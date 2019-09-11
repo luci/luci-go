@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e3be8cc_2a2f86b0",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-11T17:42:44Z",
+      "side": 1,
+      "message": "how is this going to be used? not sure i understand handling of this error should be different from malformed json. It smells like YAGNI",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87c5c3fd_9a5bafe2",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-11T17:42:44Z",
+      "side": 1,
+      "message": "it does not actually return ErrBadFormat, but a wrap of it",
+      "range": {
+        "startLine": 66,
+        "startChar": 6,
+        "endLine": 66,
+        "endChar": 18
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
