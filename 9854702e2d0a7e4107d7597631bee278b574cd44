@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0db082c8_0d503865",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T16:46:42Z",
+      "side": 1,
+      "message": "Actually, where is \"variant_id\" in the invocation proto used again? If it\u0027s only used to associate the TestVariant\u0027s variant within the context of its own invocation (and we\u0027re otherwise using the digest as the key in Spanner), can we just use a vector in the Invocation proto and use index as ID?",
+      "range": {
+        "startLine": 117,
+        "startChar": 12,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
