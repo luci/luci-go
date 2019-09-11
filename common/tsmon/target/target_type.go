@@ -42,7 +42,10 @@ type targetTypeFlag struct {
 }
 
 func (ttf *targetTypeFlag) String() string {
-	return ttf.flags.TargetType.Name
+	if ttf.flags != nil {
+		return ttf.flags.TargetType.Name
+	}
+	return DeviceType.Name
 }
 
 func (ttf *targetTypeFlag) Set(v string) error {
