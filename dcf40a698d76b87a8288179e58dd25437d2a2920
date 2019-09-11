@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2ab5ba36_92cabad4",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T23:26:11Z",
+      "side": 1,
+      "message": "Chatted offline: we\u0027ll just retry for the different formats.\n\n(I left the header of common.go to make rebasing simpler.)",
+      "parentUuid": "29e244e0_95fdb6cd",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87c5c3fd_9a5bafe2",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 6
@@ -69,6 +93,30 @@
       "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35868380_86669e5e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T23:26:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "87c5c3fd_9a5bafe2",
+      "range": {
+        "startLine": 66,
+        "startChar": 6,
+        "endLine": 66,
+        "endChar": 18
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
