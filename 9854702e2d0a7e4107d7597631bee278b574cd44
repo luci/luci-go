@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "a7863bce_664e7aed",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T18:06:59Z",
+      "side": 1,
+      "message": "This is a placeholder for getting \"variant_id\" in the TestVariant proto, and is related to the below question on whether variant_id is only used to associate the TestVariant\u0027s variant within the context of its own invocation.\n\nL59-61 computes a hash (to be used for \"digest\" in VariantDef proto), which in your response to the above question is something we don\u0027t want to make the user compute.\n\nDo you maybe mean L59-60, i.e. the unhashed string concatenating the k:v pairs?",
+      "parentUuid": "127a037d_d11612d9",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28a70425_efeef974",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -231,6 +249,30 @@
       "writtenOn": "2019-09-11T17:32:50Z",
       "side": 1,
       "message": "in the orig doc, by epoch they meant Unix epoch, i.e. this is duration since Unix epoch.\nhere this seems to be used as as synonym of \"start\" in \"start of the test\".\n\nin any case, it would be cleaner to implement this as a custom type `Time` which implements https://godoc.org/encoding/json#Unmarshaler\n\nexample: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/buildbot/time.go",
+      "range": {
+        "startLine": 47,
+        "startChar": 27,
+        "endLine": 47,
+        "endChar": 35
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb79f870_ed3b0503",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T18:06:59Z",
+      "side": 1,
+      "message": "Confused --- which orig doc?\n\n(The idea here was to introduce a field within GTestResults that stores the start for the entire swarming task, and that is indeed duration since Unix epoch, since timestamp.Timestamp in ptypes also stores seconds since Unix epoch IIUC.)",
+      "parentUuid": "1e4a9b57_09badd7e",
       "range": {
         "startLine": 47,
         "startChar": 27,
@@ -507,6 +549,24 @@
       "writtenOn": "2019-09-11T17:32:50Z",
       "side": 1,
       "message": "why not set it always? we already have an indicator that it is lossy. What\u0027s the value of not setting it at all?",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed5b870f_aa81f250",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T18:06:59Z",
+      "side": 1,
+      "message": "Set rpb.Summary.Text? We do, in 128 --- it defaults to result.OutputSnippetBase64. Or do you mean something else?",
+      "parentUuid": "16d9d952_4fa98966",
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
