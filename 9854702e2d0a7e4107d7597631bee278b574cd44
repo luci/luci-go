@@ -521,6 +521,24 @@
     },
     {
       "key": {
+        "uuid": "dbb5efb0_49b1450c",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T20:59:14Z",
+      "side": 1,
+      "message": "My concern was that that could cause confusion, since people looking at resultsdb might think, \"That\u0027s weird, all the tests in this step finished way before the step did, why was the bot just waiting around?\"\n\nAFAICT the tests don\u0027t log time-based information elsewhere (unless there are cases where it\u0027s embedded in the summary string). Why does it matter that this is non-deterministic? That is, when would we depend on getting the same times for the results on multiple calls of the function in prod? Or do you mean just to avoid potential future trip ups if we end up doing multiple calls?\n\n(Another alternative is to sort the per iteration data by test name before processing.)",
+      "parentUuid": "95b9fbd7_1fff1bef",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f4e54404_81075612",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
