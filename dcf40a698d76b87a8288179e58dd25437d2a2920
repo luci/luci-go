@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "29e244e0_95fdb6cd",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-11T17:54:19Z",
+      "side": 1,
+      "message": "The idea is that we\u0027ll read output.json, and then try it out as different formats. If even /unmarshalling/ fails, then there\u0027s no need to try the different formats. Otherwise, it may just be /this/ particular format tried that fails. If you have other thoughts on distinguishing JSON Test Results formatted output.json and GTest results formatted output.json, please let me know.",
+      "parentUuid": "4e3be8cc_2a2f86b0",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "87c5c3fd_9a5bafe2",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 6
