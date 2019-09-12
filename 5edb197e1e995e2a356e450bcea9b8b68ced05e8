@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f92806e_5ddc4961",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-12T01:33:35Z",
+      "side": 1,
+      "message": "I\u0027m a little confused here: IIUC, since StartTime is actually the shard\u0027s start time, ConvertFromJSON will not be able to set StartTime, right? If so, where and how does the StartTime to be set?",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 18
+      },
+      "revId": "5edb197e1e995e2a356e450bcea9b8b68ced05e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4539c82_86b44ee1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-12T01:33:35Z",
+      "side": 1,
+      "message": "Nit: GtestResults?",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 42
+      },
+      "revId": "5edb197e1e995e2a356e450bcea9b8b68ced05e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
