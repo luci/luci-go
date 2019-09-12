@@ -169,6 +169,24 @@
     },
     {
       "key": {
+        "uuid": "ac1945c2_150639ac",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-12T02:05:56Z",
+      "side": 1,
+      "message": "Curious --- why is this the case (that doing multiple Write() calls instead of Join()ing and doing one) is significantly more efficient?\n\n(IIUC the comments w.r.t. removing sortedKeys argument, we\u0027re already walking the variant def map twice --- once to created the merged variant def map, and once to get the keys)",
+      "parentUuid": "92062ed7_80007b00",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a91be73_eec02269",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2

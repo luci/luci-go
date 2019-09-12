@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d1ccba8a_a0e86eb1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-12T02:05:56Z",
+      "side": 1,
+      "message": "Yes, exactly --- this field will have to be prepopulated by the caller, which should have access at some point to the swarming task.\n\nSpecifically, currently, the swarming task is handled in swarming.go, and we get the task (which has this start time info), get the isolate hash for output.json, and throw away the task. So we\u0027d do something like get implement a caller of fetchOutputJSON in swarming.go that gets the task, and then feeds that task to fetchOutputJSON (to get the output.json isolate hash), and also uses it for creating the GTestResults for trying to process the read JSON data.",
+      "parentUuid": "5f92806e_5ddc4961",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 18
+      },
+      "revId": "5edb197e1e995e2a356e450bcea9b8b68ced05e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d4539c82_86b44ee1",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
