@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f29f9ec_59decc49",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1306846
+      },
+      "writtenOn": "2019-09-12T11:19:22Z",
+      "side": 1,
+      "message": "h.Write() the individual field values separated by \u0027\\0\u0027 or something? There is no reason why hashing an object should (a) panic() or (b) create that much work for the garbage collector.",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2ae0a28_2ca960c1",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1306846
+      },
+      "writtenOn": "2019-09-12T11:19:22Z",
+      "side": 1,
+      "message": "This doesn\u0027t seem like an adequate substitute for the document that I asked you to write. If there are pros and cons for automatic population versus manual population, then your decision should be written up so that everyone who isn\u0027t you can understand why you made that decision. Our users are well within their rights to say, \"The Python API has automatic population, so why is it that the Go API has manual population?\" I wouldn\u0027t know how to answer that question.",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
