@@ -159,12 +159,29 @@
 // The state of the build is defined as the last Build message sent on this
 // stream. There's no implicit accumulation between sent Build messages.
 //
-// All Step.Log urls in the emitted Build messages MUST start with
-// $LOGDOG_NAMESPACE. For example, if $LOGDOG_STREAM_PREFIX == "infra/prefix"
-// and $LOGDOG_NAMESPACE = "u", then a Step.Log entry with a Url field of
-// "u/hello/world" would refer to "logdog.host/infra/prefix/+/u/hello/world".
+// All Step.Log.Url fields in the emitted Build messages MUST be relative to
+// the $LOGDOG_NAMESPACE of the build.proto stream. For example, if the host
+// application is parsing a Build.proto in a stream named
+// "logdog://host/project/prefix/+/something/build.proto", then a Log with a Url
+// of "hello/world/stdout" will be transformed into:
+//
+//   Url:     logdog://host/project/prefix/+/something/hello/world/stdout
+//   ViewUrl: <implementation defined>
+//
 // The `ViewUrl` field SHOULD be left empty, and will be filled in by the
 // host running the luciexe (if supplied it will be overwritten).
+//
+// The following Build fields will be read from the luciexe-controlled
+// build.proto stream:
+//
+//   Steps
+//   SummaryMarkdown
+//   Status
+//   StatusDetails
+//   UpdateTime
+//   Tags
+//   EndTime
+//   Output
 //
 // The luciexe binary - Reporting final status
 //
@@ -202,20 +219,27 @@
 //
 // The parent can achieve this by recording a Step (with no children), and
 // a single Step.Log named "$build.proto" which points to a "build.proto" stream
-// (see "Updating the Build State"). The steps from the child stream will appear
-// as substeps of step S in the parent. This rule applies recursively, i.e.
-// leaf step(s) in the child build MAY also have a "$build.proto" log.
+// (see "Updating the Build State"). The steps from the child build.proto stream
+// will appear as substeps of step S in the parent. The following fields of the
+// child Build will be copied to the equivalent fields of step S in the parent:
+//
+//  SummaryMarkdown
+//  Status
+//  EndTime
+//  Logs
+//
+// This rule applies recursively, i.e. leaf step(s) in the child build MAY also
+// have a "$build.proto" log.
 //
 // Each luciexe's step names should be emitted as relative names. e.g. say
 // a build runs a sub-luciexe with the name "a|b". This sub-luciexe then runs
 // a step "x|y|z". The top level build.proto stream will show the step
 // "a|b|x|y|z".
 //
-// The graph of datagram streams MUST NOT contain cycles. Typically, it should
-// be a tree, but having two leaves point to the same substream is not checked
-// for/rejected.
-//
-//   NOTE: Recursive invocation is not yet implemented ("WIP") as of Aug 12, 2019.
+// The graph of datagram streams MUST be a tree. This follows from the
+// namespacing rules of the Log.Url fields; Since Log.Url fields are relative to
+// their build's namespace, it's only possible to have a merge step point
+// further 'down' the tree, making it impossible to create a cycle.
 //
 // Related Libraries
 //
