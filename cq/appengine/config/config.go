@@ -219,7 +219,7 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
 	}
 
 	if group.CombineCls != nil {
-		ctx.Enter("group_cls")
+		ctx.Enter("combine_cls")
 		if group.CombineCls.StabilizationDelay == nil {
 			ctx.Errorf("stabilization_delay is required to enable cl_grouping")
 		} else {
@@ -229,6 +229,9 @@ func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
 			case d.Seconds() < 10.0:
 				ctx.Errorf("stabilization_delay must be at least 10 seconds")
 			}
+		}
+		if group.GetVerifiers().GetGerritCqAbility().GetAllowSubmitWithOpenDeps() {
+			ctx.Errorf("combine_cls can not be used with gerrit_cq_ability.allow_submit_with_open_deps=true.")
 		}
 		ctx.Exit()
 	}

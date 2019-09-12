@@ -151,6 +151,9 @@ message ConfigGroup {
   // Typical use-case is testing & submitting changes to multiple repos at the
   // same time, in which case all such repos must be declared up-front in
   // `Gerrit` part of this config_group.
+  //
+  // Not allowed to be used together with
+  // submit_options.allow_submit_with_open_deps=true.
   CombineCLs combine_cls = 4;
 
   // Defines how to verify a CL before submitting it. Required.

@@ -273,6 +273,11 @@ func TestValidation(t *testing.T) {
 					validateProjectConfig(vctx, &cfg)
 					So(vctx.Finalize(), ShouldBeNil)
 				})
+				Convey("Can't use with allow_submit_with_open_deps", func() {
+					cfg.ConfigGroups[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
+					validateProjectConfig(vctx, &cfg)
+					So(vctx.Finalize(), ShouldErrLike, "allow_submit_with_open_deps=true")
+				})
 			})
 		})
 
