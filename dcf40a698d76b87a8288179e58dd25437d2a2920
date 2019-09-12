@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "c4acf935_9066c3f5",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-12T19:52:25Z",
+      "side": 1,
+      "message": "for this problem, i think it could be simpler: try another format on any error",
+      "parentUuid": "29e244e0_95fdb6cd",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 16
+      },
+      "revId": "dcf40a698d76b87a8288179e58dd25437d2a2920",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87c5c3fd_9a5bafe2",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 6
