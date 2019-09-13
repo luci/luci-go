@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -641,8 +642,8 @@ func (d downloadType) String() string {
 type Stats struct {
 	Duration time.Duration `json:"duration"`
 
-	ItemsCold string `json:"items_cold"`
-	ItemsHot  string `json:"items_hot"`
+	ItemsCold []byte `json:"items_cold"`
+	ItemsHot  []byte `json:"items_hot"`
 }
 
 // FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
@@ -658,7 +659,8 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 	added := cache.GetAdded()
 	used := cache.GetUsed()
 
-	itemsCold, err := isolated.PackBase64(added)
+	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
+	itemsCold, err := isolated.Pack(added)
 	if err != nil {
 		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for cold items").Err()
 	}
@@ -678,8 +680,8 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 			hot = append(hot, k)
 		}
 	}
-
-	itemsHot, err := isolated.PackBase64(hot)
+	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
+	itemsHot, err := isolated.Pack(hot)
 	if err != nil {
 		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for hot items").Err()
 	}
