@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "451259c0_b44923fd",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-09-13T10:25:28Z",
+      "side": 1,
+      "message": "why not have the function as part of large?\nconvert from array of units.Size to array of int64.",
+      "range": {
+        "startLine": 102,
+        "startChar": 16,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
