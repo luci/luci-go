@@ -24,6 +24,9 @@ import (
 // Image names must have the form projects/<project>/global/images/<image> or
 // global/images/<image>.
 func isValidImage(s string) bool {
+	if s == "" {
+		return true
+	}
 	switch parts := strings.Split(s, "/"); len(parts) {
 	case 3:
 		return parts[0] == "global" && parts[1] == "images"
