@@ -40,7 +40,12 @@ const (
 	// instanceCacheMaxSize defines how many packages to keep in the cache.
 	//
 	// When this limit is reached, oldest touched packages are purged.
-	instanceCacheMaxSize = 100
+	//
+	// NOTE: There's a bad failure mode if this is too small. Because the cache is
+	// LRU if a normal "ensure" scenario involves more than this number of
+	// instances, it's possible to have a situation where EVERY ensure operation
+	// causes rolling evictions through the cache. See crbug.com/1003774.
+	instanceCacheMaxSize = 500
 
 	// instanceCacheMaxAge defines when to purge a cached package that is not
 	// being used.
