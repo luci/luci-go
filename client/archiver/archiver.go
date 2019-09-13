@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -98,6 +99,16 @@ func (s *Stats) TotalBytesHits() units.Size {
 	return out
 }
 
+// PackedHits returns the size of hit items in packed format.
+func (s *Stats) PackedHits() ([]byte, error) {
+	hits := make([]int64, len(s.Hits))
+	for i, v := range s.Hits {
+		hits[i] = int64(v)
+	}
+	sort.Slice(hits, func(i, j int) bool { return hits[i] < hits[j] })
+	return isolated.Pack(hits)
+}
+
 // TotalMisses returns the number of cache misses on the server.
 func (s *Stats) TotalMisses() int {
 	return len(s.Pushed)
@@ -110,6 +121,16 @@ func (s *Stats) TotalBytesPushed() units.Size {
 		out += i.Size
 	}
 	return out
+}
+
+// PackedMisses returns size of missed items in packed format.
+func (s *Stats) PackedMisses() ([]byte, error) {
+	misses := make([]int64, len(s.Pushed))
+	for i, v := range s.Pushed {
+		misses[i] = int64(v.Size)
+	}
+	sort.Slice(misses, func(i, j int) bool { return misses[i] < misses[j] })
+	return isolated.Pack(misses)
 }
 
 func (s *Stats) deepCopy() *Stats {

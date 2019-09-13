@@ -75,8 +75,17 @@ func TestArchiverFile(t *testing.T) {
 
 		stats := a.Stats()
 		So(stats.TotalHits(), ShouldResemble, 0)
+		packedHits, err := stats.PackedHits()
+		So(err, ShouldBeNil)
+		So(packedHits, ShouldBeEmpty)
+
 		// Only 2 lookups, not 3.
 		So(stats.TotalMisses(), ShouldResemble, 2)
+
+		packedMisses, err := stats.PackedMisses()
+		So(err, ShouldBeNil)
+		So(packedMisses, ShouldNotBeEmpty)
+
 		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
 		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(3))
 		expected := map[string]map[isolated.HexDigest][]byte{
