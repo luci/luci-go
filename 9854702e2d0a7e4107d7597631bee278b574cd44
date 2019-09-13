@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "f54d3a44_bc35a112",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "i mean L59-61. FWIU this function will return the hash of the variant, which is what L59-61 computes.",
+      "parentUuid": "a7863bce_664e7aed",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28a70425_efeef974",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -175,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "09292811_020a61dd",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "alphabet is restricted: a key may not include a colon. A value may not have a \\n.\n\nthe alphabet is currently not well defined, but it must be. The proto files are currently missing most comments, but they must define an alphabet",
+      "parentUuid": "9c69183f_a54b2d06",
+      "range": {
+        "startLine": 59,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 18
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92062ed7_80007b00",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -204,6 +246,24 @@
       "side": 1,
       "message": "Curious --- why is this the case (that doing multiple Write() calls instead of Join()ing and doing one) is significantly more efficient?\n\n(IIUC the comments w.r.t. removing sortedKeys argument, we\u0027re already walking the variant def map twice --- once to created the merged variant def map, and once to get the keys)",
       "parentUuid": "92062ed7_80007b00",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26759568_425d6bc6",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "probably not significantly, since number of pairs is small. \n\nI believe it is more canonical to make multiple Write calls. For example, https://godoc.org/hash#example-package--BinaryMarshaler example makes two Write calls instead of making one Write call with concatenated content. The reason is same for any io.Writer (note that hash.Hash is io.Writer). If we print multiple lines in stdout, we use multple Println calls, instead of one Println call with strings.Join.\n\nIf we make one Write call like this, we allocate a large string that includes all pairs. With multiple Write calls, we don\u0027t. \n\nit is not a big deal though",
+      "parentUuid": "ac1945c2_150639ac",
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -314,6 +374,30 @@
       "side": 1,
       "message": "Confused --- which orig doc?\n\n(The idea here was to introduce a field within GTestResults that stores the start for the entire swarming task, and that is indeed duration since Unix epoch, since timestamp.Timestamp in ptypes also stores seconds since Unix epoch IIUC.)",
       "parentUuid": "1e4a9b57_09badd7e",
+      "range": {
+        "startLine": 47,
+        "startChar": 27,
+        "endLine": 47,
+        "endChar": 35
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7cc9fc4_a23eebc1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "i confused with json test results. There is no \"original doc\" for GTest.\n\nNow that you explained this, i think this struct combines multiple purposes (which should be avoided): parsed JSON from isolate AND information about the task result from swarming. Let\u0027s use https://en.wikipedia.org/wiki/Single_responsibility_principle\nif you need to pass additional information about the task to ToInvocation, let\u0027s pass an additional parameter.",
+      "parentUuid": "cb79f870_ed3b0503",
       "range": {
         "startLine": 47,
         "startChar": 27,
@@ -545,6 +629,29 @@
     },
     {
       "key": {
+        "uuid": "2b44fbb9_67b0cc9b",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "this is base64. Did you mean to decode it from base64?\n\nalso we must escape it before using it as markdown",
+      "range": {
+        "startLine": 128,
+        "startChar": 47,
+        "endLine": 128,
+        "endChar": 66
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95b9fbd7_1fff1bef",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -574,6 +681,24 @@
       "side": 1,
       "message": "My concern was that that could cause confusion, since people looking at resultsdb might think, \"That\u0027s weird, all the tests in this step finished way before the step did, why was the bot just waiting around?\"\n\nAFAICT the tests don\u0027t log time-based information elsewhere (unless there are cases where it\u0027s embedded in the summary string). Why does it matter that this is non-deterministic? That is, when would we depend on getting the same times for the results on multiple calls of the function in prod? Or do you mean just to avoid potential future trip ups if we end up doing multiple calls?\n\n(Another alternative is to sort the per iteration data by test name before processing.)",
       "parentUuid": "95b9fbd7_1fff1bef",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09db95d2_6406ca6e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "in my experience non-deterministic code makes live harder: tests get flakier, it makes it harder to debug things because code runs differently each time.\n\ndid you consider simply not populating the field? I\u0027ve changed it from StartTime+EndTime to StartTime+Duration specifically to avoid lying here, but still preserve duration.",
+      "parentUuid": "dbb5efb0_49b1450c",
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -626,6 +751,24 @@
       "side": 1,
       "message": "Set rpb.Summary.Text? We do, in 128 --- it defaults to result.OutputSnippetBase64. Or do you mean something else?",
       "parentUuid": "16d9d952_4fa98966",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00b5e0af_e69c66b1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-13T00:01:27Z",
+      "side": 1,
+      "message": "i just read https://cs.chromium.org/chromium/src/base/test/launcher/test_results_tracker.cc?q\u003dlossless_snippet\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d409\n\nit seems that OutputSnippetBase64 and OutputSnippet represent the same text. Why do we need to deal with OutputSnippet and LosslessSnippet then?",
+      "parentUuid": "ed5b870f_aa81f250",
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
