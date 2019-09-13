@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94b05958_995bffa0",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-09-13T10:25:58Z",
+      "side": 1,
+      "message": "how do you realize \"fs.listdir\" part in L589?",
+      "revId": "ece5ac114709ce04a412570e925d3adfd79ce185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "174d64f0_eb65c86d",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2019-09-13T10:25:58Z",
+      "side": 1,
+      "message": "is this equivalent to outputs_ref?",
+      "range": {
+        "startLine": 300,
+        "startChar": 8,
+        "endLine": 300,
+        "endChar": 25
+      },
+      "revId": "ece5ac114709ce04a412570e925d3adfd79ce185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
