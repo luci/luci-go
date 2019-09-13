@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1317be12_f71a655c",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-13T22:54:22Z",
+      "side": 1,
+      "message": "This isn\u0027t a valid image. In Validate, below, if disk type is local-ssd then require image to be unspecified.",
+      "revId": "29f4dd43d795b976aed934a5068ace56a051d7ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad2667de_a1539190",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-13T22:54:22Z",
+      "side": 1,
+      "message": "Here, check if d.Type is local-ssd then enforce that d.Image is \"\". And if d.Type is not local-ssd, then call isValidImage.",
+      "revId": "29f4dd43d795b976aed934a5068ace56a051d7ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6b79fce_3899cf88",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-13T22:54:22Z",
+      "side": 1,
+      "message": "Can you test creating a GCE instance using the API without specifying \"SCRATCH\"? Sometimes GCE defaults to the right thing, if it works for local-ssd then we can skip this. Otherwise add a comment like \"GCE requires local-ssds to be scratch disks.\"\n\nAnd why HasSuffix? Are there other kinds of local-ssd besides \"local-ssd\"?",
+      "revId": "29f4dd43d795b976aed934a5068ace56a051d7ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
