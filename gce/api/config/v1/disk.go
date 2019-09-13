@@ -25,6 +25,8 @@ import (
 // global/images/<image>.
 func isValidImage(s string) bool {
 	switch parts := strings.Split(s, "/"); len(parts) {
+	case 0:
+		return true
 	case 3:
 		return parts[0] == "global" && parts[1] == "images"
 	case 5:
