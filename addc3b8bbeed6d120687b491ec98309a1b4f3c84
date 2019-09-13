@@ -70,6 +70,30 @@
       "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0824c0c_1696bfac",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-13T14:21:39Z",
+      "side": 1,
+      "message": "Changed bit, but I still want to have pack function in Stats not to make deleteAndUpload longer.",
+      "parentUuid": "c92e4eb8_ba6a510e",
+      "range": {
+        "startLine": 102,
+        "startChar": 16,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
