@@ -98,6 +98,15 @@ func (s *Stats) TotalBytesHits() units.Size {
 	return out
 }
 
+// PackedHits returns size of hit items in packed base64 format.
+func (s *Stats) PackedHits() (string, error) {
+	hits := make([]int64, len(s.Hits))
+	for i, v := range s.Hits {
+		hits[i] = int64(v)
+	}
+	return isolated.PackBase64(hits)
+}
+
 // TotalMisses returns the number of cache misses on the server.
 func (s *Stats) TotalMisses() int {
 	return len(s.Pushed)
@@ -110,6 +119,15 @@ func (s *Stats) TotalBytesPushed() units.Size {
 		out += i.Size
 	}
 	return out
+}
+
+// PackedMisses returns size of missed items in packed base64 format.
+func (s *Stats) PackedMisses() (string, error) {
+	misses := make([]int64, len(s.Pushed))
+	for i, v := range s.Pushed {
+		misses[i] = int64(v.Size)
+	}
+	return isolated.PackBase64(misses)
 }
 
 func (s *Stats) deepCopy() *Stats {
