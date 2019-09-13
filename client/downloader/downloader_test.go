@@ -324,8 +324,8 @@ func TestFetchAndMap(t *testing.T) {
 		})
 
 		So(stats.Duration, ShouldBeGreaterThan, 0)
-		So(stats.ItemsCold, ShouldEqual, "eJziAQQAAP//AA0ADQ==")
-		So(stats.ItemsHot, ShouldEqual, "")
+		So(stats.ItemsCold, ShouldResemble, []byte{120, 156, 226, 1, 4, 0, 0, 255, 255, 0, 13, 0, 13})
+		So(stats.ItemsHot, ShouldResemble, []byte(nil))
 
 		buf, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
 		So(err, ShouldBeNil)
