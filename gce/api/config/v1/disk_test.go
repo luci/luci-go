@@ -39,6 +39,7 @@ func TestDisk(t *testing.T) {
 			})
 
 			Convey("valid", func() {
+				So(isValidImage(""), ShouldBeTrue)
 				So(isValidImage("global/images/image"), ShouldBeTrue)
 				So(isValidImage("projects/project/global/images/image"), ShouldBeTrue)
 			})
@@ -64,7 +65,9 @@ func TestDisk(t *testing.T) {
 			c := &validation.Context{Context: context.Background()}
 
 			Convey("invalid", func() {
-				d := &Disk{}
+				d := &Disk{
+					Image: "not/a/valid/image"
+				}
 				d.Validate(c)
 				err := c.Finalize().(*validation.Error).Errors
 				So(err, ShouldContainErr, "image must match")
