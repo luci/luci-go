@@ -46,6 +46,30 @@
       "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c92e4eb8_ba6a510e",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-13T12:34:58Z",
+      "side": 1,
+      "message": "I think it\u0027s reasonable to switch Hits to int64.",
+      "parentUuid": "2defcb71_53914329",
+      "range": {
+        "startLine": 102,
+        "startChar": 16,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
