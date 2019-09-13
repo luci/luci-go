@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "2f4f3680_86a9f58e",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-13T12:36:59Z",
+      "side": 1,
+      "message": "https://golang.org/pkg/encoding/json/#Marshal\n\n\" Array and slice values encode as JSON arrays, except that []byte encodes as a base64-encoded string, and a nil slice encodes as the null JSON value. \"\n\nThis means that if you use a []byte here, you get the base64 encoding and decoding \"for free\". Hence I don\u0027t think PackBase64() is necessary.",
+      "revId": "ece5ac114709ce04a412570e925d3adfd79ce185",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "94b05958_995bffa0",
         "filename": "cmdrunner/command.go",
         "patchSetId": 8
