@@ -15,7 +15,6 @@
 package isolated
 
 import (
-	"encoding/base64"
 	"math/rand"
 	"sort"
 	"testing"
@@ -83,24 +82,6 @@ func TestPack(t *testing.T) {
 			unpackedArray, err := Unpack([]byte{})
 			So(err, ShouldBeNil)
 			So(unpackedArray, ShouldBeEmpty)
-		})
-	})
-}
-
-func TestPackBase64(t *testing.T) {
-	t.Parallel()
-	Convey(`PackBase64`, t, func() {
-		Convey(`sanity check`, func() {
-			str, err := PackBase64([]int64{0, 1})
-			So(err, ShouldBeNil)
-
-			b, err := base64.StdEncoding.DecodeString(str)
-			So(err, ShouldBeNil)
-
-			unpacked, err := Unpack(b)
-			So(err, ShouldBeNil)
-
-			So(unpacked, ShouldResemble, []int64{0, 1})
 		})
 	})
 }
