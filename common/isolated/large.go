@@ -17,9 +17,11 @@ package isolated
 import (
 	"bytes"
 	"compress/zlib"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"sort"
 )
 
 // Pack returns a deflate'd buffer of delta encoded varints.
@@ -60,6 +62,20 @@ func Pack(values []int64) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
+}
+
+// PackBase64 packs given integer array to base64 encoded format.
+func PackBase64(array []int64) (string, error) {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i] < array[j]
+	})
+
+	packed, err := Pack(array)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(packed), nil
 }
 
 // Unpack decompresses a deflate'd delta encoded list of varints.

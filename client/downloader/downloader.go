@@ -18,13 +18,11 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -647,19 +645,6 @@ type Stats struct {
 	ItemsHot  string `json:"items_hot"`
 }
 
-func pack(array []int64) (string, error) {
-	sort.Slice(array, func(i, j int) bool {
-		return array[i] < array[j]
-	})
-
-	packed, err := isolated.Pack(array)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(packed), nil
-}
-
 // FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
 func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
 	start := time.Now()
@@ -673,7 +658,7 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 	added := cache.GetAdded()
 	used := cache.GetUsed()
 
-	itemsCold, err := pack(added)
+	itemsCold, err := isolated.PackBase64(added)
 	if err != nil {
 		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for cold items").Err()
 	}
@@ -694,7 +679,7 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 		}
 	}
 
-	itemsHot, err := pack(hot)
+	itemsHot, err := isolated.PackBase64(hot)
 	if err != nil {
 		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for hot items").Err()
 	}
