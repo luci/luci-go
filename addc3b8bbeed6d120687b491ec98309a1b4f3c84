@@ -22,6 +22,30 @@
       "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2defcb71_53914329",
+        "filename": "client/archiver/archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-13T10:46:41Z",
+      "side": 1,
+      "message": "Because of s.Pushed.\nHaving functions processing []*UploadStat in large.go is not feasible.",
+      "parentUuid": "451259c0_b44923fd",
+      "range": {
+        "startLine": 102,
+        "startChar": 16,
+        "endLine": 102,
+        "endChar": 26
+      },
+      "revId": "addc3b8bbeed6d120687b491ec98309a1b4f3c84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
