@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c724bbde_5c331569",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-13T14:50:49Z",
+      "side": 1,
+      "message": "For the record, another option would have been to do:\n\ntype PackedInts []byte\n\nfunc (p* PackedInts) Set(i []int64) {\n  *p \u003d ...\n}\n\nfunc (p*PackedInts) Get() []int64{\n  return ...\n}\n\n\nso that serialization is still base64, but at least it\u0027s typed, which IMHO helps readability. But that\u0027s really low importance, no need to worry too much about this.",
+      "range": {
+        "startLine": 256,
+        "startChar": 11,
+        "endLine": 256,
+        "endChar": 17
+      },
+      "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88c6d95f_69ce4779",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-13T14:50:49Z",
+      "side": 1,
+      "message": "Can you name it uploadThenDelete() ? It would be more factual, as deleteAndUpload is the reverse order of what is done.\nDon\u0027t forget to update Stats comment and commit description.",
+      "range": {
+        "startLine": 260,
+        "startChar": 5,
+        "endLine": 260,
+        "endChar": 20
+      },
+      "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
