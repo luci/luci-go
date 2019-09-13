@@ -121,6 +121,16 @@ func New(anonClient, authClient *http.Client, host, namespace string, rFn retry.
 	return i
 }
 
+// URL returns the URL of isolateserver.
+func (i *Client) URL() string {
+	return i.url
+}
+
+// Namespace returns namespace set to this client.
+func (i *Client) Namespace() string {
+	return i.namespace
+}
+
 // Hash returns the hashing algorithm used for this client.
 func (i *Client) Hash() crypto.Hash {
 	return i.h
