@@ -33,14 +33,19 @@ type Channel struct {
 	DrainC <-chan struct{}
 }
 
-// CloseAndDrain is a convenience function which closes C (and swallows panic if
-// already closed) and then blocks on DrainC/ctx.Done().
-func (c Channel) CloseAndDrain(ctx context.Context) {
+// Close is a convenience function which closes C (and swallows panic if
+// already closed).
+func (c Channel) Close() {
 	func() {
 		defer func() { recover() }()
 		close(c.C)
 	}()
+}
 
+// CloseAndDrain is a convenience function which closes C (and swallows panic if
+// already closed) and then blocks on DrainC/ctx.Done().
+func (c Channel) CloseAndDrain(ctx context.Context) {
+	c.Close()
 	select {
 	case <-ctx.Done():
 	case <-c.DrainC:
