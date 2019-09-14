@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "51c0e841_5e586fee",
+        "filename": "common/sync/dispatcher/buffer/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-14T07:21:59Z",
+      "side": 1,
+      "message": "typo correction",
+      "range": {
+        "startLine": 65,
+        "startChar": 4,
+        "endLine": 65,
+        "endChar": 15
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ffb3c380_b9855f1d",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-14T07:21:59Z",
+      "side": 1,
+      "message": "split out the \"Close\" part of \"CloseAndDrain\"",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 22
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4e9ab565_b0c790f4",
+        "filename": "luciexe/host/buildmerge/build_merger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-14T07:21:59Z",
+      "side": 1,
+      "message": "this whole file is placeholder for the next CL, which will add a real Agent object",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 10
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5654ff78_b17af15d",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-14T07:21:59Z",
+      "side": 1,
+      "message": "this is a bit tricky; it needs to be non-blocking for both:\n  * The main \u0027merger\u0027 routine which aggregates together a snapshot of all build.proto streams. Not in this CL.\n  * The logdog butler, which is pushing datagrams into this function as quickly as the user can write them.\n\nAdditionally, it needs to be able to close in three events:\n   * A \"natural\" close when the user closes the stream\n   * A \"forced\" close when the merger closes the stream \n   * the user writes a build.proto which is invalid in some way\n\nOnce the stream is closed, parse should be a noop; new data doesn\u0027t update anything and closing a \u0027second\u0027 time must be safe (i.e. if the stream naturally closes, and then the merger \u0027forces\u0027 it closed by sending nil again, this should be OK).\n\nI\u0027ll update all the comments in this file when it\u0027s more daytime than right now.",
+      "range": {
+        "startLine": 214,
+        "startChar": 29,
+        "endLine": 214,
+        "endChar": 34
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
