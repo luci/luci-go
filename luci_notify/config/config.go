@@ -251,16 +251,17 @@ func GetConfigService(c context.Context) configInterface.Interface {
 
 // UpdateHandler is the HTTP router handler for handling cron-triggered
 // configuration update requests.
-func UpdateHandler(ctx *router.Context) {
-	c, h := ctx.Context, ctx.Writer
-	c, _ = context.WithTimeout(c, time.Minute)
-	if err := updateProjects(c); err != nil {
-		logging.WithError(err).Errorf(c, "error while updating project configs")
+func UpdateHandler(c *router.Context) {
+	ctx, h := c.Context, c.Writer
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	if err := updateProjects(ctx); err != nil {
+		logging.WithError(err).Errorf(ctx, "error while updating project configs")
 		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if err := updateSettings(c); err != nil {
-		logging.WithError(err).Errorf(c, "error while updating settings")
+	if err := updateSettings(ctx); err != nil {
+		logging.WithError(err).Errorf(ctx, "error while updating settings")
 		h.WriteHeader(http.StatusInternalServerError)
 		return
 	}

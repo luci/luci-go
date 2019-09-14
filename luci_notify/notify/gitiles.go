@@ -33,18 +33,19 @@ import (
 //
 // If oldRevision is not reachable from newRevision, returns an empty slice
 // and nil error.
-type HistoryFunc func(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error)
+type HistoryFunc func(ctx context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error)
 
 // gitilesHistory is an implementation of a HistoryFunc intended to be used
 // in production (not for testing).
-func gitilesHistory(c context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
-	c, _ = context.WithTimeout(c, 30*time.Second)
+func gitilesHistory(ctx context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	opts := []auth.RPCOption{
 		auth.WithProject(project),
 		auth.WithScopes(gitiles.OAuthScope),
 	}
-	transport, err := auth.GetRPCTransport(c, auth.AsProject, opts...)
+	transport, err := auth.GetRPCTransport(ctx, auth.AsProject, opts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
@@ -62,8 +63,8 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		ExcludeAncestorsOf: oldRevision + "~1",
 		Committish:         newRevision,
 	}
-	logging.Infof(c, "Gitiles request to host %q: %q", host, &req)
-	res, err := gitiles.PagingLog(c, client, req, 0)
+	logging.Infof(ctx, "Gitiles request to host %q: %q", host, &req)
+	res, err := gitiles.PagingLog(ctx, client, req, 0)
 	switch {
 	case err != nil:
 		return nil, grpcutil.WrapIfTransient(errors.Annotate(err, "fetching commit from Gitiles").Err())

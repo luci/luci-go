@@ -81,8 +81,9 @@ func TestCollectParse_BadTimeout(t *testing.T) {
 }
 
 func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
-	c, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
-	c, _ = clock.WithTimeout(c, 100*time.Second)
+	ctx, clk := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
+	ctx, cancel := clock.WithTimeout(ctx, 100*time.Second)
+	defer cancel()
 
 	// Set a callback to make the timer finish.
 	clk.SetTimerCallback(func(amt time.Duration, t clock.Timer) {
