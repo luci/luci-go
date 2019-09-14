@@ -28,7 +28,7 @@ import (
 type InboundAppIDAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m InboundAppIDAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
+func (m InboundAppIDAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
 	appID := r.Header.Get("X-Appengine-Inbound-Appid")
 	if appID == "" {
 		return nil, nil

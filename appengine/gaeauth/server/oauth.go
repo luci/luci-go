@@ -48,8 +48,8 @@ type OAuth2Method struct {
 var _ auth.UserCredentialsGetter = (*OAuth2Method)(nil)
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
-	if info.IsDevAppServer(c) {
+func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+	if info.IsDevAppServer(ctx) {
 		// On "dev_appserver", we verify OAuth2 tokens using Google's OAuth2
 		// verification endpoint.
 		//
@@ -58,7 +58,7 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 		devMethod := auth.GoogleOAuth2Method{
 			Scopes: m.Scopes,
 		}
-		return devMethod.Authenticate(c, r)
+		return devMethod.Authenticate(ctx, r)
 	}
 
 	header := r.Header.Get("Authorization")
@@ -70,9 +70,9 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 	var err error
 	for attempt := 0; attempt < 4; attempt++ {
 		var u *user.User
-		u, err = user.CurrentOAuth(c, m.Scopes...)
+		u, err = user.CurrentOAuth(ctx, m.Scopes...)
 		if err != nil {
-			logging.Warningf(c, "oauth: failed to execute GetOAuthUser - %s", err)
+			logging.Warningf(ctx, "oauth: failed to execute GetOAuthUser - %s", err)
 			continue
 		}
 		if u == nil {
@@ -96,7 +96,7 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 }
 
 // GetUserCredentials implements auth.UserCredentialsGetter.
-func (m *OAuth2Method) GetUserCredentials(c context.Context, r *http.Request) (*oauth2.Token, error) {
+func (m *OAuth2Method) GetUserCredentials(ctx context.Context, r *http.Request) (*oauth2.Token, error) {
 	chunks := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
 		return nil, errBadAuthHeader

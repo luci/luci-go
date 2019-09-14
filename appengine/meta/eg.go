@@ -34,9 +34,9 @@ type EntityGroupMeta struct {
 // GetEntityGroupVersion returns the entity group version for the entity group
 // containing root. If the entity group doesn't exist, this function will return
 // zero and a nil error.
-func GetEntityGroupVersion(c context.Context, key *ds.Key) (int64, error) {
+func GetEntityGroupVersion(ctx context.Context, key *ds.Key) (int64, error) {
 	egm := &EntityGroupMeta{Parent: key.Root()}
-	err := ds.Get(c, egm)
+	err := ds.Get(ctx, egm)
 	ret := egm.Version
 	if err == ds.ErrNoSuchEntity {
 		// this is OK for callers. The version of the entity group is effectively 0

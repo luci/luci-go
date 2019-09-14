@@ -39,16 +39,16 @@ var errNotConfigured = errors.New(
 // If auth_service URL is not configured, returns special kind of authdb.DB that
 // implements some default authorization rules (allow everything on dev server,
 // forbid everything and emit errors on real GAE).
-func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
+func GetAuthDB(ctx context.Context, prev authdb.DB) (authdb.DB, error) {
 	// Grab revision number of most recent snapshot.
-	latest, err := authdbimpl.GetLatestSnapshotInfo(c)
+	latest, err := authdbimpl.GetLatestSnapshotInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// If auth_service URL is not configured, use default db implementation.
 	if latest == nil {
-		if info.IsDevAppServer(c) {
+		if info.IsDevAppServer(ctx) {
 			return authdb.DevServerDB{}, nil
 		}
 		return authdb.ErroringDB{Error: errNotConfigured}, nil
@@ -66,15 +66,15 @@ func GetAuthDB(c context.Context, prev authdb.DB) (authdb.DB, error) {
 	// Fetch new snapshot from the datastore. It was validated already when it was
 	// stored, so skip expensive validation step. Log how long it takes to keep an
 	// eye on performance here, since it has potential to become slow.
-	start := clock.Now(c)
-	proto, err := authdbimpl.GetAuthDBSnapshot(c, latest.GetSnapshotID())
+	start := clock.Now(ctx)
+	proto, err := authdbimpl.GetAuthDBSnapshot(ctx, latest.GetSnapshotID())
 	if err != nil {
 		return nil, err
 	}
 	db, err := authdb.NewSnapshotDB(proto, latest.AuthServiceURL, latest.Rev, false)
-	logging.Infof(c, "auth: AuthDB at rev %d fetched in %s", latest.Rev, clock.Now(c).Sub(start))
+	logging.Infof(ctx, "auth: AuthDB at rev %d fetched in %s", latest.Rev, clock.Now(ctx).Sub(start))
 	if err != nil {
-		logging.Errorf(c, "auth: AuthDB is invalid - %s", err)
+		logging.Errorf(ctx, "auth: AuthDB is invalid - %s", err)
 		return nil, err
 	}
 

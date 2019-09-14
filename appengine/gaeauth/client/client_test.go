@@ -36,10 +36,10 @@ import (
 
 func TestGetAccessToken(t *testing.T) {
 	Convey("GetAccessToken works", t, func() {
-		c := testContext()
+		ctx := testContext()
 
 		// Getting initial token.
-		ctx := mockAccessTokenRPC(c, []string{"A", "B"}, "access_token_1", testclock.TestRecentTimeUTC.Add(time.Hour))
+		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_1", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err := GetAccessToken(ctx, []string{"B", "B", "A"})
 		So(err, ShouldBeNil)
 		So(tok, ShouldResemble, &oauth2.Token{
@@ -49,9 +49,9 @@ func TestGetAccessToken(t *testing.T) {
 		})
 
 		// Some time later same cached token is used.
-		clock.Get(c).(testclock.TestClock).Add(30 * time.Minute)
+		clock.Get(ctx).(testclock.TestClock).Add(30 * time.Minute)
 
-		ctx = mockAccessTokenRPC(c, []string{"A", "B"}, "access_token_none", testclock.TestRecentTimeUTC.Add(time.Hour))
+		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_none", testclock.TestRecentTimeUTC.Add(time.Hour))
 		tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 		So(err, ShouldBeNil)
 		So(tok, ShouldResemble, &oauth2.Token{
@@ -62,9 +62,9 @@ func TestGetAccessToken(t *testing.T) {
 
 		// Closer to expiration, the token is updated, at some random invocation,
 		// (depends on the seed, defines the loop limit in the test).
-		clock.Get(c).(testclock.TestClock).Add(26 * time.Minute)
+		clock.Get(ctx).(testclock.TestClock).Add(26 * time.Minute)
 		for i := 0; ; i++ {
-			ctx = mockAccessTokenRPC(c, []string{"A", "B"}, fmt.Sprintf("access_token_%d", i+2), testclock.TestRecentTimeUTC.Add(2*time.Hour))
+			ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, fmt.Sprintf("access_token_%d", i+2), testclock.TestRecentTimeUTC.Add(2*time.Hour))
 			tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 			So(err, ShouldBeNil)
 			if tok.AccessToken != "access_token_1" {
@@ -79,8 +79,8 @@ func TestGetAccessToken(t *testing.T) {
 		})
 
 		// No randomization for token that are long expired.
-		clock.Get(c).(testclock.TestClock).Add(2 * time.Hour)
-		ctx = mockAccessTokenRPC(c, []string{"A", "B"}, "access_token_new", testclock.TestRecentTimeUTC.Add(5*time.Hour))
+		clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
+		ctx = mockAccessTokenRPC(ctx, []string{"A", "B"}, "access_token_new", testclock.TestRecentTimeUTC.Add(5*time.Hour))
 		tok, err = GetAccessToken(ctx, []string{"B", "B", "A"})
 		So(err, ShouldBeNil)
 		So(tok.AccessToken, ShouldEqual, "access_token_new")
@@ -109,8 +109,8 @@ func testContext() context.Context {
 	return ctx
 }
 
-func mockAccessTokenRPC(c context.Context, scopes []string, tok string, exp time.Time) context.Context {
-	return info.AddFilters(c, func(ci context.Context, i info.RawInterface) info.RawInterface {
+func mockAccessTokenRPC(ctx context.Context, scopes []string, tok string, exp time.Time) context.Context {
+	return info.AddFilters(ctx, func(ci context.Context, i info.RawInterface) info.RawInterface {
 		return &mockedInfo{i, scopes, tok, exp}
 	})
 }

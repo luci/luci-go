@@ -96,7 +96,7 @@ func (r Range) IsEmpty() bool {
 // May return fewer ranges than requested if it detects there are too few
 // entities. In extreme case may return a single range (000..., fff...)
 // represented by Range struct with 'Start' and 'End' both set to nil.
-func SplitIntoRanges(c context.Context, q *datastore.Query, p Params) ([]Range, error) {
+func SplitIntoRanges(ctx context.Context, q *datastore.Query, p Params) ([]Range, error) {
 	if p.Shards < 1 {
 		panic("number of shards should be >=1")
 	}
@@ -118,7 +118,7 @@ func SplitIntoRanges(c context.Context, q *datastore.Query, p Params) ([]Range, 
 		Order("__scatter__").
 		Limit(int32(p.Samples)).
 		KeysOnly(true)
-	if err := datastore.GetAll(c, byScat, &keys); err != nil {
+	if err := datastore.GetAll(ctx, byScat, &keys); err != nil {
 		return nil, err
 	}
 
