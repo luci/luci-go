@@ -171,13 +171,13 @@ func (s *Settings) IsMutable() bool {
 // set returns ErrNoSettings.
 func (s *Settings) Get(c context.Context, key string, value interface{}) error {
 	bundle, err := s.values.Get(c, func(interface{}) (interface{}, time.Duration, error) {
-		c, done := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
-		defer done()
+		c, cancel := clock.WithTimeout(c, 15*time.Second) // retry for 15 sec total
+		defer cancel()
 		var bundle *Bundle
 		var exp time.Duration
 		err := retry.Retry(c, transient.Only(retry.Default), func() (err error) {
-			c, done := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
-			defer done()
+			c, cancel := clock.WithTimeout(c, 2*time.Second) // trigger a retry after 2 sec RPC timeout
+			defer cancel()
 			bundle, exp, err = s.storage.FetchAllSettings(c)
 			return
 		}, nil)

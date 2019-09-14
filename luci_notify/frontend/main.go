@@ -62,7 +62,8 @@ func main() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		c.Context, _ = context.WithTimeout(c.Context, 50*time.Second)
+		c.Context, cancel = context.WithTimeout(c.Context, 50*time.Second)
+		defer cancel()
 		ctx := c.Context
 
 		status := ""
