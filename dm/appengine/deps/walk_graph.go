@@ -431,14 +431,13 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 }
 
 func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
-	cncl := (func())(nil)
 	timeoutProto := req.Limit.MaxTime
 	timeout := google.DurationFromProto(timeoutProto)
 	if timeoutProto == nil || timeout > maxTimeout {
 		timeout = maxTimeout
 	}
-	c, cncl = clock.WithTimeout(c, timeout)
-	defer cncl()
+	c, cancel := clock.WithTimeout(c, timeout)
+	defer cancel()
 
 	// nodeChan recieves attempt nodes to process. If it recieves the
 	// `finishedJob` sentinel node, that indicates that an outstanding worker is
