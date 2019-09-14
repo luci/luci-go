@@ -35,7 +35,7 @@ type Locker interface {
 	//
 	// If the lock is already held, TryWithLock should return ErrFailedToLock.
 	// Otherwise, TryWithLock will forward the return value of fn.
-	TryWithLock(c context.Context, key string, fn func(context.Context) error) error
+	TryWithLock(ctx context.Context, key string, fn func(context.Context) error) error
 }
 
 // memLocker is a Locker implementation that uses the memlock library.
@@ -45,17 +45,17 @@ type memLocker struct {
 
 // MemLocker returns a Locker instance that uses a memcache lock bound to the
 // current request ID.
-func MemLocker(c context.Context) Locker {
+func MemLocker(ctx context.Context) Locker {
 	return &memLocker{
 		clientID: strings.Join([]string{
 			"datastore_cache",
-			info.RequestID(c),
+			info.RequestID(ctx),
 		}, "\x00"),
 	}
 }
 
-func (m *memLocker) TryWithLock(c context.Context, key string, fn func(context.Context) error) error {
-	switch err := memlock.TryWithLock(c, key, m.clientID, fn); err {
+func (m *memLocker) TryWithLock(ctx context.Context, key string, fn func(context.Context) error) error {
+	switch err := memlock.TryWithLock(ctx, key, m.clientID, fn); err {
 	case memlock.ErrFailedToLock:
 		return ErrFailedToLock
 	default:
@@ -66,6 +66,6 @@ func (m *memLocker) TryWithLock(c context.Context, key string, fn func(context.C
 // nopLocker is a Locker instance that performs no actual locking.
 type nopLocker struct{}
 
-func (nopLocker) TryWithLock(c context.Context, key string, fn func(context.Context) error) error {
-	return fn(c)
+func (nopLocker) TryWithLock(ctx context.Context, key string, fn func(context.Context) error) error {
+	return fn(ctx)
 }

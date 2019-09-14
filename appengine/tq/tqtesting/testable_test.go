@@ -52,7 +52,7 @@ func TestTestable(t *testing.T) {
 		tst := GetTestable(ctx, &d)
 
 		var calls []proto.Message
-		handler := func(c context.Context, payload proto.Message) error {
+		handler := func(ctx context.Context, payload proto.Message) error {
 			calls = append(calls, payload)
 			return nil
 		}
@@ -135,10 +135,10 @@ func TestRunSimulation(t *testing.T) {
 		d := tq.Dispatcher{}
 		tst := GetTestable(ctx, &d)
 
-		addTask := func(c context.Context, idx int64, delay time.Duration, dedup string) {
-			d.AddTask(c, &tq.Task{
+		addTask := func(ctx context.Context, idx int64, delay time.Duration, dedup string) {
+			d.AddTask(ctx, &tq.Task{
 				Payload:          &wrappers.Int64Value{Value: idx},
-				ETA:              clock.Now(c).Add(delay),
+				ETA:              clock.Now(ctx).Add(delay),
 				DeduplicationKey: dedup,
 			})
 		}
@@ -164,19 +164,19 @@ func TestRunSimulation(t *testing.T) {
 		//                \   |
 		//                 -> 4
 		errorOnIdx := -1
-		handler := func(c context.Context, payload proto.Message) error {
+		handler := func(ctx context.Context, payload proto.Message) error {
 			switch payload.(*wrappers.Int64Value).Value {
 			case int64(errorOnIdx):
 				return fmt.Errorf("task failure")
 			case 1:
-				addTask(c, 2, time.Second, "")
+				addTask(ctx, 2, time.Second, "")
 			case 2:
-				addTask(c, 3, time.Second, "")
-				addTask(c, 4, time.Second, "")
+				addTask(ctx, 3, time.Second, "")
+				addTask(ctx, 4, time.Second, "")
 			case 3, 4:
-				addTask(c, 5, 0, "dedup")
+				addTask(ctx, 5, 0, "dedup")
 			case 5:
-				addTask(c, 6, time.Second, "")
+				addTask(ctx, 6, time.Second, "")
 			case 6:
 				return nil
 			default:

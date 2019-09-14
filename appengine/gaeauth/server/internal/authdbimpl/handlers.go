@@ -46,33 +46,33 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 }
 
 // setupPubSub creates a subscription to AuthDB service notification stream.
-func setupPubSub(c context.Context, baseURL, authServiceURL string) error {
+func setupPubSub(ctx context.Context, baseURL, authServiceURL string) error {
 	pushURL := ""
-	if !info.IsDevAppServer(c) {
+	if !info.IsDevAppServer(ctx) {
 		pushURL = baseURL + pubSubPushURLPath // push in prod, pull on dev server
 	}
-	service := getAuthService(c, authServiceURL)
-	return service.EnsureSubscription(c, subscriptionName(c, authServiceURL), pushURL)
+	service := getAuthService(ctx, authServiceURL)
+	return service.EnsureSubscription(ctx, subscriptionName(ctx, authServiceURL), pushURL)
 }
 
 // killPubSub removes PubSub subscription created with setupPubSub.
-func killPubSub(c context.Context, authServiceURL string) error {
-	service := getAuthService(c, authServiceURL)
-	return service.DeleteSubscription(c, subscriptionName(c, authServiceURL))
+func killPubSub(ctx context.Context, authServiceURL string) error {
+	service := getAuthService(ctx, authServiceURL)
+	return service.DeleteSubscription(ctx, subscriptionName(ctx, authServiceURL))
 }
 
 // subscriptionName returns full PubSub subscription name for AuthDB
 // change notifications stream from given auth service.
-func subscriptionName(c context.Context, authServiceURL string) string {
+func subscriptionName(ctx context.Context, authServiceURL string) string {
 	subIDPrefix := "gae-v1"
-	if info.IsDevAppServer(c) {
+	if info.IsDevAppServer(ctx) {
 		subIDPrefix = "dev-app-server-v1"
 	}
 	serviceURL, err := url.Parse(authServiceURL)
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf("projects/%s/subscriptions/%s+%s", info.AppID(c), subIDPrefix, serviceURL.Host)
+	return fmt.Sprintf("projects/%s/subscriptions/%s+%s", info.AppID(ctx), subIDPrefix, serviceURL.Host)
 }
 
 // pubSubPull is HTTP handler that pulls PubSub messages from AuthDB change
@@ -85,8 +85,8 @@ func pubSubPull(c *router.Context) {
 		replyError(c.Context, c.Writer, errors.New("not a dev server"))
 		return
 	}
-	processPubSubRequest(c.Context, c.Writer, c.Request, func(c context.Context, srv authService, serviceURL string) (*service.Notification, error) {
-		return srv.PullPubSub(c, subscriptionName(c, serviceURL))
+	processPubSubRequest(c.Context, c.Writer, c.Request, func(ctx context.Context, srv authService, serviceURL string) (*service.Notification, error) {
+		return srv.PullPubSub(ctx, subscriptionName(ctx, serviceURL))
 	})
 }
 
@@ -111,29 +111,29 @@ type notifcationGetter func(context.Context, authService, string) (*service.Noti
 // It implements most logic of notification handling. Calls supplied callback
 // to actually get service.Notification, since this part is different from Pull
 // and Push subscriptions.
-func processPubSubRequest(c context.Context, rw http.ResponseWriter, r *http.Request, callback notifcationGetter) {
-	c = defaultNS(c)
-	info, err := GetLatestSnapshotInfo(c)
+func processPubSubRequest(ctx context.Context, rw http.ResponseWriter, r *http.Request, callback notifcationGetter) {
+	ctx = defaultNS(ctx)
+	info, err := GetLatestSnapshotInfo(ctx)
 	if err != nil {
-		replyError(c, rw, err)
+		replyError(ctx, rw, err)
 		return
 	}
 	if info == nil {
 		// Return HTTP 200 to avoid a redelivery.
-		replyOK(c, rw, "Auth Service URL is not configured, skipping the message")
+		replyOK(ctx, rw, "Auth Service URL is not configured, skipping the message")
 		return
 	}
-	srv := getAuthService(c, info.AuthServiceURL)
+	srv := getAuthService(ctx, info.AuthServiceURL)
 
-	notify, err := callback(c, srv, info.AuthServiceURL)
+	notify, err := callback(ctx, srv, info.AuthServiceURL)
 	if err != nil {
-		replyError(c, rw, err)
+		replyError(ctx, rw, err)
 		return
 	}
 
 	// notify may be nil if PubSub messages didn't pass authentication.
 	if notify == nil {
-		replyOK(c, rw, "No new valid AuthDB change notifications")
+		replyOK(ctx, rw, "No new valid AuthDB change notifications")
 		return
 	}
 
@@ -141,25 +141,25 @@ func processPubSubRequest(c context.Context, rw http.ResponseWriter, r *http.Req
 	latest := info
 	if notify.Revision > info.Rev {
 		var err error
-		if latest, err = syncAuthDB(c); err != nil {
-			replyError(c, rw, err)
+		if latest, err = syncAuthDB(ctx); err != nil {
+			replyError(ctx, rw, err)
 			return
 		}
 	}
 
-	if err := notify.Acknowledge(c); err != nil {
-		replyError(c, rw, err)
+	if err := notify.Acknowledge(ctx); err != nil {
+		replyError(ctx, rw, err)
 		return
 	}
 
 	replyOK(
-		c, rw, "Processed PubSub notification for rev %d: %d -> %d",
+		ctx, rw, "Processed PubSub notification for rev %d: %d -> %d",
 		notify.Revision, info.Rev, latest.Rev)
 }
 
 // replyError sends HTTP 500 on transient errors, HTTP 400 on fatal ones.
-func replyError(c context.Context, rw http.ResponseWriter, err error) {
-	logging.Errorf(c, "Error while processing PubSub notification - %s", err)
+func replyError(ctx context.Context, rw http.ResponseWriter, err error) {
+	logging.Errorf(ctx, "Error while processing PubSub notification - %s", err)
 	if transient.Tag.In(err) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	} else {
@@ -168,7 +168,7 @@ func replyError(c context.Context, rw http.ResponseWriter, err error) {
 }
 
 // replyOK sends HTTP 200.
-func replyOK(c context.Context, rw http.ResponseWriter, msg string, args ...interface{}) {
-	logging.Infof(c, msg, args...)
+func replyOK(ctx context.Context, rw http.ResponseWriter, msg string, args ...interface{}) {
+	logging.Infof(ctx, msg, args...)
 	rw.Write([]byte(fmt.Sprintf(msg, args...)))
 }

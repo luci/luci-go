@@ -25,20 +25,20 @@ import (
 
 // runTxn runs a datastore transaction retrying the body on transient errors or
 // when encountering a commit conflict.
-func runTxn(c context.Context, cb func(context.Context) error) error {
+func runTxn(ctx context.Context, cb func(context.Context) error) error {
 	var attempt int
 	var innerErr error
 
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		attempt++
 		if attempt != 1 {
 			if innerErr != nil {
-				logging.Warningf(c, "Retrying the transaction after the error: %s", innerErr)
+				logging.Warningf(ctx, "Retrying the transaction after the error: %s", innerErr)
 			} else {
-				logging.Warningf(c, "Retrying the transaction: failed to commit")
+				logging.Warningf(ctx, "Retrying the transaction: failed to commit")
 			}
 		}
-		innerErr = cb(c)
+		innerErr = cb(ctx)
 		if transient.Tag.In(innerErr) {
 			return datastore.ErrConcurrentTransaction // causes a retry
 		}
@@ -46,7 +46,7 @@ func runTxn(c context.Context, cb func(context.Context) error) error {
 	}, nil)
 
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Transaction failed")
+		logging.WithError(err).Errorf(ctx, "Transaction failed")
 		if innerErr != nil {
 			return innerErr
 		}

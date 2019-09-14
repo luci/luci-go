@@ -35,8 +35,8 @@ type gaeBlobCache struct {
 	ns string
 }
 
-func (g gaeBlobCache) Get(c context.Context, key string) ([]byte, error) {
-	switch itm, err := memcache.GetKey(info.MustNamespace(c, g.ns), key); {
+func (g gaeBlobCache) Get(ctx context.Context, key string) ([]byte, error) {
+	switch itm, err := memcache.GetKey(info.MustNamespace(ctx, g.ns), key); {
 	case err == memcache.ErrCacheMiss:
 		return nil, caching.ErrCacheMiss
 	case err != nil:
@@ -46,10 +46,10 @@ func (g gaeBlobCache) Get(c context.Context, key string) ([]byte, error) {
 	}
 }
 
-func (g gaeBlobCache) Set(c context.Context, key string, value []byte, exp time.Duration) error {
-	c = info.MustNamespace(c, g.ns)
-	item := memcache.NewItem(c, key).SetValue(value).SetExpiration(exp)
-	if err := memcache.Set(c, item); err != nil {
+func (g gaeBlobCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) error {
+	ctx = info.MustNamespace(ctx, g.ns)
+	item := memcache.NewItem(ctx, key).SetValue(value).SetExpiration(exp)
+	if err := memcache.Set(ctx, item); err != nil {
 		return transient.Tag.Apply(err)
 	}
 	return nil

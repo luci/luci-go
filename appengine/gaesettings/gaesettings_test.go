@@ -34,46 +34,46 @@ import (
 
 func TestWorks(t *testing.T) {
 	Convey("Works", t, func() {
-		c := memory.Use(context.Background())
-		c = dscache.AlwaysFilterRDS(c)
-		c, tc := testclock.UseTime(c, time.Unix(1444945245, 0))
+		ctx := memory.Use(context.Background())
+		ctx = dscache.AlwaysFilterRDS(ctx)
+		ctx, tc := testclock.UseTime(ctx, time.Unix(1444945245, 0))
 
 		// Record access to memcache. There should be none.
-		c, mcOps := count.FilterMC(c)
+		ctx, mcOps := count.FilterMC(ctx)
 
 		s := Storage{}
 
 		// Nothing's there yet.
-		bundle, exp, err := s.FetchAllSettings(c)
+		bundle, exp, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(exp, ShouldEqual, time.Second)
 		So(len(bundle.Values), ShouldEqual, 0)
 
-		conTime, err := s.GetConsistencyTime(c)
+		conTime, err := s.GetConsistencyTime(ctx)
 		So(conTime.IsZero(), ShouldBeTrue)
 		So(err, ShouldBeNil)
 
 		// Produce a bunch of versions.
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
 		tc.Add(time.Minute)
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val3"`), "who3", "why3"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val3"`), "who3", "why3"), ShouldBeNil)
 
-		bundle, exp, err = s.FetchAllSettings(c)
+		bundle, exp, err = s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(exp, ShouldEqual, time.Second)
 		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val3"`))
 
-		conTime, err = s.GetConsistencyTime(c)
-		So(conTime, ShouldResemble, clock.Now(c).UTC().Add(time.Second))
+		conTime, err = s.GetConsistencyTime(ctx)
+		So(conTime, ShouldResemble, clock.Now(ctx).UTC().Add(time.Second))
 		So(err, ShouldBeNil)
 
 		// Check all log entities is there.
-		ds.GetTestable(c).CatchupIndexes()
+		ds.GetTestable(ctx).CatchupIndexes()
 		entities := []settingsEntity{}
-		So(ds.GetAll(c, ds.NewQuery("gaesettings.SettingsLog"), &entities), ShouldBeNil)
+		So(ds.GetAll(ctx, ds.NewQuery("gaesettings.SettingsLog"), &entities), ShouldBeNil)
 		So(len(entities), ShouldEqual, 2)
 		asMap := map[string]settingsEntity{}
 		for _, e := range entities {
@@ -114,18 +114,18 @@ func TestWorks(t *testing.T) {
 	})
 
 	Convey("Handles namespace switch", t, func() {
-		c := memory.Use(context.Background())
-		c = dscache.AlwaysFilterRDS(c)
+		ctx := memory.Use(context.Background())
+		ctx = dscache.AlwaysFilterRDS(ctx)
 
-		namespaced := info.MustNamespace(c, "blah")
+		namespaced := info.MustNamespace(ctx, "blah")
 
 		s := Storage{}
 
 		// Put something using default namespace.
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 
 		// Works when using default namespace.
-		bundle, _, err := s.FetchAllSettings(c)
+		bundle, _, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val1"`))
 
@@ -138,26 +138,26 @@ func TestWorks(t *testing.T) {
 		So(s.UpdateSetting(namespaced, "key", json.RawMessage(`"val2"`), "who2", "why2"), ShouldBeNil)
 
 		// Works when using default namespace.
-		bundle, _, err = s.FetchAllSettings(c)
+		bundle, _, err = s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(*bundle.Values["key"], ShouldResemble, json.RawMessage(`"val2"`))
 	})
 
 	Convey("Ignores transactions", t, func() {
-		c := memory.Use(context.Background())
+		ctx := memory.Use(context.Background())
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(c)
+		bundle, _, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(len(bundle.Values), ShouldEqual, 1)
 
 		// Works when fetching from inside of a transaction.
-		ds.RunInTransaction(c, func(c context.Context) error {
-			bundle, _, err := s.FetchAllSettings(c)
+		ds.RunInTransaction(ctx, func(ctx context.Context) error {
+			bundle, _, err := s.FetchAllSettings(ctx)
 			So(err, ShouldBeNil)
 			So(len(bundle.Values), ShouldEqual, 1)
 			return nil
@@ -165,21 +165,21 @@ func TestWorks(t *testing.T) {
 	})
 
 	Convey("Ignores transactions and namespaces", t, func() {
-		c := memory.Use(context.Background())
+		ctx := memory.Use(context.Background())
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(c)
+		bundle, _, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(len(bundle.Values), ShouldEqual, 1)
 
 		// Works when fetching from inside of a transaction.
-		namespaced := info.MustNamespace(c, "blah")
-		ds.RunInTransaction(namespaced, func(c context.Context) error {
-			bundle, _, err := s.FetchAllSettings(c)
+		namespaced := info.MustNamespace(ctx, "blah")
+		ds.RunInTransaction(namespaced, func(ctx context.Context) error {
+			bundle, _, err := s.FetchAllSettings(ctx)
 			So(err, ShouldBeNil)
 			So(len(bundle.Values), ShouldEqual, 1)
 			return nil
@@ -187,20 +187,20 @@ func TestWorks(t *testing.T) {
 	})
 
 	Convey("Ignores transactions and txnBuf", t, func() {
-		c := memory.Use(context.Background())
+		ctx := memory.Use(context.Background())
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(c)
+		bundle, _, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(len(bundle.Values), ShouldEqual, 1)
 
 		// Works when fetching from inside of a transaction.
-		ds.RunInTransaction(txnBuf.FilterRDS(c), func(c context.Context) error {
-			bundle, _, err := s.FetchAllSettings(c)
+		ds.RunInTransaction(txnBuf.FilterRDS(ctx), func(ctx context.Context) error {
+			bundle, _, err := s.FetchAllSettings(ctx)
 			So(err, ShouldBeNil)
 			So(len(bundle.Values), ShouldEqual, 1)
 			return nil
@@ -208,21 +208,21 @@ func TestWorks(t *testing.T) {
 	})
 
 	Convey("Ignores transactions and namespaces and txnBuf", t, func() {
-		c := memory.Use(context.Background())
+		ctx := memory.Use(context.Background())
 		s := Storage{}
 
 		// Put something.
-		So(s.UpdateSetting(c, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
+		So(s.UpdateSetting(ctx, "key", json.RawMessage(`"val1"`), "who1", "why1"), ShouldBeNil)
 
 		// Works when fetching outside of a transaction.
-		bundle, _, err := s.FetchAllSettings(c)
+		bundle, _, err := s.FetchAllSettings(ctx)
 		So(err, ShouldBeNil)
 		So(len(bundle.Values), ShouldEqual, 1)
 
 		// Works when fetching from inside of a transaction.
-		namespaced := info.MustNamespace(c, "blah")
-		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(c context.Context) error {
-			bundle, _, err := s.FetchAllSettings(c)
+		namespaced := info.MustNamespace(ctx, "blah")
+		ds.RunInTransaction(txnBuf.FilterRDS(namespaced), func(ctx context.Context) error {
+			bundle, _, err := s.FetchAllSettings(ctx)
 			So(err, ShouldBeNil)
 			So(len(bundle.Values), ShouldEqual, 1)
 			return nil

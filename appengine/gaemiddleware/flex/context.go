@@ -26,4 +26,4 @@ import (
 //
 // This value will always be available if the Context has been initialized
 // by Use.
-func HTTPRequest(c context.Context) *http.Request { return cloud.HTTPRequest(c) }
+func HTTPRequest(ctx context.Context) *http.Request { return cloud.HTTPRequest(ctx) }
