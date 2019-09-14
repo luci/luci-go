@@ -253,7 +253,8 @@ func GetConfigService(c context.Context) configInterface.Interface {
 // configuration update requests.
 func UpdateHandler(ctx *router.Context) {
 	c, h := ctx.Context, ctx.Writer
-	c, _ = context.WithTimeout(c, time.Minute)
+	c, cancel = context.WithTimeout(c, time.Minute)
+	defer cancel()
 	if err := updateProjects(c); err != nil {
 		logging.WithError(err).Errorf(c, "error while updating project configs")
 		h.WriteHeader(http.StatusInternalServerError)
