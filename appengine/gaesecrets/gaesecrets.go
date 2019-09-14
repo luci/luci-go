@@ -52,7 +52,7 @@ type Config struct {
 
 // Use injects the GAE implementation of secrets.Store into the context.
 // The context must be configured with GAE datastore implementation already.
-func Use(c context.Context, cfg *Config) context.Context {
+func Use(ctx context.Context, cfg *Config) context.Context {
 	config := Config{}
 	if cfg != nil {
 		config = *cfg
@@ -66,8 +66,8 @@ func Use(c context.Context, cfg *Config) context.Context {
 	if config.Entropy == nil {
 		config.Entropy = rand.Reader
 	}
-	return secrets.SetFactory(c, func(ic context.Context) secrets.Store {
-		return &storeImpl{config, ic}
+	return secrets.SetFactory(ctx, func(ctx context.Context) secrets.Store {
+		return &storeImpl{config, ctx}
 	})
 }
 
@@ -99,15 +99,15 @@ func (s *storeImpl) GetSecret(k string) (secrets.Secret, error) {
 // secret.
 func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
 	// Switch to default namespace.
-	c, err := info.Namespace(s.ctx, "")
+	ctx, err := info.Namespace(s.ctx, "")
 	if err != nil {
 		panic(err) // should not happen, Namespace errors only on bad namespace name
 	}
-	c = ds.WithoutTransaction(c)
+	ctx = ds.WithoutTransaction(ctx)
 
 	// Grab existing.
 	ent := secretEntity{ID: s.cfg.Prefix + ":" + string(k)}
-	err = ds.Get(c, &ent)
+	err = ds.Get(ctx, &ent)
 	if err != nil && err != ds.ErrNoSuchEntity {
 		return secrets.Secret{}, transient.Tag.Apply(err)
 	}
@@ -121,14 +121,14 @@ func (s *storeImpl) getSecretFromDatastore(k string) (secrets.Secret, error) {
 		if ent.Secret, err = s.generateSecret(); err != nil {
 			return secrets.Secret{}, transient.Tag.Apply(err)
 		}
-		err = ds.RunInTransaction(c, func(c context.Context) error {
+		err = ds.RunInTransaction(ctx, func(ctx context.Context) error {
 			newOne := secretEntity{ID: ent.ID}
-			switch err := ds.Get(c, &newOne); err {
+			switch err := ds.Get(ctx, &newOne); err {
 			case nil:
 				ent = newOne
 				return nil
 			case ds.ErrNoSuchEntity:
-				return ds.Put(c, &ent)
+				return ds.Put(ctx, &ent)
 			default:
 				return err
 			}
