@@ -359,7 +359,8 @@ func (l *Log) Flush(ctx context.Context) (int, error) {
 	var lastLeaseErr error
 	sleep := time.Second
 	for clock.Now(ctx).Before(softDeadline) {
-		rpcCtx, _ := clock.WithTimeout(softDeadlineCtx, 15*time.Second) // RPC timeout
+		rpcCtx, cancel := clock.WithTimeout(softDeadlineCtx, 15*time.Second) // RPC timeout
+		defer cancel()
 		tasks, err := taskqueue.Lease(rpcCtx, l.batchesPerRequest(), l.QueueName, hardDeadline.Sub(clock.Now(ctx)))
 		if err != nil {
 			lastLeaseErr = err
@@ -383,7 +384,8 @@ func (l *Log) Flush(ctx context.Context) (int, error) {
 			Tasks: tasks,
 			Done: func(ctx context.Context) {
 				logging.Infof(ctx, "Deleting %d tasks from the task queue", len(tasks))
-				ctx, _ = clock.WithTimeout(ctx, 30*time.Second) // RPC timeout
+				ctx, cancel = clock.WithTimeout(ctx, 30*time.Second) // RPC timeout
+				defer cancel()
 				if err := taskqueue.Delete(ctx, l.QueueName, tasks...); err != nil {
 					logging.WithError(err).Errorf(ctx, "Failed to delete some tasks")
 				}
@@ -477,7 +479,8 @@ func (l *Log) bigQuery(ctx context.Context) (*bqapi.Service, error) {
 //
 // It is mocked in tests.
 func (l *Log) doInsert(ctx context.Context, req *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
-	ctx, _ = clock.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	logging.Infof(ctx, "Sending %d rows to BigQuery", len(req.Rows))
 	bq, err := l.bigQuery(ctx)
 	if err != nil {
