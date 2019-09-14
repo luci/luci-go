@@ -108,12 +108,12 @@ type Environment struct {
 }
 
 // ensurePrepared is called before handling requests to initialize global state.
-func (e *Environment) ensurePrepared(c context.Context) {
+func (e *Environment) ensurePrepared(ctx context.Context) {
 	e.prepareOnce.Do(func() {
 		e.processCacheData = caching.NewProcessCacheData()
 		e.globalSettings = settings.New(gaesettings.Storage{})
 		if e.Prepare != nil {
-			e.Prepare(c)
+			e.Prepare(ctx)
 		}
 	})
 }
@@ -149,65 +149,65 @@ func (e *Environment) InstallHandlersWithMiddleware(r *router.Router, base route
 //
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
-func (e *Environment) With(c context.Context, req *http.Request) context.Context {
+func (e *Environment) With(ctx context.Context, req *http.Request) context.Context {
 	// Set an initial logging level. We'll configure this to be more specific
 	// later once we can load settings.
-	c = logging.SetLevel(c, logging.Debug)
+	ctx = logging.SetLevel(ctx, logging.Debug)
 
 	// Ensure one-time initialization happened.
-	e.ensurePrepared(c)
+	e.ensurePrepared(ctx)
 
 	// Install process and request LRU caches.
-	c = caching.WithProcessCacheData(c, e.processCacheData)
-	c = caching.WithRequestCache(c)
+	ctx = caching.WithProcessCacheData(ctx, e.processCacheData)
+	ctx = caching.WithRequestCache(ctx)
 
-	c = e.WithInitialRequest(c, req)
+	ctx = e.WithInitialRequest(ctx, req)
 
 	// A previous layer must have installed a "luci/gae" datastore.
-	if datastore.Raw(c) == nil {
+	if datastore.Raw(ctx) == nil {
 		panic("no luci/gae datastore is installed")
 	}
 
 	// The global cache depends on luci/gae's memcache installed.
 	if e.MemcacheAvailable {
-		c = caching.WithGlobalCache(c, blobCacheProvider)
+		ctx = caching.WithGlobalCache(ctx, blobCacheProvider)
 	}
 
 	// These are needed to use fetchCachedSettings.
-	c = settings.Use(c, e.globalSettings)
+	ctx = settings.Use(ctx, e.globalSettings)
 
 	// Fetch and apply configuration stored in the datastore.
-	cachedSettings := fetchCachedSettings(c)
-	c = logging.SetLevel(c, cachedSettings.LoggingLevel)
+	cachedSettings := fetchCachedSettings(ctx)
+	ctx = logging.SetLevel(ctx, cachedSettings.LoggingLevel)
 	if e.MemcacheAvailable {
 		if bool(cachedSettings.SimulateMemcacheOutage) {
-			logging.Warningf(c, "Memcache outage simulation is enabled")
+			logging.Warningf(ctx, "Memcache outage simulation is enabled")
 			var fb featureBreaker.FeatureBreaker
-			c, fb = featureBreaker.FilterMC(c, errSimulatedMemcacheOutage)
+			ctx, fb = featureBreaker.FilterMC(ctx, errSimulatedMemcacheOutage)
 			fb.BreakFeatures(nil,
 				"GetMulti", "AddMulti", "SetMulti", "DeleteMulti",
 				"CompareAndSwapMulti", "Flush", "Stats")
 		}
 		if !bool(cachedSettings.DisableDSCache) {
-			c = dscache.AlwaysFilterRDS(c)
+			ctx = dscache.AlwaysFilterRDS(ctx)
 		}
 	}
 	if e.DSReadOnly {
-		c = readonly.FilterRDS(c, e.DSReadOnlyPredicate)
+		ctx = readonly.FilterRDS(ctx, e.DSReadOnlyPredicate)
 	}
 
 	// The rest of the service may use applied configuration.
 	if e.WithConfig != nil {
-		c = e.WithConfig(c)
+		ctx = e.WithConfig(ctx)
 	}
-	c = gaesecrets.Use(c, nil)
+	ctx = gaesecrets.Use(ctx, nil)
 	if e.WithAuth != nil {
-		c = e.WithAuth(c)
+		ctx = e.WithAuth(ctx)
 	}
 
 	// Wrap this in a cache context so that lookups for any of the aforementioned
 	// items are fast.
-	return cacheContext.Wrap(c)
+	return cacheContext.Wrap(ctx)
 }
 
 // Base returns a middleware chain to use for all GAE environment

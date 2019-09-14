@@ -31,27 +31,27 @@ import (
 
 func TestGetAuthDB(t *testing.T) {
 	Convey("Unconfigured", t, func() {
-		c := gaetesting.TestingContext()
-		authDB, err := GetAuthDB(c, nil)
+		ctx := gaetesting.TestingContext()
+		authDB, err := GetAuthDB(ctx, nil)
 		So(err, ShouldBeNil)
 		So(authDB, ShouldHaveSameTypeAs, authdb.DevServerDB{})
 	})
 
 	Convey("Reuses instance if no changes", t, func() {
-		c := gaetesting.TestingContext()
+		ctx := gaetesting.TestingContext()
 
-		bumpAuthDB(c, 123)
-		authDB, err := GetAuthDB(c, nil)
+		bumpAuthDB(ctx, 123)
+		authDB, err := GetAuthDB(ctx, nil)
 		So(err, ShouldBeNil)
 		So(authDB, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
 		So(authDB.(*authdb.SnapshotDB).Rev, ShouldEqual, 123)
 
-		newOne, err := GetAuthDB(c, authDB)
+		newOne, err := GetAuthDB(ctx, authDB)
 		So(err, ShouldBeNil)
 		So(newOne, ShouldEqual, authDB) // exact same pointer
 
-		bumpAuthDB(c, 124)
-		anotherOne, err := GetAuthDB(c, authDB)
+		bumpAuthDB(ctx, 124)
+		anotherOne, err := GetAuthDB(ctx, authDB)
 		So(err, ShouldBeNil)
 		So(anotherOne, ShouldHaveSameTypeAs, &authdb.SnapshotDB{})
 		So(anotherOne.(*authdb.SnapshotDB).Rev, ShouldEqual, 124)
@@ -60,7 +60,7 @@ func TestGetAuthDB(t *testing.T) {
 
 ///
 
-func bumpAuthDB(c context.Context, rev int64) {
+func bumpAuthDB(ctx context.Context, rev int64) {
 	blob, err := service.DeflateAuthDB(&protocol.AuthDB{
 		OauthClientId:     fmt.Sprintf("client-id-for-rev-%d", rev),
 		OauthClientSecret: "secret",
@@ -72,10 +72,10 @@ func bumpAuthDB(c context.Context, rev int64) {
 		AuthServiceURL: "https://fake-auth-service",
 		Rev:            rev,
 	}
-	if err = ds.Put(c, &info); err != nil {
+	if err = ds.Put(ctx, &info); err != nil {
 		panic(err)
 	}
-	err = ds.Put(c, &authdbimpl.Snapshot{
+	err = ds.Put(ctx, &authdbimpl.Snapshot{
 		ID:             info.GetSnapshotID(),
 		AuthDBDeflated: blob,
 	})

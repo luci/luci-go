@@ -25,12 +25,12 @@ import (
 //
 // Unit tests inject fake implementation into the testing context.
 type authService interface {
-	EnsureSubscription(c context.Context, subscription, pushURL string) error
-	DeleteSubscription(c context.Context, subscription string) error
-	PullPubSub(c context.Context, subscription string) (*service.Notification, error)
-	ProcessPubSubPush(c context.Context, body []byte) (*service.Notification, error)
-	GetLatestSnapshotRevision(c context.Context) (int64, error)
-	GetSnapshot(c context.Context, rev int64) (*service.Snapshot, error)
+	EnsureSubscription(ctx context.Context, subscription, pushURL string) error
+	DeleteSubscription(ctx context.Context, subscription string) error
+	PullPubSub(ctx context.Context, subscription string) (*service.Notification, error)
+	ProcessPubSubPush(ctx context.Context, body []byte) (*service.Notification, error)
+	GetLatestSnapshotRevision(ctx context.Context) (int64, error)
+	GetSnapshot(ctx context.Context, rev int64) (*service.Snapshot, error)
 }
 
 type contextKey int
@@ -38,14 +38,14 @@ type contextKey int
 // setAuthService injects authService implementation into the context.
 //
 // Used in unit tests.
-func setAuthService(c context.Context, s authService) context.Context {
-	return context.WithValue(c, contextKey(0), s)
+func setAuthService(ctx context.Context, s authService) context.Context {
+	return context.WithValue(ctx, contextKey(0), s)
 }
 
 // getAuthService returns authService implementation injected into the context
 // via setAuthService or *service.AuthService otherwise.
-func getAuthService(c context.Context, url string) authService {
-	if s, _ := c.Value(contextKey(0)).(authService); s != nil {
+func getAuthService(ctx context.Context, url string) authService {
+	if s, _ := ctx.Value(contextKey(0)).(authService); s != nil {
 		return s
 	}
 	return &service.AuthService{URL: url}
@@ -57,6 +57,6 @@ func getAuthService(c context.Context, url string) authService {
 // All internal functions expect the context to be in the default namespace.
 //
 // Idempotent.
-func defaultNS(c context.Context) context.Context {
-	return info.MustNamespace(c, "")
+func defaultNS(ctx context.Context) context.Context {
+	return info.MustNamespace(ctx, "")
 }

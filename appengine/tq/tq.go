@@ -181,7 +181,7 @@ func (task *Task) Name() string {
 // until they reach Dispatcher, which treats them as retriable.
 //
 // An untagged error (or success) marks the task as "done", it won't be retried.
-type Handler func(c context.Context, payload proto.Message) error
+type Handler func(ctx context.Context, payload proto.Message) error
 
 // RegisterTask tells the dispatcher that tasks of given proto type should be
 // handled by the given handler and routed through the given task queue.
@@ -246,8 +246,8 @@ func (d *Dispatcher) GetQueues() []string {
 // error. If an errors.MultiError is returned, it and any embedded
 // MultiError (recursively) will be flattened into a single MultiError
 // containing only the non-nil errors. This simplifies user expectations.
-func (d *Dispatcher) runBatchesPerQueue(c context.Context, tasks []*Task,
-	fn func(c context.Context, queue string, tasks []*taskqueue.Task) error) error {
+func (d *Dispatcher) runBatchesPerQueue(ctx context.Context, tasks []*Task,
+	fn func(ctx context.Context, queue string, tasks []*taskqueue.Task) error) error {
 
 	if len(tasks) == 0 {
 		return nil
@@ -259,7 +259,7 @@ func (d *Dispatcher) runBatchesPerQueue(c context.Context, tasks []*Task,
 		if err != nil {
 			return err
 		}
-		if err := fn(c, queue, []*taskqueue.Task{t}); err != nil {
+		if err := fn(ctx, queue, []*taskqueue.Task{t}); err != nil {
 			return transient.Tag.Apply(err)
 		}
 		return nil
@@ -286,7 +286,7 @@ func (d *Dispatcher) runBatchesPerQueue(c context.Context, tasks []*Task,
 				count = len(tasks)
 			}
 			go func(q string, batch []*taskqueue.Task) {
-				errs <- fn(c, q, batch)
+				errs <- fn(ctx, q, batch)
 			}(q, tasks[:count])
 			tasks = tasks[count:]
 			ops++
@@ -320,9 +320,9 @@ func (d *Dispatcher) runBatchesPerQueue(c context.Context, tasks []*Task,
 //
 // Returns only transient errors. Unlike regular Task Queue's Add,
 // ErrTaskAlreadyAdded is not considered an error.
-func (d *Dispatcher) AddTask(c context.Context, tasks ...*Task) error {
-	return d.runBatchesPerQueue(c, tasks, func(c context.Context, queue string, tasks []*taskqueue.Task) error {
-		if err := taskqueue.Add(c, queue, tasks...); err != nil {
+func (d *Dispatcher) AddTask(ctx context.Context, tasks ...*Task) error {
+	return d.runBatchesPerQueue(ctx, tasks, func(ctx context.Context, queue string, tasks []*taskqueue.Task) error {
+		if err := taskqueue.Add(ctx, queue, tasks...); err != nil {
 			return errors.Filter(err, taskqueue.ErrTaskAlreadyAdded)
 		}
 		return nil
@@ -339,9 +339,9 @@ func (d *Dispatcher) AddTask(c context.Context, tasks ...*Task) error {
 //
 // Returns only transient errors. Unlike regular Task Queue's Delete,
 // attempts to delete an unknown or tombstoned task are not considered errors.
-func (d *Dispatcher) DeleteTask(c context.Context, tasks ...*Task) error {
-	return d.runBatchesPerQueue(c, tasks, func(c context.Context, queue string, tasks []*taskqueue.Task) error {
-		return errors.FilterFunc(taskqueue.Delete(c, queue, tasks...), func(err error) bool {
+func (d *Dispatcher) DeleteTask(ctx context.Context, tasks ...*Task) error {
+	return d.runBatchesPerQueue(ctx, tasks, func(ctx context.Context, queue string, tasks []*taskqueue.Task) error {
+		return errors.FilterFunc(taskqueue.Delete(ctx, queue, tasks...), func(err error) bool {
 			// Currently, the best way to detect an attempt to delete an unknown task
 			// is to check the string with tolerable error message phrases.
 			for _, phrase := range []string{"UNKNOWN_TASK", "TOMBSTONED_TASK"} {
@@ -381,16 +381,16 @@ var (
 	errOutsideHandler = errors.New("request headers are only available inside a task handler")
 )
 
-func withRequestHeaders(c context.Context, hdr *taskqueue.RequestHeaders) context.Context {
-	return context.WithValue(c, &requestHeadersKey, hdr)
+func withRequestHeaders(ctx context.Context, hdr *taskqueue.RequestHeaders) context.Context {
+	return context.WithValue(ctx, &requestHeadersKey, hdr)
 }
 
 // RequestHeaders returns the special task-queue HTTP request headers for
 // the current task handler.
 //
 // Returns an error if called from outside of a task handler.
-func RequestHeaders(c context.Context) (*taskqueue.RequestHeaders, error) {
-	if hdr, ok := c.Value(&requestHeadersKey).(*taskqueue.RequestHeaders); ok {
+func RequestHeaders(ctx context.Context) (*taskqueue.RequestHeaders, error) {
+	if hdr, ok := ctx.Value(&requestHeadersKey).(*taskqueue.RequestHeaders); ok {
 		return hdr, nil
 	}
 	return nil, errOutsideHandler

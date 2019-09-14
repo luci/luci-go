@@ -154,7 +154,7 @@ func testManagerImpl(t *testing.T, mgrTemplate *manager) {
 			})
 
 			Convey(`Will not prune any entries if AccessUpdateInterval is 0.`, func() {
-				cache.refreshFn = func(c context.Context, key []byte, v Value) (Value, error) { return v, nil }
+				cache.refreshFn = func(ctx context.Context, key []byte, v Value) (Value, error) { return v, nil }
 				cache.AccessUpdateInterval = 0
 
 				So(runCron(), ShouldEqual, http.StatusOK)
@@ -173,7 +173,7 @@ func testManagerImpl(t *testing.T, mgrTemplate *manager) {
 			})
 
 			Convey(`Will not prune any entries if PruneFactor is 0.`, func() {
-				cache.refreshFn = func(c context.Context, key []byte, v Value) (Value, error) { return v, nil }
+				cache.refreshFn = func(ctx context.Context, key []byte, v Value) (Value, error) { return v, nil }
 				cache.PruneFactor = 0
 
 				So(runCron(), ShouldEqual, http.StatusOK)
