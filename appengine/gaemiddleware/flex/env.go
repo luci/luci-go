@@ -82,12 +82,12 @@ var (
 	// have no trace ID for logs).
 	globalTsMonState = &tsmon.State{
 		IsDevMode: !metadata.OnGCE(),
-		Target: func(c context.Context) target.Task {
+		Target: func(ctx context.Context) target.Task {
 			return target.Task{
 				DataCenter:  "appengine",
-				ServiceName: info.AppID(c),
-				JobName:     info.ModuleName(c),
-				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
+				ServiceName: info.AppID(ctx),
+				JobName:     info.ModuleName(ctx),
+				HostName:    strings.SplitN(info.VersionID(ctx), ".", 2)[0],
 			}
 		},
 		InstanceID:        info.InstanceID,
@@ -116,26 +116,26 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		// dscache, and thus it is safe to mutate datastore from Flex side.
 		return k.Namespace() != gaetsmon.DatastoreNamespace
 	},
-	Prepare: func(c context.Context) {
+	Prepare: func(ctx context.Context) {
 		globalFlex = &cloud.Flex{
 			Cache: lru.New(65535),
 		}
 		var err error
-		if globalFlexConfig, err = globalFlex.Configure(c); err != nil {
+		if globalFlexConfig, err = globalFlex.Configure(ctx); err != nil {
 			panic(errors.Annotate(err, "could not create Flex config").Err())
 		}
 	},
-	WithInitialRequest: func(c context.Context, req *http.Request) context.Context {
+	WithInitialRequest: func(ctx context.Context, req *http.Request) context.Context {
 		// Install our Cloud services.
 		if globalFlexConfig == nil {
 			// This can happen when Prepare fails.
 			panic("global Flex config is not initialized")
 		}
-		return globalFlexConfig.Use(c, globalFlex.Request(c, req))
+		return globalFlexConfig.Use(ctx, globalFlex.Request(ctx, req))
 	},
 	WithConfig: gaeconfig.UseFlex,
-	WithAuth: func(c context.Context) context.Context {
-		return auth.Initialize(c, &globalAuthConfig)
+	WithAuth: func(ctx context.Context) context.Context {
+		return auth.Initialize(ctx, &globalAuthConfig)
 	},
 	ExtraMiddleware: router.NewMiddlewareChain(
 		flexFoundationMiddleware,
@@ -163,6 +163,6 @@ func flexFoundationMiddleware(c *router.Context, next router.Handler) {
 }
 
 // WithGlobal returns a Context that is not attached to a specific request.
-func WithGlobal(c context.Context) context.Context {
-	return ReadOnlyFlex.With(c, &http.Request{})
+func WithGlobal(ctx context.Context) context.Context {
+	return ReadOnlyFlex.With(ctx, &http.Request{})
 }

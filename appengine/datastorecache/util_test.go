@@ -81,7 +81,7 @@ type testCache struct {
 	parallel             int
 
 	refreshes int32
-	refreshFn func(c context.Context, key []byte, current Value) (Value, error)
+	refreshFn func(ctx context.Context, key []byte, current Value) (Value, error)
 }
 
 func makeTestCache(name string) *testCache {
@@ -102,21 +102,21 @@ func (tc *testCache) FailOpen() bool                       { return tc.failOpen 
 func (tc *testCache) RefreshInterval([]byte) time.Duration { return tc.refreshInterval }
 func (tc *testCache) Parallel() int                        { return tc.parallel }
 
-func (tc *testCache) Refresh(c context.Context, key []byte, current Value) (Value, error) {
+func (tc *testCache) Refresh(ctx context.Context, key []byte, current Value) (Value, error) {
 	atomic.AddInt32(&tc.refreshes, 1)
 
 	if tc.refreshFn == nil {
 		return Value{}, errors.New("no refresh function installed")
 	}
 
-	value, err := tc.refreshFn(c, key, current)
+	value, err := tc.refreshFn(ctx, key, current)
 	if err != nil {
 		return Value{}, err
 	}
 	return value, nil
 }
 
-func (tc *testCache) Locker(c context.Context) Locker { return MemLocker(c) }
+func (tc *testCache) Locker(ctx context.Context) Locker { return MemLocker(ctx) }
 
 func (tc *testCache) reset() {
 	atomic.StoreInt32(&tc.refreshes, 0)

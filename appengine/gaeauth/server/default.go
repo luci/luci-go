@@ -48,10 +48,10 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 }
 
 func init() {
-	warmup.Register("appengine/gaeauth/server", func(c context.Context) error {
+	warmup.Register("appengine/gaeauth/server", func(ctx context.Context) error {
 		m := CookieAuth.(cookieAuthMethod)
 		if oid, ok := m.Method.(*openid.AuthMethod); ok {
-			return oid.Warmup(c)
+			return oid.Warmup(ctx)
 		}
 		return nil
 	})
@@ -65,12 +65,12 @@ type cookieAuthMethod struct {
 	auth.Method
 }
 
-func (m cookieAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
-	return m.Method.(auth.UsersAPI).LoginURL(c, dest)
+func (m cookieAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
+	return m.Method.(auth.UsersAPI).LoginURL(ctx, dest)
 }
 
-func (m cookieAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
-	return m.Method.(auth.UsersAPI).LogoutURL(c, dest)
+func (m cookieAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
+	return m.Method.(auth.UsersAPI).LogoutURL(ctx, dest)
 }
 
 func init() {

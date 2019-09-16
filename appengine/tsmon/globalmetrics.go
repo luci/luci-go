@@ -35,13 +35,13 @@ var (
 // Called by tsmon from inside /housekeeping cron handler. Metrics reported must
 // not depend on the state of the particular process that happens to report
 // them.
-func collectGlobalMetrics(c context.Context) {
-	version, err := module.DefaultVersion(c, "")
+func collectGlobalMetrics(ctx context.Context) {
+	version, err := module.DefaultVersion(ctx, "")
 	if err != nil {
-		logging.Errorf(c, "Error getting default appengine version: %s", err)
-		defaultVersion.Set(c, "(unknown)")
+		logging.Errorf(ctx, "Error getting default appengine version: %s", err)
+		defaultVersion.Set(ctx, "(unknown)")
 	} else {
-		defaultVersion.Set(c, version)
+		defaultVersion.Set(ctx, version)
 	}
 }
 

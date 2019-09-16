@@ -31,8 +31,8 @@ import (
 type UsersAPIAuthMethod struct{}
 
 // Authenticate extracts peer's identity from the incoming request.
-func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
-	u := user.Current(c)
+func (m UsersAPIAuthMethod) Authenticate(ctx context.Context, r *http.Request) (*auth.User, error) {
+	u := user.Current(ctx)
 	if u == nil {
 		return nil, nil
 	}
@@ -56,14 +56,14 @@ const (
 
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
-func (m UsersAPIAuthMethod) LoginURL(c context.Context, dest string) (string, error) {
-	url, err := user.LoginURL(c, dest)
+func (m UsersAPIAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
+	url, err := user.LoginURL(ctx, dest)
 	if err != nil {
 		return "", err
 	}
 	if !strings.HasPrefix(url, serviceLoginURL) {
-		if !info.IsDevAppServer(c) {
-			logging.Warningf(c, "Unexpected login URL: %q", url)
+		if !info.IsDevAppServer(ctx) {
+			logging.Warningf(ctx, "Unexpected login URL: %q", url)
 		}
 		return url, nil
 	}
@@ -75,6 +75,6 @@ func (m UsersAPIAuthMethod) LoginURL(c context.Context, dest string) (string, er
 
 // LogoutURL returns a URL that, when visited, signs the user out,
 // then redirects the user to the URL specified by dest.
-func (m UsersAPIAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
-	return user.LogoutURL(c, dest)
+func (m UsersAPIAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
+	return user.LogoutURL(ctx, dest)
 }

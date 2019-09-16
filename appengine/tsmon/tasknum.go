@@ -42,8 +42,8 @@ type DatastoreTaskNumAllocator struct {
 }
 
 // NotifyTaskIsAlive is part of TaskNumAllocator interface.
-func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *target.Task, instanceID string) (taskNum int, err error) {
-	c = dsContext(c)
+func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(ctx context.Context, task *target.Task, instanceID string) (taskNum int, err error) {
+	ctx = dsContext(ctx)
 
 	// Exact values here are not important. Important properties are:
 	//  * 'entityID' is unique, and depends on both 'task' and 'instanceID'.
@@ -54,18 +54,18 @@ func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *targ
 	target := fmt.Sprintf("%s|%s|%s|%s", task.DataCenter, task.ServiceName, task.JobName, task.HostName)
 	entityID := fmt.Sprintf("%s|%s", target, instanceID)
 
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		entity := instance{ID: entityID}
-		switch err := datastore.Get(c, &entity); {
+		switch err := datastore.Get(ctx, &entity); {
 		case err == datastore.ErrNoSuchEntity:
 			entity.Target = target
 			entity.TaskNum = -1
 		case err != nil:
 			return err
 		}
-		entity.LastUpdated = clock.Now(c).UTC()
+		entity.LastUpdated = clock.Now(ctx).UTC()
 		taskNum = entity.TaskNum
-		return datastore.Put(c, &entity)
+		return datastore.Put(ctx, &entity)
 	}, nil)
 	if err == nil && taskNum == -1 {
 		err = tsmon.ErrNoTaskNumber
@@ -81,10 +81,10 @@ func (DatastoreTaskNumAllocator) NotifyTaskIsAlive(c context.Context, task *targ
 //
 // Must be used from some (global per project) cron if DatastoreTaskNumAllocator
 // is used. Use 'InstallHandlers' to install the corresponding cron handler.
-func AssignTaskNumbers(c context.Context) error {
-	c = dsContext(c)
+func AssignTaskNumbers(ctx context.Context) error {
+	ctx = dsContext(ctx)
 
-	now := clock.Now(c)
+	now := clock.Now(ctx)
 	cutoff := now.Add(-instanceExpirationTimeout)
 	perTarget := map[string]*workingSet{}
 
@@ -93,15 +93,15 @@ func AssignTaskNumbers(c context.Context) error {
 	// assigned a number yet. Group by 'Target' (can be "" for old entities, this
 	// is fine).
 	q := datastore.NewQuery("Instance")
-	err := datastore.RunBatch(c, int32(taskQueryBatchSize), q, func(entity *instance) error {
+	err := datastore.RunBatch(ctx, int32(taskQueryBatchSize), q, func(entity *instance) error {
 		set := perTarget[entity.Target]
 		if set == nil {
 			set = newWorkingSet(cutoff)
 			perTarget[entity.Target] = set
 		}
-		set.addInstance(c, entity)
+		set.addInstance(ctx, entity)
 		if len(set.expired) >= taskQueryBatchSize {
-			if err := set.cleanupExpired(c); err != nil {
+			if err := set.cleanupExpired(ctx); err != nil {
 				return err
 			}
 		}
@@ -118,14 +118,14 @@ func AssignTaskNumbers(c context.Context) error {
 
 			tasks <- func() error {
 				// "Flush" all pending expired instances.
-				if err := set.cleanupExpired(c); err != nil {
-					logging.WithError(err).Errorf(c, "Failed to delete expired entries for target %q", target)
+				if err := set.cleanupExpired(ctx); err != nil {
+					logging.WithError(err).Errorf(ctx, "Failed to delete expired entries for target %q", target)
 					return err
 				}
 				// Assign task numbers to those that don't have one assigned yet.
-				logging.Debugf(c, "Found %d expired and %d unassigned instances for target %q", set.totalExpired, len(set.pending), target)
-				if err := set.assignTaskNumbers(c); err != nil {
-					logging.WithError(err).Errorf(c, "Failed to assign task numbers for target %q", target)
+				logging.Debugf(ctx, "Found %d expired and %d unassigned instances for target %q", set.totalExpired, len(set.pending), target)
+				if err := set.assignTaskNumbers(ctx); err != nil {
+					logging.WithError(err).Errorf(ctx, "Failed to assign task numbers for target %q", target)
 					return err
 				}
 				return nil
@@ -146,9 +146,9 @@ const (
 // It switches the namespace and disables dscache, since these entities are
 // updated from Flex, which doesn't work with dscache. Besides, all reads happen
 // either in transactions or through queries - dscache is useless anyhow.
-func dsContext(c context.Context) context.Context {
-	c = info.MustNamespace(c, DatastoreNamespace)
-	return dscache.AddShardFunctions(c, func(*datastore.Key) (shards int, ok bool) {
+func dsContext(ctx context.Context) context.Context {
+	ctx = info.MustNamespace(ctx, DatastoreNamespace)
+	return dscache.AddShardFunctions(ctx, func(*datastore.Key) (shards int, ok bool) {
 		return 0, true
 	})
 }
@@ -186,12 +186,12 @@ func newWorkingSet(cutoff time.Time) *workingSet {
 	}
 }
 
-func (s *workingSet) addInstance(c context.Context, entity *instance) {
+func (s *workingSet) addInstance(ctx context.Context, entity *instance) {
 	switch {
 	case entity.LastUpdated.Before(s.cutoff):
-		logging.Debugf(c, "Expiring %q (task_num %d), inactive since %s",
+		logging.Debugf(ctx, "Expiring %q (task_num %d), inactive since %s",
 			entity.ID, entity.TaskNum, entity.LastUpdated)
-		s.expired = append(s.expired, datastore.KeyForObj(c, entity))
+		s.expired = append(s.expired, datastore.KeyForObj(ctx, entity))
 	case entity.TaskNum < 0:
 		s.pending = append(s.pending, entity)
 	default:
@@ -199,13 +199,13 @@ func (s *workingSet) addInstance(c context.Context, entity *instance) {
 	}
 }
 
-func (s *workingSet) cleanupExpired(c context.Context) error {
+func (s *workingSet) cleanupExpired(ctx context.Context) error {
 	if len(s.expired) == 0 {
 		return nil
 	}
 
-	logging.Debugf(c, "Expiring %d instance(s)", len(s.expired))
-	if err := datastore.Delete(c, s.expired); err != nil {
+	logging.Debugf(ctx, "Expiring %d instance(s)", len(s.expired))
+	if err := datastore.Delete(ctx, s.expired); err != nil {
 		return err
 	}
 
@@ -214,7 +214,7 @@ func (s *workingSet) cleanupExpired(c context.Context) error {
 	return nil
 }
 
-func (s *workingSet) assignTaskNumbers(c context.Context) error {
+func (s *workingSet) assignTaskNumbers(ctx context.Context) error {
 	if len(s.pending) == 0 {
 		return nil
 	}
@@ -222,7 +222,7 @@ func (s *workingSet) assignTaskNumbers(c context.Context) error {
 	nextNum := gapFinder(s.assignedNums)
 	for _, entity := range s.pending {
 		entity.TaskNum = nextNum()
-		logging.Debugf(c, "Assigned %q task_num %d", entity.ID, entity.TaskNum)
+		logging.Debugf(ctx, "Assigned %q task_num %d", entity.ID, entity.TaskNum)
 	}
 
 	// Update all pending entities. This is non-transactional, meaning:
@@ -230,7 +230,7 @@ func (s *workingSet) assignTaskNumbers(c context.Context) error {
 	//  * If there are two parallel 'AssignTaskNumbers', they'll screw up each
 	//    other. GAE cron gives some protection against concurrent cron job
 	//    executions though.
-	return datastore.Put(c, s.pending)
+	return datastore.Put(ctx, s.pending)
 }
 
 func gapFinder(used map[int]struct{}) func() int {

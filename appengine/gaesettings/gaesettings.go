@@ -61,9 +61,9 @@ type settingsEntity struct {
 // defaultContext returns datastore interface configured to use default
 // namespace, escape any current transaction, and don't use dscache (since it
 // may not be available when modifying settings).
-func defaultContext(c context.Context) context.Context {
-	c = ds.WithoutTransaction(info.MustNamespace(c, ""))
-	return dscache.AddShardFunctions(c, func(*ds.Key) (shards int, ok bool) {
+func defaultContext(ctx context.Context) context.Context {
+	ctx = ds.WithoutTransaction(info.MustNamespace(ctx, ""))
+	return dscache.AddShardFunctions(ctx, func(*ds.Key) (shards int, ok bool) {
 		return 0, true
 	})
 }
@@ -78,20 +78,20 @@ func latestSettings() settingsEntity {
 //
 // One minute in prod, one second on dev server (since long expiration time on
 // dev server is very annoying).
-func (s Storage) expirationDuration(c context.Context) time.Duration {
-	if info.IsDevAppServer(c) {
+func (s Storage) expirationDuration(ctx context.Context) time.Duration {
+	if info.IsDevAppServer(ctx) {
 		return time.Second
 	}
 	return time.Minute
 }
 
 // FetchAllSettings fetches all latest settings at once.
-func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, time.Duration, error) {
-	c = defaultContext(c)
-	logging.Debugf(c, "Fetching app settings from the datastore")
+func (s Storage) FetchAllSettings(ctx context.Context) (*settings.Bundle, time.Duration, error) {
+	ctx = defaultContext(ctx)
+	logging.Debugf(ctx, "Fetching app settings from the datastore")
 
 	latest := latestSettings()
-	switch err := ds.Get(c, &latest); {
+	switch err := ds.Get(ctx, &latest); {
 	case err == ds.ErrNoSuchEntity:
 		break
 	case err != nil:
@@ -104,18 +104,18 @@ func (s Storage) FetchAllSettings(c context.Context) (*settings.Bundle, time.Dur
 			return nil, 0, err
 		}
 	}
-	return &settings.Bundle{Values: pairs}, s.expirationDuration(c), nil
+	return &settings.Bundle{Values: pairs}, s.expirationDuration(ctx), nil
 }
 
 // UpdateSetting updates a setting at the given key.
-func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMessage, who, why string) error {
-	c = defaultContext(c)
+func (s Storage) UpdateSetting(ctx context.Context, key string, value json.RawMessage, who, why string) error {
+	ctx = defaultContext(ctx)
 
 	var fatalFail error // set in transaction on fatal errors
-	err := ds.RunInTransaction(c, func(c context.Context) error {
+	err := ds.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Fetch the most recent values.
 		latest := latestSettings()
-		if err := ds.Get(c, &latest); err != nil && err != ds.ErrNoSuchEntity {
+		if err := ds.Get(ctx, &latest); err != nil && err != ds.ErrNoSuchEntity {
 			return err
 		}
 
@@ -133,7 +133,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		auditCopy := latest
 		auditCopy.Kind = "gaesettings.SettingsLog"
 		auditCopy.ID = strconv.Itoa(latest.Version)
-		auditCopy.Parent = ds.KeyForObj(c, &latest)
+		auditCopy.Parent = ds.KeyForObj(ctx, &latest)
 
 		// Prepare a new version.
 		buf, err := json.MarshalIndent(pairs, "", "  ")
@@ -145,7 +145,7 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 		latest.Value = string(buf)
 		latest.Who = who
 		latest.Why = why
-		latest.When = clock.Now(c).UTC()
+		latest.When = clock.Now(ctx).UTC()
 
 		// Skip update if no changes at all.
 		if latest.Value == auditCopy.Value {
@@ -154,9 +154,9 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 
 		// Don't store copy of "no settings at all", it's useless.
 		if latest.Version == 1 {
-			return ds.Put(c, &latest)
+			return ds.Put(ctx, &latest)
 		}
-		return ds.Put(c, &latest, &auditCopy)
+		return ds.Put(ctx, &latest, &auditCopy)
 	}, nil)
 
 	if fatalFail != nil {
@@ -171,12 +171,12 @@ func (s Storage) UpdateSetting(c context.Context, key string, value json.RawMess
 // all instances.
 //
 // Returns zero time if there are no settings stored.
-func (s Storage) GetConsistencyTime(c context.Context) (time.Time, error) {
-	c = defaultContext(c)
+func (s Storage) GetConsistencyTime(ctx context.Context) (time.Time, error) {
+	ctx = defaultContext(ctx)
 	latest := latestSettings()
-	switch err := ds.Get(c, &latest); err {
+	switch err := ds.Get(ctx, &latest); err {
 	case nil:
-		return latest.When.Add(s.expirationDuration(c)), nil
+		return latest.When.Add(s.expirationDuration(ctx)), nil
 	case ds.ErrNoSuchEntity:
 		return time.Time{}, nil
 	default:

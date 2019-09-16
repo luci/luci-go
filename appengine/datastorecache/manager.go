@@ -35,7 +35,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func errHTTPHandler(fn func(c context.Context, req *http.Request, params httprouter.Params) error) router.Handler {
+func errHTTPHandler(fn func(ctx context.Context, req *http.Request, params httprouter.Params) error) router.Handler {
 	return func(ctx *router.Context) {
 		err := fn(ctx.Context, ctx.Request, ctx.Params)
 		if err == nil {
@@ -85,10 +85,10 @@ func (m *manager) installCronRoute(path string, r *router.Router, base router.Mi
 	r.GET(path, base, errHTTPHandler(m.handleManageCronGET))
 }
 
-func (m *manager) handleManageCronGET(c context.Context, req *http.Request, params httprouter.Params) error {
+func (m *manager) handleManageCronGET(ctx context.Context, req *http.Request, params httprouter.Params) error {
 	var h Handler
 	if hf := m.cache.HandlerFunc; hf != nil {
-		h = hf(c)
+		h = hf(ctx)
 	}
 
 	// NOTE: All manager runs currently have exactly one shard, #0.
@@ -96,18 +96,18 @@ func (m *manager) handleManageCronGET(c context.Context, req *http.Request, para
 	shard := managerShard{
 		manager: m,
 		h:       h,
-		now:     clock.Now(c).UTC(),
+		now:     clock.Now(ctx).UTC(),
 		st: managerShardStats{
 			Shard: shardID + 1, // +1 b/c 0 is invalid ID.
 		},
 		clientID: strings.Join([]string{
 			"datastore_cache_manager",
-			info.RequestID(c),
+			info.RequestID(ctx),
 		}, "\x00"),
 		shard:    0,
 		shardKey: fmt.Sprintf("datastore_cache_manager_shard_%d", shardID),
 	}
-	return shard.run(c)
+	return shard.run(ctx)
 }
 
 type managerShard struct {
@@ -135,11 +135,11 @@ type managerShard struct {
 func (ms *managerShard) observeEntry()         { atomic.AddInt32(&ms.entries, 1) }
 func (ms *managerShard) observeErrors(c int32) { atomic.AddInt32(&ms.errors, c) }
 
-func (ms *managerShard) run(c context.Context) error {
+func (ms *managerShard) run(ctx context.Context) error {
 	// Enter our cache cacheNamespace. We'll leave this when calling Handler
 	// functions.
-	c = ms.cache.withNamespace(c)
-	c = log.SetField(c, "shard", ms.shard)
+	ctx = ms.cache.withNamespace(ctx)
+	ctx = log.SetField(ctx, "shard", ms.shard)
 
 	// Validate shard configuration.
 	switch {
@@ -148,7 +148,7 @@ func (ms *managerShard) run(c context.Context) error {
 	}
 
 	// Take out a memlock on our cache shard.
-	return memlock.TryWithLock(c, ms.shardKey, ms.clientID, func(c context.Context) (rv error) {
+	return memlock.TryWithLock(ctx, ms.shardKey, ms.clientID, func(ctx context.Context) (rv error) {
 		// Output our stats on completion.
 		defer func() {
 			ms.st.LastEntryCount = int(ms.entries)
@@ -156,12 +156,12 @@ func (ms *managerShard) run(c context.Context) error {
 				ms.st.LastSuccessfulRun = ms.now
 			}
 
-			if rv := datastore.Put(c, &ms.st); rv != nil {
-				log.WithError(rv).Errorf(c, "Failed to Put() stats on completion.")
+			if rv := datastore.Put(ctx, &ms.st); rv != nil {
+				log.WithError(rv).Errorf(ctx, "Failed to Put() stats on completion.")
 			}
 		}()
 
-		if err := ms.runLocked(c); err != nil {
+		if err := ms.runLocked(ctx); err != nil {
 			return errors.Annotate(err, "running maintenance loop").Err()
 		}
 
@@ -177,7 +177,7 @@ func (ms *managerShard) run(c context.Context) error {
 //
 // As the run is executed, stats can be collected in ms.st. These will be output
 // to datastore on completion.
-func (ms *managerShard) runLocked(c context.Context) error {
+func (ms *managerShard) runLocked(ctx context.Context) error {
 	workers := ms.cache.Parallel
 	if workers <= 0 {
 		workers = 1
@@ -218,7 +218,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 	// appropriate. At the end of its operation, all deferred datastore
 	// operations will execute, and the accumulated entries list will be purged
 	// for next round.
-	handleEntries := func(c context.Context) error {
+	handleEntries := func(ctx context.Context) error {
 		if len(entries) == 0 {
 			return nil
 		}
@@ -246,7 +246,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 							"lastRefresh":    e.LastRefreshed,
 							"lastAccessed":   e.LastAccessed,
 							"pruneThreshold": pruneThreshold,
-						}.Infof(c, "Pruning expired cache entry.")
+						}.Infof(ctx, "Pruning expired cache entry.")
 						deleteEntry(e)
 						return nil
 					}
@@ -257,7 +257,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 						if refreshInterval > 0 && !e.LastRefreshed.After(ms.now.Add(-refreshInterval)) {
 							// Call our Handler's Refresh function. We leave our cache namespace
 							// first.
-							switch value, delta, err := doRefresh(c, ms.h, e, ""); err {
+							switch value, delta, err := doRefresh(ctx, ms.h, e, ""); err {
 							case nil:
 								// Refresh successful! Update the entry.
 								//
@@ -272,7 +272,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 							case ErrDeleteCacheEntry:
 								log.Fields{
 									"key": e.keyHash(),
-								}.Debugf(c, "Refresh requested entry deletion.")
+								}.Debugf(ctx, "Refresh requested entry deletion.")
 								deleteEntry(e)
 								return nil
 
@@ -281,7 +281,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 									log.ErrorKey:  err,
 									"key":         e.keyHash(),
 									"lastRefresh": e.LastRefreshed,
-								}.Errorf(c, "Failed to refresh cache entry.")
+								}.Errorf(ctx, "Failed to refresh cache entry.")
 								atomic.AddInt32(&totalErrors, 1)
 							}
 						}
@@ -302,11 +302,11 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		_ = parallel.FanOutIn(func(taskC chan<- func() error) {
 			if putIdx > 0 {
 				taskC <- func() error {
-					if err := datastore.Put(c, putBuf[:putIdx]); err != nil {
+					if err := datastore.Put(ctx, putBuf[:putIdx]); err != nil {
 						log.Fields{
 							log.ErrorKey: err,
 							"size":       putIdx,
-						}.Errorf(c, "Failed to Put batch.")
+						}.Errorf(ctx, "Failed to Put batch.")
 						atomic.AddInt32(&totalErrors, 1)
 					} else {
 						totalRefreshed += int(putIdx)
@@ -317,11 +317,11 @@ func (ms *managerShard) runLocked(c context.Context) error {
 
 			if deleteIdx > 0 {
 				taskC <- func() error {
-					if err := datastore.Delete(c, deleteBuf[:deleteIdx]); err != nil {
+					if err := datastore.Delete(ctx, deleteBuf[:deleteIdx]); err != nil {
 						log.Fields{
 							log.ErrorKey: err,
 							"size":       deleteIdx,
-						}.Errorf(c, "Failed to Delete batch.")
+						}.Errorf(ctx, "Failed to Delete batch.")
 						atomic.AddInt32(&totalErrors, 1)
 					} else {
 						totalPruned += int(deleteIdx)
@@ -333,14 +333,14 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		return nil
 	}
 
-	err := datastore.RunBatch(c, ms.queryBatchSize, q, func(e *entry) error {
+	err := datastore.RunBatch(ctx, ms.queryBatchSize, q, func(e *entry) error {
 		totalEntries++
 		ms.observeEntry()
 		entries = append(entries, e)
 
 		if len(entries) >= int(ms.queryBatchSize) {
 			// Hit the end of a query batch. Process entries.
-			handleEntries(c)
+			handleEntries(ctx)
 		}
 		return nil
 	})
@@ -349,7 +349,7 @@ func (ms *managerShard) runLocked(c context.Context) error {
 	}
 
 	// Flush any outstanding entries (ignore error, will always be nil).
-	_ = handleEntries(c)
+	_ = handleEntries(ctx)
 	if totalErrors > 0 {
 		ms.observeErrors(totalErrors)
 	}
@@ -359,6 +359,6 @@ func (ms *managerShard) runLocked(c context.Context) error {
 		"errors":    totalErrors,
 		"refreshed": totalRefreshed,
 		"pruned":    totalPruned,
-	}.Infof(c, "Successfully updated cache entries.")
+	}.Infof(ctx, "Successfully updated cache entries.")
 	return nil
 }

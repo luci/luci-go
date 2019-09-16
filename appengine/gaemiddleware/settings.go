@@ -61,9 +61,9 @@ type gaeSettings struct {
 // Panics only if there's no cached value (i.e. it is the first call to this
 // function in this process ever) and datastore operation fails. It is a good
 // idea to implement /_ah/warmup to warm this up.
-func fetchCachedSettings(c context.Context) gaeSettings {
+func fetchCachedSettings(ctx context.Context) gaeSettings {
 	s := gaeSettings{}
-	switch err := settings.Get(c, settingsKey, &s); {
+	switch err := settings.Get(ctx, settingsKey, &s); {
 	case err == nil:
 		return s
 	case err == settings.ErrNoSettings:
@@ -84,8 +84,8 @@ var dsCacheDisabled = metric.NewBool(
 
 // reportDSCacheDisabled reports the value of DSCacheDisabled in settings to
 // tsmon.
-func reportDSCacheDisabled(c context.Context) {
-	dsCacheDisabled.Set(c, bool(fetchCachedSettings(c).DisableDSCache))
+func reportDSCacheDisabled(ctx context.Context) {
+	dsCacheDisabled.Set(ctx, bool(fetchCachedSettings(ctx).DisableDSCache))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,11 +95,11 @@ type settingsPage struct {
 	portal.BasePage
 }
 
-func (settingsPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(ctx context.Context) (string, error) {
 	return "Appengine related settings", nil
 }
 
-func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+func (settingsPage) Fields(ctx context.Context) ([]portal.Field, error) {
 	return []portal.Field{
 		{
 			ID:    "LoggingLevel",
@@ -139,9 +139,9 @@ real memcache outage happens.`,
 	}, nil
 }
 
-func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error) {
 	s := gaeSettings{}
-	err := settings.GetUncached(c, settingsKey, &s)
+	err := settings.GetUncached(ctx, settingsKey, &s)
 	if err != nil && err != settings.ErrNoSettings {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}, nil
 }
 
-func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
 	modified := gaeSettings{}
 	if err := modified.LoggingLevel.Set(values["LoggingLevel"]); err != nil {
 		return err
@@ -166,18 +166,18 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 
 	// When switching dscache back on, wipe memcache.
 	existing := gaeSettings{}
-	err := settings.GetUncached(c, settingsKey, &existing)
+	err := settings.GetUncached(ctx, settingsKey, &existing)
 	if err != nil && err != settings.ErrNoSettings {
 		return err
 	}
 	if existing.DisableDSCache && !modified.DisableDSCache {
-		logging.Warningf(c, "DSCache was reenabled, flushing memcache")
-		if err := mc.Flush(c); err != nil {
+		logging.Warningf(ctx, "DSCache was reenabled, flushing memcache")
+		if err := mc.Flush(ctx); err != nil {
 			return fmt.Errorf("failed to flush memcache after reenabling dscache - %s", err)
 		}
 	}
 
-	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
+	return settings.SetIfChanged(ctx, settingsKey, &modified, who, why)
 }
 
 func init() {

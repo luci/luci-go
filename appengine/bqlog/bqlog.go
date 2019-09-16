@@ -432,11 +432,11 @@ func (l *Log) flushTimeout() time.Duration {
 	return defaultFlushTimeout
 }
 
-func (l *Log) insert(c context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
+func (l *Log) insert(ctx context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
 	if l.insertMock != nil {
-		return l.insertMock(c, r)
+		return l.insertMock(ctx, r)
 	}
-	return l.doInsert(c, r)
+	return l.doInsert(ctx, r)
 }
 
 // projID returns ProjectID or a GAE app ID if ProjectID is "".

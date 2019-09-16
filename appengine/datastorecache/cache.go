@@ -150,7 +150,7 @@ type Cache struct {
 	HandlerFunc func(context.Context) Handler
 }
 
-func (cache *Cache) withNamespace(c context.Context) context.Context {
+func (cache *Cache) withNamespace(ctx context.Context) context.Context {
 	// Put our basic sanity check here.
 	if cache.Name == "" && cache.Namespace == "" {
 		panic(errors.New("a Cache must specify either a Name or a Namespace"))
@@ -160,7 +160,7 @@ func (cache *Cache) withNamespace(c context.Context) context.Context {
 	if ns == "" {
 		ns = DefaultCacheNamespace
 	}
-	return info.MustNamespace(c, ns)
+	return info.MustNamespace(ctx, ns)
 }
 
 // pruneInterval calculates the prune interval. This is a function of the
@@ -200,20 +200,20 @@ func (cache *Cache) InstallCronRoute(path string, r *router.Router, base router.
 //
 // If the Refresh function returns an error, that error will be propagated
 // as-is and returned.
-func (cache *Cache) Get(c context.Context, key []byte) (Value, error) {
+func (cache *Cache) Get(ctx context.Context, key []byte) (Value, error) {
 	// Leave any current transaction.
-	c = datastore.WithoutTransaction(c)
+	ctx = datastore.WithoutTransaction(ctx)
 
 	var h Handler
 	if hf := cache.HandlerFunc; hf != nil {
-		h = hf(c)
+		h = hf(ctx)
 	}
 	if h == nil {
 		return Value{}, errors.New("unable to generate Handler")
 	}
 
 	// Determine which Locker to use.
-	locker := h.Locker(c)
+	locker := h.Locker(ctx)
 	if locker == nil {
 		locker = nopLocker{}
 	}
@@ -223,7 +223,7 @@ func (cache *Cache) Get(c context.Context, key []byte) (Value, error) {
 		h:      h,
 		locker: locker,
 	}
-	return bci.get(c, key)
+	return bci.get(ctx, key)
 }
 
 // boundCacheInst is a Cache instance bound to a specific HTTP request.
@@ -236,15 +236,15 @@ type boundCacheInst struct {
 	locker Locker
 }
 
-func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
+func (bci *boundCacheInst) get(ctx context.Context, key []byte) (Value, error) {
 	// Enter our cache namespace. Retain the user's namespace so, in the event
 	// that we have to call into the Handler, we do so with the user's setup.
-	userNS := info.GetNamespace(c)
-	c = bci.withNamespace(c)
+	userNS := info.GetNamespace(ctx)
+	ctx = bci.withNamespace(ctx)
 
 	// Get our current time. We will pass this around so that all methods that
 	// need to examine or assign time will use the same moment for this round.
-	now := datastore.RoundTime(clock.Now(c).UTC())
+	now := datastore.RoundTime(clock.Now(ctx).UTC())
 
 	// Configure our datastore cache entry to Get.
 	e := entry{
@@ -253,7 +253,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 	}
 
 	// Install logging fields.
-	c = log.SetFields(c, log.Fields{
+	ctx = log.SetFields(ctx, log.Fields{
 		"namespace": bci.Namespace,
 		"key":       e.keyHash(),
 	})
@@ -263,17 +263,17 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 		entryWasMissing  = false
 		createCacheEntry = true
 	)
-	switch err := datastore.Get(c, &e); err {
+	switch err := datastore.Get(ctx, &e); err {
 	case nil:
 		// We successfully retrieved the entry. Do we need to update its access
 		// time?
-		if ai := bci.AccessUpdateInterval; ai > 0 && shouldAttemptUpdate(ai, now, e.LastAccessed, bci.getRandFunc(c)) {
-			bci.tryUpdateLastAccessed(c, &e, now)
+		if ai := bci.AccessUpdateInterval; ai > 0 && shouldAttemptUpdate(ai, now, e.LastAccessed, bci.getRandFunc(ctx)) {
+			bci.tryUpdateLastAccessed(ctx, &e, now)
 		}
 
 		// Check if our cache entry has expired. If it has, we may be using stale
 		// data.
-		_ = bci.checkExpired(c, &e, now)
+		_ = bci.checkExpired(ctx, &e, now)
 		return e.toValue(), nil
 
 	case datastore.ErrNoSuchEntity:
@@ -282,7 +282,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 
 	default:
 		// Unexpected error from datastore.
-		log.WithError(err).Errorf(c, "Failed to retrieve cache entry from datastore.")
+		log.WithError(err).Errorf(ctx, "Failed to retrieve cache entry from datastore.")
 
 		// We are failing open, so log the error. We will use Refresh to reload the
 		// cache entry, but will refrain from actually committing it, since this is
@@ -304,7 +304,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 		refreshValue Value
 		delta        time.Duration
 	)
-	err := retry.Retry(clock.Tag(c, "datastoreCacheLockRetry"),
+	err := retry.Retry(clock.Tag(ctx, "datastoreCacheLockRetry"),
 		transient.Only(bci.refreshRetryFactory), func() error {
 
 			// This is a retry. If the entry was missing before, check to see if some
@@ -314,7 +314,7 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 			//
 			// If this fails, we'll continue to try and perform the Refresh.
 			if entryWasMissing && attempts > 0 {
-				switch err := datastore.Get(c, &e); err {
+				switch err := datastore.Get(ctx, &e); err {
 				case nil:
 					// Successfully loaded the entry!
 					refreshValue = e.toValue()
@@ -325,17 +325,17 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 					// The entry doesn't exist yet.
 
 				default:
-					log.WithError(err).Warningf(c, "Error checking datastore for cache entry.")
+					log.WithError(err).Warningf(ctx, "Error checking datastore for cache entry.")
 				}
 			}
 			attempts++
 
 			// Take out a lock on this entry and Refresh it.
-			err := bci.locker.TryWithLock(c, e.lockKey(), func(c context.Context) (err error) {
+			err := bci.locker.TryWithLock(ctx, e.lockKey(), func(ctx context.Context) (err error) {
 				acquiredLock = true
 
 				// Perform our initial refresh.
-				refreshValue, delta, err = doRefresh(c, bci.h, &e, userNS)
+				refreshValue, delta, err = doRefresh(ctx, bci.h, &e, userNS)
 				return
 			})
 			switch err {
@@ -348,11 +348,11 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 				return transient.Tag.Apply(err)
 
 			default:
-				log.WithError(err).Warningf(c, "Unexpected failure obtaining initial load lock.")
+				log.WithError(err).Warningf(ctx, "Unexpected failure obtaining initial load lock.")
 				return err
 			}
 		}, func(err error, d time.Duration) {
-			log.WithError(err).Debugf(c, "Failed to acquire initial refresh lock. Retrying...")
+			log.WithError(err).Debugf(ctx, "Failed to acquire initial refresh lock. Retrying...")
 		})
 	if err != nil {
 		// If we actually acquired the lock, then this refresh was a failure, and
@@ -362,10 +362,10 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 			return Value{}, err
 		}
 
-		log.WithError(err).Warningf(c, "Failed to cooperatively Refresh entry. Manually Refreshing.")
-		if refreshValue, delta, err = doRefresh(c, bci.h, &e, userNS); err != nil {
+		log.WithError(err).Warningf(ctx, "Failed to cooperatively Refresh entry. Manually Refreshing.")
+		if refreshValue, delta, err = doRefresh(ctx, bci.h, &e, userNS); err != nil {
 			// Propagate the Refresh error verbatim.
-			log.WithError(err).Errorf(c, "Refresh returned an error.")
+			log.WithError(err).Errorf(ctx, "Refresh returned an error.")
 			return Value{}, err
 		}
 	}
@@ -378,24 +378,24 @@ func (bci *boundCacheInst) get(c context.Context, key []byte) (Value, error) {
 		e.LastRefreshDelta = int64(delta)
 		e.loadValue(refreshValue)
 
-		switch err := datastore.Put(c, &e); err {
+		switch err := datastore.Put(ctx, &e); err {
 		case nil:
-			log.Debugf(c, "Performed initial cache data Refresh for: %s", e.Description)
+			log.Debugf(ctx, "Performed initial cache data Refresh for: %s", e.Description)
 
 		default:
-			log.WithError(err).Warningf(c, "Failed to Put initial cache data Refresh entry.")
+			log.WithError(err).Warningf(ctx, "Failed to Put initial cache data Refresh entry.")
 		}
 	}
 
 	return refreshValue, nil
 }
 
-func (bci *boundCacheInst) checkExpired(c context.Context, e *entry, now time.Time) bool {
+func (bci *boundCacheInst) checkExpired(ctx context.Context, e *entry, now time.Time) bool {
 	// Is this entry significantly past its expiration threshold?
 	if now.Sub(e.LastRefreshed) >= (expireFactor * bci.h.RefreshInterval(e.Key)) {
 		log.Fields{
 			"lastRefreshed": e.LastRefreshed,
-		}.Infof(c, "Stale cache entry is past its refresh interval.")
+		}.Infof(ctx, "Stale cache entry is past its refresh interval.")
 		return true
 	}
 	return false
@@ -410,13 +410,13 @@ func (bci *boundCacheInst) refreshRetryFactory() retry.Iterator {
 	}
 }
 
-func (bci *boundCacheInst) tryUpdateLastAccessed(c context.Context, e *entry, now time.Time) {
+func (bci *boundCacheInst) tryUpdateLastAccessed(ctx context.Context, e *entry, now time.Time) {
 	// Take out a memcache lock on this entry. We do this to prevent multiple
 	// cache Gets that all examine "e" at the same time don't waste each other's
 	// time spamming last accessed updates.
-	err := bci.locker.TryWithLock(c, e.lockKey(), func(c context.Context) error {
+	err := bci.locker.TryWithLock(ctx, e.lockKey(), func(ctx context.Context) error {
 		e.LastAccessed = now
-		return datastore.Put(c, e)
+		return datastore.Put(ctx, e)
 	})
 	switch err {
 	case nil, ErrFailedToLock:
@@ -425,21 +425,21 @@ func (bci *boundCacheInst) tryUpdateLastAccessed(c context.Context, e *entry, no
 
 	default:
 		// Something unexpected happened, so let's log it.
-		log.WithError(err).Warningf(c, "Failed to update cache entry 'last accessed' time.")
+		log.WithError(err).Warningf(ctx, "Failed to update cache entry 'last accessed' time.")
 	}
 }
 
-func (bci *boundCacheInst) getRandFunc(c context.Context) randFunc {
-	return func() float64 { return mathrand.Float64(c) }
+func (bci *boundCacheInst) getRandFunc(ctx context.Context) randFunc {
+	return func() float64 { return mathrand.Float64(ctx) }
 }
 
-func doRefresh(c context.Context, h Handler, e *entry, userNS string) (v Value, delta time.Duration, err error) {
+func doRefresh(ctx context.Context, h Handler, e *entry, userNS string) (v Value, delta time.Duration, err error) {
 	// Execute the Refresh in the user's namespace.
-	start := clock.Now(c)
-	if v, err = h.Refresh(info.MustNamespace(c, userNS), e.Key, e.toValue()); err != nil {
+	start := clock.Now(ctx)
+	if v, err = h.Refresh(info.MustNamespace(ctx, userNS), e.Key, e.toValue()); err != nil {
 		return
 	}
-	delta = clock.Now(c).Sub(start)
+	delta = clock.Now(ctx).Sub(start)
 	return
 }
 

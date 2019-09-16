@@ -32,11 +32,11 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 )
 
-func makeDumpingMapper(c context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
-	return func(c context.Context, keys []*datastore.Key) error {
-		logging.Infof(c, "Got %d keys:", len(keys))
+func makeDumpingMapper(ctx context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
+	return func(ctx context.Context, keys []*datastore.Key) error {
+		logging.Infof(ctx, "Got %d keys:", len(keys))
 		for _, k := range keys {
-			logging.Infof(c, "%s", k)
+			logging.Infof(ctx, "%s", k)
 		}
 		return nil
 	}, nil
@@ -61,17 +61,17 @@ func main() {
 	tasks.InstallRoutes(r, base)
 
 	// Populate creates a bunch of entities.
-	r.GET("/populate", base, func(c *router.Context) {
+	r.GET("/populate", base, func(ctx *router.Context) {
 		ents := make([]TestEntity, 1024)
-		if err := datastore.Put(c.Context, ents); err != nil {
+		if err := datastore.Put(ctx.Context, ents); err != nil {
 			panic(err)
 		}
-		fmt.Fprintf(c.Writer, "Done")
+		fmt.Fprintf(ctx.Writer, "Done")
 	})
 
 	// Launch launches the mapper job.
-	r.GET("/launch", base, func(c *router.Context) {
-		jobID, err := mappers.LaunchJob(c.Context, &mapper.JobConfig{
+	r.GET("/launch", base, func(ctx *router.Context) {
+		jobID, err := mappers.LaunchJob(ctx.Context, &mapper.JobConfig{
 			Query: mapper.Query{
 				Kind: "TestEntity",
 			},
@@ -82,7 +82,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Fprintf(c.Writer, "Launched job %d", jobID)
+		fmt.Fprintf(ctx.Writer, "Launched job %d", jobID)
 	})
 
 	http.DefaultServeMux.Handle("/", r)

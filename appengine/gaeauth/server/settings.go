@@ -31,12 +31,12 @@ type settingsPage struct {
 	portal.BasePage
 }
 
-func (settingsPage) Title(c context.Context) (string, error) {
+func (settingsPage) Title(ctx context.Context) (string, error) {
 	return "Authorization settings", nil
 }
 
-func (settingsPage) Overview(c context.Context) (template.HTML, error) {
-	serviceAcc, err := info.ServiceAccount(c)
+func (settingsPage) Overview(ctx context.Context) (template.HTML, error) {
+	serviceAcc, err := info.ServiceAccount(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +72,7 @@ service per LUCI deployment.</p>
 </ul>`, html.EscapeString(serviceAcc))), nil
 }
 
-func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+func (settingsPage) Fields(ctx context.Context) ([]portal.Field, error) {
 	return []portal.Field{
 		{
 			ID:    "AuthServiceURL",
@@ -93,8 +93,8 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	}, nil
 }
 
-func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
-	switch info, err := authdbimpl.GetLatestSnapshotInfo(c); {
+func (settingsPage) ReadSettings(ctx context.Context) (map[string]string, error) {
+	switch info, err := authdbimpl.GetLatestSnapshotInfo(ctx); {
 	case err != nil:
 		return nil, err
 	case info == nil:
@@ -110,7 +110,7 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}
 }
 
-func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (settingsPage) WriteSettings(ctx context.Context, values map[string]string, who, why string) error {
 	authServiceURL := values["AuthServiceURL"]
 	if authServiceURL != "" {
 		var err error
@@ -119,8 +119,8 @@ func (settingsPage) WriteSettings(c context.Context, values map[string]string, w
 			return err
 		}
 	}
-	baseURL := "https://" + info.DefaultVersionHostname(c)
-	return authdbimpl.ConfigureAuthService(c, baseURL, authServiceURL)
+	baseURL := "https://" + info.DefaultVersionHostname(ctx)
+	return authdbimpl.ConfigureAuthService(ctx, baseURL, authServiceURL)
 }
 
 func normalizeAuthServiceURL(authServiceURL string) (string, error) {

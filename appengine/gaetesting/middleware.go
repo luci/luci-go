@@ -31,9 +31,9 @@ var goLogger = flag.Bool("test.gologger", false, "Enable console logging during 
 //   * go.chromium.org/luci/server/caching (access to process cache)
 //   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContext() context.Context {
-	c := context.Background()
-	c = memory.Use(c)
-	return commonTestingContext(c)
+	ctx := context.Background()
+	ctx = memory.Use(ctx)
+	return commonTestingContext(ctx)
 }
 
 // TestingContextWithAppID returns context with the specified App ID and base
@@ -42,18 +42,18 @@ func TestingContext() context.Context {
 //   * go.chromium.org/luci/server/caching (access to process cache)
 //   * go.chromium.org/luci/server/secrets/testsecrets (access to fake secret keys)
 func TestingContextWithAppID(appID string) context.Context {
-	c := context.Background()
-	c = memory.UseWithAppID(c, appID)
-	return commonTestingContext(c)
+	ctx := context.Background()
+	ctx = memory.UseWithAppID(ctx, appID)
+	return commonTestingContext(ctx)
 }
 
-func commonTestingContext(c context.Context) context.Context {
-	c = testsecrets.Use(c)
-	c = caching.WithEmptyProcessCache(c)
+func commonTestingContext(ctx context.Context) context.Context {
+	ctx = testsecrets.Use(ctx)
+	ctx = caching.WithEmptyProcessCache(ctx)
 
 	if *goLogger {
-		c = gologger.StdConfig.Use(c)
+		ctx = gologger.StdConfig.Use(ctx)
 	}
 
-	return c
+	return ctx
 }

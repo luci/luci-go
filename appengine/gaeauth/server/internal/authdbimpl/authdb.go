@@ -73,12 +73,12 @@ type Snapshot struct {
 // GetLatestSnapshotInfo fetches SnapshotInfo singleton entity.
 //
 // If no such entity is stored, returns (nil, nil).
-func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
-	report := durationReporter(c, latestSnapshotInfoDuration)
-	logging.Debugf(c, "Fetching AuthDB snapshot info from the datastore")
-	c = ds.WithoutTransaction(defaultNS(c))
+func GetLatestSnapshotInfo(ctx context.Context) (*SnapshotInfo, error) {
+	report := durationReporter(ctx, latestSnapshotInfoDuration)
+	logging.Debugf(ctx, "Fetching AuthDB snapshot info from the datastore")
+	ctx = ds.WithoutTransaction(defaultNS(ctx))
 	info := SnapshotInfo{}
-	switch err := ds.Get(c, &info); {
+	switch err := ds.Get(ctx, &info); {
 	case err == ds.ErrNoSuchEntity:
 		report("SUCCESS")
 		return nil, nil
@@ -94,20 +94,20 @@ func GetLatestSnapshotInfo(c context.Context) (*SnapshotInfo, error) {
 // deleteSnapshotInfo removes SnapshotInfo entity from the datastore.
 //
 // Used to detach the service from auth_service.
-func deleteSnapshotInfo(c context.Context) error {
-	c = ds.WithoutTransaction(c)
-	return ds.Delete(c, ds.KeyForObj(c, &SnapshotInfo{}))
+func deleteSnapshotInfo(ctx context.Context) error {
+	ctx = ds.WithoutTransaction(ctx)
+	return ds.Delete(ctx, ds.KeyForObj(ctx, &SnapshotInfo{}))
 }
 
 // GetAuthDBSnapshot fetches, inflates and deserializes AuthDB snapshot.
-func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
-	report := durationReporter(c, getSnapshotDuration)
-	logging.Debugf(c, "Fetching AuthDB snapshot from the datastore")
-	defer logging.Debugf(c, "AuthDB snapshot fetched")
+func GetAuthDBSnapshot(ctx context.Context, id string) (*protocol.AuthDB, error) {
+	report := durationReporter(ctx, getSnapshotDuration)
+	logging.Debugf(ctx, "Fetching AuthDB snapshot from the datastore")
+	defer logging.Debugf(ctx, "AuthDB snapshot fetched")
 
-	c = ds.WithoutTransaction(defaultNS(c))
+	ctx = ds.WithoutTransaction(defaultNS(ctx))
 	snap := Snapshot{ID: id}
-	switch err := ds.Get(c, &snap); {
+	switch err := ds.Get(ctx, &snap); {
 	case err == ds.ErrNoSuchEntity:
 		report("ERROR_NO_SNAPSHOT")
 		return nil, err // not transient
@@ -133,14 +133,14 @@ func GetAuthDBSnapshot(c context.Context, id string) (*protocol.AuthDB, error) {
 // PubSub push endpoint URL.
 //
 // If `authServiceURL` is blank, disables the fetching.
-func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) error {
-	logging.Infof(c, "Reconfiguring AuthDB to be fetched from %q", authServiceURL)
-	c = defaultNS(c)
+func ConfigureAuthService(ctx context.Context, baseURL, authServiceURL string) error {
+	logging.Infof(ctx, "Reconfiguring AuthDB to be fetched from %q", authServiceURL)
+	ctx = defaultNS(ctx)
 
 	// If switching auth services, need to grab URL of a currently configured
 	// auth service to unsubscribe from its PubSub stream.
 	prevAuthServiceURL := ""
-	switch existing, err := GetLatestSnapshotInfo(c); {
+	switch existing, err := GetLatestSnapshotInfo(ctx); {
 	case err != nil:
 		return err
 	case existing != nil:
@@ -150,17 +150,17 @@ func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) err
 	// Stopping synchronization completely?
 	if authServiceURL == "" {
 		if prevAuthServiceURL != "" {
-			if err := killPubSub(c, prevAuthServiceURL); err != nil {
+			if err := killPubSub(ctx, prevAuthServiceURL); err != nil {
 				return err
 			}
 		}
-		return deleteSnapshotInfo(c)
+		return deleteSnapshotInfo(ctx)
 	}
 
 	// Fetch latest AuthDB snapshot and store it in the datastore, thus verifying
 	// authServiceURL works end-to-end.
-	srv := getAuthService(c, authServiceURL)
-	latestRev, err := srv.GetLatestSnapshotRevision(c)
+	srv := getAuthService(ctx, authServiceURL)
+	latestRev, err := srv.GetLatestSnapshotRevision(ctx)
 	if err != nil {
 		return err
 	}
@@ -168,27 +168,27 @@ func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) err
 		AuthServiceURL: authServiceURL,
 		Rev:            latestRev,
 	}
-	if err := fetchSnapshot(c, info); err != nil {
-		logging.Errorf(c, "Failed to fetch latest snapshot from %s - %s", authServiceURL, err)
+	if err := fetchSnapshot(ctx, info); err != nil {
+		logging.Errorf(ctx, "Failed to fetch latest snapshot from %s - %s", authServiceURL, err)
 		return err
 	}
 
 	// Configure PubSub subscription to receive future updates.
-	if err := setupPubSub(c, baseURL, authServiceURL); err != nil {
-		logging.Errorf(c, "Failed to configure pubsub subscription - %s", err)
+	if err := setupPubSub(ctx, baseURL, authServiceURL); err != nil {
+		logging.Errorf(ctx, "Failed to configure pubsub subscription - %s", err)
 		return err
 	}
 
 	// All is configured. Switch SnapshotInfo entity to point to new snapshot.
 	// It makes syncAuthDB fetch changes from `authServiceURL`, thus promoting
 	// `authServiceURL` to the status of main auth service.
-	if err := ds.Put(ds.WithoutTransaction(c), info); err != nil {
+	if err := ds.Put(ds.WithoutTransaction(ctx), info); err != nil {
 		return transient.Tag.Apply(err)
 	}
 
 	// Stop getting notifications from previously used auth service.
 	if prevAuthServiceURL != "" && prevAuthServiceURL != authServiceURL {
-		return killPubSub(c, prevAuthServiceURL)
+		return killPubSub(ctx, prevAuthServiceURL)
 	}
 
 	return nil
@@ -199,9 +199,9 @@ func ConfigureAuthService(c context.Context, baseURL, authServiceURL string) err
 //
 // Idempotent. Doesn't touch SnapshotInfo entity itself, and thus always safe
 // to call.
-func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
-	srv := getAuthService(c, info.AuthServiceURL)
-	snap, err := srv.GetSnapshot(c, info.Rev)
+func fetchSnapshot(ctx context.Context, info *SnapshotInfo) error {
+	srv := getAuthService(ctx, info.AuthServiceURL)
+	snap, err := srv.GetSnapshot(ctx, info.Rev)
 	if err != nil {
 		return err
 	}
@@ -213,10 +213,10 @@ func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
 		ID:             info.GetSnapshotID(),
 		AuthDBDeflated: blob,
 		CreatedAt:      snap.Created.UTC(),
-		FetchedAt:      clock.Now(c).UTC(),
+		FetchedAt:      clock.Now(ctx).UTC(),
 	}
-	logging.Infof(c, "Lag: %s", ent.FetchedAt.Sub(ent.CreatedAt))
-	return transient.Tag.Apply(ds.Put(ds.WithoutTransaction(c), &ent))
+	logging.Infof(ctx, "Lag: %s", ent.FetchedAt.Sub(ent.CreatedAt))
+	return transient.Tag.Apply(ds.Put(ds.WithoutTransaction(ctx), &ent))
 }
 
 // syncAuthDB fetches latest AuthDB snapshot from the configured auth service,
@@ -226,11 +226,11 @@ func fetchSnapshot(c context.Context, info *SnapshotInfo) error {
 // PubSub notifications.
 //
 // Returns SnapshotInfo of the most recent snapshot.
-func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
-	report := durationReporter(c, syncAuthDBDuration)
+func syncAuthDB(ctx context.Context) (*SnapshotInfo, error) {
+	report := durationReporter(ctx, syncAuthDBDuration)
 
 	// `info` is what we have in the datastore now.
-	info, err := GetLatestSnapshotInfo(c)
+	info, err := GetLatestSnapshotInfo(ctx)
 	if err != nil {
 		report("ERROR_GET_LATEST_INFO")
 		return nil, err
@@ -241,8 +241,8 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	}
 
 	// Grab revision number of the latest snapshot on the server.
-	srv := getAuthService(c, info.AuthServiceURL)
-	latestRev, err := srv.GetLatestSnapshotRevision(c)
+	srv := getAuthService(ctx, info.AuthServiceURL)
+	latestRev, err := srv.GetLatestSnapshotRevision(ctx)
 	if err != nil {
 		report("ERROR_GET_LATEST_REVISION")
 		return nil, err
@@ -250,7 +250,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 
 	// Nothing new?
 	if info.Rev == latestRev {
-		logging.Infof(c, "AuthDB is up-to-date at revision %d", latestRev)
+		logging.Infof(ctx, "AuthDB is up-to-date at revision %d", latestRev)
 		report("SUCCESS_UP_TO_DATE")
 		return info, nil
 	}
@@ -258,7 +258,7 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	// Auth service traveled back in time?
 	if info.Rev > latestRev {
 		logging.Errorf(
-			c, "Latest AuthDB revision on server is %d, we have %d. It should not happen",
+			ctx, "Latest AuthDB revision on server is %d, we have %d. It should not happen",
 			latestRev, info.Rev)
 		report("SUCCESS_NEWER_ALREADY")
 		return info, nil
@@ -266,8 +266,8 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 
 	// Fetch the actual snapshot from the server and put it into the datastore.
 	info.Rev = latestRev
-	if err = fetchSnapshot(c, info); err != nil {
-		logging.Errorf(c, "Failed to fetch snapshot %d from %q - %s", info.Rev, info.AuthServiceURL, err)
+	if err = fetchSnapshot(ctx, info); err != nil {
+		logging.Errorf(ctx, "Failed to fetch snapshot %d from %q - %s", info.Rev, info.AuthServiceURL, err)
 		report("ERROR_FETCHING")
 		return nil, err
 	}
@@ -275,25 +275,25 @@ func syncAuthDB(c context.Context) (*SnapshotInfo, error) {
 	// Move pointer to the latest snapshot only if it is more recent than what is
 	// already in the datastore.
 	var latest *SnapshotInfo
-	err = ds.RunInTransaction(ds.WithoutTransaction(c), func(c context.Context) error {
+	err = ds.RunInTransaction(ds.WithoutTransaction(ctx), func(ctx context.Context) error {
 		latest = &SnapshotInfo{}
-		switch err := ds.Get(c, latest); {
+		switch err := ds.Get(ctx, latest); {
 		case err == ds.ErrNoSuchEntity:
-			logging.Warningf(c, "No longer need to fetch AuthDB, not configured anymore")
+			logging.Warningf(ctx, "No longer need to fetch AuthDB, not configured anymore")
 			return nil
 		case err != nil:
 			return err
 		case latest.AuthServiceURL != info.AuthServiceURL:
 			logging.Warningf(
-				c, "No longer need to fetch AuthDB from %q, %q is primary now",
+				ctx, "No longer need to fetch AuthDB from %q, %q is primary now",
 				info.AuthServiceURL, latest.AuthServiceURL)
 			return nil
 		case latest.Rev >= info.Rev:
-			logging.Warningf(c, "Already have rev %d", info.Rev)
+			logging.Warningf(ctx, "Already have rev %d", info.Rev)
 			return nil
 		}
 		latest = info
-		return ds.Put(c, info)
+		return ds.Put(ctx, info)
 	}, nil)
 
 	if err != nil {

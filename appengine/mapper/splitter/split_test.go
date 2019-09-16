@@ -39,7 +39,7 @@ type StringEntity struct {
 	Parent *datastore.Key `gae:"$parent"`
 }
 
-func putIntEntities(c context.Context, parent *datastore.Key, ids []int) {
+func putIntEntities(ctx context.Context, parent *datastore.Key, ids []int) {
 	e := make([]*IntEntity, len(ids))
 	for i, id := range ids {
 		e[i] = &IntEntity{
@@ -47,7 +47,7 @@ func putIntEntities(c context.Context, parent *datastore.Key, ids []int) {
 			Parent: parent,
 		}
 	}
-	if err := datastore.Put(c, e); err != nil {
+	if err := datastore.Put(ctx, e); err != nil {
 		panic(err)
 	}
 }
@@ -83,10 +83,10 @@ func extractRanges(ranges []Range, max int) []intRange {
 	return out
 }
 
-func countRanges(c context.Context, q *datastore.Query, ranges []Range) []int {
+func countRanges(ctx context.Context, q *datastore.Query, ranges []Range) []int {
 	out := make([]int, len(ranges))
 	for i, r := range ranges {
-		count, err := datastore.Count(c, r.Apply(q))
+		count, err := datastore.Count(ctx, r.Apply(q))
 		if err != nil {
 			panic(err)
 		}
@@ -97,13 +97,13 @@ func countRanges(c context.Context, q *datastore.Query, ranges []Range) []int {
 
 func TestSplitIntoRanges(t *testing.T) {
 	Convey("Works", t, func() {
-		c := memory.Use(context.Background())
+		ctx := memory.Use(context.Background())
 		rnd := rand.New(rand.NewSource(1))
 
-		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(ctx).AutoIndex(true)
 
 		getRanges := func(q *datastore.Query, shards, samples, max int) []intRange {
-			ranges, err := SplitIntoRanges(c, q, Params{
+			ranges, err := SplitIntoRanges(ctx, q, Params{
 				Shards:  shards,
 				Samples: samples,
 			})
@@ -112,18 +112,18 @@ func TestSplitIntoRanges(t *testing.T) {
 		}
 
 		getShardSizes := func(q *datastore.Query, shards, samples int) []int {
-			ranges, err := SplitIntoRanges(c, q, Params{
+			ranges, err := SplitIntoRanges(ctx, q, Params{
 				Shards:  shards,
 				Samples: samples,
 			})
 			So(err, ShouldBeNil)
-			return countRanges(c, q, ranges)
+			return countRanges(ctx, q, ranges)
 		}
 
 		Convey("With mostly empty query", func() {
-			putIntEntities(c, nil, []int{1, 2, 3, 4, 5, 6})
+			putIntEntities(ctx, nil, []int{1, 2, 3, 4, 5, 6})
 			maxID := 6
-			datastore.GetTestable(c).CatchupIndexes()
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("IntEntity")
 
@@ -145,8 +145,8 @@ func TestSplitIntoRanges(t *testing.T) {
 			for i := 0; i < maxID; i++ {
 				ints = append(ints, i)
 			}
-			putIntEntities(c, nil, ints)
-			datastore.GetTestable(c).CatchupIndexes()
+			putIntEntities(ctx, nil, ints)
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("IntEntity")
 
@@ -194,8 +194,8 @@ func TestSplitIntoRanges(t *testing.T) {
 					seen[key] = true
 				}
 			}
-			putIntEntities(c, nil, ints)
-			datastore.GetTestable(c).CatchupIndexes()
+			putIntEntities(ctx, nil, ints)
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("IntEntity")
 
@@ -233,12 +233,12 @@ func TestSplitIntoRanges(t *testing.T) {
 		})
 
 		Convey("Handles ancestor filter", func() {
-			root1 := datastore.KeyForObj(c, &RootEntity{ID: 1})
-			root2 := datastore.KeyForObj(c, &RootEntity{ID: 2})
+			root1 := datastore.KeyForObj(ctx, &RootEntity{ID: 1})
+			root2 := datastore.KeyForObj(ctx, &RootEntity{ID: 2})
 
-			putIntEntities(c, root1, []int{1, 2, 3, 4})
-			putIntEntities(c, root2, []int{1, 2, 3, 4, 5, 6, 7, 8})
-			datastore.GetTestable(c).CatchupIndexes()
+			putIntEntities(ctx, root1, []int{1, 2, 3, 4})
+			putIntEntities(ctx, root2, []int{1, 2, 3, 4, 5, 6, 7, 8})
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("IntEntity")
 
@@ -264,11 +264,11 @@ func TestSplitIntoRanges(t *testing.T) {
 				So(err, ShouldBeNil)
 				entities[i] = &StringEntity{
 					ID:     string(blob),
-					Parent: datastore.KeyForObj(c, &RootEntity{ID: rnd.Intn(10) + 1}),
+					Parent: datastore.KeyForObj(ctx, &RootEntity{ID: rnd.Intn(10) + 1}),
 				}
 			}
-			So(datastore.Put(c, entities), ShouldBeNil)
-			datastore.GetTestable(c).CatchupIndexes()
+			So(datastore.Put(ctx, entities), ShouldBeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("StringEntity")
 

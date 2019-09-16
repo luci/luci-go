@@ -72,6 +72,6 @@ func (d internalsImpl) GetHandler(payload proto.Message) (cb Handler, q string, 
 	return h.cb, h.queue, nil
 }
 
-func (d internalsImpl) WithRequestHeaders(c context.Context, hdr *taskqueue.RequestHeaders) context.Context {
-	return withRequestHeaders(c, hdr)
+func (d internalsImpl) WithRequestHeaders(ctx context.Context, hdr *taskqueue.RequestHeaders) context.Context {
+	return withRequestHeaders(ctx, hdr)
 }

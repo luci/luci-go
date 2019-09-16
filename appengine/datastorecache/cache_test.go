@@ -102,11 +102,11 @@ func TestCache(t *testing.T) {
 		})
 
 		Convey(`Can perform a Get while in another entity's transaction`, func() {
-			err := datastore.RunInTransaction(te, func(c context.Context) error {
+			err := datastore.RunInTransaction(te, func(ctx context.Context) error {
 				// Hit some random entity first. Since we're not cross-group, this means
 				// that any invalid single-group datastore accesses from the cache will
 				// error.
-				r, err := datastore.Exists(c, datastore.PropertyMap{
+				r, err := datastore.Exists(ctx, datastore.PropertyMap{
 					"$kind": datastore.MkProperty("SomeEntitySomewhere"),
 					"$id":   datastore.MkProperty(1),
 				})
@@ -116,7 +116,7 @@ func TestCache(t *testing.T) {
 				So(r.Any(), ShouldBeFalse)
 
 				// Perform a cache Get.
-				v, err := cache.Get(c, []byte("foo"))
+				v, err := cache.Get(ctx, []byte("foo"))
 				if err != nil {
 					return err
 				}
@@ -130,8 +130,8 @@ func TestCache(t *testing.T) {
 		Convey(`The refresh function is called with the original namespace.`, func() {
 			c := info.MustNamespace(te, "dog")
 
-			cache.refreshFn = func(rc context.Context, key []byte, v Value) (Value, error) {
-				So(info.GetNamespace(rc), ShouldEqual, "dog")
+			cache.refreshFn = func(ctx context.Context, key []byte, v Value) (Value, error) {
+				So(info.GetNamespace(ctx), ShouldEqual, "dog")
 				return currentValue, nil
 			}
 
@@ -192,15 +192,15 @@ func TestCache(t *testing.T) {
 
 			Convey(`Will manually refresh with original namespace after retries.`, func() {
 
-				cache.refreshFn = func(rc context.Context, key []byte, v Value) (Value, error) {
-					So(info.GetNamespace(rc), ShouldEqual, "dog")
+				cache.refreshFn = func(ctx context.Context, key []byte, v Value) (Value, error) {
+					So(info.GetNamespace(ctx), ShouldEqual, "dog")
 					return currentValue, nil
 				}
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
 				var v Value
-				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(ctx context.Context) (err error) {
 					v, err = cache.Get(info.MustNamespace(te, "dog"), []byte("foo"))
 					return
 				})
@@ -216,7 +216,7 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(ctx context.Context) (err error) {
 					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -236,7 +236,7 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(ctx context.Context) (err error) {
 					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -250,7 +250,7 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(ctx context.Context) (err error) {
 					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
@@ -373,7 +373,7 @@ func TestCache(t *testing.T) {
 
 			Convey(`Will ignore accessed timestamp if the entry's lock is held.`, func() {
 				var v Value
-				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
+				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(ctx context.Context) (err error) {
 					v, err = cache.Get(te, []byte("foo"))
 					return
 				})

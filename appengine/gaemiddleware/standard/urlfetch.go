@@ -35,7 +35,7 @@ var background = context.Background()
 // (if available), and falling back to the context provided during the creation
 // otherwise.
 type contextAwareURLFetch struct {
-	c context.Context
+	ctx context.Context
 }
 
 // RoundTrip is part of http.RoundTripper interface.
@@ -43,7 +43,7 @@ func (c *contextAwareURLFetch) RoundTrip(r *http.Request) (*http.Response, error
 	ctx := r.Context()
 	// We assume context.Background() always returns exact same object.
 	if ctx == background {
-		ctx = c.c
+		ctx = c.ctx
 	}
 	return urlfetch.Get(ctx).RoundTrip(r)
 }

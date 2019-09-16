@@ -43,30 +43,30 @@ import (
 //
 // Implements a caching layer on top of GAE's GetAccessToken RPC. May return
 // transient errors.
-func GetAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
+func GetAccessToken(ctx context.Context, scopes []string) (*oauth2.Token, error) {
 	scopes, cacheKey := normalizeScopes(scopes)
 
 	// Try to find the token in the local memory first. If it expires soon,
 	// refresh it earlier with some probability. That avoids a situation when
 	// parallel requests that use access tokens suddenly see the cache expired
 	// and rush to refresh the token all at once.
-	lru := tokensCache.LRU(c)
-	if tokIface, ok := lru.Get(c, cacheKey); ok {
+	lru := tokensCache.LRU(ctx)
+	if tokIface, ok := lru.Get(ctx, cacheKey); ok {
 		tok := tokIface.(*oauth2.Token)
-		if !closeToExpRandomized(c, tok.Expiry) {
+		if !closeToExpRandomized(ctx, tok.Expiry) {
 			return tok, nil
 		}
 	}
 
-	tokIface, err := lru.Create(c, cacheKey, func() (interface{}, time.Duration, error) {
+	tokIface, err := lru.Create(ctx, cacheKey, func() (interface{}, time.Duration, error) {
 		// The token needs to be refreshed.
-		logging.Debugf(c, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
-		accessToken, exp, err := info.AccessToken(c, scopes...)
+		logging.Debugf(ctx, "Getting an access token for scopes %q", strings.Join(scopes, ", "))
+		accessToken, exp, err := info.AccessToken(ctx, scopes...)
 		if err != nil {
 			return nil, 0, transient.Tag.Apply(err)
 		}
-		now := clock.Now(c)
-		logging.Debugf(c, "The token expires in %s", exp.Sub(now))
+		now := clock.Now(ctx)
+		logging.Debugf(ctx, "The token expires in %s", exp.Sub(now))
 
 		// Prematurely expire it to guarantee all returned token live for at least
 		// 'expirationMinLifetime'.
@@ -129,15 +129,15 @@ func normalizeScopes(scopes []string) (normalized []string, cacheKey string) {
 	return scopes, strings.Join(scopes, "\n")
 }
 
-func closeToExpRandomized(c context.Context, exp time.Time) bool {
-	switch now := clock.Now(c); {
+func closeToExpRandomized(ctx context.Context, exp time.Time) bool {
+	switch now := clock.Now(ctx); {
 	case now.After(exp):
 		return true // expired already
 	case now.Add(expirationRandomization).Before(exp):
 		return false // far from expiration
 	default:
 		// The expiration is close enough. Do the randomization.
-		rnd := time.Duration(mathrand.Int63n(c, int64(expirationRandomization)))
+		rnd := time.Duration(mathrand.Int63n(ctx, int64(expirationRandomization)))
 		return now.Add(rnd).After(exp)
 	}
 }

@@ -58,8 +58,8 @@ var (
 		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
-		AnonymousTransport: func(c context.Context) http.RoundTripper {
-			return &contextAwareURLFetch{c}
+		AnonymousTransport: func(ctx context.Context) http.RoundTripper {
+			return &contextAwareURLFetch{ctx}
 		},
 		IsDevMode: appengine.IsDevAppServer(),
 	}
@@ -68,12 +68,12 @@ var (
 	// monitoring.
 	globalTsMonState = &tsmon.State{
 		IsDevMode: appengine.IsDevAppServer(),
-		Target: func(c context.Context) target.Task {
+		Target: func(ctx context.Context) target.Task {
 			return target.Task{
 				DataCenter:  "appengine",
-				ServiceName: info.AppID(c),
-				JobName:     info.ModuleName(c),
-				HostName:    strings.SplitN(info.VersionID(c), ".", 2)[0],
+				ServiceName: info.AppID(ctx),
+				JobName:     info.ModuleName(ctx),
+				HostName:    strings.SplitN(info.VersionID(ctx), ".", 2)[0],
 			}
 		},
 		InstanceID:        info.InstanceID,
@@ -88,8 +88,8 @@ var classicEnv = gaemiddleware.Environment{
 	MemcacheAvailable:  true,
 	WithInitialRequest: prod.Use,
 	WithConfig:         gaeconfig.Use,
-	WithAuth: func(c context.Context) context.Context {
-		return auth.Initialize(c, &globalAuthConfig)
+	WithAuth: func(ctx context.Context) context.Context {
+		return auth.Initialize(ctx, &globalAuthConfig)
 	},
 
 	ExtraMiddleware: func() router.MiddlewareChain {
@@ -121,8 +121,8 @@ var classicEnv = gaemiddleware.Environment{
 //
 // 'Production' here means the services will use real GAE APIs (not mocks or
 // stubs), so With should never be used from unit tests.
-func With(c context.Context, req *http.Request) context.Context {
-	return classicEnv.With(c, req)
+func With(ctx context.Context, req *http.Request) context.Context {
+	return classicEnv.With(ctx, req)
 }
 
 // Base returns a middleware chain to use for all GAE requests.

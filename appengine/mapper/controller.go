@@ -61,7 +61,7 @@ type ID string
 //
 // The function is called outside of any transactions, so it can start its own
 // if needed.
-type Mapper func(c context.Context, keys []*datastore.Key) error
+type Mapper func(ctx context.Context, keys []*datastore.Key) error
 
 // Factory knows how to construct instances of Mapper.
 //
@@ -74,7 +74,7 @@ type Mapper func(c context.Context, keys []*datastore.Key) error
 //
 // Returning a transient error triggers an eventual retry. Returning a fatal
 // error causes the shard (eventually the entire job) to be marked as failed.
-type Factory func(c context.Context, j *Job, shardIdx int) (Mapper, error)
+type Factory func(ctx context.Context, j *Job, shardIdx int) (Mapper, error)
 
 // Controller is responsible for starting, progressing and finishing mapping
 // jobs.
@@ -192,12 +192,12 @@ func (ctl *Controller) getFactory(id ID) (Factory, error) {
 // initMapper instantiates a Mapper through a registered factory.
 //
 // May return fatal and transient errors.
-func (ctl *Controller) initMapper(c context.Context, j *Job, shardIdx int) (Mapper, error) {
+func (ctl *Controller) initMapper(ctx context.Context, j *Job, shardIdx int) (Mapper, error) {
 	f, err := ctl.getFactory(j.Config.Mapper)
 	if err != nil {
 		return nil, errors.Annotate(err, "when initializing mapper").Err()
 	}
-	m, err := f(c, j, shardIdx)
+	m, err := f(ctx, j, shardIdx)
 	if err != nil {
 		return nil, errors.Annotate(err, "error from mapper factory %q", j.Config.Mapper).Err()
 	}
@@ -208,7 +208,7 @@ func (ctl *Controller) initMapper(c context.Context, j *Job, shardIdx int) (Mapp
 // control it or query its status).
 //
 // Launches a datastore transaction inside.
-func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error) {
+func (ctl *Controller) LaunchJob(ctx context.Context, j *JobConfig) (JobID, error) {
 	disp := ctl.tq()
 
 	if err := j.Validate(); err != nil {
@@ -223,18 +223,18 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 	// asynchronously since this can be potentially slow (for large number of
 	// shards).
 	var job Job
-	err := runTxn(c, func(c context.Context) error {
-		now := clock.Now(c).UTC()
+	err := runTxn(ctx, func(ctx context.Context) error {
+		now := clock.Now(ctx).UTC()
 		job = Job{
 			Config:  *j,
 			State:   State_STARTING,
 			Created: now,
 			Updated: now,
 		}
-		if err := datastore.Put(c, &job); err != nil {
+		if err := datastore.Put(ctx, &job); err != nil {
 			return errors.Annotate(err, "failed to store Job entity").Tag(transient.Tag).Err()
 		}
-		return disp.AddTask(c, &tq.Task{
+		return disp.AddTask(ctx, &tq.Task{
 			Title: fmt.Sprintf("split:job-%d", job.ID),
 			Payload: &tasks.SplitAndLaunch{
 				JobId: int64(job.ID),
@@ -251,10 +251,10 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 //
 // Returns ErrNoSuchJob if not found. All other possible errors are transient
 // and they are marked as such.
-func (ctl *Controller) GetJob(c context.Context, id JobID) (*Job, error) {
+func (ctl *Controller) GetJob(ctx context.Context, id JobID) (*Job, error) {
 	// Even though we could have made getJob public, we want to force API users
 	// to use Controller as a single facade.
-	return getJob(c, id)
+	return getJob(ctx, id)
 }
 
 // AbortJob aborts a job and returns its most recent state.
@@ -263,10 +263,10 @@ func (ctl *Controller) GetJob(c context.Context, id JobID) (*Job, error) {
 //
 // Returns ErrNoSuchJob is there's no such job at all. All other possible errors
 // are transient and they are marked as such.
-func (ctl *Controller) AbortJob(c context.Context, id JobID) (job *Job, err error) {
-	err = runTxn(c, func(c context.Context) error {
+func (ctl *Controller) AbortJob(ctx context.Context, id JobID) (job *Job, err error) {
+	err = runTxn(ctx, func(ctx context.Context) error {
 		var err error
-		switch job, err = getJob(c, id); {
+		switch job, err = getJob(ctx, id); {
 		case err != nil:
 			return err
 		case isFinalState(job.State) || job.State == State_ABORTING:
@@ -281,8 +281,8 @@ func (ctl *Controller) AbortJob(c context.Context, id JobID) (job *Job, err erro
 			// ABORTED state.
 			job.State = State_ABORTING
 		}
-		job.Updated = clock.Now(c).UTC()
-		return errors.Annotate(datastore.Put(c, job), "failed to store Job entity").Tag(transient.Tag).Err()
+		job.Updated = clock.Now(ctx).UTC()
+		return errors.Annotate(datastore.Put(ctx, job), "failed to store Job entity").Tag(transient.Tag).Err()
 	})
 	if err != nil {
 		job = nil // don't return bogus data in case txn failed to land
@@ -301,12 +301,12 @@ var errJobAborted = errors.New("the job has been aborted")
 
 // splitAndLaunchHandler splits the job into shards and enqueues tasks that
 // process shards.
-func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Message) error {
+func (ctl *Controller) splitAndLaunchHandler(ctx context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.SplitAndLaunch)
-	now := clock.Now(c).UTC()
+	now := clock.Now(ctx).UTC()
 
 	// Fetch job details. Make sure it isn't canceled and isn't running already.
-	job, err := getJobInState(c, JobID(msg.JobId), State_STARTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), State_STARTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in SplitAndLaunch").Err()
 	}
@@ -314,7 +314,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// Figure out key ranges for shards. There may be fewer shards than requested
 	// if there are too few entities.
 	dq := job.Config.Query.ToDatastoreQuery()
-	ranges, err := splitter.SplitIntoRanges(c, dq, splitter.Params{
+	ranges, err := splitter.SplitIntoRanges(ctx, dq, splitter.Params{
 		Shards:  job.Config.ShardCount,
 		Samples: 512, // should be enough for everyone...
 	})
@@ -341,8 +341,8 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// Calculate number of entities in each shard to track shard processing
 	// progress. Note that this can be very slow if there are many entities.
 	if job.Config.TrackProgress {
-		logging.Infof(c, "Estimating the size of each shard...")
-		if err := fetchShardSizes(c, dq, shards); err != nil {
+		logging.Infof(ctx, "Estimating the size of each shard...")
+		if err := fetchShardSizes(ctx, dq, shards); err != nil {
 			return errors.Annotate(err, "when estimating shard sizes").Err()
 		}
 	}
@@ -351,8 +351,8 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// task retries cleanly, even if the underlying key space we are mapping over
 	// changes between the retries (making a naive put using "<job-id>:<index>"
 	// key non-idempotent!).
-	logging.Infof(c, "Instantiating shards...")
-	if err := datastore.Put(c, shards); err != nil {
+	logging.Infof(ctx, "Instantiating shards...")
+	if err := datastore.Put(ctx, shards); err != nil {
 		return errors.Annotate(err, "failed to store shards").Tag(transient.Tag).Err()
 	}
 
@@ -362,7 +362,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	//
 	// Log the resulting shards along the way.
 	shardsEnt := shardList{
-		Parent: datastore.KeyForObj(c, job),
+		Parent: datastore.KeyForObj(ctx, job),
 		Shards: make([]int64, len(shards)),
 	}
 	for idx, s := range shards {
@@ -379,7 +379,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		if s.ExpectedCount != 0 {
 			count = fmt.Sprintf(" (%d entities)", s.ExpectedCount)
 		}
-		logging.Infof(c, "Shard #%d is %d: %s - %s%s", idx, s.ID, l, r, count)
+		logging.Infof(ctx, "Shard #%d is %d: %s - %s%s", idx, s.ID, l, r, count)
 	}
 
 	// Transactionally associate shards with the job and launch the TQ task that
@@ -389,22 +389,22 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	//
 	// If SplitAndLaunch crashes before this transaction lands, there'll be some
 	// orphaned Shard entities, no big deal.
-	logging.Infof(c, "Updating the job and launching the fan out task...")
-	return runTxn(c, func(c context.Context) error {
-		job, err := getJobInState(c, JobID(msg.JobId), State_STARTING)
+	logging.Infof(ctx, "Updating the job and launching the fan out task...")
+	return runTxn(ctx, func(ctx context.Context) error {
+		job, err := getJobInState(ctx, JobID(msg.JobId), State_STARTING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in SplitAndLaunch txn").Err()
 		}
 
 		job.State = State_RUNNING
 		job.Updated = now
-		if err := datastore.Put(c, job, &shardsEnt); err != nil {
+		if err := datastore.Put(ctx, job, &shardsEnt); err != nil {
 			return errors.Annotate(err,
 				"when storing Job %d and ShardList with %d shards", job.ID, len(shards),
 			).Tag(transient.Tag).Err()
 		}
 
-		return ctl.tq().AddTask(c, &tq.Task{
+		return ctl.tq().AddTask(ctx, &tq.Task{
 			Title: fmt.Sprintf("fanout:job-%d", job.ID),
 			Payload: &tasks.FanOutShards{
 				JobId: int64(job.ID),
@@ -417,15 +417,15 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 // shard.
 //
 // Updates ExpectedCount in-place.
-func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard) error {
-	c, cancel := clock.WithTimeout(c, 10*time.Minute)
+func fetchShardSizes(ctx context.Context, baseQ *datastore.Query, shards []*shard) error {
+	ctx, cancel := clock.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 
 	err := parallel.WorkPool(32, func(tasks chan<- func() error) {
 		for _, sh := range shards {
 			sh := sh
 			tasks <- func() error {
-				n, err := datastore.CountBatch(c, 1024, sh.Range.Apply(baseQ))
+				n, err := datastore.CountBatch(ctx, 1024, sh.Range.Apply(baseQ))
 				if err == nil {
 					sh.ExpectedCount = n
 				}
@@ -439,7 +439,7 @@ func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard)
 
 // fanOutShardsHandler fetches a list of shards from the job and launches
 // named ProcessShard tasks, one per shard.
-func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Message) error {
+func (ctl *Controller) fanOutShardsHandler(ctx context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.FanOutShards)
 
 	// Make sure the job is still present. If it is aborted, we still need to
@@ -447,14 +447,14 @@ func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Mess
 	// to abort all shards right here and now, but it basically means implementing
 	// an alternative shard abort flow. Seems simpler just to let the regular flow
 	// to proceed.
-	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in FanOutShards").Err()
 	}
 
 	// Grab the list of shards created in SplitAndLaunch. It must exist at this
 	// point, since the job is in Running state.
-	shardIDs, err := job.fetchShardIDs(c)
+	shardIDs, err := job.fetchShardIDs(ctx)
 	if err != nil {
 		return errors.Annotate(err, "in FanOutShards").Err()
 	}
@@ -466,7 +466,7 @@ func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Mess
 	for idx, sid := range shardIDs {
 		tsks[idx] = makeProcessShardTask(job.ID, sid, 0, true)
 	}
-	return ctl.tq().AddTask(c, tsks...)
+	return ctl.tq().AddTask(ctx, tsks...)
 }
 
 // processShardHandler reads a bunch of entities (up to PageSize), and hands
@@ -477,23 +477,23 @@ func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Mess
 // processing TQ task relatively small, so it doesn't eat a lot of memory, or
 // produces gigantic unreadable logs. It also makes TQ's "Pause queue" button
 // more handy.
-func (ctl *Controller) processShardHandler(c context.Context, payload proto.Message) error {
+func (ctl *Controller) processShardHandler(ctx context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.ProcessShard)
 
 	// Grab the shard. This returns (nil, nil) if this Task Queue task is stale
 	// (based on taskNum) and should be silently skipped.
-	sh, err := getActiveShard(c, msg.ShardId, msg.TaskNum)
+	sh, err := getActiveShard(ctx, msg.ShardId, msg.TaskNum)
 	if err != nil || sh == nil {
 		return errors.Annotate(err, "when fetching shard state").Err()
 	}
-	c = logging.SetField(c, "shardIdx", sh.Index)
+	ctx = logging.SetField(ctx, "shardIdx", sh.Index)
 
-	logging.Infof(c,
+	logging.Infof(ctx,
 		"Resuming processing of the shard (launched %s ago)",
-		clock.Now(c).Sub(sh.Created))
+		clock.Now(ctx).Sub(sh.Created))
 
 	// Grab the job config, make sure the job is still active.
-	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in ProcessShard").Err()
 	}
@@ -502,17 +502,17 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// notify the job about shard's completion. Once all shards are done, the
 	// job will switch into ABORTED state.
 	if job.State == State_ABORTING {
-		return ctl.finishShard(c, sh.ID, 0, errJobAborted)
+		return ctl.finishShard(ctx, sh.ID, 0, errJobAborted)
 	}
 
 	// Prepare the mapper by giving the factory job parameters.
-	mapper, err := ctl.initMapper(c, job, sh.Index)
+	mapper, err := ctl.initMapper(ctx, job, sh.Index)
 	switch {
 	case transient.Tag.In(err):
 		return errors.Annotate(err, "transient error when instantiating a mapper").Err()
 	case err != nil:
 		// Kill the shard if the factory returns a fatal error.
-		return ctl.finishShard(c, sh.ID, 0, err)
+		return ctl.finishShard(ctx, sh.ID, 0, err)
 	}
 
 	baseQ := job.Config.Query.ToDatastoreQuery()
@@ -531,7 +531,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	if job.Config.TaskDuration > 0 {
 		dur = job.Config.TaskDuration
 	}
-	deadline := clock.Now(c).Add(dur)
+	deadline := clock.Now(ctx).Add(dur)
 
 	// Optionally also put a limit on number of processed pages. Useful if the
 	// mapper is somehow leaking resources (not sure it is possible in Go, but
@@ -541,7 +541,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		pageCountLimit = job.Config.PagesPerTask
 	}
 
-	for clock.Now(c).Before(deadline) && pageCount < pageCountLimit {
+	for clock.Now(ctx).Before(deadline) && pageCount < pageCountLimit {
 		rng := sh.Range
 		if lastKey != nil {
 			rng.Start = lastKey
@@ -554,10 +554,10 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		// Fetch next batch of keys. Return an error to the outer scope where it
 		// eventually will bubble up to TQ (so the task is retried with exponential
 		// backoff).
-		logging.Infof(c, "Fetching the next batch...")
+		logging.Infof(ctx, "Fetching the next batch...")
 		q := rng.Apply(baseQ).Limit(int32(job.Config.PageSize)).KeysOnly(true)
 		keys = keys[:0]
-		if err = datastore.GetAll(c, q, &keys); err != nil {
+		if err = datastore.GetAll(ctx, q, &keys); err != nil {
 			err = errors.Annotate(err, "when querying for keys").Tag(transient.Tag).Err()
 			break
 		}
@@ -569,12 +569,12 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		}
 
 		// Let the mapper do its thing. Remember where to resume from.
-		logging.Infof(c,
+		logging.Infof(ctx,
 			"Processing %d entities: %s - %s",
 			len(keys),
 			keys[0].String(),
 			keys[len(keys)-1].String())
-		if err = mapper(c, keys); err != nil {
+		if err = mapper(ctx, keys); err != nil {
 			err = errors.Annotate(err, "while mapping %d keys", len(keys)).Err()
 			break
 		}
@@ -597,10 +597,10 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// with a fatal error. finishShard would take care of notifying the parent
 	// job about the shard's completion.
 	if shardDone || (err != nil && !transient.Tag.In(err)) {
-		return ctl.finishShard(c, sh.ID, itemCount, err)
+		return ctl.finishShard(ctx, sh.ID, itemCount, err)
 	}
 
-	logging.Infof(c, "The shard processing will resume from %s", lastKey)
+	logging.Infof(ctx, "The shard processing will resume from %s", lastKey)
 
 	// If the shard isn't done and we made no progress at all, then we hit
 	// a transient error. Ask TQ to retry.
@@ -611,13 +611,13 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// Otherwise need to checkpoint the progress and either to retry this task
 	// (on transient errors, to get an exponential backoff from TQ), or start
 	// a new task.
-	txnErr := shardTxn(c, sh.ID, func(c context.Context, sh *shard) (bool, error) {
+	txnErr := shardTxn(ctx, sh.ID, func(ctx context.Context, sh *shard) (bool, error) {
 		switch {
 		case sh.ProcessTaskNum != msg.TaskNum:
-			logging.Warningf(c, "Unexpected shard state: its ProcessTaskNum is %d != %d", sh.ProcessTaskNum, msg.TaskNum)
+			logging.Warningf(ctx, "Unexpected shard state: its ProcessTaskNum is %d != %d", sh.ProcessTaskNum, msg.TaskNum)
 			return false, nil // some other task is already running
 		case sh.ResumeFrom != nil && lastKey.Less(sh.ResumeFrom):
-			logging.Warningf(c, "Unexpected shard state: its ResumeFrom is %s >= %s", sh.ResumeFrom, lastKey)
+			logging.Warningf(ctx, "Unexpected shard state: its ResumeFrom is %s >= %s", sh.ResumeFrom, lastKey)
 			return false, nil // someone already claimed to process further, let them proceed
 		}
 
@@ -634,7 +634,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		// Otherwise launch a new task in the chain. This essentially "resets"
 		// the exponential backoff counter.
 		sh.ProcessTaskNum++
-		return true, ctl.tq().AddTask(c,
+		return true, ctl.tq().AddTask(ctx,
 			makeProcessShardTask(sh.JobID, sh.ID, sh.ProcessTaskNum, false))
 	})
 
@@ -652,24 +652,24 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 
 // finishShard marks the shard as finished (with status based on shardErr) and
 // emits a task to update the parent job's status.
-func (ctl *Controller) finishShard(c context.Context, shardID, processedCount int64, shardErr error) error {
-	err := shardTxn(c, shardID, func(c context.Context, sh *shard) (save bool, err error) {
-		runtime := clock.Now(c).Sub(sh.Created)
+func (ctl *Controller) finishShard(ctx context.Context, shardID, processedCount int64, shardErr error) error {
+	err := shardTxn(ctx, shardID, func(ctx context.Context, sh *shard) (save bool, err error) {
+		runtime := clock.Now(ctx).Sub(sh.Created)
 		switch {
 		case shardErr == errJobAborted:
-			logging.Warningf(c, "The job has been aborted, aborting the shard after it has been running %s", runtime)
+			logging.Warningf(ctx, "The job has been aborted, aborting the shard after it has been running %s", runtime)
 			sh.State = State_ABORTED
 			sh.Error = errJobAborted.Error()
 		case shardErr != nil:
-			logging.Errorf(c, "The shard processing failed in %s with error: %s", runtime, shardErr)
+			logging.Errorf(ctx, "The shard processing failed in %s with error: %s", runtime, shardErr)
 			sh.State = State_FAIL
 			sh.Error = shardErr.Error()
 		default:
-			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
+			logging.Infof(ctx, "The shard processing finished successfully in %s", runtime)
 			sh.State = State_SUCCESS
 		}
 		sh.ProcessedCount += processedCount
-		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
+		return true, ctl.requestJobStateUpdate(ctx, sh.JobID, sh.ID)
 	})
 	return errors.Annotate(err, "when marking the shard as finished").Err()
 }
@@ -699,8 +699,8 @@ func makeProcessShardTask(job JobID, shardID, taskNum int64, named bool) *tq.Tas
 
 // requestJobStateUpdate submits RequestJobStateUpdate task, which eventually
 // causes updateJobStateHandler to execute.
-func (ctl *Controller) requestJobStateUpdate(c context.Context, jobID JobID, shardID int64) error {
-	return ctl.tq().AddTask(c, &tq.Task{
+func (ctl *Controller) requestJobStateUpdate(ctx context.Context, jobID JobID, shardID int64) error {
+	return ctl.tq().AddTask(ctx, &tq.Task{
 		Title: fmt.Sprintf("notify:job-%d-shard-%d", jobID, shardID),
 		Payload: &tasks.RequestJobStateUpdate{
 			JobId:   int64(jobID),
@@ -714,16 +714,16 @@ func (ctl *Controller) requestJobStateUpdate(c context.Context, jobID JobID, sha
 // It forwards this notification to the job (specifically updateJobStateHandler)
 // throttling the rate to ~0.5 QPS to avoid overwhelming job's entity group with
 // high write rate.
-func (ctl *Controller) requestJobStateUpdateHandler(c context.Context, payload proto.Message) error {
+func (ctl *Controller) requestJobStateUpdateHandler(ctx context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.RequestJobStateUpdate)
 
 	// Throttle to once per 2 sec (and make sure it is always in the future). We
 	// rely here on a pretty good (< .5s maximum skew) clock sync on GAE.
-	eta := clock.Now(c).Unix()
+	eta := clock.Now(ctx).Unix()
 	eta = (eta/2 + 1) * 2
 	dedupKey := fmt.Sprintf("update-job-state-v1:%d:%d", msg.JobId, eta)
 
-	err := ctl.tq().AddTask(c, &tq.Task{
+	err := ctl.tq().AddTask(ctx, &tq.Task{
 		DeduplicationKey: dedupKey,
 		Title:            fmt.Sprintf("update:job-%d", msg.JobId),
 		ETA:              time.Unix(eta, 0),
@@ -736,15 +736,15 @@ func (ctl *Controller) requestJobStateUpdateHandler(c context.Context, payload p
 // changed state.
 //
 // It calculates overall job state based on the state of its shards.
-func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Message) error {
+func (ctl *Controller) updateJobStateHandler(ctx context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.UpdateJobState)
 
 	// Get the job and all its shards in their most recent state.
-	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in UpdateJobState").Err()
 	}
-	shards, err := job.fetchShards(c)
+	shards, err := job.fetchShards(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to fetch shards").Err()
 	}
@@ -753,7 +753,7 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 	perState := make(map[State]int, len(State_name))
 	finished := 0
 	for _, sh := range shards {
-		logging.Infof(c, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
+		logging.Infof(ctx, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
 		perState[sh.State]++
 		if isFinalState(sh.State) {
 			finished++
@@ -771,8 +771,8 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 		jobState = State_FAIL
 	}
 
-	return runTxn(c, func(c context.Context) error {
-		job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING, State_ABORTING)
+	return runTxn(ctx, func(ctx context.Context) error {
+		job, err := getJobInState(ctx, JobID(msg.JobId), State_RUNNING, State_ABORTING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in UpdateJobState txn").Err()
 		}
@@ -785,24 +785,24 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 		} else {
 			job.State = jobState
 		}
-		job.Updated = clock.Now(c).UTC()
+		job.Updated = clock.Now(ctx).UTC()
 
 		runtime := job.Updated.Sub(job.Created)
 		switch job.State {
 		case State_SUCCESS:
-			logging.Infof(c, "The job finished successfully in %s", runtime)
+			logging.Infof(ctx, "The job finished successfully in %s", runtime)
 		case State_FAIL:
-			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[State_FAIL], runtime)
+			logging.Errorf(ctx, "The job finished with %d shards failing in %s", perState[State_FAIL], runtime)
 			for _, sh := range shards {
 				if sh.State == State_FAIL {
-					logging.Errorf(c, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
+					logging.Errorf(ctx, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
 				}
 			}
 		case State_ABORTED:
-			logging.Warningf(c, "The job has been aborted after %s: %d shards succeeded, %d shards failed, %d shards aborted",
+			logging.Warningf(ctx, "The job has been aborted after %s: %d shards succeeded, %d shards failed, %d shards aborted",
 				runtime, perState[State_SUCCESS], perState[State_FAIL], perState[State_ABORTED])
 		}
 
-		return transient.Tag.Apply(datastore.Put(c, job))
+		return transient.Tag.Apply(datastore.Put(ctx, job))
 	})
 }

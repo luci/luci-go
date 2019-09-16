@@ -35,8 +35,8 @@ import (
 // GetTestable returns an interface for TQ intended to be used only from tests.
 //
 // Panics if used with production Task Queue implementation.
-func GetTestable(c context.Context, d *tq.Dispatcher) Testable {
-	tqt := taskqueue.GetTestable(c)
+func GetTestable(ctx context.Context, d *tq.Dispatcher) Testable {
+	tqt := taskqueue.GetTestable(ctx)
 	if tqt == nil {
 		panic("not a testable task queue implementation")
 	}
@@ -63,7 +63,7 @@ type Testable interface {
 	//
 	// Returns whatever the handle returns or a general error if the task can't
 	// be dispatched.
-	ExecuteTask(c context.Context, task Task, hdr *taskqueue.RequestHeaders) error
+	ExecuteTask(ctx context.Context, task Task, hdr *taskqueue.RequestHeaders) error
 
 	// RunSimulation simulates task queue service by running enqueued tasks.
 	//
@@ -90,7 +90,7 @@ type Testable interface {
 	//   executed: executed tasks, in order of their execution.
 	//   pending: tasks to be executed (when hitting a deadline or an error).
 	//   err: an error produced by the failed task (when exiting on an error).
-	RunSimulation(c context.Context, params *SimulationParams) (executed, pending TaskList, err error)
+	RunSimulation(ctx context.Context, params *SimulationParams) (executed, pending TaskList, err error)
 }
 
 // SimulationParams are passed to RunSimulation.
@@ -119,7 +119,7 @@ type dispatcherInternals interface {
 	GetAllQueues() []string
 	GetPayload(blob []byte) (proto.Message, error)
 	GetHandler(payload proto.Message) (cb tq.Handler, q string, err error)
-	WithRequestHeaders(c context.Context, hdr *taskqueue.RequestHeaders) context.Context
+	WithRequestHeaders(ctx context.Context, hdr *taskqueue.RequestHeaders) context.Context
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,7 +186,7 @@ func (t *testableImpl) GetScheduledTasks() (out TaskList) {
 	return
 }
 
-func (t *testableImpl) ExecuteTask(c context.Context, task Task, hdr *taskqueue.RequestHeaders) error {
+func (t *testableImpl) ExecuteTask(ctx context.Context, task Task, hdr *taskqueue.RequestHeaders) error {
 	if task.Payload == nil {
 		return fmt.Errorf("can't execute a task without payload, not a tq task?")
 	}
@@ -204,13 +204,13 @@ func (t *testableImpl) ExecuteTask(c context.Context, task Task, hdr *taskqueue.
 	headers.TaskName = task.Task.Name
 	headers.TaskETA = task.Task.ETA
 
-	return cb(t.d.WithRequestHeaders(c, &headers), task.Payload)
+	return cb(t.d.WithRequestHeaders(ctx, &headers), task.Payload)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (t *testableImpl) RunSimulation(c context.Context, params *SimulationParams) (executed, pending TaskList, err error) {
-	tc := clock.Get(c).(testclock.TestClock)
+func (t *testableImpl) RunSimulation(ctx context.Context, params *SimulationParams) (executed, pending TaskList, err error) {
+	tc := clock.Get(ctx).(testclock.TestClock)
 
 	var deadline time.Time
 	var shouldStopBefore func(t Task) bool
@@ -235,7 +235,7 @@ loop:
 			break loop // stop condition reached
 		}
 
-		if err = taskqueue.Delete(c, queue, earliest.Task); err != nil {
+		if err = taskqueue.Delete(ctx, queue, earliest.Task); err != nil {
 			panic("impossible, the task must be in the queue")
 		}
 		executed = append(executed, *earliest)
@@ -248,7 +248,7 @@ loop:
 				err = fmt.Errorf("unrecognized TQ task for handler at %s", earliest.Task.Path)
 			}
 		} else {
-			err = t.ExecuteTask(c, *earliest, nil)
+			err = t.ExecuteTask(ctx, *earliest, nil)
 		}
 
 		if err != nil {

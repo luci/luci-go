@@ -74,8 +74,8 @@ func TestDispatcher(t *testing.T) {
 
 		Convey("Single task", func() {
 			var calls []proto.Message
-			handler := func(c context.Context, payload proto.Message) error {
-				hdr, err := RequestHeaders(c)
+			handler := func(ctx context.Context, payload proto.Message) error {
+				hdr, err := RequestHeaders(ctx)
 				So(err, ShouldBeNil)
 				So(hdr, ShouldResemble, &taskqueue.RequestHeaders{})
 				calls = append(calls, payload)
@@ -149,7 +149,7 @@ func TestDispatcher(t *testing.T) {
 		})
 
 		Convey("Deleting unknown task returns nil", func() {
-			handler := func(c context.Context, payload proto.Message) error { return nil }
+			handler := func(ctx context.Context, payload proto.Message) error { return nil }
 			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
 
 			So(d.DeleteTask(ctx, &Task{
@@ -159,7 +159,7 @@ func TestDispatcher(t *testing.T) {
 		})
 
 		Convey("Many tasks", func() {
-			handler := func(c context.Context, payload proto.Message) error { return nil }
+			handler := func(ctx context.Context, payload proto.Message) error { return nil }
 			d.RegisterTask(&duration.Duration{}, handler, "default", nil)
 			d.RegisterTask(&empty.Empty{}, handler, "another-q", nil)
 			installRoutes()
@@ -213,7 +213,7 @@ func TestDispatcher(t *testing.T) {
 		Convey("Execution errors", func() {
 			var returnErr error
 			panicNow := false
-			handler := func(c context.Context, payload proto.Message) error {
+			handler := func(ctx context.Context, payload proto.Message) error {
 				if panicNow {
 					panic("must not be called")
 				}
@@ -282,7 +282,7 @@ func TestDispatcher(t *testing.T) {
 
 		Convey("GetQueues", func() {
 			// Never called.
-			handler := func(c context.Context, payload proto.Message) error {
+			handler := func(ctx context.Context, payload proto.Message) error {
 				panic("handler was called in GetQueues")
 				return nil
 			}
