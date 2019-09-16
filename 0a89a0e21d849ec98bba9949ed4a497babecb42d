@@ -45,6 +45,30 @@
       "revId": "0a89a0e21d849ec98bba9949ed4a497babecb42d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af73fee7_34ad591c",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:40:11Z",
+      "side": 1,
+      "message": "ah, i see the follow up now.",
+      "parentUuid": "927421d3_87f146ec",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "0a89a0e21d849ec98bba9949ed4a497babecb42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
