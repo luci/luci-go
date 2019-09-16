@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "537dfe8a_ad760f65",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T21:54:53Z",
+      "side": 1,
+      "message": "seems fine for a **summary** markdown (that\u0027s about 650 English words in utf-8)",
+      "range": {
+        "startLine": 32,
+        "startChar": 20,
+        "endLine": 32,
+        "endChar": 40
+      },
+      "revId": "0a89a0e21d849ec98bba9949ed4a497babecb42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "927421d3_87f146ec",
+        "filename": "luciexe/host/buildmerge/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T21:54:53Z",
+      "side": 1,
+      "message": "is using this func on nil build expected and common?",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "0a89a0e21d849ec98bba9949ed4a497babecb42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
