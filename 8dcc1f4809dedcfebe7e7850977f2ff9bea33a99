@@ -71,6 +71,277 @@
     },
     {
       "key": {
+        "uuid": "ba8c80a1_d185d355",
+        "filename": "luciexe/host/buildmerge/build_merger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4e9ab565_b0c790f4",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 10
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4396dc42_5109a515",
+        "filename": "luciexe/host/buildmerge/build_merger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "nit: given how verbose vars below are, clockNow would be nicer :)",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 7
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4166bb9a_e49b076f",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "why is this one passed from outside instead of stored inside the tracker?",
+      "range": {
+        "startLine": 59,
+        "startChar": 44,
+        "endLine": 59,
+        "endChar": 61
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "004d7299_5c745af5",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "s/bs/bt or even just `t`",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 8
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d6095f9_2bff6063",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 63,
+        "startChar": 30,
+        "endLine": 63,
+        "endChar": 31
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc7c3748_0174e8ca",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "it is here because otherwise you can\u0027t do check on L95 with already initialized parseBuild, right?",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 74,
+        "endChar": 24
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c762be4_f0379ee0",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "...Tracker\n\nelse i\u0027d expect actually new buildState",
+      "range": {
+        "startLine": 114,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 16
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71385239_45e307a6",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "dup word",
+      "range": {
+        "startLine": 114,
+        "startChar": 50,
+        "endLine": 114,
+        "endChar": 57
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17bbd93c_2fad3b97",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "no idea what this stands for. Might as well inline given above comment.",
+      "range": {
+        "startLine": 155,
+        "startChar": 3,
+        "endLine": 155,
+        "endChar": 5
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6362a4e_43febb92",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "panic(err) // creating dispatcher.Channel should not fail.",
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "689cb871_1a4d3fdd",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "tbh, i read it at first as return value is tuple(state,bool), maybe rephrase by referring to .invalid field instead?",
+      "range": {
+        "startLine": 196,
+        "startChar": 9,
+        "endLine": 196,
+        "endChar": 30
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e880e42_1aa181d8",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "nit: .",
+      "range": {
+        "startLine": 213,
+        "startChar": 3,
+        "endLine": 213,
+        "endChar": 7
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5654ff78_b17af15d",
         "filename": "luciexe/host/buildmerge/build_state.go",
         "patchSetId": 4
@@ -82,6 +353,30 @@
       "writtenOn": "2019-09-14T07:21:59Z",
       "side": 1,
       "message": "this is a bit tricky; it needs to be non-blocking for both:\n  * The main \u0027merger\u0027 routine which aggregates together a snapshot of all build.proto streams. Not in this CL.\n  * The logdog butler, which is pushing datagrams into this function as quickly as the user can write them.\n\nAdditionally, it needs to be able to close in three events:\n   * A \"natural\" close when the user closes the stream\n   * A \"forced\" close when the merger closes the stream \n   * the user writes a build.proto which is invalid in some way\n\nOnce the stream is closed, parse should be a noop; new data doesn\u0027t update anything and closing a \u0027second\u0027 time must be safe (i.e. if the stream naturally closes, and then the merger \u0027forces\u0027 it closed by sending nil again, this should be OK).\n\nI\u0027ll update all the comments in this file when it\u0027s more daytime than right now.",
+      "range": {
+        "startLine": 214,
+        "startChar": 29,
+        "endLine": 214,
+        "endChar": 34
+      },
+      "revId": "8dcc1f4809dedcfebe7e7850977f2ff9bea33a99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e2cfeb2_d8576405",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-16T22:58:17Z",
+      "side": 1,
+      "message": "thank you! Some of the comment above can just be moved verbatim inside here. daytime now? :)",
+      "parentUuid": "5654ff78_b17af15d",
       "range": {
         "startLine": 214,
         "startChar": 29,
