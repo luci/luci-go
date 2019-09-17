@@ -160,6 +160,9 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 // loop.
 func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 	defer close(state.drainCh)
+	if state.opts.DrainedFn != nil {
+		defer state.opts.DrainedFn()
+	}
 	defer close(state.resultCh)
 	defer state.timer.Stop()
 

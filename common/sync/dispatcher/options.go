@@ -80,6 +80,23 @@ type Options struct {
 	// level otherwise) the number of data items in the Batch being dropped.
 	DropFn func(*buffer.Batch)
 
+	// [OPTIONAL] Called exactly once when the associated Channel is closed and
+	// has fully drained its buffer, but before DrainC is closed.
+	//
+	// Note that this takes effect whether the Channel is shut down via Context
+	// cancellation or explicitly by closing Channel.C.
+	//
+	// This is useful for performing final state synchronization tasks/metrics
+	// finalization/helpful "everything is done!" messages/etc. without having to
+	// poll the Channel to see if it's done and also maintain external
+	// synchronization around the finalization action.
+	//
+	// Called in the main handler loop, but it's called after all other work is
+	// done by the Channel, so the only thing it blocks is the closure of DrainC.
+	//
+	// Default: No action.
+	DrainedFn func()
+
 	// [OPTIONAL] A rate limiter for how frequently this will invoke SendFn.
 	//
 	// Default: 1 QPS with a burst of 1.

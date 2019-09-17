@@ -62,7 +62,7 @@ type Options struct {
 	// NOTE: if this is combined with high Retry values, it can lead to a
 	// head-of-line blocking situation.
 	//
-	// Required: May only be true if MaxLeases == 1
+	// Requirement: May only be true if MaxLeases == 1
 	FIFO bool
 
 	// [OPTIONAL] Each batch will have a retry.Iterator assigned to it from this

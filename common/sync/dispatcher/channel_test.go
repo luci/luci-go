@@ -48,13 +48,15 @@ func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...interfa
 func TestChannelConstruction(t *testing.T) {
 	Convey(`Channel`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 
 		Convey(`construction`, func() {
 
 			Convey(`success`, func() {
 				ch, err := NewChannel(ctx, nil, dummySendFn)
 				So(err, ShouldBeNil)
-				close(ch.C)
+				cancel()
 				<-ch.DrainC
 			})
 
@@ -360,5 +362,78 @@ func TestImplicitDrops(t *testing.T) {
 
 		// We should only have seen one batch actually sent.
 		So(sentBatches, ShouldHaveLength, 1)
+	})
+}
+
+func TestContextCancel(t *testing.T) {
+	Convey(`can use context cancelation for termination`, t, func() {
+		ctx := context.Background() // uses real time!
+		ctx, dbg := dbgIfVerbose(ctx)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		ch, err := NewChannel(ctx, &Options{
+			QPSLimit: rate.NewLimiter(rate.Inf, 0),
+			Buffer: buffer.Options{
+				MaxLeases:    1,
+				BatchSize:    1,
+				FullBehavior: &buffer.BlockNewItems{MaxItems: 20},
+			},
+			testingDbg: dbg,
+		}, func(batch *buffer.Batch) (err error) {
+			// doesn't matter :)
+			return
+		})
+		So(err, ShouldBeNil)
+
+		writerDone := make(chan struct{})
+		go func() {
+			defer close(writerDone)
+			i := 0
+			for {
+				select {
+				case ch.C <- i:
+				case <-ctx.Done():
+					return
+				}
+				i++
+			}
+		}()
+		cancel()
+
+		<-writerDone
+		<-ch.DrainC // must be closed
+	})
+}
+
+func TestDrainedFn(t *testing.T) {
+	Convey(`can set DrainedFn to do exactly-once termination tasks`, t, func() {
+		ctx := context.Background() // uses real time!
+		ctx, dbg := dbgIfVerbose(ctx)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		amDrained := false
+
+		ch, err := NewChannel(ctx, &Options{
+			DrainedFn:  func() { amDrained = true },
+			testingDbg: dbg,
+		}, func(batch *buffer.Batch) (err error) {
+			// doesn't matter :)
+			return
+		})
+		So(err, ShouldBeNil)
+
+		Convey(`via cancel`, func() {
+			cancel()
+			<-ch.DrainC
+			So(amDrained, ShouldBeTrue)
+		})
+
+		Convey(`via close`, func() {
+			ch.Close()
+			<-ch.DrainC
+			So(amDrained, ShouldBeTrue)
+		})
 	})
 }
