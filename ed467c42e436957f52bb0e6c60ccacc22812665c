@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "d0783603_c10008fa",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T00:53:15Z",
+      "side": 1,
+      "message": "\"DeleteAndUploadStats\" would be better if it\u0027s only for deleteAndUpload.",
+      "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c724bbde_5c331569",
         "filename": "cmdrunner/command.go",
         "patchSetId": 9
@@ -42,6 +59,40 @@
         "endLine": 260,
         "endChar": 20
       },
+      "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4724533_c382b2f8",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T00:53:15Z",
+      "side": 1,
+      "message": "Is items[0] the outDir item? If so, it\u0027s implicit that `ArchiveFiles` guarantees the order. \nAdd a comment or use a variable `outDirItem`  or something.",
+      "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75dc5ec5_5cfab0d2",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T00:53:15Z",
+      "side": 1,
+      "message": "Is this `fi.IsDir()` check necessary? It\u0027s checked earlier in this function.",
       "revId": "ed467c42e436957f52bb0e6c60ccacc22812665c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
