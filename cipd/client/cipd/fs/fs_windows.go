@@ -18,6 +18,7 @@ package fs
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -69,6 +70,8 @@ func openFile(path string) (*os.File, error) {
 
 func moveFileEx(source, target *uint16, flags uint32) error {
 	ret, _, err := procMoveFileExW.Call(uintptr(unsafe.Pointer(source)), uintptr(unsafe.Pointer(target)), uintptr(flags))
+	runtime.KeepAlive(source)
+	runtime.KeepAlive(target)
 	if ret == 0 {
 		if err != nil {
 			return err
