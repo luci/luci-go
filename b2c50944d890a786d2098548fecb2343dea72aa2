@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95b15ca7_35a29ff6",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T03:46:45Z",
+      "side": 1,
+      "message": "Same comment with this\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-py/+/1806636/4/client/run_isolated.py#570",
+      "revId": "b2c50944d890a786d2098548fecb2343dea72aa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
