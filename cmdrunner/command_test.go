@@ -16,12 +16,15 @@ package cmdrunner
 
 import (
 	"context"
+	"net/http/httptest"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/testfs"
 
@@ -195,6 +198,44 @@ func TestLinkOutputsToOutdir(t *testing.T) {
 		So(layout, ShouldResemble, map[string]string{
 			"a/b": "ab",
 			"e":   "e",
+		})
+	}))
+}
+
+func TestUploadThenDelete(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("UploadThenDelete", t, testfs.MustWithTempDir(t, "", func(dir string) {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		namespace := isolatedclient.DefaultNamespace
+		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
+
+		So(testfs.Build(dir, map[string]string{
+			"a/b":   "ab",
+			"a/c/d": "acd",
+		}), ShouldBeNil)
+
+		Convey("UploadThenDelete", func() {
+			digest, stats, err := uploadThenDelete(ctx, client, dir, "a")
+			So(err, ShouldBeNil)
+			So(digest, ShouldNotEqual, "")
+			So(stats, ShouldNotBeNil)
+			So(stats.Duration, ShouldNotBeNil)
+			So(stats.ItemsCold, ShouldNotBeEmpty)
+			So(stats.ItemsHot, ShouldBeEmpty)
+		})
+
+		Convey("Upload", func() {
+			digest, stats, err := upload(ctx, client, dir, "a")
+			So(err, ShouldBeNil)
+			So(digest, ShouldNotEqual, "")
+			So(stats, ShouldNotBeNil)
+			So(stats.Duration, ShouldNotBeNil)
+			So(stats.ItemsCold, ShouldNotBeEmpty)
+			So(stats.ItemsHot, ShouldBeEmpty)
 		})
 	}))
 }
