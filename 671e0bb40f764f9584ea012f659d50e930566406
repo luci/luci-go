@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a680caf_f2e495d7",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T13:54:15Z",
+      "side": 1,
+      "message": "there is a certain beauty for me here: exactly \\theta(id) performance :)",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 38
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5f7670f_7975d59e",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T13:54:15Z",
+      "side": 1,
+      "message": "why did you decide to add this here?\nAFAIR, you normally test stuff...",
+      "range": {
+        "startLine": 115,
+        "startChar": 36,
+        "endLine": 115,
+        "endChar": 68
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37278278_e52d577a",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T13:54:15Z",
+      "side": 1,
+      "message": "thought: if we don\u0027t have many diff globs, it is more efficient to keep `ss` as sorted []string in the first place.\n\npremature optimization for now though.",
+      "range": {
+        "startLine": 116,
+        "startChar": 6,
+        "endLine": 116,
+        "endChar": 21
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "240d399a_b8a47afe",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T13:54:15Z",
+      "side": 1,
+      "message": "given https://play.golang.com/p/z7MWXniSwDk \ni think it\u0027s slightly more efficient to use r[1:len(r)-1] here and add ^...$ only once",
+      "range": {
+        "startLine": 132,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 20
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
