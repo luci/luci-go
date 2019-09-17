@@ -16,6 +16,24 @@
       "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b96313_46cdc267",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-17T09:19:10Z",
+      "side": 1,
+      "message": "Updated comment.\nActually, we want to include the time for removing directory too.\nIt sometimes becomes unignorably large.",
+      "parentUuid": "fc807c3e_48d9b4cb",
+      "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
