@@ -45,6 +45,30 @@
       "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10b241ad_f245ad56",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T16:21:20Z",
+      "side": 1,
+      "message": "yeah, this is a logo. Some day I\u0027ll learn to re-gen it.",
+      "parentUuid": "634017a0_46e45801",
+      "range": {
+        "startLine": 41,
+        "startChar": 34,
+        "endLine": 41,
+        "endChar": 39
+      },
+      "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
