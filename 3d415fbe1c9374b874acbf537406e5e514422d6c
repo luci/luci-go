@@ -75,6 +75,30 @@
     },
     {
       "key": {
+        "uuid": "78a32ef6_f9a63e00",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T22:25:01Z",
+      "side": 1,
+      "message": "well, it\u0027s not shadowing.",
+      "parentUuid": "0ce99f7a_b7fa52b7",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 31
+      },
+      "revId": "3d415fbe1c9374b874acbf537406e5e514422d6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "799c9d85_27ff63b2",
         "filename": "luciexe/host/buildmerge/build_state.go",
         "patchSetId": 6
@@ -120,6 +144,30 @@
       "revId": "3d415fbe1c9374b874acbf537406e5e514422d6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c42ab246_4acdb51a",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T22:25:01Z",
+      "side": 1,
+      "message": "why?",
+      "parentUuid": "8ee7f291_b18e47fe",
+      "range": {
+        "startLine": 223,
+        "startChar": 2,
+        "endLine": 223,
+        "endChar": 8
+      },
+      "revId": "3d415fbe1c9374b874acbf537406e5e514422d6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
