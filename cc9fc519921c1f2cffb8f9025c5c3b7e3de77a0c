@@ -1,0 +1,74 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ce785a85_3e2f4a96",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T12:55:20Z",
+      "side": 1,
+      "message": "\u003e \"recieve\" is a possible misspelling of \"receive\".\n\nPlease Fix",
+      "parentUuid": "25801e9e_54bed21c",
+      "range": {
+        "startLine": 41,
+        "startChar": 70,
+        "endLine": 41,
+        "endChar": 77
+      },
+      "revId": "cc9fc519921c1f2cffb8f9025c5c3b7e3de77a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0340cc02_a9e6541f",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T12:55:20Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 57,
+        "startChar": 8,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "cc9fc519921c1f2cffb8f9025c5c3b7e3de77a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5888eea_261466fa",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T12:55:20Z",
+      "side": 1,
+      "message": "?",
+      "range": {
+        "startLine": 64,
+        "startChar": 59,
+        "endLine": 64,
+        "endChar": 77
+      },
+      "revId": "cc9fc519921c1f2cffb8f9025c5c3b7e3de77a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
