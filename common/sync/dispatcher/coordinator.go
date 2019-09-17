@@ -27,7 +27,8 @@ type coordinatorState struct {
 	opts Options
 	buf  *buffer.Buffer
 
-	itemCh  <-chan interface{}
+	// bidirectional so run() can close it. See `case <-ctx.Done()` in run().
+	itemCh  chan interface{}
 	drainCh chan<- struct{}
 
 	resultCh chan workerResult
@@ -160,8 +161,22 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 // loop.
 func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 	defer close(state.drainCh)
+	if state.opts.DrainedFn != nil {
+		defer state.opts.DrainedFn()
+	}
 	defer close(state.resultCh)
 	defer state.timer.Stop()
+
+	// Because users can cancel the Channel either by closing Channel.C OR by
+	// canceling the Context, we close itemCh on exit to prevent callers from
+	// blocking forever on writes to itemCh.
+	//
+	// If they're using SafeSend, it will unblock them without panic, otherwise
+	// they'll panic and they'll have to rethink how they're using the Channel.
+	defer func() {
+		defer func() { recover() }()
+		close(state.itemCh)
+	}()
 
 loop:
 	for {
