@@ -24,7 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/errors"
+	commonisolated "go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exec2"
@@ -243,4 +247,80 @@ func linkOutputsToOutdir(runDir, outDir string, outputs []string) error {
 	}
 
 	return nil
+}
+
+// UploadStats is stats of upload or uploadThenDelete.
+type UploadStats struct {
+	Duration time.Duration `json:"duration"`
+
+	ItemsCold []byte `json:"items_cold"`
+	ItemsHot  []byte `json:"items_hot"`
+}
+
+func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (commonisolated.HexDigest, *UploadStats, error) {
+	start := time.Now()
+	absOutDir := filepath.Join(baseDir, outDir)
+
+	isEmpty, err := filesystem.IsEmptyDir(absOutDir)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to call IsEmptyDir(%s)", absOutDir).Err()
+	}
+
+	var stats UploadStats
+	var digest commonisolated.HexDigest
+
+	if !isEmpty {
+		arch := archiver.New(ctx, client, nil)
+		defer arch.Close() // Ignore "was already closed" error here.
+
+		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir}, nil)
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to upload files in %s", absOutDir).Err()
+		}
+		outDirItem := items[0]
+
+		outDirItem.WaitForHashed()
+		if err := outDirItem.Error(); err != nil {
+			return "", nil, errors.Annotate(err, "failed to upload isolated for %s", absOutDir).Err()
+		}
+
+		if err := arch.Close(); err != nil {
+			return "", nil, errors.Annotate(err, "failed to Close archiver").Err()
+		}
+
+		itemsHot, err := arch.Stats().PackedHits()
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to call PackedHits").Err()
+		}
+
+		itemsCold, err := arch.Stats().PackedMisses()
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to call PackedMisses").Err()
+		}
+
+		stats.ItemsHot = itemsHot
+		stats.ItemsCold = itemsCold
+		digest = outDirItem.Digest()
+	}
+
+	stats.Duration = time.Now().Sub(start)
+	return digest, &stats, nil
+}
+
+func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (commonisolated.HexDigest, *UploadStats, error) {
+	start := time.Now()
+
+	digest, stats, err := upload(ctx, client, baseDir, outDir)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to call upload").Err()
+	}
+
+	absOutDir := filepath.Join(baseDir, outDir)
+	if err := filesystem.RemoveAll(absOutDir); err != nil {
+		return "", nil, errors.Annotate(err, "failed to call RemoveAll(%s)", absOutDir).Err()
+	}
+
+	stats.Duration = time.Now().Sub(start)
+
+	return digest, stats, nil
 }
