@@ -351,3 +351,20 @@ func CreateDirectories(baseDirectory string, files []string) error {
 
 	return nil
 }
+
+// IsEmptyDir returns whether |dir| is empty or not.
+// This returns error if |dir| is not directory, or find some error during checking.
+func IsEmptyDir(dir string) (bool, error) {
+	d, err := os.Open(dir)
+	if err != nil {
+		return false, errors.Annotate(err, "failed to Open(%s)", dir).Err()
+	}
+	defer d.Close()
+
+	names, err := d.Readdirnames(1)
+	if len(names) > 0 || err == io.EOF {
+		return len(names) == 0, nil
+	}
+
+	return false, errors.Annotate(err, "failed to call Readdirnames(1) for %s", dir).Err()
+}

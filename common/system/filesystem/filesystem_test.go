@@ -376,3 +376,31 @@ func TestCreateDirectories(t *testing.T) {
 		})
 	})
 }
+
+func TestIsEmptyDir(t *testing.T) {
+	Convey("IsEmptyDir", t, func() {
+		withTempDir(t, func(dir string) {
+			emptyDir := filepath.Join(dir, "empty")
+			So(MakeDirs(emptyDir), ShouldBeNil)
+
+			isEmpty, err := IsEmptyDir(emptyDir)
+			So(err, ShouldBeNil)
+			So(isEmpty, ShouldBeTrue)
+
+			nonEmptyDir := filepath.Join(dir, "non-empty")
+			So(MakeDirs(nonEmptyDir), ShouldBeNil)
+			file1 := filepath.Join(nonEmptyDir, "file1")
+			So(ioutil.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
+
+			isEmpty, err = IsEmptyDir(nonEmptyDir)
+			So(err, ShouldBeNil)
+			So(isEmpty, ShouldBeFalse)
+
+			_, err = IsEmptyDir(file1)
+			So(err, ShouldNotBeNil)
+
+			_, err = IsEmptyDir(filepath.Join(dir, "not-existing"))
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
