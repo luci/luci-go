@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d791b2bc_70d0e167",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-09-17T04:01:07Z",
+      "side": 1,
+      "message": "AFAIK, golang doesn\u0027t support converting struct to byte[]. It needs to be encoded into a byte buffer, using encoding/json, encoding/binary, encoding/gob, or something.\n\nAlso, all of the marshaling/encoding functions of the above packages return an error. fmt.Sprintf() could be used to encode a struct into byte[]. but...it does not solve (b), either. Otherwise we use a different format of hash key, I don\u0027t know if there are many things we can do to resolve both (a) and (B).\n\nI updated it with fmt.Sprintf() to avoid (a). PTAL.",
+      "parentUuid": "4f29f9ec_59decc49",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2ae0a28_2ca960c1",
         "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
         "patchSetId": 18
