@@ -87,6 +87,37 @@ type SendFn func(data *buffer.Batch) error
 //   * `opts` is optional (see Options for the defaults).
 //
 // The Channel must be Close()'d when you're done with it.
+//
+// TODO(iannucci): Remove `ctx` as input from NewChannel, and as a source of
+// cancelation. Resoning:
+//   * We must provide Channel.C for efficient use of the Channel (i.e. so it
+//     can be used in select statements.
+//   * We must correctly support closure of Channel.C; there's no way to provide
+//     a send channel without restricting closure on that channel.
+//   * Accepting cancelation via `ctx` means that we have TWO non-equivalent
+//     ways to teardown... ick.
+//   * Due to constraints of the go race detector, it's not possible for Channel
+//     to close Channel.C when ctx is canceled; Apparently this counts as
+//     a read/write action, not just a write action.
+//   * Leaving C open, but shutting down the coordinator goroutine, means that
+//     users of Channel could be blocked forever when they should
+//     panic/stop/whatever.
+//   * Adding an infinite consumer loop on Channel.C means that producers could
+//     produce at an infinite rate... also not great.
+//   * The only thing that Channel uses ctx for is:
+//     * logging in the default Error/DropFn's
+//     * the retry.Iterator from Buffer
+//     * clock/timer stuff for testing; external packages can remove the
+//       reliance on timing information in tests by setting an infinite rate
+//       via Options, so external users shouldn't be attempting to manipulate
+//       time within the Channel.
+//     * this extra cancelation problem/feature
+//
+// Plan: Remove non-cancelation uses of ctx, then remove ctx from the external
+// view. The trickiest dependency is retry.Next, which, IMO is a poor use of
+// context anyway; retry.Next is bound to an Iterator struct, producecd from
+// a retry.Factory; There's plenty of opportunity for the user to bind a context
+// that they want from any of those places.
 func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error) {
 	if send == nil {
 		return Channel{}, errors.New("send is required: got nil")
