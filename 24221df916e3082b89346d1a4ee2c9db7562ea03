@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82a6c02c_01ec5b62",
+        "filename": "common/sync/dispatcher/channel.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T03:23:18Z",
+      "side": 1,
+      "message": "ommitting context intentional?\n\nI expected you\u0027d take it and unblock on context.Done(), too.",
+      "revId": "24221df916e3082b89346d1a4ee2c9db7562ea03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93a08667_963bef62",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T03:23:18Z",
+      "side": 1,
+      "message": "i have suspicion go race doesn\u0027t like this.",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 178,
+        "endChar": 21
+      },
+      "revId": "24221df916e3082b89346d1a4ee2c9db7562ea03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
