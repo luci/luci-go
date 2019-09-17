@@ -281,7 +281,7 @@ func (b *Build) HumanStatus() string {
 	case buildbucketpb.Status_INFRA_FAILURE:
 		return "Infra Failure"
 	case buildbucketpb.Status_CANCELED:
-		return "Cancelled"
+		return "Canceled"
 	default:
 		return "Unknown status"
 	}

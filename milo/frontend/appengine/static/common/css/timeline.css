@@ -77,7 +77,7 @@
   border-color: #C5C56D;
 }
 
-.status-FAILURE, .status-CANCELLED, .status-FAILURE a, .status-CANCELLED a {
+.status-FAILURE, .status-CANCELED, .status-FAILURE a, .status-CANCELED a {
   color: #000;
   background-color: #e88;
   border-color: #A77272;

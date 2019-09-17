@@ -62,15 +62,15 @@ const (
 	// Expired if the component was never scheduled due to resource exhaustion.
 	Expired
 
-	// Cancelled if the component had external intervention to stop it after it
+	// Canceled if the component had external intervention to stop it after it
 	// was scheduled, but before it completed on its own.
-	Cancelled
+	Canceled
 )
 
 // Terminal returns true if the step status won't change.
 func (s Status) Terminal() bool {
 	switch s {
-	case Success, Failure, InfraFailure, Warning, Expired, Exception, Cancelled:
+	case Success, Failure, InfraFailure, Warning, Expired, Exception, Canceled:
 		return true
 	default:
 		return false

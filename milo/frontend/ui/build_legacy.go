@@ -65,7 +65,7 @@ type MiloBuildLegacy struct {
 }
 
 var statusPrecendence = map[model.Status]int{
-	model.Cancelled:    0,
+	model.Canceled:     0,
 	model.Expired:      1,
 	model.Exception:    2,
 	model.InfraFailure: 3,
