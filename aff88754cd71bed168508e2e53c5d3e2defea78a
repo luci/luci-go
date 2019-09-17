@@ -81,6 +81,30 @@
       "revId": "aff88754cd71bed168508e2e53c5d3e2defea78a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7438918a_18102454",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T17:11:06Z",
+      "side": 1,
+      "message": "yeah, me too.",
+      "parentUuid": "dad8f2fe_b1bc947a",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "aff88754cd71bed168508e2e53c5d3e2defea78a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

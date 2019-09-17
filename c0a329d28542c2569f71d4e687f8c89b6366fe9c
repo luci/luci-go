@@ -46,6 +46,30 @@
       "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "274f75d7_9f1749c4",
+        "filename": "milo/frontend/appengine/static/common/css/tabs.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T17:11:06Z",
+      "side": 0,
+      "message": "now that\u0027s a good point.\n\nHowever, adding border in these two cases is inconsistent. If we want borders for failures, then it should exception/infraFailure/Failure. Canceled is really more like green -- ie WAI.",
+      "parentUuid": "5de2c3e9_f9974777",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 22
+      },
+      "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
