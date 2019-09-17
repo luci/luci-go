@@ -60,7 +60,8 @@ func TestPromise(t *testing.T) {
 				tc.Add(1 * time.Second)
 			}()
 
-			ctx, _ = clock.WithTimeout(ctx, 1*time.Second)
+			ctx, cancel := clock.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
 			data, err := p.Get(ctx)
 			So(data, ShouldBeNil)
 			So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())

@@ -224,8 +224,8 @@ func TestClient(t *testing.T) {
 			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
 				// Set an overall deadline.
 				overallDeadline := 2 * time.Second
-				ctx, cancelFunc := clock.WithTimeout(ctx, overallDeadline)
-				defer cancelFunc()
+				ctx, cancel := clock.WithTimeout(ctx, overallDeadline)
+				defer cancel()
 
 				client, server := setUp(advanceClockAndErr(tc, time.Second))
 				defer server.Close()
