@@ -24,7 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/errors"
+	commonisolated "go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exec2"
@@ -243,4 +247,61 @@ func linkOutputsToOutdir(runDir, outDir string, outputs []string) error {
 	}
 
 	return nil
+}
+
+// UploadStats is stats of uploadThenDelete.
+type UploadStats struct {
+	Duration time.Duration `json:"duration"`
+
+	ItemsCold []byte `json:"items_cold"`
+	ItemsHot  []byte `json:"items_hot"`
+}
+
+func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string, leakTempDir bool) (commonisolated.HexDigest, *UploadStats, error) {
+	start := time.Now()
+	absOutDir := filepath.Join(baseDir, outDir)
+	fi, err := os.Stat(absOutDir)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to get stat for %s", absOutDir).Err()
+	}
+	if !fi.IsDir() {
+		return "", nil, errors.Reason("%s is not a directory: %v", absOutDir, fi).Err()
+	}
+
+	arch := archiver.New(ctx, client, nil)
+	defer arch.Close()
+
+	items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir}, nil)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to upload files in %s", absOutDir).Err()
+	}
+
+	outDirItem := items[0]
+
+	outDirItem.WaitForHashed()
+	if err := outDirItem.Error(); err != nil {
+		return "", nil, errors.Annotate(err, "failed to upload isolated for %s", absOutDir).Err()
+	}
+
+	if !leakTempDir {
+		if err := filesystem.RemoveAll(absOutDir); err != nil {
+			return "", nil, errors.Annotate(err, "failed to call RemoveAll(%s)", absOutDir).Err()
+		}
+	}
+
+	itemsHot, err := arch.Stats().PackedHits()
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to call PackedHits").Err()
+	}
+
+	itemsCold, err := arch.Stats().PackedMisses()
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to call PackedMisses").Err()
+	}
+
+	return outDirItem.Digest(), &UploadStats{
+		Duration:  time.Now().Sub(start),
+		ItemsHot:  itemsHot,
+		ItemsCold: itemsCold,
+	}, nil
 }
