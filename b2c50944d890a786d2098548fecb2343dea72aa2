@@ -16,6 +16,24 @@
       "revId": "b2c50944d890a786d2098548fecb2343dea72aa2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc4b85d2_6cf5cbac",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-17T06:25:19Z",
+      "side": 1,
+      "message": "let me leave as-is here.",
+      "parentUuid": "95b15ca7_35a29ff6",
+      "revId": "b2c50944d890a786d2098548fecb2343dea72aa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
