@@ -455,12 +455,20 @@ div.BuildWaterfall {
   border-color: #4F8530;
 }
 
-.failure, .status-Failure, .status-Canceled, .tree-status-closed, .status.FAILURE, .status.CANCELED {
+.failure, .status-Failure, .tree-status-closed, .status.FAILURE {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
   border-style: solid;
 }
+
+.status-Canceled, .status.CANCELED {
+  color: #000;
+  background-color: #8ef;
+  border-color: #00d8fc;
+  border-style: solid;
+}
+
 
 .failure-again {
   color: #000;
