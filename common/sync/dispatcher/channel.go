@@ -33,17 +33,39 @@ type Channel struct {
 	DrainC <-chan struct{}
 }
 
+// Close is a convenience function which closes C (and swallows panic if
+// already closed).
+func (c Channel) Close() {
+	defer func() { recover() }()
+	close(c.C)
+}
+
 // CloseAndDrain is a convenience function which closes C (and swallows panic if
 // already closed) and then blocks on DrainC/ctx.Done().
 func (c Channel) CloseAndDrain(ctx context.Context) {
-	func() {
-		defer func() { recover() }()
-		close(c.C)
-	}()
-
+	c.Close()
 	select {
 	case <-ctx.Done():
 	case <-c.DrainC:
+	}
+}
+
+// SafeSend attempts to send the item `itm` to the Channel, which may be closed.
+//
+// On successful send, returns true, otherwise false.
+func (c Channel) SafeSend(itm interface{}) (ok bool) {
+	defer func() { recover() }()
+	c.C <- itm
+	return true
+}
+
+// IsDrained returns true iff the Channel is closed and drained.
+func (c Channel) IsDrained() bool {
+	select {
+	case <-c.DrainC:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -108,6 +130,5 @@ func NewChannel(ctx context.Context, opts *Options, send SendFn) (Channel, error
 	}
 
 	go cstate.run(ctx, send)
-
 	return Channel{C: itemCh, DrainC: drainCh}, nil
 }
