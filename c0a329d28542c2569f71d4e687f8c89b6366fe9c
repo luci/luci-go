@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0324670f_97382581",
+        "filename": "milo/frontend/appengine/static/common/css/tabs.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T15:34:20Z",
+      "side": 0,
+      "message": "i have no idea why this was important -- looks good to me w/o.",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 22
+      },
+      "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

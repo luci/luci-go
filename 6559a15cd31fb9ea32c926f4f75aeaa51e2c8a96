@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc862cfb_82a141f6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-17T15:34:20Z",
+      "side": 1,
+      "message": "example: https://4824-644a19f-tainted-tandrii-can-2-dot-luci-milo.appspot.com/p/infra/builders/try/infra-try-xenial-64/b8902483627894782096\n\nwhere please click on each tab",
+      "revId": "6559a15cd31fb9ea32c926f4f75aeaa51e2c8a96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
