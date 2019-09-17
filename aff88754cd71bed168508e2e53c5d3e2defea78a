@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4c3dad22_409bb6a6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-09-17T16:36:48Z",
+      "side": 1,
+      "message": "The color looks alright to me -- for some reason I never used any other tabs besides Overview in milo...",
+      "parentUuid": "4ab5a524_b0372dc3",
+      "revId": "aff88754cd71bed168508e2e53c5d3e2defea78a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6df3d232_fece3ebf",
         "filename": "milo/frontend/appengine/static/common/css/timeline.css",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "aff88754cd71bed168508e2e53c5d3e2defea78a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dad8f2fe_b1bc947a",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-09-17T16:36:48Z",
+      "side": 1,
+      "message": "Seems OK to me. I wonder how the other border colors were chosen...",
+      "parentUuid": "6df3d232_fece3ebf",
+      "range": {
+        "startLine": 90,
+        "startChar": 17,
+        "endLine": 90,
+        "endChar": 23
+      },
+      "revId": "aff88754cd71bed168508e2e53c5d3e2defea78a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

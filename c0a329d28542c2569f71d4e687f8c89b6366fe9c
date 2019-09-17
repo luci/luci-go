@@ -22,6 +22,30 @@
       "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5de2c3e9_f9974777",
+        "filename": "milo/frontend/appengine/static/common/css/tabs.css",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-09-17T16:36:48Z",
+      "side": 0,
+      "message": "It might have been for emphasis; another factor to consider is that for accessibility you don\u0027t want to differentiate things only by color, so for red-green colorblind people a border might make the failures stand out more. This doesn\u0027t matter much when the text clearly says SUCCESS or FAILURE, but if the text just says the step name, color is currently the main distinguishing factor.\n\nI can\u0027t see clearly where the class .status-Failure in tabs.css is applied; potentially the border could be kept for consistency, but if you think it looks better without, then I\u0027m also OK with removing.",
+      "parentUuid": "0324670f_97382581",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 22
+      },
+      "revId": "c0a329d28542c2569f71d4e687f8c89b6366fe9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
