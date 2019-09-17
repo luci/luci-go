@@ -19,6 +19,7 @@ package luci.resultsdb;
 // TODO(jchinlee): Update protos and clarify documentation when finalized.
 // Currently, these are for experimentation/iteration.
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -41,7 +42,7 @@ message Result {
   Markdown summary = 3;
 
   google.protobuf.Timestamp start_time = 4;
-  google.protobuf.Timestamp end_time = 5;
+  google.protobuf.Duration duration = 5;
 
   repeated StringPair tags = 6;
 

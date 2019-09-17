@@ -119,15 +119,15 @@ message DeriveInvocationFromSwarmingRequest {
 
   // Test path prefix.
   //
-  // Examples: "gn://{label}/".
+  // Examples: "gn:{label}/".
   //
   // See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
   // label examples.
   //
   // Generated test path examples:
-  // * GTest: gn/{label}/{suite}/{case}
-  // * javatests: gn/{label}/{full_java_method_name}
-  // * web tests: gn/{label}/{file_name}
+  // * GTest: gn:{label}/{suite}/{case}
+  // * javatests: gn:{label}/{full_java_method_name}
+  // * web tests: gn:{label}/{file_name}
   string test_path_prefix = 2;
 
   // Test variant base. These get combined with the remainder of the test
