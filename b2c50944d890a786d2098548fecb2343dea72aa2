@@ -34,6 +34,24 @@
       "revId": "b2c50944d890a786d2098548fecb2343dea72aa2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b10fe15_3fe2f1d7",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T06:52:10Z",
+      "side": 1,
+      "message": "ok, but I just let you know that handling `leakTempDir` at higher level wouldn\u0027t be complicated. \n\nIt would be like\n\n```\n# caller\nif data.leakTempDir {\n  upload(...)\n} else {\n  uploadThenDelete(...)\n}\n```\n\nIt\u0027s often said that changing function\u0027s behavior by flag isn\u0027t good. you just need another function in that case.",
+      "parentUuid": "dc4b85d2_6cf5cbac",
+      "revId": "b2c50944d890a786d2098548fecb2343dea72aa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "faad107b_fb5d59e3",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 320,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-17T06:52:10Z",
+      "side": 1,
+      "message": "Btw, no tests for this function? at least make sure that this works in a regular case.",
+      "revId": "96462e7ade843c1484242c8034e8a292f0d65530",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
