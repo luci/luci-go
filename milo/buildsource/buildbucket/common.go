@@ -66,7 +66,7 @@ var statusMap = map[buildbucketpb.Status]model.Status{
 	buildbucketpb.Status_SUCCESS:       model.Success,
 	buildbucketpb.Status_FAILURE:       model.Failure,
 	buildbucketpb.Status_INFRA_FAILURE: model.InfraFailure,
-	buildbucketpb.Status_CANCELED:      model.Cancelled,
+	buildbucketpb.Status_CANCELED:      model.Canceled,
 }
 
 // parseStatus converts a buildbucket status to model.Status.

@@ -16,12 +16,12 @@ func _() {
 	_ = x[InfraFailure-5]
 	_ = x[Exception-6]
 	_ = x[Expired-7]
-	_ = x[Cancelled-8]
+	_ = x[Canceled-8]
 }
 
-const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExceptionExpiredCancelled"
+const _Status_name = "NotRunRunningSuccessFailureWarningInfraFailureExceptionExpiredCanceled"
 
-var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 55, 62, 71}
+var _Status_index = [...]uint8{0, 6, 13, 20, 27, 34, 46, 55, 62, 70}
 
 func (i Status) String() string {
 	if i < 0 || i >= Status(len(_Status_index)-1) {

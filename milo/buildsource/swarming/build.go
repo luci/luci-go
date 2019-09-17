@@ -165,7 +165,7 @@ type swarmingFetchParams struct {
 	// fetching the result. It will be passed a key/value map
 	// of the Swarming result's tags.
 	//
-	// If taskResCallback returns true, any pending log fetch will be cancelled
+	// If taskResCallback returns true, any pending log fetch will be canceled
 	// without error.
 	taskResCallback func(*swarming.SwarmingRpcsTaskResult) bool
 }
@@ -174,7 +174,7 @@ type swarmingFetchResult struct {
 	res *swarming.SwarmingRpcsTaskResult
 
 	// log is the log data content. If no log data was fetched, this will empty.
-	// If the log fetch was cancelled, this is undefined.
+	// If the log fetch was canceled, this is undefined.
 	log string
 }
 
@@ -193,7 +193,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 	var fr swarmingFetchResult
 
 	// Special Context to enable the cancellation of log fetching.
-	logsCancelled := false
+	logsCanceled := false
 	logCtx, cancelLogs := context.WithCancel(c)
 	defer cancelLogs()
 
@@ -201,7 +201,7 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 		workC <- func() (err error) {
 			if fr.res, err = svc.GetSwarmingResult(c, taskID); err == nil {
 				if req.taskResCallback != nil && req.taskResCallback(fr.res) {
-					logsCancelled = true
+					logsCanceled = true
 					cancelLogs()
 				}
 			} else if ierr, ok := err.(*googleapi.Error); ok {
@@ -248,8 +248,8 @@ func swarmingFetch(c context.Context, svc swarmingService, taskID string, req sw
 		}
 	}
 
-	// If we explicitly cancelled logs, everything is OK.
-	if logErr == context.Canceled && logsCancelled {
+	// If we explicitly canceled logs, everything is OK.
+	if logErr == context.Canceled && logsCanceled {
 		logErr = nil
 	}
 	return &fr, logErr
@@ -357,11 +357,11 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		}
 
 	case TaskCanceled, TaskKilled:
-		// Cancelled build is user action, so it is not an infra failure.
+		// Canceled build is user action, so it is not an infra failure.
 		step.Status = miloProto.Status_FAILURE
 		step.FailureDetails = &miloProto.FailureDetails{
 			Type: miloProto.FailureDetails_CANCELLED,
-			Text: "Task cancelled by user",
+			Text: "Task canceled by user",
 		}
 
 	case TaskNoResource:
