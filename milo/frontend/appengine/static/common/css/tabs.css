@@ -60,17 +60,16 @@
   border-color: #C5C56D;
 }
 
-.status-Failure, .status-Canceled {
+.status-Failure, .status-Failure a {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
-  border-style: solid;
 }
 
-.status-Failure a, .status-Canceled a {
+.status-Canceled, .status-Canceled a {
   color: #000;
-  background-color: #e88;
-  border-color: #A77272;
+  background-color: #8ef;
+  border-color: #00d8fc;
 }
 
 .status-Success, .status-Success a {

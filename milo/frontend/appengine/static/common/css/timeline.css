@@ -77,10 +77,17 @@
   border-color: #C5C56D;
 }
 
-.status-FAILURE, .status-CANCELED, .status-FAILURE a, .status-CANCELED a {
+.status-FAILURE, .status-FAILURE a {
   color: #000;
   background-color: #e88;
   border-color: #A77272;
+  border-style: solid;
+}
+
+.status-CANCELED, .status-CANCELED a {
+  color: #000;
+  background-color: #8ef;
+  border-color: #00d8fc;
   border-style: solid;
 }
 
