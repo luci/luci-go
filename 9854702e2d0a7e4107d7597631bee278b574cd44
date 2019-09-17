@@ -270,6 +270,24 @@
     },
     {
       "key": {
+        "uuid": "acf863a0_9d5eb7ea",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-17T01:15:26Z",
+      "side": 1,
+      "message": "Oh, I\u0027m fine with doing the multiple writes, was just wondering; thanks for the explanation.\n\nSo, to confirm:\n+ We have a method of the variant type to generate a sorted list of keys given the input map, which allocates a vector for all the keys, and walks the input map (created from walking the input maps in sequence).\n+ We have a method of the variant type to generate the []string of key:val pairs [so that we can use that to generate a human-readable variant definition].\n+ We also use that here and loop through to write each key:val string separately into the hash.\n\nDoes that accurately address the comments above w.r.t. breaking out the body of this hashing/digest-creating function?",
+      "parentUuid": "26759568_425d6bc6",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a91be73_eec02269",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -652,6 +670,30 @@
     },
     {
       "key": {
+        "uuid": "5f3a1539_ab0c09a4",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-17T01:15:26Z",
+      "side": 1,
+      "message": "Actually, I\u0027m not sure how the encodings would work in Go. If we decode from base64, we get an array of bytes, right? So we\u0027d then encode that bytearray as...?\n\nI don\u0027t know enough about what kind of data is stored in lossy output snippets (i.e. output snippets that only exist as base64) to have a good guess as to what would be the best way to display it.",
+      "parentUuid": "2b44fbb9_67b0cc9b",
+      "range": {
+        "startLine": 128,
+        "startChar": 47,
+        "endLine": 128,
+        "endChar": 66
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95b9fbd7_1fff1bef",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -769,6 +811,24 @@
       "side": 1,
       "message": "i just read https://cs.chromium.org/chromium/src/base/test/launcher/test_results_tracker.cc?q\u003dlossless_snippet\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d409\n\nit seems that OutputSnippetBase64 and OutputSnippet represent the same text. Why do we need to deal with OutputSnippet and LosslessSnippet then?",
       "parentUuid": "ed5b870f_aa81f250",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2eca1ff_e48b3c51",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-17T01:15:26Z",
+      "side": 1,
+      "message": "My understanding is that they only contain the same data if the text is UTF8, and in that case OutputSnippetBase64 encodes it as base64 (and we note losless_snippet [sic] as true to indicate that OutputSnippet contains the same data, encoded as UTF8) --- am I missing something?",
+      "parentUuid": "00b5e0af_e69c66b1",
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
