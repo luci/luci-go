@@ -17,6 +17,7 @@ package cmdrunner
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,7 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/isolated"
 	"go.chromium.org/luci/common/errors"
+	commonisolated "go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exec2"
@@ -243,4 +248,76 @@ func linkOutputsToOutdir(runDir, outDir string, outputs []string) error {
 	}
 
 	return nil
+}
+
+// UploadStats is stats of uploadThenDelete.
+type UploadStats struct {
+	Duration time.Duration `json:"duration"`
+
+	ItemsCold []byte `json:"items_cold"`
+	ItemsHot  []byte `json:"items_hot"`
+}
+
+func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string, leakTempDir bool) (commonisolated.HexDigest, *UploadStats, error) {
+	start := time.Now()
+	absOutDir := filepath.Join(baseDir, outDir)
+	fi, err := os.Stat(absOutDir)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to get stat for %s", absOutDir).Err()
+	}
+	if !fi.IsDir() {
+		return "", nil, errors.Reason("%s is not a directory: %v", absOutDir, fi).Err()
+	}
+
+	d, err := os.Open(absOutDir)
+	if err != nil {
+		return "", nil, errors.Annotate(err, "failed to call Open(%s)", absOutDir).Err()
+	}
+
+	var stats UploadStats
+	var digest commonisolated.HexDigest
+	if names, err := d.Readdirnames(1); len(names) > 0 {
+		arch := archiver.New(ctx, client, nil)
+		defer arch.Close() // Ignore "was already closed" error here.
+
+		items, err := isolated.ArchiveFiles(ctx, arch, baseDir, []string{outDir}, nil)
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to upload files in %s", absOutDir).Err()
+		}
+		outDirItem := items[0]
+
+		outDirItem.WaitForHashed()
+		if err := outDirItem.Error(); err != nil {
+			return "", nil, errors.Annotate(err, "failed to upload isolated for %s", absOutDir).Err()
+		}
+
+		if err := arch.Close(); err != nil {
+			return "", nil, errors.Annotate(err, "failed to Close archiver").Err()
+		}
+
+		itemsHot, err := arch.Stats().PackedHits()
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to call PackedHits").Err()
+		}
+
+		itemsCold, err := arch.Stats().PackedMisses()
+		if err != nil {
+			return "", nil, errors.Annotate(err, "failed to call PackedMisses").Err()
+		}
+		digest = outDirItem.Digest()
+		stats.ItemsHot = itemsHot
+		stats.ItemsCold = itemsCold
+	} else if err != io.EOF {
+		return "", nil, errors.Annotate(err, "unexpected error from Readdirnames for %s", absOutDir).Err()
+	}
+
+	if !leakTempDir {
+		if err := filesystem.RemoveAll(absOutDir); err != nil {
+			return "", nil, errors.Annotate(err, "failed to call RemoveAll(%s)", absOutDir).Err()
+		}
+	}
+
+	stats.Duration = time.Now().Sub(start)
+
+	return digest, &stats, nil
 }
