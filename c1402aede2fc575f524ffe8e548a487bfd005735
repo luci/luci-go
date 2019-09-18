@@ -52,6 +52,24 @@
       "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ec780301_23fb59fe",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-18T14:48:23Z",
+      "side": 1,
+      "message": "That\u0027s a good point, do we want more granularity on more individual steps, like removing files? I don\u0027t know.",
+      "parentUuid": "8a14e4b5_6e0ef082",
+      "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
