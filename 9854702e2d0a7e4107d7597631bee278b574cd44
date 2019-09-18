@@ -537,6 +537,29 @@
     },
     {
       "key": {
+        "uuid": "6dde7af3_cf98bf90",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-18T22:35:27Z",
+      "side": 1,
+      "message": "The Spanner schema defines TestResults as storing the base variant definition per test result explicitly, so storing the complete variant definition in Invocation.Tests.Variants works against that. IIUC we do want to store the base variant definition explicitly in Spanner, since it\u0027s shared across many test results.",
+      "range": {
+        "startLine": 116,
+        "startChar": 19,
+        "endLine": 116,
+        "endChar": 33
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0db082c8_0d503865",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
