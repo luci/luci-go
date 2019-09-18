@@ -36,9 +36,11 @@ type coordinatorState struct {
 	// buffer will have a batch available due to buffer timeout and/or qps limiter.
 	timer clock.Timer
 
-	// true iff we're supposed to process the rest of our work, but no new work
-	// will come in.
-	draining bool
+	// true if itemCh is closed
+	closed bool
+
+	// true if our context is canceled
+	canceled bool
 }
 
 type workerResult struct {
@@ -53,7 +55,17 @@ func (state *coordinatorState) dbg(msg string, args ...interface{}) {
 }
 
 func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, send SendFn) time.Duration {
-	for {
+	if state.canceled {
+		for _, batch := range state.buf.ForceLeaseAll() {
+			state.dbg("  >dropping batch: canceled")
+			state.opts.DropFn(batch)
+			state.buf.ACK(batch)
+		}
+		return 0
+	}
+
+	// while the context is not canceled, send stuff batches we're able to send.
+	for ctx.Err() == nil {
 		// See if we're permitted to send.
 		res := state.opts.QPSLimit.ReserveN(now, 1)
 		if !res.OK() {
@@ -72,22 +84,20 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, s
 			// got a batch! Send it.
 			state.dbg("  >sending batch")
 			go func() {
-				rslt := workerResult{
+				state.resultCh <- workerResult{
 					batch: batchToSend,
 					err:   send(batchToSend),
-				}
-				select {
-				case <-ctx.Done():
-				case state.resultCh <- rslt:
 				}
 			}()
 		} else {
 			// Otherwise we're done sending batches for now. Cancel the reservation,
 			// since we can't use it.
 			res.CancelAt(now)
-			return 0
+			break
 		}
 	}
+
+	return 0
 }
 
 // getNextTimingEvent returns a clock.Timer channel which will activate when the
@@ -121,7 +131,7 @@ func (state *coordinatorState) getNextTimingEvent(now time.Time, nextQPSToken ti
 //
 // Otherwise returns nil.
 func (state *coordinatorState) getWorkChannel() <-chan interface{} {
-	if !state.draining && state.buf.CanAddItem() {
+	if !state.closed && state.buf.CanAddItem() {
 		state.dbg("  |waiting on new data")
 		return state.itemCh
 	}
@@ -149,6 +159,13 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 		return
 	}
 
+	if state.canceled {
+		state.dbg("    NO RETRY (dropping batch: canceled context)")
+		state.opts.DropFn(result.batch)
+		state.buf.ACK(result.batch)
+		return
+	}
+
 	state.dbg("    NACK")
 	state.buf.NACK(ctx, result.err, result.batch)
 	return
@@ -169,18 +186,27 @@ func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 loop:
 	for {
 		bufStats := state.buf.Stats()
-		if state.draining && bufStats.Empty() {
+		if state.closed && bufStats.Empty() {
 			break loop
 		}
-		state.dbg("LOOP (draining: %t): buf.Stats[%+v]", state.draining, bufStats)
+		state.dbg("LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
+			state.closed, state.canceled, bufStats)
 
 		now := clock.Now(ctx)
 
 		resDelay := state.sendBatches(ctx, now, send)
 
+		// Only select on ctx.Done if we haven't observed its cancelation yet.
+		var doneCh <-chan struct{}
+		if !state.canceled {
+			doneCh = ctx.Done()
+		}
+
 		select {
-		case <-ctx.Done():
-			break loop
+		case <-doneCh:
+			state.dbg("  GOT CANCEL (via context)")
+			state.canceled = true
+			state.buf.Flush(now)
 
 		case result := <-state.resultCh:
 			state.handleResult(ctx, result)
@@ -188,11 +214,18 @@ loop:
 		case itm, ok := <-state.getWorkChannel():
 			if !ok {
 				state.dbg("  GOT DRAIN")
-				state.draining = true
+				state.closed = true
 				state.buf.Flush(now)
 				continue
 			}
 			state.dbg("  GOT NEW DATA")
+			if state.canceled {
+				state.dbg("    dropped batch (canceled)")
+				state.opts.DropFn(&buffer.Batch{
+					Data: []interface{}{itm},
+				})
+				continue
+			}
 			if dropped := state.buf.AddNoBlock(now, itm); dropped != nil {
 				state.dbg("    dropped batch")
 				state.opts.DropFn(dropped)
@@ -200,7 +233,10 @@ loop:
 
 		case result := <-state.getNextTimingEvent(now, resDelay):
 			if result.Incomplete() {
-				break loop
+				state.dbg("  GOT CANCEL (via timer)")
+				state.canceled = true
+				state.buf.Flush(now)
+				continue
 			}
 			state.dbg("  GOT TIMER WAKEUP")
 			// opportunistically attempt to send batches; either a new batch is ready
