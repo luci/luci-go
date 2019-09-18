@@ -1,0 +1,18 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// DummyProject is the Target schema used by tsmon to represent a dummy project.
+syntax = "proto3";
+
+message DummyProject {
+  // The project id that uniquely identifies the dummy project owning the data.
+  string project = 10;
+
+  // The location (e.g., GCE zone, Metro, Lab, etc), where the project is
+  // located.
+  string location = 20;
+
+  // Whether a given project is staging or not.
+  bool is_staging = 40;
+}
