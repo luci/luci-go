@@ -70,6 +70,24 @@
       "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4e90124_b2d4e529",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-18T22:26:50Z",
+      "side": 1,
+      "message": "I\u0027ll do that if I want to know more granular stats.",
+      "parentUuid": "ec780301_23fb59fe",
+      "revId": "c1402aede2fc575f524ffe8e548a487bfd005735",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
