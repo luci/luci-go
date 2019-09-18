@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "a99fe208_a54c5b56",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-18T10:09:15Z",
+      "side": 1,
+      "message": "Because this is important for correctness and it would be bad if it is suddenly regresses. Normally I\u0027d put an assert for stuff like this, but it\u0027d clutter the code, so instead I\u0027ve added a test and left this pointer.",
+      "parentUuid": "b5f7670f_7975d59e",
+      "range": {
+        "startLine": 115,
+        "startChar": 36,
+        "endLine": 115,
+        "endChar": 68
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37278278_e52d577a",
         "filename": "server/auth/authdb/internal/globset/globset.go",
         "patchSetId": 2
@@ -59,6 +83,30 @@
       "writtenOn": "2019-09-17T13:54:15Z",
       "side": 1,
       "message": "thought: if we don\u0027t have many diff globs, it is more efficient to keep `ss` as sorted []string in the first place.\n\npremature optimization for now though.",
+      "range": {
+        "startLine": 116,
+        "startChar": 6,
+        "endLine": 116,
+        "endChar": 21
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e0cba51a_73c24f62",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-18T10:09:15Z",
+      "side": 1,
+      "message": "More efficient in terms of memory? Either way, globs are pretty small part of authdb.",
+      "parentUuid": "37278278_e52d577a",
       "range": {
         "startLine": 116,
         "startChar": 6,
@@ -91,6 +139,30 @@
       "revId": "671e0bb40f764f9584ea012f659d50e930566406",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf6e5aa1_785e9d0e",
+        "filename": "server/auth/authdb/internal/globset/globset.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-18T10:09:15Z",
+      "side": 1,
+      "message": "Not sure how your example shows it is more efficient, but fine.",
+      "parentUuid": "240d399a_b8a47afe",
+      "range": {
+        "startLine": 132,
+        "startChar": 3,
+        "endLine": 132,
+        "endChar": 20
+      },
+      "revId": "671e0bb40f764f9584ea012f659d50e930566406",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
