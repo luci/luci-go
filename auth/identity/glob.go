@@ -48,7 +48,7 @@ func (g Glob) Validate() error {
 	if len(chunks) != 2 {
 		return fmt.Errorf("auth: bad identity glob string %q", g)
 	}
-	if knownKinds[Kind(chunks[0])] == nil {
+	if KnownKinds[Kind(chunks[0])] == nil {
 		return fmt.Errorf("auth: bad identity glob kind %q", chunks[0])
 	}
 	if chunks[1] == "" {
@@ -84,14 +84,14 @@ func (g Glob) Pattern() string {
 // or identity glob string are invalid, returns false.
 func (g Glob) Match(id Identity) bool {
 	globChunks := strings.SplitN(string(g), ":", 2)
-	if len(globChunks) != 2 || knownKinds[Kind(globChunks[0])] == nil {
+	if len(globChunks) != 2 || KnownKinds[Kind(globChunks[0])] == nil {
 		return false
 	}
 	globKind := globChunks[0]
 	pattern := globChunks[1]
 
 	idChunks := strings.SplitN(string(id), ":", 2)
-	if len(idChunks) != 2 || knownKinds[Kind(idChunks[0])] == nil {
+	if len(idChunks) != 2 || KnownKinds[Kind(idChunks[0])] == nil {
 		return false
 	}
 	idKind := idChunks[0]
@@ -109,6 +109,20 @@ func (g Glob) Match(id Identity) bool {
 		return false
 	}
 	return re.MatchString(name)
+}
+
+// Preprocess splits the glob into its kind and a regexp against identity names.
+//
+// For example "user:*@example.com" => ("user", "^.*@example\.com$"). Returns
+// an error if the glob is malformed.
+func (g Glob) Preprocess() (kind Kind, regexp string, err error) {
+	globChunks := strings.SplitN(string(g), ":", 2)
+	if len(globChunks) != 2 || KnownKinds[Kind(globChunks[0])] == nil {
+		return "", "", fmt.Errorf("bad identity glob format")
+	}
+	kind = Kind(globChunks[0])
+	regexp, err = translate(globChunks[1])
+	return
 }
 
 ////

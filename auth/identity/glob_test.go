@@ -96,4 +96,20 @@ func TestGlob(t *testing.T) {
 		_, err := translate("blah\nblah")
 		So(err, ShouldNotBeNil)
 	})
+
+	Convey("Preprocess works", t, func() {
+		k, r, err := Glob("user:*@example.com").Preprocess()
+		So(err, ShouldBeNil)
+		So(k, ShouldEqual, User)
+		So(r, ShouldEqual, "^.*@example\\.com$")
+	})
+
+	Convey("Preprocess rejects malformed identity globs", t, func() {
+		_, _, err := Glob("*@example.com").Preprocess()
+		So(err, ShouldNotBeNil)
+		_, _, err = Glob("unknown:*@example.com").Preprocess()
+		So(err, ShouldNotBeNil)
+		_, _, err = Glob("user:*\n@example.com").Preprocess()
+		So(err, ShouldNotBeNil)
+	})
 }
