@@ -69,6 +69,30 @@
       "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3073fb91_8d8bb045",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-09-18T08:46:46Z",
+      "side": 1,
+      "message": "I updated the inline comment with more info. I believe that it\u0027d be best to create a separate doc with the information that I put. However, I don\u0027t think the doc would be useful without explaining why one would consider defining a new Target proto.\n\nThen, the doc would have to include the difference between target and metric fields, and limits applied to them to help readers justify if they need to create a new monitoring Target type or not.\n\nI filed crbug.com/1005113 for the work. Please let me know if I understood your intention correctly and the inline comments provide enough information.",
+      "parentUuid": "c2ae0a28_2ca960c1",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
