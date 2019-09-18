@@ -305,6 +305,17 @@ message ScheduleBuildRequest {
   // Overrides Builder.exe in the config.
   // Supported subfields: cipd_version.
   Executable exe = 14;
+
+  // If specified, it is passed to Swarming when triggering an underlying task
+  // for this build s.t. triggered build won't outlive its parent build (task).
+  //
+  // If the config does not specify a swarming backend, the request will fail
+  // with InvalidArgument error code.
+  //
+  // This is useful when one build (parent) schedules others (children) and
+  // waits for their completion and it is deriable to terminate children as soon
+  // as possible after their parent has been completed/canceled/crashed.
+  string swarming_parent_task_id = 15;
 }
 
 // A request message for CancelBuild rpc.
