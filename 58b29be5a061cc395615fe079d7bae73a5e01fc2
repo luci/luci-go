@@ -147,6 +147,24 @@
       "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57f1211a_683a3d40",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2019-09-18T14:54:22Z",
+      "side": 1,
+      "message": "I may have misunderstood something here. We are setting some additional summary markdown in our builds, for example, as seen in this builder:\n\nhttps://ci.chromium.org/p/chromeos/builders/general/CommitQueue/b8901987323286113680\nhttps://screenshot.googleplex.com/8Y4W565VNfn.png\n\nand it works. Which is great, however, my understanding is that this would appear in summary columns such as the one found on the related builds tab. This is where TPMs get the quick overview of what is failing. The summary markdown is not rendered there:\n\nhttps://screenshot.googleplex.com/Ow3CiVhQ2hM.png\n\nI suppose if I inspect the code the field mask for summary markdown is absent?",
+      "parentUuid": "bfa604c7_5a1199c3",
+      "revId": "58b29be5a061cc395615fe079d7bae73a5e01fc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
