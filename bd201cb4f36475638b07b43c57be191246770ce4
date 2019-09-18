@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ed935fe_515fc951",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-18T16:08:59Z",
+      "side": 1,
+      "message": "Its",
+      "range": {
+        "startLine": 72,
+        "startChar": 4,
+        "endLine": 72,
+        "endChar": 8
+      },
+      "revId": "bd201cb4f36475638b07b43c57be191246770ce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8fd05ad_8e8e11ee",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-18T16:08:59Z",
+      "side": 1,
+      "message": "oh, right!",
+      "range": {
+        "startLine": 300,
+        "startChar": 2,
+        "endLine": 300,
+        "endChar": 15
+      },
+      "revId": "bd201cb4f36475638b07b43c57be191246770ce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
