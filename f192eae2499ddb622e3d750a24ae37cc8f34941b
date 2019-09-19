@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1293510_f0a32c7e",
+        "filename": "luciexe/host/buildmerge/build_state.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-19T00:42:05Z",
+      "side": 1,
+      "message": "why does this need to be outside of lock? there is only 1 ever entry\u003dnil, so why optimize for such use case? :)",
+      "range": {
+        "startLine": 301,
+        "startChar": 1,
+        "endLine": 304,
+        "endChar": 2
+      },
+      "revId": "f192eae2499ddb622e3d750a24ae37cc8f34941b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
