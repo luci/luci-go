@@ -110,8 +110,9 @@ func CIService(c context.Context) (*ui.CIService, error) {
 				builder.Name, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket.Name, builder.Name),
 				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
 		}
+		group.Sort()
 		result.BuilderGroups[i] = group
 	}
-
+	result.Sort()
 	return result, nil
 }

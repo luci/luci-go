@@ -14,6 +14,11 @@
 
 package ui
 
+import (
+	"sort"
+	"strings"
+)
+
 // Collection of structs to describe how to lay out the overview pages of Milo.
 // There is an implicit hierarchy of Master -> Builder.
 
@@ -37,6 +42,13 @@ type CIService struct {
 	BuilderGroups []BuilderGroup
 }
 
+// Sort sorts builder groups by their Name.
+func (c *CIService) Sort() {
+	sort.Slice(c.BuilderGroups, func(i, j int) bool {
+		return c.BuilderGroups[i].Name < c.BuilderGroups[j].Name
+	})
+}
+
 // BuilderGroup is a container to describe a named cluster of builders.
 // This takes on other names in each CI services:
 // Buildbot: Master
@@ -47,4 +59,15 @@ type BuilderGroup struct {
 	Name string
 	// Builders is a list of links to the builder page for that builder.
 	Builders []Link
+}
+
+// Sort sorts Builders by the lowercase of their name.
+func (g *BuilderGroup) Sort() {
+	lowerCases := make([]string, len(g.Builders))
+	for i, b := range g.Builders {
+		lowerCases[i] = strings.ToLower(b.Label)
+	}
+	sort.Slice(g.Builders, func(i, j int) bool {
+		return lowerCases[i] < lowerCases[j]
+	})
 }
