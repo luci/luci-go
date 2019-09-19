@@ -39,7 +39,9 @@ import (
 // Blocking the returned channel may block the execution of `cb`.
 //
 // NOTE: This modifies the environment (i.e. with os.Setenv) while `cb` is
-// running. Be careful when using Run concurrently with other code.
+// running. Be careful when using Run concurrently with other code. You MUST
+// completely drain the returned channel in order to be guaranteed that all
+// side-effects of Run have been unwound.
 func Run(ctx context.Context, options *Options, cb func(context.Context) error) (<-chan *bbpb.Build, error) {
 	var opts Options
 	if options != nil {
@@ -56,6 +58,12 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	var cleanup cleanupSlice
 	defer cleanup.run()
 
+	cleanupComplete := make(chan struct{})
+	cleanup = append(cleanup, func() error {
+		close(cleanupComplete)
+		return nil
+	})
+
 	// First, capture the entire env to restore it later.
 	cleanup = append(cleanup, restoreEnv())
 
@@ -69,24 +77,36 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	if err != nil {
 		return nil, err
 	}
+	agent := spyOn(ctx, butler, opts.BaseBuild)
 	cleanup = append(cleanup, func() error {
 		butler.Activate()
 		return butler.Wait()
 	})
+	cleanup = append(cleanup, func() error {
+		agent.Close()
+		return nil
+	})
 
-	// TODO(iannucci): add build spy
-	builds := make(chan *bbpb.Build)
+	buildCh := make(chan *bbpb.Build)
+	go func() {
+		defer close(buildCh)
+		for build := range agent.MergedBuildC {
+			buildCh <- build
+		}
+		<-cleanupComplete
+	}()
 
 	// Transfer ownership of cleanups to goroutine
 	userCleanup := cleanup
 	cleanup = nil
 	go func() {
-		defer close(builds)
 		defer userCleanup.run()
+		defer butler.WaitForNamespace(ctx, agent.UserNamespace)
+		defer butler.Activate()
 
 		// TODO(iannucci): do something with retval of cb
 		cb(ctx)
 	}()
 
-	return builds, nil
+	return buildCh, nil
 }
