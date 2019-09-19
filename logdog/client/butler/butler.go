@@ -20,12 +20,14 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -81,6 +83,22 @@ type registeredCallback struct {
 	wrap bool
 }
 
+type onceCloser struct {
+	C     <-chan struct{}
+	Close func()
+}
+
+func newOnceCloser() *onceCloser {
+	ch := make(chan struct{})
+	var once sync.Once
+	return &onceCloser{
+		C: ch,
+		Close: func() {
+			once.Do(func() { close(ch) })
+		},
+	}
+}
+
 // Butler is the Butler application structure. The Butler runs until closed.
 // During operation, it acts as a service manager and data router, routing:
 // - Messages from Streams to the attached Output.
@@ -120,6 +138,15 @@ type Butler struct {
 	// streamSeenLock is a lock to protect streamSeen.
 	streamSeenLock sync.Mutex
 
+	// deadNamespaces is the set of stream namespaces which are 'closed'; no
+	// new streams may be opened under these namespaces. The value is a channel
+	// which will be closed when there are no more streams in this namespace.
+	deadNamespaces     map[types.StreamName]*onceCloser
+	deadNamespacesMap  map[types.StreamName]stringset.Set
+	deadNamespacesPing chan struct{}
+	// protects all deadNamespaces* fields
+	deadNamespacesLock sync.Mutex
+
 	// shutdownMu is a mutex to protect shutdown parameters.
 	shutdownMu sync.Mutex
 	// isShutdown is true if the Butler been shut down.
@@ -145,11 +172,14 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 
 		streamsFinishedC: make(chan struct{}),
 
-		activateC:         make(chan struct{}),
-		streamC:           make(chan *stream),
-		streamSeen:        stringset.New(0),
-		streamServerStopC: make(chan struct{}),
-		streamStopC:       make(chan struct{}),
+		activateC:          make(chan struct{}),
+		streamC:            make(chan *stream),
+		streamSeen:         stringset.New(0),
+		deadNamespaces:     map[types.StreamName]*onceCloser{},
+		deadNamespacesMap:  map[types.StreamName]stringset.Set{},
+		deadNamespacesPing: make(chan struct{}, 1),
+		streamServerStopC:  make(chan struct{}),
+		streamStopC:        make(chan struct{}),
 	}
 
 	bc := bundler.Config{
@@ -337,6 +367,56 @@ func (b *Butler) Streams() []types.StreamName {
 	return ([]types.StreamName)(streams)
 }
 
+// WaitForNamespace prevents any new streams from being registered in the given
+// namespace, and waits for all existing streams in that namespace to drain.
+//
+// Every 5 seconds this logs the list of streams we're waiting for.
+func (b *Butler) WaitForNamespace(ctx context.Context, namespace types.StreamName) bool {
+	if !strings.HasSuffix(string(namespace), "/") {
+		namespace += "/"
+	}
+
+	ch := func() *onceCloser {
+		b.deadNamespacesLock.Lock()
+		defer b.deadNamespacesLock.Unlock()
+		ch, ok := b.deadNamespaces[namespace]
+		if !ok {
+			ch = newOnceCloser()
+			b.deadNamespaces[namespace] = ch
+		}
+		return ch
+	}()
+
+	select {
+	case b.deadNamespacesPing <- struct{}{}:
+	default:
+	}
+
+	timer := clock.NewTimer(ctx)
+	defer timer.Stop()
+
+	for {
+		timer.Reset(5 * time.Second)
+		select {
+		case <-timer.GetC():
+			logging.Infof(ctx, "waiting for the following streams: ")
+			streams := func() []string {
+				b.deadNamespacesLock.Lock()
+				defer b.deadNamespacesLock.Unlock()
+				return b.deadNamespacesMap[namespace].ToSlice()
+			}()
+			for _, ns := range streams {
+				logging.Infof(ctx, "  %s", ns)
+			}
+
+		case <-ch.C:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+}
+
 // StreamServer is butler's interface for
 // go.chromium.org/luci/logdog/client/butler/streamserver
 //
@@ -446,6 +526,7 @@ func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error
 		Context: streamCtx,
 		r:       rc,
 		c:       rc,
+		name:    types.StreamName(d.Name),
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "d", so
@@ -464,9 +545,100 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 	streamFinishedC := make(chan *stream)
 	streamC := b.streamC
 
-	activeCount := 0
+	activeStreams := stringset.New(100)
+
+	// TODO(iannucci): this is pretty fragile; by construction there's only one
+	// runStreams running at a time, but we do run it more than once because of
+	// sloppiness in the shutdown ("Wait()") routine.
+	//
+	// For this reason we clear deadNamespacesMap on every run of `runStreams` so
+	// that WaitForNamespace can report on the set of streams it's waiting for.
+	func() {
+		b.deadNamespacesLock.Lock()
+		defer b.deadNamespacesLock.Unlock()
+		b.deadNamespacesMap = map[types.StreamName]stringset.Set{}
+	}()
+
+	// pulls in new namespaces to block from b.deadNamespaces; generally this
+	// should be very fast, since we don't expect deadNamespaces to change very
+	// often. Returns `deadNamespacesMap` for convenience.
+	currentNamespaceMapLocked := func() map[types.StreamName]stringset.Set {
+		for k, closer := range b.deadNamespaces {
+			if b.deadNamespacesMap[k] == nil {
+				current := stringset.New(10)
+				activeStreams.Iter(func(stream string) bool {
+					if strings.HasPrefix(stream, string(k)) {
+						current.Add(stream)
+					}
+					return true
+				})
+				if current.Len() == 0 {
+					closer.Close()
+				}
+				b.deadNamespacesMap[k] = current
+			}
+		}
+		return b.deadNamespacesMap
+	}
+
+	computeDeadNamespaceMap := func() {
+		b.deadNamespacesLock.Lock()
+		defer b.deadNamespacesLock.Unlock()
+		currentNamespaceMapLocked()
+	}
+
+	namespacesOf := func(name types.StreamName) (ret []types.StreamName) {
+		var namespace types.StreamName
+		for {
+			namespace, _ = name.Split()
+			if namespace == "" {
+				return
+			}
+			ret = append(ret, namespace+"/")
+			name = namespace
+		}
+	}
+
+	// returns all the dead namespaces that `fullname` occupies.
+	streamDone := func(fullname types.StreamName) {
+		b.deadNamespacesLock.Lock()
+		defer b.deadNamespacesLock.Unlock()
+
+		namespaceMap := currentNamespaceMapLocked()
+
+		for _, ns := range namespacesOf(fullname) {
+			if nameset, ok := namespaceMap[ns]; ok {
+				if nameset.Del(string(fullname)) {
+					if nameset.Len() == 0 {
+						b.deadNamespaces[ns].Close()
+					}
+				}
+			}
+		}
+		return
+	}
+
+	// returns true if `fullname` is blacklisted by deadNamespaces.
+	isDead := func(fullname types.StreamName) bool {
+		b.deadNamespacesLock.Lock()
+		defer b.deadNamespacesLock.Unlock()
+
+		namespaceMap := currentNamespaceMapLocked()
+
+		for _, ns := range namespacesOf(fullname) {
+			if _, ok := namespaceMap[ns]; ok {
+				return true
+			}
+		}
+		return false
+	}
+
 	for {
 		select {
+		case <-b.deadNamespacesPing:
+			computeDeadNamespaceMap()
+			continue
+
 		case s, ok := <-streamC:
 			if !ok {
 				// Our streamC has been closed. At this point, we wait for current
@@ -475,9 +647,15 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 				continue
 			}
 
+			if isDead(s.name) {
+				log.Debugf(s, "Ignoring dead stream.")
+				s.closeStream()
+				continue
+			}
+
 			// Monitor goroutine to respond to shutdown signal and clean up stream.
 			log.Debugf(s, "Adding stream.")
-			activeCount++
+			activeStreams.Add(string(s.name))
 
 			closeOnce := sync.Once{}
 			closeStream := func() {
@@ -516,19 +694,20 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 				<-finishedC
 			}()
 
-		case <-streamFinishedC:
+		case s := <-streamFinishedC:
 			// A stream has reported that it finished.
 			//
 			// If this is the last active stream and we've been activated, exit the
 			// monitor.
-			activeCount--
-			if activeCount == 0 && activateC == nil {
+			streamDone(s.name)
+			activeStreams.Del(string(s.name))
+			if activeStreams.Len() == 0 && activateC == nil {
 				return
 			}
 
 		case <-activateC:
 			// If we're not managing any streams, then we're done.
-			if activeCount == 0 {
+			if activeStreams.Len() == 0 {
 				return
 			}
 

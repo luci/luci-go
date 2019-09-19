@@ -21,10 +21,13 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 type stream struct {
 	context.Context
+
+	name types.StreamName
 
 	r  io.Reader
 	c  io.Closer
