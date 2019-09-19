@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "cf7fbeba_e8bc3170",
+        "filename": "milo/frontend/ui/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-19T18:50:47Z",
+      "side": 1,
+      "message": "only lowercase, so no need.",
+      "parentUuid": "0e336098_7c2eb357",
+      "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4e7f69c_252a0426",
         "filename": "milo/frontend/ui/search_test.go",
         "patchSetId": 2
@@ -56,6 +74,24 @@
       "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "231c163e_aac76bc6",
+        "filename": "milo/frontend/ui/search_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-19T18:50:47Z",
+      "side": 1,
+      "message": "it was me being dumb and I was testing my assumptions.",
+      "parentUuid": "d4e7f69c_252a0426",
+      "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
