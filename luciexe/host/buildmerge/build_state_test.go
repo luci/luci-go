@@ -20,13 +20,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -47,22 +46,26 @@ func TestBuildState(t *testing.T) {
 	Convey(`buildState`, t, func() {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
 		So(err, ShouldBeNil)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
+		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		merger := &agent{
-			clockNow: func() *timestamp.Timestamp { return now },
-			calculateURLs: func(ns, stream string) (url, viewURL string) {
-				return fmt.Sprintf("url://%s/%s", ns, stream), fmt.Sprintf("view://%s/%s", ns, stream)
-			},
-			informed: make(chan struct{}, 1),
+		merger := New(ctx, "u/", &bbpb.Build{}, func(ns, stream string) (url, viewURL string) {
+			return fmt.Sprintf("url://%s%s", ns, stream), fmt.Sprintf("view://%s%s", ns, stream)
+		})
+		defer merger.Close()
+
+		informChan := make(chan struct{}, 1)
+		merger.informNewData = func() {
+			informChan <- struct{}{}
 		}
 		wait := func() {
-			<-merger.informed
+			<-informChan
 		}
 
 		Convey(`opened in error state`, func() {
-			bs := newBuildStateTracker(ctx, merger, "ns", errors.New("nope"))
+			bs := newBuildStateTracker(ctx, merger, "ns/", errors.New("nope"))
+			wait() // for final build
 			So(bs.getLatest(), ShouldResemble, &buildState{
 				build: &bbpb.Build{
 					SummaryMarkdown: "\n\nError in build protocol: nope",
@@ -76,7 +79,7 @@ func TestBuildState(t *testing.T) {
 		})
 
 		Convey(`basic`, func() {
-			bs := newBuildStateTracker(ctx, merger, "ns", nil)
+			bs := newBuildStateTracker(ctx, merger, "ns/", nil)
 
 			Convey(`ignores updates when merger cancels context`, func() {
 				cancel()
@@ -208,6 +211,7 @@ func TestBuildState(t *testing.T) {
 						}},
 					})
 					wait()
+					wait() // for final build
 					So(bs.getFinal(), ShouldResemble, &buildState{
 						closed:  true,
 						final:   true,
@@ -282,6 +286,7 @@ func TestBuildState(t *testing.T) {
 					}},
 				})
 				wait()
+				wait() // for final build
 				So(bs.getFinal(), ShouldResemble, &buildState{
 					closed:  true,
 					final:   true,
@@ -324,6 +329,7 @@ func TestBuildState(t *testing.T) {
 					},
 				}))
 				wait()
+				wait() // for final build
 				So(bs.getFinal(), ShouldResemble, &buildState{
 					closed:  true,
 					final:   true,
