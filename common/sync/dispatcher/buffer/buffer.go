@@ -283,12 +283,40 @@ func (buf *Buffer) LeaseOne(now time.Time) (leased *Batch) {
 		return
 	}
 
+	return buf.forceLeaseOne()
+}
+
+// leases the next available batch, regardless of its marked nextSend time.
+func (buf *Buffer) forceLeaseOne() (leased *Batch) {
+	if buf.unleased.Len() == 0 {
+		return nil
+	}
+
 	leased = buf.unleased.PopBatch()
 	buf.unAckedLeases[leased] = struct{}{}
 	buf.liveLeases[leased] = struct{}{}
 	buf.stats.UnleasedItemCount -= leased.countedSize
 	buf.stats.LeasedItemCount += leased.countedSize
 	return
+}
+
+// ForceLeaseAll leases and returns all unleased Batches immediately, regardless
+// of their send times.
+//
+// This is useful for cancelation scenarios where you no longer want to do
+// full processing on the remaining batches.
+//
+// NOTE: It's helpful to call Flush before ForceLeaseAll to include the
+// currently buffered, but unbatched, data.
+func (buf *Buffer) ForceLeaseAll() []*Batch {
+	if buf.unleased.Len() == 0 {
+		return nil
+	}
+	ret := make([]*Batch, 0, buf.unleased.Len())
+	for buf.unleased.Len() > 0 {
+		ret = append(ret, buf.forceLeaseOne())
+	}
+	return ret
 }
 
 // ACK records that all the items in the batch have been processed.

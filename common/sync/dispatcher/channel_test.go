@@ -48,15 +48,16 @@ func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...interfa
 func TestChannelConstruction(t *testing.T) {
 	Convey(`Channel`, t, func() {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, dbg := dbgIfVerbose(ctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		Convey(`construction`, func() {
 
 			Convey(`success`, func() {
-				ch, err := NewChannel(ctx, nil, dummySendFn)
+				ch, err := NewChannel(ctx, &Options{testingDbg: dbg}, dummySendFn)
 				So(err, ShouldBeNil)
-				cancel()
+				ch.Close()
 				<-ch.DrainC
 			})
 
@@ -159,31 +160,34 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 }
 
 func TestContextShutdown(t *testing.T) {
-	Convey(`context cancellation ends channel`, t, func(cvctx C) {
+	Convey(`context cancelation ends channel`, t, func(cvctx C) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx, dbg := dbgIfVerbose(ctx)
 		cctx, cancel := context.WithCancel(ctx)
 
 		sentBatches := []string{}
-		blockSend := make(chan struct{})
+		droppedBatches := []string{}
 
 		ch, err := NewChannel(cctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
-			DropFn:   noDrop,
+			DropFn: func(dropped *buffer.Batch) {
+				droppedBatches = append(droppedBatches, dropped.Data[0].(string))
+			},
 			Buffer: buffer.Options{
 				MaxLeases:    1,
 				BatchSize:    1,
-				FullBehavior: &buffer.BlockNewItems{MaxItems: 1},
+				FullBehavior: &buffer.BlockNewItems{MaxItems: 2},
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch) (err error) {
 			sentBatches = append(sentBatches, batch.Data[0].(string))
-			<-blockSend
+			<-cctx.Done()
 			return
 		})
 		So(err, ShouldBeNil)
 
 		ch.C <- "hey"
+		ch.C <- "buffered"
 		select {
 		case ch.C <- "blocked":
 			panic("channel should have been blocked")
@@ -192,7 +196,13 @@ func TestContextShutdown(t *testing.T) {
 		}
 
 		cancel()
+		ch.C <- "IGNORE ME" // canceled channel can be written to, but is dropped
+
 		ch.CloseAndDrain(ctx)
+
+		So(sentBatches, ShouldContain, "hey")
+		So(droppedBatches, ShouldContain, "buffered")
+		So(droppedBatches, ShouldContain, "IGNORE ME")
 	})
 }
 
@@ -402,7 +412,9 @@ func TestContextCancel(t *testing.T) {
 		cancel()
 
 		<-writerDone
-		<-ch.DrainC // must be closed
+
+		close(ch.C) // still responsible for closing C
+		<-ch.DrainC // everything shuts down now
 	})
 }
 
@@ -424,16 +436,8 @@ func TestDrainedFn(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		Convey(`via cancel`, func() {
-			cancel()
-			<-ch.DrainC
-			So(amDrained, ShouldBeTrue)
-		})
-
-		Convey(`via close`, func() {
-			ch.Close()
-			<-ch.DrainC
-			So(amDrained, ShouldBeTrue)
-		})
+		ch.Close()
+		<-ch.DrainC
+		So(amDrained, ShouldBeTrue)
 	})
 }
