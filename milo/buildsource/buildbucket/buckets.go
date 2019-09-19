@@ -103,15 +103,15 @@ func CIService(c context.Context) (*ui.CIService, error) {
 		// buildbucket guarantees that buckets that start with "luci.",
 		// start with "luci.<project id>." prefix.
 		project := strings.Split(bucket.Name, ".")[1]
-		group := ui.BuilderGroup{Name: bucket.Name}
-		group.Builders = make([]ui.Link, len(bucket.Builders))
+		result.BuilderGroups[i].Name = bucket.Name
+		result.BuilderGroups[i].Builders = make([]ui.Link, len(bucket.Builders))
 		for j, builder := range bucket.Builders {
-			group.Builders[j] = *ui.NewLink(
+			result.BuilderGroups[i].Builders[j] = *ui.NewLink(
 				builder.Name, fmt.Sprintf("/p/%s/builders/%s/%s", project, bucket.Name, builder.Name),
 				fmt.Sprintf("buildbucket builder %s in bucket %s", builder.Name, bucket.Name))
 		}
-		result.BuilderGroups[i] = group
+		result.BuilderGroups[i].Sort()
 	}
-
+	result.Sort()
 	return result, nil
 }
