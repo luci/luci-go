@@ -267,7 +267,7 @@
           <td>{{ .CreateTime | toTime | localTime "N/A" }}</td>
           <td>{{ duration .CreateTime .StartTime $now }}</td>
           <td>{{ duration .StartTime .EndTime $now }}</td>
-          <td>{{ with .Output }}{{ .SummaryMarkdown | renderMarkdown }}{{ end }}</td>
+          <td>{{ .SummaryMarkdown | renderMarkdown }}</td>
         </tr>
       {{ end }}
     </table>
