@@ -103,26 +103,26 @@ func (m *UpdateInvocationRequest) GetInvocation() *Invocation {
 }
 
 type DeriveInvocationFromSwarmingRequest struct {
-	// Swarming task.
+	// Swarming task from which to derive invocation.
 	Task *DeriveInvocationFromSwarmingRequest_SwarmingTask `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 	// Test path prefix.
 	//
-	// Examples: "gn/{label}/".
+	// Examples: "gn:{label}/".
 	//
 	// See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
 	// label examples.
 	//
 	// Generated test path examples:
-	// * GTest: gn/{label}/{suite}/{case}
-	// * javatests: gn/{label}/{full_java_method_name}
-	// * web tests: gn/{label}/{file_name}
+	// * GTest: gn:{label}/{suite}/{case}
+	// * javatests: gn:{label}/{full_java_method_name}
+	// * web tests: gn:{label}/{file_name}
 	TestPathPrefix string `protobuf:"bytes,2,opt,name=test_path_prefix,json=testPathPrefix,proto3" json:"test_path_prefix,omitempty"`
-	// Test variant base: for Chromium, expected keys in the def map are "bucket",
-	// "builder", and "test_suite".
+	// Test variant base. These get combined with the remainder of the test
+	// variant definition, including test parameters and other key/value pairs
+	// that may be derived from the swarming task.
 	//
-	// These get combined with the remainder of the test variant definition,
-	// including test parameters and other key/value pairs may be derived from
-	// the swarming task.
+	// For Chromium, expected keys in the def map are "bucket", "builder", and
+	// "test_suite".
 	BaseTestVariant      *VariantDef `protobuf:"bytes,3,opt,name=base_test_variant,json=baseTestVariant,proto3" json:"base_test_variant,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -281,7 +281,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RecorderClient interface {
-	// InsertInvocation creates a new invocation.
+	// Creates a new invocation.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
@@ -300,7 +300,7 @@ type RecorderClient interface {
 	// Impl note: transactionally inserts a new spanner row with invocation id
 	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error)
-	// UpdateInvocation updates an existing non-final invocation.
+	// Updates an existing non-final invocation.
 	//
 	// Compared to ResultStoreUpload:
 	// - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -315,8 +315,8 @@ type RecorderClient interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// DeriveInvocation derives an invocation given a swarming task and inserts if
-	// not already present.
+	// Derives an invocation given a swarming task and inserts if not already
+	// present.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
@@ -395,7 +395,7 @@ func (c *recorderClient) DeriveInvocationFromSwarming(ctx context.Context, in *D
 
 // RecorderServer is the server API for Recorder service.
 type RecorderServer interface {
-	// InsertInvocation creates a new invocation.
+	// Creates a new invocation.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
@@ -414,7 +414,7 @@ type RecorderServer interface {
 	// Impl note: transactionally inserts a new spanner row with invocation id
 	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(context.Context, *Invocation) (*Invocation, error)
-	// UpdateInvocation updates an existing non-final invocation.
+	// Updates an existing non-final invocation.
 	//
 	// Compared to ResultStoreUpload:
 	// - In a sense, combines UpdateInvocation, FinishInvocation,
@@ -429,8 +429,8 @@ type RecorderServer interface {
 	// the rest of the payload. If request insertion fails, exits successfully.
 	// Request table cleanup will be performed out of band.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*empty.Empty, error)
-	// DeriveInvocation derives an invocation given a swarming task and inserts if
-	// not already present.
+	// Derives an invocation given a swarming task and inserts if not already
+	// present.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
