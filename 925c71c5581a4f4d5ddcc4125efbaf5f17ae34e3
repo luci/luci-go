@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26daca06_7045f60e",
+        "filename": "milo/frontend/ui/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-09-19T17:35:11Z",
+      "side": 1,
+      "message": "Heh\n\nThat\u0027ll be the day ;)",
+      "range": {
+        "startLine": 32,
+        "startChar": 41,
+        "endLine": 32,
+        "endChar": 45
+      },
+      "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0e336098_7c2eb357",
+        "filename": "milo/frontend/ui/search.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-09-19T17:35:11Z",
+      "side": 1,
+      "message": "Should we also cast the bucket names to lower case prior to comparing?\n\n(Wait, does buildbucket allow upper-case letters in bucket names? I don\u0027t think I\u0027ve ever seen one...)",
+      "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4e7f69c_252a0426",
+        "filename": "milo/frontend/ui/search_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1170419
+      },
+      "writtenOn": "2019-09-19T17:35:11Z",
+      "side": 1,
+      "message": "🤔\n\nYou\u0027re testing golang\u0027s string comparison? Is that really necessary?",
+      "revId": "925c71c5581a4f4d5ddcc4125efbaf5f17ae34e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
