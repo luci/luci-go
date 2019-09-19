@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6ad04eb_b4c87ed0",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-19T07:31:46Z",
+      "side": 1,
+      "message": "I\u0027ll switch everything to errors.Annotate(...) at the end of the refactoring in a separate CL. For now keeping consistency.",
+      "range": {
+        "startLine": 118,
+        "startChar": 14,
+        "endLine": 118,
+        "endChar": 71
+      },
+      "revId": "611b177de68b5671ca8c2db316ef2e8d53105302",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
