@@ -266,6 +266,30 @@
     },
     {
       "key": {
+        "uuid": "3f6d8204_f3f4411a",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "later sgtm",
+      "parentUuid": "2078081f_5039e94a",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 2
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c69183f_a54b2d06",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -1131,6 +1155,30 @@
     },
     {
       "key": {
+        "uuid": "71ca5b18_678583a8",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "i think we need to use https://godoc.org/strings#ToValidUTF8 here, to get a valid string\n\nbut after that, we still need to convert to valid Markdown. The text should be wrapped with `` and angle brackets converted to \u0026gt; and \u0026lt;. Maybe extract it to function in luci/common, since it is sounds generally useful (in separate CL, and then rebase this CL on top of that one)",
+      "parentUuid": "5f3a1539_ab0c09a4",
+      "range": {
+        "startLine": 128,
+        "startChar": 47,
+        "endLine": 128,
+        "endChar": 66
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95b9fbd7_1fff1bef",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -1578,6 +1626,30 @@
       "side": 1,
       "message": "mergeTestVariantMaps?",
       "parentUuid": "66f842b9_1a83955b",
+      "range": {
+        "startLine": 220,
+        "startChar": 18,
+        "endLine": 220,
+        "endChar": 64
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f806de8_53726955",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "1e8e1f49_de3ddfca",
       "range": {
         "startLine": 220,
         "startChar": 18,

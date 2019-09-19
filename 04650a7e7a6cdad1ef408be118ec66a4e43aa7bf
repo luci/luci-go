@@ -1,0 +1,480 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5e70e88a_4c7e7dde",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "a HEX SHA256",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 19
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5a8c1ea_586f9e2e",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "just \"ID\"\nhttps://golang.org/doc/effective_go.html#Getters\n\nsame below with all \"get\" symbols",
+      "range": {
+        "startLine": 34,
+        "startChar": 23,
+        "endLine": 34,
+        "endChar": 28
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81eec928_d128e5b7",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "io.WriteString(h, k)\n\nsame below",
+      "range": {
+        "startLine": 42,
+        "startChar": 2,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00e1fad6_82d206a7",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "does not match the spec:\n\nhex(sha256(\u0027\u0027.join(\u0027%s:%s\\n\u0027 % (k, v) for k, v in sorted(def.items()))))\n\nlet\u0027s remove the if statement",
+      "range": {
+        "startLine": 45,
+        "startChar": 2,
+        "endLine": 45,
+        "endChar": 28
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "674dfb7e_41aa98a5",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "this is not a readable string. please use hex encoding",
+      "range": {
+        "startLine": 50,
+        "startChar": 8,
+        "endLine": 50,
+        "endChar": 14
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31e48a25_61f11540",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "preallocate the slice please",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 18
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7387e9b7_bca393f4",
+        "filename": "results/recorder/chromium/formats/common_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "nit: dot imports go in the end",
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7c9bbd6_00c75adf",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "why we do compute it second time? it is variantDef.Digest",
+      "range": {
+        "startLine": 103,
+        "startChar": 12,
+        "endLine": 103,
+        "endChar": 49
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a9bc6bc_af6d5295",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "setting same field in two places, far away from each other, is confusing. See also my another comment on what we should do with this field",
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8de1389b_464fb85c",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "nit: it would be easier to read if this code was extracted to its own func with a small scope",
+      "range": {
+        "startLine": 111,
+        "startChar": 0,
+        "endLine": 139,
+        "endChar": 5
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "869f17d8_8832851e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "simpler:\n\n  req.TestPathPrefix + basename",
+      "range": {
+        "startLine": 145,
+        "startChar": 15,
+        "endLine": 145,
+        "endChar": 64
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0bcd3ee_4c07e1d2",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "inv.Tests is random. Let\u0027s make it deterministic by sorting",
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9367482b_e9efa3dd",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "inconsistency: we have a variable for this, but not a variable for incomplete. In case of incomplete, we write to inv directly. Let\u0027s be consistent: either write directly to inv.VariantDefs, or add a variable for incomplete (and move inv variable down)",
+      "range": {
+        "startLine": 167,
+        "startChar": 19,
+        "endLine": 167,
+        "endChar": 30
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7db4980c_fdefd14b",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "let\u0027s add a tag to indicate that this is a gtest invocation. How about \"test_framework:gtest\"",
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5a904a2_823d4f74",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "we are losing info that this was FAILURE_ON_EXIT and not FAIL. Let\u0027s record this as a gtest_status tag. same concern with excessive_output",
+      "range": {
+        "startLine": 183,
+        "startChar": 7,
+        "endLine": 183,
+        "endChar": 22
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "186e6fdd_ce89505d",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "it is fail in recipes\n\nhttps://cs.chromium.org/chromium/build/scripts/slave/recipe_modules/test_results/resources/test_result.py?q\u003dEXCESSIVE_OUTPUT\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d13",
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "028440ce_71a05db3",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "consistency: use default:",
+      "range": {
+        "startLine": 195,
+        "startChar": 1,
+        "endLine": 196,
+        "endChar": 4
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d499e840_f8828aa0",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "nit: extractParameters",
+      "range": {
+        "startLine": 200,
+        "startChar": 23,
+        "endLine": 200,
+        "endChar": 36
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64820f19_b020e247",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "the last one wins.",
+      "range": {
+        "startLine": 209,
+        "startChar": 41,
+        "endLine": 210,
+        "endChar": 34
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00ab4865_a5cd5241",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "r is not used. Why is this a method of GTestResults?",
+      "range": {
+        "startLine": 211,
+        "startChar": 5,
+        "endLine": 211,
+        "endChar": 23
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e6dca71_65314315",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "we already have a type for this: VariantDefMap. Let\u0027s accept it here",
+      "range": {
+        "startLine": 211,
+        "startChar": 46,
+        "endLine": 211,
+        "endChar": 63
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "995d9eed_96371c7e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-19T22:36:46Z",
+      "side": 1,
+      "message": "this means the func does two things instead of one. https://en.wikipedia.org/wiki/Single_responsibility_principle\nlet\u0027s return def. If the caller needs proto, it is trivial to do it there",
+      "range": {
+        "startLine": 218,
+        "startChar": 12,
+        "endLine": 218,
+        "endChar": 22
+      },
+      "revId": "04650a7e7a6cdad1ef408be118ec66a4e43aa7bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
