@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "bf401bfa_aea4621e",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1306846
+      },
+      "writtenOn": "2019-09-19T08:14:33Z",
+      "side": 1,
+      "message": "Well, maybe provide something analogous to target.RootLabel(), but for hashing. If marshalling individual field values is good enough for PopulateProto(), it must be good enough for Hash(). For bool, h.Write() either 0 or 1. For int64, encode into an 8-byte buffer and h.Write() that. For string, convert to []byte and h.Write() that.",
+      "parentUuid": "d791b2bc_70d0e167",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2ae0a28_2ca960c1",
         "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
         "patchSetId": 18
@@ -93,6 +117,30 @@
       "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "270b1943_7cf622db",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1306846
+      },
+      "writtenOn": "2019-09-19T08:14:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3073fb91_8d8bb045",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
