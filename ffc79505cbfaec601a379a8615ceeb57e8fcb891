@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b041610_c44b0038",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-19T18:48:18Z",
+      "side": 1,
+      "message": "It should still delete even on upload failure.",
+      "revId": "ffc79505cbfaec601a379a8615ceeb57e8fcb891",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
