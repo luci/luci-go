@@ -25,6 +25,116 @@
     },
     {
       "key": {
+        "uuid": "990cdf70_ede7cfde",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "perhaps we should rename luci/results to luci/resultsdb? then we don\u0027t need the alias\n\nnot in this CL. this line is fine.",
+      "parentUuid": "69295151_35be2401",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 4
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35aaaff2_203f16b5",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "let\u0027s include only the information that the caller does not know, because the caller may further annotate the returned error with the information it knows (task id, hostname).",
+      "range": {
+        "startLine": 110,
+        "startChar": 31,
+        "endLine": 110,
+        "endChar": 47
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a424fd8b_25c4f70a",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "in go, error messages must start with a lower case letter",
+      "range": {
+        "startLine": 110,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 7
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad9420a_e8144a82",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "q, because it may be empty string or some garbage",
+      "range": {
+        "startLine": 194,
+        "startChar": 83,
+        "endLine": 194,
+        "endChar": 84
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43bcbc89_8ce5fc24",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "if think we should bubble this error up to the top. We don\u0027t want STATUS_UNSPECIFIED in our storage, it is corrupted data",
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "45d681c1_6b150fba",
         "filename": "results/util/util.go",
         "patchSetId": 13
@@ -48,6 +158,30 @@
     },
     {
       "key": {
+        "uuid": "2eca536e_4fdf6e5c",
+        "filename": "results/util/util.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "45d681c1_6b150fba",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 13
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13a609d6_f1c7223a",
         "filename": "results/variantdef.go",
         "patchSetId": 13
@@ -68,6 +202,30 @@
       "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "445cc0dd_9350a808",
+        "filename": "results/variantdef.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T19:53:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "13a609d6_f1c7223a",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 58,
+        "endChar": 13
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
