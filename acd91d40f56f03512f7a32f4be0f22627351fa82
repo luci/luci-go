@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16ca8f78_f9c7b60e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T20:32:00Z",
+      "side": 1,
+      "message": "this does not add much value in addition to L196-199. I think this code can be removed",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 43
+      },
+      "revId": "acd91d40f56f03512f7a32f4be0f22627351fa82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

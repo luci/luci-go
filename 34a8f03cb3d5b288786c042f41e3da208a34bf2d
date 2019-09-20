@@ -249,6 +249,24 @@
     },
     {
       "key": {
+        "uuid": "67851e33_86e15be7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T20:32:00Z",
+      "side": 1,
+      "message": "i think it is better to lose everything and complain loudly, fix the bug, and try again, rather than insert corrupted data",
+      "parentUuid": "ad89f5e9_7ebf53c5",
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45d681c1_6b150fba",
         "filename": "results/util/util.go",
         "patchSetId": 13
