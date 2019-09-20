@@ -26,6 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -153,6 +154,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	progress := newProgressReporter(ctx, files)
 
 	extracted = make([]pkg.FileInfo, 0, len(files))
+	var appendLock sync.Mutex
 	recordExtracted := func(file fs.File, symlink, hash string) {
 		fi := pkg.FileInfo{
 			Name:       file.Name(),
@@ -166,7 +168,13 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		if modTime := file.ModTime(); !modTime.IsZero() {
 			fi.ModTime = modTime.Unix()
 		}
+
+		// append() is not thread-safe, and the FileInfo data that get written
+		// to the manifest file can become corrupted in weird ways if we allow
+		// parallel goroutines to append to this slice.
+		appendLock.Lock()
 		extracted = append(extracted, fi)
+		appendLock.Unlock()
 	}
 
 	extractSymlinkFile := func(f fs.File) error {
@@ -216,7 +224,34 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	// extracted with everything else). Grab the manifest from them though. It
 	// will be extended with []pkg.FileInfo of extracted files and dropped to disk
 	// too, to represent the now unpacked package.
+	fileQueue := make(chan fs.File, len(files))
+	extractResults := make(chan error, len(files))
+	var wg sync.WaitGroup
+
+	workerCount := runtime.NumCPU() - 1
+	if workerCount < 1 {
+		workerCount = 1
+	} else if workerCount > len(files) {
+		workerCount = len(files)
+	}
+	// Spawn worker threads to do the CPU-intensive extraction in parallel.
+	for i := 0; i < workerCount; i++ {
+		go func() {
+			for {
+				if f, queueOpen := <-fileQueue; !queueOpen {
+					return
+				} else if f.Symlink() {
+					extractResults <- extractSymlinkFile(f)
+				} else {
+					extractResults <- extractRegularFile(f)
+				}
+				wg.Done()
+			}
+		}()
+	}
 	var manifestFile fs.File
+
+	fileCount := 0
 	for _, f := range files {
 		if err = ctx.Err(); err != nil {
 			break
@@ -233,13 +268,24 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 			// Skip private package files. Note that pkg.ManifestName is one such
 			// file, so the order of 'case' branches here is important.
 			progress.advance(f)
-		case f.Symlink():
-			err = extractSymlinkFile(f)
 		default:
-			err = extractRegularFile(f)
+			// Send file to a worker thread for extraction.
+			fileCount++
+			wg.Add(1)
+			fileQueue <- f
 		}
-		if err != nil {
-			break
+	}
+
+	wg.Wait()
+
+	close(fileQueue)
+	close(extractResults)
+
+	if err == nil {
+		for err := range extractResults {
+			if err != nil {
+				break
+			}
 		}
 	}
 

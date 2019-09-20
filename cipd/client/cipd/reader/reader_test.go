@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"sort"
 	"testing"
 	"time"
 
@@ -35,17 +36,32 @@ import (
 	. "go.chromium.org/luci/cipd/common"
 )
 
-func normalizeJSON(s string) (string, error) {
+func normalizeJSONWithHook(s string, hook func(map[string]interface{})) (string, error) {
 	// Round trip through default json marshaller to normalize indentation.
 	var x map[string]interface{}
 	if err := json.Unmarshal([]byte(s), &x); err != nil {
 		return "", err
+	}
+	if hook != nil {
+		hook(x)
 	}
 	blob, err := json.Marshal(x)
 	if err != nil {
 		return "", err
 	}
 	return string(blob), nil
+}
+
+func normalizeJSON(s string) (string, error) {
+	return normalizeJSONWithHook(s, nil)
+}
+
+func shouldContainSameStrings(actual interface{}, expected ...interface{}) string {
+	sort.Strings(actual.([]string))
+	for _, slice := range expected {
+		sort.Strings(slice.([]string))
+	}
+	return ShouldResemble(actual, expected...)
 }
 
 func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
@@ -61,6 +77,38 @@ func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
 		return err.Error()
 	}
 	return ShouldEqual(actualNorm, expectedNorm)
+}
+
+func shouldBeSameManifest(actual interface{}, expected ...interface{}) string {
+	if len(expected) != 1 {
+		return "Too many argument for shouldBeSameManifest"
+	}
+	actualNorm, err := normalizeManifest(actual.(string))
+	if err != nil {
+		return err.Error()
+	}
+	expectedNorm, err := normalizeManifest(expected[0].(string))
+	if err != nil {
+		return err.Error()
+	}
+	return ShouldEqual(actualNorm, expectedNorm)
+}
+
+func normalizeManifest(manifestJSON string) (string, error) {
+	manifest := pkg.Manifest{}
+	err := json.Unmarshal([]byte(manifestJSON), &manifest)
+	if err != nil {
+		return "", err
+	}
+	sort.Slice(manifest.Files, func(i, j int) bool {
+		f1, f2 := manifest.Files[i], manifest.Files[j]
+		return f1.Name < f2.Name
+	})
+	data, err := json.MarshalIndent(&manifest, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 type bytesSource struct {
@@ -247,7 +295,7 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -258,7 +306,7 @@ func TestPackageReading(t *testing.T) {
 				".cipdpkg/manifest.json",
 			})
 		} else {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -362,7 +410,7 @@ func TestPackageReading(t *testing.T) {
 			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
-			shouldBeSameJSONDict, goodManifest)
+			shouldBeSameManifest, goodManifest)
 	})
 
 	Convey("ExtractFiles handles v1 packages correctly", t, func() {
@@ -414,7 +462,7 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
@@ -423,7 +471,7 @@ func TestPackageReading(t *testing.T) {
 				".cipdpkg/manifest.json",
 			})
 		} else {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
@@ -510,7 +558,7 @@ func TestPackageReading(t *testing.T) {
 			}`)
 		}
 		So(string(dest.fileByName(".cipdpkg/manifest.json").Bytes()),
-			shouldBeSameJSONDict, goodManifest)
+			shouldBeSameManifest, goodManifest)
 	})
 }
 
