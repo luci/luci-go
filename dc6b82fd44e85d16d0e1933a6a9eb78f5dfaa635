@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a91f80ca_f4f232c3",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "most of the code in this file is about this type. I think it would be cleaner to move this type and all of its methods to a separate file, e.g. \"variantdef.go\"\n\nalso it is more general than chromium specific formats, or even recorder. Let\u0027s move it to the luci/results package",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22f4c885_e3b4d0d1",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "this looks like a generally useful function. I suspect we will need it further.\nLet\u0027s make it public and add comments.",
+      "range": {
+        "startLine": 62,
+        "startChar": 23,
+        "endLine": 62,
+        "endChar": 33
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "590640ad_0ab28bde",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "It would be hard to debug without annotating this error with information about iteration index and test name",
+      "range": {
+        "startLine": 107,
+        "startChar": 16,
+        "endLine": 107,
+        "endChar": 19
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e720dff_3cf158a4",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "TODO(jchinlee)\n\nsame below",
+      "range": {
+        "startLine": 120,
+        "startChar": 7,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c07944e_804c01e1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "there also might be unexpected SKIPPED tests. Please add this to the todo",
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ab272f7_4481a754",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "paths",
+      "range": {
+        "startLine": 136,
+        "startChar": 52,
+        "endLine": 136,
+        "endChar": 57
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2f058a6_49b0e6c7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "FYI i plan to rename this to Path under this CL is landed",
+      "range": {
+        "startLine": 144,
+        "startChar": 39,
+        "endLine": 144,
+        "endChar": 43
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9e64478_8acfb7f9",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "inconsistency: below, we use gtest_ prefix for status. Let\u0027s use it here too: gtest_global_tag",
+      "range": {
+        "startLine": 159,
+        "startChar": 47,
+        "endLine": 159,
+        "endChar": 57
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69695f11_69be4175",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "not used. Let\u0027s make a global func, with a name entailing that this is specific to gtest",
+      "range": {
+        "startLine": 166,
+        "startChar": 6,
+        "endLine": 166,
+        "endChar": 7
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29111d5f_632cf9ce",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "what do we expect here? I am worried about cases that we don\u0027t know about.\n\nlet\u0027s use `case \"\"` here, and return an error in default case.",
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3777667_c5184479",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "same here, r is not used",
+      "range": {
+        "startLine": 190,
+        "startChar": 5,
+        "endLine": 190,
+        "endChar": 23
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b22d1d6c_56d2fbae",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 198,
+        "startChar": 1,
+        "endLine": 198,
+        "endChar": 7
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "661be9f8_7917f511",
+        "filename": "results/util/util.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T18:28:53Z",
+      "side": 1,
+      "message": "k, v string",
+      "range": {
+        "startLine": 21,
+        "startChar": 16,
+        "endLine": 21,
+        "endChar": 34
+      },
+      "revId": "dc6b82fd44e85d16d0e1933a6a9eb78f5dfaa635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
