@@ -21,59 +21,147 @@ package luci.resultsdb;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/results/proto/v1/common.proto";
-import "go.chromium.org/luci/results/proto/v1/tests.proto";
 
 option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
+// A container of test results.
+// Composable: can include other invocations, see inclusions field.
+// Immutable once finalized.
 message Invocation {
+  // A uninque identifier of the invocation.
+  // LUCI systems MAY use nicely formatted IDs, such as "build/1234567890".
+  // All other clients MUST use GUIDs.
   string id = 1;
 
-  Bucket bucket = 2;
-
+  // A container for a given test case.
   message Test {
-    // regex: ^\w+(\|\w+)*$
-    // max length: 1024
-    // TODO(jchinlee): Update regex format when finalized if needed.
-    string name = 1;
+    // Test path, a unique identifier of the test.
+    //
+    // If a two tests have a common test path prefix that ends with a
+    // non-alphanumeric character, such two tests are considered siblings in a
+    // hierarchy. Examples:
+    // - "a/b/c"
+    // - "a/b/d"
+    // - "a/b/e:x"
+    // - "a/b/e:y"
+    // - "a/f"
+    // The groups of siblings are what you expect:
+    // - All are sibling because of the common prefix "a/"
+    // - First 4 are siblings  because of the common prefix "a/b"
+    // - "a/b/e:x" and "a/b/e:y" are siblings because of the common prefix
+    //   "a/b/e:".
+    //
+    // LUCI does not intepret test paths in any other way.
+    string path = 1;
+
+    // Results of running specific variants of the test.
     repeated TestVariant variants = 2;
   }
+
+  // Test-variant-specific information.
   message TestVariant {
-    string variant_id = 1; // see variant_defs below
-    repeated Result results = 2;
+    // ID of the variant, a key in Invocation.variant_defs.
+    string variant_id = 1;
+
+    // Individual results of this test variant.
+    repeated TestResult results = 2;
+
+    // Exonerations for this test variant.
+    // An exoneration retroactively marks an unexpected test results as
+    // expected. This applies not only to results in this Invocation, but also
+    // to results in the included invocations, recursively.
+    //
+    // The recurisve nature of exenorations puts it apart from making a test
+    // result as expected. Chromium uses to mark test failures with a patch
+    // expected if the same test variant failed without the patch (at HEAD).
     repeated Exoneration exonerations = 3;
   }
-  // The tests in this and included invocations.
-  // By default, only test variants with only unexpected results are included.
-  // To load all test results, GetInvocationRequest.expected_tests must be true.
+
+  // Test results.
+  //
+  // When reading an invocation, by default this field incldues tests
+  // from the included invocations (see includes field), so the client
+  // does not have to load the transitive closure of included invocations.
   repeated Test tests = 3;
 
+  // All variant definitions used in this invocation message.
   // Maps a variant id to its definition.
   map<string, VariantDef> variant_defs = 4;
 
+  // Invocation-level string key-value pairs.
+  // A key can be repeated.
   repeated StringPair tags = 5;
 
+  // The contents of the invocation are incomplete.
+  // For example, test harness stopped before executing all tests, or a
+  // Swarming bot died.
   bool incomplete = 6;
 
+  // One directed inclusion edge.
   message Include {
+    // ID of the included invocation.
+    //
+    // When inserting the inclusion edge, if the referenced invocation is not
+    // finalized, then it is taken with a promise that it will get finalized
+    // before the parent invocation is finalized. If this does not happen,
+    // then the included invocation
     string invocation_id = 1;
-    // If specified, include inconsequential invocations.
+
+    // Although included, this invocation does not influences the final outcome
+    // of this invocation. A typical example is a retry where the last
+    // attempt wins and previous attempts no longer matter.
+    //
+    // An existing inclusion edge can be marked inconsequential after insertion,
+    // but before the invocation is finalized:
+    // Call UpdateInvocation with an inclusion of the same invocation id, but
+    // inconsequential set to true.
+    // The opposite is not supported.
     bool inconsequential = 2;
+
+    // The included invocation was finalized before the parent invocation.
+    // The formula for the field is
+    //   included_inv.finalize_time < parent_inv.finalize_time
+    // If the included invocation is final, but the parent is not yet, the
+    // edge is ready. If both are not final yet, the edge is not ready *yet*,
+    // but its value may change over time, until the parent invocation is
+    // finalized.
+    //
+    // In practice, either an edge is ready because the parent is expected to
+    // waits for its children to conclude its own result, or it does not matter
+    // e.g. if the parent was canceled and finalized prematurely.
+    //
+    // When fetching an invocation via API, unready edges are discarded, unless
+    // the request says otherwise.
+    //
+    // This field is read-only: values provided by clients are ignored.
+    bool ready = 3;
   }
-  // List of invocations to include
+
+
+  // List of invocations to include in this invocation.
+  // When fetching an invocation, test results of recursively included
+  // invocations are presented as a part of the returned invocation.
+  // If the same test variant was executed in multiple invocations, all
+  // results are unioned.
   repeated Include includes = 7;
 
-  // A secret token required to update this invocation.
-  // Present only in CreateInvocation response.
-  // Elaborated in Ingestion section.
+  // A secret token required in UpdateInvocation.
+  // Present only in InsertInvocation response.
   string update_token = 8;
 
-  // This invocation is no longer updatable.
-  bool is_final = 9;
+  // This invocation is immutable.
+  // One finalized, fetching the invocation via API is guaranteed to return
+  // the same data, unless explicitly specified otherwise
+  // (see InvocationView.exclude_unready).
+  bool final = 9;
 
-  // Timestamp when to forcefully finalize the invocation.
-  // Can be extended.
+  // Timestamp when the invocation will be forcefully finalized.
+  // Can be extended with UpdateInvocation until finalized.
   google.protobuf.Timestamp deadline = 10;
 
+  // When the invocation was created. Required.
   google.protobuf.Timestamp create_time = 11;
+
+  // When the invocation was finalized. Optional.
   google.protobuf.Timestamp finalize_time = 12;
 }
