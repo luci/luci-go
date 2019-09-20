@@ -307,15 +307,17 @@ func upload(ctx context.Context, client *isolatedclient.Client, baseDir, outDir 
 	return digest, &stats, nil
 }
 
-func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (commonisolated.HexDigest, *UploadStats, error) {
+func uploadThenDelete(ctx context.Context, client *isolatedclient.Client, baseDir, outDir string) (digest commonisolated.HexDigest, stats *UploadStats, err error) {
 	start := time.Now()
+	absOutDir := filepath.Join(baseDir, outDir)
 
-	digest, stats, err := upload(ctx, client, baseDir, outDir)
+	digest, stats, err = upload(ctx, client, baseDir, outDir)
 	if err != nil {
+		filesystem.RemoveAll(absOutDir)
+
 		return "", nil, errors.Annotate(err, "failed to call upload").Err()
 	}
 
-	absOutDir := filepath.Join(baseDir, outDir)
 	if err := filesystem.RemoveAll(absOutDir); err != nil {
 		return "", nil, errors.Annotate(err, "failed to call RemoveAll(%s)", absOutDir).Err()
 	}
