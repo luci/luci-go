@@ -44,6 +44,9 @@ func setErrorOnBuild(build *bbpb.Build, err error) {
 //
 // Sets EndTime and UpdateTime for the build, and EndTime for all steps (if
 // they're missing one). Any incomplete steps will be marked as "CANCELED".
+//
+// If this needs to make adjustments to `build.Steps`, it will make shallow
+// copies of Steps, as well as the individual steps which need modification.
 func processFinalBuild(now *timestamp.Timestamp, build *bbpb.Build) {
 	if !protoutil.IsEnded(build.Status) {
 		setErrorOnBuild(build, errors.Reason(
@@ -52,18 +55,36 @@ func processFinalBuild(now *timestamp.Timestamp, build *bbpb.Build) {
 	}
 
 	// Mark incomplete steps as canceled and set EndTime for all steps missing it.
-	for _, s := range build.Steps {
-		if !protoutil.IsEnded(s.Status) {
-			s.Status = bbpb.Status_CANCELED
-			if s.SummaryMarkdown != "" {
-				s.SummaryMarkdown += "\n"
+	newSteps := build.Steps
+	copiedSteps := false
+	for i, s := range build.Steps {
+		terminalStatus := protoutil.IsEnded(s.Status)
+		if terminalStatus && s.EndTime != nil {
+			continue
+		}
+
+		// maybe make a copy of the Steps slice
+		if !copiedSteps {
+			copiedSteps = true
+			newSteps = make([]*bbpb.Step, len(build.Steps))
+			copy(newSteps, build.Steps)
+		}
+
+		// make a shallow copy of the step
+		sVal := *s
+		if !terminalStatus {
+			sVal.Status = bbpb.Status_CANCELED
+			if sVal.SummaryMarkdown != "" {
+				sVal.SummaryMarkdown += "\n"
 			}
-			s.SummaryMarkdown += "step was never finalized; did the build crash?"
+			sVal.SummaryMarkdown += "step was never finalized; did the build crash?"
 		}
-		if s.EndTime == nil {
-			s.EndTime = now
+		if sVal.EndTime == nil {
+			sVal.EndTime = now
 		}
+		newSteps[i] = &sVal
 	}
+	build.Steps = newSteps
 	build.UpdateTime = now
 	build.EndTime = now
 }
