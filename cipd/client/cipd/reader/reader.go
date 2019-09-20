@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -127,6 +128,11 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 	return inst, nil
 }
 
+type fileToExtract struct {
+	fs.File
+	index int
+}
+
 // ExtractFiles extracts all given files into a destination, with a progress
 // report.
 //
@@ -152,24 +158,25 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 
 	progress := newProgressReporter(ctx, files)
 
-	extracted = make([]pkg.FileInfo, 0, len(files))
-	recordExtracted := func(file fs.File, symlink, hash string) {
+	extracted = make([]pkg.FileInfo, len(files))
+	recordExtracted := func(f fileToExtract, symlink, hash string) {
 		fi := pkg.FileInfo{
-			Name:       file.Name(),
-			Size:       file.Size(),
-			Executable: file.Executable(),
-			Writable:   file.Writable(),
-			WinAttrs:   file.WinAttrs().String(),
+			Name:       f.Name(),
+			Size:       f.Size(),
+			Executable: f.Executable(),
+			Writable:   f.Writable(),
+			WinAttrs:   f.WinAttrs().String(),
 			Symlink:    symlink,
 			Hash:       hash,
 		}
-		if modTime := file.ModTime(); !modTime.IsZero() {
+		if modTime := f.ModTime(); !modTime.IsZero() {
 			fi.ModTime = modTime.Unix()
 		}
-		extracted = append(extracted, fi)
+
+		extracted[f.index] = fi
 	}
 
-	extractSymlinkFile := func(f fs.File) error {
+	extractSymlinkFile := func(f fileToExtract) error {
 		defer progress.advance(f)
 		target, err := f.SymlinkTarget()
 		if err != nil {
@@ -182,7 +189,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		return nil
 	}
 
-	extractRegularFile := func(f fs.File) (err error) {
+	extractRegularFile := func(f fileToExtract) (err error) {
 		defer progress.advance(f)
 		out, err := dest.CreateFile(ctx, f.Name(), fs.CreateFileOptions{
 			Executable: f.Executable(),
@@ -211,13 +218,15 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		return err
 	}
 
+	fileQueue := make(chan fileToExtract, len(files))
+
 	// Extract everything except files under .cipdpkg dir (they are special CIPD
 	// guts that are interpreted by CIPD itself and thus don't need to be blindly
 	// extracted with everything else). Grab the manifest from them though. It
 	// will be extended with []pkg.FileInfo of extracted files and dropped to disk
 	// too, to represent the now unpacked package.
 	var manifestFile fs.File
-	for _, f := range files {
+	for i, f := range files {
 		if err = ctx.Err(); err != nil {
 			break
 		}
@@ -233,15 +242,36 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 			// Skip private package files. Note that pkg.ManifestName is one such
 			// file, so the order of 'case' branches here is important.
 			progress.advance(f)
-		case f.Symlink():
-			err = extractSymlinkFile(f)
 		default:
-			err = extractRegularFile(f)
-		}
-		if err != nil {
-			break
+			// Send file to a worker thread for extraction.
+			fileQueue <- fileToExtract{
+				File:  f,
+				index: i,
+			}
 		}
 	}
+	close(fileQueue)
+
+	workerCount := 1
+	// Spawn worker threads to do the CPU-intensive extraction in parallel.
+	err = parallel.WorkPool(workerCount, func(tasks chan<- func() error) {
+		for {
+			if err = ctx.Err(); err != nil {
+				return
+			}
+			f, queueOpen := <-fileQueue
+			if !queueOpen {
+				return
+			}
+			tasks <- func() error {
+				if f.Symlink() {
+					return extractSymlinkFile(f)
+				} else {
+					return extractRegularFile(f)
+				}
+			}
+		}
+	})
 
 	switch {
 	case err != nil || bool(!withManifest):
@@ -258,7 +288,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	if err != nil {
 		return
 	}
-	manifest.Files = extracted
+	manifest.Files = excludeNoNameFiles(extracted)
 
 	// And place it into the destination.
 	out, err := dest.CreateFile(ctx, pkg.ManifestName, fs.CreateFileOptions{})
@@ -272,6 +302,19 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	}()
 	err = pkg.WriteManifest(&manifest, out)
 	return
+}
+
+// excludeNoNameFiles returns all the files with non-empty names. It does the
+// filtering in-place to avoid extra memory allocation.
+func excludeNoNameFiles(files []pkg.FileInfo) []pkg.FileInfo {
+	keepCount := 0
+	for _, file := range files {
+		if file.Name != "" {
+			files[keepCount] = file
+			keepCount++
+		}
+	}
+	return files[:keepCount]
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes
@@ -344,11 +387,11 @@ func (r *progressReporter) advance(f fs.File) {
 		size = f.Size()
 	}
 
-	// Report progress on first and last 'advance' calls and each 2 sec.
+	// Report progress on first and last 'advance' calls and each 0.5 sec.
 	r.Lock()
 	r.extractedSize += size
 	r.extractedCount++
-	if r.extractedCount == 1 || r.extractedCount == r.totalCount || now.Sub(r.prevReport) > 2*time.Second {
+	if r.extractedCount == 1 || r.extractedCount == r.totalCount || now.Sub(r.prevReport) > 500*time.Millisecond {
 		reportNow = true
 		if r.totalSize != 0 {
 			progress = int(float64(r.extractedSize) * 100 / float64(r.totalSize))
@@ -672,15 +715,17 @@ func (f *fileInZip) Open() (io.ReadCloser, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ReaderAt implementation via ReadSeeker. Not concurrency safe, moves file
-// pointer around without any locking. Works OK in the context of OpenInstance
-// function though (where OpenInstance takes sole ownership of io.ReadSeeker).
+// ReaderAt thread-safe implementation via ReadSeeker.
 
 type readerAt struct {
+	sync.Mutex
+
 	r io.ReadSeeker
 }
 
 func (r *readerAt) ReadAt(data []byte, off int64) (int, error) {
+	r.Lock()
+	defer r.Unlock()
 	_, err := r.r.Seek(off, os.SEEK_SET)
 	if err != nil {
 		return 0, err

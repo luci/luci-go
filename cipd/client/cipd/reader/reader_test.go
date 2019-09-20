@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -34,6 +35,23 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/cipd/common"
 )
+
+func stringCounts(values []string) map[string]int {
+	counts := make(map[string]int)
+	for _, v := range values {
+		counts[v]++
+	}
+	return counts
+}
+
+// shouldContainSameStrings checks if the left and right side are slices that
+// contain the same strings, regardless of the ordering.
+func shouldContainSameStrings(actual interface{}, expected ...interface{}) string {
+	if len(expected) != 1 {
+		return "Too many arguments for shouldContainSameStrings"
+	}
+	return ShouldResemble(stringCounts(actual.([]string)), stringCounts(expected[0].([]string)))
+}
 
 func normalizeJSON(s string) (string, error) {
 	// Round trip through default json marshaller to normalize indentation.
@@ -50,7 +68,7 @@ func normalizeJSON(s string) (string, error) {
 
 func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
 	if len(expected) != 1 {
-		return "Too many argument for shouldBeSameJSONDict"
+		return "Too many arguments for shouldBeSameJSONDict"
 	}
 	actualNorm, err := normalizeJSON(actual.(string))
 	if err != nil {
@@ -247,7 +265,7 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -258,7 +276,7 @@ func TestPackageReading(t *testing.T) {
 				".cipdpkg/manifest.json",
 			})
 		} else {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"writable",
@@ -414,7 +432,7 @@ func TestPackageReading(t *testing.T) {
 			names[i] = f.name
 		}
 		if runtime.GOOS != "windows" {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
@@ -423,7 +441,7 @@ func TestPackageReading(t *testing.T) {
 				".cipdpkg/manifest.json",
 			})
 		} else {
-			So(names, ShouldResemble, []string{
+			So(names, shouldContainSameStrings, []string{
 				"testing/qwerty",
 				"abc",
 				"rel_symlink",
@@ -517,9 +535,10 @@ func TestPackageReading(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 
 type testDestination struct {
-	beginCalls int
-	endCalls   int
-	files      []*testDestinationFile
+	beginCalls       int
+	endCalls         int
+	files            []*testDestinationFile
+	registerFileLock sync.Mutex
 }
 
 type testDestinationFile struct {
@@ -547,7 +566,7 @@ func (d *testDestination) CreateFile(ctx context.Context, name string, opts fs.C
 		modtime:    opts.ModTime,
 		winAttrs:   opts.WinAttrs,
 	}
-	d.files = append(d.files, f)
+	d.registerFile(f)
 	return f, nil
 }
 
@@ -556,7 +575,7 @@ func (d *testDestination) CreateSymlink(ctx context.Context, name string, target
 		name:          name,
 		symlinkTarget: target,
 	}
-	d.files = append(d.files, f)
+	d.registerFile(f)
 	return nil
 }
 
@@ -572,4 +591,10 @@ func (d *testDestination) fileByName(name string) *testDestinationFile {
 		}
 	}
 	return nil
+}
+
+func (d *testDestination) registerFile(f *testDestinationFile) {
+	d.registerFileLock.Lock()
+	d.files = append(d.files, f)
+	d.registerFileLock.Unlock()
 }
