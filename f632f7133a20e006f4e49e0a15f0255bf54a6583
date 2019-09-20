@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5469e47_d63ab5cb",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 37,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 11
+      },
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "540ad45c_674f3336",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "i don\u0027t think it is this method\u0027s job to do this",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 46
+      },
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76926fbf_38311185",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "MergeTestVariantMaps",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 14
+      },
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33c64f54_73c89bd7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "please move into L132\n\n  Incomplete: incomplete,",
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f47c1b4b_8a689045",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "looks like we are adding the status conditionally.\nconditionals add complexity. let\u0027s do it unconditionally",
+      "range": {
+        "startLine": 170,
+        "startChar": 32,
+        "endLine": 172,
+        "endChar": 3
+      },
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63a4e71c_74ddb5cc",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "let\u0027s declare variables closer to their usage\n\nincidentally it would make code shorter:\n\n  rpb :\u003d \u0026resultspb.Result{ \n    Status:status,\n    Tags: ...,\n    Duration: ...,\n  }",
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbcdb717_d9cbb0f7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "unnecessary. \"\" is a valid base64 value",
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1287,6 +1287,30 @@
     },
     {
       "key": {
+        "uuid": "14c2f163_0e596386",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T05:40:34Z",
+      "side": 1,
+      "message": "\u003e It looks like\n\u003e 1) GTest output wants to be wrapped as a code block or span, neither of which should escape angle brackets, and\n\ni see\n\n\u003e 2) %q (which is how we discussed outputting the data here in order to preserve the non-UTF8 substrings) already Go-escapes the string, so if we want to render the GTest output nicely we probably actually want to /undo/ some of the whitespace escaping (e.g. for \\n and \\t), and then wrap as a code block.\n\nok, then let\u0027s use ToValidUTF8 for now. We can make it more sophisticated later.\n\n\u003e For other kinds of output that wouldn\u0027t get treated as code blocks and spans we /would/ want to escape the angle brackets.\n\u003e \n\u003e WDYT about deciding how to process the strings for GTest output here, and then refactoring out the generalizable parts for Markdown processing later?\n\nok",
+      "parentUuid": "76e00b8a_625706e3",
+      "range": {
+        "startLine": 128,
+        "startChar": 47,
+        "endLine": 128,
+        "endChar": 66
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95b9fbd7_1fff1bef",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
