@@ -1,0 +1,235 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ad93d7f_cd10812f",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "I find it hard to follow, but possibly because I lack reasons for having them separate.\n\nWhy is receive side of channel public? Can it be made a public method instead?",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 32
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "348686ff_b2f4166e",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "these 2 always used together and only for each other. atomic\u003cbool\u003e would have been the perfect fit -- but I\u0027m not aware of such type in go..",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 12
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd6ed101_063d79c0",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "I didn\u0027t grok it at first, but reading tests wondered \"wait, who closes the channel?\" and then realized this. Neat!",
+      "range": {
+        "startLine": 157,
+        "startChar": 14,
+        "endLine": 157,
+        "endChar": 26
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5508f7a8_5941e6c0",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "\u003e \"recieves\" is a possible misspelling of \"receives\".\n\nPlease Fix",
+      "parentUuid": "043f8238_18eb3ee2",
+      "range": {
+        "startLine": 172,
+        "startChar": 39,
+        "endLine": 172,
+        "endChar": 47
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f84d8ad_987db890",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "Is this to skip all irrelevant streams that child recipe opens?",
+      "range": {
+        "startLine": 182,
+        "startChar": 1,
+        "endLine": 182,
+        "endChar": 12
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c175b5b_dfda2848",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "one last time?",
+      "range": {
+        "startLine": 221,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 19
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc8b5f84_8c623cb9",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "it appears if state is invalid you ignore it anyways below. So, why not make L248 inside if{} above?\nyou can then name s/states/validStates  (L241)",
+      "range": {
+        "startLine": 248,
+        "startChar": 2,
+        "endLine": 248,
+        "endChar": 19
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4568f3eb_67c1aec9",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "state, ok :\u003d states[...]\nif !ok || state.invalid {\n  return nil\n}\n\nand de-indent the rest.",
+      "range": {
+        "startLine": 260,
+        "startChar": 2,
+        "endLine": 260,
+        "endChar": 37
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0992887_acfee884",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "ah, you are making a ponter to a copy, right? add a comment, please :)",
+      "range": {
+        "startLine": 264,
+        "startChar": 5,
+        "endLine": 265,
+        "endChar": 20
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38ca1989_c10a4c74",
+        "filename": "luciexe/host/buildmerge/agent_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:25:26Z",
+      "side": 1,
+      "message": "👍 for such test. It didn\u0027t immediately occur to me reading the impl. code.",
+      "range": {
+        "startLine": 175,
+        "startChar": 3,
+        "endLine": 176,
+        "endChar": 53
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
