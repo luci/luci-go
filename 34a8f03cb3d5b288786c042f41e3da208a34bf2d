@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8650d81b_c83ba4ab",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T20:17:45Z",
+      "side": 1,
+      "message": "OK, thanks",
+      "parentUuid": "990cdf70_ede7cfde",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 4
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "35aaaff2_203f16b5",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 13
@@ -95,6 +119,54 @@
     },
     {
       "key": {
+        "uuid": "beaa65c4_85768834",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T20:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a424fd8b_25c4f70a",
+      "range": {
+        "startLine": 110,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 7
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c084ff2_feed80a9",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T20:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35aaaff2_203f16b5",
+      "range": {
+        "startLine": 110,
+        "startChar": 31,
+        "endLine": 110,
+        "endChar": 47
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ad9420a_e8144a82",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 13
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "31ac7804_1b94ac50",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T20:17:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ad9420a_e8144a82",
+      "range": {
+        "startLine": 194,
+        "startChar": 83,
+        "endLine": 194,
+        "endChar": 84
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43bcbc89_8ce5fc24",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 13
@@ -132,6 +228,24 @@
       "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad89f5e9_7ebf53c5",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T20:17:45Z",
+      "side": 1,
+      "message": "OK, then we\u0027ll lose the overall results. We can reingest the isolated outputs if we do get unrecognized statuses.\n\nAlso accordingly returned error even if the GTest output itself contains \"UNKNOWN\" as a status.",
+      "parentUuid": "43bcbc89_8ce5fc24",
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
