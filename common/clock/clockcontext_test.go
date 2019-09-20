@@ -109,8 +109,8 @@ func TestClockContext(t *testing.T) {
 
 		Convey(`A context with a deadline wrapping a cancellable parent`, func() {
 			Convey(`Successfully reports its deadline.`, func() {
-				cctx, _ := context.WithCancel(Set(context.Background(), &mc))
-				ctx, _ := WithTimeout(cctx, 10*time.Millisecond)
+				ctx, cancel := WithTimeout(Set(context.Background(), &mc), 10*time.Millisecond)
+				defer cancel()
 
 				deadline, ok := ctx.Deadline()
 				So(ok, ShouldBeTrue)
@@ -122,35 +122,35 @@ func TestClockContext(t *testing.T) {
 					return true
 				}
 
-				cctx, _ := context.WithCancel(Set(context.Background(), &mc))
-				ctx, _ := WithTimeout(cctx, 10*time.Millisecond)
+				cctx, cancel := context.WithCancel(Set(context.Background(), &mc))
+				defer cancel()
+				ctx, cancel := WithTimeout(cctx, 10*time.Millisecond)
+				defer cancel()
 				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
 			})
 
 			Convey(`Will successfully cancel with its cancel func.`, func() {
-				cctx, _ := context.WithCancel(Set(context.Background(), &mc))
+				cctx, cancel := context.WithCancel(Set(context.Background(), &mc))
+				defer cancel()
 				ctx, cf := WithTimeout(cctx, 10*time.Millisecond)
-
-				go func() {
-					cf()
-				}()
+				go cf()
 				So(wait(ctx), ShouldEqual, context.Canceled)
 			})
 
 			Convey(`Will successfully cancel if the parent is canceled.`, func() {
 				cctx, pcf := context.WithCancel(Set(context.Background(), &mc))
-				ctx, _ := WithTimeout(cctx, 10*time.Millisecond)
-
-				go func() {
-					pcf()
-				}()
+				ctx, cancel := WithTimeout(cctx, 10*time.Millisecond)
+				defer cancel()
+				go pcf()
 				So(wait(ctx), ShouldEqual, context.Canceled)
 			})
 		})
 
 		Convey(`A context with a deadline wrapping a parent with a shorter deadline`, func() {
-			cctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			cctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+			defer cancel()
 			ctx, cf := WithTimeout(cctx, 1*time.Hour)
+			defer cf()
 
 			Convey(`Will successfully time out.`, func() {
 				mc.timeoutCallback = func(d time.Duration) bool {
@@ -161,9 +161,7 @@ func TestClockContext(t *testing.T) {
 			})
 
 			Convey(`Will successfully cancel with its cancel func.`, func() {
-				go func() {
-					cf()
-				}()
+				go cf()
 				So(wait(ctx), ShouldEqual, context.Canceled)
 			})
 		})
