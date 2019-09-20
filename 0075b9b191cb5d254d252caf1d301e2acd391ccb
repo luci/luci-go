@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5f53a45_eea1ef06",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:42:18Z",
+      "side": 1,
+      "message": "in concurrent environment, all within the single Infof() statement is better then several lines of interwoven ones.",
+      "range": {
+        "startLine": 402,
+        "startChar": 3,
+        "endLine": 402,
+        "endChar": 60
+      },
+      "revId": "0075b9b191cb5d254d252caf1d301e2acd391ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ef2e378_413b541d",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 552,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T02:42:18Z",
+      "side": 1,
+      "message": "omg. This whole func is gigantic clusterfuck of variables and streams.",
+      "range": {
+        "startLine": 549,
+        "startChar": 0,
+        "endLine": 552,
+        "endChar": 50
+      },
+      "revId": "0075b9b191cb5d254d252caf1d301e2acd391ccb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
