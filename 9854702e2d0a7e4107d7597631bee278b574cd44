@@ -992,6 +992,30 @@
     },
     {
       "key": {
+        "uuid": "689eac50_a1f4348c",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T21:37:30Z",
+      "side": 1,
+      "message": "this problem will be solved at the spanner level, not in this CL.\n\nI think we need to look at all test results that we are about to insert, take the common ones, record that in the variants table, and then store only extra keys/values in test results table.\n\nthe alternative is more explicit:\n- for each variant def we see, exclude param/ keys and ensure the variant is present in the variant table\n- in test results rows, use id of the variant params, and store params in TestResults.VariantPairs column.",
+      "parentUuid": "6dde7af3_cf98bf90",
+      "range": {
+        "startLine": 116,
+        "startChar": 19,
+        "endLine": 116,
+        "endChar": 33
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0db082c8_0d503865",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
