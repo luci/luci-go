@@ -55,13 +55,13 @@ type buildState struct {
 type buildStateTracker struct {
 	ctx context.Context
 
-	// The agent that this buildStateTracker belongs to. Used to access:
+	// The Agent that this buildStateTracker belongs to. Used to access:
 	//   * clockNow
 	//   * calculateURLs
 	//   * informNewData
-	merger *agent
+	merger *Agent
 
-	ldNamespace string
+	ldNamespaceSlash string
 
 	// We use this mutex to synchronize closure and sending operations on the work
 	// channel; `work` is configured, if it's running, to immediately accept any
@@ -103,7 +103,7 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 						err, "step[%q].logs[%q].Url = %q", step.Name, log.Name, log.Url).Err()
 				}
 
-				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, log.Url)
+				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespaceSlash, log.Url)
 			}
 		}
 		return nil
@@ -132,7 +132,7 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 // `ctx` is used for cancellation/logging. Canceling the context is equivalent
 // to calling handleNewData(nil) (i.e. ignore all future updates).
 //
-// `merger` is the agent that this buildStateTracker belongs to. See the comment
+// `merger` is the Agent that this buildStateTracker belongs to. See the comment
 // in buildStateTracker for its use of this.
 //
 // `namespace` is the logdog namespace under which this build.proto is being
@@ -144,12 +144,12 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 // (closed) state where getLatest always returns a fixed Build in the
 // INFRA_FAILURE state with `err` reflected in the build's SummaryMarkdown
 // field.
-func newBuildStateTracker(ctx context.Context, merger *agent, namespace string, err error) *buildStateTracker {
+func newBuildStateTracker(ctx context.Context, merger *Agent, namespaceSlash string, err error) *buildStateTracker {
 	ret := &buildStateTracker{
-		ctx:         ctx,
-		merger:      merger,
-		ldNamespace: namespace,
-		latestState: &buildState{},
+		ctx:              ctx,
+		merger:           merger,
+		ldNamespaceSlash: namespaceSlash,
+		latestState:      &buildState{},
 	}
 
 	if err != nil {
