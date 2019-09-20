@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93ab3fad_c9dceb91",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-20T22:42:55Z",
+      "side": 1,
+      "message": "this is slightly different than the original patchset; now streams are atomically registered by the stream server as soon as they Accept the connection. Arguably this is more correct than before (where they only were registered in runStreams when it received the stream object from line 462 below)",
+      "range": {
+        "startLine": 439,
+        "startChar": 21,
+        "endLine": 439,
+        "endChar": 35
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f94d0f97_abe2d344",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 523,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-20T22:42:55Z",
+      "side": 1,
+      "message": "note; this is racy b/c closing the stream, observing the active count and closing runStreams is not atomic, but I think this whole thing could be improved in a followup CL to do CloseNamespace(\"\") at the top of Wait(). I don\u0027t think this is any more racy than the previous version.",
+      "range": {
+        "startLine": 523,
+        "startChar": 7,
+        "endLine": 523,
+        "endChar": 8
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52bca179_b481892c",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-20T22:42:55Z",
+      "side": 1,
+      "message": "same, really",
+      "range": {
+        "startLine": 529,
+        "startChar": 16,
+        "endLine": 529,
+        "endChar": 27
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c46cdae_2bf2ba83",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-20T22:42:55Z",
+      "side": 1,
+      "message": "if you like, I could separate the changes here, but I thought they were small enough to include in this CL.",
+      "range": {
+        "startLine": 287,
+        "startChar": 3,
+        "endLine": 287,
+        "endChar": 13
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
