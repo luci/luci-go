@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c2dac478_1b97843a",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "i remember Vadim suggested it and i agreed, but now i am not convinced it was a good idea. Flatter is simpler. Done, thanks",
+      "parentUuid": "6667d953_94ffa812",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 10
+      },
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a48abcfc_87c639d7",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 4
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "756aaaef_4e01a484",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Added an example",
+      "parentUuid": "a48abcfc_87c639d7",
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d2fabd3_0a106b78",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 4
@@ -56,6 +98,24 @@
       "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e39189c1_23aa1d0d",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "added an intention.\n\nif the content is embedded, the size is not that useful because we can simply take the length of the content. But if it is stored elsewhere, it is harder to tell the size, hence the field is here.\n\nif size is populated conditionally, the consuming code will be more complicated because it must have an if statement \"if content is embedded, takes its length, otherwise use this size\". It is simpler not to have the if statement",
+      "parentUuid": "6d2fabd3_0a106b78",
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -79,6 +139,30 @@
       "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcf1ace6_9afecec4",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bdc32428_77b10007",
+      "range": {
+        "startLine": 75,
+        "startChar": 11,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

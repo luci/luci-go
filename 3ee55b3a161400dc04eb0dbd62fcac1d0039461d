@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "092b24ca_865be948",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "i think we talked about this month+ ago, but I never updated the proto.\n\nThis message is really specific to tests. It refers to test path, has start time and duration, has test-specific statuses (like PASS/FAIL/CRASH). If we ever need a BuildResult, we\u0027d probably need to add some build-specific fields which cannot be added to a message used for tests anyway.",
+      "parentUuid": "b3b6a91f_db076bcd",
+      "range": {
+        "startLine": 36,
+        "startChar": 8,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d21b78a8_0933be43",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1af0887_39700a68",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d21b78a8_0933be43",
+      "range": {
+        "startLine": 130,
+        "startChar": 16,
+        "endLine": 130,
+        "endChar": 20
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f020c9d0_4c946b73",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12da1b83_dcba1fba",
+      "range": {
+        "startLine": 131,
+        "startChar": 5,
+        "endLine": 131,
+        "endChar": 66
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cf33bd7_43a8aa92",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815eb984_fb288f29",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cf33bd7_43a8aa92",
+      "range": {
+        "startLine": 197,
+        "startChar": 55,
+        "endLine": 197,
+        "endChar": 56
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +259,78 @@
     },
     {
       "key": {
+        "uuid": "24e40480_3393efcb",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "rephrased. ptal",
+      "parentUuid": "bde6357a_22f6f8e6",
+      "range": {
+        "startLine": 75,
+        "startChar": 44,
+        "endLine": 75,
+        "endChar": 71
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88606174_9333c2bb",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2d6e6ff2_5a7e12af",
+      "range": {
+        "startLine": 75,
+        "startChar": 31,
+        "endLine": 75,
+        "endChar": 43
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "daffc5e9_67cf2070",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0c72581a_f96877dd",
+      "range": {
+        "startLine": 75,
+        "startChar": 11,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17c10c3d_2b30e77b",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -183,6 +351,30 @@
       "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4e11aa2_8fb47805",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17c10c3d_2b30e77b",
+      "range": {
+        "startLine": 107,
+        "startChar": 7,
+        "endLine": 107,
+        "endChar": 31
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "2e315248_f1e3bed0",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48c5f821_69eee8c9",
+      "range": {
+        "startLine": 116,
+        "startChar": 11,
+        "endLine": 116,
+        "endChar": 19
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af162b41_212d29fd",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -229,6 +445,30 @@
       "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fabfb656_a6ced5e7",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T23:20:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af162b41_212d29fd",
+      "range": {
+        "startLine": 31,
+        "startChar": 25,
+        "endLine": 31,
+        "endChar": 26
+      },
+      "revId": "3ee55b3a161400dc04eb0dbd62fcac1d0039461d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
