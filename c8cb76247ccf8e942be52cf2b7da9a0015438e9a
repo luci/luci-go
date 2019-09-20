@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6667d953_94ffa812",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2019-09-20T22:36:18Z",
+      "side": 1,
+      "message": "Why isn\u0027t this an inlined string?",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 10
+      },
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a48abcfc_87c639d7",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2019-09-20T22:36:18Z",
+      "side": 1,
+      "message": "Are there any examples in mind here? I don\u0027t know of anything like this right now, but maybe I do with a different name.",
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d2fabd3_0a106b78",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2019-09-20T22:36:18Z",
+      "side": 1,
+      "message": "Suggestion: Put both size and contents in a sub-message which only has a value if the contents are embedded. Otherwise, leave it empty. Not sure if that\u0027s a great idea, but maybe it could make things a bit clearer? In particular, I feel like the size isn\u0027t always that useful, unless the contents are also here? Not sure what the intention of the size field is.",
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdc32428_77b10007",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2019-09-20T22:36:18Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 75,
+        "startChar": 11,
+        "endLine": 75,
+        "endChar": 20
+      },
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
