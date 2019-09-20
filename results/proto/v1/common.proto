@@ -25,78 +25,188 @@ import "google/protobuf/wrappers.proto";
 
 option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
-// Bucket definition for specifying ACLs to invocations and results.
-// TODO(jchinlee): This will change to "realm".
-message Bucket {
-  string project = 1;
-  string bucket = 2;
+// A result of a functional test case.
+// Often a single test case is executed multiple times and has multiple results,
+// a single test suite has multiple test cases,
+// and the same test suite can be executed in different variants
+// (OS, GPU, compile flags, etc).
+//
+// This message does not specify the test path. It is should be available
+// in the message that embeds this message.
+message TestResult {
+  // Identifies a test result.
+  // MUST be unique for a given invocation id and a test path.
+  // Globally, a test result is identified by a tuple
+  // (invocation_id, test_path, result_id).
+  //
+  // MUST be provided by the client on insertion.
+  string result_id = 1;
+
+  // Whether the result of test case execution is expected.
+  // In a typical Chromium CL, 99%+ of test results are expected.
+  // Users are typically interested only in the unexpected results.
+  //
+  // An unexpected result != test case failure. There are test cases that are
+  // expected to fail/skip/crash. The test harness compares the actual status
+  // with the expected one and this field is the result of the comparison.
+  //
+  // If unset on insertion, then set to (Status == PASS).
+  // Guaranteed to be set when reading the invocation.
+  google.protobuf.BoolValue expected = 2;
+
+  // Machine-readable status of the test case.
+  // MUST NOT be STATUS_UNSPECIFIED.
+  Status status = 3;
+
+  // Human-readable explanation of the result.
+  // Markdown spec: https://spec.commonmark.org/0.29/
+  string summary_markdown = 4;
+
+  // The point in time when the test case started to execute.
+  // Optional: not all test harnesses record it.
+  google.protobuf.Timestamp start_time = 5;
+
+  // Duration of the test case execution.
+  google.protobuf.Duration duration = 6;
+
+  // Metadata for this test result.
+  // It might describe this particular execution or the test case.
+  repeated StringPair tags = 7;
+
+  // Artifacts consumed by this test result.
+  //
+  // Example: building a Chrome OS image is expensive and non-deterministic, so
+  // they are retained and used as input artifact to a test case.
+  repeated Artifact input_artifacts = 8;
+
+  // Artifacts produced by this test result.
+  // Examples: traces, logs, screenshots, memory dumps, profiler output.
+  repeated Artifact output_artifacts = 9;
 }
 
-// Result of the lowest granularity we store.
-// This is often a test result, e.g. the result of a functional test run
-// within a swarming task.
-message Result {
-  // If unset on upload, set to (Status == PASS).
-  google.protobuf.BoolValue is_expected = 1;
-  Status status = 2;
-  Markdown summary = 3;
-
-  google.protobuf.Timestamp start_time = 4;
-  google.protobuf.Duration duration = 5;
-
-  repeated StringPair tags = 6;
-
-  // note: avoid map<> because that would be tens of
-  // thousands of tiny hash tables for no good reason.
-  repeated Artifact artifacts = 7;
-}
-
-// Status associated with a result.
+// Machine-readable status of a test result.
 enum Status {
+  // Status was not specified.
+  // Not to be used in actual test results; serves as a default value for an
+  // unset field.
   STATUS_UNSPECIFIED = 0;
+
+  // The test case has passed.
   PASS = 1;
+
+  // The test case has failed.
+  // The code under test is incorrect.
   FAIL = 2;
+
+  // The the case has crashed during execution.
+  // The outcome is inconclusive: the code under test might or might not be
+  // correct, but the test+code is incorrect.
   CRASH = 3;
+
+  // The test case has started, but was aborted before finishing.
+  // A common reason: timeout.
   ABORT = 4;
+
+  // The test case did not execute.
+  // Examples:
+  // - The execution of the collection of test cases, such as a test
+  //   binary, was aborted prematurely and execution of some test cases was
+  //   skipped.
+  // - The test harness configuration specified that the test case must be
+  //   skipped.
   SKIP = 5;
 }
 
+// A key-value map describing one variant of a test case.
+//
+// The same test case can be executed in different ways, for example on
+// different OS, GPUs, with different compile options, runtime flags or even
+// with different values of the test parameter (for parameterized tests).
+// A variant definition captures one variant.
+// A test case with a specific variant definition is called test variant.
+//
+// Guidelines for variant definition design:
+// - This rule guides what keys must be present in the definition.
+//   A single expected result of a given test variant is enough to consider it
+//   passing (potentially flakily). If it is important to differentiate across
+//   a certain dimension (e.g. whether web tests are executed with or without
+//   site per process isolation), then there must be a key that captures the
+//   dimension (e.g. a name from test_suites.pyl).
+//   Otherwise, a pass in one variant will hide a failure of another one.
+//
+// - This rule guides what keys must NOT be present in the definition.
+//   A change in the key-value set essentially resets the test result history.
+//   For example, if GN args are among variant key-value pairs, then adding a
+//   new GN arg changes the identity of the test variant and resets its history.
+//
+// In Chromium, typical variant keys are:
+// - bucket: the LUCI bucket, e.g. "ci"
+// - builder: the LUCI builder, e.g. "linux-rel"
+// - test_suite: a name from
+//   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
 message VariantDef {
-  // key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-  // Max key length: 64
-  // value regex: ^[a-z][a-z0-9_]*$
-  // Max value length: 64
-  //
-  // Up to 16 pairs.
+  // The definition of the variant.
+  // Key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
+  // Max key length: 32.
   map<string, string> def = 1;
 
-  // hash func:
+  // Hash of the def. Used to refer to the variant definition.
+  //
+  // Formula:
   // hex(sha256(''.join('%s:%s\n' % (k, v) for k, v in sorted(def.items()))))
   string digest = 2;
 }
 
-// Artifact generated as part of a Result.
-//
-// Examples include traces, logs, screenshots, memory dumps, profiler output.
+// A file produced/consumed by a test case.
+// See TestResult.output_artifacts for examples.
 message Artifact {
-  string name = 1; // relative path, e.g. "traces/a.txt"
+  // A slash-separated relative path, identifies the artifact.
+  // Example: "traces/a.txt".
+  string name = 1;
 
-  // must start with either of "rbe-cas://" "isolate://", "gs://" or "logdog://".
+  // Machine-readable URL to fetch the contents of the artifact.
+  // Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
   string fetch_url = 2;
-  // URL to human-consumable HTTP page with the file content.
+
+  // Human-consumable URL to the file content.
+  // Typically a URL of a page where the user can view/download the arficact.
   string view_url = 3;
 
+  // Media type of the artifact.
+  // Logs are typically "plain/text" and screenshots are typically "image/png".
   string content_type = 4;  // media type
+
+  // Size of the file, in bytes.
+  // Can be used in UI to decide whether to fetch an artifact and display it
+  // inline, or only show a link if it is too large.
   int64 size = 5;
+
+  // Contents of the artifact if it is stored inline with the test result.
+  // Empty for artifacts stored elsewhere. To fetch such artifacts, use
+  // fetch_url.
+  // Size must be <= 8KB.
+  bytes contents = 6;
 }
 
-// Convenience proto to define key:value pairs.
+// A string key-value pair. Typically used for tagging, see TestResult.tags
 message StringPair {
+  // Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
+  // Max length: 64
   string key = 1;
+
+  // Regex: ^[a-z][a-z0-9_]*$
+  // Max length: 64
   string value = 2;
 }
 
-// Markdown-formatted text (see https://spec.commonmark.org/0.28/).
-message Markdown {
-  string text = 1;
+// Indicates the test subject (e.g. a CL) is absolved from blame
+// for an unexpected result of a test variant.
+// For example, the test variant fails both with and without CL, so it is not
+// CL's fault.
+//
+// See also Invocation.tests.variants.exonerations.
+message Exoneration {
+  // Reasoning behind the exoneration, in markdown.
+  // Markdown spec: https://spec.commonmark.org/0.29/
+  string explanation_markdown = 1;
 }

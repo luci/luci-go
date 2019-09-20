@@ -27,36 +27,29 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// A request for UpdateInvocation RPC.
 type UpdateInvocationRequest struct {
-	// If a request with same (invocation.id, request_id) was processed successfully
-	// before, then this request is a noop.
+	// If a request with same (invocation.id, request_id) was processed
+	// successfully, then this request is a noop.
 	// In other words, UpdateInvocation is idempotent.
 	// Required.
-	//
-	// Internally, UpdateInvocation uses request id to generate test result keys:
-	// <request_id>-<a number unique within the request>
 	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	// Invocation to update.
 	//
-	// Each test result is appended.
-	// Overwriting or removing test results is not supported.
+	// All repeated fields in the Invocation are appended, not replaced.
+	// Examples of repeated fields: test results, exonerations, inclusions.
+	// It is not possible to remove previously added elements.
+	// Some elements may be mutated, e.g. Invocation.Inclusion.inconsequential,
+	// see its docs.
 	//
-	// If a test log has contents, they are stored inline with the test result.
-	// Such log MUST be less than 8KB. If it is more, clients must supply log URL.
-	//
-	// If a test variant has an exoneration, it is ensured
-	// on the server.
-	// Removing exoneration is not supported.
-	//
-	// Includes are appended. An existing invocation can be marked inconsequential.
-	// Removing includes is not supported.
-	//
-	// If invocation.is_final is true, finalizes the invocation.
-	// If invocation.deadline is specified, overwrites the
-	// server-stored value.
+	// If invocation.final is true, finalizes the invocation.
+	// If invocation.deadline is specified, overwrites the server-stored value.
 	//
 	// Invocation.update_token is required and must match the token
-	// returned by CreateInvocation.
+	// returned by InsertInvocation.
+	//
+	// If the invocation is already final on the server, FAILED_PRECONDITION is
+	// returned.
 	Invocation           *Invocation `protobuf:"bytes,2,opt,name=invocation,proto3" json:"invocation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
@@ -282,38 +275,18 @@ const _ = grpc.SupportPackageIsVersion4
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RecorderClient interface {
 	// Creates a new invocation.
+	// The request specifies the invocation id and its contents.
+	//
+	// The invocation can be created as finalized. Then it is immutable from the
+	// start.
+	//
+	// The response includes Invocation.update_token for future updates.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
-	//
-	// It is inspired by ResultStoreUpload.CreateInvocation. Notable differences:
-	// - no CreateInvocationRequest: it is "inlined", i.e. Invocation used instead.
-	// - no request_id because it is unnecessary. ResultStore requires invocation_id
-	//   to be set if request_id is set. Invocation id must be unique, therefore
-	//   request_id gains nothing in addition to invocation id
-	// - no authorization_token: CreateInvocation handler will generate a token
-	//   associated with the invocation ID and return in the response.
-	//   Also "authorization_token" is abstract: authorizing what exactly?
-	//   This design uses the term "update_token".
-	//   READ permissions  are defined elsewhere.
-	//
-	// Impl note: transactionally inserts a new spanner row with invocation id
-	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error)
 	// Updates an existing non-final invocation.
-	//
-	// Compared to ResultStoreUpload:
-	// - In a sense, combines UpdateInvocation, FinishInvocation,
-	//   CreateTarget, UpdateTarget, CreateConfiguredTarget, UpdateConfiguredTarget,
-	//   CreateAction, UpdateAction, CreateConfiguration, UpdateConfiguration
-	//   to be more aligned with the intended usage of the API and because it is a
-	//   single Spanner mutation underneath.
-	// - Finalization is coarse: entire invocation, as opposed to per sub-entity.
-	// - More aligned with the domain model: test results can be only inserted.
-	//
-	// Impl note: Transactionally inserts a (invocation_id, request_id) row with
-	// the rest of the payload. If request insertion fails, exits successfully.
-	// Request table cleanup will be performed out of band.
+	// See UpdateInvocationRequest for semantics.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Derives an invocation given a swarming task and inserts if not already
 	// present.
@@ -396,38 +369,18 @@ func (c *recorderClient) DeriveInvocationFromSwarming(ctx context.Context, in *D
 // RecorderServer is the server API for Recorder service.
 type RecorderServer interface {
 	// Creates a new invocation.
+	// The request specifies the invocation id and its contents.
+	//
+	// The invocation can be created as finalized. Then it is immutable from the
+	// start.
+	//
+	// The response includes Invocation.update_token for future updates.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
-	//
-	// It is inspired by ResultStoreUpload.CreateInvocation. Notable differences:
-	// - no CreateInvocationRequest: it is "inlined", i.e. Invocation used instead.
-	// - no request_id because it is unnecessary. ResultStore requires invocation_id
-	//   to be set if request_id is set. Invocation id must be unique, therefore
-	//   request_id gains nothing in addition to invocation id
-	// - no authorization_token: CreateInvocation handler will generate a token
-	//   associated with the invocation ID and return in the response.
-	//   Also "authorization_token" is abstract: authorizing what exactly?
-	//   This design uses the term "update_token".
-	//   READ permissions  are defined elsewhere.
-	//
-	// Impl note: transactionally inserts a new spanner row with invocation id
-	// primary key. If insertion fails with a conflict, returns ALREADY_EXISTS.
 	InsertInvocation(context.Context, *Invocation) (*Invocation, error)
 	// Updates an existing non-final invocation.
-	//
-	// Compared to ResultStoreUpload:
-	// - In a sense, combines UpdateInvocation, FinishInvocation,
-	//   CreateTarget, UpdateTarget, CreateConfiguredTarget, UpdateConfiguredTarget,
-	//   CreateAction, UpdateAction, CreateConfiguration, UpdateConfiguration
-	//   to be more aligned with the intended usage of the API and because it is a
-	//   single Spanner mutation underneath.
-	// - Finalization is coarse: entire invocation, as opposed to per sub-entity.
-	// - More aligned with the domain model: test results can be only inserted.
-	//
-	// Impl note: Transactionally inserts a (invocation_id, request_id) row with
-	// the rest of the payload. If request insertion fails, exits successfully.
-	// Request table cleanup will be performed out of band.
+	// See UpdateInvocationRequest for semantics.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*empty.Empty, error)
 	// Derives an invocation given a swarming task and inserts if not already
 	// present.

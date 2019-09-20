@@ -85,7 +85,7 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
 	// testsToVariants maps GTest base name to the variant IDs present to Results.
 	// We store these maps to handle the same test and variants appearing in multiple iterations.
-	testsToVariants := map[string]map[string][]*resultspb.Result{}
+	testsToVariants := map[string]map[string][]*resultspb.TestResult{}
 	variantDefs := map[string]*resultspb.VariantDef{}
 
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
@@ -115,7 +115,7 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 			}
 
 			// Generate individual result protos.
-			rpbs := make([]*resultspb.Result, len(results))
+			rpbs := make([]*resultspb.TestResult, len(results))
 			for i, result := range results {
 				if rpb, err := r.convertRunResult(ctx, name, result); err != nil {
 					return nil, errors.Annotate(err,
@@ -136,7 +136,7 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 			// Store the processed test result into the correct part of the overall map.
 			testPath := req.TestPathPrefix + baseName
 			if _, ok := testsToVariants[testPath]; !ok {
-				testsToVariants[testPath] = map[string][]*resultspb.Result{}
+				testsToVariants[testPath] = map[string][]*resultspb.TestResult{}
 			}
 			testsToVariants[testPath][varID] = append(testsToVariants[testPath][varID], rpbs...)
 		}
@@ -149,8 +149,8 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 		Tags:        []*resultspb.StringPair{util.StringPair("test_framework", "gtest")},
 	}
 
-	for name, variants := range testsToVariants {
-		testpb := &resultspb.Invocation_Test{Name: name}
+	for testPath, variants := range testsToVariants {
+		testpb := &resultspb.Invocation_Test{Path: testPath}
 
 		for id, results := range variants {
 			testpb.Variants = append(testpb.Variants, &resultspb.Invocation_TestVariant{
@@ -161,7 +161,7 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 
 		inv.Tests = append(inv.Tests, testpb)
 	}
-	sort.Slice(inv.Tests, func(i, j int) bool { return inv.Tests[i].Name < inv.Tests[j].Name })
+	sort.Slice(inv.Tests, func(i, j int) bool { return inv.Tests[i].Path < inv.Tests[j].Path })
 
 	// Populate the tags.
 	for _, tag := range r.GlobalTags {
@@ -205,13 +205,13 @@ func extractGTestParameters(testPath string) (basePath string, params rdb.Varian
 	return
 }
 
-func (r *GTestResults) convertRunResult(ctx context.Context, name string, result *GTestRunResult) (*resultspb.Result, error) {
+func (r *GTestResults) convertRunResult(ctx context.Context, name string, result *GTestRunResult) (*resultspb.TestResult, error) {
 	status, err := toGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
-	rpb := &resultspb.Result{
+	rpb := &resultspb.TestResult{
 		Status:   status,
 		Tags:     []*resultspb.StringPair{util.StringPair("gtest_status", result.Status)},
 		Duration: secondsToDuration(1e-6 * float64(result.ElapsedTimeMs)),
@@ -226,9 +226,7 @@ func (r *GTestResults) convertRunResult(ctx context.Context, name string, result
 			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
 		} else {
 			// TODO(jchinlee): Escape Markdown.
-			rpb.Summary = &resultspb.Markdown{
-				Text: strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError)),
-			}
+			rpb.SummaryMarkdown = strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError))
 		}
 	}
 
