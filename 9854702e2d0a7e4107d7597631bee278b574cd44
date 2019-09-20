@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "cf65d11a_1565bda1",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f54d3a44_bc35a112",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28a70425_efeef974",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 2
@@ -216,6 +234,30 @@
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3a8d9ab_eb0f1dce",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "dbdc3ec5_be3de2f3",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 6
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -447,6 +489,24 @@
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d69890ae_aef004e6",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd887e1b_95d85217",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -979,6 +1039,30 @@
     },
     {
       "key": {
+        "uuid": "f704394a_e3e1b1a6",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28b4f5da_89aab518",
+      "range": {
+        "startLine": 117,
+        "startChar": 12,
+        "endLine": 117,
+        "endChar": 24
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97a37386_fe5504eb",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -1179,6 +1263,30 @@
     },
     {
       "key": {
+        "uuid": "76e00b8a_625706e3",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "It looks like\n1) GTest output wants to be wrapped as a code block or span, neither of which should escape angle brackets, and\n2) %q (which is how we discussed outputting the data here in order to preserve the non-UTF8 substrings) already Go-escapes the string, so if we want to render the GTest output nicely we probably actually want to /undo/ some of the whitespace escaping (e.g. for \\n and \\t), and then wrap as a code block.\n\nFor other kinds of output that wouldn\u0027t get treated as code blocks and spans we /would/ want to escape the angle brackets.\n\nWDYT about deciding how to process the strings for GTest output here, and then refactoring out the generalizable parts for Markdown processing later?",
+      "parentUuid": "71ca5b18_678583a8",
+      "range": {
+        "startLine": 128,
+        "startChar": 47,
+        "endLine": 128,
+        "endChar": 66
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95b9fbd7_1fff1bef",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 2
@@ -1353,6 +1461,24 @@
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4175ef9_49575006",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2eca1ff_e48b3c51",
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -1659,6 +1785,30 @@
       "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f83ca82_3905e7df",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T05:11:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f806de8_53726955",
+      "range": {
+        "startLine": 220,
+        "startChar": 18,
+        "endLine": 220,
+        "endChar": 64
+      },
+      "revId": "9854702e2d0a7e4107d7597631bee278b574cd44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
