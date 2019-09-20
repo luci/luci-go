@@ -23,16 +23,30 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Status associated with a result.
+// Machine-readable status of a test result.
 type Status int32
 
 const (
+	// Status was not specified.
+	// Not to be used in actual test results; serves as a default value for an
+	// unset field.
 	Status_STATUS_UNSPECIFIED Status = 0
-	Status_PASS               Status = 1
-	Status_FAIL               Status = 2
-	Status_CRASH              Status = 3
-	Status_ABORT              Status = 4
-	Status_SKIP               Status = 5
+	// The test case has passed.
+	Status_PASS Status = 1
+	// The test case has failed.
+	// The code under test is incorrect.
+	Status_FAIL Status = 2
+	// The the case has crashed during execution.
+	// The outcome is inconclusive: the code under test might or might not be
+	// correct, but the test+code is incorrect.
+	Status_CRASH Status = 3
+	// The test case has started, but was aborted before finishing.
+	// A common reason: timeout.
+	Status_ABORT Status = 4
+	// The test case did not execute.
+	// Can happen if the execution of the collection of test cases (test binary)
+	// was canceled and execution of some tests was skipped.
+	Status_SKIP Status = 5
 )
 
 var Status_name = map[int32]string{
@@ -61,157 +75,150 @@ func (Status) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6721ae6a14ce615e, []int{0}
 }
 
-// Bucket definition for specifying ACLs to invocations and results.
-// TODO(jchinlee): This will change to "realm".
-type Bucket struct {
-	Project              string   `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	Bucket               string   `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Bucket) Reset()         { *m = Bucket{} }
-func (m *Bucket) String() string { return proto.CompactTextString(m) }
-func (*Bucket) ProtoMessage()    {}
-func (*Bucket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{0}
-}
-
-func (m *Bucket) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Bucket.Unmarshal(m, b)
-}
-func (m *Bucket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Bucket.Marshal(b, m, deterministic)
-}
-func (m *Bucket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Bucket.Merge(m, src)
-}
-func (m *Bucket) XXX_Size() int {
-	return xxx_messageInfo_Bucket.Size(m)
-}
-func (m *Bucket) XXX_DiscardUnknown() {
-	xxx_messageInfo_Bucket.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Bucket proto.InternalMessageInfo
-
-func (m *Bucket) GetProject() string {
-	if m != nil {
-		return m.Project
-	}
-	return ""
-}
-
-func (m *Bucket) GetBucket() string {
-	if m != nil {
-		return m.Bucket
-	}
-	return ""
-}
-
-// Result of the lowest granularity we store.
-// This is often a test result, e.g. the result of a functional test run
-// within a swarming task.
-type Result struct {
-	// If unset on upload, set to (Status == PASS).
-	IsExpected *wrappers.BoolValue  `protobuf:"bytes,1,opt,name=is_expected,json=isExpected,proto3" json:"is_expected,omitempty"`
-	Status     Status               `protobuf:"varint,2,opt,name=status,proto3,enum=luci.resultsdb.Status" json:"status,omitempty"`
-	Summary    *Markdown            `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
-	StartTime  *timestamp.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	Duration   *duration.Duration   `protobuf:"bytes,5,opt,name=duration,proto3" json:"duration,omitempty"`
-	Tags       []*StringPair        `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	// note: avoid map<> because that would be tens of
-	// thousands of tiny hash tables for no good reason.
-	Artifacts            []*Artifact `protobuf:"bytes,7,rep,name=artifacts,proto3" json:"artifacts,omitempty"`
+// A result of a functional test case.
+// Often a single test case has multiple results, and a single test suite
+// has many test cases.
+//
+// This message does not specify the test path. It is should be available
+// in the message that embeds this message.
+type TestResult struct {
+	// Identifies a test result.
+	// MUST be unique for a given invocation id and a test path.
+	// Globally, a test result is identified by a tuple
+	// (invocation_id, test_path, result_id).
+	//
+	// MUST be provided by the client on insertion.
+	ResultId string `protobuf:"bytes,1,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
+	// The result of test case execution is expected.
+	// In a typical Chromium CL, <1% of test results are unexpected.
+	// Users are typically interested only in the unexpected results.
+	//
+	// An unexpected result != failed test case. There are test cases that are
+	// expected to fail/skip/crash. The test harness compares the actual status
+	// with the expected one and this field is the result of the comparison.
+	//
+	// If unset on insertion, then set to (Status == PASS).
+	// Guaranteed to be set when reading the invocation.
+	Expected *wrappers.BoolValue `protobuf:"bytes,2,opt,name=expected,proto3" json:"expected,omitempty"`
+	// Machine-readable status of the test case.
+	// MUST NOT be STATUS_UNSPECIFIED.
+	Status Status `protobuf:"varint,3,opt,name=status,proto3,enum=luci.resultsdb.Status" json:"status,omitempty"`
+	// Human-readable explanation of the result.
+	Summary *Markdown `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
+	// The point in time when the test case started to execute.
+	// Optional: not all test harnesses record it.
+	StartTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// Duration of the test case execution.
+	Duration *duration.Duration `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
+	// Metadata for this test result.
+	// It might describe this particular execution, or the test case.
+	Tags []*StringPair `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
+	// Artifacts consumed by this test result.
+	InputArtifacts []*Artifact `protobuf:"bytes,8,rep,name=input_artifacts,json=inputArtifacts,proto3" json:"input_artifacts,omitempty"`
+	// Artifacts produced by this test result.
+	// Examples: traces, logs, screenshots, memory dumps, profiler output.
+	OutputArtifacts      []*Artifact `protobuf:"bytes,9,rep,name=output_artifacts,json=outputArtifacts,proto3" json:"output_artifacts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *Result) Reset()         { *m = Result{} }
-func (m *Result) String() string { return proto.CompactTextString(m) }
-func (*Result) ProtoMessage()    {}
-func (*Result) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{1}
+func (m *TestResult) Reset()         { *m = TestResult{} }
+func (m *TestResult) String() string { return proto.CompactTextString(m) }
+func (*TestResult) ProtoMessage()    {}
+func (*TestResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6721ae6a14ce615e, []int{0}
 }
 
-func (m *Result) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Result.Unmarshal(m, b)
+func (m *TestResult) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TestResult.Unmarshal(m, b)
 }
-func (m *Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Result.Marshal(b, m, deterministic)
+func (m *TestResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TestResult.Marshal(b, m, deterministic)
 }
-func (m *Result) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Result.Merge(m, src)
+func (m *TestResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestResult.Merge(m, src)
 }
-func (m *Result) XXX_Size() int {
-	return xxx_messageInfo_Result.Size(m)
+func (m *TestResult) XXX_Size() int {
+	return xxx_messageInfo_TestResult.Size(m)
 }
-func (m *Result) XXX_DiscardUnknown() {
-	xxx_messageInfo_Result.DiscardUnknown(m)
+func (m *TestResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_TestResult.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Result proto.InternalMessageInfo
+var xxx_messageInfo_TestResult proto.InternalMessageInfo
 
-func (m *Result) GetIsExpected() *wrappers.BoolValue {
+func (m *TestResult) GetResultId() string {
 	if m != nil {
-		return m.IsExpected
+		return m.ResultId
+	}
+	return ""
+}
+
+func (m *TestResult) GetExpected() *wrappers.BoolValue {
+	if m != nil {
+		return m.Expected
 	}
 	return nil
 }
 
-func (m *Result) GetStatus() Status {
+func (m *TestResult) GetStatus() Status {
 	if m != nil {
 		return m.Status
 	}
 	return Status_STATUS_UNSPECIFIED
 }
 
-func (m *Result) GetSummary() *Markdown {
+func (m *TestResult) GetSummary() *Markdown {
 	if m != nil {
 		return m.Summary
 	}
 	return nil
 }
 
-func (m *Result) GetStartTime() *timestamp.Timestamp {
+func (m *TestResult) GetStartTime() *timestamp.Timestamp {
 	if m != nil {
 		return m.StartTime
 	}
 	return nil
 }
 
-func (m *Result) GetDuration() *duration.Duration {
+func (m *TestResult) GetDuration() *duration.Duration {
 	if m != nil {
 		return m.Duration
 	}
 	return nil
 }
 
-func (m *Result) GetTags() []*StringPair {
+func (m *TestResult) GetTags() []*StringPair {
 	if m != nil {
 		return m.Tags
 	}
 	return nil
 }
 
-func (m *Result) GetArtifacts() []*Artifact {
+func (m *TestResult) GetInputArtifacts() []*Artifact {
 	if m != nil {
-		return m.Artifacts
+		return m.InputArtifacts
 	}
 	return nil
 }
 
+func (m *TestResult) GetOutputArtifacts() []*Artifact {
+	if m != nil {
+		return m.OutputArtifacts
+	}
+	return nil
+}
+
+// A key-value map describing one variant of a test case.
 type VariantDef struct {
-	// key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-	// Max key length: 64
-	// value regex: ^[a-z][a-z0-9_]*$
-	// Max value length: 64
+	// The definition of the variant.
 	//
-	// Up to 16 pairs.
 	Def map[string]string `protobuf:"bytes,1,rep,name=def,proto3" json:"def,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// hash func:
+	// Hash of the def. Used to refer to the variant definition.
+	//
+	// Formula:
 	// hex(sha256(''.join('%s:%s\n' % (k, v) for k, v in sorted(def.items()))))
 	Digest               string   `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -223,7 +230,7 @@ func (m *VariantDef) Reset()         { *m = VariantDef{} }
 func (m *VariantDef) String() string { return proto.CompactTextString(m) }
 func (*VariantDef) ProtoMessage()    {}
 func (*VariantDef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{2}
+	return fileDescriptor_6721ae6a14ce615e, []int{1}
 }
 
 func (m *VariantDef) XXX_Unmarshal(b []byte) error {
@@ -258,17 +265,28 @@ func (m *VariantDef) GetDigest() string {
 	return ""
 }
 
-// Artifact generated as part of a Result.
-//
-// Examples include traces, logs, screenshots, memory dumps, profiler output.
+// A file produced/consumed by a test case.
+// See TestResult.output_artifacts for examples.
 type Artifact struct {
+	// A slash-separated relative path, identifies the artifact.
+	// Example: "traces/a.txt".
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// must start with either of "rbe-cas://" "isolate://", "gs://" or "logdog://".
+	// Machine-readable URL to fetch the contents of the artifact.
+	// Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
 	FetchUrl string `protobuf:"bytes,2,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
-	// URL to human-consumable HTTP page with the file content.
-	ViewUrl              string   `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
-	ContentType          string   `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	Size                 int64    `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	// Human-consumable URL to the file content.
+	// Typicall URL of a page where user can view/download the arficact.
+	ViewUrl string `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
+	// Media type of the artifact.
+	// Logs are typically "plain/text" and screenshots are typically "image/png".
+	ContentType string `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	// Size of the file, in bytes.
+	Size int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	// Contents of the artifact if it is stored inline with the test result.
+	// Empty for artifacts stored elsewhere. To fetch such artifacts, use
+	// fetch_url.
+	// Size must be <= 8KB.
+	Contents             []byte   `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -278,7 +296,7 @@ func (m *Artifact) Reset()         { *m = Artifact{} }
 func (m *Artifact) String() string { return proto.CompactTextString(m) }
 func (*Artifact) ProtoMessage()    {}
 func (*Artifact) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{3}
+	return fileDescriptor_6721ae6a14ce615e, []int{2}
 }
 
 func (m *Artifact) XXX_Unmarshal(b []byte) error {
@@ -334,9 +352,20 @@ func (m *Artifact) GetSize() int64 {
 	return 0
 }
 
-// Convenience proto to define key:value pairs.
+func (m *Artifact) GetContents() []byte {
+	if m != nil {
+		return m.Contents
+	}
+	return nil
+}
+
+// A string key-value pair. Typically used for tagging, see TestResult.tags
 type StringPair struct {
-	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
+	// Max length: 64
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Regex: ^[a-z][a-z0-9_]*$
+	// Max length: 64
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -347,7 +376,7 @@ func (m *StringPair) Reset()         { *m = StringPair{} }
 func (m *StringPair) String() string { return proto.CompactTextString(m) }
 func (*StringPair) ProtoMessage()    {}
 func (*StringPair) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{4}
+	return fileDescriptor_6721ae6a14ce615e, []int{3}
 }
 
 func (m *StringPair) XXX_Unmarshal(b []byte) error {
@@ -382,8 +411,9 @@ func (m *StringPair) GetValue() string {
 	return ""
 }
 
-// Markdown-formatted text (see https://spec.commonmark.org/0.28/).
+// Markdown-formatted text.
 type Markdown struct {
+	// Text conforming https://spec.commonmark.org/0.28/.
 	Text                 string   `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -394,7 +424,7 @@ func (m *Markdown) Reset()         { *m = Markdown{} }
 func (m *Markdown) String() string { return proto.CompactTextString(m) }
 func (*Markdown) ProtoMessage()    {}
 func (*Markdown) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{5}
+	return fileDescriptor_6721ae6a14ce615e, []int{4}
 }
 
 func (m *Markdown) XXX_Unmarshal(b []byte) error {
@@ -422,15 +452,61 @@ func (m *Markdown) GetText() string {
 	return ""
 }
 
+// Indicates the test subject (e.g. a CL) is absolved from blame
+// for an unexpected result of a test variant.
+// For example, the test variant fails both with and without CL, so it is not
+// CL's fault.
+//
+// See also Invocation.tests.variants.exonerations.
+type Exoneration struct {
+	// Reasoning behind the exoneration, in markdown.
+	Explanation          *Markdown `protobuf:"bytes,1,opt,name=explanation,proto3" json:"explanation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *Exoneration) Reset()         { *m = Exoneration{} }
+func (m *Exoneration) String() string { return proto.CompactTextString(m) }
+func (*Exoneration) ProtoMessage()    {}
+func (*Exoneration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6721ae6a14ce615e, []int{5}
+}
+
+func (m *Exoneration) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Exoneration.Unmarshal(m, b)
+}
+func (m *Exoneration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Exoneration.Marshal(b, m, deterministic)
+}
+func (m *Exoneration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Exoneration.Merge(m, src)
+}
+func (m *Exoneration) XXX_Size() int {
+	return xxx_messageInfo_Exoneration.Size(m)
+}
+func (m *Exoneration) XXX_DiscardUnknown() {
+	xxx_messageInfo_Exoneration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Exoneration proto.InternalMessageInfo
+
+func (m *Exoneration) GetExplanation() *Markdown {
+	if m != nil {
+		return m.Explanation
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("luci.resultsdb.Status", Status_name, Status_value)
-	proto.RegisterType((*Bucket)(nil), "luci.resultsdb.Bucket")
-	proto.RegisterType((*Result)(nil), "luci.resultsdb.Result")
+	proto.RegisterType((*TestResult)(nil), "luci.resultsdb.TestResult")
 	proto.RegisterType((*VariantDef)(nil), "luci.resultsdb.VariantDef")
 	proto.RegisterMapType((map[string]string)(nil), "luci.resultsdb.VariantDef.DefEntry")
 	proto.RegisterType((*Artifact)(nil), "luci.resultsdb.Artifact")
 	proto.RegisterType((*StringPair)(nil), "luci.resultsdb.StringPair")
 	proto.RegisterType((*Markdown)(nil), "luci.resultsdb.Markdown")
+	proto.RegisterType((*Exoneration)(nil), "luci.resultsdb.Exoneration")
 }
 
 func init() {
@@ -438,44 +514,47 @@ func init() {
 }
 
 var fileDescriptor_6721ae6a14ce615e = []byte{
-	// 609 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xcf, 0x4f, 0xdb, 0x30,
-	0x14, 0xc7, 0x57, 0xd2, 0x86, 0xf4, 0x31, 0xa1, 0xc8, 0x9a, 0x50, 0xe8, 0x24, 0xc6, 0xba, 0xcb,
-	0xb4, 0x43, 0x22, 0xba, 0x81, 0x36, 0x38, 0xb5, 0xb4, 0x68, 0xd5, 0x7e, 0x55, 0x4e, 0xe1, 0xb0,
-	0x4b, 0xe5, 0xa6, 0x6e, 0xc8, 0x48, 0xe2, 0xc8, 0x76, 0x80, 0xee, 0xba, 0xf3, 0x4e, 0xfb, 0x87,
-	0x27, 0x3b, 0x0e, 0x68, 0x54, 0x93, 0xb8, 0xbd, 0xe7, 0xf7, 0xf9, 0xbe, 0x67, 0xbf, 0xf7, 0x12,
-	0xe8, 0xc5, 0xcc, 0x8f, 0x2e, 0x39, 0xcb, 0x92, 0x32, 0xf3, 0x19, 0x8f, 0x83, 0xb4, 0x8c, 0x92,
-	0x80, 0x53, 0x51, 0xa6, 0x52, 0x04, 0x05, 0x67, 0x92, 0x05, 0xd7, 0x07, 0x41, 0xc4, 0xb2, 0x8c,
-	0xe5, 0xbe, 0xf6, 0xd1, 0xb6, 0x62, 0x7c, 0xc3, 0x2c, 0xe6, 0x9d, 0xbd, 0x98, 0xb1, 0x38, 0xa5,
-	0x15, 0x3d, 0x2f, 0x97, 0xc1, 0xa2, 0xe4, 0x44, 0x26, 0x35, 0xdf, 0x79, 0xf1, 0x30, 0x2e, 0x93,
-	0x8c, 0x0a, 0x49, 0xb2, 0xc2, 0x00, 0x6b, 0x09, 0x6e, 0x38, 0x29, 0x0a, 0xca, 0x45, 0x15, 0xef,
-	0x1e, 0x83, 0x3d, 0x28, 0xa3, 0x2b, 0x2a, 0x91, 0x07, 0x9b, 0x05, 0x67, 0x3f, 0x68, 0x24, 0xbd,
-	0xc6, 0x7e, 0xe3, 0x75, 0x1b, 0xd7, 0x2e, 0xda, 0x01, 0x7b, 0xae, 0x19, 0x6f, 0x43, 0x07, 0x8c,
-	0xd7, 0xfd, 0x65, 0x81, 0x8d, 0xf5, 0x55, 0xd1, 0x09, 0x6c, 0x25, 0x62, 0x46, 0x6f, 0x0b, 0x1a,
-	0x49, 0xba, 0xd0, 0x09, 0xb6, 0x7a, 0x1d, 0xbf, 0x2a, 0xee, 0xd7, 0xc5, 0xfd, 0x01, 0x63, 0xe9,
-	0x05, 0x49, 0x4b, 0x8a, 0x21, 0x11, 0x23, 0x43, 0x23, 0x1f, 0x6c, 0x21, 0x89, 0x2c, 0x85, 0xce,
-	0xbf, 0xdd, 0xdb, 0xf1, 0xff, 0xed, 0x82, 0x1f, 0xea, 0x28, 0x36, 0x14, 0xea, 0xc1, 0xa6, 0x28,
-	0xb3, 0x8c, 0xf0, 0x95, 0x67, 0xe9, 0x42, 0xde, 0x43, 0xc1, 0x17, 0xc2, 0xaf, 0x16, 0xec, 0x26,
-	0xc7, 0x35, 0x88, 0x3e, 0x00, 0x08, 0x49, 0xb8, 0x9c, 0xa9, 0x06, 0x79, 0xcd, 0xff, 0xdc, 0x6f,
-	0x5a, 0x77, 0x0f, 0xb7, 0x35, 0xad, 0x7c, 0x74, 0x08, 0x4e, 0xdd, 0x75, 0xaf, 0xa5, 0x85, 0xbb,
-	0x6b, 0xc2, 0xa1, 0x01, 0xf0, 0x1d, 0x8a, 0x7c, 0x68, 0x4a, 0x12, 0x0b, 0xcf, 0xde, 0xb7, 0x74,
-	0xad, 0xb5, 0x37, 0xf1, 0x24, 0x8f, 0x27, 0x24, 0xe1, 0x58, 0x73, 0xe8, 0x08, 0xda, 0x84, 0xcb,
-	0x64, 0x49, 0x22, 0x29, 0xbc, 0x4d, 0x2d, 0x5a, 0x7b, 0x57, 0xdf, 0x00, 0xf8, 0x1e, 0xed, 0xfe,
-	0x69, 0x00, 0x5c, 0x10, 0x9e, 0x90, 0x5c, 0x0e, 0xe9, 0x12, 0x1d, 0x82, 0xb5, 0xa0, 0x4b, 0xaf,
-	0xa1, 0x13, 0xbc, 0x7a, 0x98, 0xe0, 0x1e, 0xf4, 0x87, 0x74, 0x39, 0xca, 0x25, 0x5f, 0x61, 0xc5,
-	0xab, 0x19, 0x2f, 0x92, 0x98, 0x8a, 0xbb, 0x19, 0x57, 0x5e, 0xe7, 0x08, 0x9c, 0x1a, 0x44, 0x2e,
-	0x58, 0x57, 0x74, 0x65, 0xb6, 0x43, 0x99, 0xe8, 0x19, 0xb4, 0xae, 0xd5, 0x38, 0x8d, 0xa8, 0x72,
-	0x8e, 0x37, 0xde, 0x37, 0xba, 0xbf, 0x1b, 0xe0, 0xd4, 0xb7, 0x45, 0x08, 0x9a, 0x39, 0xc9, 0xa8,
-	0x51, 0x6a, 0x1b, 0x3d, 0x87, 0xf6, 0x92, 0xca, 0xe8, 0x72, 0x56, 0xf2, 0xd4, 0xc8, 0x1d, 0x7d,
-	0x70, 0xce, 0x53, 0xb4, 0x0b, 0xce, 0x75, 0x42, 0x6f, 0x74, 0xcc, 0xaa, 0x96, 0x51, 0xf9, 0x2a,
-	0xf4, 0x12, 0x9e, 0x46, 0x2c, 0x97, 0x34, 0x97, 0x33, 0xb9, 0x2a, 0xaa, 0x51, 0xb6, 0xf1, 0x96,
-	0x39, 0x9b, 0xae, 0x0a, 0xaa, 0xca, 0x89, 0xe4, 0x27, 0xd5, 0xc3, 0xb2, 0xb0, 0xb6, 0xbb, 0xef,
-	0x00, 0xee, 0x3b, 0xfe, 0xd8, 0x97, 0x74, 0xf7, 0xc0, 0xa9, 0x57, 0x49, 0x65, 0x95, 0xf4, 0xb6,
-	0xfe, 0x38, 0xb4, 0xfd, 0x66, 0x0a, 0x76, 0xb5, 0x9b, 0x68, 0x07, 0x50, 0x38, 0xed, 0x4f, 0xcf,
-	0xc3, 0xd9, 0xf9, 0xd7, 0x70, 0x32, 0x3a, 0x1d, 0x9f, 0x8d, 0x47, 0x43, 0xf7, 0x09, 0x72, 0xa0,
-	0x39, 0xe9, 0x87, 0xa1, 0xdb, 0x50, 0xd6, 0x59, 0x7f, 0xfc, 0xd9, 0xdd, 0x40, 0x6d, 0x68, 0x9d,
-	0xe2, 0x7e, 0xf8, 0xd1, 0xb5, 0x94, 0xd9, 0x1f, 0x7c, 0xc3, 0x53, 0xb7, 0xa9, 0xe2, 0xe1, 0xa7,
-	0xf1, 0xc4, 0x6d, 0x0d, 0x0e, 0xbe, 0x07, 0x8f, 0xfa, 0x75, 0x9c, 0x98, 0x83, 0x62, 0x3e, 0xb7,
-	0xf5, 0xd9, 0xdb, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0x16, 0x3d, 0xc9, 0x23, 0x74, 0x04, 0x00,
+	// 657 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xcd, 0x4e, 0xdb, 0x40,
+	0x10, 0xc7, 0x6b, 0x9c, 0x04, 0x67, 0x82, 0xc0, 0x5a, 0x55, 0xc8, 0xa4, 0x12, 0x4d, 0xd3, 0x0b,
+	0xea, 0xc1, 0x11, 0x69, 0x41, 0x2d, 0x3d, 0x05, 0x12, 0xd4, 0xa8, 0x5f, 0xd1, 0x3a, 0x70, 0xe8,
+	0x25, 0xda, 0xc4, 0x1b, 0x63, 0x61, 0x7b, 0xad, 0xdd, 0x35, 0x24, 0x7d, 0x8d, 0x3e, 0x45, 0x9f,
+	0xae, 0xaf, 0x50, 0xed, 0xda, 0x0e, 0x85, 0xa8, 0x82, 0xdb, 0x7c, 0xfc, 0xfe, 0x33, 0x1e, 0xe7,
+	0xef, 0x40, 0x37, 0x60, 0xee, 0xec, 0x8a, 0xb3, 0x38, 0xcc, 0x62, 0x97, 0xf1, 0xa0, 0x13, 0x65,
+	0xb3, 0xb0, 0xc3, 0xa9, 0xc8, 0x22, 0x29, 0x3a, 0x29, 0x67, 0x92, 0x75, 0x6e, 0x0e, 0x3b, 0x33,
+	0x16, 0xc7, 0x2c, 0x71, 0x75, 0x8e, 0xb6, 0x15, 0xe3, 0x16, 0x8c, 0x3f, 0x6d, 0xee, 0x07, 0x8c,
+	0x05, 0x11, 0xcd, 0xe9, 0x69, 0x36, 0xef, 0xf8, 0x19, 0x27, 0x32, 0x2c, 0xf9, 0xe6, 0xcb, 0x87,
+	0x7d, 0x19, 0xc6, 0x54, 0x48, 0x12, 0xa7, 0x05, 0xb0, 0x36, 0xe0, 0x96, 0x93, 0x34, 0xa5, 0x5c,
+	0xe4, 0xfd, 0xf6, 0x1f, 0x13, 0x60, 0x4c, 0x85, 0xc4, 0x7a, 0x25, 0x7a, 0x01, 0xf5, 0x7c, 0xf9,
+	0x24, 0xf4, 0x1d, 0xa3, 0x65, 0x1c, 0xd4, 0xb1, 0x95, 0x17, 0x86, 0x3e, 0x3a, 0x06, 0x8b, 0x2e,
+	0x52, 0x3a, 0x93, 0xd4, 0x77, 0x36, 0x5a, 0xc6, 0x41, 0xa3, 0xdb, 0x74, 0xf3, 0xf1, 0x6e, 0x39,
+	0xde, 0x3d, 0x65, 0x2c, 0xba, 0x24, 0x51, 0x46, 0xf1, 0x8a, 0x45, 0x2e, 0xd4, 0x84, 0x24, 0x32,
+	0x13, 0x8e, 0xd9, 0x32, 0x0e, 0xb6, 0xbb, 0xbb, 0xee, 0xfd, 0x2b, 0x5d, 0x4f, 0x77, 0x71, 0x41,
+	0xa1, 0x2e, 0x6c, 0x8a, 0x2c, 0x8e, 0x09, 0x5f, 0x3a, 0x15, 0xbd, 0xc6, 0x79, 0x28, 0xf8, 0x4a,
+	0xf8, 0xb5, 0xcf, 0x6e, 0x13, 0x5c, 0x82, 0xe8, 0x03, 0x80, 0x90, 0x84, 0xcb, 0x89, 0x7a, 0x01,
+	0x4e, 0xf5, 0x3f, 0x4f, 0x37, 0x2e, 0xdf, 0x0e, 0xae, 0x6b, 0x5a, 0xe5, 0xe8, 0x08, 0xac, 0xf2,
+	0xad, 0x3a, 0x35, 0x2d, 0xdc, 0x5b, 0x13, 0xf6, 0x0b, 0x00, 0xaf, 0x50, 0xe4, 0x42, 0x45, 0x92,
+	0x40, 0x38, 0x9b, 0x2d, 0x53, 0xef, 0x5a, 0xbb, 0x89, 0x87, 0x49, 0x30, 0x22, 0x21, 0xc7, 0x9a,
+	0x43, 0x3d, 0xd8, 0x09, 0x93, 0x34, 0x93, 0x13, 0xc2, 0x65, 0x38, 0x27, 0x33, 0x29, 0x1c, 0x4b,
+	0x4b, 0xd7, 0xae, 0xeb, 0x15, 0x00, 0xde, 0xd6, 0x82, 0x32, 0x15, 0xe8, 0x0c, 0x6c, 0x96, 0xc9,
+	0xfb, 0x33, 0xea, 0x8f, 0xcc, 0xd8, 0xc9, 0x15, 0xab, 0x21, 0xed, 0x5f, 0x06, 0xc0, 0x25, 0xe1,
+	0x21, 0x49, 0x64, 0x9f, 0xce, 0xd1, 0x11, 0x98, 0x3e, 0x9d, 0x3b, 0x86, 0x1e, 0xf3, 0xfa, 0xe1,
+	0x98, 0x3b, 0xd0, 0xed, 0xd3, 0xf9, 0x20, 0x91, 0x7c, 0x89, 0x15, 0x8f, 0x76, 0xa1, 0xe6, 0x87,
+	0x01, 0x15, 0x52, 0x3b, 0xa1, 0x8e, 0x8b, 0xac, 0x79, 0x0c, 0x56, 0x09, 0x22, 0x1b, 0xcc, 0x6b,
+	0xba, 0x2c, 0x6c, 0xa4, 0x42, 0xf4, 0x1c, 0xaa, 0x37, 0xca, 0x1c, 0x85, 0x28, 0x4f, 0x4e, 0x36,
+	0xde, 0x1b, 0xed, 0xdf, 0x06, 0x58, 0xe5, 0x33, 0x22, 0x04, 0x95, 0x84, 0xc4, 0xb4, 0x50, 0xea,
+	0x58, 0x39, 0x73, 0x4e, 0xe5, 0xec, 0x6a, 0x92, 0xf1, 0xa8, 0x90, 0x5b, 0xba, 0x70, 0xc1, 0x23,
+	0xb4, 0x07, 0xd6, 0x4d, 0x48, 0x6f, 0x75, 0xcf, 0xd4, 0xbd, 0x4d, 0x95, 0xab, 0xd6, 0x2b, 0xd8,
+	0x9a, 0xb1, 0x44, 0xd2, 0x44, 0x4e, 0xe4, 0x32, 0xa5, 0xda, 0x51, 0x75, 0xdc, 0x28, 0x6a, 0xe3,
+	0x65, 0x4a, 0xd5, 0x3a, 0x11, 0xfe, 0xcc, 0x5d, 0x63, 0x62, 0x1d, 0xa3, 0x26, 0x58, 0x05, 0x22,
+	0xb4, 0x29, 0xb6, 0xf0, 0x2a, 0x6f, 0xbf, 0x03, 0xb8, 0xfb, 0x75, 0x9f, 0x7a, 0x65, 0x7b, 0x1f,
+	0xac, 0xd2, 0xb6, 0x6a, 0xa3, 0xa4, 0x0b, 0x59, 0x1e, 0xa8, 0xe2, 0xf6, 0x10, 0x1a, 0x83, 0x05,
+	0x4b, 0x68, 0x61, 0xaf, 0x13, 0x68, 0xd0, 0x45, 0x1a, 0x91, 0x24, 0x37, 0xa6, 0xf1, 0xc8, 0x87,
+	0xf0, 0x2f, 0xfc, 0x66, 0x0c, 0xb5, 0xfc, 0x93, 0x42, 0xbb, 0x80, 0xbc, 0x71, 0x6f, 0x7c, 0xe1,
+	0x4d, 0x2e, 0xbe, 0x79, 0xa3, 0xc1, 0xd9, 0xf0, 0x7c, 0x38, 0xe8, 0xdb, 0xcf, 0x90, 0x05, 0x95,
+	0x51, 0xcf, 0xf3, 0x6c, 0x43, 0x45, 0xe7, 0xbd, 0xe1, 0x17, 0x7b, 0x03, 0xd5, 0xa1, 0x7a, 0x86,
+	0x7b, 0xde, 0x27, 0xdb, 0x54, 0x61, 0xef, 0xf4, 0x3b, 0x1e, 0xdb, 0x15, 0xd5, 0xf7, 0x3e, 0x0f,
+	0x47, 0x76, 0xf5, 0xf4, 0xf0, 0x47, 0xe7, 0x49, 0xff, 0x68, 0x1f, 0x8b, 0x42, 0x3a, 0x9d, 0xd6,
+	0x74, 0xed, 0xed, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x1a, 0x52, 0x5d, 0x38, 0x0b, 0x05, 0x00,
 	0x00,
 }

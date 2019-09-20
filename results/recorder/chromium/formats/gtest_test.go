@@ -228,9 +228,9 @@ func TestGTestConversions(t *testing.T) {
 		So(len(inv.Tests), ShouldEqual, 3)
 
 		Convey(`grouping by test name works`, func() {
-			So(inv.Tests[0].Name, ShouldEqual, "prefix/test1")
-			So(inv.Tests[1].Name, ShouldEqual, "prefix/test2")
-			So(inv.Tests[2].Name, ShouldEqual, "prefix/test3")
+			So(inv.Tests[0].Path, ShouldEqual, "prefix/test1")
+			So(inv.Tests[1].Path, ShouldEqual, "prefix/test2")
+			So(inv.Tests[2].Path, ShouldEqual, "prefix/test3")
 		})
 
 		Convey(`grouping by variant works`, func() {
