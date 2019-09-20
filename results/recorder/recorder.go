@@ -25,7 +25,7 @@ import (
 	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
-// RecorderServer implements resultspb.Recorder API.
+// RecorderServer implements resultspb.Recorder service.
 //
 // This is not typically used directly by the end client, but by intermediaries
 // such as the Uploader, which handles uploading test results from swarming
