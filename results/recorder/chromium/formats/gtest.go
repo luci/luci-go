@@ -15,12 +15,21 @@
 package formats
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
+	"sort"
+	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
+	resultspb "go.chromium.org/luci/results/proto/v1"
+	"go.chromium.org/luci/results/util"
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -48,9 +57,8 @@ type GTestRunResult struct {
 	Status        string `json:"status"`
 	ElapsedTimeMs int    `json:"elapsed_time_ms"`
 
-	OutputSnippet       string `json:"output_snippet"`
 	LosslessSnippet     bool   `json:"losless_snippet"`
-	OutputSnippetBase64 string `json:"output_snippit_base64"`
+	OutputSnippetBase64 string `json:"output_snippet_base64"`
 }
 
 // Location describes a code location.
@@ -70,4 +78,159 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 	}
 
 	return nil
+}
+
+// ToInvocation converts a GTestResults to a (partial) resultspb.Invocation.
+func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+	// testsToVariants maps GTest base name to the variant IDs present to Results.
+	// We store these maps to handle the same test and variants appearing in multiple iterations.
+	testsToVariants := map[string]map[string][]*resultspb.Result{}
+	variantDefs := map[string]*resultspb.VariantDef{}
+
+	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
+	// more than one to confirm and track.
+	if len(r.PerIterationData) > 1 {
+		logging.Infof(ctx,
+			"Got %d iterations for task %s on %s", len(r.PerIterationData), req.Task.Id, req.Task.Hostname)
+	}
+
+	// Assume the invocation is complete for now; if any results are NOTRUN, we'll mark as otherwise.
+	incomplete := false
+
+	for _, data := range r.PerIterationData {
+		for name, results := range data {
+			baseName, params := r.extractParameters(name)
+
+			// Derive the variant definition from base variant and params.
+			variantDef := MergeTestVariantMaps(req.BaseTestVariant.Def, params).Proto()
+			varID := variantDef.Digest
+			if _, ok := variantDefs[varID]; !ok {
+				variantDefs[varID] = variantDef
+			}
+
+			// Generate individual result protos.
+			rpbs := make([]*resultspb.Result, len(results))
+			for i, result := range results {
+				rpbs[i] = r.convertRunResult(ctx, name, result)
+
+				// TODO: Verify that it's indeed the case that getting NOTRUN results in the final results
+				// indicates the task was incomplete.
+				if result.Status == "NOTRUN" {
+					incomplete = true
+				}
+			}
+
+			// Store the processed test result into the correct part of the overall map.
+			testPath := req.TestPathPrefix + baseName
+			if _, ok := testsToVariants[testPath]; !ok {
+				testsToVariants[testPath] = map[string][]*resultspb.Result{}
+			}
+			testsToVariants[testPath][varID] = append(testsToVariants[testPath][varID], rpbs...)
+		}
+	}
+
+	// Now that we have all the results mapped by test names and variant, populate the invocation.
+	inv := &resultspb.Invocation{
+		VariantDefs: variantDefs,
+		Incomplete:  incomplete,
+		Tags:        []*resultspb.StringPair{util.StringPair("test_framework", "gtest")},
+	}
+
+	for name, variants := range testsToVariants {
+		testpb := &resultspb.Invocation_Test{Name: name}
+
+		for id, results := range variants {
+			testpb.Variants = append(testpb.Variants, &resultspb.Invocation_TestVariant{
+				VariantId: id,
+				Results:   results,
+			})
+		}
+
+		inv.Tests = append(inv.Tests, testpb)
+	}
+	sort.Slice(inv.Tests, func(i, j int) bool { return inv.Tests[i].Name < inv.Tests[j].Name })
+
+	// Populate the tags.
+	for _, tag := range r.GlobalTags {
+		inv.Tags = append(inv.Tags, util.StringPair("global_tag", tag))
+	}
+	SortTagsInPlace(inv.Tags)
+
+	return inv, nil
+}
+
+// status derives a resultspb.Status from the given GTest status and annotating info as tags if any.
+func (r *GTestResults) status(s string) (status resultspb.Status, tags []*resultspb.StringPair) {
+	tags = []*resultspb.StringPair{util.StringPair("gtest_status", s)}
+	switch s {
+	case "SUCCESS":
+		status = resultspb.Status_PASS
+	case "FAILURE":
+		status = resultspb.Status_FAIL
+	case "FAILURE_ON_EXIT":
+		status = resultspb.Status_FAIL
+	case "CRASH":
+		status = resultspb.Status_CRASH
+	case "TIMEOUT":
+		status = resultspb.Status_ABORT
+	case "SKIPPED":
+		status = resultspb.Status_SKIP
+	case "EXCESSIVE_OUTPUT":
+		status = resultspb.Status_FAIL
+	case "NOTRUN":
+		status = resultspb.Status_SKIP
+	default:
+		status = resultspb.Status_STATUS_UNSPECIFIED
+	}
+	return
+}
+
+// extractParameters extracts parameters from a test path as a mapping with "param/" keys.
+func (r *GTestResults) extractParameters(testPath string) (basePath string, params VariantDefMap) {
+	// TODO: Implement.
+	basePath = testPath
+	params = VariantDefMap{}
+	return
+}
+
+func (r *GTestResults) convertRunResult(ctx context.Context, name string, result *GTestRunResult) *resultspb.Result {
+	status, statusTags := r.status(result.Status)
+
+	rpb := &resultspb.Result{
+		Status:   status,
+		Tags:     statusTags,
+		Duration: secondsToDuration(1e-6 * float64(result.ElapsedTimeMs)),
+	}
+
+	// Write the summary.
+	if result.OutputSnippetBase64 != "" {
+		outputBytes, err := base64.StdEncoding.DecodeString(result.OutputSnippetBase64)
+		if err != nil {
+			// Log the error, but we shouldn't fail to convert an entire invocation just because we can't
+			// convert a summary.
+			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
+		} else {
+			rpb.Summary = &resultspb.Markdown{
+				Text: strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError)),
+			}
+		}
+	}
+
+	// Store the correct output snippet.
+	rpb.Tags = append(
+		rpb.Tags,
+		util.StringPair("lossless_snippet", strconv.FormatBool(result.LosslessSnippet)),
+	)
+
+	// Store the test code location.
+	if loc, ok := r.TestLocations[name]; ok {
+		rpb.Tags = append(rpb.Tags,
+			util.StringPair("file", loc.File),
+			util.StringPair("line", strconv.Itoa(loc.Line)),
+		)
+	}
+
+	SortTagsInPlace(rpb.Tags)
+
+	return rpb
 }
