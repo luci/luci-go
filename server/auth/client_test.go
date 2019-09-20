@@ -312,37 +312,37 @@ func TestGetRPCTransport(t *testing.T) {
 			})
 
 			Convey("uses request context", func(c C) {
-				reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
-				defer reqCtxCancel()
-				transCtx, transCtxCancel := context.WithTimeout(ctx1, time.Hour)
-				defer transCtxCancel()
+				reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
+				defer cancel()
+				transCtx, cancel := context.WithTimeout(ctx1, time.Hour)
+				defer cancel()
 				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
 			})
 
 			Convey("OK on two background contexts", func(c C) {
-				reqCtx, reqCtxCancel := context.WithTimeout(root, time.Minute)
-				defer reqCtxCancel()
-				transCtx, transCtxCancel := context.WithTimeout(root, time.Hour)
-				defer transCtxCancel()
+				reqCtx, cancel := context.WithTimeout(root, time.Minute)
+				defer cancel()
+				transCtx, cancel := context.WithTimeout(root, time.Hour)
+				defer cancel()
 				So(run(c, reqCtx, transCtx), ShouldEqual, reqCtx)
 			})
 
 			Convey("panics on contexts with different auth state", func(c C) {
 				So(func() {
-					reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
-					defer reqCtxCancel()
-					transCtx, transCtxCancel := context.WithTimeout(ctx2, time.Hour)
-					defer transCtxCancel()
+					reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
+					defer cancel()
+					transCtx, cancel := context.WithTimeout(ctx2, time.Hour)
+					defer cancel()
 					run(c, reqCtx, transCtx)
 				}, ShouldPanic)
 			})
 
 			Convey("panics if one is background and another is not", func(c C) {
 				So(func() {
-					reqCtx, reqCtxCancel := context.WithTimeout(ctx1, time.Minute)
-					defer reqCtxCancel()
-					transCtx, transCtxCancel := context.WithTimeout(root, time.Hour)
-					defer transCtxCancel()
+					reqCtx, cancel := context.WithTimeout(ctx1, time.Minute)
+					defer cancel()
+					transCtx, cancel := context.WithTimeout(root, time.Hour)
+					defer cancel()
 					run(c, reqCtx, transCtx)
 				}, ShouldPanic)
 			})
