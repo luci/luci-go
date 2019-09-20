@@ -50,6 +50,30 @@
     },
     {
       "key": {
+        "uuid": "a1a9a5a0_d5dbb153",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-20T13:00:14Z",
+      "side": 1,
+      "message": "it\u0027s just unusual to have the same actual value in 2 similarly named fields of the same struct.\nthanks for comment -- I think it\u0027s OK to keep then.",
+      "parentUuid": "8f97c822_149549cb",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 32
+      },
+      "revId": "d10e98491984a21216ed8400c2427a17771b6683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "348686ff_b2f4166e",
         "filename": "luciexe/host/buildmerge/agent.go",
         "patchSetId": 3
