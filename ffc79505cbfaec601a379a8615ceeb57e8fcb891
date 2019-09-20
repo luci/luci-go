@@ -16,6 +16,24 @@
       "revId": "ffc79505cbfaec601a379a8615ceeb57e8fcb891",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dee86ea1_45b4e45f",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-09-20T01:21:12Z",
+      "side": 1,
+      "message": "made\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1816017",
+      "parentUuid": "7b041610_c44b0038",
+      "revId": "ffc79505cbfaec601a379a8615ceeb57e8fcb891",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
