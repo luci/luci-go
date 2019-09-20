@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69295151_35be2401",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T19:45:20Z",
+      "side": 1,
+      "message": "\"results\" is an unfortunately overloaded term everywhere here. I\u0027m happy to change this name to something else (\"resultsdb\" looks unfortunately very similar to \"resultspb\"), or find other names for the \"results\" vars below.",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 4
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45d681c1_6b150fba",
+        "filename": "results/util/util.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T19:45:20Z",
+      "side": 1,
+      "message": "A bit redundant of a docstring",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 13
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13a609d6_f1c7223a",
+        "filename": "results/variantdef.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-20T19:45:20Z",
+      "side": 1,
+      "message": "A bit redundant of a docstring",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 58,
+        "endChar": 13
+      },
+      "revId": "34a8f03cb3d5b288786c042f41e3da208a34bf2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
