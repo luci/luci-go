@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "ca4bb6cf_858adefd",
+        "filename": "results/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T16:20:28Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "d514d788_aa50f022",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 46
+      },
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "76926fbf_38311185",
         "filename": "results/recorder/chromium/formats/common.go",
         "patchSetId": 9
@@ -289,6 +313,24 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "cbcdb717_d9cbb0f7",
+      "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "374e4918_97b61ba4",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-20T16:20:28Z",
+      "side": 1,
+      "message": "i meant that the if condition is unnecessary, but now I see its value: rpb.Summary stays empty if there is no snippet.",
+      "parentUuid": "1220cf03_77827bd5",
       "revId": "f632f7133a20e006f4e49e0a15f0255bf54a6583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
