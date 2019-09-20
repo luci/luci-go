@@ -1659,6 +1659,14 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 
 		check := func(expected *DeployedPackage) *DeployedPackage {
 			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, pkg.WithoutManifest)
+			// Ordering of files is nondeterministic, so we only care that the
+			// package contains the expected files, not that the ordering
+			// matches the expected ordering exactly.
+			sort.Strings(dp.ToRedeploy)
+			sort.Strings(expected.ToRedeploy)
+			sort.Strings(dp.ToRelink)
+			sort.Strings(expected.ToRelink)
+
 			So(err, ShouldBeNil)
 			So(dp.Manifest, ShouldNotBeNil)
 			dp.Manifest = nil
