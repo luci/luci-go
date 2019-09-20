@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "172e0538_98413d87",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-09-20T02:32:53Z",
+      "side": 1,
+      "message": "Better to use \"defer\" for \"filesystem.RemoveAll(absOutDir)\" to avoid duplication?",
+      "revId": "db20230988d7d692a95fe204b08f0cc0f6c90ab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
