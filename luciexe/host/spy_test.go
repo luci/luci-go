@@ -18,36 +18,49 @@ import (
 	"context"
 	"testing"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
+	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
+	"go.chromium.org/luci/luciexe"
 
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestButler(t *testing.T) {
-	Convey(`test butler environment`, t, func() {
+func TestSpy(t *testing.T) {
+	Convey(`test build spy environment`, t, func() {
 		ctx, closer := testCtx()
 		defer closer()
 
 		Convey(`butler active within Run`, func(c C) {
 			ch, err := Run(ctx, nil, func(ctx context.Context) error {
 				bs, err := bootstrap.Get()
-				c.So(err, ShouldBeNil)
-				c.So(bs.Client, ShouldNotBeNil)
-				c.So(bs.Project, ShouldEqual, "null")
-				c.So(bs.Prefix, ShouldEqual, "null")
-				c.So(bs.Namespace, ShouldEqual, "u")
 
-				stream, err := bs.Client.NewTextStream(ctx, "sup")
+				stream, err := bs.Client.NewDatagramStream(
+					ctx, luciexe.BuildProtoStreamSuffix,
+					streamclient.WithContentType(luciexe.BuildProtoContentType))
 				c.So(err, ShouldBeNil)
 				defer stream.Close()
-				_, err = stream.Write([]byte("HELLO"))
+
+				data, err := proto.Marshal(&bbpb.Build{
+					SummaryMarkdown: "we did it",
+					Status:          bbpb.Status_SUCCESS,
+				})
 				c.So(err, ShouldBeNil)
+
+				err = stream.WriteDatagram(data)
+				c.So(err, ShouldBeNil)
+
+				c.So(stream.Close(), ShouldBeNil)
+
 				return nil
 			})
+
 			So(err, ShouldBeNil)
 			for range ch {
-				// TODO(iannucci): check for Build object contents
+				// TODO(iannucci): actually evaluate the builds here
 			}
 		})
+
 	})
 }
