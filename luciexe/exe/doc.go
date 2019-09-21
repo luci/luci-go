@@ -12,6 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package exe provides a client for the luciexe protocol which allows you to
-// write a luciexe-compliant binary.
+// Package exe implements a client for the LUCI Executable ("luciexe") protocol.
+//
+// The simplest luciexe is:
+//
+//   import (
+//     "context"
+//
+//     "go.chromium.org/luci/luciexe/exe"
+//
+//     bbpb "go.chromium.org/luci/buildbucket/proto"
+//   )
+//
+//   func main() {
+//     exe.Run(func(ctx context.Context, input *bbpb.Build, send exe.BuildSender) error {
+//       ... do whatever you want here ...
+//       return nil // nil error indicates successful build.
+//     })
+//   }
+//
+// See Also: https://go.chromium.org/luci/luciexe
 package exe
