@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "12cc1557_c8e6d162",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd656d48_9cd62450",
+      "range": {
+        "startLine": 34,
+        "startChar": 51,
+        "endLine": 34,
+        "endChar": 53
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d23ae66_15b41bb8",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "168c7469_2622edd9",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "thanks, specified the alphabet",
+      "parentUuid": "0d23ae66_15b41bb8",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 18
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "549f1e1f_16cee8b2",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d3e2d35_44de3182",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 38
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30d9d2e4_6ded93b2",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 6
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "9b106bed_d744a9bd",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30d9d2e4_6ded93b2",
+      "range": {
+        "startLine": 101,
+        "startChar": 9,
+        "endLine": 101,
+        "endChar": 12
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5960f3c2_add1600e",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 6
@@ -105,6 +201,30 @@
       "writtenOn": "2019-09-21T01:32:59Z",
       "side": 1,
       "message": "What\u0027s the intent of explaining group here?\n\nIIUC, in resultsdb we don\u0027t need to actually store groups a test belongs to since that will be redundant information. But external services may need groups and if so they can get the info by parsing path?",
+      "range": {
+        "startLine": 41,
+        "startChar": 63,
+        "endLine": 41,
+        "endChar": 68
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eae180bf_559fb3db",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "test path is defined in this proto file and this part of the comment explains standard semantics.\nAs  someone who is considering to insert some test results in to resultsdb, I\u0027d see this and understand how other systems will interpret the results.\n\nthis was my reasoning. It is also possible that we want to put this documentation in markdown instead. So far, we kept protos quite exhaustive because they define protocols, semantics, etc.",
+      "parentUuid": "5960f3c2_add1600e",
       "range": {
         "startLine": 41,
         "startChar": 63,

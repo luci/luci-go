@@ -138,6 +138,24 @@
     },
     {
       "key": {
+        "uuid": "b0235985_33b603db",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-21T04:43:59Z",
+      "side": 1,
+      "message": "still not sure what you mean, could you elaborate more? this comment thread is about input artifacts. Something uses Gold\u0027s image diffs as input into test cases?",
+      "parentUuid": "f3e74e84_0bd9a332",
+      "revId": "c8cb76247ccf8e942be52cf2b7da9a0015438e9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d2fabd3_0a106b78",
         "filename": "results/proto/v1/common.proto",
         "patchSetId": 4
