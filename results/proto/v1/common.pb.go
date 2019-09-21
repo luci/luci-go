@@ -34,9 +34,10 @@ const (
 	// The test case has passed.
 	Status_PASS Status = 1
 	// The test case has failed.
-	// The code under test is incorrect.
+	// Suggests that the code under test is incorrect, but it is also possible
+	// that the test is incorrect or it is a flake.
 	Status_FAIL Status = 2
-	// The the case has crashed during execution.
+	// The case has crashed during execution.
 	// The outcome is inconclusive: the code under test might or might not be
 	// correct, but the test+code is incorrect.
 	Status_CRASH Status = 3
@@ -85,8 +86,8 @@ func (Status) EnumDescriptor() ([]byte, []int) {
 // and the same test suite can be executed in different variants
 // (OS, GPU, compile flags, etc).
 //
-// This message does not specify the test path. It is should be available
-// in the message that embeds this message.
+// This message does not specify the test path. It should be available in the
+// message that embeds this message.
 type TestResult struct {
 	// Identifies a test result.
 	// MUST be unique for a given invocation id and a test path.
@@ -94,6 +95,8 @@ type TestResult struct {
 	// (invocation_id, test_path, result_id).
 	//
 	// MUST be provided by the client on insertion.
+	// Regex: ^[a-z][a-z0-9_\-]*$.
+	// Examples: a number or a GUID.
 	ResultId string `protobuf:"bytes,1,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Whether the result of test case execution is expected.
 	// In a typical Chromium CL, 99%+ of test results are expected.
