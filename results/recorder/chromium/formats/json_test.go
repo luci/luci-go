@@ -17,6 +17,7 @@ package formats
 import (
 	"bytes"
 	"context"
+	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,13 +35,14 @@ func TestConversion(t *testing.T) {
 					"c1": {
 						"c2": {
 							"t1.html": {
-								"actual": "PASS",
+								"actual": "PASS PASS PASS",
 								"expected": "PASS",
+								"time": 0.3,
 								"times": [ 0.2, 0.1 ]
 							},
 							"t2.html": {
-								"actual": "PASS",
-								"expected": "FAIL",
+								"actual": "PASS FAIL PASS",
+								"expected": "PASS FAIL",
 								"times": [ 0.05 ]
 							}
 						}
@@ -48,8 +50,7 @@ func TestConversion(t *testing.T) {
 					"c2": {
 						"t3.html": {
 							"actual": "FAIL",
-							"expected": "PASS",
-							"times": [ 0.3, 0.4 ]
+							"expected": "PASS"
 						}
 					}
 				}
@@ -64,9 +65,29 @@ func TestConversion(t *testing.T) {
 		So(results.PathDelimiter, ShouldEqual, "::")
 		So(results.SecondsSinceEpoch, ShouldEqual, 1565504423)
 		So(results.Tests, ShouldResemble, map[string]*TestFields{
-			"c1::c2::t1.html": {Actual: "PASS", Expected: "PASS", Times: []float64{0.2, 0.1}},
-			"c1::c2::t2.html": {Actual: "PASS", Expected: "FAIL", Times: []float64{0.05}},
-			"c2::t3.html":     {Actual: "FAIL", Expected: "PASS", Times: []float64{0.3, 0.4}},
+			"c1::c2::t1.html": {
+				ActualRaw:    "PASS PASS PASS",
+				Actual:       []string{"PASS", "PASS", "PASS"},
+				ExpectedRaw:  "PASS",
+				ExpectedSet:  []string{"PASS"},
+				Time:         0.3,
+				Times:        []float64{0.2, 0.1},
+				AllDurations: []float64{0.3, 0.2, 0.1},
+			},
+			"c1::c2::t2.html": {
+				ActualRaw:    "PASS FAIL PASS",
+				Actual:       []string{"PASS", "FAIL", "PASS"},
+				ExpectedRaw:  "PASS FAIL",
+				ExpectedSet:  []string{"PASS", "FAIL"},
+				Times:        []float64{0.05},
+				AllDurations: []float64{0.05},
+			},
+			"c2::t3.html": {
+				ActualRaw:   "FAIL",
+				Actual:      []string{"FAIL"},
+				ExpectedRaw: "PASS",
+				ExpectedSet: []string{"PASS"},
+			},
 		})
 
 		Convey(`with default path delimiter`, func() {
@@ -77,10 +98,16 @@ func TestConversion(t *testing.T) {
 			err := results.convertTests("", results.TestsRaw)
 			So(err, ShouldBeNil)
 			So(results, ShouldNotBeNil)
-			So(results.Tests, ShouldResemble, map[string]*TestFields{
-				"c1/c2/t1.html": {Actual: "PASS", Expected: "PASS", Times: []float64{0.2, 0.1}},
-				"c1/c2/t2.html": {Actual: "PASS", Expected: "FAIL", Times: []float64{0.05}},
-				"c2/t3.html":    {Actual: "FAIL", Expected: "PASS", Times: []float64{0.3, 0.4}},
+
+			paths := make([]string, 0, len(results.Tests))
+			for path := range results.Tests {
+				paths = append(paths, path)
+			}
+			sort.Slice(paths, func(i, j int) bool { return paths[i] < paths[j] })
+			So(paths, ShouldResemble, []string{
+				"c1/c2/t1.html",
+				"c1/c2/t2.html",
+				"c2/t3.html",
 			})
 		})
 	})
