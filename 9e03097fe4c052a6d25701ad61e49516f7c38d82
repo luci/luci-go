@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "093ceda0_d577dac7",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "93ab3fad_c9dceb91",
+      "range": {
+        "startLine": 439,
+        "startChar": 21,
+        "endLine": 439,
+        "endChar": 35
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f94d0f97_abe2d344",
         "filename": "logdog/client/butler/butler.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0015dc04_479bc04b",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 523,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f94d0f97_abe2d344",
+      "range": {
+        "startLine": 523,
+        "startChar": 7,
+        "endLine": 523,
+        "endChar": 8
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,53 @@
     },
     {
       "key": {
+        "uuid": "eb6a94df_4dc7aa64",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "52bca179_b481892c",
+      "range": {
+        "startLine": 529,
+        "startChar": 16,
+        "endLine": 529,
+        "endChar": 27
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11047fc9_cbb114f5",
+        "filename": "logdog/client/butler/stream_tracker.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "nit: I read it as \"check that stream is closed\", but actually it is \"check not closed\", so maybe \"CanOpen\"?",
+      "range": {
+        "startLine": 70,
+        "startChar": 13,
+        "endLine": 70,
+        "endChar": 24
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c46cdae_2bf2ba83",
         "filename": "logdog/common/types/streamname.go",
         "patchSetId": 3
@@ -87,6 +182,145 @@
         "startChar": 3,
         "endLine": 287,
         "endChar": 13
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19ae16a0_34e7a0e6",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "fine as is.",
+      "parentUuid": "8c46cdae_2bf2ba83",
+      "range": {
+        "startLine": 287,
+        "startChar": 3,
+        "endLine": 287,
+        "endChar": 13
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03c9c8e5_42368ce0",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "a/b/\na/\n\n(and that\u0027s what your code does below)",
+      "range": {
+        "startLine": 291,
+        "startChar": 12,
+        "endLine": 291,
+        "endChar": 13
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3ea7689_542dd05a",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 298,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "contradicts doc.",
+      "range": {
+        "startLine": 298,
+        "startChar": 3,
+        "endLine": 298,
+        "endChar": 31
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e27f5b8_416628fc",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "first, StreamNameSepStr\n\nbut, it\u0027s a tad unfortunate to create new string, when slice of the existing string would suffice:\n\nremaining :\u003d string(s)\nfor {\n  lidx :\u003d strings.LastIndex(remaining, StreamNameSepStr)\n  if lidx \u003c 0 {\n    return\n  }\n  ret \u003d append(ret, remaining[:len(lidx)+1])\n  remaining \u003d remaining[:len(lidx)]\n}",
+      "range": {
+        "startLine": 301,
+        "startChar": 19,
+        "endLine": 301,
+        "endChar": 34
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61ddb793_34c2832b",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "StreamNameSepStr",
+      "range": {
+        "startLine": 318,
+        "startChar": 48,
+        "endLine": 318,
+        "endChar": 51
+      },
+      "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f9a1cb0_8eba6639",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T15:19:48Z",
+      "side": 1,
+      "message": "StreamNameSepStr",
+      "range": {
+        "startLine": 321,
+        "startChar": 12,
+        "endLine": 321,
+        "endChar": 15
       },
       "revId": "9e03097fe4c052a6d25701ad61e49516f7c38d82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
