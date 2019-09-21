@@ -228,9 +228,9 @@ func TestGTestConversions(t *testing.T) {
 		So(len(inv.Tests), ShouldEqual, 3)
 
 		Convey(`grouping by test name works`, func() {
-			So(inv.Tests[0].Name, ShouldEqual, "prefix/test1")
-			So(inv.Tests[1].Name, ShouldEqual, "prefix/test2")
-			So(inv.Tests[2].Name, ShouldEqual, "prefix/test3")
+			So(inv.Tests[0].Path, ShouldEqual, "prefix/test1")
+			So(inv.Tests[1].Path, ShouldEqual, "prefix/test2")
+			So(inv.Tests[2].Path, ShouldEqual, "prefix/test3")
 		})
 
 		Convey(`grouping by variant works`, func() {
@@ -278,8 +278,7 @@ func TestGTestConversions(t *testing.T) {
 				testResults := inv.Tests[0].Variants[0].Results
 				summaries := make([]string, len(testResults))
 				for i, r := range testResults {
-					So(r.Summary, ShouldNotBeNil)
-					summaries[i] = r.Summary.Text
+					summaries[i] = r.SummaryMarkdown
 				}
 				So(summaries, ShouldResemble, []string{
 					"[ RUN      ] FooTest.TestDoBar\n(10 ms)",
@@ -293,13 +292,12 @@ func TestGTestConversions(t *testing.T) {
 				testResults := inv.Tests[1].Variants[0].Results
 				expectedText := fmt.Sprintf("Bytes: 0xC0 0x8A 0x3D 0x27\n<a b%c='c'/>", utf8.RuneError)
 				for _, r := range testResults {
-					So(r.Summary, ShouldNotBeNil)
-					So(r.Summary.Text, ShouldEqual, expectedText)
+					So(r.SummaryMarkdown, ShouldEqual, expectedText)
 				}
 			})
 
 			Convey(`for missing snippets`, func() {
-				So(inv.Tests[2].Variants[0].Results[0].Summary, ShouldBeNil)
+				So(inv.Tests[2].Variants[0].Results[0].SummaryMarkdown, ShouldEqual, "")
 			})
 		})
 
