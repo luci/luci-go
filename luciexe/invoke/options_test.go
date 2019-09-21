@@ -166,6 +166,7 @@ func TestOptionsNamespace(t *testing.T) {
 					{Name: "stderr", Url: "u/stderr"},
 				},
 			})
+			So(luciexe.IsMergeStep(lo.step), ShouldBeTrue)
 		})
 
 		Convey(`nested`, func() {
@@ -184,6 +185,7 @@ func TestOptionsNamespace(t *testing.T) {
 					{Name: "stderr", Url: "u/bar/sub/stderr"},
 				},
 			})
+			So(luciexe.IsMergeStep(lo.step), ShouldBeTrue)
 		})
 
 		Convey(`deeply nested`, func() {
@@ -203,6 +205,7 @@ func TestOptionsNamespace(t *testing.T) {
 					{Name: "stderr", Url: "u/step/s___cool__/sub/stderr"},
 				},
 			})
+			So(luciexe.IsMergeStep(lo.step), ShouldBeTrue)
 		})
 	})
 }

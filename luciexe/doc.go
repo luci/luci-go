@@ -218,18 +218,22 @@
 // of the responsibilities of the host application.
 //
 // The parent can achieve this by recording a Step (with no children), and
-// a single Step.Log named "$build.proto" which points to a "build.proto" stream
-// (see "Updating the Build State"). The steps from the child build.proto stream
-// will appear as substeps of step S in the parent. The following fields of the
-// child Build will be copied to the equivalent fields of step S in the parent:
+// a Step.Log named "$build.proto" which points to a "build.proto" stream (see
+// "Updating the Build State"). If the step has multiple logs, the
+// "$build.proto" log must be the first one. This is called a "Merge Step", and
+// is a directive for the host to merge the Build message located in the
+// "$build.proto" log here.
+//
+// The steps from the child build.proto stream will appear as substeps of step
+// S in the parent. The following fields of the child Build will be copied to
+// the equivalent fields of step S in the parent:
 //
 //  SummaryMarkdown
 //  Status
 //  EndTime
-//  Logs
+//  Output.Logs (appended)
 //
-// This rule applies recursively, i.e. leaf step(s) in the child build MAY also
-// have a "$build.proto" log.
+// This rule applies recursively, i.e. the child build MAY have Merge Step(s).
 //
 // Each luciexe's step names should be emitted as relative names. e.g. say
 // a build runs a sub-luciexe with the name "a|b". This sub-luciexe then runs

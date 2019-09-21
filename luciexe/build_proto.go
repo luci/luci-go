@@ -14,7 +14,10 @@
 
 package luciexe
 
-import "go.chromium.org/luci/buildbucket/protoutil"
+import (
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+)
 
 const (
 	// BuildProtoLogName is the Build.Step.Log.Name for sub-lucictx programs.
@@ -46,3 +49,13 @@ const (
 	OutputTextFileExt   = ".textpb"
 	OutputJSONFileExt   = ".json"
 )
+
+// IsMergeStep returns true iff the given step is identified as a 'merge step'.
+//
+// See "Recursive Invocation" in the doc for this package.
+func IsMergeStep(s *bbpb.Step) bool {
+	if len(s.GetLogs()) >= 1 && s.Logs[0].Name == BuildProtoLogName {
+		return true
+	}
+	return false
+}
