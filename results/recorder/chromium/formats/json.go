@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -51,13 +52,21 @@ type JSONTestResults struct {
 //
 // Deprecated fields and fields not used by Test Results are omitted.
 type TestFields struct {
-	Actual   string `json:"actual"`
-	Expected string `json:"expected"`
+	// ActualRaw is a space-separated string of statuses from each run.
+	ActualRaw string `json:"actual"`
+	Actual    []string
+
+	// ExpectedRaw is a space-separated string of the set of expected statuses.
+	ExpectedRaw string `json:"expected"`
+	ExpectedSet []string
 
 	Artifacts map[string][]string `json:"artifacts"`
 
-	Time  float64   `json:"time"`
-	Times []float64 `json:"times"`
+	// Time records the duration of the first run, and Times all subsequent.
+	// Both are optional.
+	Time         float64   `json:"time"`
+	Times        []float64 `json:"times"`
+	AllDurations []float64
 }
 
 // ConvertFromJSON converts a JSON of test results in the JSON Test Results
@@ -106,7 +115,18 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		// No error from unmarshalling to TestFields might mean that the RawMessage
 		// was an arbitrary dict or intermediate node, so check that TestFields
 		// required fields are populated.
-		if maybeFields.Actual != "" && maybeFields.Expected != "" {
+		if maybeFields.ActualRaw != "" && maybeFields.ExpectedRaw != "" {
+			// Process statuses.
+			maybeFields.Actual = strings.Split(maybeFields.ActualRaw, " ")
+			maybeFields.ExpectedSet = strings.Split(maybeFields.ExpectedRaw, " ")
+
+			// Process times.
+			if maybeFields.Time > 0 {
+				maybeFields.AllDurations = append(maybeFields.AllDurations, maybeFields.Time)
+			}
+			maybeFields.AllDurations = append(maybeFields.AllDurations, maybeFields.Times...)
+
+			// Store the TestField.
 			if r.Tests == nil {
 				r.Tests = make(map[string]*TestFields)
 			}
