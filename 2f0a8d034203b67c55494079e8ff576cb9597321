@@ -22,6 +22,30 @@
       "revId": "2f0a8d034203b67c55494079e8ff576cb9597321",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c83843e_0c8d784c",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-21T18:23:49Z",
+      "side": 1,
+      "message": "Heh. Done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1817972",
+      "parentUuid": "dcf881a2_843f2fac",
+      "range": {
+        "startLine": 304,
+        "startChar": 6,
+        "endLine": 304,
+        "endChar": 54
+      },
+      "revId": "2f0a8d034203b67c55494079e8ff576cb9597321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
