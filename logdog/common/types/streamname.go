@@ -284,6 +284,45 @@ func (s StreamName) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&v)
 }
 
+// Namespaces returns a slice of all the namespaces this StreamName is within.
+//
+// For example:
+//    "a/b/c".Namespaces() ->
+//       "a/b/"
+//       "a/"
+//       ""
+func (s StreamName) Namespaces() (ret []StreamName) {
+	var namespace StreamName
+	for {
+		lidx := strings.LastIndex(string(s), StreamNameSepStr)
+		if lidx < 0 {
+			ret = append(ret, "")
+			return
+		}
+		namespace = s[:lidx+len(StreamNameSepStr)]
+		ret = append(ret, namespace)
+		s = namespace[:len(namespace)-len(StreamNameSepStr)]
+	}
+}
+
+// AsNamespace returns this streamname in namespace form.
+//
+// As such, the returned value may always be directly concatenated with another
+// StreamName (i.e. with `+`) to form a valid stream name (assuming that both
+// StreamNames are, in fact, valid in the first place).
+//
+// For example:
+//
+//    "".AsNamespace() -> ""
+//    "foo".AsNamespace() -> "foo/"
+//    "bar/".AsNamespace() -> "bar/"
+func (s StreamName) AsNamespace() StreamName {
+	if len(s) == 0 || strings.HasSuffix(string(s), StreamNameSepStr) {
+		return s
+	}
+	return s + StreamName(StreamNameSep)
+}
+
 // A StreamPath consists of two StreamName, joined via a StreamPathSep (+)
 // separator.
 type StreamPath string

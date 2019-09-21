@@ -101,6 +101,44 @@ func TestStreamName(t *testing.T) {
 		}
 	})
 
+	Convey(`StreamName.Namespaces`, t, func() {
+		type e struct {
+			t string       // Test value.
+			e []StreamName // Expected value.
+		}
+		for _, entry := range []e{
+			{``, []StreamName{``}},
+			{`foo`, []StreamName{``}},
+			{`foo/bar`, []StreamName{`foo/`, ``}},
+			{`foo/bar/baz`, []StreamName{`foo/bar/`, `foo/`, ``}},
+
+			// This is malformed input (GIGO), but don't want infinite loop
+			{`/`, []StreamName{`/`, ``}},
+		} {
+			Convey(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func() {
+				So(StreamName(entry.t).Namespaces(), ShouldResemble, entry.e)
+			})
+		}
+	})
+
+	Convey(`StreamName.AsNamespace`, t, func() {
+		type e struct {
+			t string // Test value.
+			e string // Expected value.
+		}
+		for _, entry := range []e{
+			{``, ``},
+			{`foo`, `foo/`},
+			{`foo/`, `foo/`},
+			{`foo/bar`, `foo/bar/`},
+			{`foo/bar/`, `foo/bar/`},
+		} {
+			Convey(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func() {
+				So(StreamName(entry.t).AsNamespace(), ShouldEqual, entry.e)
+			})
+		}
+	})
+
 	Convey(`StreamName.Validate`, t, func() {
 		type e struct {
 			t string // Test value
