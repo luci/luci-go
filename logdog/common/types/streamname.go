@@ -301,7 +301,7 @@ func (s StreamName) Namespaces() (ret []StreamName) {
 		}
 		namespace = s[:lidx+len(StreamNameSepStr)]
 		ret = append(ret, namespace)
-		s = namespace[:len(namespace)-len(StreamNameSepStr)]
+		s = namespace[:lidx]
 	}
 }
 
