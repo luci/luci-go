@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd656d48_9cd62450",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-21T01:32:59Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 34,
+        "startChar": 51,
+        "endLine": 34,
+        "endChar": 53
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d23ae66_15b41bb8",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-21T01:32:59Z",
+      "side": 1,
+      "message": "What\u0027s the content of the result_id? Or it\u0027s up to the client?",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 18
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d3e2d35_44de3182",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-21T01:32:59Z",
+      "side": 1,
+      "message": "I personally think this statement is a little bit too assertive.\n\nIt\u0027s also possible that the test is incorrect or flake, right?",
+      "range": {
+        "startLine": 98,
+        "startChar": 0,
+        "endLine": 98,
+        "endChar": 38
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30d9d2e4_6ded93b2",
+        "filename": "results/proto/v1/common.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-21T01:32:59Z",
+      "side": 1,
+      "message": "nit: remove.",
+      "range": {
+        "startLine": 101,
+        "startChar": 9,
+        "endLine": 101,
+        "endChar": 12
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5960f3c2_add1600e",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-21T01:32:59Z",
+      "side": 1,
+      "message": "What\u0027s the intent of explaining group here?\n\nIIUC, in resultsdb we don\u0027t need to actually store groups a test belongs to since that will be redundant information. But external services may need groups and if so they can get the info by parsing path?",
+      "range": {
+        "startLine": 41,
+        "startChar": 63,
+        "endLine": 41,
+        "endChar": 68
+      },
+      "revId": "e82cd8f0c25b72518c9d234c0acfd7b31143b426",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
