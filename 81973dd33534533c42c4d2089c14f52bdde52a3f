@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "00074c53_fb8c2468",
+        "filename": "luciexe/host/cleanup.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T18:48:35Z",
+      "side": 1,
+      "message": "scared of bugs, i usually explicitly mark i as int.",
+      "range": {
+        "startLine": 29,
+        "startChar": 22,
+        "endLine": 29,
+        "endChar": 33
+      },
+      "revId": "81973dd33534533c42c4d2089c14f52bdde52a3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ffc9cf4a_54fcbcc4",
         "filename": "luciexe/host/spy.go",
         "patchSetId": 1
@@ -24,6 +47,30 @@
       "revId": "81973dd33534533c42c4d2089c14f52bdde52a3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7db9dbe7_d7bfe4ca",
+        "filename": "luciexe/host/spy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T18:48:35Z",
+      "side": 1,
+      "message": "consistency :)",
+      "parentUuid": "423586f3_115a3cbf",
+      "range": {
+        "startLine": 72,
+        "startChar": 3,
+        "endLine": 72,
+        "endChar": 12
+      },
+      "revId": "81973dd33534533c42c4d2089c14f52bdde52a3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76457733_c8f8dc2e",
+        "filename": "luciexe/host/spy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T18:48:35Z",
+      "side": 1,
+      "message": "curNamespace + \"/u\"\n\nalso, what about that named constant for namespace separation?",
+      "range": {
+        "startLine": 92,
+        "startChar": 18,
+        "endLine": 92,
+        "endChar": 51
+      },
+      "revId": "396822e8f1c9f9bd6c075c148ea3a954df44baf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c85298f2_050fde41",
+        "filename": "luciexe/host/spy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T18:48:35Z",
+      "side": 1,
+      "message": "host here is guaranteed *not* to have trailing slash?",
+      "range": {
+        "startLine": 179,
+        "startChar": 50,
+        "endLine": 179,
+        "endChar": 54
+      },
+      "revId": "396822e8f1c9f9bd6c075c148ea3a954df44baf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
