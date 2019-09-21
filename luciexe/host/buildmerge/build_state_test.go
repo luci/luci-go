@@ -26,6 +26,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,7 +51,7 @@ func TestBuildState(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		merger := New(ctx, "u/", &bbpb.Build{}, func(ns, stream string) (url, viewURL string) {
+		merger := New(ctx, "u/", &bbpb.Build{}, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), fmt.Sprintf("view://%s%s", ns, stream)
 		})
 		defer merger.Close()

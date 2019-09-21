@@ -26,8 +26,8 @@ type cleanupSlice []cleanupFn
 
 func (c cleanupSlice) run() {
 	merr := errors.NewLazyMultiError(len(c))
-	for i, fn := range c {
-		merr.Assign(i, fn())
+	for i := len(c) - 1; i >= 0; i-- {
+		merr.Assign(i, c[i]())
 	}
 	if err := merr.Get(); err != nil {
 		panic(err)

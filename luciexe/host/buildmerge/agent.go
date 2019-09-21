@@ -34,7 +34,6 @@ package buildmerge
 
 import (
 	"context"
-	"path"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -50,13 +49,14 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
 	"golang.org/x/time/rate"
 )
 
 // CalcURLFn is a stateless function which can calculate the absolute url and
 // viewUrl from a given logdog namespace (with trailing slash) and streamName.
-type CalcURLFn func(namespaceSlash, streamName string) (url, viewUrl string)
+type CalcURLFn func(namespaceSlash, streamName types.StreamName) (url, viewUrl string)
 
 // Agent holds all the logic around merging build.proto streams.
 type Agent struct {
@@ -77,9 +77,9 @@ type Agent struct {
 	// mergedBuildC is the send side of MergedBuildC
 	mergedBuildC chan<- *bbpb.Build
 
-	// userNamespaceSlash is the logdog namespace (with a trailing slash) which
-	// we'll use to determine if a new stream is potentially monitored, or not.
-	userNamespaceSlash string
+	// userNamespace is the logdog namespace (with a trailing slash) which we'll
+	// use to determine if a new stream is potentially monitored, or not.
+	userNamespace types.StreamName
 
 	// userRootURL is the full url ('logdog://.../stream/build.proto') of the
 	// user's "root" build.proto stream (i.e. the one emitted by the top level
@@ -125,8 +125,8 @@ type Agent struct {
 //     will cease sending updates on MergedBuildC, but you must still invoke
 //     Agent.Close() in order to clean up all resources associated with the
 //     Agent.
-//   * userNamespaceSlash - The logdog namespace (with a trailing slash) under
-//     which we should monitor streams.
+//   * userNamespace - The logdog namespace (with a trailing slash) under which
+//     we should monitor streams.
 //   * base - The "model" Build message that all generated builds should start
 //     with. All build proto streams will be merged onto a copy of this message.
 //   * calculateURLs - A function to calculate Log.Url and Log.ViewUrl values.
@@ -146,21 +146,21 @@ type Agent struct {
 //
 // The frequency of updates from this Agent is governed by how quickly the
 // caller consumes from Agent.MergedBuildC.
-func New(ctx context.Context, userNamespaceSlash string, base *bbpb.Build, calculateURLs CalcURLFn) *Agent {
+func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, calculateURLs CalcURLFn) *Agent {
 	ch := make(chan *bbpb.Build)
-	userRootURL, _ := calculateURLs(userNamespaceSlash, luciexe.BuildProtoStreamSuffix)
+	userRootURL, _ := calculateURLs(userNamespace, luciexe.BuildProtoStreamSuffix)
 
 	ret := &Agent{
 		parentCtx: ctx,
 
 		MergedBuildC: ch,
 
-		mergedBuildC:       ch,
-		states:             map[string]*buildStateTracker{},
-		calculateURLs:      calculateURLs,
-		userNamespaceSlash: userNamespaceSlash,
-		userRootURL:        userRootURL,
-		baseBuild:          proto.Clone(base).(*bbpb.Build),
+		mergedBuildC:  ch,
+		states:        map[string]*buildStateTracker{},
+		calculateURLs: calculateURLs,
+		userNamespace: userNamespace.AsNamespace(),
+		userRootURL:   userRootURL,
+		baseBuild:     proto.Clone(base).(*bbpb.Build),
 	}
 	var err error
 	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
@@ -194,7 +194,10 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) bundler.StreamChunk
 	if !a.collectingData() {
 		return nil
 	}
-	if !strings.HasPrefix(desc.Name, a.userNamespaceSlash) || path.Base(desc.Name) != luciexe.BuildProtoStreamSuffix {
+
+	namespace, base := types.StreamName(desc.Name).Split()
+
+	if !strings.HasPrefix(desc.Name, string(a.userNamespace)) || base != luciexe.BuildProtoStreamSuffix {
 		// outside our monitored prefix, or not a ".../build.proto" stream
 		return nil
 	}
@@ -206,8 +209,8 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) bundler.StreamChunk
 		err = errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err()
 	}
 
-	url, _ := a.calculateURLs("", desc.Name)
-	bState := newBuildStateTracker(a.doneCtx, a, path.Dir(desc.Name)+"/", err)
+	url, _ := a.calculateURLs("", types.StreamName(desc.Name))
+	bState := newBuildStateTracker(a.doneCtx, a, namespace, err)
 
 	a.statesMu.Lock()
 	defer a.statesMu.Unlock()

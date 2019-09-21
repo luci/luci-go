@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/authctx"
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -61,6 +62,10 @@ type Options struct {
 	// execution, Run will ensure that the directory is empty by removing its
 	// contents.
 	BaseDir string
+
+	// The base Build message to use as the template for all merged Build
+	// messages.
+	BaseBuild *bbpb.Build
 
 	// If LeakBaseDir is true, Run will not try to remove BaseDir at the end if
 	// it's execution.
@@ -129,6 +134,10 @@ func (o *Options) initialize() (err error) {
 		if err := os.Mkdir(o.BaseDir, 0777); err != nil {
 			return errors.Annotate(err, "creating options.BaseDir").Err()
 		}
+	}
+
+	if o.BaseBuild == nil {
+		o.BaseBuild = &bbpb.Build{}
 	}
 
 	pathsToMake := []pathToMake{
