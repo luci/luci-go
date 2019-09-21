@@ -50,6 +50,30 @@
     },
     {
       "key": {
+        "uuid": "ebd6a4d2_7607aa38",
+        "filename": "luciexe/host/spy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T19:16:26Z",
+      "side": 1,
+      "message": "nice!",
+      "parentUuid": "ef5e36cb_41312ada",
+      "range": {
+        "startLine": 92,
+        "startChar": 18,
+        "endLine": 92,
+        "endChar": 51
+      },
+      "revId": "396822e8f1c9f9bd6c075c148ea3a954df44baf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c85298f2_050fde41",
         "filename": "luciexe/host/spy.go",
         "patchSetId": 2
