@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cfdd57bd_b9567667",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-21T13:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "854b101a_52a7d99a",
+      "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7df884d9_5a434ed6",
         "filename": "server/auth/authdb/internal/graph/graph.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1854895_48a2599e",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-21T13:13:57Z",
+      "side": 1,
+      "message": "This code is a bit defensive. There\u0027s a check for referential integrity in chrome-infra-auth, and when initially ingesting AuthDB proto from chrome-infra-auth.",
+      "parentUuid": "7df884d9_5a434ed6",
+      "range": {
+        "startLine": 72,
+        "startChar": 33,
+        "endLine": 72,
+        "endChar": 50
+      },
+      "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "437dd9f6_cd8f0a4e",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-21T13:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e86b5a1_3427eed5",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 21
+      },
+      "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0dab089_f80d215f",
         "filename": "server/auth/authdb/internal/graph/graph_test.go",
         "patchSetId": 3
@@ -108,6 +174,30 @@
       "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f20a5a84_13e335d1",
+        "filename": "server/auth/authdb/internal/graph/graph_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-21T13:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0dab089_f80d215f",
+      "range": {
+        "startLine": 91,
+        "startChar": 9,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "05eaf5f671ab19f2307ec7f2410ae8f5c97b7cd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
