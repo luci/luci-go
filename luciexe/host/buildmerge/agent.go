@@ -275,7 +275,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 			return nil
 		}
 		for _, step := range state.build.Steps {
-			isMergeStep := len(step.Logs) == 1 && step.Logs[0].Name == luciexe.BuildProtoLogName
+			isMergeStep := luciexe.IsMergeStep(step)
 			if isMergeStep || len(stepNS) > 0 {
 				// make a shallow copy, much cheaper than proto.Clone
 				stepVal := *step
