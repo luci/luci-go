@@ -25,6 +25,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -59,7 +60,7 @@ func TestAgent(t *testing.T) {
 			},
 		}
 		// we omit view url here to keep tests simpler
-		merger := New(ctx, "u/", base, func(ns, stream string) (url, viewURL string) {
+		merger := New(ctx, "u/", base, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), ""
 		})
 		defer merger.Close()

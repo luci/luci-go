@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/localauth"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/lucictx"
 	"golang.org/x/oauth2/google"
@@ -55,7 +56,7 @@ func tokenShouldStartWith(actual interface{}, expected ...interface{}) string {
 func testCtx() (context.Context, func()) {
 	ctx := context.Background()
 	if testing.Verbose() {
-		ctx = gologger.StdConfig.Use(ctx)
+		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
 	}
 
 	// Setup a fake local auth. It is a real localhost server, it needs real

@@ -61,7 +61,7 @@ type buildStateTracker struct {
 	//   * informNewData
 	merger *Agent
 
-	ldNamespaceSlash string
+	ldNamespace types.StreamName
 
 	// We use this mutex to synchronize closure and sending operations on the work
 	// channel; `work` is configured, if it's running, to immediately accept any
@@ -96,14 +96,15 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 
 		for _, step := range parsedBuild.Steps {
 			for _, log := range step.Logs {
-				if err := types.StreamName(log.Url).Validate(); err != nil {
+				url := types.StreamName(log.Url)
+				if err := url.Validate(); err != nil {
 					step.Status = bbpb.Status_INFRA_FAILURE
 					step.SummaryMarkdown += fmt.Sprintf("bad log url: %q", log.Url)
 					return errors.Annotate(
 						err, "step[%q].logs[%q].Url = %q", step.Name, log.Name, log.Url).Err()
 				}
 
-				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespaceSlash, log.Url)
+				log.Url, log.ViewUrl = t.merger.calculateURLs(t.ldNamespace, url)
 			}
 		}
 		return nil
@@ -144,12 +145,12 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 // (closed) state where getLatest always returns a fixed Build in the
 // INFRA_FAILURE state with `err` reflected in the build's SummaryMarkdown
 // field.
-func newBuildStateTracker(ctx context.Context, merger *Agent, namespaceSlash string, err error) *buildStateTracker {
+func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.StreamName, err error) *buildStateTracker {
 	ret := &buildStateTracker{
-		ctx:              ctx,
-		merger:           merger,
-		ldNamespaceSlash: namespaceSlash,
-		latestState:      &buildState{},
+		ctx:         ctx,
+		merger:      merger,
+		ldNamespace: namespace.AsNamespace(),
+		latestState: &buildState{},
 	}
 
 	if err != nil {
