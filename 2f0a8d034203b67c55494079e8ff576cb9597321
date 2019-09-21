@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcf881a2_843f2fac",
+        "filename": "logdog/common/types/streamname.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-21T18:14:41Z",
+      "side": 1,
+      "message": "s \u003d s[:idx]",
+      "range": {
+        "startLine": 304,
+        "startChar": 6,
+        "endLine": 304,
+        "endChar": 54
+      },
+      "revId": "2f0a8d034203b67c55494079e8ff576cb9597321",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
