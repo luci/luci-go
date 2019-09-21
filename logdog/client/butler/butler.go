@@ -19,13 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sort"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
@@ -114,11 +113,8 @@ type Butler struct {
 	streamServerStopC chan struct{}
 
 	streamC chan *stream
-	// streamSeen tracks if a stream has been seen. This is used to prevent
-	// duplicate stream names from being created.
-	streamSeen stringset.Set
-	// streamSeenLock is a lock to protect streamSeen.
-	streamSeenLock sync.Mutex
+
+	streams *streamTracker
 
 	// shutdownMu is a mutex to protect shutdown parameters.
 	shutdownMu sync.Mutex
@@ -145,9 +141,10 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 
 		streamsFinishedC: make(chan struct{}),
 
+		streams: newStreamTracker(),
+
 		activateC:         make(chan struct{}),
 		streamC:           make(chan *stream),
-		streamSeen:        stringset.New(0),
 		streamServerStopC: make(chan struct{}),
 		streamStopC:       make(chan struct{}),
 	}
@@ -321,20 +318,23 @@ func (b *Butler) Wait() error {
 // Streams returns a sorted list of stream names that have been registered to
 // the Butler.
 func (b *Butler) Streams() []types.StreamName {
-	var streams types.StreamNameSlice
-	func() {
-		b.streamSeenLock.Lock()
-		defer b.streamSeenLock.Unlock()
+	return b.streams.Seen()
+}
 
-		streams = make([]types.StreamName, 0, b.streamSeen.Len())
-		b.streamSeen.Iter(func(s string) bool {
-			streams = append(streams, types.StreamName(s))
-			return true
-		})
-	}()
+// CloseNamespace prevents any new streams from being registered in the given
+// namespace, and waits for all existing streams in that namespace to drain.
+//
+// If this exits due to context cancelation, it returns the list of stream names
+// in the namespace which are still open.
+func (b *Butler) CloseNamespace(ctx context.Context, namespace types.StreamName) []types.StreamName {
+	ch := b.streams.CloseNamespace(namespace)
 
-	sort.Sort(streams)
-	return ([]types.StreamName)(streams)
+	select {
+	case <-ch:
+		return nil
+	case <-ctx.Done():
+		return b.streams.Active(namespace)
+	}
 }
 
 // StreamServer is butler's interface for
@@ -436,16 +436,19 @@ func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error
 		}
 	}
 
-	if err := b.registerStream(d.Name); err != nil {
+	if err := b.streams.RegisterStream(types.StreamName(d.Name)); err != nil {
+		logging.WithError(err).Errorf(b.ctx, "failed to register stream")
 		return err
 	}
 
 	// Build our stream struct.
 	streamCtx := log.SetField(b.ctx, "stream", d.Name)
+	logging.Infof(streamCtx, "adding stream")
 	s := stream{
 		Context: streamCtx,
 		r:       rc,
 		c:       rc,
+		name:    types.StreamName(d.Name),
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "d", so
@@ -464,7 +467,6 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 	streamFinishedC := make(chan *stream)
 	streamC := b.streamC
 
-	activeCount := 0
 	for {
 		select {
 		case s, ok := <-streamC:
@@ -474,10 +476,6 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 				streamC = nil
 				continue
 			}
-
-			// Monitor goroutine to respond to shutdown signal and clean up stream.
-			log.Debugf(s, "Adding stream.")
-			activeCount++
 
 			closeOnce := sync.Once{}
 			closeStream := func() {
@@ -516,19 +514,19 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 				<-finishedC
 			}()
 
-		case <-streamFinishedC:
+		case s := <-streamFinishedC:
 			// A stream has reported that it finished.
 			//
 			// If this is the last active stream and we've been activated, exit the
 			// monitor.
-			activeCount--
-			if activeCount == 0 && activateC == nil {
+			b.streams.CompleteStream(s.name)
+			if b.streams.ActiveCount() == 0 && activateC == nil {
 				return
 			}
 
 		case <-activateC:
 			// If we're not managing any streams, then we're done.
-			if activeCount == 0 {
+			if b.streams.ActiveCount() == 0 {
 				return
 			}
 
@@ -538,18 +536,6 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 			activateC = nil
 		}
 	}
-}
-
-// registerStream registers awareness of the named Stream with the Butler. An
-// error will be returned if the Stream has ever been registered.
-func (b *Butler) registerStream(name string) error {
-	b.streamSeenLock.Lock()
-	defer b.streamSeenLock.Unlock()
-
-	if added := b.streamSeen.Add(name); added {
-		return nil
-	}
-	return fmt.Errorf("a stream has already been registered with name %q", name)
 }
 
 // Activate notifies the Butler that its current stream load is sufficient.

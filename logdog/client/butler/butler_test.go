@@ -24,6 +24,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -42,7 +44,8 @@ type testOutput struct {
 	maxSize  int
 	streams  map[string][]*logpb.LogEntry
 	terminal map[string]struct{}
-	closed   bool
+
+	closed bool
 }
 
 func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
@@ -143,6 +146,8 @@ type testStream struct {
 	inC     chan *testStreamData
 	closedC chan struct{}
 
+	allowDoubleClose bool
+
 	desc *logpb.LogStreamDescriptor
 }
 
@@ -172,6 +177,9 @@ func (ts *testStream) isClosed() bool {
 
 func (ts *testStream) Close() error {
 	if ts.isClosed() {
+		if ts.allowDoubleClose {
+			return nil
+		}
 		panic("double close")
 	}
 
@@ -340,7 +348,7 @@ func TestButler(t *testing.T) {
 				So(b.AddStream(s0, s0.desc), ShouldBeNil)
 
 				s1 := newTestStream(nil)
-				So(b.AddStream(s1, s1.desc), ShouldErrLike, "a stream has already been registered")
+				So(b.AddStream(s1, s1.desc), ShouldErrLike, "duplicate registration")
 			})
 
 			Convey(`Can apply global tags.`, func() {
@@ -553,6 +561,123 @@ func TestButler(t *testing.T) {
 			b := mkb(c, conf)
 			b.AddStreamServer(tss)
 			So(b.Wait(), ShouldErrLike, "test panic")
+		})
+
+		Convey(`Can wait for a subset of streams to complete.`, func() {
+			c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
+
+			b := mkb(c, conf)
+			defer func() {
+				b.Activate()
+				b.Wait()
+			}()
+
+			newTestStream := func(setup func(d *logpb.LogStreamDescriptor)) *testStream {
+				desc := &logpb.LogStreamDescriptor{
+					Name:        "test",
+					StreamType:  logpb.StreamType_TEXT,
+					ContentType: string(types.ContentTypeText),
+				}
+				if setup != nil {
+					setup(desc)
+				}
+
+				return &testStream{
+					inC:              make(chan *testStreamData, 16),
+					closedC:          make(chan struct{}),
+					desc:             desc,
+					allowDoubleClose: true,
+				}
+			}
+
+			deep := newTestStream(func(d *logpb.LogStreamDescriptor) { d.Name = "ns/deep/s" })
+			defer deep.Close()
+
+			ns := newTestStream(func(d *logpb.LogStreamDescriptor) { d.Name = "ns/s" })
+			defer ns.Close()
+
+			s := newTestStream(func(d *logpb.LogStreamDescriptor) { d.Name = "s" })
+			defer s.Close()
+
+			b.AddStream(deep, deep.desc)
+			b.AddStream(ns, ns.desc)
+			b.AddStream(s, s.desc)
+
+			wait := func(cvctx C, ns ...types.StreamName) <-chan struct{} {
+				ch := make(chan struct{})
+				ret := sync.WaitGroup{}
+				ret.Add(len(ns))
+				go func() {
+					ret.Wait()
+					close(ch)
+				}()
+				for _, singleNS := range ns {
+					singleNS := singleNS
+					go func() {
+						defer ret.Done()
+						cvctx.So(b.CloseNamespace(c, singleNS), ShouldBeNil)
+					}()
+				}
+				return ch
+			}
+
+			check := func(toWait <-chan struct{}, toClose ...*testStream) {
+				select {
+				case <-time.After(time.Millisecond):
+				case <-toWait:
+					panic("we should time out here")
+				}
+
+				for _, c := range toClose {
+					So(c.Close(), ShouldBeNil)
+				}
+				<-toWait
+			}
+
+			Convey(`waiting for already-empty namespace works`, func() {
+				So(b.CloseNamespace(c, "other"), ShouldBeNil)
+			})
+
+			Convey(`can wait at a deep level`, func(cvctx C) {
+				check(wait(cvctx, "ns/deep"), deep)
+
+				Convey(`and we now cannot open new streams under that namespace`, func() {
+					err := b.AddStream(nil, &logpb.LogStreamDescriptor{
+						Name:        "ns/deep/other",
+						ContentType: "wat",
+					})
+					So(err, ShouldErrLike, `namespace "ns/deep/": already closed`)
+				})
+
+				Convey(`can still open new adjacent streams`, func() {
+					cool := newTestStream(func(d *logpb.LogStreamDescriptor) { d.Name = "ns/side/other" })
+					defer cool.Close()
+					So(b.AddStream(cool, cool.desc), ShouldBeNil)
+				})
+
+				Convey(`then we can also wait at higher levels`, func(cvctx C) {
+					check(wait(cvctx, "ns"), ns)
+				})
+			})
+
+			Convey(`can wait at multiple levels`, func(cvctx C) {
+				check(wait(cvctx, "ns", "ns/deep"), ns, deep)
+			})
+
+			Convey(`can cancel the wait and see leftovers`, func() {
+				cctx, cancel := context.WithCancel(c)
+				cancel()
+				So(b.CloseNamespace(cctx, "ns"), ShouldResemble, []types.StreamName{
+					"ns/deep/s",
+					"ns/s",
+				})
+			})
+
+			Convey(`can cancel entire namespace`, func(cvctx C) {
+				// TODO(iannucci): We should use this in Wait() for a more orderly
+				// shutdown.
+				check(wait(cvctx, ""), ns, deep, s)
+			})
 		})
 	})
 }
