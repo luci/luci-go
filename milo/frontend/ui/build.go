@@ -531,6 +531,8 @@ func (bp *BuildPage) Timeline() string {
 		Data      stepData `json:"data"`
 	}
 
+	now, _ := ptypes.Timestamp(bp.Now)
+
 	groups := make([]group, len(bp.Build.Steps))
 	items := make([]item, len(bp.Build.Steps))
 	for i, step := range bp.Build.Steps {
@@ -549,6 +551,9 @@ func (bp *BuildPage) Timeline() string {
 		groups[i] = group{groupID, data}
 		start, _ := ptypes.Timestamp(step.StartTime)
 		end, _ := ptypes.Timestamp(step.EndTime)
+		if end.IsZero() || end.Before(start) {
+			end = now
+		}
 		items[i] = item{
 			ID:        groupID,
 			Group:     groupID,
