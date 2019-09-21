@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation/internal"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -55,12 +54,15 @@ type AnnotationStream struct {
 	// Client is the HTTP client to use for LogDog communication.
 	Client *coordinator.Client
 
-	// cs is the unmarshalled annotation stream Step and associated data.
-	cs internal.CachedStep
+	// The cached Step object
+	step *miloProto.Step
+
+	// If the underlying stream was finished.
+	finished bool
 }
 
-// Normalize validates and normalizes the stream's parameters.
-func (as *AnnotationStream) Normalize() error {
+// normalize validates and normalizes the stream's parameters.
+func (as *AnnotationStream) normalize() error {
 	if err := config.ValidateProjectName(as.Project); err != nil {
 		return errors.Annotate(err, "Invalid project name: %s", as.Project).Tag(grpcutil.InvalidArgumentTag).Err()
 	}
@@ -76,17 +78,14 @@ var errNotMilo = errors.New("Requested stream is not a Milo annotation protobuf"
 var errNotDatagram = errors.New("Requested stream is not a datagram stream")
 var errNoEntries = errors.New("Log stream has no annotation entries")
 
-// Fetch loads the annotation stream from LogDog.
+// populateCache loads the annotation stream from LogDog and caches it on this
+// AnnotationStream.
 //
-// If the stream does not exist, or is invalid, Fetch will return a Milo error.
-// Otherwise, it will return the Step that was loaded.
-//
-// Fetch caches the step, so multiple calls to Fetch will return the same Step
-// value.
-func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
+// If the stream does not exist, or is invalid, populateCache will return a Milo error.
+func (as *AnnotationStream) populateCache(c context.Context) error {
 	// Cached?
-	if as.cs.Step != nil {
-		return as.cs.Step, nil
+	if as.step != nil {
+		return nil
 	}
 
 	// Load from LogDog directly.
@@ -94,7 +93,7 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 		"host":    as.Client.Host,
 		"project": as.Project,
 		"path":    as.Path,
-	}.Infof(c, "Making tail request to LogDog to fetch annotation stream.")
+	}.Infof(c, "Making tail request to LogDog to populateCache annotation stream.")
 
 	var (
 		state  coordinator.LogStream
@@ -104,20 +103,20 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	le, err := stream.Tail(c, coordinator.WithState(&state), coordinator.Complete())
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to load stream.")
-		return nil, err
+		return err
 	}
 
 	// Make sure that this is an annotation stream.
 	switch {
 	case state.Desc.ContentType != miloProto.ContentTypeAnnotations:
-		return nil, errNotMilo
+		return errNotMilo
 
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:
-		return nil, errNotDatagram
+		return errNotDatagram
 
 	case le == nil:
 		// No annotation stream data, so render a minimal page.
-		return nil, errNoEntries
+		return errNoEntries
 	}
 
 	// Get the last log entry in the stream. In reality, this will be index 0,
@@ -127,13 +126,13 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	// datagram will be complete even if its source datagram(s) are fragments.
 	dg := le.GetDatagram()
 	if dg == nil {
-		return nil, errors.New("Datagram stream does not have datagram data")
+		return errors.New("Datagram stream does not have datagram data")
 	}
 
 	// Attempt to decode the Step protobuf.
 	var step miloProto.Step
 	if err := proto.Unmarshal(dg.Data, &step); err != nil {
-		return nil, err
+		return err
 	}
 
 	var latestEndedTime time.Time
@@ -156,12 +155,11 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 		latestEndedTime = google.TimeFromProto(step.Started)
 	}
 
-	// Build our CachedStep.
-	as.cs = internal.CachedStep{
-		Step:     &step,
-		Finished: (state.State.TerminalIndex >= 0 && le.StreamIndex == uint64(state.State.TerminalIndex)),
-	}
-	return as.cs.Step, nil
+	// cache the result
+	as.step = &step
+	as.finished = (state.State.TerminalIndex >= 0 &&
+		le.StreamIndex == uint64(state.State.TerminalIndex))
+	return nil
 }
 
 func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuildLegacy {
@@ -174,8 +172,8 @@ func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuildLegacy {
 			Prefix:     string(prefix),
 			Path:       string(name),
 			IsDatagram: true,
-			Data:       as.cs.Step,
-			Closed:     as.cs.Finished,
+			Data:       as.step,
+			Closed:     as.finished,
 		},
 	}
 
@@ -251,7 +249,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 		Project: project,
 		Path:    path,
 	}
-	if err := as.Normalize(); err != nil {
+	if err := as.normalize(); err != nil {
 		return nil, err
 	}
 
@@ -262,7 +260,7 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 	}
 
 	// Load the Milo annotation protobuf from the annotation stream.
-	switch _, err := as.Fetch(c); errors.Unwrap(err) {
+	switch err := as.populateCache(c); errors.Unwrap(err) {
 	case nil, errNoEntries:
 
 	case coordinator.ErrNoSuchStream:
@@ -297,9 +295,10 @@ func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*miloProto.Step
 		Project: addr.Project,
 		Path:    addr.Path,
 	}
-	if err := as.Normalize(); err != nil {
+	if err := as.normalize(); err != nil {
 		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
 	}
 
-	return as.Fetch(c)
+	err = as.populateCache(c)
+	return as.step, err
 }
