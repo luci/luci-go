@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -107,7 +109,7 @@ func TestSnapshotDB(t *testing.T) {
 
 		So(call("abc@appspot.gserviceaccount.com", "anonymous"), ShouldBeTrue)
 		So(call("dude@example.com", ""), ShouldBeFalse)
-		So(call("dude@example.com", googleAPIExplorerClientID), ShouldBeTrue)
+		So(call("dude@example.com", oauthid.GoogleAPIExplorerClientID), ShouldBeTrue)
 		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)
 		So(call("dude@example.com", "additional-client-id-2"), ShouldBeTrue)
 		So(call("dude@example.com", "unknown-client-id"), ShouldBeFalse)

@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"net"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -32,10 +31,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
-)
 
-// OAuth client_id of https://apis-explorer.appspot.com/.
-const googleAPIExplorerClientID = "292824132082.apps.googleusercontent.com"
+	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+)
 
 // SnapshotDB implements DB using AuthDB proto message.
 //
@@ -47,8 +45,8 @@ type SnapshotDB struct {
 
 	tokenServiceURL string // URL of the token server as provided by Auth service
 
-	clientIDs map[string]struct{} // set of allowed client IDs
-	groups    map[string]*group   // map of all known groups
+	clientIDs oauthid.Whitelist // set of allowed client IDs
+	groups    map[string]*group // map of all known groups
 
 	assignments map[identity.Identity]string // IP whitelist assignments
 	whitelists  map[string][]net.IPNet       // IP whitelists
@@ -117,22 +115,10 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 	}
 
 	db := &SnapshotDB{
-		AuthServiceURL: authServiceURL,
-		Rev:            rev,
-
+		AuthServiceURL:  authServiceURL,
+		Rev:             rev,
+		clientIDs:       oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
 		tokenServiceURL: authDB.TokenServerUrl,
-	}
-
-	// Set of all allowed clientIDs.
-	db.clientIDs = make(map[string]struct{}, 2+len(authDB.OauthAdditionalClientIds))
-	db.clientIDs[googleAPIExplorerClientID] = struct{}{}
-	if authDB.OauthClientId != "" {
-		db.clientIDs[authDB.OauthClientId] = struct{}{}
-	}
-	for _, cid := range authDB.OauthAdditionalClientIds {
-		if cid != "" {
-			db.clientIDs[cid] = struct{}{}
-		}
 	}
 
 	// First pass: build all `group` nodes.
@@ -219,22 +205,10 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 	return db, nil
 }
 
-// IsAllowedOAuthClientID returns true if given OAuth2 client_id can be used
-// to authenticate access for given email.
-func (db *SnapshotDB) IsAllowedOAuthClientID(c context.Context, email, clientID string) (bool, error) {
-	// No need to whitelist client IDs for service accounts, since email address
-	// uniquely identifies credentials used. Note: this is Google specific.
-	if strings.HasSuffix(email, ".gserviceaccount.com") {
-		return true, nil
-	}
-
-	// clientID must be set for non service accounts.
-	if clientID == "" {
-		return false, nil
-	}
-
-	_, ok := db.clientIDs[clientID]
-	return ok, nil
+// IsAllowedOAuthClientID returns true if the given OAuth2 client ID can be used
+// to authorize access from the given email.
+func (db *SnapshotDB) IsAllowedOAuthClientID(_ context.Context, email, clientID string) (bool, error) {
+	return db.clientIDs.IsAllowedOAuthClientID(email, clientID), nil
 }
 
 // IsInternalService returns true if the given hostname belongs to a service
