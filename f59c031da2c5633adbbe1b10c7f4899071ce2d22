@@ -45,6 +45,63 @@
       "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a19e6cad_f6aecc8f",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-22T15:49:02Z",
+      "side": 1,
+      "message": "speaking of bit pinching, why do you need this one?\nfor nodes in []Node, one can use std::distance equivalent:\n  https://play.golang.com/p/icM9oVSIRz6 with unsafe\n  https://play.golang.com/p/Clf99RclxYX with \"safe\" hacks",
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01d2bdbb_a163117b",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-22T15:49:02Z",
+      "side": 1,
+      "message": "nit: if you move \"Index NodeIndex\" right before this bool, struct should shrink by 8 bytes.",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 12
+      },
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "274fa588_640298e3",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-22T15:49:02Z",
+      "side": 1,
+      "message": "does CrIA ensure we are always \u003c64K of entries?",
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
