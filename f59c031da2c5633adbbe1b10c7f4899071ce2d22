@@ -65,6 +65,24 @@
     },
     {
       "key": {
+        "uuid": "50e483f7_9bbeb709",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T17:00:48Z",
+      "side": 1,
+      "message": "nah, too hacky, not worth it. It is only 2 bytes.\n\nNote that Graph and Node will not be sitting in memory for long, they will be used only when loading AuthDB into memory initially to construct a memory-optimized representation of the graph (this will be in the next CL).",
+      "parentUuid": "a19e6cad_f6aecc8f",
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01d2bdbb_a163117b",
         "filename": "server/auth/authdb/internal/graph/graph.go",
         "patchSetId": 4
@@ -88,6 +106,30 @@
     },
     {
       "key": {
+        "uuid": "d99d70d1_8008bd3d",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T17:00:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01d2bdbb_a163117b",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 12
+      },
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "274fa588_640298e3",
         "filename": "server/auth/authdb/internal/graph/graph.go",
         "patchSetId": 4
@@ -102,6 +144,24 @@
       "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab666666_fe83a56f",
+        "filename": "server/auth/authdb/internal/graph/graph.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T17:00:48Z",
+      "side": 1,
+      "message": "No, but we are far-far away from this limit (we have 605 groups now). I\u0027ll add the check.",
+      "parentUuid": "274fa588_640298e3",
+      "revId": "f59c031da2c5633adbbe1b10c7f4899071ce2d22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
