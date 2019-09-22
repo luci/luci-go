@@ -20,7 +20,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"regexp"
 
 	"github.com/golang/protobuf/proto"
 
@@ -33,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/internal/certs"
 	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
+	"go.chromium.org/luci/server/auth/authdb/internal/seccfg"
 )
 
 // SnapshotDB implements DB using AuthDB proto message.
@@ -43,14 +43,13 @@ type SnapshotDB struct {
 	AuthServiceURL string // where it was fetched from
 	Rev            int64  // its revision number
 
-	clientIDs      oauthid.Whitelist // set of allowed client IDs
-	whitelistedIPs ipaddr.Whitelist  // set of named IP whitelists
-	groups         map[string]*group // map of all known groups
+	clientIDs      oauthid.Whitelist      // set of allowed client IDs
+	whitelistedIPs ipaddr.Whitelist       // set of named IP whitelists
+	groups         map[string]*group      // map of all known groups
+	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
 
 	tokenServiceURL   string       // URL of the token server as provided by Auth service
 	tokenServiceCerts certs.Bundle // cached public keys of the token server
-
-	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil
 }
 
 var _ DB = &SnapshotDB{}
@@ -111,11 +110,17 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		return nil, fmt.Errorf("auth: bad IP whitelists in AuthDB - %s", err)
 	}
 
+	securityCfg, err := seccfg.Parse(authDB.SecurityConfig)
+	if err != nil {
+		return nil, fmt.Errorf("auth: bad SecurityConfig - %s", err)
+	}
+
 	db := &SnapshotDB{
 		AuthServiceURL:    authServiceURL,
 		Rev:               rev,
 		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
 		whitelistedIPs:    ipWL,
+		securityCfg:       securityCfg,
 		tokenServiceURL:   authDB.TokenServerUrl,
 		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
 	}
@@ -155,29 +160,6 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		}
 	}
 
-	// SecurityConfig is stored in the serialized form.
-	securityConf := protocol.SecurityConfig{}
-	if len(authDB.SecurityConfig) != 0 {
-		if err := proto.Unmarshal(authDB.SecurityConfig, &securityConf); err != nil {
-			return nil, fmt.Errorf("auth: failed to deserialize SecurityConfig - %s", err)
-		}
-	}
-
-	// Assemble a single regexp from a bunch of 'internal_service_regexp'.
-	if len(securityConf.InternalServiceRegexp) > 0 {
-		exp := ""
-		for idx, re := range securityConf.InternalServiceRegexp {
-			if idx != 0 {
-				exp += "|"
-			}
-			exp += "(^" + re + "$)"
-		}
-		var err error
-		if db.internalServices, err = regexp.Compile(exp); err != nil {
-			return nil, fmt.Errorf("auth: failed to compile internal_service_regexp - %s", err)
-		}
-	}
-
 	return db, nil
 }
 
@@ -193,10 +175,7 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(_ context.Context, email, clientID 
 // What hosts are internal is controlled by 'internal_service_regexp' setting
 // in security.cfg in the Auth Service configs.
 func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	if db.internalServices == nil {
-		return false, nil
-	}
-	return db.internalServices.MatchString(hostname), nil
+	return db.securityCfg.IsInternalService(hostname), nil
 }
 
 // IsMember returns true if the given identity belongs to any of the groups.
