@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b11adc49_892dcb5a",
+        "filename": "luciexe/runner/buildspy/listener.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-22T22:01:23Z",
+      "side": 1,
+      "message": "where did this go?",
+      "revId": "381bf1ce0c53acc2b2a5fb73f8e5d3dd597c8d21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
