@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "688bf037_e1fbb305",
+        "filename": "server/auth/authdb/internal/legacy/groups.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T18:44:33Z",
+      "side": 1,
+      "message": "this was moved from snapshot.go, to be deleted soon",
+      "revId": "0eb93e20f68df7a6a433159e2fd5675fb2856799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60efca93_467029a5",
+        "filename": "server/auth/authdb/snapshot_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T18:44:33Z",
+      "side": 1,
+      "message": "With synthetically generated groups graph (1000 members, 500 groups):\n\nold - 4738 Kb\nnew - 338 Kb\n\nWith existing real AuthDB:\n\nold - 1465 Kb\nnew - 1561 Kb\n\ni.e. it is slightly *worse* as is (thus my TODO to optimize memory more), but the new implementation scales significantly better. For example, if I add 1000 randomly generated groups  (consisting of random slices of existing emails) on top of existing AuthDB:\n\nold - 10673 Kb\nnew - 2812 Kb",
+      "range": {
+        "startLine": 403,
+        "startChar": 0,
+        "endLine": 403,
+        "endChar": 52
+      },
+      "revId": "0eb93e20f68df7a6a433159e2fd5675fb2856799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f324dbd_f8942b03",
+        "filename": "server/auth/authdb/snapshot_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T18:44:33Z",
+      "side": 1,
+      "message": "just to be 100% sure :) It is slow O(N^2), I\u0027ll remove it when I remove internal/legacy.",
+      "range": {
+        "startLine": 413,
+        "startChar": 5,
+        "endLine": 413,
+        "endChar": 25
+      },
+      "revId": "0eb93e20f68df7a6a433159e2fd5675fb2856799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "033c7f7c_b9ec34eb",
+        "filename": "server/auth/authdb/snapshot_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T18:44:33Z",
+      "side": 1,
+      "message": "~1.7x faster with the existing AuthDB (and also with the synthetic AuthDB)",
+      "range": {
+        "startLine": 462,
+        "startChar": 5,
+        "endLine": 462,
+        "endChar": 25
+      },
+      "revId": "0eb93e20f68df7a6a433159e2fd5675fb2856799",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
