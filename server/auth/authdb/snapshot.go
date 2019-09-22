@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
 )
 
@@ -45,11 +46,9 @@ type SnapshotDB struct {
 
 	tokenServiceURL string // URL of the token server as provided by Auth service
 
-	clientIDs oauthid.Whitelist // set of allowed client IDs
-	groups    map[string]*group // map of all known groups
-
-	assignments map[identity.Identity]string // IP whitelist assignments
-	whitelists  map[string][]net.IPNet       // IP whitelists
+	clientIDs      oauthid.Whitelist // set of allowed client IDs
+	whitelistedIPs ipaddr.Whitelist  // set of named IP whitelists
+	groups         map[string]*group // map of all known groups
 
 	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil
 
@@ -114,10 +113,16 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		}
 	}
 
+	ipWL, err := ipaddr.NewWhitelist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
+	if err != nil {
+		return nil, fmt.Errorf("auth: bad IP whitelists in AuthDB - %s", err)
+	}
+
 	db := &SnapshotDB{
 		AuthServiceURL:  authServiceURL,
 		Rev:             rev,
 		clientIDs:       oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
+		whitelistedIPs:  ipWL,
 		tokenServiceURL: authDB.TokenServerUrl,
 	}
 
@@ -154,29 +159,6 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 				gr.nested = append(gr.nested, nestedGroup)
 			}
 		}
-	}
-
-	// Build map of IP whitelist assignments.
-	db.assignments = make(map[identity.Identity]string, len(authDB.IpWhitelistAssignments))
-	for _, a := range authDB.IpWhitelistAssignments {
-		db.assignments[identity.Identity(a.Identity)] = a.IpWhitelist
-	}
-
-	// Parse all subnets into IPNet objects.
-	db.whitelists = make(map[string][]net.IPNet, len(authDB.IpWhitelists))
-	for _, w := range authDB.IpWhitelists {
-		if len(w.Subnets) == 0 {
-			continue
-		}
-		nets := make([]net.IPNet, len(w.Subnets))
-		for i, subnet := range w.Subnets {
-			_, ipnet, err := net.ParseCIDR(subnet)
-			if err != nil {
-				return nil, fmt.Errorf("auth: bad subnet %q in IP list %q - %s", subnet, w.Name, err)
-			}
-			nets[i] = *ipnet
-		}
-		db.whitelists[w.Name] = nets
 	}
 
 	// SecurityConfig is stored in the serialized form.
@@ -359,7 +341,7 @@ func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Ident
 //
 // Returns ("", nil) if `ident` is not IP restricted.
 func (db *SnapshotDB) GetWhitelistForIdentity(c context.Context, ident identity.Identity) (string, error) {
-	return db.assignments[ident], nil
+	return db.whitelistedIPs.GetWhitelistForIdentity(ident), nil
 }
 
 // IsInWhitelist returns true if IP address belongs to given named IP whitelist.
@@ -367,12 +349,7 @@ func (db *SnapshotDB) GetWhitelistForIdentity(c context.Context, ident identity.
 // IP whitelist is a set of IP subnets. Unknown IP whitelists are considered
 // empty. May return errors if underlying datastore has issues.
 func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist string) (bool, error) {
-	for _, ipnet := range db.whitelists[whitelist] {
-		if ipnet.Contains(ip) {
-			return true, nil
-		}
-	}
-	return false, nil
+	return db.whitelistedIPs.IsInWhitelist(ip, whitelist), nil
 }
 
 // GetAuthServiceURL returns root URL ("https://<host>") of the auth service
