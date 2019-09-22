@@ -861,13 +861,15 @@ func GetBuild(c context.Context, host, taskID string) (*ui.MiloBuildLegacy, erro
 	return SwarmingBuildImpl(c, sf, taskID)
 }
 
-// BuildbucketBuildIDFromTask returns the ID of the buildbucket build
-// that the task represents.
-// If the task does not represent a buildbucket build, returns (0, nil).
-func BuildbucketBuildIDFromTask(c context.Context, host, taskID string) (int64, error) {
+// RedirectsFromTask returns either
+//   * The ID of the buildbucket build corresponding to this task. OR
+//   * The build.proto logdog stream from this swarming task.
+//
+// If the task does not represent a buildbucket build, returns (0, "", nil).
+func RedirectsFromTask(c context.Context, host, taskID string) (int64, string, error) {
 	sf, err := newProdService(c, host)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	defer sf.Close()
 
@@ -876,27 +878,36 @@ func BuildbucketBuildIDFromTask(c context.Context, host, taskID string) (int64, 
 	case *googleapi.Error:
 		switch err.Code {
 		case http.StatusNotFound:
-			return 0, errors.Annotate(err, "task %s/%s not found", host, taskID).Tag(grpcutil.NotFoundTag).Err()
+			return 0, "", errors.Annotate(err, "task %s/%s not found", host, taskID).Tag(grpcutil.NotFoundTag).Err()
 		case http.StatusBadRequest:
-			return 0, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+			return 0, "", errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 		}
 	case error:
-		return 0, err
+		return 0, "", err
 	}
 
 	for _, t := range res.Tags {
-		const prefix = "buildbucket_build_id:"
-		if strings.HasPrefix(t, prefix) {
-			value := t[len(prefix):]
+		const bbPrefix = "buildbucket_build_id:"
+		if strings.HasPrefix(t, bbPrefix) {
+			value := t[len(bbPrefix):]
 			id, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				logging.Errorf(c, "failed to parse buildbucket_build_id tag %q as int64: %s", value, err)
-				return 0, nil
+				return 0, "", nil
 			}
-			return id, nil
+			return id, "", nil
+		}
+
+		const ldPrefix = "log_location:"
+		if strings.HasPrefix(t, ldPrefix) {
+			url := t[len(ldPrefix):]
+			if strings.HasPrefix(url, "logdog://") {
+				url = url[len("logdog://"):]
+			}
+			return 0, url, nil
 		}
 	}
-	return 0, nil
+	return 0, "", nil
 }
 
 // GetLog loads a step log.

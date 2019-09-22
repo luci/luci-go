@@ -20,7 +20,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -36,11 +40,6 @@ import (
 )
 
 const (
-	// intermediateCacheLifetime is the amount of time to cache intermediate (non-
-	// terminal) annotation streams. Terminal annotation streams are cached
-	// indefinitely.
-	intermediateCacheLifetime = 10 * time.Second
-
 	// DefaultLogDogHost is the default LogDog host, if one isn't specified via
 	// query string.
 	DefaultLogDogHost = chromeinfra.LogDogHost
@@ -57,7 +56,10 @@ type AnnotationStream struct {
 	// The cached Step object
 	step *miloProto.Step
 
-	// If the underlying stream was finished.
+	// Build is the build.proto, if this annotation stream is Build messages
+	// instead of Step messages.
+	build *bbpb.Build
+
 	finished bool
 }
 
@@ -74,7 +76,7 @@ func (as *AnnotationStream) normalize() error {
 	return nil
 }
 
-var errNotMilo = errors.New("Requested stream is not a Milo annotation protobuf")
+var errNotMilo = errors.New("Requested stream is not a recognized protobuf")
 var errNotDatagram = errors.New("Requested stream is not a datagram stream")
 var errNoEntries = errors.New("Log stream has no annotation entries")
 
@@ -84,7 +86,7 @@ var errNoEntries = errors.New("Log stream has no annotation entries")
 // If the stream does not exist, or is invalid, populateCache will return a Milo error.
 func (as *AnnotationStream) populateCache(c context.Context) error {
 	// Cached?
-	if as.step != nil {
+	if as.step != nil || as.build != nil {
 		return nil
 	}
 
@@ -119,6 +121,47 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 		return errNoEntries
 	}
 
+	var toUnmarshal proto.Message
+	followup := func() {}
+
+	switch state.Desc.ContentType {
+	case miloProto.ContentTypeAnnotations:
+		var step miloProto.Step
+		toUnmarshal = &step
+		followup = func() {
+			var latestEndedTime time.Time
+			for _, sub := range step.Substep {
+				switch t := sub.Substep.(type) {
+				case *miloProto.Step_Substep_AnnotationStream:
+					// TODO(hinoka,dnj): Implement recursive / embedded substream fetching if
+					// specified.
+					log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
+
+				case *miloProto.Step_Substep_Step:
+					endedTime := google.TimeFromProto(t.Step.Ended)
+					if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
+						latestEndedTime = endedTime
+					}
+				}
+			}
+			if latestEndedTime.IsZero() {
+				// No substep had an ended time :(
+				latestEndedTime = google.TimeFromProto(step.Started)
+			}
+			as.step = &step
+		}
+
+	case protoutil.BuildMediaType:
+		var build bbpb.Build
+		toUnmarshal = &build
+		followup = func() {
+			as.build = &build
+		}
+
+	default:
+		return errNotMilo
+	}
+
 	// Get the last log entry in the stream. In reality, this will be index 0,
 	// since the "Tail" call should only return one log entry.
 	//
@@ -129,34 +172,12 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 		return errors.New("Datagram stream does not have datagram data")
 	}
 
-	// Attempt to decode the Step protobuf.
-	var step miloProto.Step
-	if err := proto.Unmarshal(dg.Data, &step); err != nil {
+	// Attempt to decode the protobuf.
+	if err := proto.Unmarshal(dg.Data, toUnmarshal); err != nil {
 		return err
 	}
+	followup()
 
-	var latestEndedTime time.Time
-	for _, sub := range step.Substep {
-		switch t := sub.Substep.(type) {
-		case *miloProto.Step_Substep_AnnotationStream:
-			// TODO(hinoka,dnj): Implement recursive / embedded substream fetching if
-			// specified.
-			log.Warningf(c, "Annotation stream links LogDog substream [%+v], not supported!", t.AnnotationStream)
-
-		case *miloProto.Step_Substep_Step:
-			endedTime := google.TimeFromProto(t.Step.Ended)
-			if t.Step.Ended != nil && endedTime.After(latestEndedTime) {
-				latestEndedTime = endedTime
-			}
-		}
-	}
-	if latestEndedTime.IsZero() {
-		// No substep had an ended time :(
-		latestEndedTime = google.TimeFromProto(step.Started)
-	}
-
-	// cache the result
-	as.step = &step
 	as.finished = (state.State.TerminalIndex >= 0 &&
 		le.StreamIndex == uint64(state.State.TerminalIndex))
 	return nil
@@ -243,20 +264,23 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 	}
 }
 
-// GetBuild returns a build from a raw annotation stream.
-func GetBuild(c context.Context, host string, project string, path types.StreamPath) (*ui.MiloBuildLegacy, error) {
+// GetBuild returns either a MiloBuildLegacy or a Build from a raw datagram
+// stream.
+//
+// The type of return value is determined by the content type of the stream.
+func GetBuild(c context.Context, host string, project string, path types.StreamPath) (*ui.MiloBuildLegacy, *ui.BuildPage, error) {
 	as := AnnotationStream{
 		Project: project,
 		Path:    path,
 	}
 	if err := as.normalize(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Setup our LogDog client.
 	var err error
 	if as.Client, err = NewClient(c, host); err != nil {
-		return nil, errors.Annotate(err, "generating LogDog Client").Err()
+		return nil, nil, errors.Annotate(err, "generating LogDog Client").Err()
 	}
 
 	// Load the Milo annotation protobuf from the annotation stream.
@@ -264,20 +288,24 @@ func GetBuild(c context.Context, host string, project string, path types.StreamP
 	case nil, errNoEntries:
 
 	case coordinator.ErrNoSuchStream:
-		return nil, grpcutil.NotFoundTag.Apply(err)
+		return nil, nil, grpcutil.NotFoundTag.Apply(err)
 
 	case coordinator.ErrNoAccess:
-		return nil, grpcutil.PermissionDeniedTag.Apply(err)
+		return nil, nil, grpcutil.PermissionDeniedTag.Apply(err)
 
 	case errNotMilo, errNotDatagram:
 		// The user requested a LogDog url that isn't a Milo annotation.
-		return nil, grpcutil.InvalidArgumentTag.Apply(err)
+		return nil, nil, grpcutil.InvalidArgumentTag.Apply(err)
 
 	default:
-		return nil, errors.Annotate(err, "failed to load stream").Err()
+		return nil, nil, errors.Annotate(err, "failed to load stream").Err()
 	}
 
-	return as.toMiloBuild(c), nil
+	if as.step != nil {
+		return as.toMiloBuild(c), nil, nil
+	}
+	now, _ := ptypes.TimestampProto(clock.Now(c))
+	return nil, &ui.BuildPage{Build: ui.Build{Build: as.build, Now: now}}, nil
 }
 
 // ReadAnnotations synchronously reads and decodes the latest Step information
@@ -299,6 +327,11 @@ func ReadAnnotations(c context.Context, addr *types.StreamAddr) (*miloProto.Step
 		return nil, errors.Annotate(err, "failed to normalize annotation stream parameters").Err()
 	}
 
-	err = as.populateCache(c)
-	return as.step, err
+	if err := as.populateCache(c); err != nil {
+		return nil, err
+	}
+	if as.step == nil {
+		return nil, errors.New("stream does not contain milo.Step")
+	}
+	return as.step, nil
 }

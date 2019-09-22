@@ -81,12 +81,17 @@ func handleSwarmingBuild(c *router.Context) error {
 	taskID := c.Params.ByName("id")
 
 	// Redirect to build page if possible.
-	switch buildID, err := swarming.BuildbucketBuildIDFromTask(c.Context, host, taskID); {
+	switch buildID, ldURL, err := swarming.RedirectsFromTask(c.Context, host, taskID); {
 	case err != nil:
 		return err
 	case buildID != 0:
 		u := *c.Request.URL
 		u.Path = fmt.Sprintf("/b/%d", buildID)
+		http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+		return nil
+	case ldURL != "":
+		u := *c.Request.URL
+		u.Path = fmt.Sprintf("/raw/build/%s", ldURL)
 		http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
 		return nil
 	}
@@ -96,12 +101,15 @@ func handleSwarmingBuild(c *router.Context) error {
 }
 
 func handleRawPresentationBuild(c *router.Context) error {
-	build, err := rawpresentation.GetBuild(
+	legacyBuild, build, err := rawpresentation.GetBuild(
 		c.Context,
 		c.Params.ByName("logdog_host"),
 		c.Params.ByName("project"),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
-	return renderBuildLegacy(c, build, false, err)
+	if build != nil {
+		return renderBuild(c, build, err)
+	}
+	return renderBuildLegacy(c, legacyBuild, false, err)
 }
 
 // renderBuildLegacy is a shortcut for rendering build or returning err if it is not
