@@ -21,17 +21,16 @@ import (
 	"io/ioutil"
 	"net"
 	"regexp"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/certs"
 	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
 )
@@ -44,17 +43,14 @@ type SnapshotDB struct {
 	AuthServiceURL string // where it was fetched from
 	Rev            int64  // its revision number
 
-	tokenServiceURL string // URL of the token server as provided by Auth service
-
 	clientIDs      oauthid.Whitelist // set of allowed client IDs
 	whitelistedIPs ipaddr.Whitelist  // set of named IP whitelists
 	groups         map[string]*group // map of all known groups
 
-	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil
+	tokenServiceURL   string       // URL of the token server as provided by Auth service
+	tokenServiceCerts certs.Bundle // cached public keys of the token server
 
-	// Certs are loaded lazily in GetCertificates since they are used only when
-	// checking delegation tokens, which is relatively rare.
-	certs lazyslot.Slot
+	internalServices *regexp.Regexp // assembled from SecurityConfig, may be nil
 }
 
 var _ DB = &SnapshotDB{}
@@ -66,9 +62,6 @@ type group struct {
 	globs   []identity.Glob                // list of all identity globs
 	nested  []*group                       // pointers to nested groups
 }
-
-// certMap is used in GetCertificate and fetchTrustedCerts.
-type certMap map[identity.Identity]*signing.PublicCertificates
 
 // Revision returns a revision of an auth DB or 0 if it can't be determined.
 //
@@ -119,11 +112,12 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 	}
 
 	db := &SnapshotDB{
-		AuthServiceURL:  authServiceURL,
-		Rev:             rev,
-		clientIDs:       oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
-		whitelistedIPs:  ipWL,
-		tokenServiceURL: authDB.TokenServerUrl,
+		AuthServiceURL:    authServiceURL,
+		Rev:               rev,
+		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
+		whitelistedIPs:    ipWL,
+		tokenServiceURL:   authDB.TokenServerUrl,
+		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
 	}
 
 	// First pass: build all `group` nodes.
@@ -322,16 +316,23 @@ func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, grou
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
+//
+// Currently only the Token Server is a trusted signer.
 func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Identity) (*signing.PublicCertificates, error) {
-	mapping, err := db.certs.Get(c, func(interface{}) (interface{}, time.Duration, error) {
-		mapping, err := db.fetchTrustedCerts(c)
-		return mapping, time.Hour, err
-	})
-	if err != nil {
-		return nil, err
+	if db.tokenServiceURL == "" {
+		logging.Warningf(
+			c, "Delegation is not supported, the token server URL is not set by %s",
+			db.AuthServiceURL)
+		return nil, nil
 	}
-	trustedCertsMap := mapping.(certMap)
-	return trustedCertsMap[signerID], nil
+	switch tokenServerID, certs, err := db.tokenServiceCerts.GetCerts(c); {
+	case err != nil:
+		return nil, err
+	case signerID != tokenServerID:
+		return nil, nil // signerID is not trusted since it's not a token server
+	default:
+		return certs, nil
+	}
 }
 
 // GetWhitelistForIdentity returns name of the IP whitelist to use to check
@@ -368,33 +369,4 @@ func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
 // This is needed to implement authdb.DB interface.
 func (db *SnapshotDB) GetTokenServiceURL(c context.Context) (string, error) {
 	return db.tokenServiceURL, nil
-}
-
-//// Implementation details.
-
-// fetchTrustedCerts is called by GetCertificates to fetch certificates.
-//
-// We currently trust only the token server, as provided by the auth service.
-func (db *SnapshotDB) fetchTrustedCerts(c context.Context) (certMap, error) {
-	if db.tokenServiceURL == "" {
-		logging.Warningf(
-			c, "Delegation is not supported, the token server URL is not set by %s",
-			db.AuthServiceURL)
-		return certMap{}, nil
-	}
-
-	certs, err := signing.FetchCertificatesFromLUCIService(c, db.tokenServiceURL)
-	if err != nil {
-		return nil, err
-	}
-	if certs.ServiceAccountName == "" {
-		return nil, fmt.Errorf("the token server %s didn't provide its service account name", db.tokenServiceURL)
-	}
-
-	id, err := identity.MakeIdentity("user:" + certs.ServiceAccountName)
-	if err != nil {
-		return nil, fmt.Errorf("invalid service_account_name %q in fetched certificates bundle - %s", certs.ServiceAccountName, err)
-	}
-
-	return certMap{id: certs}, nil
 }
