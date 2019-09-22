@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a86b75a_de03cdcc",
+        "filename": "server/auth/authdb/internal/seccfg/seccfg.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-22T16:34:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0df05f8b_438a49fc",
+      "range": {
+        "startLine": 28,
+        "startChar": 28,
+        "endLine": 28,
+        "endChar": 37
+      },
+      "revId": "2a6d673276a83f2ba884e6f134044f4dd00fe938",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
