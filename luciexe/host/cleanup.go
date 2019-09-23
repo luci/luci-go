@@ -15,28 +15,45 @@
 package host
 
 import (
+	"context"
 	"os"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 )
 
 type cleanupFn func() error
-type cleanupSlice []cleanupFn
+type cleanupItem struct {
+	name string
+	cb   cleanupFn
+}
+type cleanupSlice []cleanupItem
 
-func (c cleanupSlice) run() {
+func (c cleanupSlice) run(ctx context.Context) {
 	merr := errors.NewLazyMultiError(len(c))
 	for i := len(c) - 1; i >= 0; i-- {
-		merr.Assign(i, c[i]())
+		itm := c[i]
+		logging.Infof(ctx, "running cleanup %q", itm.name)
+		err := itm.cb()
+		if merr.Assign(i, err) {
+			logging.WithError(err).Errorf(ctx, "cleanup %q failed", itm.name)
+		} else {
+			logging.Infof(ctx, "cleanup %q succeeded", itm.name)
+		}
 	}
 	if err := merr.Get(); err != nil {
 		panic(err)
 	}
 }
 
-func (c *cleanupSlice) add(cleanup cleanupSlice, err error) error {
+func (c *cleanupSlice) concat(cleanup cleanupSlice, err error) error {
 	*c = append(*c, cleanup...)
 	return err
+}
+
+func (c *cleanupSlice) add(name string, cb cleanupFn) {
+	*c = append(*c, cleanupItem{name, cb})
 }
 
 func restoreEnv() cleanupFn {

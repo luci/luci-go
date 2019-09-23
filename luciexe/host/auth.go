@@ -25,7 +25,7 @@ import (
 
 func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error) {
 	var myCleanups cleanupSlice
-	defer myCleanups.run()
+	defer myCleanups.run(ctx)
 
 	env := environ.New(nil)
 
@@ -34,7 +34,7 @@ func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error)
 	}
 	opts.ExeAuth.Report(ctx)
 	ctx = opts.ExeAuth.Export(ctx, env)
-	myCleanups = append(myCleanups, func() error {
+	myCleanups.add("authctx", func() error {
 		opts.ExeAuth.Close(ctx)
 		return nil
 	})
@@ -43,7 +43,7 @@ func startAuthServices(ctx context.Context, opts *Options) (cleanupSlice, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "exporting LUCI_CONTEXT").Err()
 	}
-	myCleanups = append(myCleanups, exported.Close)
+	myCleanups.add("LUCI_CONTEXT", exported.Close)
 	exported.SetInEnviron(env)
 
 	if err := env.Iter(os.Setenv); err != nil {

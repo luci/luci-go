@@ -314,8 +314,10 @@ func (t *buildStateTracker) handleNewData(entry *logpb.LogEntry) {
 }
 
 func (t *buildStateTracker) closeWorkLocked() {
-	t.work.Close()
-	t.workClosed = true
+	if !t.workClosed {
+		close(t.work.C)
+		t.workClosed = true
+	}
 }
 
 func (t *buildStateTracker) closeWork() {

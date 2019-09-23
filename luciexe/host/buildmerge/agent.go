@@ -222,9 +222,7 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) bundler.StreamChunk
 // and then shut down all internal routines.
 func (a *Agent) Close() {
 	// stops accepting new trackers
-	alreadyClosed := atomic.SwapInt32(&a.done, 1) == 1
-
-	if alreadyClosed {
+	if atomic.SwapInt32(&a.done, 1) == 1 {
 		return
 	}
 
