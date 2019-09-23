@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+const testNamePrefixKey = "test_name_prefix"
+
 // JSONTestResults represents the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
 //
@@ -33,8 +35,6 @@ type JSONTestResults struct {
 
 	PathDelimiter string `json:"path_delimiter"`
 
-	SecondsSinceEpoch float64 `json:"seconds_since_epoch"`
-
 	TestsRaw json.RawMessage `json:"tests"`
 	Tests    map[string]*TestFields
 
@@ -43,7 +43,12 @@ type JSONTestResults struct {
 	ArtifactTypes map[string]string `json:"artifact_types"`
 
 	BuildNumber string `json:"build_number"`
-	BuilderName string `json:"builder_number"`
+	BuilderName string `json:"builder_name"`
+
+	// Metadata associated with results, which may include a list of expectation_files, or
+	// test_name_prefix e.g. in GPU tests (distinct from test_path_prefix passed in the recorder API
+	// request).
+	Metadata map[string]json.RawMessage `json:"metadata"`
 }
 
 // TestFields represents the test fields structure in
@@ -63,18 +68,18 @@ type TestFields struct {
 // ConvertFromJSON converts a JSON of test results in the JSON Test Results
 // format to the internal struct format.
 //
-// TODO: convert to resultspb.Invocation.
-func ConvertFromJSON(ctx context.Context, reader io.Reader) (*JSONTestResults, error) {
-	results := &JSONTestResults{}
-	if err := json.NewDecoder(reader).Decode(results); err != nil {
-		return nil, err
+// The receiver is cleared and its fields overwritten.
+func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) error {
+	*r = JSONTestResults{}
+	if err := json.NewDecoder(reader).Decode(r); err != nil {
+		return err
 	}
 
 	// Convert Tests and return.
-	if err := results.convertTests("", results.TestsRaw); err != nil {
-		return nil, err
+	if err := r.convertTests("", r.TestsRaw); err != nil {
+		return err
 	}
-	return results, nil
+	return nil
 }
 
 // convertTests converts the trie of tests.
@@ -82,7 +87,7 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 	// curNode should certainly be a map.
 	var maybeNode map[string]json.RawMessage
 	if err := json.Unmarshal(curNode, &maybeNode); err != nil {
-		return errors.Annotate(err, "%v not map[string]json.RawMessage", curNode).Err()
+		return errors.Annotate(err, "%q not map[string]json.RawMessage", curNode).Err()
 	}
 
 	// Convert the tree.
@@ -90,7 +95,7 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		// Try to convert the map values to a TestFields.
 		maybeFields := &TestFields{}
 		if err := json.Unmarshal(value, maybeFields); err != nil {
-			return errors.Annotate(err, "%v not TestFields", value).Err()
+			return errors.Annotate(err, "%q not TestFields", value).Err()
 		}
 
 		// Set up test path.
@@ -99,8 +104,17 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		if r.PathDelimiter != "" {
 			delim = r.PathDelimiter
 		}
+
 		if curPath != "" {
 			testPath = fmt.Sprintf("%s%s%s", curPath, delim, key)
+		} else {
+			if prefixJson, ok := r.Metadata[testNamePrefixKey]; ok {
+				var prefix string
+				if err := json.Unmarshal(prefixJson, &prefix); err != nil {
+					return errors.Annotate(err, "%s not string, got %q", testNamePrefixKey, prefixJson).Err()
+				}
+				testPath = prefix + key
+			}
 		}
 
 		// No error from unmarshalling to TestFields might mean that the RawMessage
@@ -116,7 +130,7 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 
 		// Otherwise, try to process it as an intermediate node.
 		if err := r.convertTests(testPath, value); err != nil {
-			return errors.Annotate(err, "error attempting conversion of %v as intermediated node", value).Err()
+			return errors.Annotate(err, "error attempting conversion of %q as intermediated node", value).Err()
 		}
 	}
 
