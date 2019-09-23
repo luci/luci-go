@@ -34,8 +34,12 @@ type GlobSet map[identity.Kind]*regexp.Regexp
 
 // Has checks whether 'id' is in the set.
 //
-// Malformed identities are considered to be not in the set.
+// Malformed identities are considered to be not in the set. 'nil' GlobSet is
+// considered empty.
 func (gs GlobSet) Has(id identity.Identity) bool {
+	if gs == nil {
+		return false
+	}
 	sepIdx := strings.IndexRune(string(id), ':')
 	if sepIdx == -1 {
 		return false
