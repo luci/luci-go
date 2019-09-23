@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -280,6 +282,14 @@ type RegistrationServer interface {
 	// A stream prefix may be registered at most once. Additional registration
 	// requests will fail with the "AlreadyExists" gRPC code.
 	RegisterPrefix(context.Context, *RegisterPrefixRequest) (*RegisterPrefixResponse, error)
+}
+
+// UnimplementedRegistrationServer can be embedded to have forward compatible implementations.
+type UnimplementedRegistrationServer struct {
+}
+
+func (*UnimplementedRegistrationServer) RegisterPrefix(ctx context.Context, req *RegisterPrefixRequest) (*RegisterPrefixResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterPrefix not implemented")
 }
 
 func RegisterRegistrationServer(s prpc.Registrar, srv RegistrationServer) {
