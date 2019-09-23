@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "efbcda7d_282c66fc",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-23T17:44:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8380a57a_deadc86b",
+      "range": {
+        "startLine": 230,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 12
+      },
+      "revId": "8f1fb2ce811faed3138d231cff6eff2e7e135708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75b786ca_53f3c922",
         "filename": "gce/appengine/backend/bots.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "8f1fb2ce811faed3138d231cff6eff2e7e135708",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0658ae94_a816d95d",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-23T17:44:18Z",
+      "side": 1,
+      "message": "good point. Reworded, ptal.",
+      "parentUuid": "75b786ca_53f3c922",
+      "revId": "8f1fb2ce811faed3138d231cff6eff2e7e135708",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
