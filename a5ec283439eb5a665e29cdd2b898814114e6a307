@@ -91,6 +91,29 @@
       "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f89b96e_677a4490",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 733,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-23T20:11:22Z",
+      "side": 1,
+      "message": "ReadAt now needs a mutex (and a comment adjustment). This will negate some of the benefits of parallelization when this code path is hit (which should be rare, mostly in tests: usually io.ReadSeeker passed to OpenInstance is actually *os.File and it implements io.ReaderAt and this fallback is not involved).",
+      "range": {
+        "startLine": 718,
+        "startChar": 0,
+        "endLine": 733,
+        "endChar": 1
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
