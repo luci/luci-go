@@ -13,6 +13,8 @@ import (
 	messages "go.chromium.org/luci/server/auth/delegation/messages"
 	api "go.chromium.org/luci/tokenserver/api"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -941,6 +943,32 @@ type AdminServer interface {
 	//   grpc.InvalidArgument error for unsupported token kind.
 	//   grpc.Internal error for transient errors.
 	InspectOAuthTokenGrant(context.Context, *InspectOAuthTokenGrantRequest) (*InspectOAuthTokenGrantResponse, error)
+}
+
+// UnimplementedAdminServer can be embedded to have forward compatible implementations.
+type UnimplementedAdminServer struct {
+}
+
+func (*UnimplementedAdminServer) ImportCAConfigs(ctx context.Context, req *empty.Empty) (*ImportedConfigs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportCAConfigs not implemented")
+}
+func (*UnimplementedAdminServer) ImportDelegationConfigs(ctx context.Context, req *empty.Empty) (*ImportedConfigs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportDelegationConfigs not implemented")
+}
+func (*UnimplementedAdminServer) ImportServiceAccountsConfigs(ctx context.Context, req *empty.Empty) (*ImportedConfigs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportServiceAccountsConfigs not implemented")
+}
+func (*UnimplementedAdminServer) ImportProjectIdentityConfigs(ctx context.Context, req *empty.Empty) (*ImportedConfigs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportProjectIdentityConfigs not implemented")
+}
+func (*UnimplementedAdminServer) InspectMachineToken(ctx context.Context, req *InspectMachineTokenRequest) (*InspectMachineTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InspectMachineToken not implemented")
+}
+func (*UnimplementedAdminServer) InspectDelegationToken(ctx context.Context, req *InspectDelegationTokenRequest) (*InspectDelegationTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InspectDelegationToken not implemented")
+}
+func (*UnimplementedAdminServer) InspectOAuthTokenGrant(ctx context.Context, req *InspectOAuthTokenGrantRequest) (*InspectOAuthTokenGrantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InspectOAuthTokenGrant not implemented")
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {

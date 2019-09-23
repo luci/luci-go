@@ -5,11 +5,10 @@ package config
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	_ "go.chromium.org/luci/common/proto"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -240,6 +239,9 @@ type ConfigGroup struct {
 	// Typical use-case is testing & submitting changes to multiple repos at the
 	// same time, in which case all such repos must be declared up-front in
 	// `Gerrit` part of this config_group.
+	//
+	// Not allowed to be used together with
+	// submit_options.allow_submit_with_open_deps=true.
 	CombineCls *CombineCLs `protobuf:"bytes,4,opt,name=combine_cls,json=combineCls,proto3" json:"combine_cls,omitempty"`
 	// Defines how to verify a CL before submitting it. Required.
 	Verifiers *Verifiers `protobuf:"bytes,2,opt,name=verifiers,proto3" json:"verifiers,omitempty"`

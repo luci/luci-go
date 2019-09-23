@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -512,6 +514,17 @@ type BuildbotServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	// Schedule puts new builds to a queue.
 	Schedule(context.Context, *ScheduleRequest) (*ScheduleResponse, error)
+}
+
+// UnimplementedBuildbotServer can be embedded to have forward compatible implementations.
+type UnimplementedBuildbotServer struct {
+}
+
+func (*UnimplementedBuildbotServer) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (*UnimplementedBuildbotServer) Schedule(ctx context.Context, req *ScheduleRequest) (*ScheduleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Schedule not implemented")
 }
 
 func RegisterBuildbotServer(s prpc.Registrar, srv BuildbotServer) {

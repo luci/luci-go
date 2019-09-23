@@ -12,6 +12,8 @@ import (
 	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -739,6 +741,26 @@ type CertificateAuthoritiesServer interface {
 	IsRevokedCert(context.Context, *IsRevokedCertRequest) (*IsRevokedCertResponse, error)
 	// CheckCertificate says whether a certificate is valid or not.
 	CheckCertificate(context.Context, *CheckCertificateRequest) (*CheckCertificateResponse, error)
+}
+
+// UnimplementedCertificateAuthoritiesServer can be embedded to have forward compatible implementations.
+type UnimplementedCertificateAuthoritiesServer struct {
+}
+
+func (*UnimplementedCertificateAuthoritiesServer) FetchCRL(ctx context.Context, req *FetchCRLRequest) (*FetchCRLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FetchCRL not implemented")
+}
+func (*UnimplementedCertificateAuthoritiesServer) ListCAs(ctx context.Context, req *empty.Empty) (*ListCAsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCAs not implemented")
+}
+func (*UnimplementedCertificateAuthoritiesServer) GetCAStatus(ctx context.Context, req *GetCAStatusRequest) (*GetCAStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCAStatus not implemented")
+}
+func (*UnimplementedCertificateAuthoritiesServer) IsRevokedCert(ctx context.Context, req *IsRevokedCertRequest) (*IsRevokedCertResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsRevokedCert not implemented")
+}
+func (*UnimplementedCertificateAuthoritiesServer) CheckCertificate(ctx context.Context, req *CheckCertificateRequest) (*CheckCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckCertificate not implemented")
 }
 
 func RegisterCertificateAuthoritiesServer(s prpc.Registrar, srv CertificateAuthoritiesServer) {
