@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "01abe31b_c3234fb6",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-23T21:48:53Z",
+      "side": 1,
+      "message": "are you able to reliably repro this s.t. a regression test can be added?\nif it requires adding new signalling *into prod code*, just land as is.",
+      "parentUuid": "903e368e_3158dc3f",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 46
+      },
+      "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ee500a3_9fdbf4b5",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa5f8c7e_e2b4f028",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-23T21:48:53Z",
+      "side": 1,
+      "message": "+1 on all 3 counts. Shame on me for not suggesting doing so for the last 2 reasons earlier.",
+      "parentUuid": "4ee500a3_9fdbf4b5",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 12
+      },
+      "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
