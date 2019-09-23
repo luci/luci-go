@@ -60,19 +60,19 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	// the defer below will run them all. Otherwise they'll be transferred to the
 	// goroutine.
 	var cleanup cleanupSlice
-	defer cleanup.run()
+	defer cleanup.run(ctx)
 
 	cleanupComplete := make(chan struct{})
-	cleanup = append(cleanup, func() error {
+	cleanup.add("cleanupComplete", func() error {
 		close(cleanupComplete)
 		return nil
 	})
 
 	// First, capture the entire env to restore it later.
-	cleanup = append(cleanup, restoreEnv())
+	cleanup.add("restoreEnv", restoreEnv())
 
 	// Startup auth services
-	if err := cleanup.add(startAuthServices(ctx, &opts)); err != nil {
+	if err := cleanup.concat(startAuthServices(ctx, &opts)); err != nil {
 		return nil, err
 	}
 
@@ -82,11 +82,11 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 		return nil, err
 	}
 	agent := spyOn(ctx, butler, opts.BaseBuild)
-	cleanup = append(cleanup, func() error {
+	cleanup.add("butler", func() error {
 		butler.Activate()
 		return butler.Wait()
 	})
-	cleanup = append(cleanup, func() error {
+	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
 		return nil
 	})
@@ -102,26 +102,30 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 
 	// Transfer ownership of cleanups to goroutine
 	userCleanup := cleanup
-	cleanup = nil
-	go func() {
-		defer userCleanup.run()
-		defer func() {
-			cctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
-			defer cancel()
-
-			logging.Infof(ctx, "waiting up to 30 seconds for user logs to flush")
-			leftovers := butler.CloseNamespace(cctx, agent.UserNamespace)
-			if len(leftovers) > 0 {
-				builder := strings.Builder{}
-				for _, leftover := range leftovers {
-					builder.WriteString("\n  ")
-					builder.WriteString(string(leftover))
-				}
-				logging.Errorf(
-					ctx, "failed to flush the following logs:\n  %s", builder.String())
+	userCleanup.add("flush u/", func() error {
+		cctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		logging.Infof(ctx, "waiting up to 30 seconds for user logs to flush")
+		leftovers := butler.CloseNamespace(cctx, agent.UserNamespace)
+		if len(leftovers) > 0 {
+			builder := strings.Builder{}
+			for _, leftover := range leftovers {
+				builder.WriteString("\n  ")
+				builder.WriteString(string(leftover))
 			}
-		}()
-		defer butler.Activate()
+			logging.Errorf(
+				ctx, "failed to flush the following logs:\n  %s", builder.String())
+		}
+		return nil
+	})
+	userCleanup.add("butler.Activate", func() error {
+		butler.Activate()
+		return nil
+	})
+	cleanup = nil
+
+	go func() {
+		defer userCleanup.run(ctx)
 
 		// TODO(iannucci): do something with retval of cb
 		cb(ctx)

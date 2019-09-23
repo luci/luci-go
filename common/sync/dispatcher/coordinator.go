@@ -185,16 +185,18 @@ func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 
 loop:
 	for {
-		bufStats := state.buf.Stats()
-		if state.closed && bufStats.Empty() {
-			break loop
-		}
 		state.dbg("LOOP (closed: %t, canceled: %t): buf.Stats[%+v]",
-			state.closed, state.canceled, bufStats)
+			state.closed, state.canceled, state.buf.Stats())
 
 		now := clock.Now(ctx)
 
 		resDelay := state.sendBatches(ctx, now, send)
+
+		// sendBatches may drain the buf if we're in the canceled state, so pull it
+		// again to see if it's empty.
+		if state.closed && state.buf.Stats().Empty() {
+			break loop
+		}
 
 		// Only select on ctx.Done if we haven't observed its cancelation yet.
 		var doneCh <-chan struct{}

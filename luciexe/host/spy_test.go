@@ -50,7 +50,6 @@ func TestSpy(t *testing.T) {
 
 				err = stream.WriteDatagram(data)
 				c.So(err, ShouldBeNil)
-
 				c.So(stream.Close(), ShouldBeNil)
 
 				return nil
