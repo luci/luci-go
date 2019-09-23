@@ -17,20 +17,29 @@ package authdb
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/server/auth/authdb/internal/graph"
+	"go.chromium.org/luci/server/auth/authdb/internal/legacy"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -284,48 +293,181 @@ func TestSnapshotDB(t *testing.T) {
 	})
 }
 
-func BenchmarkIsMember(b *testing.B) {
-	c := context.Background()
-	db, _ := NewSnapshotDB(&protocol.AuthDB{
-		Groups: []*protocol.AuthGroup{
-			{
-				Name:   "outer",
-				Nested: []string{"A", "B"},
-			},
-			{
-				Name:   "A",
-				Nested: []string{"A_A", "A_B"},
-			},
-			{
-				Name:   "B",
-				Nested: []string{"B_A", "B_B"},
-			},
-			{
-				Name:   "A_A",
-				Nested: []string{"A_A_A"},
-			},
-			{
-				Name:   "A_A_A",
-				Nested: []string{"A_A_A_A"},
-			},
-			{
-				Name: "A_A_A_A",
-			},
-			{
-				Name: "A_B",
-			},
-			{
-				Name: "B_A",
-			},
-			{
-				Name: "B_B",
-			},
-		},
-	}, "http://auth-service", 1234, false)
+var authDBPath = flag.String("authdb", "", "path to AuthDB proto to use in tests")
+var testAuthDB *protocol.AuthDB
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if *authDBPath != "" {
+		testAuthDB = readTestDB(*authDBPath)
+	}
+	os.Exit(m.Run())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+func randString(min, max int, seen stringset.Set) string {
+	for {
+		b := make([]rune, min+rand.Intn(max))
+		for i := range b {
+			b[i] = letterRunes[rand.Intn(len(letterRunes))]
+		}
+		s := string(b)
+		if seen.Add(s) {
+			return s
+		}
+	}
+}
+
+func readTestDB(path string) *protocol.AuthDB {
+	blob, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	signed := protocol.SignedAuthDB{}
+	if err := proto.Unmarshal(blob, &signed); err != nil {
+		panic(err)
+	}
+	m := protocol.ReplicationPushRequest{}
+	if err := proto.Unmarshal(signed.AuthDbBlob, &m); err != nil {
+		panic(err)
+	}
+	return m.AuthDb
+}
+
+func makeTestDB(users, groups int) *protocol.AuthDB {
+	if testAuthDB != nil {
+		return testAuthDB
+	}
+
+	db := &protocol.AuthDB{}
+
+	domains := make([]string, 50)
+	seenDomains := stringset.New(50)
+	for i := range domains {
+		domains[i] = "@" + randString(5, 15, seenDomains) + ".com"
+	}
+	members := make([]string, users)
+	seenMembers := stringset.New(users)
+	for i := range members {
+		members[i] = "user:" + randString(3, 20, seenMembers) + domains[rand.Intn(len(domains))]
+	}
+
+	seenGroups := stringset.New(groups)
+	for i := 0; i < groups; i++ {
+		s := rand.Intn(len(members))
+		l := rand.Intn(len(members) - s)
+		db.Groups = append(db.Groups, &protocol.AuthGroup{
+			Name:    randString(10, 30, seenGroups),
+			Members: members[s : s+l],
+		})
+	}
+
+	return db
+}
+
+type queryableGraph interface {
+	IsMember(ident identity.Identity, group string) bool
+}
+
+func oldQueryableGraph(db *protocol.AuthDB) queryableGraph {
+	q, err := legacy.BuildGroups(db.Groups)
+	if err != nil {
+		panic(err)
+	}
+	return q
+}
+
+func newQueryableGraph(db *protocol.AuthDB) queryableGraph {
+	q, err := graph.BuildQueryable(db.Groups)
+	if err != nil {
+		panic(err)
+	}
+	return q
+}
+
+func memUsage(t *testing.T, cb func(*runtime.MemStats)) {
+	var m1, m2 runtime.MemStats
+
+	cb(&m1)
+	runtime.GC()
+	runtime.ReadMemStats(&m2)
+
+	t.Logf("HeapAlloc: %1.f Kb", float64(m1.HeapAlloc-m2.HeapAlloc)/1024)
+}
+
+func runMemUsageTest(t *testing.T, cb func(db *protocol.AuthDB) queryableGraph) {
+	db := makeTestDB(1000, 500)
+	memUsage(t, func(m *runtime.MemStats) {
+		q := cb(db)
+		runtime.GC()
+		runtime.ReadMemStats(m)
+		runtime.KeepAlive(q)
+	})
+}
+
+// Note: to compare memory usage with some real AuthDB (previously saved to a
+// file):
+//   go test . -run=TestMemUsage* -v -authdb auth.db
+
+func TestMemUsageOld(t *testing.T) {
+	runMemUsageTest(t, oldQueryableGraph)
+}
+
+func TestMemUsageNew(t *testing.T) {
+	runMemUsageTest(t, newQueryableGraph)
+}
+
+func TestCompareNewAndOld(t *testing.T) {
+	db := makeTestDB(100, 50)
+	old := oldQueryableGraph(db)
+	new := newQueryableGraph(db)
+
+	idSet := stringset.New(0)
+	for _, g := range db.Groups {
+		for _, m := range g.Members {
+			idSet.Add(m)
+		}
+	}
+	idents := idSet.ToSlice()
+	sort.Strings(idents)
+
+	for _, g := range db.Groups {
+		for _, id := range idents {
+			r1 := old.IsMember(identity.Identity(id), g.Name)
+			r2 := new.IsMember(identity.Identity(id), g.Name)
+			if r1 != r2 {
+				t.Fatalf("IsMember(%q, %q): %v != %v", id, g.Name, r1, r2)
+			}
+		}
+	}
+}
+
+func runIsMemberBenchmark(b *testing.B, db *protocol.AuthDB, q queryableGraph) {
+	idSet := stringset.New(0)
+	for _, g := range db.Groups {
+		for _, m := range g.Members {
+			idSet.Add(m)
+		}
+	}
+	idents := idSet.ToSlice()
 
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		db.IsMember(c, "user:somedude@example.com", []string{"outer"})
+		for _, g := range db.Groups {
+			for _, id := range idents {
+				q.IsMember(identity.Identity(id), g.Name)
+			}
+		}
 	}
+}
+
+func BenchmarkIsMemberOld(b *testing.B) {
+	db := makeTestDB(100, 50)
+	runIsMemberBenchmark(b, db, oldQueryableGraph(db))
+}
+
+func BenchmarkIsMemberNew(b *testing.B) {
+	db := makeTestDB(100, 50)
+	runIsMemberBenchmark(b, db, newQueryableGraph(db))
 }

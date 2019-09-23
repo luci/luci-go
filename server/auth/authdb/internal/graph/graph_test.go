@@ -15,10 +15,14 @@
 package graph
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	"go.chromium.org/luci/server/auth/authdb/internal/globset"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -67,6 +71,8 @@ func ancestors(g *Graph, node string) []string {
 }
 
 func TestGraph(t *testing.T) {
+	t.Parallel()
+
 	Convey("Linear", t, func() {
 		g := mkGraph(map[string][]string{
 			"1": {"2"},
@@ -126,4 +132,143 @@ func TestGraph(t *testing.T) {
 		g := mkGraph(map[string][]string{"1": {"missing"}})
 		So(descendants(g, "1"), ShouldResemble, []string{"1"})
 	})
+}
+
+func TestNodeSet(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ns1 := make(NodeSet, 0)
+		ns1.Add(5)
+		ns1.Add(3)
+
+		ns2 := make(NodeSet, 0)
+		ns2.Add(10)
+		ns2.Add(5)
+
+		ns3 := make(NodeSet, 0)
+		ns3.Update(ns1)
+		ns3.Update(ns2)
+
+		sorted := ns3.Sort()
+		So(sorted, ShouldResemble, SortedNodeSet{3, 5, 10})
+
+		So(sorted.Has(1), ShouldBeFalse)
+		So(sorted.Has(3), ShouldBeTrue)
+		So(sorted.Has(5), ShouldBeTrue)
+		So(sorted.Has(10), ShouldBeTrue)
+		So(sorted.Has(11), ShouldBeFalse)
+
+		So(sorted.MapKey(), ShouldResemble, "\x03\x00\x05\x00\x0a\x00")
+	})
+}
+
+func TestQueryable(t *testing.T) {
+	t.Parallel()
+
+	Convey("Globs map", t, func() {
+		q, err := BuildQueryable([]*protocol.AuthGroup{
+			{
+				Name:   "root",
+				Globs:  []string{"user:*@1.example.com", "user:*@2.example.com"},
+				Nested: []string{"child1"},
+			},
+			{
+				Name:   "child1",
+				Globs:  []string{"user:*@2.example.com"},
+				Nested: []string{"child2", "no globs"},
+			},
+			{
+				Name:  "child2",
+				Globs: []string{"user:*@3.example.com"},
+			},
+			{
+				Name: "no globs",
+			},
+			{
+				Name:  "separate",
+				Globs: []string{"user:*@3.example.com", "user:*@2.example.com"},
+			},
+		})
+		So(err, ShouldBeNil)
+		So(stringifyGlobMap(q.globs), ShouldResemble, map[NodeIndex]string{
+			0: "user:^((.*@1\\.example\\.com)|(.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
+			1: "user:^((.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
+			2: "user:^.*@3\\.example\\.com$",
+			4: "user:^((.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
+		})
+
+		// Identical GlobSet's are shared by reference.
+		a := q.globs[1]["user"]
+		b := q.globs[4]["user"]
+		So(a == b, ShouldBeTrue)
+
+		So(q.IsMember("user:a@3.example.com", "root"), ShouldBeTrue)
+		So(q.IsMember("user:a@3.example.com", "child1"), ShouldBeTrue)
+		So(q.IsMember("user:a@3.example.com", "child2"), ShouldBeTrue)
+		So(q.IsMember("user:a@3.example.com", "no globs"), ShouldBeFalse)
+
+		So(q.IsMember("user:a@1.example.com", "root"), ShouldBeTrue)
+		So(q.IsMember("user:a@1.example.com", "child1"), ShouldBeFalse)
+		So(q.IsMember("user:a@1.example.com", "child2"), ShouldBeFalse)
+	})
+
+	Convey("Memberships map", t, func() {
+		q, err := BuildQueryable([]*protocol.AuthGroup{
+			{
+				Name:    "root", // 0
+				Members: []string{"user:1@example.com"},
+				Nested:  []string{"child1", "child2"},
+			},
+			{
+				Name:    "child1", // 1
+				Members: []string{"user:1@example.com", "user:2@example.com"},
+				Nested:  []string{"child2"},
+			},
+			{
+				Name:    "child2", // 2
+				Members: []string{"user:3@example.com"},
+			},
+			{
+				Name: "standalone", // 3
+				Members: []string{
+					"user:1@example.com",
+					"user:2@example.com",
+					"user:3@example.com",
+					"user:4@example.com",
+				},
+			},
+		})
+		So(err, ShouldBeNil)
+
+		So(q.memberships, ShouldResemble, map[identity.Identity]SortedNodeSet{
+			"user:1@example.com": {0, 1, 3},
+			"user:2@example.com": {0, 1, 3},
+			"user:3@example.com": {0, 1, 2, 3},
+			"user:4@example.com": {3},
+		})
+
+		// Identical SortedNodeSet's are shared by reference.
+		a := q.memberships["user:1@example.com"]
+		b := q.memberships["user:2@example.com"]
+		So(&a[0] == &b[0], ShouldBeTrue)
+
+		So(q.IsMember("user:1@example.com", "root"), ShouldBeTrue)
+		So(q.IsMember("user:1@example.com", "child1"), ShouldBeTrue)
+		So(q.IsMember("user:1@example.com", "child2"), ShouldBeFalse)
+		So(q.IsMember("user:1@example.com", "standalone"), ShouldBeTrue)
+		So(q.IsMember("user:1@example.com", "unknown"), ShouldBeFalse)
+	})
+}
+
+func stringifyGlobMap(gl map[NodeIndex]globset.GlobSet) map[NodeIndex]string {
+	globs := map[NodeIndex]string{}
+	for idx, globSet := range gl {
+		g := ""
+		for k, v := range globSet {
+			g += fmt.Sprintf("%s:%s", k, v)
+		}
+		globs[idx] = g
+	}
+	return globs
 }
