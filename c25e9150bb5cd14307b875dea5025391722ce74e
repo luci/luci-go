@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9623b4f3_167885bb",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-23T17:17:16Z",
+      "side": 1,
+      "message": "we should clear r before decoding, because there may be some trash before calling this func, especially if we have non-raw fields",
+      "revId": "c25e9150bb5cd14307b875dea5025391722ce74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36361dda_1ca43530",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-23T17:17:16Z",
+      "side": 1,
+      "message": "this will look like as bytes. should use %q\nhttps://play.golang.org/p/W4mZX_xm9TS",
+      "range": {
+        "startLine": 111,
+        "startChar": 54,
+        "endLine": 111,
+        "endChar": 55
+      },
+      "revId": "c25e9150bb5cd14307b875dea5025391722ce74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bdc677b_7f1d04cd",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-23T17:17:16Z",
+      "side": 1,
+      "message": "nit: this is a complex way of doing `prefix + key`",
+      "range": {
+        "startLine": 113,
+        "startChar": 15,
+        "endLine": 113,
+        "endChar": 47
+      },
+      "revId": "c25e9150bb5cd14307b875dea5025391722ce74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
