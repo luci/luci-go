@@ -441,3 +441,64 @@ func TestDrainedFn(t *testing.T) {
 		So(amDrained, ShouldBeTrue)
 	})
 }
+
+func TestCloseDeadlockRegression(t *testing.T) {
+	// This is a regression test for crbug.com/1006623
+	//
+	// A single run of the test, even with the broken code, doesn't reliably
+	// reproduce it. However, running the test ~10 times seems to be VERY likely
+	// to catch the deadlock at least once. We could make the test 100% likely to
+	// catch the race, but it would involve adding extra synchronization channels
+	// to the production code, which makes us nervous :).
+	//
+	// This code should never hang if the coordinator code is correct.
+	for i := 0; i < 10; i++ {
+		Convey(fmt.Sprintf(`ensure that the channel can shutdown cleanly (%d)`, i), t, func() {
+			ctx := context.Background() // uses real time!
+			ctx, dbg := dbgIfVerbose(ctx)
+			ctx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
+			inSendFn := make(chan struct{})
+			holdSendFn := make(chan struct{})
+
+			ch, err := NewChannel(ctx, &Options{
+				testingDbg: dbg,
+				Buffer: buffer.Options{
+					MaxLeases: 1,
+					BatchSize: 1,
+					FullBehavior: &buffer.DropOldestBatch{
+						MaxLiveItems: 1,
+					},
+				},
+				QPSLimit: rate.NewLimiter(rate.Inf, 1),
+			}, func(batch *buffer.Batch) (err error) {
+				inSendFn <- struct{}{}
+				<-holdSendFn
+				return
+			})
+			So(err, ShouldBeNil)
+
+			ch.C <- nil
+			// Now ensure we're in the send function
+			<-inSendFn
+			Println("unblocked")
+
+			ch.C <- nil // this will go into UnleasedItemCount
+			Println("pushed")
+
+			// While still in the send function, cancel the context and close the
+			// channel.
+			cancel()
+			ch.Close()
+			Println("closed")
+
+			// Now unblock the send function
+			close(holdSendFn)
+			Println("unheld")
+
+			// We should drain properly
+			<-ch.DrainC
+		})
+	}
+}
