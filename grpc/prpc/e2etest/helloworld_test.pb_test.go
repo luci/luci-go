@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -179,6 +181,14 @@ func (c *helloClient) Greet(ctx context.Context, in *HelloRequest, opts ...grpc.
 // HelloServer is the server API for Hello service.
 type HelloServer interface {
 	Greet(context.Context, *HelloRequest) (*HelloReply, error)
+}
+
+// UnimplementedHelloServer can be embedded to have forward compatible implementations.
+type UnimplementedHelloServer struct {
+}
+
+func (*UnimplementedHelloServer) Greet(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Greet not implemented")
 }
 
 func RegisterHelloServer(s prpc.Registrar, srv HelloServer) {

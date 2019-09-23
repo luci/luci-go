@@ -1201,9 +1201,6 @@
     "LegacyApiStartRequestBodyMessage": {
       "id": "LegacyApiStartRequestBodyMessage",
       "properties": {
-        "canary": {
-          "type": "boolean"
-        },
         "lease_key": {
           "format": "int64",
           "type": "string"

@@ -11,6 +11,8 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -170,6 +172,23 @@ type DepsServer interface {
 	FinishAttempt(context.Context, *FinishAttemptReq) (*empty.Empty, error)
 	// runs queries, and walks along the dependency graph from the query results.
 	WalkGraph(context.Context, *WalkGraphReq) (*GraphData, error)
+}
+
+// UnimplementedDepsServer can be embedded to have forward compatible implementations.
+type UnimplementedDepsServer struct {
+}
+
+func (*UnimplementedDepsServer) EnsureGraphData(ctx context.Context, req *EnsureGraphDataReq) (*EnsureGraphDataRsp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnsureGraphData not implemented")
+}
+func (*UnimplementedDepsServer) ActivateExecution(ctx context.Context, req *ActivateExecutionReq) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActivateExecution not implemented")
+}
+func (*UnimplementedDepsServer) FinishAttempt(ctx context.Context, req *FinishAttemptReq) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinishAttempt not implemented")
+}
+func (*UnimplementedDepsServer) WalkGraph(ctx context.Context, req *WalkGraphReq) (*GraphData, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WalkGraph not implemented")
 }
 
 func RegisterDepsServer(s prpc.Registrar, srv DepsServer) {
