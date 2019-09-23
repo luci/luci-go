@@ -69,7 +69,10 @@ type Location struct {
 }
 
 // ConvertFromJSON reads the provided reader into the receiver.
+//
+// The receiver is cleared and its fields overwritten.
 func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) error {
+	*r = GTestResults{}
 	if err := json.NewDecoder(reader).Decode(r); err != nil {
 		return err
 	}
