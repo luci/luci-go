@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "fd935a98_069a9be6",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T22:18:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60f0d108_c12d7eb0",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 46
+      },
+      "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ee500a3_9fdbf4b5",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
