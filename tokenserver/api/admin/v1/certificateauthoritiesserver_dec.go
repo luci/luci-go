@@ -16,96 +16,96 @@ type DecoratedCertificateAuthorities struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *FetchCRLRequest) (rsp *FetchCRLResponse, err error) {
+func (s *DecoratedCertificateAuthorities) FetchCRL(ctx context.Context, req *FetchCRLRequest) (rsp *FetchCRLResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "FetchCRL", req)
+		newCtx, err = s.Prelude(ctx, "FetchCRL", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.FetchCRL(c, req)
+		rsp, err = s.Service.FetchCRL(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "FetchCRL", rsp, err)
+		err = s.Postlude(ctx, "FetchCRL", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *empty.Empty) (rsp *ListCAsResponse, err error) {
+func (s *DecoratedCertificateAuthorities) ListCAs(ctx context.Context, req *empty.Empty) (rsp *ListCAsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListCAs", req)
+		newCtx, err = s.Prelude(ctx, "ListCAs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListCAs(c, req)
+		rsp, err = s.Service.ListCAs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListCAs", rsp, err)
+		err = s.Postlude(ctx, "ListCAs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *GetCAStatusRequest) (rsp *GetCAStatusResponse, err error) {
+func (s *DecoratedCertificateAuthorities) GetCAStatus(ctx context.Context, req *GetCAStatusRequest) (rsp *GetCAStatusResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetCAStatus", req)
+		newCtx, err = s.Prelude(ctx, "GetCAStatus", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetCAStatus(c, req)
+		rsp, err = s.Service.GetCAStatus(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetCAStatus", rsp, err)
+		err = s.Postlude(ctx, "GetCAStatus", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (rsp *IsRevokedCertResponse, err error) {
+func (s *DecoratedCertificateAuthorities) IsRevokedCert(ctx context.Context, req *IsRevokedCertRequest) (rsp *IsRevokedCertResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "IsRevokedCert", req)
+		newCtx, err = s.Prelude(ctx, "IsRevokedCert", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.IsRevokedCert(c, req)
+		rsp, err = s.Service.IsRevokedCert(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "IsRevokedCert", rsp, err)
+		err = s.Postlude(ctx, "IsRevokedCert", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCertificateAuthorities) CheckCertificate(c context.Context, req *CheckCertificateRequest) (rsp *CheckCertificateResponse, err error) {
+func (s *DecoratedCertificateAuthorities) CheckCertificate(ctx context.Context, req *CheckCertificateRequest) (rsp *CheckCertificateResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CheckCertificate", req)
+		newCtx, err = s.Prelude(ctx, "CheckCertificate", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CheckCertificate(c, req)
+		rsp, err = s.Service.CheckCertificate(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CheckCertificate", rsp, err)
+		err = s.Postlude(ctx, "CheckCertificate", rsp, err)
 	}
 	return
 }

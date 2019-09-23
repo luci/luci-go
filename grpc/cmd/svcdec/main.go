@@ -17,7 +17,7 @@
 //
 //   type DecoratedXYZ struct {
 //     Service XYZServer
-//     Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+//     Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 //   }
 //
 // DecoratedXYZ has the same methods as XYZServer: they call Prelude before
@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/grpc/internal/svctool"
 )
 
-func generate(c context.Context, a *svctool.GeneratorArgs) error {
+func generate(ctx context.Context, a *svctool.GeneratorArgs) error {
 	args := templateArgs{
 		PackageName:  a.PackageName,
 		ExtraImports: a.ExtraImports,
