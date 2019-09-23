@@ -81,11 +81,12 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	if err != nil {
 		return nil, err
 	}
-	agent := spyOn(ctx, butler, opts.BaseBuild)
 	cleanup.add("butler", func() error {
 		butler.Activate()
 		return butler.Wait()
 	})
+
+	agent := spyOn(ctx, butler, opts.BaseBuild)
 	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
 		return nil
