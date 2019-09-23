@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b973acfa_267ce21f",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-23T15:01:27Z",
+      "side": 1,
+      "message": "This is not entirely accurate, as there are many test frameworks that use the JSON Test Results format.",
+      "range": {
+        "startLine": 131,
+        "startChar": 74,
+        "endLine": 131,
+        "endChar": 78
+      },
+      "revId": "66b14e521ebc57737d0e1947e389bb9c7c69fcfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
