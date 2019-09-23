@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a596d429_aa25e9f9",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T22:57:44Z",
+      "side": 1,
+      "message": "calculateURLs documents namespace as having the slash, so moved the .AsNamespace() call up to line 150 to have a slash in both locations.",
+      "range": {
+        "startLine": 153,
+        "startChar": 19,
+        "endLine": 153,
+        "endChar": 32
+      },
+      "revId": "fce64af6f5f60e1ea988199eacca0b6bd825780d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8b94a96b_cd52feb3",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T22:57:44Z",
+      "side": 1,
+      "message": "noop, just clearer",
+      "range": {
+        "startLine": 89,
+        "startChar": 10,
+        "endLine": 89,
+        "endChar": 15
+      },
+      "revId": "fce64af6f5f60e1ea988199eacca0b6bd825780d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93399b72_30be847e",
+        "filename": "luciexe/host/spy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T22:57:44Z",
+      "side": 1,
+      "message": "this isn\u0027t strictly necessary, but avoids aliasing host",
+      "range": {
+        "startLine": 152,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 11
+      },
+      "revId": "fce64af6f5f60e1ea988199eacca0b6bd825780d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4973f49_74569384",
+        "filename": "luciexe/host/spy_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T22:57:44Z",
+      "side": 1,
+      "message": "pretty much this comment",
+      "range": {
+        "startLine": 72,
+        "startChar": 6,
+        "endLine": 72,
+        "endChar": 15
+      },
+      "revId": "fce64af6f5f60e1ea988199eacca0b6bd825780d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
