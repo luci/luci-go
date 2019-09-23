@@ -452,6 +452,7 @@ func (c *GetBuildersCall) Header() http.Header {
 
 func (c *GetBuildersCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20190905")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -577,6 +578,7 @@ func (c *GetTaskDefCall) Header() http.Header {
 
 func (c *GetTaskDefCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20190905")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -702,6 +704,7 @@ func (c *SetNextBuildNumberCall) Header() http.Header {
 
 func (c *SetNextBuildNumberCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20190905")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
