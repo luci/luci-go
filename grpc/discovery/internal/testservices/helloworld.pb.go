@@ -10,6 +10,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -277,6 +279,14 @@ type GreeterServer interface {
 	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
 }
 
+// UnimplementedGreeterServer can be embedded to have forward compatible implementations.
+type UnimplementedGreeterServer struct {
+}
+
+func (*UnimplementedGreeterServer) SayHello(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+}
+
 func RegisterGreeterServer(s prpc.Registrar, srv GreeterServer) {
 	s.RegisterService(&_Greeter_serviceDesc, srv)
 }
@@ -355,6 +365,14 @@ func (c *calcClient) Multiply(ctx context.Context, in *MultiplyRequest, opts ...
 // CalcServer is the server API for Calc service.
 type CalcServer interface {
 	Multiply(context.Context, *MultiplyRequest) (*MultiplyResponse, error)
+}
+
+// UnimplementedCalcServer can be embedded to have forward compatible implementations.
+type UnimplementedCalcServer struct {
+}
+
+func (*UnimplementedCalcServer) Multiply(ctx context.Context, req *MultiplyRequest) (*MultiplyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Multiply not implemented")
 }
 
 func RegisterCalcServer(s prpc.Registrar, srv CalcServer) {
