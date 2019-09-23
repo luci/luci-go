@@ -14,62 +14,62 @@ type DecoratedBuildbot struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *MasterRequest) (rsp *CompressedMasterJSON, err error) {
+func (s *DecoratedBuildbot) GetCompressedMasterJSON(ctx context.Context, req *MasterRequest) (rsp *CompressedMasterJSON, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetCompressedMasterJSON", req)
+		newCtx, err = s.Prelude(ctx, "GetCompressedMasterJSON", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetCompressedMasterJSON(c, req)
+		rsp, err = s.Service.GetCompressedMasterJSON(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetCompressedMasterJSON", rsp, err)
+		err = s.Postlude(ctx, "GetCompressedMasterJSON", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *BuildbotBuildRequest) (rsp *BuildbotBuildJSON, err error) {
+func (s *DecoratedBuildbot) GetBuildbotBuildJSON(ctx context.Context, req *BuildbotBuildRequest) (rsp *BuildbotBuildJSON, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetBuildbotBuildJSON", req)
+		newCtx, err = s.Prelude(ctx, "GetBuildbotBuildJSON", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetBuildbotBuildJSON(c, req)
+		rsp, err = s.Service.GetBuildbotBuildJSON(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetBuildbotBuildJSON", rsp, err)
+		err = s.Postlude(ctx, "GetBuildbotBuildJSON", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(c context.Context, req *BuildbotBuildsRequest) (rsp *BuildbotBuildsJSON, err error) {
+func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(ctx context.Context, req *BuildbotBuildsRequest) (rsp *BuildbotBuildsJSON, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetBuildbotBuildsJSON", req)
+		newCtx, err = s.Prelude(ctx, "GetBuildbotBuildsJSON", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetBuildbotBuildsJSON(c, req)
+		rsp, err = s.Service.GetBuildbotBuildsJSON(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetBuildbotBuildsJSON", rsp, err)
+		err = s.Postlude(ctx, "GetBuildbotBuildsJSON", rsp, err)
 	}
 	return
 }

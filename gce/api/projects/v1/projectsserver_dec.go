@@ -16,79 +16,79 @@ type DecoratedProjects struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedProjects) Delete(c context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedProjects) Delete(ctx context.Context, req *DeleteRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "Delete", req)
+		newCtx, err = s.Prelude(ctx, "Delete", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.Delete(c, req)
+		rsp, err = s.Service.Delete(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "Delete", rsp, err)
+		err = s.Postlude(ctx, "Delete", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedProjects) Ensure(c context.Context, req *EnsureRequest) (rsp *Config, err error) {
+func (s *DecoratedProjects) Ensure(ctx context.Context, req *EnsureRequest) (rsp *Config, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "Ensure", req)
+		newCtx, err = s.Prelude(ctx, "Ensure", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.Ensure(c, req)
+		rsp, err = s.Service.Ensure(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "Ensure", rsp, err)
+		err = s.Postlude(ctx, "Ensure", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedProjects) Get(c context.Context, req *GetRequest) (rsp *Config, err error) {
+func (s *DecoratedProjects) Get(ctx context.Context, req *GetRequest) (rsp *Config, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "Get", req)
+		newCtx, err = s.Prelude(ctx, "Get", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.Get(c, req)
+		rsp, err = s.Service.Get(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "Get", rsp, err)
+		err = s.Postlude(ctx, "Get", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedProjects) List(c context.Context, req *ListRequest) (rsp *ListResponse, err error) {
+func (s *DecoratedProjects) List(ctx context.Context, req *ListRequest) (rsp *ListResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "List", req)
+		newCtx, err = s.Prelude(ctx, "List", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.List(c, req)
+		rsp, err = s.Service.List(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "List", rsp, err)
+		err = s.Postlude(ctx, "List", rsp, err)
 	}
 	return
 }
