@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "60f0d108_c12d7eb0",
+        "filename": "common/sync/dispatcher/coordinator.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T21:52:14Z",
+      "side": 1,
+      "message": "Let me take a stab at adding a test for this; I think it\u0027ll require adding a channel, but possibly not.",
+      "parentUuid": "01abe31b_c3234fb6",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 46
+      },
+      "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ee500a3_9fdbf4b5",
         "filename": "luciexe/host/host.go",
         "patchSetId": 1
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "+1 on all 3 counts. Shame on me for not suggesting doing so for the last 2 reasons earlier.",
       "parentUuid": "4ee500a3_9fdbf4b5",
+      "range": {
+        "startLine": 105,
+        "startChar": 1,
+        "endLine": 105,
+        "endChar": 12
+      },
+      "revId": "7773bf5db8fddc46de92c767fc95eaa51d3e6a41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b31faf16_1441bff4",
+        "filename": "luciexe/host/host.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T21:52:14Z",
+      "side": 1,
+      "message": "Well only reason 3 was relevant before; previously these were just bare defers, but now that cleanup does some logging, I wanted to add them to the cleanup slice.",
+      "parentUuid": "aa5f8c7e_e2b4f028",
       "range": {
         "startLine": 105,
         "startChar": 1,

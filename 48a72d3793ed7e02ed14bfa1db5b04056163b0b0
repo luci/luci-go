@@ -16,6 +16,24 @@
       "revId": "48a72d3793ed7e02ed14bfa1db5b04056163b0b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95e60441_a9b8f6a5",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-23T21:52:14Z",
+      "side": 0,
+      "message": "ah lol; I just noticed it was vestigial (when it used to be guarded with a lock) while adding debug prints in this area",
+      "parentUuid": "9db3ade5_d6bcd0bd",
+      "revId": "48a72d3793ed7e02ed14bfa1db5b04056163b0b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
