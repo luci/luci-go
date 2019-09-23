@@ -227,7 +227,11 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		logging.Debugf(c, "bot %q does not exist", task.Hostname)
 		return nil
 	}
-	// TODO(crbug/982840): swarming should perform de-duplication itself.
+	// 1 terminate task from GCE-P should normally suffice to terminate a bot,
+	// but in case users or bugs interfere, resend terminate task after 1 hour.
+	// Even if memcache content is cleared, more frequent terminate requests can
+	// now be handled by the swarming server and after crbug/982840 will be
+	// auto-deduped.
 	mi := memcache.NewItem(c, fmt.Sprintf("terminate-%s/%s", vm.Swarming, vm.Hostname))
 	if err := memcache.Get(c, mi); err == nil {
 		logging.Debugf(c, "bot %q already has terminate task from us", task.Hostname)
