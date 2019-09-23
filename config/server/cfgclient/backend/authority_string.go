@@ -4,6 +4,15 @@ package backend
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[AsAnonymous-0]
+	_ = x[AsService-1]
+	_ = x[AsUser-2]
+}
+
 const _Authority_name = "AsAnonymousAsServiceAsUser"
 
 var _Authority_index = [...]uint8{0, 11, 20, 26}
