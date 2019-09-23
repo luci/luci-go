@@ -37,9 +37,9 @@ func init() {
 	})
 }
 
-func enumPackagesMapper(c context.Context, _ mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func enumPackagesMapper(ctx context.Context, _ mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
 	for _, k := range keys {
-		logging.Infof(c, "Found package: %s", k.StringID())
+		logging.Infof(ctx, "Found package: %s", k.StringID())
 	}
 	return nil
 }

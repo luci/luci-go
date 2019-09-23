@@ -60,21 +60,21 @@ var signedURLsCache = layered.Cache{
 //
 // On failures returns grpc-annotated errors. In particular, if the requested
 // file is missing, returns NotFound grpc-annotated error.
-func getSignedURL(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
-	cached, err := signedURLsCache.GetOrCreate(c, gsPath, func() (interface{}, time.Duration, error) {
-		switch yes, err := gs.Exists(c, gsPath); {
+func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
+	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (interface{}, time.Duration, error) {
+		switch yes, err := gs.Exists(ctx, gsPath); {
 		case err != nil:
 			return nil, 0, errors.Annotate(err, "failed to check GS file presence").Err()
 		case !yes:
 			return "", absenceExpiration, nil
 		}
 
-		sig, err := signer(c)
+		sig, err := signer(ctx)
 		if err != nil {
 			return nil, 0, errors.Annotate(err, "can't create the signer").Err()
 		}
 
-		url, err := signURL(c, gsPath, sig, maxSignedURLExpiration)
+		url, err := signURL(ctx, gsPath, sig, maxSignedURLExpiration)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -114,7 +114,7 @@ func getSignedURL(c context.Context, gsPath, filename string, signer signerFacto
 }
 
 // signURL generates a signed GS URL using the signer.
-func signURL(c context.Context, gsPath string, signer *signer, expiry time.Duration) (string, error) {
+func signURL(ctx context.Context, gsPath string, signer *signer, expiry time.Duration) (string, error) {
 	// See https://cloud.google.com/storage/docs/access-control/signed-urls.
 	//
 	// Basically, we sign a specially crafted multi-line string that encodes
@@ -122,7 +122,7 @@ func signURL(c context.Context, gsPath string, signer *signer, expiry time.Durat
 	// Storage backend will construct the same string and verify that the provided
 	// signature matches it.
 
-	expires := fmt.Sprintf("%d", clock.Now(c).Add(expiry).Unix())
+	expires := fmt.Sprintf("%d", clock.Now(ctx).Add(expiry).Unix())
 
 	buf := &bytes.Buffer{}
 	fmt.Fprintf(buf, "GET\n")
@@ -131,7 +131,7 @@ func signURL(c context.Context, gsPath string, signer *signer, expiry time.Durat
 	fmt.Fprintf(buf, "%s\n", expires)
 	fmt.Fprintf(buf, "%s", gsPath)
 
-	_, sig, err := signer.SignBytes(c, buf.Bytes())
+	_, sig, err := signer.SignBytes(ctx, buf.Bytes())
 	if err != nil {
 		return "", errors.Annotate(err, "signBytes call failed").Err()
 	}

@@ -56,12 +56,12 @@ func (m *mapperDef) mapperID() mapper.ID {
 }
 
 // newMapper creates new instance of a mapping function.
-func (m *mapperDef) newMapper(c context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
+func (m *mapperDef) newMapper(ctx context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
 	cfg := &api.JobConfig{}
 	if err := proto.Unmarshal(j.Config.Params, cfg); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal JobConfig").Err()
 	}
-	return func(c context.Context, keys []*datastore.Key) error {
-		return m.Func(c, j.ID, cfg, keys)
+	return func(ctx context.Context, keys []*datastore.Key) error {
+		return m.Func(ctx, j.ID, cfg, keys)
 	}, nil
 }

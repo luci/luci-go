@@ -50,19 +50,19 @@ import (
 // the info log.
 type GoogleStorage interface {
 	// Exists checks whether given Google Storage file exists.
-	Exists(c context.Context, path string) (exists bool, err error)
+	Exists(ctx context.Context, path string) (exists bool, err error)
 
 	// Copy copies a file at 'src' to 'dst'.
 	//
 	// Applies ifSourceGenerationMatch and ifGenerationMatch preconditions if
 	// srcGen or dstGen are non-negative. See Google Storage docs:
 	// https://cloud.google.com/storage/docs/json_api/v1/objects/copy
-	Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error
+	Copy(ctx context.Context, dst string, dstGen int64, src string, srcGen int64) error
 
 	// Delete removes a file.
 	//
 	// Missing file is not an error.
-	Delete(c context.Context, path string) error
+	Delete(ctx context.Context, path string) error
 
 	// Publish implements conditional copy operation with some caveats, making it
 	// useful for moving uploaded files from a temporary storage area after they
@@ -77,7 +77,7 @@ type GoogleStorage interface {
 	//
 	// Note that it keeps 'src' intact. Use Delete to get rid of it when
 	// necessary. Google Storage doesn't have atomic "move" operation.
-	Publish(c context.Context, dst, src string, srcGen int64) error
+	Publish(ctx context.Context, dst, src string, srcGen int64) error
 
 	// StartUpload opens a new resumable upload session to a given path.
 	//
@@ -86,15 +86,15 @@ type GoogleStorage interface {
 	//
 	// The upload protocol is finished by the CIPD client, and so it's not
 	// implemented here.
-	StartUpload(c context.Context, path string) (uploadURL string, err error)
+	StartUpload(ctx context.Context, path string) (uploadURL string, err error)
 
 	// CancelUpload cancels a resumable upload session.
-	CancelUpload(c context.Context, uploadURL string) error
+	CancelUpload(ctx context.Context, uploadURL string) error
 
 	// Reader returns an io.ReaderAt implementation to read contents of a file at
 	// a specific generation (if 'gen' is positive) or at the current live
 	// generation (if 'gen' is zero or negative).
-	Reader(c context.Context, path string, gen int64) (Reader, error)
+	Reader(ctx context.Context, path string, gen int64) (Reader, error)
 }
 
 // Reader can read chunks of a Google Storage file.
@@ -111,7 +111,7 @@ type Reader interface {
 
 // impl is actual implementation of GoogleStorage using real API.
 type impl struct {
-	c context.Context
+	ctx context.Context
 
 	testingTransport http.RoundTripper // used in tests to mock the transport
 	testingBasePath  string            // used in tests to mock Google Storage URL
@@ -130,8 +130,8 @@ type impl struct {
 // outlive it. Each individual method still accepts a context though, which
 // can be a derivative of the root context (for example to provide custom
 // per-method deadline or logging fields).
-func Get(c context.Context) GoogleStorage {
-	return &impl{c: c}
+func Get(ctx context.Context) GoogleStorage {
+	return &impl{ctx: ctx}
 }
 
 func (gs *impl) init() error {
@@ -140,7 +140,7 @@ func (gs *impl) init() error {
 
 		tr := gs.testingTransport
 		if tr == nil {
-			tr, err = auth.GetRPCTransport(gs.c, auth.AsSelf, auth.WithScopes(storage.CloudPlatformScope))
+			tr, err = auth.GetRPCTransport(gs.ctx, auth.AsSelf, auth.WithScopes(storage.CloudPlatformScope))
 			if err != nil {
 				gs.err = errors.Annotate(err, "failed to get authenticating transport").
 					Tag(transient.Tag).Err()
@@ -160,16 +160,16 @@ func (gs *impl) init() error {
 	return gs.err
 }
 
-func (gs *impl) Exists(c context.Context, path string) (exists bool, err error) {
-	logging.Infof(c, "gs: Exists(path=%q)", path)
+func (gs *impl) Exists(ctx context.Context, path string) (exists bool, err error) {
+	logging.Infof(ctx, "gs: Exists(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return false, err
 	}
 
 	// Fetch and discard object metadata, we are interested in HTTP 404 reply.
 	// There's no faster way to check the object presence.
-	call := gs.srv.Objects.Get(SplitPath(path)).Context(c)
-	switch err := withRetry(c, func() error { _, err = call.Do(); return err }); {
+	call := gs.srv.Objects.Get(SplitPath(path)).Context(ctx)
+	switch err := withRetry(ctx, func() error { _, err = call.Do(); return err }); {
 	case err == nil:
 		return true, nil
 	case StatusCode(err) == http.StatusNotFound:
@@ -179,8 +179,8 @@ func (gs *impl) Exists(c context.Context, path string) (exists bool, err error) 
 	}
 }
 
-func (gs *impl) Copy(c context.Context, dst string, dstGen int64, src string, srcGen int64) error {
-	logging.Infof(c, "gs: Copy(dst=%q, dstGen=%d, src=%q, srcGen=%d)", dst, dstGen, src, srcGen)
+func (gs *impl) Copy(ctx context.Context, dst string, dstGen int64, src string, srcGen int64) error {
+	logging.Infof(ctx, "gs: Copy(dst=%q, dstGen=%d, src=%q, srcGen=%d)", dst, dstGen, src, srcGen)
 	if err := gs.init(); err != nil {
 		return err
 	}
@@ -188,32 +188,32 @@ func (gs *impl) Copy(c context.Context, dst string, dstGen int64, src string, sr
 	srcBucket, srcPath := SplitPath(src)
 	dstBucket, dstPath := SplitPath(dst)
 
-	call := gs.srv.Objects.Copy(srcBucket, srcPath, dstBucket, dstPath, nil).Context(c)
+	call := gs.srv.Objects.Copy(srcBucket, srcPath, dstBucket, dstPath, nil).Context(ctx)
 	if srcGen >= 0 {
 		call.IfSourceGenerationMatch(srcGen)
 	}
 	if dstGen >= 0 {
 		call.IfGenerationMatch(dstGen)
 	}
-	return withRetry(c, func() error { _, err := call.Do(); return err })
+	return withRetry(ctx, func() error { _, err := call.Do(); return err })
 }
 
-func (gs *impl) Delete(c context.Context, path string) error {
-	logging.Infof(c, "gs: Delete(path=%q)", path)
+func (gs *impl) Delete(ctx context.Context, path string) error {
+	logging.Infof(ctx, "gs: Delete(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return err
 	}
 
-	call := gs.srv.Objects.Delete(SplitPath(path)).Context(c)
-	err := withRetry(c, func() error { return call.Do() })
+	call := gs.srv.Objects.Delete(SplitPath(path)).Context(ctx)
+	err := withRetry(ctx, func() error { return call.Do() })
 	if err == nil || StatusCode(err) == http.StatusNotFound {
 		return nil
 	}
 	return err
 }
 
-func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error {
-	err := gs.Copy(c, dst, 0, src, srcGen)
+func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) error {
+	err := gs.Copy(ctx, dst, 0, src, srcGen)
 	if err == nil {
 		return nil
 	}
@@ -241,7 +241,7 @@ func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error 
 		return errors.Annotate(err, "failed to copy the object").Err()
 	}
 
-	switch exists, dstErr := gs.Exists(c, dst); {
+	switch exists, dstErr := gs.Exists(ctx, dst); {
 	case dstErr != nil:
 		return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
 	case !exists && code == http.StatusNotFound:
@@ -257,8 +257,8 @@ func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error 
 	return nil // 'dst' exists, Publish is considered successful
 }
 
-func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, err error) {
-	logging.Infof(c, "gs: StartUpload(path=%q)", path)
+func (gs *impl) StartUpload(ctx context.Context, path string) (uploadURL string, err error) {
+	logging.Infof(ctx, "gs: StartUpload(path=%q)", path)
 	if err := gs.init(); err != nil {
 		return "", err
 	}
@@ -293,9 +293,9 @@ func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, e
 		u.Host = testingURL.Host
 	}
 
-	err = withRetry(c, func() error {
+	err = withRetry(ctx, func() error {
 		req, _ := http.NewRequest("POST", u.String(), nil)
-		resp, err := ctxhttp.Do(c, gs.client, req)
+		resp, err := ctxhttp.Do(ctx, gs.client, req)
 		if err != nil {
 			return err
 		}
@@ -314,15 +314,15 @@ func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, e
 	return uploadURL, nil
 }
 
-func (gs *impl) CancelUpload(c context.Context, uploadURL string) error {
-	logging.Infof(c, "gs: CancelUpload(uploadURL=%q)", uploadURL)
+func (gs *impl) CancelUpload(ctx context.Context, uploadURL string) error {
+	logging.Infof(ctx, "gs: CancelUpload(uploadURL=%q)", uploadURL)
 	if err := gs.init(); err != nil {
 		return err
 	}
 
-	err := withRetry(c, func() error {
+	err := withRetry(ctx, func() error {
 		req, _ := http.NewRequest("DELETE", uploadURL, nil)
-		resp, err := ctxhttp.Do(c, gs.client, req)
+		resp, err := ctxhttp.Do(ctx, gs.client, req)
 		if err != nil {
 			return err
 		}
@@ -344,20 +344,20 @@ func (gs *impl) CancelUpload(c context.Context, uploadURL string) error {
 // Reader returns an io.ReaderAt implementation to read contents of a file at
 // a specific generation (if 'gen' is positive) or at the current live
 // generation (if 'gen' is zero or negative).
-func (gs *impl) Reader(c context.Context, path string, gen int64) (Reader, error) {
-	logging.Infof(c, "gs: Reader(path=%q, gen=%d)", path, gen)
+func (gs *impl) Reader(ctx context.Context, path string, gen int64) (Reader, error) {
+	logging.Infof(ctx, "gs: Reader(path=%q, gen=%d)", path, gen)
 	if err := gs.init(); err != nil {
 		return nil, err
 	}
 
 	// Fetch the object metadata, including its size and the generation number
 	// (which is useful when 'gen' is <= 0).
-	call := gs.srv.Objects.Get(SplitPath(path)).Context(c)
+	call := gs.srv.Objects.Get(SplitPath(path)).Context(ctx)
 	if gen > 0 {
 		call.Generation(gen)
 	}
 	var obj *storage.Object
-	err := withRetry(c, func() (err error) { obj, err = call.Do(); return })
+	err := withRetry(ctx, func() (err error) { obj, err = call.Do(); return })
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to grab the object size and generation").Err()
 	}
@@ -365,14 +365,14 @@ func (gs *impl) Reader(c context.Context, path string, gen int64) (Reader, error
 	// Carry on reading from the resolved generation. That way we are not
 	// concerned with concurrent changes that may be happening to the file while
 	// we are reading it.
-	return &readerImpl{c, gs, path, int64(obj.Size), obj.Generation}, nil
+	return &readerImpl{ctx, gs, path, int64(obj.Size), obj.Generation}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 // readerImpl implements Reader using real APIs.
 type readerImpl struct {
-	c    context.Context
+	ctx  context.Context
 	gs   *impl
 	path string
 	size int64
@@ -391,15 +391,15 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		return 0, io.EOF
 	}
 
-	logging.Debugf(r.c, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d)", r.path, off, toRead, r.gen)
+	logging.Debugf(r.ctx, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d)", r.path, off, toRead, r.gen)
 	if err := r.gs.init(); err != nil {
 		return 0, err
 	}
 
-	call := r.gs.srv.Objects.Get(SplitPath(r.path)).Context(r.c).Generation(r.gen)
+	call := r.gs.srv.Objects.Get(SplitPath(r.path)).Context(r.ctx).Generation(r.gen)
 	call.Header().Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+toRead-1))
 
-	err = withRetry(r.c, func() error {
+	err = withRetry(r.ctx, func() error {
 		n = 0
 		// 'Download' is magic. Unlike regular call.Do(), it will append alt=media
 		// to the request string, thus asking GS to return the object body instead
