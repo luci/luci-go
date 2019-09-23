@@ -46,8 +46,8 @@ func init() {
 	})
 }
 
-func findMalformedTagsMapper(c context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
-	return visitAndMarkTags(c, job, keys, func(t *model.Tag) string {
+func findMalformedTagsMapper(ctx context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+	return visitAndMarkTags(ctx, job, keys, func(t *model.Tag) string {
 		if err := common.ValidateInstanceTag(t.Tag); err != nil {
 			return err.Error()
 		}
@@ -55,12 +55,12 @@ func findMalformedTagsMapper(c context.Context, job mapper.JobID, _ *api.JobConf
 	})
 }
 
-func fixMarkedTags(c context.Context, job mapper.JobID) (fixed []*api.TagFixReport_Tag, err error) {
-	c, cancel := clock.WithTimeout(c, time.Minute)
+func fixMarkedTags(ctx context.Context, job mapper.JobID) (fixed []*api.TagFixReport_Tag, err error) {
+	ctx, cancel := clock.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
 	var marked []markedTag
-	if err := datastore.GetAll(c, queryMarkedTags(job), &marked); err != nil {
+	if err := datastore.GetAll(ctx, queryMarkedTags(job), &marked); err != nil {
 		return nil, errors.Annotate(err, "failed to query marked tags").Tag(transient.Tag).Err()
 	}
 
@@ -82,8 +82,8 @@ func fixMarkedTags(c context.Context, job mapper.JobID) (fixed []*api.TagFixRepo
 			root := keys[0].Root()
 			tasks <- func() error {
 				var fixedHere []*api.TagFixReport_Tag
-				err := datastore.RunInTransaction(c, func(c context.Context) (err error) {
-					fixedHere, err = txnFixTagsInEG(c, keys)
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) (err error) {
+					fixedHere, err = txnFixTagsInEG(ctx, keys)
 					return err
 				}, nil)
 				if err != nil {
@@ -99,15 +99,15 @@ func fixMarkedTags(c context.Context, job mapper.JobID) (fixed []*api.TagFixRepo
 	return fixed, transient.Tag.Apply(err)
 }
 
-func txnFixTagsInEG(c context.Context, keys []*datastore.Key) (report []*api.TagFixReport_Tag, err error) {
-	err = multiGetTags(c, keys, func(key *datastore.Key, tag *model.Tag) error {
+func txnFixTagsInEG(ctx context.Context, keys []*datastore.Key) (report []*api.TagFixReport_Tag, err error) {
+	err = multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		out := &api.TagFixReport_Tag{
 			Pkg:       key.Parent().Parent().StringID(),
 			Instance:  key.Parent().StringID(),
 			BrokenTag: tag.Tag,
 		}
 		if common.ValidateInstanceTag(tag.Tag) == nil {
-			logging.Infof(c, "In %s:%s - skipping tag %q, it is not broken anymore", out.Pkg, out.Instance, tag.Tag)
+			logging.Infof(ctx, "In %s:%s - skipping tag %q, it is not broken anymore", out.Pkg, out.Instance, tag.Tag)
 			return nil
 		}
 
@@ -118,7 +118,7 @@ func txnFixTagsInEG(c context.Context, keys []*datastore.Key) (report []*api.Tag
 		}
 
 		// Delete the old tag no matter what, it is broken.
-		if err := datastore.Delete(c, key); err != nil {
+		if err := datastore.Delete(ctx, key); err != nil {
 			return errors.Annotate(err, "failed to delete the tag %s", key).Err()
 		}
 
@@ -127,13 +127,13 @@ func txnFixTagsInEG(c context.Context, keys []*datastore.Key) (report []*api.Tag
 			fixedTag := *tag
 			fixedTag.ID = model.TagID(fixed)
 			fixedTag.Tag = common.JoinInstanceTag(fixed)
-			logging.Infof(c, "In %s:%s - replacing tag %q => %q", out.Pkg, out.Instance, tag.Tag, fixedTag.Tag)
-			if err := datastore.Put(c, &fixedTag); err != nil {
+			logging.Infof(ctx, "In %s:%s - replacing tag %q => %q", out.Pkg, out.Instance, tag.Tag, fixedTag.Tag)
+			if err := datastore.Put(ctx, &fixedTag); err != nil {
 				return errors.Annotate(err, "failed to create a fixed tag %s instead of %s", fixedTag.Tag, key).Err()
 			}
 			out.FixedTag = fixedTag.Tag
 		} else {
-			logging.Infof(c, "In %s:%s - deleting tag %q", out.Pkg, out.Instance, tag.Tag)
+			logging.Infof(ctx, "In %s:%s - deleting tag %q", out.Pkg, out.Instance, tag.Tag)
 		}
 
 		// Record what we have done for the API response. No need for a lock,
