@@ -16,6 +16,24 @@
       "revId": "92da9e362dc0d4a2fdb69c41ac4ca9e190251f0c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3668b971_3ef63607",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-23T15:02:12Z",
+      "side": 1,
+      "message": "It seems that ActualRaw/Actual, ExpectedRaw/ExpectedSet, and Time(s)/AllDurations in TestFields are not so different from TestsRaw/Tests in JSONTestResults?\n\nAt any rate, though, I\u0027ve adjusted things in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1817643 to avoid introducing these fields --- if you prefer the direction of that, then I\u0027ll mark this CL as abandoned. (Yes, the desired format at the end of the day is the protos themselves, which is covered by that linked CL.)",
+      "parentUuid": "557b9d09_68e9e169",
+      "revId": "92da9e362dc0d4a2fdb69c41ac4ca9e190251f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
