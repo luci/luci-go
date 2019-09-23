@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "18d20a09_6b098537",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-23T19:55:28Z",
+      "side": 1,
+      "message": "LUCI codebase has an idiom for expressing this kind of stuff which should be used here (since cipd is part of LUCI codebase): https://cs.chromium.org/search/?q\u003dparallel.WorkPool\u0026sq\u003dpackage:chromium\u0026type\u003dcs",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 247,
+        "endChar": 0
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a26cec84_a4a79a46",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-23T19:55:28Z",
+      "side": 1,
+      "message": "This line is responsible for aborting the extraction when the context is closed (in particular on Ctrl+C I believe). Each individual parallel task should now check this too, otherwise Ctrl+C will \"lag\" until the queue is fully drained (i.e. all files are extracted).",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 257,
+        "endChar": 3
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a4becd0_905dcb3f",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-23T19:55:28Z",
+      "side": 1,
+      "message": "Order of files in the manifest has some importance for various edge cases in Deployer, better to preserve it to avoid heisenbugs.",
+      "range": {
+        "startLine": 305,
+        "startChar": 1,
+        "endLine": 305,
+        "endChar": 27
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "950e0190_01d7fe7e",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-23T19:55:28Z",
+      "side": 1,
+      "message": "nit: either change to 0.5 or return back 2 sec below",
+      "range": {
+        "startLine": 391,
+        "startChar": 63,
+        "endLine": 391,
+        "endChar": 64
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
