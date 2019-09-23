@@ -17,70 +17,97 @@ package formats
 import (
 	"bytes"
 	"context"
+	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestConversion(t *testing.T) {
+func TestJSONConversions(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	buf := []byte(
-		`{
-				"version": 3,
-				"interrupted": false,
-				"path_delimiter": "::",
-				"seconds_since_epoch": 1565504423,
-				"tests": {
-					"c1": {
+
+	Convey(`From JSON works`, t, func() {
+		buf := []byte(
+			`{
+					"version": 3,
+					"interrupted": false,
+					"path_delimiter": "::",
+					"metadata": {"test_name_prefix": "prefix."},
+					"builder_name": "Linux Tests",
+					"build_number": "82046",
+					"tests": {
+						"c1": {
+							"c2": {
+								"t1.html": {
+									"actual": "PASS PASS PASS",
+									"expected": "PASS",
+									"time": 0.3,
+									"times": [ 0.2, 0.1 ]
+								},
+								"t2.html": {
+									"actual": "PASS FAIL PASS",
+									"expected": "PASS FAIL",
+									"times": [ 0.05 ]
+								}
+							}
+						},
 						"c2": {
-							"t1.html": {
-								"actual": "PASS",
-								"expected": "PASS",
-								"times": [ 0.2, 0.1 ]
-							},
-							"t2.html": {
-								"actual": "PASS",
-								"expected": "FAIL",
-								"times": [ 0.05 ]
+							"t3.html": {
+								"actual": "FAIL",
+								"expected": "PASS"
 							}
 						}
-					},
-					"c2": {
-						"t3.html": {
-							"actual": "FAIL",
-							"expected": "PASS",
-							"times": [ 0.3, 0.4 ]
-						}
 					}
-				}
-			}`)
+				}`)
 
-	Convey(`Works`, t, func() {
-		results, err := ConvertFromJSON(ctx, bytes.NewReader(buf))
-		So(err, ShouldBeNil)
-		So(results, ShouldNotBeNil)
-		So(results.Version, ShouldEqual, 3)
-		So(results.Interrupted, ShouldEqual, false)
-		So(results.PathDelimiter, ShouldEqual, "::")
-		So(results.SecondsSinceEpoch, ShouldEqual, 1565504423)
-		So(results.Tests, ShouldResemble, map[string]*TestFields{
-			"c1::c2::t1.html": {Actual: "PASS", Expected: "PASS", Times: []float64{0.2, 0.1}},
-			"c1::c2::t2.html": {Actual: "PASS", Expected: "FAIL", Times: []float64{0.05}},
-			"c2::t3.html":     {Actual: "FAIL", Expected: "PASS", Times: []float64{0.3, 0.4}},
-		})
-
-		Convey(`with default path delimiter`, func() {
-			// Clear the delimiter and already processed and flattened tests.
-			results.PathDelimiter = ""
-			results.Tests = make(map[string]*TestFields)
-
-			err := results.convertTests("", results.TestsRaw)
+		Convey(`Works`, func() {
+			results := &JSONTestResults{}
+			err := results.ConvertFromJSON(ctx, bytes.NewReader(buf))
 			So(err, ShouldBeNil)
 			So(results, ShouldNotBeNil)
+			So(results.Version, ShouldEqual, 3)
+			So(results.Interrupted, ShouldEqual, false)
+			So(results.PathDelimiter, ShouldEqual, "::")
+			So(results.BuildNumber, ShouldEqual, "82046")
+			So(results.BuilderName, ShouldEqual, "Linux Tests")
 			So(results.Tests, ShouldResemble, map[string]*TestFields{
-				"c1/c2/t1.html": {Actual: "PASS", Expected: "PASS", Times: []float64{0.2, 0.1}},
-				"c1/c2/t2.html": {Actual: "PASS", Expected: "FAIL", Times: []float64{0.05}},
-				"c2/t3.html":    {Actual: "FAIL", Expected: "PASS", Times: []float64{0.3, 0.4}},
+				"prefix.c1::c2::t1.html": {
+					Actual:   "PASS PASS PASS",
+					Expected: "PASS",
+					Time:     0.3,
+					Times:    []float64{0.2, 0.1},
+				},
+				"prefix.c1::c2::t2.html": {
+					Actual:   "PASS FAIL PASS",
+					Expected: "PASS FAIL",
+					Times:    []float64{0.05},
+				},
+				"prefix.c2::t3.html": {
+					Actual:   "FAIL",
+					Expected: "PASS",
+				},
+			})
+
+			Convey(`with default path delimiter`, func() {
+				// Clear the delimiter and already processed and flattened tests.
+				results.PathDelimiter = ""
+				results.Tests = make(map[string]*TestFields)
+
+				err := results.convertTests("", results.TestsRaw)
+				So(err, ShouldBeNil)
+				So(results, ShouldNotBeNil)
+
+				paths := make([]string, 0, len(results.Tests))
+				for path := range results.Tests {
+					paths = append(paths, path)
+				}
+				sort.Slice(paths, func(i, j int) bool { return paths[i] < paths[j] })
+				So(paths, ShouldResemble, []string{
+					"prefix.c1/c2/t1.html",
+					"prefix.c1/c2/t2.html",
+					"prefix.c2/t3.html",
+				})
 			})
 		})
 	})
