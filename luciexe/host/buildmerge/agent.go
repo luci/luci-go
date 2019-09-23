@@ -147,6 +147,8 @@ type Agent struct {
 // The frequency of updates from this Agent is governed by how quickly the
 // caller consumes from Agent.MergedBuildC.
 func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, calculateURLs CalcURLFn) *Agent {
+	userNamespace = userNamespace.AsNamespace()
+
 	ch := make(chan *bbpb.Build)
 	userRootURL, _ := calculateURLs(userNamespace, luciexe.BuildProtoStreamSuffix)
 
@@ -158,7 +160,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 		mergedBuildC:  ch,
 		states:        map[string]*buildStateTracker{},
 		calculateURLs: calculateURLs,
-		userNamespace: userNamespace.AsNamespace(),
+		userNamespace: userNamespace,
 		userRootURL:   userRootURL,
 		baseBuild:     proto.Clone(base).(*bbpb.Build),
 	}

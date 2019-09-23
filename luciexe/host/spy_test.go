@@ -18,19 +18,29 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
 
-	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpy(t *testing.T) {
 	Convey(`test build spy environment`, t, func() {
 		ctx, closer := testCtx()
 		defer closer()
+
+		sawBuild := false
+		sawBuildC := make(chan struct{})
+		defer func() {
+			if !sawBuild {
+				close(sawBuildC)
+			}
+		}()
 
 		Convey(`butler active within Run`, func(c C) {
 			ch, err := Run(ctx, nil, func(ctx context.Context) error {
@@ -52,13 +62,36 @@ func TestSpy(t *testing.T) {
 				c.So(err, ShouldBeNil)
 				c.So(stream.Close(), ShouldBeNil)
 
+				// NOTE: This is very much cheating. Currently (Sept 2019) there's a bug
+				// in Logdog Butler (crbug.com/1007022) where the butler protocol is TOO
+				// asynchronous, and it's possible for this entire callback to execute
+				// and return before the butler has registered the stream above.
+				//
+				// Without sawBuildC, it's possible that Run() will close the "u/"
+				// namespace before the butler sees the stream that we just opened.
+				<-sawBuildC
+
 				return nil
 			})
 
 			So(err, ShouldBeNil)
-			for range ch {
-				// TODO(iannucci): actually evaluate the builds here
+			for build := range ch {
+				if build.EndTime != nil && !sawBuild {
+					build := proto.Clone(build).(*bbpb.Build)
+					So(build.UpdateTime, ShouldNotBeNil)
+					So(build.EndTime, ShouldNotBeNil)
+					build.UpdateTime = nil
+					build.EndTime = nil
+
+					So(build, ShouldResembleProto, &bbpb.Build{
+						SummaryMarkdown: "we did it",
+						Status:          bbpb.Status_SUCCESS,
+					})
+					close(sawBuildC)
+					sawBuild = true
+				}
 			}
+			So(sawBuild, ShouldBeTrue)
 		})
 
 	})

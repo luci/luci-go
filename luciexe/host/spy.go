@@ -99,7 +99,7 @@ func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) *spy {
 	return &spy{
 		MergedBuildC:  fwdChan,
 		Close:         builds.Close,
-		UserNamespace: types.StreamName(userNamespace),
+		UserNamespace: types.StreamName(userNamespace).AsNamespace(),
 	}
 }
 
@@ -149,15 +149,16 @@ func mkURLCalcFn() buildmerge.CalcURLFn {
 	host := os.Getenv(bootstrap.EnvCoordinatorHost)
 
 	if strings.HasPrefix(host, "file://") {
-		if !strings.HasSuffix(host, "/") {
-			host += "/"
+		hostSlash := host
+		if !strings.HasSuffix(hostSlash, "/") {
+			hostSlash += "/"
 		}
 
-		viewURLPrefix := filepath.FromSlash(host)
+		viewURLPrefix := filepath.FromSlash(hostSlash)
 
 		return func(ns, streamName types.StreamName) (url string, viewURL string) {
 			fullStreamName := string(ns + streamName)
-			url = host + filepath.FromSlash(fullStreamName)
+			url = hostSlash + filepath.FromSlash(fullStreamName)
 			// TODO(iannucci): actually implement strict types.StreamName -> (url,
 			// filesystem) mapping. Currently ':' is a permitted character, which is
 			// not legal on Windows file systems. Fortunately stream names must begin
