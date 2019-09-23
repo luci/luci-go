@@ -16,7 +16,6 @@ package authdb
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -30,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/certs"
+	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
 	"go.chromium.org/luci/server/auth/authdb/internal/seccfg"
@@ -39,13 +39,15 @@ import (
 //
 // Use NewSnapshotDB to create new instances. Don't touch public fields
 // of existing instances.
+//
+// Zero value represents an empty AuthDB.
 type SnapshotDB struct {
 	AuthServiceURL string // where it was fetched from
 	Rev            int64  // its revision number
 
+	groups         *graph.QueryableGraph  // queryable representation of groups
 	clientIDs      oauthid.Whitelist      // set of allowed client IDs
 	whitelistedIPs ipaddr.Whitelist       // set of named IP whitelists
-	groups         map[string]*group      // map of all known groups
 	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
 
 	tokenServiceURL   string       // URL of the token server as provided by Auth service
@@ -53,14 +55,6 @@ type SnapshotDB struct {
 }
 
 var _ DB = &SnapshotDB{}
-
-// group is a node in a group graph. Nested groups are referenced directly via
-// pointer.
-type group struct {
-	members map[identity.Identity]struct{} // set of all members
-	globs   []identity.Glob                // list of all identity globs
-	nested  []*group                       // pointers to nested groups
-}
 
 // Revision returns a revision of an auth DB or 0 if it can't be determined.
 //
@@ -105,62 +99,31 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		}
 	}
 
+	groups, err := graph.BuildQueryable(authDB.Groups)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to build groups graph").Err()
+	}
+
 	ipWL, err := ipaddr.NewWhitelist(authDB.IpWhitelists, authDB.IpWhitelistAssignments)
 	if err != nil {
-		return nil, fmt.Errorf("auth: bad IP whitelists in AuthDB - %s", err)
+		return nil, errors.Annotate(err, "bad IP whitelists in AuthDB").Err()
 	}
 
 	securityCfg, err := seccfg.Parse(authDB.SecurityConfig)
 	if err != nil {
-		return nil, fmt.Errorf("auth: bad SecurityConfig - %s", err)
+		return nil, errors.Annotate(err, "bad SecurityConfig").Err()
 	}
 
-	db := &SnapshotDB{
+	return &SnapshotDB{
 		AuthServiceURL:    authServiceURL,
 		Rev:               rev,
+		groups:            groups,
 		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
 		whitelistedIPs:    ipWL,
 		securityCfg:       securityCfg,
 		tokenServiceURL:   authDB.TokenServerUrl,
 		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
-	}
-
-	// First pass: build all `group` nodes.
-	db.groups = make(map[string]*group, len(authDB.Groups))
-	for _, g := range authDB.Groups {
-		if db.groups[g.Name] != nil {
-			return nil, fmt.Errorf("auth: bad AuthDB, group %q is listed twice", g.Name)
-		}
-		gr := &group{}
-		if len(g.Members) != 0 {
-			gr.members = make(map[identity.Identity]struct{}, len(g.Members))
-			for _, ident := range g.Members {
-				gr.members[identity.Identity(ident)] = struct{}{}
-			}
-		}
-		if len(g.Globs) != 0 {
-			gr.globs = make([]identity.Glob, len(g.Globs))
-			for i, glob := range g.Globs {
-				gr.globs[i] = identity.Glob(glob)
-			}
-		}
-		if len(g.Nested) != 0 {
-			gr.nested = make([]*group, 0, len(g.Nested))
-		}
-		db.groups[g.Name] = gr
-	}
-
-	// Second pass: fill in `nested` with pointers, now that we have them.
-	for _, g := range authDB.Groups {
-		gr := db.groups[g.Name]
-		for _, nestedName := range g.Nested {
-			if nestedGroup := db.groups[nestedName]; nestedGroup != nil {
-				gr.nested = append(gr.nested, nestedGroup)
-			}
-		}
-	}
-
-	return db, nil
+	}, nil
 }
 
 // IsAllowedOAuthClientID returns true if the given OAuth2 client ID can be used
@@ -175,7 +138,10 @@ func (db *SnapshotDB) IsAllowedOAuthClientID(_ context.Context, email, clientID 
 // What hosts are internal is controlled by 'internal_service_regexp' setting
 // in security.cfg in the Auth Service configs.
 func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (bool, error) {
-	return db.securityCfg.IsInternalService(hostname), nil
+	if db.securityCfg != nil {
+		return db.securityCfg.IsInternalService(hostname), nil
+	}
+	return false, nil
 }
 
 // IsMember returns true if the given identity belongs to any of the groups.
@@ -183,12 +149,12 @@ func (db *SnapshotDB) IsInternalService(c context.Context, hostname string) (boo
 // Unknown groups are considered empty. May return errors if underlying
 // datastore has issues.
 func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups []string) (bool, error) {
+	if db.groups == nil {
+		return false, nil
+	}
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
-		switch found, err := db.isMemberImpl(c, id, gr); {
-		case err != nil:
-			return false, err
-		case found:
+		if db.groups.IsMember(id, gr) {
 			return true, nil
 		}
 	}
@@ -205,93 +171,16 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups [
 //
 // May return errors if underlying datastore has issues.
 func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, groups []string) (out []string, err error) {
+	if db.groups == nil {
+		return
+	}
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
-		switch found, err := db.isMemberImpl(c, id, gr); {
-		case err != nil:
-			return nil, err
-		case found:
+		if db.groups.IsMember(id, gr) {
 			out = append(out, gr)
 		}
 	}
 	return
-}
-
-// isMemberImpl implements IsMember check for a single group only.
-func (db *SnapshotDB) isMemberImpl(c context.Context, id identity.Identity, groupName string) (bool, error) {
-	// Cycle detection check uses a stack of groups currently being explored. Use
-	// stack allocated array as a backing store to avoid unnecessary dynamic
-	// allocation. If stack depth grows beyond 8, 'append' will reallocate it on
-	// the heap.
-	var backingStore [8]*group
-	current := backingStore[:0]
-
-	// Keep a set of all visited groups to avoid revisiting them in case of a
-	// diamond-like graph, e.g A -> B, A -> C, B -> D, C -> D (we don't need to
-	// visit D twice in this case).
-	visited := make(map[*group]struct{}, 10)
-
-	// isMember is used to recurse over nested groups.
-	var isMember func(*group) bool
-
-	isMember = func(gr *group) bool {
-		// 'id' is a direct member?
-		if _, ok := gr.members[id]; ok {
-			return true
-		}
-
-		// 'id' matches some glob?
-		for _, glob := range gr.globs {
-			if glob.Match(id) {
-				return true
-			}
-		}
-
-		if len(gr.nested) == 0 {
-			return false
-		}
-
-		current = append(current, gr) // popped before return
-
-		found := false
-
-	outer_loop:
-		for _, nested := range gr.nested {
-			// There should be no cycles, but do the check just in case there are,
-			// seg faulting with stack overflow is very bad. In case of a cycle, skip
-			// the offending group, but keep searching other groups.
-			for _, ancestor := range current {
-				if ancestor == nested {
-					logging.Errorf(c, "auth: unexpected group nesting cycle in group %q", groupName)
-					continue outer_loop
-				}
-			}
-
-			// Explored 'nested' already (and didn't find anything) while visiting
-			// some sibling branch? Skip.
-			if _, seen := visited[nested]; seen {
-				continue
-			}
-
-			if isMember(nested) {
-				found = true
-				break
-			}
-		}
-
-		// Note that we don't use defers here since they have non-negligible runtime
-		// cost. Using 'defer' here makes IsMember ~1.7x slower (1200 ns vs 700 ns),
-		// See BenchmarkIsMember.
-		current = current[:len(current)-1]
-		visited[gr] = struct{}{}
-
-		return found
-	}
-
-	if gr := db.groups[groupName]; gr != nil {
-		return isMember(gr), nil
-	}
-	return false, nil
 }
 
 // GetCertificates returns a bundle with certificates of a trusted signer.
@@ -338,7 +227,7 @@ func (db *SnapshotDB) IsInWhitelist(c context.Context, ip net.IP, whitelist stri
 // This is needed to implement authdb.DB interface.
 func (db *SnapshotDB) GetAuthServiceURL(c context.Context) (string, error) {
 	if db.AuthServiceURL == "" {
-		return "", fmt.Errorf("not using Auth Service")
+		return "", errors.Reason("not using Auth Service").Err()
 	}
 	return db.AuthServiceURL, nil
 }
