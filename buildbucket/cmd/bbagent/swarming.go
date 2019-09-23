@@ -12,37 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runner
+package main
 
 import (
 	"context"
-	"testing"
 
 	"github.com/golang/protobuf/proto"
-
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
-
-	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestReadBuildSecrets(t *testing.T) {
-	t.Parallel()
+// readBuildSecrets reads BuildSecrets message from swarming secret bytes.
+func readBuildSecrets(ctx context.Context) (*bbpb.BuildSecrets, error) {
+	swarming := lucictx.GetSwarming(ctx)
+	if swarming == nil {
+		return nil, errors.Reason("no swarming secret bytes; is this a Swarming Task with secret bytes?").Err()
+	}
 
-	Convey("readBuildSecrets", t, func() {
-		ctx := context.Background()
-		ctx = lucictx.SetSwarming(ctx, nil)
-
-		secretBytes, err := proto.Marshal(&pb.BuildSecrets{
-			BuildToken: "build token",
-		})
-		So(err, ShouldBeNil)
-
-		ctx = lucictx.SetSwarming(ctx, &lucictx.Swarming{SecretBytes: secretBytes})
-
-		secrets, err := readBuildSecrets(ctx)
-		So(err, ShouldBeNil)
-		So(string(secrets.BuildToken), ShouldEqual, "build token")
-	})
+	secrets := &bbpb.BuildSecrets{}
+	if err := proto.Unmarshal(swarming.SecretBytes, secrets); err != nil {
+		return nil, errors.Annotate(err, "failed to read BuildSecrets message from swarming secret bytes").Err()
+	}
+	return secrets, nil
 }
