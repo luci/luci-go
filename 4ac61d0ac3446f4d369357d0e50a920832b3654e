@@ -243,6 +243,23 @@
     },
     {
       "key": {
+        "uuid": "5be4aef2_5b745a85",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T18:20:12Z",
+      "side": 1,
+      "message": "i see you fix this code in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1822330/1/results/recorder/chromium/formats/json.go#329\nlet\u0027s fix it here",
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fbd40bb0_1d2aa5e6",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
