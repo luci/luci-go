@@ -14,79 +14,79 @@ type DecoratedStorage struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequest) (rsp *ObjectURL, err error) {
+func (s *DecoratedStorage) GetObjectURL(ctx context.Context, req *GetObjectURLRequest) (rsp *ObjectURL, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "GetObjectURL", req)
+		newCtx, err = s.Prelude(ctx, "GetObjectURL", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.GetObjectURL(c, req)
+		rsp, err = s.Service.GetObjectURL(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetObjectURL", rsp, err)
+		err = s.Postlude(ctx, "GetObjectURL", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadRequest) (rsp *UploadOperation, err error) {
+func (s *DecoratedStorage) BeginUpload(ctx context.Context, req *BeginUploadRequest) (rsp *UploadOperation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "BeginUpload", req)
+		newCtx, err = s.Prelude(ctx, "BeginUpload", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.BeginUpload(c, req)
+		rsp, err = s.Service.BeginUpload(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "BeginUpload", rsp, err)
+		err = s.Postlude(ctx, "BeginUpload", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequest) (rsp *UploadOperation, err error) {
+func (s *DecoratedStorage) FinishUpload(ctx context.Context, req *FinishUploadRequest) (rsp *UploadOperation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "FinishUpload", req)
+		newCtx, err = s.Prelude(ctx, "FinishUpload", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.FinishUpload(c, req)
+		rsp, err = s.Service.FinishUpload(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "FinishUpload", rsp, err)
+		err = s.Postlude(ctx, "FinishUpload", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedStorage) CancelUpload(c context.Context, req *CancelUploadRequest) (rsp *UploadOperation, err error) {
+func (s *DecoratedStorage) CancelUpload(ctx context.Context, req *CancelUploadRequest) (rsp *UploadOperation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CancelUpload", req)
+		newCtx, err = s.Prelude(ctx, "CancelUpload", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CancelUpload(c, req)
+		rsp, err = s.Service.CancelUpload(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CancelUpload", rsp, err)
+		err = s.Postlude(ctx, "CancelUpload", rsp, err)
 	}
 	return
 }

@@ -16,130 +16,130 @@ type DecoratedAdmin struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) ImportCAConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportCAConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ImportCAConfigs", req)
+		newCtx, err = s.Prelude(ctx, "ImportCAConfigs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ImportCAConfigs(c, req)
+		rsp, err = s.Service.ImportCAConfigs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportCAConfigs", rsp, err)
+		err = s.Postlude(ctx, "ImportCAConfigs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) ImportDelegationConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportDelegationConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ImportDelegationConfigs", req)
+		newCtx, err = s.Prelude(ctx, "ImportDelegationConfigs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ImportDelegationConfigs(c, req)
+		rsp, err = s.Service.ImportDelegationConfigs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportDelegationConfigs", rsp, err)
+		err = s.Postlude(ctx, "ImportDelegationConfigs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) ImportServiceAccountsConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportServiceAccountsConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ImportServiceAccountsConfigs", req)
+		newCtx, err = s.Prelude(ctx, "ImportServiceAccountsConfigs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ImportServiceAccountsConfigs(c, req)
+		rsp, err = s.Service.ImportServiceAccountsConfigs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportServiceAccountsConfigs", rsp, err)
+		err = s.Postlude(ctx, "ImportServiceAccountsConfigs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) ImportProjectIdentityConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
+func (s *DecoratedAdmin) ImportProjectIdentityConfigs(ctx context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ImportProjectIdentityConfigs", req)
+		newCtx, err = s.Prelude(ctx, "ImportProjectIdentityConfigs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ImportProjectIdentityConfigs(c, req)
+		rsp, err = s.Service.ImportProjectIdentityConfigs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ImportProjectIdentityConfigs", rsp, err)
+		err = s.Postlude(ctx, "ImportProjectIdentityConfigs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
+func (s *DecoratedAdmin) InspectMachineToken(ctx context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "InspectMachineToken", req)
+		newCtx, err = s.Prelude(ctx, "InspectMachineToken", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.InspectMachineToken(c, req)
+		rsp, err = s.Service.InspectMachineToken(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "InspectMachineToken", rsp, err)
+		err = s.Postlude(ctx, "InspectMachineToken", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) InspectDelegationToken(c context.Context, req *InspectDelegationTokenRequest) (rsp *InspectDelegationTokenResponse, err error) {
+func (s *DecoratedAdmin) InspectDelegationToken(ctx context.Context, req *InspectDelegationTokenRequest) (rsp *InspectDelegationTokenResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "InspectDelegationToken", req)
+		newCtx, err = s.Prelude(ctx, "InspectDelegationToken", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.InspectDelegationToken(c, req)
+		rsp, err = s.Service.InspectDelegationToken(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "InspectDelegationToken", rsp, err)
+		err = s.Postlude(ctx, "InspectDelegationToken", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedAdmin) InspectOAuthTokenGrant(c context.Context, req *InspectOAuthTokenGrantRequest) (rsp *InspectOAuthTokenGrantResponse, err error) {
+func (s *DecoratedAdmin) InspectOAuthTokenGrant(ctx context.Context, req *InspectOAuthTokenGrantRequest) (rsp *InspectOAuthTokenGrantResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "InspectOAuthTokenGrant", req)
+		newCtx, err = s.Prelude(ctx, "InspectOAuthTokenGrant", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.InspectOAuthTokenGrant(c, req)
+		rsp, err = s.Service.InspectOAuthTokenGrant(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "InspectOAuthTokenGrant", rsp, err)
+		err = s.Postlude(ctx, "InspectOAuthTokenGrant", rsp, err)
 	}
 	return
 }

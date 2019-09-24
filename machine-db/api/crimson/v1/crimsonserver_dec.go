@@ -16,487 +16,487 @@ type DecoratedCrimson struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedCrimson) ListDatacenters(c context.Context, req *ListDatacentersRequest) (rsp *ListDatacentersResponse, err error) {
+func (s *DecoratedCrimson) ListDatacenters(ctx context.Context, req *ListDatacentersRequest) (rsp *ListDatacentersResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListDatacenters", req)
+		newCtx, err = s.Prelude(ctx, "ListDatacenters", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListDatacenters(c, req)
+		rsp, err = s.Service.ListDatacenters(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListDatacenters", rsp, err)
+		err = s.Postlude(ctx, "ListDatacenters", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListFreeIPs(c context.Context, req *ListFreeIPsRequest) (rsp *ListIPsResponse, err error) {
+func (s *DecoratedCrimson) ListFreeIPs(ctx context.Context, req *ListFreeIPsRequest) (rsp *ListIPsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListFreeIPs", req)
+		newCtx, err = s.Prelude(ctx, "ListFreeIPs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListFreeIPs(c, req)
+		rsp, err = s.Service.ListFreeIPs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListFreeIPs", rsp, err)
+		err = s.Postlude(ctx, "ListFreeIPs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListKVMs(c context.Context, req *ListKVMsRequest) (rsp *ListKVMsResponse, err error) {
+func (s *DecoratedCrimson) ListKVMs(ctx context.Context, req *ListKVMsRequest) (rsp *ListKVMsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListKVMs", req)
+		newCtx, err = s.Prelude(ctx, "ListKVMs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListKVMs(c, req)
+		rsp, err = s.Service.ListKVMs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListKVMs", rsp, err)
+		err = s.Postlude(ctx, "ListKVMs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
+func (s *DecoratedCrimson) ListOSes(ctx context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListOSes", req)
+		newCtx, err = s.Prelude(ctx, "ListOSes", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListOSes(c, req)
+		rsp, err = s.Service.ListOSes(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListOSes", rsp, err)
+		err = s.Postlude(ctx, "ListOSes", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListPlatforms(c context.Context, req *ListPlatformsRequest) (rsp *ListPlatformsResponse, err error) {
+func (s *DecoratedCrimson) ListPlatforms(ctx context.Context, req *ListPlatformsRequest) (rsp *ListPlatformsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListPlatforms", req)
+		newCtx, err = s.Prelude(ctx, "ListPlatforms", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListPlatforms(c, req)
+		rsp, err = s.Service.ListPlatforms(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListPlatforms", rsp, err)
+		err = s.Postlude(ctx, "ListPlatforms", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListRacks(c context.Context, req *ListRacksRequest) (rsp *ListRacksResponse, err error) {
+func (s *DecoratedCrimson) ListRacks(ctx context.Context, req *ListRacksRequest) (rsp *ListRacksResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListRacks", req)
+		newCtx, err = s.Prelude(ctx, "ListRacks", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListRacks(c, req)
+		rsp, err = s.Service.ListRacks(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListRacks", rsp, err)
+		err = s.Postlude(ctx, "ListRacks", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListSwitches(c context.Context, req *ListSwitchesRequest) (rsp *ListSwitchesResponse, err error) {
+func (s *DecoratedCrimson) ListSwitches(ctx context.Context, req *ListSwitchesRequest) (rsp *ListSwitchesResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListSwitches", req)
+		newCtx, err = s.Prelude(ctx, "ListSwitches", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListSwitches(c, req)
+		rsp, err = s.Service.ListSwitches(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListSwitches", rsp, err)
+		err = s.Postlude(ctx, "ListSwitches", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListVLANs(c context.Context, req *ListVLANsRequest) (rsp *ListVLANsResponse, err error) {
+func (s *DecoratedCrimson) ListVLANs(ctx context.Context, req *ListVLANsRequest) (rsp *ListVLANsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListVLANs", req)
+		newCtx, err = s.Prelude(ctx, "ListVLANs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListVLANs(c, req)
+		rsp, err = s.Service.ListVLANs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListVLANs", rsp, err)
+		err = s.Postlude(ctx, "ListVLANs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) CreateMachine(c context.Context, req *CreateMachineRequest) (rsp *Machine, err error) {
+func (s *DecoratedCrimson) CreateMachine(ctx context.Context, req *CreateMachineRequest) (rsp *Machine, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreateMachine", req)
+		newCtx, err = s.Prelude(ctx, "CreateMachine", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CreateMachine(c, req)
+		rsp, err = s.Service.CreateMachine(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreateMachine", rsp, err)
+		err = s.Postlude(ctx, "CreateMachine", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) DeleteMachine(c context.Context, req *DeleteMachineRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteMachine(ctx context.Context, req *DeleteMachineRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "DeleteMachine", req)
+		newCtx, err = s.Prelude(ctx, "DeleteMachine", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.DeleteMachine(c, req)
+		rsp, err = s.Service.DeleteMachine(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "DeleteMachine", rsp, err)
+		err = s.Postlude(ctx, "DeleteMachine", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequest) (rsp *ListMachinesResponse, err error) {
+func (s *DecoratedCrimson) ListMachines(ctx context.Context, req *ListMachinesRequest) (rsp *ListMachinesResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListMachines", req)
+		newCtx, err = s.Prelude(ctx, "ListMachines", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListMachines(c, req)
+		rsp, err = s.Service.ListMachines(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListMachines", rsp, err)
+		err = s.Postlude(ctx, "ListMachines", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) RenameMachine(c context.Context, req *RenameMachineRequest) (rsp *Machine, err error) {
+func (s *DecoratedCrimson) RenameMachine(ctx context.Context, req *RenameMachineRequest) (rsp *Machine, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "RenameMachine", req)
+		newCtx, err = s.Prelude(ctx, "RenameMachine", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.RenameMachine(c, req)
+		rsp, err = s.Service.RenameMachine(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "RenameMachine", rsp, err)
+		err = s.Postlude(ctx, "RenameMachine", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) UpdateMachine(c context.Context, req *UpdateMachineRequest) (rsp *Machine, err error) {
+func (s *DecoratedCrimson) UpdateMachine(ctx context.Context, req *UpdateMachineRequest) (rsp *Machine, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "UpdateMachine", req)
+		newCtx, err = s.Prelude(ctx, "UpdateMachine", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.UpdateMachine(c, req)
+		rsp, err = s.Service.UpdateMachine(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "UpdateMachine", rsp, err)
+		err = s.Postlude(ctx, "UpdateMachine", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) CreateNIC(c context.Context, req *CreateNICRequest) (rsp *NIC, err error) {
+func (s *DecoratedCrimson) CreateNIC(ctx context.Context, req *CreateNICRequest) (rsp *NIC, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreateNIC", req)
+		newCtx, err = s.Prelude(ctx, "CreateNIC", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CreateNIC(c, req)
+		rsp, err = s.Service.CreateNIC(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreateNIC", rsp, err)
+		err = s.Postlude(ctx, "CreateNIC", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) DeleteNIC(c context.Context, req *DeleteNICRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteNIC(ctx context.Context, req *DeleteNICRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "DeleteNIC", req)
+		newCtx, err = s.Prelude(ctx, "DeleteNIC", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.DeleteNIC(c, req)
+		rsp, err = s.Service.DeleteNIC(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "DeleteNIC", rsp, err)
+		err = s.Postlude(ctx, "DeleteNIC", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rsp *ListNICsResponse, err error) {
+func (s *DecoratedCrimson) ListNICs(ctx context.Context, req *ListNICsRequest) (rsp *ListNICsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListNICs", req)
+		newCtx, err = s.Prelude(ctx, "ListNICs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListNICs(c, req)
+		rsp, err = s.Service.ListNICs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListNICs", rsp, err)
+		err = s.Postlude(ctx, "ListNICs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) UpdateNIC(c context.Context, req *UpdateNICRequest) (rsp *NIC, err error) {
+func (s *DecoratedCrimson) UpdateNIC(ctx context.Context, req *UpdateNICRequest) (rsp *NIC, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "UpdateNIC", req)
+		newCtx, err = s.Prelude(ctx, "UpdateNIC", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.UpdateNIC(c, req)
+		rsp, err = s.Service.UpdateNIC(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "UpdateNIC", rsp, err)
+		err = s.Postlude(ctx, "UpdateNIC", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) CreateDRAC(c context.Context, req *CreateDRACRequest) (rsp *DRAC, err error) {
+func (s *DecoratedCrimson) CreateDRAC(ctx context.Context, req *CreateDRACRequest) (rsp *DRAC, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreateDRAC", req)
+		newCtx, err = s.Prelude(ctx, "CreateDRAC", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CreateDRAC(c, req)
+		rsp, err = s.Service.CreateDRAC(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreateDRAC", rsp, err)
+		err = s.Postlude(ctx, "CreateDRAC", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListDRACs(c context.Context, req *ListDRACsRequest) (rsp *ListDRACsResponse, err error) {
+func (s *DecoratedCrimson) ListDRACs(ctx context.Context, req *ListDRACsRequest) (rsp *ListDRACsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListDRACs", req)
+		newCtx, err = s.Prelude(ctx, "ListDRACs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListDRACs(c, req)
+		rsp, err = s.Service.ListDRACs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListDRACs", rsp, err)
+		err = s.Postlude(ctx, "ListDRACs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) UpdateDRAC(c context.Context, req *UpdateDRACRequest) (rsp *DRAC, err error) {
+func (s *DecoratedCrimson) UpdateDRAC(ctx context.Context, req *UpdateDRACRequest) (rsp *DRAC, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "UpdateDRAC", req)
+		newCtx, err = s.Prelude(ctx, "UpdateDRAC", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.UpdateDRAC(c, req)
+		rsp, err = s.Service.UpdateDRAC(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "UpdateDRAC", rsp, err)
+		err = s.Postlude(ctx, "UpdateDRAC", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
+func (s *DecoratedCrimson) CreatePhysicalHost(ctx context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreatePhysicalHost", req)
+		newCtx, err = s.Prelude(ctx, "CreatePhysicalHost", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CreatePhysicalHost(c, req)
+		rsp, err = s.Service.CreatePhysicalHost(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreatePhysicalHost", rsp, err)
+		err = s.Postlude(ctx, "CreatePhysicalHost", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysicalHostsRequest) (rsp *ListPhysicalHostsResponse, err error) {
+func (s *DecoratedCrimson) ListPhysicalHosts(ctx context.Context, req *ListPhysicalHostsRequest) (rsp *ListPhysicalHostsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListPhysicalHosts", req)
+		newCtx, err = s.Prelude(ctx, "ListPhysicalHosts", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListPhysicalHosts(c, req)
+		rsp, err = s.Service.ListPhysicalHosts(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListPhysicalHosts", rsp, err)
+		err = s.Postlude(ctx, "ListPhysicalHosts", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) UpdatePhysicalHost(c context.Context, req *UpdatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
+func (s *DecoratedCrimson) UpdatePhysicalHost(ctx context.Context, req *UpdatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "UpdatePhysicalHost", req)
+		newCtx, err = s.Prelude(ctx, "UpdatePhysicalHost", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.UpdatePhysicalHost(c, req)
+		rsp, err = s.Service.UpdatePhysicalHost(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "UpdatePhysicalHost", rsp, err)
+		err = s.Postlude(ctx, "UpdatePhysicalHost", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) FindVMSlots(c context.Context, req *FindVMSlotsRequest) (rsp *FindVMSlotsResponse, err error) {
+func (s *DecoratedCrimson) FindVMSlots(ctx context.Context, req *FindVMSlotsRequest) (rsp *FindVMSlotsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "FindVMSlots", req)
+		newCtx, err = s.Prelude(ctx, "FindVMSlots", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.FindVMSlots(c, req)
+		rsp, err = s.Service.FindVMSlots(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "FindVMSlots", rsp, err)
+		err = s.Postlude(ctx, "FindVMSlots", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rsp *VM, err error) {
+func (s *DecoratedCrimson) CreateVM(ctx context.Context, req *CreateVMRequest) (rsp *VM, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreateVM", req)
+		newCtx, err = s.Prelude(ctx, "CreateVM", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.CreateVM(c, req)
+		rsp, err = s.Service.CreateVM(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "CreateVM", rsp, err)
+		err = s.Postlude(ctx, "CreateVM", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) ListVMs(c context.Context, req *ListVMsRequest) (rsp *ListVMsResponse, err error) {
+func (s *DecoratedCrimson) ListVMs(ctx context.Context, req *ListVMsRequest) (rsp *ListVMsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ListVMs", req)
+		newCtx, err = s.Prelude(ctx, "ListVMs", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ListVMs(c, req)
+		rsp, err = s.Service.ListVMs(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ListVMs", rsp, err)
+		err = s.Postlude(ctx, "ListVMs", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) UpdateVM(c context.Context, req *UpdateVMRequest) (rsp *VM, err error) {
+func (s *DecoratedCrimson) UpdateVM(ctx context.Context, req *UpdateVMRequest) (rsp *VM, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "UpdateVM", req)
+		newCtx, err = s.Prelude(ctx, "UpdateVM", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.UpdateVM(c, req)
+		rsp, err = s.Service.UpdateVM(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "UpdateVM", rsp, err)
+		err = s.Postlude(ctx, "UpdateVM", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedCrimson) DeleteHost(c context.Context, req *DeleteHostRequest) (rsp *empty.Empty, err error) {
+func (s *DecoratedCrimson) DeleteHost(ctx context.Context, req *DeleteHostRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "DeleteHost", req)
+		newCtx, err = s.Prelude(ctx, "DeleteHost", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.DeleteHost(c, req)
+		rsp, err = s.Service.DeleteHost(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "DeleteHost", rsp, err)
+		err = s.Postlude(ctx, "DeleteHost", rsp, err)
 	}
 	return
 }

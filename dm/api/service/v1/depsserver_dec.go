@@ -16,79 +16,79 @@ type DecoratedDeps struct {
 	// Prelude is called for each method before forwarding the call to Service.
 	// If Prelude returns an error, then the call is skipped and the error is
 	// processed via the Postlude (if one is defined), or it is returned directly.
-	Prelude func(c context.Context, methodName string, req proto.Message) (context.Context, error)
+	Prelude func(ctx context.Context, methodName string, req proto.Message) (context.Context, error)
 	// Postlude is called for each method after Service has processed the call, or
 	// after the Prelude has returned an error. This takes the the Service's
 	// response proto (which may be nil) and/or any error. The decorated
 	// service will return the response (possibly mutated) and error that Postlude
 	// returns.
-	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
+	Postlude func(ctx context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedDeps) EnsureGraphData(c context.Context, req *EnsureGraphDataReq) (rsp *EnsureGraphDataRsp, err error) {
+func (s *DecoratedDeps) EnsureGraphData(ctx context.Context, req *EnsureGraphDataReq) (rsp *EnsureGraphDataRsp, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "EnsureGraphData", req)
+		newCtx, err = s.Prelude(ctx, "EnsureGraphData", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.EnsureGraphData(c, req)
+		rsp, err = s.Service.EnsureGraphData(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "EnsureGraphData", rsp, err)
+		err = s.Postlude(ctx, "EnsureGraphData", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecutionReq) (rsp *empty.Empty, err error) {
+func (s *DecoratedDeps) ActivateExecution(ctx context.Context, req *ActivateExecutionReq) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "ActivateExecution", req)
+		newCtx, err = s.Prelude(ctx, "ActivateExecution", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.ActivateExecution(c, req)
+		rsp, err = s.Service.ActivateExecution(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "ActivateExecution", rsp, err)
+		err = s.Postlude(ctx, "ActivateExecution", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedDeps) FinishAttempt(c context.Context, req *FinishAttemptReq) (rsp *empty.Empty, err error) {
+func (s *DecoratedDeps) FinishAttempt(ctx context.Context, req *FinishAttemptReq) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "FinishAttempt", req)
+		newCtx, err = s.Prelude(ctx, "FinishAttempt", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.FinishAttempt(c, req)
+		rsp, err = s.Service.FinishAttempt(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "FinishAttempt", rsp, err)
+		err = s.Postlude(ctx, "FinishAttempt", rsp, err)
 	}
 	return
 }
 
-func (s *DecoratedDeps) WalkGraph(c context.Context, req *WalkGraphReq) (rsp *GraphData, err error) {
+func (s *DecoratedDeps) WalkGraph(ctx context.Context, req *WalkGraphReq) (rsp *GraphData, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "WalkGraph", req)
+		newCtx, err = s.Prelude(ctx, "WalkGraph", req)
 		if err == nil {
-			c = newCtx
+			ctx = newCtx
 		}
 	}
 	if err == nil {
-		rsp, err = s.Service.WalkGraph(c, req)
+		rsp, err = s.Service.WalkGraph(ctx, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "WalkGraph", rsp, err)
+		err = s.Postlude(ctx, "WalkGraph", rsp, err)
 	}
 	return
 }
