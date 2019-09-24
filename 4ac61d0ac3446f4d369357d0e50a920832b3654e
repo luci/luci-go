@@ -128,6 +128,30 @@
     },
     {
       "key": {
+        "uuid": "79254b95_43ec1c0b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6990e3e9_6ee9a0a6",
+      "range": {
+        "startLine": 260,
+        "startChar": 10,
+        "endLine": 260,
+        "endChar": 44
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "edc55935_005fc627",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -197,6 +221,78 @@
     },
     {
       "key": {
+        "uuid": "709e5d49_725535d5",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "793b6e07_b7852c1a",
+      "range": {
+        "startLine": 273,
+        "startChar": 71,
+        "endLine": 273,
+        "endChar": 77
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "586bc952_42706252",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb421a32_25ba49a9",
+      "range": {
+        "startLine": 273,
+        "startChar": 3,
+        "endLine": 273,
+        "endChar": 20
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1b7208b_f07f4d7e",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "edc55935_005fc627",
+      "range": {
+        "startLine": 273,
+        "startChar": 77,
+        "endLine": 273,
+        "endChar": 111
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3622d1f_068de19e",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -217,6 +313,30 @@
       "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afdc6c8d_e7f5fa38",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e3622d1f_068de19e",
+      "range": {
+        "startLine": 276,
+        "startChar": 1,
+        "endLine": 276,
+        "endChar": 9
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +363,30 @@
     },
     {
       "key": {
+        "uuid": "71b29635_115191e9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5b180f5_d91d9892",
+      "range": {
+        "startLine": 277,
+        "startChar": 15,
+        "endLine": 277,
+        "endChar": 16
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5be4aef2_5b745a85",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -257,6 +401,24 @@
       "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "928ecec5_c5f9f276",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5be4aef2_5b745a85",
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +445,30 @@
     },
     {
       "key": {
+        "uuid": "8d30b22b_cbabcd4b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fbd40bb0_1d2aa5e6",
+      "range": {
+        "startLine": 291,
+        "startChar": 3,
+        "endLine": 291,
+        "endChar": 9
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40b3e8de_0d129d99",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -306,6 +492,30 @@
     },
     {
       "key": {
+        "uuid": "960eb78c_9e148a41",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40b3e8de_0d129d99",
+      "range": {
+        "startLine": 303,
+        "startChar": 11,
+        "endLine": 303,
+        "endChar": 25
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe8732a8_3017b9b0",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -326,6 +536,30 @@
       "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f91ee91_4955f170",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe8732a8_3017b9b0",
+      "range": {
+        "startLine": 306,
+        "startChar": 11,
+        "endLine": 306,
+        "endChar": 50
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -375,6 +609,30 @@
     },
     {
       "key": {
+        "uuid": "4a4fdac8_efcdf1a1",
+        "filename": "results/recorder/chromium/formats/json_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d73176b_9a5e6f0c",
+      "range": {
+        "startLine": 165,
+        "startChar": 4,
+        "endLine": 165,
+        "endChar": 9
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5542cfff_d11a2884",
         "filename": "results/recorder/chromium/formats/json_test.go",
         "patchSetId": 4
@@ -386,6 +644,30 @@
       "writtenOn": "2019-09-24T17:57:43Z",
       "side": 1,
       "message": "i think it would much more readable to use ShouldResembleProto with the invocation that we expect.\nAlso I think less code",
+      "range": {
+        "startLine": 160,
+        "startChar": 2,
+        "endLine": 219,
+        "endChar": 4
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1c3aadb_8839c749",
+        "filename": "results/recorder/chromium/formats/json_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:29:56Z",
+      "side": 1,
+      "message": "I\u0027m worried that would be more difficult to debug. The intention behind breaking it up into the individual pieces of functionality is to make it easier to identify what in the conversion actually went wrong by seeing which test case failed and what piece of the conversion that test case tests specifically. WDYT?",
+      "parentUuid": "5542cfff_d11a2884",
       "range": {
         "startLine": 160,
         "startChar": 2,
