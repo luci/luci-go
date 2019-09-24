@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "1e379fdd_5b63fe9c",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-24T18:27:11Z",
+      "side": 1,
+      "message": "Could you point me to an example?",
+      "range": {
+        "startLine": 180,
+        "startChar": 3,
+        "endLine": 180,
+        "endChar": 63
+      },
+      "revId": "ffa0bfeb8a9717be7228a4006b2960212098aef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "419b34ee_cf2f77ae",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 1
