@@ -42,7 +42,7 @@ message RunnerArgs {
 
   // Path to the user executable.
   // Required.
-  string executable_path = 3;
+  string executable_dir = 3;
 
   // Path to a directory where each subdirectory is a cache dir.
   // Managed by Swarming.
@@ -62,4 +62,30 @@ message RunnerArgs {
   // Initial state of the build, including immutable state such as id and input
   // properties.
   Build build = 7;
+}
+
+// Arguments for bbagent command.
+//
+// All paths are relateive to bbagent's working directory.
+message BBAgentArgs {
+  // Path to the user executable.
+  //
+  // Required.
+  string executable_path = 1;
+
+  // Path to a directory where each subdirectory is a cache dir.
+  //
+  // Required.
+  string cache_dir = 2;
+
+	// List of Gerrit hosts to force git authentication for.
+	//
+	// By default public hosts are accessed anonymously, and the anonymous access
+	// has very low quota. Context needs to know all such hostnames in advance to
+	// be able to force authenticated access to them.
+  repeated string known_public_gerrit_hosts = 3;
+
+  // Initial state of the build, including immutable state such as id and input
+  // properties.
+  Build build = 4;
 }

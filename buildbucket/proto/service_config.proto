@@ -71,10 +71,13 @@ message SwarmingSettings {
   // "{TASK_RUN_DIR}/cipd_bin_packages/bin" are prepended to $PATH.
   repeated Package user_packages = 5;
 
-  // Package of LUCI runner,
-  // https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/cmd/luci_runner
-  // used to run LUCI executables.
+  // IGNORED; to be removed after transition to bbagent_package.
   Package luci_runner_package = 6;
+
+  // Package of buildbucket agent,
+  // https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/cmd/bbagent
+  // used to run LUCI executables.
+  Package bbagent_package = 8;
 
   // CIPD package of kitchen binary. DEPRECATED. TODO(nodir): remove.
   Package kitchen_package = 7;

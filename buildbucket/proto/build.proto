@@ -261,6 +261,9 @@ message BuildInfra {
     // Dimensions that were specified in ScheduleBuildRequest to create this
     // build.
     repeated RequestedDimension requested_dimensions = 6;
+
+    // Buildbucket hostname, e.g. "cr-buildbucket.appspot.com".
+    string hostname = 7;
   }
 
   // Swarming-specific information.
