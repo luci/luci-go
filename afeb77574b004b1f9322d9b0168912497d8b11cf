@@ -16,6 +16,24 @@
       "revId": "afeb77574b004b1f9322d9b0168912497d8b11cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ef46dc9_c2549999",
+        "filename": "buildbucket/proto/launcher.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-24T22:35:25Z",
+      "side": 1,
+      "message": "Because there\u0027s a half-rolled proto change in infra.git; This undoes the half-roll (otherwise I\u0027d have to modify buildbucket server code in https://chromium-review.googlesource.com/c/infra/infra/+/1823358)",
+      "parentUuid": "16094c24_e12210b1",
+      "revId": "afeb77574b004b1f9322d9b0168912497d8b11cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
