@@ -16,6 +16,7 @@ package host
 
 import (
 	"context"
+	"runtime"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -30,6 +31,10 @@ import (
 )
 
 func TestSpy(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("disabled on windows due to crbug.com/998936")
+	}
+
 	Convey(`test build spy environment`, t, func() {
 		ctx, closer := testCtx()
 		defer closer()
