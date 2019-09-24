@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "f59e8b6c_586cf58b",
+        "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2019-09-24T00:50:16Z",
+      "side": 1,
+      "message": "That\u0027s a good idea. However, there is a caveat. \n\nSerializeCells() invokes c.Target.Hash() of each cell, across all the metrics, and caches the output of Target.PopulateProto() by the generated hash key.\n: \nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/tsmon/monitor/serialize.go?l\u003d40\u0026rcl\u003d21b92fb474d30c46ecf3c2566044c6cd1266b26d\n\nIt means that there can be cache key collisions if more than one Target schemas have the same number and types of target field definitions. In order to avoid cache collisions, we need to include field names and struct names into the hash input. That\u0027s what the current implementation does effectively.\n\nWhat should really happen is to remove Target.Hash(). The problem of the current logic is that\n- SerializeCells() invokes Target.Hash() against every single cell, even if all they are pointing to the same Target instance.\n- SerializeCells() invokes Target.PopulateProto() at most once for each Target instance, but the cache map of Target.PopulateProto() gets re-created again and again each time SerilaizeCells() invoked.\n\nIn SerializeCells(), c.Target.Hash() is just to generate a cache key for generated target protos.\n\nWhat should really happen is that each Target instance self-contains the metric proto representation. \n(a) Whenever an Target instance is created and installed into the context,\n - the constructor of a Target struct generates the proto of the Target instance, and then\n - the generated Target proto is stored in the target instance itself.\n(b) Therefore, the life duration of the target proto of a Target instance is same as the life duration of a Target instance, assuming that a Target instance is immutable.\n(c) Serialize() never has to invoke c.Target.PopulateProto().\n - It doesn\u0027t even have to maintain a cache of generated protos.\n - It doesn\u0027t even have to know the hash of a Target instance, because it doesn\u0027t need to maintain and cache the generated protos by itself.\n - It just needs to use the pre-populated proto of the Target, installed in the context.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\nIn summary, I think it\u0027s a good idea to pass the values of each target field to the hash generator to avoid unnecessary buffer. However, due to the current implementation of inmemory.go, it can introduce cache collisions in SerializeCells(). To avoid the collisions, it\u0027s necessary to put the name of target fields and proto into the hash inputs.\n\nHow about keeping the current changes in this CL, and planning a work on removing Hash() from the target interface?",
+      "parentUuid": "bf401bfa_aea4621e",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "6765c7a15af74246835a5db1eff5c3b5d6024d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c2ae0a28_2ca960c1",
         "filename": "common/tsmon/examples/beep/dummy_project/dummy_project.go",
         "patchSetId": 18
