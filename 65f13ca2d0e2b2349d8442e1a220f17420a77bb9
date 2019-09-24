@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3173b5d0_7f767183",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:02:17Z",
+      "side": 1,
+      "message": "This is just describing the stopping condition (i.e. where the failure will manifest). If the trie fails to be converted, it\u0027ll be because the current node being processed will not be a struct when it\u0027s expected to be a struct, i.e. \"curNode will eventually not be a map\". Is that clearer? Or I can remove it entirely.",
+      "parentUuid": "ba71a4a5_c86026b9",
+      "range": {
+        "startLine": 179,
+        "startChar": 44,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "acbf4a43_3b864c5f",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49cfedc1_a0e15a08",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:02:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acbf4a43_3b864c5f",
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "fe0719e3_6d7ea8c2",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:02:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6aca654_0dd230eb",
+      "range": {
+        "startLine": 203,
+        "startChar": 5,
+        "endLine": 204,
+        "endChar": 47
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "904643d9_dac08a34",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 2
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "c1fbe325_c1d3ba16",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:02:17Z",
+      "side": 1,
+      "message": "I changed this in the other CL that s/resultspb.Status_STATUS_UNSPECIFIED/0, though I think the merge got a little confused in the rebase...",
+      "parentUuid": "904643d9_dac08a34",
+      "range": {
+        "startLine": 267,
+        "startChar": 4,
+        "endLine": 267,
+        "endChar": 11
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c99d6d5b_d8affecd",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 2
@@ -99,6 +189,24 @@
       "writtenOn": "2019-09-24T21:35:29Z",
       "side": 1,
       "message": "this kind of begs the question: what if both \"time\" and \"times\" are specified? FWIU this is invalid input.\n\nif so, this should be\n\n  if len(f.Times) \u003e 0 \u0026\u0026 len(statuses) !\u003d len(f.Times) {\n\n--\n\nalso, you have an open CL that added this code, so let\u0027s fix it there https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1817643",
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "193605dd_5a769505",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T22:02:17Z",
+      "side": 1,
+      "message": "My understanding was that both \"time\" and \"times\" are specified, then \"time\" refers to the duration of the first run, and \"times\" refers to the duration of the remainder of the runs --- but this turned out to be mistaken, see https://logs.chromium.org/logs/chrome/buildbucket/cr-buildbucket.appspot.com/8903237483609759584/+/steps/performance_test_suite_on_Intel_GPU_on_Windows_on_Windows-10-16299.309/0/logs/json.output/0 (search for trace/traceEvents/tmpiqbp8e.json.gz, which is in the first test result)\n\nCorrect behavior:\n\nIf \"times\" is specified, then use it, as contains durations of all runs; ignore \"time\" if specified as it will be the first element of \"times\".\n\nIf only \"time\" is specified, then we only have the duration of the first run.\n\nWill fix in the open CL that added it.",
+      "parentUuid": "c99d6d5b_d8affecd",
       "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
