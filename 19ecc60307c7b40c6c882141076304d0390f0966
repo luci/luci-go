@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "14bc9a54_ae40c134",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-24T22:41:26Z",
+      "side": 1,
+      "message": "/:",
+      "range": {
+        "startLine": 230,
+        "startChar": 26,
+        "endLine": 230,
+        "endChar": 31
+      },
+      "revId": "19ecc60307c7b40c6c882141076304d0390f0966",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
