@@ -12,16 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Command luci_runner runs a LUCI executable.
-// It is an implementation detail of Buildbucket.
 package main
 
 import (
-	"os"
+	"context"
 
-	"go.chromium.org/luci/luciexe/runner"
+	"go.chromium.org/luci/auth"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/output/logdog"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
-func main() {
-	os.Exit(runner.Main(os.Args))
+func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {
+	return (&logdog.Config{
+		Auth: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+			MonitorAs: "bbagent/logdog",
+		}),
+		Host:    opts.Hostname,
+		Project: opts.Project,
+		Prefix:  types.StreamName(opts.Prefix),
+	}).Register(ctx)
 }
