@@ -22,6 +22,30 @@
       "revId": "19ecc60307c7b40c6c882141076304d0390f0966",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cad8aa40_bb17e3aa",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-24T23:12:18Z",
+      "side": 1,
+      "message": "can you elaborate?",
+      "parentUuid": "14bc9a54_ae40c134",
+      "range": {
+        "startLine": 230,
+        "startChar": 26,
+        "endLine": 230,
+        "endChar": 31
+      },
+      "revId": "19ecc60307c7b40c6c882141076304d0390f0966",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
