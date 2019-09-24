@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "419b34ee_cf2f77ae",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T18:21:45Z",
+      "side": 1,
+      "message": "this also applies to \"times\", \"artifacts\". I am thinking, we can just treat any error coming from L179, as an indication that this is an intermediate node",
+      "revId": "ffa0bfeb8a9717be7228a4006b2960212098aef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c16e466_37b8dfa3",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T18:21:45Z",
+      "side": 1,
+      "message": "case \"IMAGE\", \"TEXT\", IMAGE+TEXT\", \"AUDIO\", \"LEAK\", \"MISSING\":\n  return resultspb.Status_FAIL, nil",
+      "range": {
+        "startLine": 265,
+        "startChar": 1,
+        "endLine": 276,
+        "endChar": 35
+      },
+      "revId": "ffa0bfeb8a9717be7228a4006b2960212098aef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e915f68a_f516a3e1",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T18:21:45Z",
+      "side": 1,
+      "message": "we never call this func for expected status, so let\u0027s not add dead code",
+      "range": {
+        "startLine": 277,
+        "startChar": 1,
+        "endLine": 292,
+        "endChar": 0
+      },
+      "revId": "ffa0bfeb8a9717be7228a4006b2960212098aef7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
