@@ -1,0 +1,360 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91e49e23_d4e93e75",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "there are no parameters embedded in JTR names?",
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd6fae4c_f73dffc8",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "given that this is going to be the same for all test results, let\u0027s validate before the loop\n\nalso, now I see that we could do better in the GTest CL: here we validate ALL keys and values. Validating inputs into the merge function would be sufficient. Parameters are guanrateed to be valid because WE generate them.",
+      "range": {
+        "startLine": 108,
+        "startChar": 12,
+        "endLine": 108,
+        "endChar": 36
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e6b1274_46452d35",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "%q: this is \"untrusted\" input",
+      "range": {
+        "startLine": 120,
+        "startChar": 43,
+        "endLine": 120,
+        "endChar": 44
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57f28763_06b93e4b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "sort this too",
+      "range": {
+        "startLine": 141,
+        "startChar": 3,
+        "endLine": 141,
+        "endChar": 18
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a4ba5e4_f0d52ba1",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "this and L149 is reapeated twice. Consider \n\n  func NormalizeInvocation(inv *resultspb.Invocation)\n\nand let\u0027s do it in the callsite of this func",
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6990e3e9_6ee9a0a6",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "nit: FWIU, the value here does not matter because we return an error. Doing\n\n  return 0, errors.Reason(...)\n\nwould be shorter",
+      "range": {
+        "startLine": 260,
+        "startChar": 10,
+        "endLine": 260,
+        "endChar": 44
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edc55935_005fc627",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "this part does not add much value",
+      "range": {
+        "startLine": 273,
+        "startChar": 77,
+        "endLine": 273,
+        "endChar": 111
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "793b6e07_b7852c1a",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "TestResult",
+      "range": {
+        "startLine": 273,
+        "startChar": 71,
+        "endLine": 273,
+        "endChar": 77
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb421a32_25ba49a9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "toProtos",
+      "range": {
+        "startLine": 273,
+        "startChar": 3,
+        "endLine": 273,
+        "endChar": 20
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5b180f5_d91d9892",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/data/stringset#NewFromSlice",
+      "range": {
+        "startLine": 277,
+        "startChar": 15,
+        "endLine": 277,
+        "endChar": 16
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbd40bb0_1d2aa5e6",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "error message should not include info that the caller already has, because often the caller wraps the error with information it posses, resulting in repeated information. And this is exactly what happens in L120",
+      "range": {
+        "startLine": 291,
+        "startChar": 3,
+        "endLine": 291,
+        "endChar": 9
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40b3e8de_0d129d99",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 303,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/data/stringset#Set.Has",
+      "range": {
+        "startLine": 303,
+        "startChar": 11,
+        "endLine": 303,
+        "endChar": 25
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe8732a8_3017b9b0",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "i think saw this kind of code a few times already. WDYT about\n\n  func StringPairs(pairs ...string) []*resultspb.StringPair\n\nwhere len(pairs) must be even",
+      "range": {
+        "startLine": 306,
+        "startChar": 11,
+        "endLine": 306,
+        "endChar": 50
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0b00326_952540b8",
+        "filename": "results/recorder/chromium/formats/json_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "this should be ShouldResembleProto",
+      "range": {
+        "startLine": 163,
+        "startChar": 3,
+        "endLine": 163,
+        "endChar": 17
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d73176b_9a5e6f0c",
+        "filename": "results/recorder/chromium/formats/json_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "could use util.StringPair here too? or even util.StringPairs (plural)",
+      "range": {
+        "startLine": 165,
+        "startChar": 4,
+        "endLine": 165,
+        "endChar": 9
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5542cfff_d11a2884",
+        "filename": "results/recorder/chromium/formats/json_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T17:57:43Z",
+      "side": 1,
+      "message": "i think it would much more readable to use ShouldResembleProto with the invocation that we expect.\nAlso I think less code",
+      "range": {
+        "startLine": 160,
+        "startChar": 2,
+        "endLine": 219,
+        "endChar": 4
+      },
+      "revId": "4ac61d0ac3446f4d369357d0e50a920832b3654e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
