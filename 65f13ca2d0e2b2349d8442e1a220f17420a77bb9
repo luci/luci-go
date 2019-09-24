@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "4d2a333c_ed9bce76",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T22:09:22Z",
+      "side": 1,
+      "message": "i think it does not help understanding the code immediately after the comment, i.e. I expect to explain it, don\u0027t see the direct connection and get worried that I don\u0027t understand something that is being implied.\n\n+1 to removing",
+      "parentUuid": "3173b5d0_7f767183",
+      "range": {
+        "startLine": 179,
+        "startChar": 44,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "acbf4a43_3b864c5f",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 2
@@ -210,6 +234,24 @@
       "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee390adf_a63c6023",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T22:09:22Z",
+      "side": 1,
+      "message": "I agree with the proposed \"Correct behavior\"",
+      "parentUuid": "193605dd_5a769505",
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
