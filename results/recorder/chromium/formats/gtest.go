@@ -149,7 +149,7 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 	inv := &resultspb.Invocation{
 		Incomplete:  incomplete,
 		VariantDefs: variantDefs,
-		Tags:        []*resultspb.StringPair{util.StringPair("test_framework", "gtest")},
+		Tags:        util.StringPairs("test_framework", "gtest"),
 	}
 
 	for testPath, variants := range testsToVariants {
@@ -216,7 +216,7 @@ func (r *GTestResults) convertRunResult(ctx context.Context, name string, result
 
 	rpb := &resultspb.TestResult{
 		Status:   status,
-		Tags:     []*resultspb.StringPair{util.StringPair("gtest_status", result.Status)},
+		Tags:     util.StringPairs("gtest_status", result.Status),
 		Duration: secondsToDuration(1e-6 * float64(result.ElapsedTimeMs)),
 	}
 
