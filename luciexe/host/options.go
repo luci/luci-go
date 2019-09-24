@@ -128,6 +128,9 @@ func (o *Options) initialize() (err error) {
 			return errors.Annotate(err, "Cannot create BaseDir").Err()
 		}
 	} else {
+		if o.BaseDir, err = filepath.Abs(o.BaseDir); err != nil {
+			return errors.Annotate(err, "resolving BaseDir").Err()
+		}
 		if err := os.RemoveAll(o.BaseDir); err != nil && !os.IsNotExist(err) {
 			return errors.Annotate(err, "clearing options.BaseDir").Err()
 		}

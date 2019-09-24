@@ -196,6 +196,9 @@ func (o *Options) prepCacheDir(ctx context.Context, cdir string, lo *launchOptio
 		}
 		newDir = cdir
 	} else {
+		if newDir, err = filepath.Abs(newDir); err != nil {
+			return nil, errors.Annotate(err, "resolving CacheDir").Err()
+		}
 		finfo, err := os.Stat(newDir)
 		if err != nil {
 			return nil, errors.Annotate(err, "statting CacheDir").Err()
