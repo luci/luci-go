@@ -62,6 +62,15 @@ func TestJSONConversions(t *testing.T) {
 								"actual": "FAIL",
 								"expected": "PASS"
 							}
+						},
+						"c3": {
+							"time": {
+								"time-t1.html": {
+									"actual": "PASS",
+									"expected": "PASS",
+									"time": 0.4
+								}
+							}
 						}
 					}
 				}`)
@@ -92,6 +101,11 @@ func TestJSONConversions(t *testing.T) {
 					Actual:   "FAIL",
 					Expected: "PASS",
 				},
+				"prefix.c3::time::time-t1.html": {
+					Actual:   "PASS",
+					Expected: "PASS",
+					Time:     0.4,
+				},
 			})
 
 			Convey(`with default path delimiter`, func() {
@@ -112,6 +126,7 @@ func TestJSONConversions(t *testing.T) {
 					"prefix.c1/c2/t1.html",
 					"prefix.c1/c2/t2.html",
 					"prefix.c2/t3.html",
+					"prefix.c3/time/time-t1.html",
 				})
 			})
 		})
@@ -139,6 +154,11 @@ func TestJSONConversions(t *testing.T) {
 				"c2/t3.html": {
 					Actual:   "FAIL",
 					Expected: "PASS",
+				},
+				"c2/t4.html": {
+					Actual:   "PASS PASS PASS",
+					Expected: "PASS",
+					Time:     0.3,
 				},
 			},
 		}
@@ -170,7 +190,7 @@ func TestJSONConversions(t *testing.T) {
 			),
 		)
 
-		So(len(inv.Tests), ShouldEqual, 3)
+		So(len(inv.Tests), ShouldEqual, 4)
 
 		Convey(`grouping by test name works`, func() {
 			paths := make([]string, len(inv.Tests))
@@ -178,7 +198,10 @@ func TestJSONConversions(t *testing.T) {
 				paths[i] = t.Path
 			}
 			So(paths, ShouldResemble, []string{
-				"prefix/c1/c2/t1.html", "prefix/c1/c2/t2.html", "prefix/c2/t3.html"})
+				"prefix/c1/c2/t1.html",
+				"prefix/c1/c2/t2.html",
+				"prefix/c2/t3.html",
+				"prefix/c2/t4.html"})
 		})
 
 		Convey(`grouping by variant works`, func() {
@@ -186,24 +209,40 @@ func TestJSONConversions(t *testing.T) {
 			So(len(inv.Tests[0].Variants), ShouldEqual, 1)
 			So(len(inv.Tests[1].Variants), ShouldEqual, 1)
 			So(len(inv.Tests[2].Variants), ShouldEqual, 1)
+			So(len(inv.Tests[3].Variants), ShouldEqual, 1)
 		})
 
 		Convey(`collecting runs per tests works`, func() {
 			So(len(inv.Tests[0].Variants[0].Results), ShouldEqual, 3)
 			So(len(inv.Tests[1].Variants[0].Results), ShouldEqual, 4)
 			So(len(inv.Tests[2].Variants[0].Results), ShouldEqual, 1)
+			So(len(inv.Tests[3].Variants[0].Results), ShouldEqual, 3)
 		})
 
 		Convey(`durations captured correctly`, func() {
-			testResults := inv.Tests[0].Variants[0].Results
-			expectedDurationsNs := []int32{3e8, 2e8, 1e8}
-			So(len(testResults), ShouldEqual, len(expectedDurationsNs))
-			for i, r := range testResults {
-				So(r.Duration.Seconds, ShouldEqual, 0)
-				So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
-			}
+			Convey(`with same total runs and durations`, func() {
+				testResults := inv.Tests[0].Variants[0].Results
+				expectedDurationsNs := []int32{3e8, 2e8, 1e8}
+				So(len(testResults), ShouldEqual, len(expectedDurationsNs))
+				for i, r := range testResults {
+					So(r.Duration.Seconds, ShouldEqual, 0)
+					So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
+				}
+			})
 
-			Convey(`fails with mismatched runs and durations`, func() {
+			Convey(`with only first duration`, func() {
+				testResults := inv.Tests[3].Variants[0].Results
+				for i, r := range testResults {
+					if i == 0 {
+						So(r.Duration.Seconds, ShouldEqual, 0)
+						So(r.Duration.Nanos, ShouldAlmostEqual, 3e8, 100)
+					} else {
+						So(r.Duration, ShouldBeNil)
+					}
+				}
+			})
+
+			Convey(`and fails with mismatched runs and durations`, func() {
 				results.Tests["c1/c2/t2.html"].Actual = "PASS FAIL PASS"
 				_, err := results.ToInvocation(ctx, req)
 				So(err, ShouldErrLike, "4 durations populated but has 3 test statuses")
