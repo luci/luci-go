@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4a249877_42d019cc",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-09-24T00:36:56Z",
+      "side": 1,
+      "message": "Ah, thanks! That makes things much cleaner.",
+      "parentUuid": "18d20a09_6b098537",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 247,
+        "endChar": 0
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a26cec84_a4a79a46",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 8
@@ -36,6 +60,30 @@
       "writtenOn": "2019-09-23T19:55:28Z",
       "side": 1,
       "message": "This line is responsible for aborting the extraction when the context is closed (in particular on Ctrl+C I believe). Each individual parallel task should now check this too, otherwise Ctrl+C will \"lag\" until the queue is fully drained (i.e. all files are extracted).",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 257,
+        "endChar": 3
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "661e8094_6b2e1ae1",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-09-24T00:36:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a26cec84_a4a79a46",
       "range": {
         "startLine": 255,
         "startChar": 2,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "40fe0d11_b1d4bc12",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-09-24T00:36:56Z",
+      "side": 1,
+      "message": "Ok, I can work around that. It\u0027ll take some effort, but it should eliminate some race conditions too.",
+      "parentUuid": "0a4becd0_905dcb3f",
+      "range": {
+        "startLine": 305,
+        "startChar": 1,
+        "endLine": 305,
+        "endChar": 27
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "950e0190_01d7fe7e",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 8
@@ -82,6 +154,30 @@
       "writtenOn": "2019-09-23T19:55:28Z",
       "side": 1,
       "message": "nit: either change to 0.5 or return back 2 sec below",
+      "range": {
+        "startLine": 391,
+        "startChar": 63,
+        "endLine": 391,
+        "endChar": 64
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41ecf4bc_94881754",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-09-24T00:36:56Z",
+      "side": 1,
+      "message": "Oops, good catch.",
+      "parentUuid": "950e0190_01d7fe7e",
       "range": {
         "startLine": 391,
         "startChar": 63,
@@ -114,6 +210,30 @@
       "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76201954_a6d6f05d",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 733,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-09-24T00:36:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f89b96e_677a4490",
+      "range": {
+        "startLine": 718,
+        "startChar": 0,
+        "endLine": 733,
+        "endChar": 1
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
