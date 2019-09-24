@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "71cf85ca_9034605e",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T23:18:59Z",
+      "side": 1,
+      "message": "this line depends on/assumes L275, i.e. have to read that in order to correctly interpret this line. It would be simpler if 1) it was orthogonal 2) we validated input before processing it: let\u0027s move this if statement above, *before* doing the durations thing\n\nprinciple: validate input data first, then process it",
+      "range": {
+        "startLine": 280,
+        "startChar": 20,
+        "endLine": 280,
+        "endChar": 61
+      },
+      "revId": "344e51f9e885e8478b52e0529f8deca5cc1c0112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0e72003_f0677203",
+        "filename": "results/util/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T23:18:59Z",
+      "side": 1,
+      "message": "comment should say that if the number of pairs is odd, the func will panic",
+      "revId": "344e51f9e885e8478b52e0529f8deca5cc1c0112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16aecf21_625c6d58",
+        "filename": "results/util/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T23:18:59Z",
+      "side": 1,
+      "message": "for i :\u003d range(strpairs) {",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 30
+      },
+      "revId": "344e51f9e885e8478b52e0529f8deca5cc1c0112",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
