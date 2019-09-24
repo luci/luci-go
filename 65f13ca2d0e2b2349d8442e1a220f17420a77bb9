@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba71a4a5_c86026b9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T21:35:29Z",
+      "side": 1,
+      "message": "i didn\u0027t quite understand this sentence",
+      "range": {
+        "startLine": 179,
+        "startChar": 44,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acbf4a43_3b864c5f",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T21:35:29Z",
+      "side": 1,
+      "message": "nit: now, the error checking is essentially L206. Let\u0027s reduce the distance between the two by moving these two lines closer to the usage, to L203",
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6aca654_0dd230eb",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T21:35:29Z",
+      "side": 1,
+      "message": "this looks like stale now, since we no longer check error",
+      "range": {
+        "startLine": 203,
+        "startChar": 5,
+        "endLine": 204,
+        "endChar": 47
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "904643d9_dac08a34",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T21:35:29Z",
+      "side": 1,
+      "message": "s/unknown/unexpected/\nsince we know about NEEDSREBASELINE, etc",
+      "range": {
+        "startLine": 267,
+        "startChar": 4,
+        "endLine": 267,
+        "endChar": 11
+      },
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c99d6d5b_d8affecd",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-24T21:35:29Z",
+      "side": 1,
+      "message": "this kind of begs the question: what if both \"time\" and \"times\" are specified? FWIU this is invalid input.\n\nif so, this should be\n\n  if len(f.Times) \u003e 0 \u0026\u0026 len(statuses) !\u003d len(f.Times) {\n\n--\n\nalso, you have an open CL that added this code, so let\u0027s fix it there https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1817643",
+      "revId": "65f13ca2d0e2b2349d8442e1a220f17420a77bb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
