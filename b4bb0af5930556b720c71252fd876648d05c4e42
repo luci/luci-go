@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ad4ff324_030823cd",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T00:14:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "758f6a98_3e25a83e",
+      "range": {
+        "startLine": 98,
+        "startChar": 25,
+        "endLine": 98,
+        "endChar": 30
+      },
+      "revId": "b4bb0af5930556b720c71252fd876648d05c4e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8c53ed2_3e287a3e",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "b4bb0af5930556b720c71252fd876648d05c4e42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff5c875e_dcdefe53",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-24T00:14:16Z",
+      "side": 1,
+      "message": "Yes, exactly. We have to return /some/ status, so we do return STATUS_UNSPECIFIED, but the error is what we actually care about and will handle from the return (if not nil as in this case).",
+      "parentUuid": "d8c53ed2_3e287a3e",
+      "range": {
+        "startLine": 260,
+        "startChar": 19,
+        "endLine": 260,
+        "endChar": 44
+      },
+      "revId": "b4bb0af5930556b720c71252fd876648d05c4e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
