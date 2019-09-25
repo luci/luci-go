@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa33b8d0_71641a8c",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T21:21:24Z",
+      "side": 1,
+      "message": "i think you meant to move this comment too. It currently does not make a lot of sense in *this* part of the code",
+      "revId": "1981ea3a51f68c3317f69bb640aee47a02f56fce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ebd55e2_b4c70529",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T21:21:24Z",
+      "side": 1,
+      "message": "let\u0027s move closer to the usage",
+      "revId": "1981ea3a51f68c3317f69bb640aee47a02f56fce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
