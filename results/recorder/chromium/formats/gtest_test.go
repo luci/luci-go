@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	resultspb "go.chromium.org/luci/results/proto/v1"
+	"go.chromium.org/luci/results/util"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -217,11 +218,11 @@ func TestGTestConversions(t *testing.T) {
 		So(
 			inv.Tags,
 			ShouldResemble,
-			[]*resultspb.StringPair{
-				{Key: "gtest_global_tag", Value: "tag1"},
-				{Key: "gtest_global_tag", Value: "tag2"},
-				{Key: "test_framework", Value: "gtest"},
-			},
+			util.StringPairs(
+				"gtest_global_tag", "tag1",
+				"gtest_global_tag", "tag2",
+				"test_framework", "gtest",
+			),
 		)
 
 		// Check tests.
@@ -303,23 +304,23 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey(`test tags work`, func() {
 			testResults := inv.Tests[0].Variants[0].Results
-			expectedTags := []*resultspb.StringPair{
-				{Key: "file", Value: "fileA.cc"},
-				{Key: "gtest_status", Value: "SUCCESS"},
-				{Key: "line", Value: "12"},
-				{Key: "lossless_snippet", Value: "true"},
-			}
+			expectedTags := util.StringPairs(
+				"file", "fileA.cc",
+				"gtest_status", "SUCCESS",
+				"line", "12",
+				"lossless_snippet", "true",
+			)
 			for _, r := range testResults {
 				So(r.Tags, ShouldResemble, expectedTags)
 			}
 
 			testResults = inv.Tests[1].Variants[0].Results
-			So(testResults[0].Tags, ShouldResemble, []*resultspb.StringPair{
-				{Key: "file", Value: "fileA.cc"},
-				{Key: "gtest_status", Value: "EXCESSIVE_OUTPUT"},
-				{Key: "line", Value: "24"},
-				{Key: "lossless_snippet", Value: "false"},
-			})
+			So(testResults[0].Tags, ShouldResemble, util.StringPairs(
+				"file", "fileA.cc",
+				"gtest_status", "EXCESSIVE_OUTPUT",
+				"line", "24",
+				"lossless_snippet", "false",
+			))
 		})
 	})
 }
