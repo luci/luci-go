@@ -16,6 +16,24 @@
       "revId": "a7e27d9f9bd132aea5bcb1f440e1d92cd1d020aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1b3fe08_945a661d",
+        "filename": "milo/buildsource/buildbot/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-25T23:40:48Z",
+      "side": 0,
+      "message": "Is this comment relevant in the latest patchset? I only see resolveLogDogStreamAddrFromTags moved.",
+      "parentUuid": "3a6f6de5_8845c065",
+      "revId": "a7e27d9f9bd132aea5bcb1f440e1d92cd1d020aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
