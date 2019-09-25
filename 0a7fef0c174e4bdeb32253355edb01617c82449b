@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f356b5c4_33998be7",
+        "filename": "results/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "nothing in this code depends/assumes this. There are other ways to make a non-normalized invocation. Let\u0027s omit this",
+      "range": {
+        "startLine": 23,
+        "startChar": 69,
+        "endLine": 23,
+        "endChar": 99
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25ae11f5_0cf7d178",
+        "filename": "results/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "test?",
+      "range": {
+        "startLine": 24,
+        "startChar": 5,
+        "endLine": 24,
+        "endChar": 24
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe170ec6_906b5294",
+        "filename": "results/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "for another CL: ShouldHaveLength",
+      "range": {
+        "startLine": 245,
+        "startChar": 6,
+        "endLine": 245,
+        "endChar": 9
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b2142e1_05f9a862",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "this won\u0027t look very useful (memory address). We need to implement fmt.Stringer there",
+      "range": {
+        "startLine": 114,
+        "startChar": 68,
+        "endLine": 114,
+        "endChar": 69
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "089e6fdd_32d6d153",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "not sure what\u0027st the point of this variable. It would be simpler to iterate over r.Tests here, and then results is fields.toProtos()",
+      "range": {
+        "startLine": 125,
+        "startChar": 28,
+        "endLine": 125,
+        "endChar": 42
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e87a15f6_50e12259",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T03:04:10Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 126,
+        "startChar": 2,
+        "endLine": 126,
+        "endChar": 8
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
