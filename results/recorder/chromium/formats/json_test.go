@@ -17,10 +17,15 @@ package formats
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"sort"
 	"testing"
 
+	resultspb "go.chromium.org/luci/results/proto/v1"
+	"go.chromium.org/luci/results/util"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestJSONConversions(t *testing.T) {
@@ -109,6 +114,140 @@ func TestJSONConversions(t *testing.T) {
 					"prefix.c2/t3.html",
 				})
 			})
+		})
+	})
+
+	Convey(`To Invocation works`, t, func() {
+		results := &JSONTestResults{
+			Interrupted: true,
+			Metadata: map[string]json.RawMessage{
+				"tags": json.RawMessage(`["linux", "ubuntu", "desktop"]`),
+			},
+			Version: 3,
+			Tests: map[string]*TestFields{
+				"c1/c2/t1.html": {
+					Actual:   "PASS PASS PASS",
+					Expected: "PASS",
+					Time:     0.3,
+					Times:    []float64{0.3, 0.2, 0.1},
+				},
+				"c1/c2/t2.html": {
+					Actual:   "PASS FAIL PASS CRASH",
+					Expected: "PASS FAIL",
+					Times:    []float64{0.05, 0.07, 0.06, 0.01},
+				},
+				"c2/t3.html": {
+					Actual:   "FAIL",
+					Expected: "PASS",
+				},
+				"c2/t4.html": {
+					Actual:   "PASS PASS PASS",
+					Expected: "PASS",
+					Time:     0.3,
+				},
+			},
+		}
+
+		req := &resultspb.DeriveInvocationFromSwarmingRequest{
+			Task: &resultspb.DeriveInvocationFromSwarmingRequest_SwarmingTask{
+				Hostname: "host-swarming",
+				Id:       "123",
+			},
+			TestPathPrefix: "prefix/",
+			BaseTestVariant: &resultspb.VariantDef{Def: map[string]string{
+				"bucket":     "bkt",
+				"builder":    "blder",
+				"test_suite": "foo_unittests",
+			}},
+		}
+
+		inv, err := results.ToInvocation(ctx, req)
+		So(err, ShouldBeNil)
+		So(inv.Incomplete, ShouldBeTrue)
+		So(inv.Tags, ShouldResembleProto, util.StringPairs(
+				"json_format_tag", "desktop",
+				"json_format_tag", "linux",
+				"json_format_tag", "ubuntu",
+				"test_framework", "json",
+			),
+		)
+
+		So(inv.Tests, ShouldHaveLength, 4)
+
+		Convey(`grouping by test name works`, func() {
+			paths := make([]string, len(inv.Tests))
+			for i, t := range inv.Tests {
+				paths[i] = t.Path
+			}
+			So(paths, ShouldResemble, []string{
+				"prefix/c1/c2/t1.html",
+				"prefix/c1/c2/t2.html",
+				"prefix/c2/t3.html",
+				"prefix/c2/t4.html"})
+		})
+
+		Convey(`grouping by variant works`, func() {
+			// They all have one and the same variant so far.
+			So(inv.Tests[0].Variants, ShouldHaveLength, 1)
+			So(inv.Tests[1].Variants, ShouldHaveLength, 1)
+			So(inv.Tests[2].Variants, ShouldHaveLength, 1)
+			So(inv.Tests[3].Variants, ShouldHaveLength, 1)
+		})
+
+		Convey(`collecting runs per tests works`, func() {
+			So(inv.Tests[0].Variants[0].Results, ShouldHaveLength, 3)
+			So(inv.Tests[1].Variants[0].Results, ShouldHaveLength, 4)
+			So(inv.Tests[2].Variants[0].Results, ShouldHaveLength, 1)
+			So(inv.Tests[3].Variants[0].Results, ShouldHaveLength, 3)
+		})
+
+		Convey(`durations captured correctly`, func() {
+			Convey(`with Time and Times both provided`, func() {
+				testResults := inv.Tests[0].Variants[0].Results
+				expectedDurationsNs := []int32{3e8, 2e8, 1e8}
+				So(testResults, ShouldHaveLength, len(expectedDurationsNs))
+				for i, r := range testResults {
+					So(r.Duration.Seconds, ShouldEqual, 0)
+					So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
+				}
+			})
+
+			Convey(`with only Times provided`, func() {
+				testResults := inv.Tests[1].Variants[0].Results
+				expectedDurationsNs := []int32{5e7, 7e7, 6e7, 1e7}
+				So(testResults, ShouldHaveLength, len(expectedDurationsNs))
+				for i, r := range testResults {
+					So(r.Duration.Seconds, ShouldEqual, 0)
+					So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
+				}
+			})
+
+			Convey(`with only Time provided`, func() {
+				testResults := inv.Tests[3].Variants[0].Results
+				for i, r := range testResults {
+					if i == 0 {
+						So(r.Duration.Seconds, ShouldEqual, 0)
+						So(r.Duration.Nanos, ShouldAlmostEqual, 3e8, 100)
+					} else {
+						So(r.Duration, ShouldBeNil)
+					}
+				}
+			})
+
+			Convey(`and fails with mismatched runs and durations`, func() {
+				results.Tests["c1/c2/t2.html"].Actual = "PASS FAIL PASS"
+				_, err := results.ToInvocation(ctx, req)
+				So(err, ShouldErrLike, "4 durations populated but has 3 test statuses")
+			})
+		})
+
+		Convey(`expectations captured correctly`, func() {
+			testResults := inv.Tests[1].Variants[0].Results
+			expectations := make([]bool, len(testResults))
+			for i, r := range testResults {
+				expectations[i] = r.Expected.Value
+			}
+			So(expectations, ShouldResemble, []bool{true, true, true, false})
 		})
 	})
 }

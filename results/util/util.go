@@ -15,10 +15,27 @@
 package util
 
 import (
+	"fmt"
+
 	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
 // StringPair creates a resultspb.StringPair with the given strings as key/value field values.
 func StringPair(k, v string) *resultspb.StringPair {
 	return &resultspb.StringPair{Key: k, Value: v}
+}
+
+// StringPairs creates a slice of resultspb.StringPair from a list of strings alternating key/value.
+//
+// Panics if an odd number of tokens is passed.
+func StringPairs(pairs ...string) []*resultspb.StringPair {
+	if len(pairs)%2 != 0 {
+		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
+	}
+
+	strpairs := make([]*resultspb.StringPair, len(pairs)/2)
+	for i := range strpairs {
+		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
+	}
+	return strpairs
 }
