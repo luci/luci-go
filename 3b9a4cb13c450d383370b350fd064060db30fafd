@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b122dbf3_682bdb03",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T21:19:54Z",
+      "side": 1,
+      "message": "let\u0027s validate first, before L98\n\nand then inv.VariantDefs can be assigned in the invocation literal",
+      "revId": "3b9a4cb13c450d383370b350fd064060db30fafd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

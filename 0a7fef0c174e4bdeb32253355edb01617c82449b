@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "28a0b314_e9080302",
+        "filename": "results/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T21:19:54Z",
+      "side": 1,
+      "message": "let\u0027s not that for now. Our yesterday discussion about base test variants helped me realized that our protos are quite entangled, so I have a local CL changing them quite a bit.",
+      "parentUuid": "37322391_a3bdebbd",
+      "range": {
+        "startLine": 23,
+        "startChar": 69,
+        "endLine": 23,
+        "endChar": 99
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25ae11f5_0cf7d178",
         "filename": "results/invocation.go",
         "patchSetId": 10
@@ -269,6 +293,30 @@
       "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e3ca8ca_122c3291",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-25T21:19:54Z",
+      "side": 1,
+      "message": "you are right",
+      "parentUuid": "be1b4959_4c5df5ec",
+      "range": {
+        "startLine": 114,
+        "startChar": 68,
+        "endLine": 114,
+        "endChar": 69
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
