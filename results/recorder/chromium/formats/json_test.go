@@ -62,6 +62,15 @@ func TestJSONConversions(t *testing.T) {
 								"actual": "FAIL",
 								"expected": "PASS"
 							}
+						},
+						"c3": {
+							"time": {
+								"time-t1.html": {
+									"actual": "PASS",
+									"expected": "PASS",
+									"time": 0.4
+								}
+							}
 						}
 					}
 				}`)
@@ -92,6 +101,11 @@ func TestJSONConversions(t *testing.T) {
 					Actual:   "FAIL",
 					Expected: "PASS",
 				},
+				"prefix.c3::time::time-t1.html": {
+					Actual:   "PASS",
+					Expected: "PASS",
+					Time:     0.4,
+				},
 			})
 
 			Convey(`with default path delimiter`, func() {
@@ -112,6 +126,7 @@ func TestJSONConversions(t *testing.T) {
 					"prefix.c1/c2/t1.html",
 					"prefix.c1/c2/t2.html",
 					"prefix.c2/t3.html",
+					"prefix.c3/time/time-t1.html",
 				})
 			})
 		})
