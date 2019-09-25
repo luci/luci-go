@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6f6de5_8845c065",
+        "filename": "milo/buildsource/buildbot/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-25T23:29:45Z",
+      "side": 0,
+      "message": "the two funcs below moved to swarming/build.go",
+      "revId": "a7e27d9f9bd132aea5bcb1f440e1d92cd1d020aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
