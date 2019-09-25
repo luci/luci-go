@@ -34,6 +34,24 @@
       "revId": "a7e27d9f9bd132aea5bcb1f440e1d92cd1d020aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b56de0_4de9871f",
+        "filename": "milo/buildsource/buildbot/buildinfo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-25T23:45:16Z",
+      "side": 0,
+      "message": "my bad. I meant to write this comment for swarming/buildinfo.",
+      "parentUuid": "c1b3fe08_945a661d",
+      "revId": "a7e27d9f9bd132aea5bcb1f440e1d92cd1d020aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
