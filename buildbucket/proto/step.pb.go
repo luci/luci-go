@@ -63,12 +63,16 @@ type Step struct {
 	Status Status `protobuf:"varint,4,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
 	// Logs produced by the step.
 	// Log order is up to the step.
+	//
+	// BigQuery: excluded from rows.
 	Logs []*Log `protobuf:"bytes,5,rep,name=logs,proto3" json:"logs,omitempty"`
 	// Human-readable summary of the step provided by the step itself,
 	// in Markdown format (https://spec.commonmark.org/0.28/).
 	//
 	// V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
 	// other formatted text.
+	//
+	// BigQuery: excluded from rows.
 	SummaryMarkdown      string   `protobuf:"bytes,7,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
