@@ -67,6 +67,8 @@ message Step {
 
   // Logs produced by the step.
   // Log order is up to the step.
+  //
+  // BigQuery: excluded from rows.
   repeated Log logs = 5;
 
   // Human-readable summary of the step provided by the step itself,
@@ -74,5 +76,7 @@ message Step {
   //
   // V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
   // other formatted text.
+  //
+  // BigQuery: excluded from rows.
   string summary_markdown = 7;
 }
