@@ -225,7 +225,7 @@ func TestGTestConversions(t *testing.T) {
 		)
 
 		// Check tests.
-		So(len(inv.Tests), ShouldEqual, 3)
+		So(inv.Tests, ShouldHaveLength, 3)
 
 		Convey(`grouping by test name works`, func() {
 			So(inv.Tests[0].Path, ShouldEqual, "prefix/test1")
@@ -235,15 +235,15 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey(`grouping by variant works`, func() {
 			// They all have one and the same variant so far.
-			So(len(inv.Tests[0].Variants), ShouldEqual, 1)
-			So(len(inv.Tests[1].Variants), ShouldEqual, 1)
-			So(len(inv.Tests[2].Variants), ShouldEqual, 1)
+			So(inv.Tests[0].Variants, ShouldHaveLength, 1)
+			So(inv.Tests[1].Variants, ShouldHaveLength, 1)
+			So(inv.Tests[2].Variants, ShouldHaveLength, 1)
 		})
 
 		Convey(`collecting runs per tests works`, func() {
-			So(len(inv.Tests[0].Variants[0].Results), ShouldEqual, 4)
-			So(len(inv.Tests[1].Variants[0].Results), ShouldEqual, 4)
-			So(len(inv.Tests[2].Variants[0].Results), ShouldEqual, 6)
+			So(inv.Tests[0].Variants[0].Results, ShouldHaveLength, 4)
+			So(inv.Tests[1].Variants[0].Results, ShouldHaveLength, 4)
+			So(inv.Tests[2].Variants[0].Results, ShouldHaveLength, 6)
 		})
 
 		Convey(`statuses mapped correctly`, func() {
@@ -266,7 +266,7 @@ func TestGTestConversions(t *testing.T) {
 		Convey(`durations captured correctly`, func() {
 			testResults := inv.Tests[0].Variants[0].Results
 			expectedDurationsNs := []int32{10000, 12000, 14000, 16000}
-			So(len(testResults), ShouldEqual, len(expectedDurationsNs))
+			So(testResults, ShouldHaveLength, len(expectedDurationsNs))
 			for i, r := range testResults {
 				So(r.Duration.Seconds, ShouldEqual, 0)
 				So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
