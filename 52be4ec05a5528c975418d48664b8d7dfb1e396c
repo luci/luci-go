@@ -52,6 +52,24 @@
       "revId": "52be4ec05a5528c975418d48664b8d7dfb1e396c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1d333e6_51ed0c9c",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-25T23:46:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "bf49dfb6_4153394a",
+      "revId": "52be4ec05a5528c975418d48664b8d7dfb1e396c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
