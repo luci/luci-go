@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "e87338db_e5d937e3",
+        "filename": "results/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-25T21:28:05Z",
+      "side": 1,
+      "message": "SG, thanks",
+      "parentUuid": "28a0b314_e9080302",
+      "range": {
+        "startLine": 23,
+        "startChar": 69,
+        "endLine": 23,
+        "endChar": 99
+      },
+      "revId": "0a7fef0c174e4bdeb32253355edb01617c82449b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "25ae11f5_0cf7d178",
         "filename": "results/invocation.go",
         "patchSetId": 10
