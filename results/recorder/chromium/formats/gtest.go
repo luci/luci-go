@@ -18,7 +18,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -149,7 +148,7 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 	inv := &resultspb.Invocation{
 		Incomplete:  incomplete,
 		VariantDefs: variantDefs,
-		Tags:        []*resultspb.StringPair{util.StringPair("test_framework", "gtest")},
+		Tags:        util.StringPairs("test_framework", "gtest"),
 	}
 
 	for testPath, variants := range testsToVariants {
@@ -164,14 +163,13 @@ func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveIn
 
 		inv.Tests = append(inv.Tests, testpb)
 	}
-	sort.Slice(inv.Tests, func(i, j int) bool { return inv.Tests[i].Path < inv.Tests[j].Path })
 
 	// Populate the tags.
 	for _, tag := range r.GlobalTags {
 		inv.Tags = append(inv.Tags, util.StringPair("gtest_global_tag", tag))
 	}
-	SortTagsInPlace(inv.Tags)
 
+	rdb.NormalizeInvocation(inv)
 	return inv, nil
 }
 
@@ -216,7 +214,7 @@ func (r *GTestResults) convertRunResult(ctx context.Context, name string, result
 
 	rpb := &resultspb.TestResult{
 		Status:   status,
-		Tags:     []*resultspb.StringPair{util.StringPair("gtest_status", result.Status)},
+		Tags:     util.StringPairs("gtest_status", result.Status),
 		Duration: secondsToDuration(1e-6 * float64(result.ElapsedTimeMs)),
 	}
 
@@ -246,8 +244,6 @@ func (r *GTestResults) convertRunResult(ctx context.Context, name string, result
 			util.StringPair("line", strconv.Itoa(loc.Line)),
 		)
 	}
-
-	SortTagsInPlace(rpb.Tags)
 
 	return rpb, nil
 }
