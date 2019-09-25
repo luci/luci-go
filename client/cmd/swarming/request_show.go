@@ -23,7 +23,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -63,11 +62,10 @@ func (c *requestShowRun) main(a subcommands.Application, taskid string) error {
 		return err
 	}
 
-	s, err := swarming.New(client)
+	s, err := c.createRawSwarmingService(client, c.serverURL+swarmingAPISuffix)
 	if err != nil {
 		return err
 	}
-	s.BasePath = c.commonFlags.serverURL + "/_ah/api/swarming/v1/"
 
 	call := s.Task.Request(taskid)
 	result, err := call.Do()

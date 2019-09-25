@@ -247,16 +247,26 @@ func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
+func (c *commonFlags) createRawSwarmingService(client *http.Client, basePath string) (*swarming.Service, error) {
+	s, err := swarming.New(client)
+	if err != nil {
+		return nil, err
+	}
+	s.BasePath = basePath
+	return s, nil
+}
+
 func (c *commonFlags) createSwarmingClient(ctx context.Context) (swarmingService, error) {
 	client, err := c.createAuthClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	s, err := swarming.New(client)
+
+	s, err := c.createRawSwarmingService(client, c.serverURL+swarmingAPISuffix)
 	if err != nil {
 		return nil, err
 	}
-	s.BasePath = c.serverURL + swarmingAPISuffix
+
 	return &swarmingServiceImpl{client, s, c.worker}, nil
 }
 
