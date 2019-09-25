@@ -16,23 +16,10 @@ package formats
 
 import (
 	"math"
-	"sort"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-
-	resultspb "go.chromium.org/luci/results/proto/v1"
 )
-
-// SortTagsInPlace sorts in-place the tags slice lexicographically by key, then value.
-func SortTagsInPlace(tags []*resultspb.StringPair) {
-	sort.Slice(tags, func(i, j int) bool {
-		if tags[i].Key != tags[j].Key {
-			return tags[i].Key < tags[j].Key
-		}
-		return tags[i].Value < tags[j].Value
-	})
-}
 
 // secondsToTimestamp converts a UTC float64 timestamp to a ptypes Timestamp.
 func secondsToTimestamp(t float64) *timestamp.Timestamp {

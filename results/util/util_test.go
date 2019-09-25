@@ -12,33 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package results
+package util
 
 import (
+	"fmt"
 	"testing"
 
 	resultspb "go.chromium.org/luci/results/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestVariantUtils(t *testing.T) {
-	Convey(`Map conversion works`, t, func() {
-		def := VariantDefMap{
-			"k2": "v2",
-			"k3": "v3",
-			"k1": "v1",
-		}
+func TestStringPairs(t *testing.T) {
+	Convey(`Works`, t, func() {
+		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*resultspb.StringPair{
+			{Key: "k1", Value: "v1"},
+			{Key: "k2", Value: "v2"},
+		})
 
-		varpb := def.Proto()
-		So(varpb, ShouldResembleProto, &resultspb.VariantDef{
-			Def: map[string]string{
-				"k1": "v1",
-				"k2": "v2",
-				"k3": "v3",
-			},
-			Digest: "6b12ab2958d568f28ca588b136468adbc0ed3a9978a4192c961f754061dbbae0",
+		Convey(`and fails if provided with incomplete pairs`, func() {
+			tokens := []string{"k1", "v1", "k2"}
+			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
+				fmt.Sprintf("odd number of tokens in %q", tokens))
 		})
 	})
 }
