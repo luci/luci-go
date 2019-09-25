@@ -18,10 +18,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
+	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+
+	rdb "go.chromium.org/luci/results"
+	resultspb "go.chromium.org/luci/results/proto/v1"
+	"go.chromium.org/luci/results/util"
 )
 
 const testNamePrefixKey = "test_name_prefix"
@@ -82,6 +89,74 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 	return nil
 }
 
+// ToInvocation converts a JSONTestResults to a (partial) resultspb.Invocation.
+func (r *JSONTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+	if r.Version != 3 {
+		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
+	}
+
+	// testsToResults maps JSON Test Formatted-test name to TestResults.
+	// There is only one variant shared by these results, the BaseTestVariant.
+	testsToResults := map[string][]*resultspb.TestResult{}
+
+	for name, fields := range r.Tests {
+		// Generate results associated with this test path.
+		rpbs, err := fields.toProtos()
+		if err != nil {
+			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
+		}
+
+		// Store the processed test result into the correct part of the overall map.
+		if _, ok := testsToResults[name]; !ok {
+			testsToResults[name] = []*resultspb.TestResult{}
+		}
+		testsToResults[name] = append(testsToResults[name], rpbs...)
+	}
+
+	// Get the variant for these tests and their results.
+	variantDefMap := rdb.VariantDefMap(req.BaseTestVariant.Def)
+	if err := variantDefMap.Validate(); err != nil {
+		return nil, errors.Annotate(err, "failed to validate variant def %q", variantDefMap).Err()
+	}
+	variantDef := variantDefMap.Proto()
+
+	// Now that we have all the results mapped by test path and variant, populate the invocation.
+	inv := &resultspb.Invocation{
+		Incomplete:  r.Interrupted,
+		VariantDefs: map[string]*resultspb.VariantDef{variantDef.Digest: variantDef},
+		Tags:        util.StringPairs("test_framework", "json"),
+	}
+
+	for name, results := range testsToResults {
+		testpb := &resultspb.Invocation_Test{
+			Path: req.TestPathPrefix + name,
+			Variants: []*resultspb.Invocation_TestVariant{
+				{
+					VariantId: variantDef.Digest,
+					Results:   results,
+				},
+			},
+		}
+
+		inv.Tests = append(inv.Tests, testpb)
+	}
+
+	// Get tags from metadata if any.
+	tags, err := r.extractTags()
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range tags {
+		inv.Tags = append(inv.Tags, util.StringPair("json_format_tag", tag))
+	}
+	if r.BuildNumber != "" {
+		inv.Tags = append(inv.Tags, util.StringPair("build_number", r.BuildNumber))
+	}
+
+	rdb.NormalizeInvocation(inv)
+	return inv, nil
+}
+
 // convertTests converts the trie of tests.
 func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) error {
 	// curNode should certainly be a map.
@@ -135,4 +210,85 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 	}
 
 	return nil
+}
+
+// extractTags tries to read the optional "tags" field in "metadata" as a slice of strings.
+func (r *JSONTestResults) extractTags() ([]string, error) {
+	maybeTags, ok := r.Metadata["tags"]
+	if !ok {
+		return nil, nil
+	}
+
+	var tags []string
+	if err := json.Unmarshal(maybeTags, &tags); err != nil {
+		return nil, errors.Annotate(err, "tags not []string, got %q", maybeTags).Err()
+	}
+
+	return tags, nil
+}
+
+func ofJSONStatus(s string) (resultspb.Status, error) {
+	switch s {
+	case "CRASH":
+		return resultspb.Status_CRASH, nil
+	case "FAIL":
+		return resultspb.Status_FAIL, nil
+	case "PASS":
+		return resultspb.Status_PASS, nil
+	case "SKIP":
+		return resultspb.Status_SKIP, nil
+	case "TIMEOUT":
+		return resultspb.Status_ABORT, nil
+	default:
+		// There are a number of web test-specific statuses not handled here as they are deprecated.
+		return 0, errors.Reason("unknown or unexpected JSON Test Format status %s", s).Err()
+	}
+}
+
+// toProtos converts the TestFields into a slice of resultspb.TestResult.
+func (f *TestFields) toProtos() ([]*resultspb.TestResult, error) {
+	// Process statuses.
+	actualStatuses := strings.Split(f.Actual, " ")
+	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
+
+	// Process times.
+	// Time and Times are both optional, but if Times is present, its length should match the number
+	// of runs. Otherwise we have only Time as the duration of the first run.
+	if len(f.Times) > 0 && len(actualStatuses) != len(f.Times) {
+		return nil, errors.Reason(
+			"%d durations populated but has %d test statuses; should match",
+			len(f.Times), len(actualStatuses)).Err()
+	}
+
+	durations := make([]float64, 0, len(f.Times)+1) // add 1 for if Time is populated but not Times
+	if len(f.Times) > 0 {
+		durations = f.Times
+	} else {
+		durations = []float64{f.Time}
+	}
+
+	// Populate protos.
+	rpbs := make([]*resultspb.TestResult, len(actualStatuses))
+	for i, runStatus := range actualStatuses {
+		status, err := ofJSONStatus(runStatus)
+		if err != nil {
+			return nil, err
+		}
+
+		rpbs[i] = &resultspb.TestResult{
+			Expected: &wrappers.BoolValue{
+				Value: expectedSet.Has(runStatus),
+			},
+			Status: status,
+			Tags:   util.StringPairs("json_format_status", runStatus),
+		}
+
+		if i < len(durations) {
+			rpbs[i].Duration = secondsToDuration(durations[i])
+		}
+
+		// TODO(jchinlee): Populate artifacts.
+	}
+
+	return rpbs, nil
 }

@@ -16,26 +16,24 @@ package util
 
 import (
 	"fmt"
+	"testing"
 
 	resultspb "go.chromium.org/luci/results/proto/v1"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-// StringPair creates a resultspb.StringPair with the given strings as key/value field values.
-func StringPair(k, v string) *resultspb.StringPair {
-	return &resultspb.StringPair{Key: k, Value: v}
-}
+func TestStringPairs(t *testing.T) {
+	Convey(`Works`, t, func() {
+		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*resultspb.StringPair{
+			{Key: "k1", Value: "v1"},
+			{Key: "k2", Value: "v2"},
+		})
 
-// StringPairs creates a slice of resultspb.StringPair from a list of strings alternating key/value.
-//
-// Panics if an odd number of tokens is passed.
-func StringPairs(pairs ...string) []*resultspb.StringPair {
-	if len(pairs) % 2 != 0 {
-		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
-	}
-
-	strpairs := make([]*resultspb.StringPair, len(pairs)/2)
-	for i := range(strpairs) {
-		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
-	}
-	return strpairs
+		Convey(`and fails if provided with incomplete pairs`, func() {
+			tokens := []string{"k1", "v1", "k2"}
+			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
+				fmt.Sprintf("odd number of tokens in %q", tokens))
+		})
+	})
 }
