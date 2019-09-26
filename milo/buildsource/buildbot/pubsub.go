@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/router"
@@ -64,13 +64,13 @@ var (
 )
 
 type buildMasterMsg struct {
-	Master *buildbotapi.Master  `json:"master"`
-	Builds []*buildbotapi.Build `json:"builds"`
+	Master *buildbot.Master  `json:"master"`
+	Builds []*buildbot.Build `json:"builds"`
 }
 
 // unmarshal a gzipped byte stream into a list of buildbot builds and masters.
 func unmarshal(
-	c context.Context, msg []byte) ([]*buildbotapi.Build, *buildbotapi.Master, error) {
+	c context.Context, msg []byte) ([]*buildbot.Build, *buildbot.Master, error) {
 	bm := buildMasterMsg{}
 	if len(msg) == 0 {
 		return bm.Builds, bm.Master, nil
@@ -106,7 +106,7 @@ func unmarshal(
 
 // getOSInfo fetches the os family and version of the slave the build was
 // running on from the master json on a best-effort basis.
-func getOSInfo(c context.Context, b *buildbotapi.Build, m *buildstore.Master) (
+func getOSInfo(c context.Context, b *buildbot.Build, m *buildstore.Master) (
 	family, version string) {
 	// Fetch the master info from datastore if not provided.
 	if m.Name == "" {
@@ -144,9 +144,9 @@ func getOSInfo(c context.Context, b *buildbotapi.Build, m *buildstore.Master) (
 	return
 }
 
-func saveMaster(c context.Context, master *buildbotapi.Master, internal bool) int {
+func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 	// Store the master in the storage.
-	expireCallback := func(b *buildbotapi.Build, reason string) {
+	expireCallback := func(b *buildbot.Build, reason string) {
 		logging.Infof(c, "Expiring %s/%s/%d due to %s",
 			master.Name, b.Buildername, b.Number, reason)
 		buildCounter.Add(

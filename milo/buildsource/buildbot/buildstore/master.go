@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
@@ -36,9 +36,9 @@ import (
 // MasterExpiry is how long a master entity can be stale before we consider it to be expired.
 const MasterExpiry = 4 * time.Hour
 
-// Master is buildbotapi.Master plus extra storage-level information.
+// Master is buildbot.Master plus extra storage-level information.
 type Master struct {
-	buildbotapi.Master
+	buildbot.Master
 	Internal bool
 	Modified time.Time
 }
@@ -115,7 +115,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		}
 		for _, builder := range builders {
 			if _, ok := m.Builders[builder]; !ok {
-				m.Builders[builder] = &buildbotapi.Builder{Buildername: builder}
+				m.Builders[builder] = &buildbot.Builder{Buildername: builder}
 			}
 		}
 
@@ -263,7 +263,7 @@ func PutPendingCount(c context.Context, master, builder string, count int) error
 }
 
 // ExpireCallback is called when a build is marked as expired.
-type ExpireCallback func(b *buildbotapi.Build, reason string)
+type ExpireCallback func(b *buildbot.Build, reason string)
 
 // SaveMaster persists the master in the storage.
 //
@@ -271,7 +271,7 @@ type ExpireCallback func(b *buildbotapi.Build, reason string)
 // and
 //   - associated with builders not declared in master.Builders
 //   - OR or not "current" from this master's perspective and >=20min stale.
-func SaveMaster(c context.Context, master *buildbotapi.Master,
+func SaveMaster(c context.Context, master *buildbot.Master,
 	internal bool, expireCallback ExpireCallback) error {
 
 	entity := &masterEntity{
@@ -326,7 +326,7 @@ func SaveMaster(c context.Context, master *buildbotapi.Master,
 	return cleanUpExpiredBuilds(c, master, expireCallback)
 }
 
-func cleanUpExpiredBuilds(c context.Context, master *buildbotapi.Master, expiredCallback ExpireCallback) error {
+func cleanUpExpiredBuilds(c context.Context, master *buildbot.Master, expiredCallback ExpireCallback) error {
 	q := datastore.NewQuery(buildKind).
 		Eq("master", master.Name).
 		Eq("finished", false)
@@ -349,7 +349,7 @@ func cleanUpExpiredBuilds(c context.Context, master *buildbotapi.Master, expired
 				}
 			}
 			if reason != "" {
-				b := (*buildbotapi.Build)(b)
+				b := (*buildbot.Build)(b)
 				work <- func() error {
 					err := expireBuild(c, b)
 					if err != nil {
@@ -370,14 +370,14 @@ func cleanUpExpiredBuilds(c context.Context, master *buildbotapi.Master, expired
 }
 
 // expireBuild marks a build as finished and expired.
-func expireBuild(c context.Context, b *buildbotapi.Build) error {
+func expireBuild(c context.Context, b *buildbot.Build) error {
 	if !b.TimeStamp.IsZero() {
 		b.Times.Finish = b.TimeStamp
 	} else {
 		b.Times.Finish.Time = clock.Now(c)
 	}
 	b.Finished = true
-	b.Results = buildbotapi.Exception
+	b.Results = buildbot.Exception
 	b.Currentstep = nil
 	b.Text = append(b.Text, "Build expired on Milo")
 	_, err := SaveBuild(c, b)
@@ -440,7 +440,7 @@ type masterEntity struct {
 	// This value must by synced with the existence of masterPublic entity.
 	// FIXME: the masterPublic entity should have been in the same entity group.
 	Internal bool
-	// Data is the json serialized and gzipped buildbotapi.Master.
+	// Data is the json serialized and gzipped buildbot.Master.
 	Data []byte `gae:",noindex"`
 	// Modified is when this entry was last modified.
 	Modified time.Time
@@ -455,7 +455,7 @@ func (m *masterEntity) decode(c context.Context) (*Master, error) {
 	err := decode(&res.Master, m.Data)
 	if err == nil && clock.Now(c).After(deadline) {
 		// Purge the builder list if the master is expired.
-		res.Master.Builders = map[string]*buildbotapi.Builder{}
+		res.Master.Builders = map[string]*buildbot.Builder{}
 	}
 	return &res, err
 }

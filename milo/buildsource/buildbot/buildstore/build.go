@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -59,14 +59,14 @@ const maxDataSize = 950000
 // GetBuild fetches a buildbot build from the storage.
 // Returns (nil, nil) if build is not found.
 // Does not check access.
-func GetBuild(c context.Context, id buildbotapi.BuildID) (*buildbotapi.Build, error) {
+func GetBuild(c context.Context, id buildbot.BuildID) (*buildbot.Build, error) {
 	return getBuild(c, id, true, true)
 }
 
 // getBuild returns a build by master, builder and number.
 // The returned build may be coming from datastore or Buildbucket RPC.
 // Returns (nil, nil) if build is not found.
-func getBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotations, fetchChanges bool) (*buildbotapi.Build, error) {
+func getBuild(c context.Context, id buildbot.BuildID, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	if !EmulationEnabled(c) {
 		return getDatastoreBuild(c, id)
 	}
@@ -97,7 +97,7 @@ func getBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotations, fetch
 
 // EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
 // Returns (nil, nil) if build is not found.
-func EmulationOf(c context.Context, id buildbotapi.BuildID) (*deprecated.Build, error) {
+func EmulationOf(c context.Context, id buildbot.BuildID) (*deprecated.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func EmulationOf(c context.Context, id buildbotapi.BuildID) (*deprecated.Build, 
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
 // Returns (nil, nil) if build is not found.
-func getEmulatedBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotations, fetchChanges bool) (*buildbotapi.Build, error) {
+func getEmulatedBuild(c context.Context, id buildbot.BuildID, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func getEmulatedBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotation
 
 // getDatastoreBuild returns a buildbot build from the datastore.
 // Returns (nil, nil) if build is not found.
-func getDatastoreBuild(c context.Context, id buildbotapi.BuildID) (*buildbotapi.Build, error) {
+func getDatastoreBuild(c context.Context, id buildbot.BuildID) (*buildbot.Build, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}
@@ -181,14 +181,14 @@ func getDatastoreBuild(c context.Context, id buildbotapi.BuildID) (*buildbotapi.
 
 	entity.addViewPath()
 
-	return (*buildbotapi.Build)(entity), err
+	return (*buildbot.Build)(entity), err
 }
 
 var errMissingProperties = errors.New("missing required properties")
 
 // attachRevisionInfo attaches a buildbucket-style BuildSet, and sets one or
 // more ManifestKeys on this build summary.
-func attachRevisionInfo(c context.Context, b *buildbotapi.Build, bs *model.BuildSummary) error {
+func attachRevisionInfo(c context.Context, b *buildbot.Build, bs *model.BuildSummary) error {
 	funcs := []struct {
 		Name string
 		CB   func() (string, error)
@@ -266,7 +266,7 @@ func attachRevisionInfo(c context.Context, b *buildbotapi.Build, bs *model.Build
 // of a buildbot build.  The format is in buildbucket://<host>/build/<buildID>.
 // Because all of our buildbot instances point to cr-buildbucket.appspot.com,
 // <host> is always cr-buildbucket.appspot.com.
-func getBuildbucketURI(b *buildbotapi.Build) (string, bool) {
+func getBuildbucketURI(b *buildbot.Build) (string, bool) {
 	v, ok := b.PropertyValue("buildbucket").(string)
 	if !ok {
 		return "", false
@@ -283,7 +283,7 @@ func getBuildbucketURI(b *buildbotapi.Build) (string, bool) {
 }
 
 // summarizeBuild creates a build summary from the buildbot build.
-func summarizeBuild(c context.Context, b *buildbotapi.Build) (*model.BuildSummary, error) {
+func summarizeBuild(c context.Context, b *buildbot.Build) (*model.BuildSummary, error) {
 	bs := &model.BuildSummary{
 		BuildKey:  datastore.KeyForObj(c, (*buildEntity)(b)),
 		BuilderID: fmt.Sprintf("buildbot/%s/%s", b.Master, b.Buildername),
@@ -329,7 +329,7 @@ func summarizeBuild(c context.Context, b *buildbotapi.Build) (*model.BuildSummar
 // SaveBuild persists the build in the storage.
 //
 // This will also update the model.BuildSummary and model.BuilderSummary.
-func SaveBuild(c context.Context, b *buildbotapi.Build) (replaced bool, err error) {
+func SaveBuild(c context.Context, b *buildbot.Build) (replaced bool, err error) {
 	bs, err := summarizeBuild(c, b)
 	if err != nil {
 		err = errors.Annotate(err, "summarizing build").Err()
@@ -377,10 +377,10 @@ func SaveBuild(c context.Context, b *buildbotapi.Build) (replaced bool, err erro
 	return
 }
 
-// buildEntity is a datstore entity that stores buildbotapi.Build in
+// buildEntity is a datstore entity that stores buildbot.Build in
 // compressed JSON format.
 // The properties is exclusively defined in Save/Load methods.
-type buildEntity buildbotapi.Build
+type buildEntity buildbot.Build
 
 const buildKind = "buildbotBuild"
 
@@ -457,7 +457,7 @@ func (b *buildEntity) Save(withMeta bool) (datastore.PropertyMap, error) {
 		ps = datastore.PropertyMap{}
 	}
 
-	build := (*buildbotapi.Build)(b)
+	build := (*buildbot.Build)(b)
 
 	data, err := encode(b)
 	if err != nil {
@@ -489,7 +489,7 @@ func (b *buildEntity) Load(pm datastore.PropertyMap) error {
 		if err != nil {
 			return err
 		}
-		build := (*buildbotapi.Build)(b)
+		build := (*buildbot.Build)(b)
 		if err := decode(build, data.([]byte)); err != nil {
 			return err
 		}
@@ -499,7 +499,7 @@ func (b *buildEntity) Load(pm datastore.PropertyMap) error {
 	return nil
 }
 
-// addViewPath populates the 'ViewPath' field of the underlying buildbotapi.Build
+// addViewPath populates the 'ViewPath' field of the underlying buildbot.Build
 // struct.
 func (b *buildEntity) addViewPath() {
 	if b == nil {
@@ -512,7 +512,7 @@ func (b *buildEntity) addViewPath() {
 }
 
 // promoteLogdogAliases promotes LogDog links to first-class links.
-func promoteLogdogAliases(b *buildbotapi.Build) {
+func promoteLogdogAliases(b *buildbot.Build) {
 	// If this is a LogDog-only build, we want to promote the LogDog links.
 	if loc, ok := b.PropertyValue("log_location").(string); ok && strings.HasPrefix(loc, "logdog://") {
 		linkMap := map[string]string{}
@@ -551,35 +551,35 @@ func promoteLogdogAliases(b *buildbotapi.Build) {
 //
 // As URLs are re-mapped, the supplied "linkMap" will be updated to map the old
 // URLs to the new ones.
-func promoteLogDogLinks(s *buildbotapi.Step, isInitialStep bool, linkMap map[string]string) {
+func promoteLogDogLinks(s *buildbot.Step, isInitialStep bool, linkMap map[string]string) {
 	remainingAliases := stringset.New(len(s.Aliases))
 	for a := range s.Aliases {
 		remainingAliases.Add(a)
 	}
 
-	maybePromoteAliases := func(sl buildbotapi.Log, isLog bool) []buildbotapi.Log {
+	maybePromoteAliases := func(sl buildbot.Log, isLog bool) []buildbot.Log {
 		// As a special case, if this is the first step ("steps" in BuildBot), we
 		// will refrain from promoting aliases for "stdio", since "stdio" represents
 		// the raw BuildBot logs.
 		if isLog && isInitialStep && sl.Name == "stdio" {
 			// No aliases, don't modify this log.
-			return []buildbotapi.Log{sl}
+			return []buildbot.Log{sl}
 		}
 
 		// If there are no aliases, we should obviously not promote them. This will
 		// be the case for pre-LogDog steps such as build setup.
 		aliases := s.Aliases[sl.Name]
 		if len(aliases) == 0 {
-			return []buildbotapi.Log{sl}
+			return []buildbot.Log{sl}
 		}
 
 		// We have chosen to promote the aliases. Therefore, we will not include
 		// them as aliases in the modified step.
 		remainingAliases.Del(sl.Name)
 
-		result := make([]buildbotapi.Log, len(aliases))
+		result := make([]buildbot.Log, len(aliases))
 		for i, alias := range aliases {
-			log := buildbotapi.Log{Name: alias.Text, URL: alias.URL}
+			log := buildbot.Log{Name: alias.Text, URL: alias.URL}
 
 			// Any link named "logdog" (Annotee cosmetic implementation detail) will
 			// inherit the name of the original log.
@@ -604,7 +604,7 @@ func promoteLogDogLinks(s *buildbotapi.Step, isInitialStep bool, linkMap map[str
 	}
 
 	// Update step logs.
-	newLogs := make([]buildbotapi.Log, 0, len(s.Logs))
+	newLogs := make([]buildbot.Log, 0, len(s.Logs))
 	for _, l := range s.Logs {
 		newLogs = append(newLogs, maybePromoteAliases(l, true)...)
 	}
@@ -613,7 +613,7 @@ func promoteLogDogLinks(s *buildbotapi.Step, isInitialStep bool, linkMap map[str
 	// Update step URLs.
 	newURLs := make(map[string]string, len(s.Urls))
 	for label, link := range s.Urls {
-		urlLinks := maybePromoteAliases(buildbotapi.Log{Name: label, URL: link}, false)
+		urlLinks := maybePromoteAliases(buildbot.Log{Name: label, URL: link}, false)
 		if len(urlLinks) > 0 {
 			// Use the last URL link, since our URL map can only tolerate one link.
 			// The expected case here is that len(urlLinks) == 1, though, but it's
@@ -628,9 +628,9 @@ func promoteLogDogLinks(s *buildbotapi.Step, isInitialStep bool, linkMap map[str
 	s.Urls = newURLs
 
 	// Preserve any aliases that haven't been promoted.
-	var newAliases map[string][]*buildbotapi.LinkAlias
+	var newAliases map[string][]*buildbot.LinkAlias
 	if l := remainingAliases.Len(); l > 0 {
-		newAliases = make(map[string][]*buildbotapi.LinkAlias, l)
+		newAliases = make(map[string][]*buildbot.LinkAlias, l)
 		remainingAliases.Iter(func(v string) bool {
 			newAliases[v] = s.Aliases[v]
 			return true

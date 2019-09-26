@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/git"
 )
 
@@ -102,7 +102,7 @@ func (q *Query) dsQuery() *datastore.Query {
 
 // QueryResult is a result of running a Query.
 type QueryResult struct {
-	Builds     []*buildbotapi.Build // ordered from greater-number to lower-number
+	Builds     []*buildbot.Build // ordered from greater-number to lower-number
 	NextCursor string
 	PrevCursor string
 }
@@ -121,7 +121,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 		return getDatastoreBuilds(c, q, true)
 	}
 
-	var emulatedBuilds, buildbotBuilds []*buildbotapi.Build
+	var emulatedBuilds, buildbotBuilds []*buildbot.Build
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (err error) {
 			res, err := getDatastoreBuilds(c, q, false)
@@ -150,8 +150,8 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 // The returned builds are ordered by build numbers, descending.
 //
 // If a build number is present in both a and b, b's build is ignored.
-func mergeBuilds(a, b []*buildbotapi.Build) []*buildbotapi.Build {
-	ret := make([]*buildbotapi.Build, len(a), len(a)+len(b))
+func mergeBuilds(a, b []*buildbot.Build) []*buildbot.Build {
+	ret := make([]*buildbot.Build, len(a), len(a)+len(b))
 	copy(ret, a)
 
 	// add builds from b that have unique build numbers.
@@ -170,7 +170,7 @@ func mergeBuilds(a, b []*buildbotapi.Build) []*buildbotapi.Build {
 	return ret
 }
 
-func getEmulatedBuilds(c context.Context, q Query) ([]*buildbotapi.Build, error) {
+func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	if q.Cursor != "" {
 		// build query emulation does not support cursors
 		logging.Warningf(c, "ignoring cursor %q", q.Cursor)
@@ -222,7 +222,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbotapi.Build, error)
 
 	logging.Infof(c, "buildbucket search took %s", clock.Since(c, start))
 
-	buildsTemp := make([]*buildbotapi.Build, len(msgs))
+	buildsTemp := make([]*buildbot.Build, len(msgs))
 	start = clock.Now(c)
 	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for i, msg := range msgs {
@@ -252,7 +252,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbotapi.Build, error)
 	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
 
 	// Remove nil builds. I.E. The ones without build numbers.
-	builds := make([]*buildbotapi.Build, 0, len(buildsTemp))
+	builds := make([]*buildbot.Build, 0, len(buildsTemp))
 	for _, b := range buildsTemp {
 		if b != nil {
 			builds = append(builds, b)
@@ -337,11 +337,11 @@ func getDatastoreBuilds(c context.Context, q Query, includeExperimental bool) (*
 		}
 	}
 	res := &QueryResult{
-		Builds: make([]*buildbotapi.Build, len(builds)),
+		Builds: make([]*buildbot.Build, len(builds)),
 	}
 	for i, b := range builds {
 		b.addViewPath()
-		res.Builds[i] = (*buildbotapi.Build)(b)
+		res.Builds[i] = (*buildbot.Build)(b)
 	}
 
 	// Compute prev and next cursors.
