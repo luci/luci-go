@@ -85,8 +85,10 @@ func main() {
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
-	opts.BaseDir, err = os.Getwd()
+	cwd, err := os.Getwd()
 	check(errors.Annotate(err, "getting cwd").Err())
+
+	opts.BaseDir = filepath.Join(cwd, "x")
 
 	exePath, err := filepath.Abs(input.ExecutablePath)
 	check(errors.Annotate(err, "absoluting exe path %q", input.ExecutablePath).Err())
