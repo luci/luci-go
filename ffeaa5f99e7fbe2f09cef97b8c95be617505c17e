@@ -22,6 +22,30 @@
       "revId": "ffeaa5f99e7fbe2f09cef97b8c95be617505c17e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "105c154d_be9d8285",
+        "filename": "common/proto/google/descutil/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-26T07:15:01Z",
+      "side": 1,
+      "message": "yep it\u0027s not great. I\u0027ll make it \u003e\u003d 50000, but I suspect that there\u0027s an actual bug here.",
+      "parentUuid": "dbedd13e_5197c555",
+      "range": {
+        "startLine": 284,
+        "startChar": 17,
+        "endLine": 284,
+        "endChar": 32
+      },
+      "revId": "ffeaa5f99e7fbe2f09cef97b8c95be617505c17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
