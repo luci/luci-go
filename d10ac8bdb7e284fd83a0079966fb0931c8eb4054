@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4c59755_4d2cc83c",
+        "filename": "milo/buildsource/buildbot/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-26T00:20:22Z",
+      "side": 1,
+      "message": "Revert.",
+      "revId": "d10ac8bdb7e284fd83a0079966fb0931c8eb4054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f2733c7_ac15045f",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-09-26T00:20:22Z",
+      "side": 1,
+      "message": "Revert.",
+      "revId": "d10ac8bdb7e284fd83a0079966fb0931c8eb4054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
