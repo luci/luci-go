@@ -73,7 +73,7 @@ type Agent struct {
 	MergedBuildC <-chan *bbpb.Build
 
 	// used to cancel in-progress sendMerge calls.
-	parentCtx context.Context
+	ctx context.Context
 
 	// mergedBuildC is the send side of MergedBuildC
 	mergedBuildC chan<- *bbpb.Build
@@ -107,9 +107,6 @@ type Agent struct {
 
 	// done is an atomically-accessed boolean
 	done int32
-
-	doneCloser func()
-	doneCtx    context.Context
 
 	// calculateURLs is a function which can convert a logdog namespace and
 	// streamname into both the full 'Url' and 'ViewUrl' values for a Log message.
@@ -156,7 +153,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	userRootURL, _ := calculateURLs(userNamespace, luciexe.BuildProtoStreamSuffix)
 
 	ret := &Agent{
-		parentCtx: ctx,
+		ctx: ctx,
 
 		MergedBuildC: ch,
 
@@ -191,7 +188,6 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	ret.informNewData = func() {
 		ret.mergeCh.C <- nil // content doesn't matter
 	}
-	ret.doneCtx, ret.doneCloser = context.WithCancel(ctx)
 
 	return ret
 }
@@ -223,7 +219,7 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) bundler.StreamChunk
 	}
 
 	url, _ := a.calculateURLs("", types.StreamName(desc.Name))
-	bState := newBuildStateTracker(a.doneCtx, a, namespace, err)
+	bState := newBuildStateTracker(a.ctx, a, namespace, err)
 
 	a.statesMu.Lock()
 	defer a.statesMu.Unlock()
@@ -239,11 +235,15 @@ func (a *Agent) Close() {
 		return
 	}
 
-	a.doneCloser() // stops all current state trackers
-
-	// wait for all states' final work items
-	for _, t := range a.snapStates() {
-		t.getFinal()
+	// close all states' and process their final work items. Closure should be
+	// very quick and will activate all final processing in parallel. GetFinal
+	// ensures that the state is completely settled.
+	states := a.snapStates()
+	for _, t := range states {
+		t.Close()
+	}
+	for _, t := range states {
+		t.GetFinal()
 	}
 
 	// tells our merge Channel to process all the current (now-final) states one
@@ -313,7 +313,7 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 	select {
 	case a.mergedBuildC <- &base:
-	case <-a.parentCtx.Done():
+	case <-a.ctx.Done():
 		a.Close()
 	}
 
@@ -330,7 +330,7 @@ func (a *Agent) collectingData() bool {
 
 // Used for minting protobuf timestamps for buildStateTrackers
 func (a *Agent) clockNow() *timestamp.Timestamp {
-	ret, err := ptypes.TimestampProto(clock.Now(a.parentCtx))
+	ret, err := ptypes.TimestampProto(clock.Now(a.ctx))
 	if err != nil {
 		panic(err)
 	}

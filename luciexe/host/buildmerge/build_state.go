@@ -130,8 +130,7 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 // newBuildStateTracker produces a new buildStateTracker in the given logdog
 // namespace.
 //
-// `ctx` is used for cancellation/logging. Canceling the context is equivalent
-// to calling handleNewData(nil) (i.e. ignore all future updates).
+// `ctx` is used for cancellation/logging.
 //
 // `merger` is the Agent that this buildStateTracker belongs to. See the comment
 // in buildStateTracker for its use of this.
@@ -174,7 +173,7 @@ func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.St
 		go func() {
 			select {
 			case <-ctx.Done():
-				ret.closeWork()
+				ret.Close()
 			case <-ret.work.DrainC:
 				// already shut down w/o cancelation
 			}
@@ -237,7 +236,7 @@ func (t *buildStateTracker) parseAndSend(data *buffer.Batch) error {
 	}
 
 	if state.closed {
-		t.closeWork()
+		t.Close()
 	} else {
 		state.build.UpdateTime = t.merger.clockNow()
 	}
@@ -267,14 +266,14 @@ func (t *buildStateTracker) getLatest() *buildState {
 	return &state
 }
 
-// getFinal waits for the build state to finalize then returns the final state
+// GetFinal waits for the build state to finalize then returns the final state
 // of the Build.
 //
 // This always returns a non-nil buildState.build to make the calling code
 // simpler.
 //
 // The returned buildState will always have `buildState.final == true`.
-func (t *buildStateTracker) getFinal() *buildState {
+func (t *buildStateTracker) GetFinal() *buildState {
 	if t.work.DrainC != nil {
 		<-t.work.DrainC
 	}
@@ -297,7 +296,7 @@ func (t *buildStateTracker) getFinal() *buildState {
 // When this is called with `nil` as an argument (when the attached logdog
 // stream is closed), it will start the closure process on this
 // buildStateTracker. The final build state can be obtained synchronously by
-// calling getFinal().
+// calling GetFinal().
 func (t *buildStateTracker) handleNewData(entry *logpb.LogEntry) {
 	t.workMu.Lock()
 	defer t.workMu.Unlock()
@@ -314,13 +313,13 @@ func (t *buildStateTracker) handleNewData(entry *logpb.LogEntry) {
 }
 
 func (t *buildStateTracker) closeWorkLocked() {
-	if !t.workClosed {
+	if !t.workClosed && t.work.C != nil {
 		close(t.work.C)
 		t.workClosed = true
 	}
 }
 
-func (t *buildStateTracker) closeWork() {
+func (t *buildStateTracker) Close() {
 	t.workMu.Lock()
 	defer t.workMu.Unlock()
 	t.closeWorkLocked()

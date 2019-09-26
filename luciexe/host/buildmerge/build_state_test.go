@@ -102,7 +102,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				// No wait, because this handleNewData was ignored.
 
-				So(bs.getFinal(), ShouldResemble, &buildState{
+				So(bs.GetFinal(), ShouldResemble, &buildState{
 					build: &bbpb.Build{
 						EndTime:         now,
 						UpdateTime:      now,
@@ -115,7 +115,7 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`can still close, though`, func() {
 					bs.handleNewData(nil)
-					So(bs.getFinal(), ShouldResemble, &buildState{
+					So(bs.GetFinal(), ShouldResemble, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -140,7 +140,7 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					So(bs.getFinal(), ShouldResemble, &buildState{
+					So(bs.GetFinal(), ShouldResemble, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -160,7 +160,7 @@ func TestBuildState(t *testing.T) {
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
 						}
 						bs.handleNewData(nil)
-						So(bs.getFinal(), ShouldResemble, &buildState{
+						So(bs.GetFinal(), ShouldResemble, &buildState{
 							closed: true,
 							final:  true,
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
@@ -213,7 +213,7 @@ func TestBuildState(t *testing.T) {
 					})
 					wait()
 					wait() // for final build
-					So(bs.getFinal(), ShouldResemble, &buildState{
+					So(bs.GetFinal(), ShouldResemble, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -248,7 +248,7 @@ func TestBuildState(t *testing.T) {
 				Convey(`handleNewData(nil)`, func() {
 					bs.handleNewData(nil)
 					wait()
-					So(bs.getFinal(), ShouldResemble, &buildState{
+					So(bs.GetFinal(), ShouldResemble, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -288,7 +288,7 @@ func TestBuildState(t *testing.T) {
 				})
 				wait()
 				wait() // for final build
-				So(bs.getFinal(), ShouldResemble, &buildState{
+				So(bs.GetFinal(), ShouldResemble, &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,
@@ -303,7 +303,7 @@ func TestBuildState(t *testing.T) {
 
 				Convey(`ignores further updates`, func() {
 					bs.handleNewData(mkDgram(&bbpb.Build{SummaryMarkdown: "hi"}))
-					So(bs.getFinal(), ShouldResemble, &buildState{
+					So(bs.GetFinal(), ShouldResemble, &buildState{
 						invalid: true,
 						closed:  true,
 						build: &bbpb.Build{
@@ -331,7 +331,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 				wait() // for final build
-				So(bs.getFinal(), ShouldResemble, &buildState{
+				So(bs.GetFinal(), ShouldResemble, &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,
