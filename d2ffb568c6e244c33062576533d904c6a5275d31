@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f0e47a45_ca555dc8",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "but it does contain result, conceptually. I\u0027ve added \"conceptually\". Does it help?",
+      "parentUuid": "5b8d4996_15842253",
+      "range": {
+        "startLine": 24,
+        "startChar": 3,
+        "endLine": 24,
+        "endChar": 15
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5fa83224_26fda9d0",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2019-09-26T19:22:14Z",
       "side": 1,
       "message": "Actually, do we expect this to be set to True if the invocation hasn\u0027t yet been finalized?\n\n(I think in practice we would check the finalize_time first anyway, so it\u0027s a specificity nit.)",
+      "range": {
+        "startLine": 40,
+        "startChar": 22,
+        "endLine": 40,
+        "endChar": 23
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c905939c_bb61e8da",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "I think it is better not to couple these two concepts. One is whether invocation is still ongoing, and another whether it is destined to be incomplete (forever). I\u0027ve clarified that incomplete state is terminal. Does it help?\n\nreplying to Chan here too, since we both threads seem to be talking about the same thing. Looks like this term is ambiguous. Meanings: 1) it is done 2) it lacks some items. I meant the latter. Need help with English here, ideas for a better word?",
+      "parentUuid": "5fa83224_26fda9d0",
       "range": {
         "startLine": 40,
         "startChar": 22,
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "bac0f283_d13a56da",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "replied above",
+      "parentUuid": "7f5b9c8b_629c27f4",
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "56d8a585_af972222",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -76,6 +142,30 @@
       "writtenOn": "2019-09-26T19:22:14Z",
       "side": 1,
       "message": "How would this be used? One test result would append keys to base_test_variant_def, but then wouldn\u0027t that base_test_variant_def then also apply those additional keys to all the other results associated with that invocation?",
+      "range": {
+        "startLine": 59,
+        "startChar": 25,
+        "endLine": 59,
+        "endChar": 35
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91651dbe_ee7c1ea8",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "i think this sentence is confusing. I\u0027ve rephrased. Is it better now?",
+      "parentUuid": "56d8a585_af972222",
       "range": {
         "startLine": 59,
         "startChar": 25,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "d21a8fae_d636ed49",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75d74ff8_9bd3de20",
+      "range": {
+        "startLine": 75,
+        "startChar": 26,
+        "endLine": 75,
+        "endChar": 29
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dbfa311d_84928538",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -122,6 +236,30 @@
       "writtenOn": "2019-09-26T19:51:41Z",
       "side": 1,
       "message": "Could you use including and included invocations here? I personally think it will be more clear.",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 38
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd6459d8_fc2e6e8b",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "forgot to update this part of the doc, thanks\n\none problem with including/included is most of chars in these two words are same, so it is a bit hard to read. Thoughts?",
+      "parentUuid": "dbfa311d_84928538",
       "range": {
         "startLine": 75,
         "startChar": 0,
@@ -151,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "1bc01b7b_5cca6837",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "yes, clarified",
+      "parentUuid": "6e320034_3572089d",
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5621d83_73249d20",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -162,6 +318,30 @@
       "writtenOn": "2019-09-26T19:51:41Z",
       "side": 1,
       "message": "For a build containing many swarming tasks, each swarming task will have their own Invocation, and their Invocations are included in the build\u0027s Invocation by Inclusion. Right?\n\nAnd included_invocation is the same as the child invocation\u0027s name.",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 33
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b336e09_dc2f8f14",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "\u003e For a build containing many swarming tasks, each swarming task will have their own Invocation, and their Invocations are included in the build\u0027s Invocation by Inclusion. Right?\n\nRight\n\n\u003e \n\u003e And included_invocation is the same as the child invocation\u0027s name.\n\nhm, no. Note that task invocation does not know who includes it. The build knows: inclusions belong to the build. Each inclusion edge specifies the task invocation in this field.",
+      "parentUuid": "c5621d83_73249d20",
       "range": {
         "startLine": 78,
         "startChar": 0,
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "6a5f818d_510ae296",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "removed the line. It is just one paragraph below",
+      "parentUuid": "4cbe4df0_44907cce",
+      "range": {
+        "startLine": 29,
+        "startChar": 17,
+        "endLine": 29,
+        "endChar": 18
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a798971_2c181e5b",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -217,6 +421,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f274c37_d867d907",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a798971_2c181e5b",
+      "range": {
+        "startLine": 71,
+        "startChar": 14,
+        "endLine": 71,
+        "endChar": 15
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +471,30 @@
     },
     {
       "key": {
+        "uuid": "d696f329_f6cf01fb",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "yes. Specified in Invocation.name that it is OUTPUT_ONLY",
+      "parentUuid": "66f2be3d_23956134",
+      "range": {
+        "startLine": 92,
+        "startChar": 28,
+        "endLine": 92,
+        "endChar": 42
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd5916cb_25ef0a43",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -263,6 +515,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "752e355c_cbef408a",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd5916cb_25ef0a43",
+      "range": {
+        "startLine": 107,
+        "startChar": 21,
+        "endLine": 107,
+        "endChar": 22
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -289,6 +565,30 @@
     },
     {
       "key": {
+        "uuid": "64d3f943_f45235fd",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "no, see OUTPUT_ONLY marker in the field declaration. https://aip.dev/203#output-only",
+      "parentUuid": "2a592b4a_788d5fb7",
+      "range": {
+        "startLine": 122,
+        "startChar": 68,
+        "endLine": 122,
+        "endChar": 69
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8789745_f1fee503",
         "filename": "results/proto/v1/recorder.proto",
         "patchSetId": 2
@@ -309,6 +609,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "592ce7a9_34329904",
+        "filename": "results/proto/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8789745_f1fee503",
+      "range": {
+        "startLine": 260,
+        "startChar": 5,
+        "endLine": 260,
+        "endChar": 11
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -335,6 +659,54 @@
     },
     {
       "key": {
+        "uuid": "0d7e984a_a643fedb",
+        "filename": "results/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "\u003e Do you mean the test results in child invocations will not be included in the response?\n\nyes, clarified\n\n\u003e \n\u003e Then for a build containing many swarming tasks, what will be returned if we request the build\u0027s results?\n\nthis RPC won\u0027t return anything for build. \nfor a build, you\u0027d want to use QueryTestResults",
+      "parentUuid": "529231f1_6d766973",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 34
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bcf9771_a78cb5ed",
+        "filename": "results/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81b3fba4_da44c45f",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 13
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e5fa834_339f0865",
         "filename": "results/proto/v1/resultdb.proto",
         "patchSetId": 2
@@ -355,6 +727,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a11cb77f_ec766612",
+        "filename": "results/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "just following the guidelines https://aip.dev/132#request-message\n\n\u003e A parent field must be included unless the resource being listed is a top-level resource. It should be called parent.\n\nbut it says \"should\", not \"must\". parent is kind of generic, so changed to invocation.",
+      "parentUuid": "2e5fa834_339f0865",
+      "range": {
+        "startLine": 68,
+        "startChar": 9,
+        "endLine": 68,
+        "endChar": 15
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -381,6 +777,30 @@
     },
     {
       "key": {
+        "uuid": "55366bba_20b58539",
+        "filename": "results/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "clarified",
+      "parentUuid": "d243c937_27e67db8",
+      "range": {
+        "startLine": 91,
+        "startChar": 31,
+        "endLine": 91,
+        "endChar": 60
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18a82792_d756bee2",
         "filename": "results/proto/v1/test_result.proto",
         "patchSetId": 2
@@ -401,6 +821,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06686c10_6840852e",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18a82792_d756bee2",
+      "range": {
+        "startLine": 29,
+        "startChar": 51,
+        "endLine": 29,
+        "endChar": 53
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -427,6 +871,30 @@
     },
     {
       "key": {
+        "uuid": "72139e4e_3145ab8f",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31f4c848_46709e93",
+      "range": {
+        "startLine": 33,
+        "startChar": 27,
+        "endLine": 33,
+        "endChar": 37
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecd33639_f230c3f8",
         "filename": "results/proto/v1/test_result.proto",
         "patchSetId": 2
@@ -447,6 +915,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33a4b593_f615d201",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecd33639_f230c3f8",
+      "range": {
+        "startLine": 74,
+        "startChar": 23,
+        "endLine": 74,
+        "endChar": 26
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -473,6 +965,30 @@
     },
     {
       "key": {
+        "uuid": "47b83d0b_3c64fe4f",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8c42c0a_bd8f882d",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 38
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92b8993c_849e64ef",
         "filename": "results/proto/v1/test_result.proto",
         "patchSetId": 2
@@ -496,6 +1012,30 @@
     },
     {
       "key": {
+        "uuid": "dc430101_ea5fdc8f",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92b8993c_849e64ef",
+      "range": {
+        "startLine": 121,
+        "startChar": 9,
+        "endLine": 121,
+        "endChar": 12
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af5b0269_fad96a52",
         "filename": "results/proto/v1/test_result.proto",
         "patchSetId": 2
@@ -516,6 +1056,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f63fc4c_ec25f2e6",
+        "filename": "results/proto/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T20:23:38Z",
+      "side": 1,
+      "message": "specified that it is server generated",
+      "parentUuid": "af5b0269_fad96a52",
+      "range": {
+        "startLine": 189,
+        "startChar": 56,
+        "endLine": 189,
+        "endChar": 67
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
