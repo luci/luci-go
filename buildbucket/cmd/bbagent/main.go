@@ -82,6 +82,7 @@ func main() {
 
 	opts := &host.Options{
 		ViewerURL: fmt.Sprintf("https://ci.chromium.org/p/%d", input.Build.Id),
+		BaseBuild: input.Build,
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
@@ -95,6 +96,15 @@ func main() {
 	if runtime.GOOS == "windows" {
 		exePath, err = resolveExe(exePath)
 		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
+	}
+
+	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
+	// for the top level user stdout/stderr streams.
+	input.Build.Output = &bbpb.Build_Output{
+		Logs: []*bbpb.Log{
+			{Name: "stdout", Url: "u/stdout"},
+			{Name: "stderr", Url: "u/stderr"},
+		},
 	}
 
 	builds, err := host.Run(cctx, opts, func(ctx context.Context) error {

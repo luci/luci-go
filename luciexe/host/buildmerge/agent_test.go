@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/luciexe"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkDesc(name string) *logpb.LogStreamDescriptor {
@@ -58,6 +59,11 @@ func TestAgent(t *testing.T) {
 					},
 				},
 			},
+			Output: &bbpb.Build_Output{
+				Logs: []*bbpb.Log{
+					{Name: "stdout", Url: "stdout"},
+				},
+			},
 		}
 		// we omit view url here to keep tests simpler
 		merger := New(ctx, "u/", base, func(ns, stream types.StreamName) (url, viewURL string) {
@@ -77,7 +83,9 @@ func TestAgent(t *testing.T) {
 			merger.Close()
 			build := <-merger.MergedBuildC
 
-			So(build, ShouldResemble, base)
+			base.Output.Logs[0].Url = "url://u/stdout"
+
+			So(build, ShouldResembleProto, base)
 		})
 
 		Convey(`bad stream type`, func() {
@@ -147,7 +155,8 @@ func TestAgent(t *testing.T) {
 			expect := *base
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
-			So(mergedBuild, ShouldResemble, &expect)
+			expect.Output.Logs[0].Url = "url://u/stdout"
+			So(mergedBuild, ShouldResembleProto, &expect)
 
 			merger.Close()
 			<-merger.MergedBuildC // final build
@@ -171,7 +180,8 @@ func TestAgent(t *testing.T) {
 			expect := *base
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
-			So(<-merger.MergedBuildC, ShouldResemble, &expect)
+			expect.Output.Logs[0].Url = "url://u/stdout"
+			So(<-merger.MergedBuildC, ShouldResembleProto, &expect)
 
 			// order of updates doesn't matter, so we'll update the sub build first
 			subTrack.handleNewData(mkDgram(&bbpb.Build{
