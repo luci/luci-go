@@ -1,0 +1,326 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5d31794_2ce2fe07",
+        "filename": "results/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: s/converst/converts",
+      "range": {
+        "startLine": 23,
+        "startChar": 23,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bbcff67_55784c48",
+        "filename": "results/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Curious: why Name instead of e.g. TestPath? IIUC Name will end up sorting by result ID, which is either a random GUID or just where the result ended up within the batch (or similar).",
+      "range": {
+        "startLine": 39,
+        "startChar": 16,
+        "endLine": 39,
+        "endChar": 20
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f42dd0b7_fe2ce2c4",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: unchanged?",
+      "range": {
+        "startLine": 90,
+        "startChar": 40,
+        "endLine": 90,
+        "endChar": 46
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ee5dd62_67fa5a34",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: Parse doesn\u0027t quite seem to describe the behavior. Parsing is usually taking some input where we don\u0027t already know the structure, and analyzing its structure.\n\nWe have the structure here already, we\u0027re just converting it to another structure. Put another way, I would actually expect \"parse\" to apply more to the action of converting the JSON input (which is structured, we just don\u0027t know what that structure is yet) to a structured GTestResults.",
+      "range": {
+        "startLine": 93,
+        "startChar": 23,
+        "endLine": 93,
+        "endChar": 28
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee9bb2d1_f334ecc8",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Makes sense. IIUC the main randomness this is avoiding is the order in which results get appended to ret. We could sort by iteration and then name, or by name and then iteration. Would the latter be more useful? It would require tracking the iteration additionally, however. Also, even if we decide something different, it doesn\u0027t have to be in this CL.",
+      "range": {
+        "startLine": 107,
+        "startChar": 43,
+        "endLine": 107,
+        "endChar": 56
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79cac855_518ab7e7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "What\u0027s the benefit of this rather than putting the\n\n var testNames []string\n\nhere, or\n\n testNames :\u003d make([]string, len(data))\n\n? Is it trying to avoid reallocation in iterations after the first?",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 108,
+        "endChar": 27
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c373403b_30ca1d22",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: maybe the empty line after L159 instead of before? Up to you",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 9
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff961838_f385a4ea",
+        "filename": "results/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Getting pass and fail are definitely important. They\u0027re also very straightforward. Would it be more helpful to use tests to document expectations about non-obvious status conversions, like EXCESSIVE_OUTPUT or NOTRUN?\n\nIf you prefer to keep these cases that\u0027s fine by me; I\u0027m not convinced of the marginal benefit, but the marginal cost is also small in any case.",
+      "range": {
+        "startLine": 127,
+        "startChar": 10,
+        "endLine": 127,
+        "endChar": 14
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb6b5ed7_a7eaccc5",
+        "filename": "results/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Should we use a nonzero value here to make sure the maths are as expected? :)\n\n(Also I\u0027m surprised that ShouldEqual wouldn\u0027t complain due to floating-point arithmetic... I had troubles before using ShouldAlmostEqual)",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 44
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37239196_d5d55547",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: redundant",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 35
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "957f25cd_8560d6e9",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: unchanged?",
+      "range": {
+        "startLine": 95,
+        "startChar": 40,
+        "endLine": 95,
+        "endChar": 46
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca105c1b_4ecf1f8f",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Same question w.r.t. \"Parse\"",
+      "range": {
+        "startLine": 98,
+        "startChar": 26,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b9d54a5_2824b853",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "What\u0027s the rationale between having this function modify its arguments, rather than returning the slice and appending them at the callsite?",
+      "range": {
+        "startLine": 237,
+        "startChar": 30,
+        "endLine": 237,
+        "endChar": 59
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bda9691f_f84a1cae",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-26T23:04:06Z",
+      "side": 1,
+      "message": "Nit: \"Do not set duration\"?",
+      "range": {
+        "startLine": 254,
+        "startChar": 28,
+        "endLine": 254,
+        "endChar": 43
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
