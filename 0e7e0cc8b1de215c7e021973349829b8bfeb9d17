@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4d1f60c8_53b1d8a2",
+        "filename": "buildbucket/cmd/bbagent/.gitignore",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-26T02:36:10Z",
+      "side": 1,
+      "message": "so I stop accidentally uploading the binary",
+      "range": {
+        "startLine": 1,
+        "startChar": 2,
+        "endLine": 1,
+        "endChar": 9
+      },
+      "revId": "0e7e0cc8b1de215c7e021973349829b8bfeb9d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4733f8b_8c1f5c96",
+        "filename": "buildbucket/cmd/bbagent/logdog_output.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-26T02:36:10Z",
+      "side": 1,
+      "message": "turns out cloud-platform is kinda important to talk to pubsub. Who knew?",
+      "range": {
+        "startLine": 33,
+        "startChar": 37,
+        "endLine": 33,
+        "endChar": 42
+      },
+      "revId": "0e7e0cc8b1de215c7e021973349829b8bfeb9d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
