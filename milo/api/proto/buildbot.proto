@@ -1,0 +1,82 @@
+// Copyright 2016 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package milo;
+
+import "google/protobuf/timestamp.proto";
+
+// DEPRECATED. Do not start using this API.
+//
+// The buildbot service definition.
+service Buildbot {
+  rpc GetCompressedMasterJSON(MasterRequest) returns (CompressedMasterJSON) {}
+  rpc GetBuildbotBuildJSON(BuildbotBuildRequest) returns (BuildbotBuildJSON) {}
+  rpc GetBuildbotBuildsJSON(BuildbotBuildsRequest) returns (BuildbotBuildsJSON) {}
+}
+
+// The request containing the name of the master.
+message MasterRequest {
+  string name = 1;
+  // if true, exclude response data that the foundation team is actively trying
+  // to deprecate:
+  // - slave info
+  bool exclude_deprecated = 10;
+  // If true, turn off emulation mode.
+  bool no_emulation = 11;
+}
+
+// The response message containing master information.
+message CompressedMasterJSON {
+  // Whether the master is internal or not.
+  bool internal = 1;
+
+  // Timestamp of the freshness of the master data.
+  google.protobuf.Timestamp modified = 2;
+
+  // Gzipped json data of the master.
+  bytes data = 3;
+}
+
+// The request for a specific build.
+message BuildbotBuildRequest {
+  string master = 1;
+  string builder = 2;
+  int64 build_num = 3;
+  // if true, exclude response data that the foundation team is actively trying
+  // to deprecate:
+  // - slave info
+  bool exclude_deprecated = 10;
+}
+
+// The response message for a specific build.
+message BuildbotBuildJSON {
+  // Json data of the build.
+  bytes data = 1;
+}
+
+// The request for multiple build on a builder.
+message BuildbotBuildsRequest {
+  reserved 5; // was used for "cursor" field
+  string master = 1;
+  string builder = 2;
+  // Limit to the number of builds to return (default: 20).
+  int32 limit = 3;
+  // Include ongoing builds (default: false).
+  bool include_current = 4;
+  // if true, exclude response data that the foundation team is actively trying
+  // to deprecate:
+  // - slave info
+  bool exclude_deprecated = 10;
+  // If true, turn off emulation mode.
+  bool no_emulation = 11;
+}
+
+// The response message for multiple builds in a builder.
+message BuildbotBuildsJSON {
+  reserved 2; // was used for "cursor" field
+  // builds is the list of builds resulting from the builds request.
+  repeated BuildbotBuildJSON builds = 1;
+}
