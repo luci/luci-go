@@ -272,6 +272,30 @@
     },
     {
       "key": {
+        "uuid": "a102400f_f21f1657",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-26T21:37:47Z",
+      "side": 1,
+      "message": "For me -ing and -ed are obvious enough. Don\u0027t know about others",
+      "parentUuid": "fd6459d8_fc2e6e8b",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 76,
+        "endChar": 38
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6e320034_3572089d",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
@@ -342,6 +366,30 @@
       "side": 1,
       "message": "\u003e For a build containing many swarming tasks, each swarming task will have their own Invocation, and their Invocations are included in the build\u0027s Invocation by Inclusion. Right?\n\nRight\n\n\u003e \n\u003e And included_invocation is the same as the child invocation\u0027s name.\n\nhm, no. Note that task invocation does not know who includes it. The build knows: inclusions belong to the build. Each inclusion edge specifies the task invocation in this field.",
       "parentUuid": "c5621d83_73249d20",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 85,
+        "endChar": 33
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a153131_2f454a67",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-26T21:37:47Z",
+      "side": 1,
+      "message": "\u003e \u003e \n\u003e \u003e And included_invocation is the same as the child invocation\u0027s name.\n\u003e \n\u003e hm, no. Note that task invocation does not know who includes it. The build knows: inclusions belong to the build. Each inclusion edge specifies the task invocation in this field.\n\nTo clarify, I meant that the value of included_invocation is the same as the name of, well, the included invocation.",
+      "parentUuid": "3b336e09_dc2f8f14",
       "range": {
         "startLine": 78,
         "startChar": 0,
@@ -680,6 +728,30 @@
       "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f563049a_baae72f2",
+        "filename": "results/proto/v1/resultdb.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-26T21:37:47Z",
+      "side": 1,
+      "message": "Got it. Thanks.",
+      "parentUuid": "0d7e984a_a643fedb",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 34
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
