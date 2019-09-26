@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbot
+package buildbotapi
 
 import (
 	"encoding/json"
@@ -58,7 +58,7 @@ type TimeRange struct {
 }
 
 // MkTimeRange is a shorthand for:
-//   buildbot.TimeRange{Start: start, Finish: finish}
+//   buildbotapi.TimeRange{Start: start, Finish: finish}
 func MkTimeRange(start, finish Time) TimeRange {
 	return TimeRange{start, finish}
 }
