@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df1cee65_742c5666",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-26T23:19:11Z",
+      "side": 1,
+      "message": "add a comment why compression is useful -- due to GAE limit\nadd a TODO to *only* do this on GAE.",
+      "revId": "f82df52a6a4133d5b27a8ef01dddcfe19cabb3a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "959b262e_6ec66d27",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-26T23:19:11Z",
+      "side": 1,
+      "message": "pedanticity aside(5*1024*1024), do you know if gzip encoding is applied transparently at transport level automatically?\nIf not, then this should be much lower.",
+      "range": {
+        "startLine": 246,
+        "startChar": 26,
+        "endLine": 246,
+        "endChar": 41
+      },
+      "revId": "f82df52a6a4133d5b27a8ef01dddcfe19cabb3a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
