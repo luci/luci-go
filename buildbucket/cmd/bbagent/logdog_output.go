@@ -28,6 +28,10 @@ import (
 func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {
 	return (&logdog.Config{
 		Auth: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
+			Scopes: []string{
+				auth.OAuthScopeEmail,
+				"https://www.googleapis.com/auth/cloud-platform",
+			},
 			MonitorAs: "bbagent/logdog",
 		}),
 		Host:    opts.Hostname,
