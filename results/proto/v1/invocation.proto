@@ -14,149 +14,101 @@
 
 syntax = "proto3";
 
-package luci.resultsdb;
-
-// TODO(jchinlee): Update protos and clarify documentation when finalized.
-// Currently, these are for experimentation/iteration.
+package luci.resultdb;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/results/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/results/proto/v1;resultpb";
 
-// A container of test results.
-// Composable: can include other invocations, see inclusions field.
-// Immutable once finalized.
+// An container of results. Immutable once finalized.
+// Composable: can include other invocations, see inclusion.proto.
 message Invocation {
-  // A unique identifier of the invocation.
-  // LUCI systems MAY create invocations with nicely formatted IDs, such as
-  // "build/1234567890". All other clients MUST use GUIDs.
-  string id = 1;
+  // The resource name of this invocation.
+  // Format: invocations/{INVOCATION_ID}
+  string name = 1;
 
-  // A container for a given test case.
-  message Test {
-    // Test path, a unique identifier of the test in a LUCI project.
-    //
-    // If two tests have a common test path prefix that ends with a
-    // non-alphanumeric character, they considered a part of a group. Examples:
-    // - "a/b/c"
-    // - "a/b/d"
-    // - "a/b/e:x"
-    // - "a/b/e:y"
-    // - "a/f"
-    // This defines the following groups:
-    // - All items belong to one group because of the common prefix "a/"
-    // - Within that group, the first 4 form a sub-group because of the common
-    //   prefix "a/b/"
-    // - Within that group, "a/b/e:x" and "a/b/e:y" form a sub-group because of
-    //   the common prefix "a/b/e:".
-    // This can be used in UI.
-    // LUCI does not interpret test paths in any other way.
-    string path = 1;
-
-    // Results of specific variants of the test.
-    repeated TestVariant variants = 2;
-  }
-
-  // Test-variant-specific information.
-  message TestVariant {
-    // ID of the variant, a key in Invocation.variant_defs.
-    string variant_id = 1;
-
-    // Individual results of this test variant.
-    repeated TestResult results = 2;
-
-    // Exonerations for this test variant, see Exoneration message comments.
-    //
-    // Exonerations transcend inclusion edges: it does not matter if an
-    // unexpected test result is a part of this invocation directly or
-    // indirectly. A Chromium tryjob can include a swarming task
-    // invocation with unexpected results, and then add an exoneration if the
-    // same test variant fails without patch.
-    repeated Exoneration exonerations = 3;
-  }
-
-  // Test results in this invocation.
-  //
-  // When reading an invocation, by default this field includes tests
-  // from the included invocations (see includes field), so the client
-  // does not have to load the transitive closure of included invocations.
-  repeated Test tests = 3;
-
-  // All variant definitions used in this invocation message.
-  // Maps a variant id to its definition.
-  map<string, VariantDef> variant_defs = 4;
+  // When the invocation was created. OUTPUT_ONLY.
+  google.protobuf.Timestamp create_time = 2;
 
   // Invocation-level string key-value pairs.
   // A key can be repeated.
-  repeated StringPair tags = 5;
+  repeated StringPair tags = 3;
 
   // The contents of the invocation are incomplete.
   // For example, test harness stopped before executing all tests, or a
   // Swarming bot died.
-  bool incomplete = 6;
+  // Results of this invocation are insufficient to conclude that the test
+  // subject is correct. A typical reaction to an incomplete invocation is a
+  // retry.
+  bool incomplete = 4;
 
-  // One directed inclusion edge, see also Invocation.inclusions.
-  message Include {
-    // ID of the included invocation.
-    string invocation_id = 1;
+  // == Finalization ===========================================================
 
-    // The included invocation does not influence the final outcome
-    // of this invocation. A typical example is a retry where the last
-    // attempt wins and previous attempts no longer matter, hence
-    // inconsequential.
-    //
-    // An existing inclusion edge can be marked inconsequential after insertion,
-    // but before the parent invocation is finalized:
-    // Call UpdateInvocation with an inclusion of the same invocation id, but
-    // inconsequential set to true.
-    // It is not possible to change from inconsequential to consequential.
-    bool inconsequential = 2;
-
-    // Whether the included invocation is finalized before the parent invocation.
-    // The formula for the field is
-    //   included_inv.finalize_time < parent_inv.finalize_time
-    // If the included invocation is final, but the parent is not yet, the
-    // edge is ready. If both are not final yet, the edge is not ready *yet*,
-    // but its value may change over time, until the parent invocation is
-    // finalized.
-    //
-    // In practice, either
-    // - an edge is ready because the parent is expected to wait for its
-    //   children to conclude its own result, OR
-    // - it does not matter e.g. if the parent was canceled and finalized
-    //   prematurely.
-    //
-    // When fetching an invocation via API, unready edges are ignored.
-    //
-    // This field is read-only: values provided by clients are ignored.
-    bool ready = 3;
-  }
-
-
-  // List of invocations to include in this invocation.
-  // When fetching an invocation, test results of the recursively included
-  // invocations are presented as a part of the returned invocation.
-  // If the same test variant was executed in multiple invocations, all
-  // results are unioned.
-  repeated Include includes = 7;
-
-  // A secret token required in UpdateInvocation.
-  // Present only in InsertInvocation response.
-  string update_token = 8;
-
-  // This invocation is immutable.
-  // Once finalized, fetching the invocation via API is guaranteed to return
-  // the same data.
-  bool final = 9;
+  // When the invocation was finalized. OUTPUT_ONLY.
+  // If this field is set, implies that the invocation is finalized.
+  google.protobuf.Timestamp finalize_time = 5;
 
   // Timestamp when the invocation will be forcefully finalized.
   // Can be extended with UpdateInvocation until finalized.
-  google.protobuf.Timestamp deadline = 10;
+  google.protobuf.Timestamp deadline = 6;
 
-  // When the invocation was created. Read-only.
-  google.protobuf.Timestamp create_time = 11;
+  // == Test results specific ==================================================
 
-  // When the invocation was finalized. Read-only.
-  google.protobuf.Timestamp finalize_time = 12;
+  // Base variant definition for test results in this invocation.
+  // A given test result can append more keys, but not overwrite existing ones.
+  VariantDef base_test_variant_def = 7;
+}
+
+
+// One inclusion edge in the invocation DAG.
+//
+// Invocations are composable: one invocation can include zero or more other
+// invocations, representing a cumulative result. For example, a Buildbucket
+// build invocation can include invocations of all child swarming tasks and
+// represent overall result of the build, encapsulating the internal structure
+// of the build from the client that just needs to load test results scoped
+// to the build.
+//
+// The graph is directed and acyclic. There can be at most one edge between a
+// given pair of invocations.
+// Source invocation MUST not be finalized.
+// Target invocation MAY be finalized.
+message Inclusion {
+  // Resource name, identifier of the inclusion.
+  // Format: invocations/{INVOCATION_ID}/inclusions/{INCLUDED_INVOCATION_ID}
+  // This implies that there can be only one direct edge between a given pair of
+  // invocations.
+  string name = 1;
+
+  // Name of the included invocation.
+  string included_invocation = 2;
+
+  // If the inclusion is masked as inconsequential, then the included invocation
+  // does not influence the final outcome of the parent invocation.
+  // A typical example is a retry where the last attempt wins and previous
+  // attempts no longer matter, hence inconsequential.
+  //
+  // An existing inclusion edge can be marked inconsequential after insertion,
+  // but before the parent invocation is finalized, see UpdateInclusion.
+  // It is not possible to change from inconsequential to consequential.
+  bool inconsequential = 3;
+
+  // Whether the included invocation is finalized before the parent invocation.
+  // OUTPUT_ONLY.
+  // The formula for the field is
+  //   included_inv.finalize_time < parent_inv.finalize_time
+  // If the included invocation is finalized, but the parent is not yet, the
+  // edge is ready. If both are not finalized yet, the edge is not ready *yet*,
+  // but its value may change over time, until the parent invocation is
+  // finalized.
+  //
+  // In practice, either
+  // - an edge is ready because the parent is expected to wait for its
+  //   children to conclude its own result, OR
+  // - it does not matter e.g. if the parent was canceled and finalized
+  //   prematurely.
+  //
+  // By default, QueryTestResults ignores un-ready inclusions.
+  bool ready = 4;
 }
