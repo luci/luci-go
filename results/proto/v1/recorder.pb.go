@@ -10,6 +10,7 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -27,40 +28,75 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A request for UpdateInvocation RPC.
-type UpdateInvocationRequest struct {
-	// If a request with same (invocation.id, request_id) was processed
-	// successfully, then this request is a noop.
-	// In other words, UpdateInvocation is idempotent.
-	// Required.
-	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// Invocation to update.
-	//
-	// All repeated fields in the Invocation are appended, not replaced.
-	// Examples of repeated fields: test results, exonerations, inclusions.
-	// It is not possible to remove previously added elements.
-	// Some elements may be mutated, e.g. Invocation.Inclusion.inconsequential,
-	// see its docs.
-	//
-	// If invocation.final is true, finalizes the invocation.
-	// If invocation.deadline is specified, overwrites the server-stored value.
-	//
-	// Invocation.update_token is required and must match the token
-	// returned by InsertInvocation.
-	//
-	// If the invocation is already final on the server, FAILED_PRECONDITION is
-	// returned.
+// A request message for CreateInvocation.
+type CreateInvocationRequest struct {
+	// Invocation identifier, becomes a part of the invocation.name.
+	// LUCI systems MAY create invocations with nicely formatted IDs, such as
+	// "build-1234567890". All other clients MUST use GUIDs.
+	InvocationId string `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	// Invocation data to insert.
 	Invocation           *Invocation `protobuf:"bytes,2,opt,name=invocation,proto3" json:"invocation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
 }
 
+func (m *CreateInvocationRequest) Reset()         { *m = CreateInvocationRequest{} }
+func (m *CreateInvocationRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateInvocationRequest) ProtoMessage()    {}
+func (*CreateInvocationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{0}
+}
+
+func (m *CreateInvocationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateInvocationRequest.Unmarshal(m, b)
+}
+func (m *CreateInvocationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateInvocationRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateInvocationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateInvocationRequest.Merge(m, src)
+}
+func (m *CreateInvocationRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateInvocationRequest.Size(m)
+}
+func (m *CreateInvocationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateInvocationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateInvocationRequest proto.InternalMessageInfo
+
+func (m *CreateInvocationRequest) GetInvocationId() string {
+	if m != nil {
+		return m.InvocationId
+	}
+	return ""
+}
+
+func (m *CreateInvocationRequest) GetInvocation() *Invocation {
+	if m != nil {
+		return m.Invocation
+	}
+	return nil
+}
+
+// A request message for UpdateInvocation RPC.
+type UpdateInvocationRequest struct {
+	// Invocation to update.
+	Invocation *Invocation `protobuf:"bytes,1,opt,name=invocation,proto3" json:"invocation,omitempty"`
+	// The list of fields to be updated.
+	// Supported fields:
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
 func (m *UpdateInvocationRequest) Reset()         { *m = UpdateInvocationRequest{} }
 func (m *UpdateInvocationRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateInvocationRequest) ProtoMessage()    {}
 func (*UpdateInvocationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{0}
+	return fileDescriptor_7445f3675a5ef248, []int{1}
 }
 
 func (m *UpdateInvocationRequest) XXX_Unmarshal(b []byte) error {
@@ -81,13 +117,6 @@ func (m *UpdateInvocationRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UpdateInvocationRequest proto.InternalMessageInfo
 
-func (m *UpdateInvocationRequest) GetRequestId() string {
-	if m != nil {
-		return m.RequestId
-	}
-	return ""
-}
-
 func (m *UpdateInvocationRequest) GetInvocation() *Invocation {
 	if m != nil {
 		return m.Invocation
@@ -95,9 +124,489 @@ func (m *UpdateInvocationRequest) GetInvocation() *Invocation {
 	return nil
 }
 
-type DeriveInvocationFromSwarmingRequest struct {
-	// Swarming task from which to derive invocation.
-	Task *DeriveInvocationFromSwarmingRequest_SwarmingTask `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+func (m *UpdateInvocationRequest) GetUpdateMask() *field_mask.FieldMask {
+	if m != nil {
+		return m.UpdateMask
+	}
+	return nil
+}
+
+// A request message for FinalizeInvocation RPC.
+type FinalizeInvocationRequest struct {
+	// Name of the invocation to finalize.
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *FinalizeInvocationRequest) Reset()         { *m = FinalizeInvocationRequest{} }
+func (m *FinalizeInvocationRequest) String() string { return proto.CompactTextString(m) }
+func (*FinalizeInvocationRequest) ProtoMessage()    {}
+func (*FinalizeInvocationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{2}
+}
+
+func (m *FinalizeInvocationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FinalizeInvocationRequest.Unmarshal(m, b)
+}
+func (m *FinalizeInvocationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FinalizeInvocationRequest.Marshal(b, m, deterministic)
+}
+func (m *FinalizeInvocationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FinalizeInvocationRequest.Merge(m, src)
+}
+func (m *FinalizeInvocationRequest) XXX_Size() int {
+	return xxx_messageInfo_FinalizeInvocationRequest.Size(m)
+}
+func (m *FinalizeInvocationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_FinalizeInvocationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FinalizeInvocationRequest proto.InternalMessageInfo
+
+func (m *FinalizeInvocationRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+// A request message for CreateInclusion RPC.
+type CreateInclusionRequest struct {
+	// Name of the invocation to extend.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// Name of the included invocation and whether it is consequential.
+	Inclusion            *Inclusion `protobuf:"bytes,3,opt,name=inclusion,proto3" json:"inclusion,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *CreateInclusionRequest) Reset()         { *m = CreateInclusionRequest{} }
+func (m *CreateInclusionRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateInclusionRequest) ProtoMessage()    {}
+func (*CreateInclusionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{3}
+}
+
+func (m *CreateInclusionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateInclusionRequest.Unmarshal(m, b)
+}
+func (m *CreateInclusionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateInclusionRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateInclusionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateInclusionRequest.Merge(m, src)
+}
+func (m *CreateInclusionRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateInclusionRequest.Size(m)
+}
+func (m *CreateInclusionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateInclusionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateInclusionRequest proto.InternalMessageInfo
+
+func (m *CreateInclusionRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *CreateInclusionRequest) GetInclusion() *Inclusion {
+	if m != nil {
+		return m.Inclusion
+	}
+	return nil
+}
+
+// A request message for UpdateInclusion RPC.
+type UpdateInclusionRequest struct {
+	// The inclusion to update.
+	// Inclusion's name is used to identify the inclusion to update.
+	Inclusion *Inclusion `protobuf:"bytes,1,opt,name=inclusion,proto3" json:"inclusion,omitempty"`
+	// The list of fields to be updated.
+	// The only supported field is "inconsequential".
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *UpdateInclusionRequest) Reset()         { *m = UpdateInclusionRequest{} }
+func (m *UpdateInclusionRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateInclusionRequest) ProtoMessage()    {}
+func (*UpdateInclusionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{4}
+}
+
+func (m *UpdateInclusionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateInclusionRequest.Unmarshal(m, b)
+}
+func (m *UpdateInclusionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateInclusionRequest.Marshal(b, m, deterministic)
+}
+func (m *UpdateInclusionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateInclusionRequest.Merge(m, src)
+}
+func (m *UpdateInclusionRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateInclusionRequest.Size(m)
+}
+func (m *UpdateInclusionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateInclusionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateInclusionRequest proto.InternalMessageInfo
+
+func (m *UpdateInclusionRequest) GetInclusion() *Inclusion {
+	if m != nil {
+		return m.Inclusion
+	}
+	return nil
+}
+
+func (m *UpdateInclusionRequest) GetUpdateMask() *field_mask.FieldMask {
+	if m != nil {
+		return m.UpdateMask
+	}
+	return nil
+}
+
+// A request message for CreateTestResult RPC.
+type CreateTestResultRequest struct {
+	// Name of the parent invocation, see Invocation.name.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// The test result to create.
+	TestResult *TestResult `protobuf:"bytes,2,opt,name=test_result,json=testResult,proto3" json:"test_result,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	// This request is only idempotent if a `request_id` is provided, so it is
+	// strongly recommended to populate this field.
+	//
+	// Impl note: this field is used to compute the spanner-level result id, which
+	// will encode tuple (request_id, index_of_request)", where
+	// - request_id is a random GUID if not provided by the user
+	// - index_of_request is 0 in CreateTestResult RPC, or index of the request
+	//   in BatchCreateTestResultsRequest in the batch RPC.
+	// TODO(jchinlee): remove this impl note when it is converted into code.
+	RequestId            string   `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateTestResultRequest) Reset()         { *m = CreateTestResultRequest{} }
+func (m *CreateTestResultRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateTestResultRequest) ProtoMessage()    {}
+func (*CreateTestResultRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{5}
+}
+
+func (m *CreateTestResultRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateTestResultRequest.Unmarshal(m, b)
+}
+func (m *CreateTestResultRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateTestResultRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateTestResultRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateTestResultRequest.Merge(m, src)
+}
+func (m *CreateTestResultRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateTestResultRequest.Size(m)
+}
+func (m *CreateTestResultRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateTestResultRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateTestResultRequest proto.InternalMessageInfo
+
+func (m *CreateTestResultRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *CreateTestResultRequest) GetTestResult() *TestResult {
+	if m != nil {
+		return m.TestResult
+	}
+	return nil
+}
+
+func (m *CreateTestResultRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+// A request message for BatchCreateTestResults RPC.
+type BatchCreateTestResultsRequest struct {
+	// Name of the parent invocation, see Invocation.name.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// Requests to create test results.
+	// requests[i].parent MUST be either empty or equal to parent in this message.
+	// requests[i].request_id MUST be either empty or equal to request_id in
+	// this message.
+	Requests []*CreateTestResultRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	// This request is only idempotent if a `request_id` is provided, so it is
+	// strongly recommended to populate this field.
+	//
+	RequestId            string   `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *BatchCreateTestResultsRequest) Reset()         { *m = BatchCreateTestResultsRequest{} }
+func (m *BatchCreateTestResultsRequest) String() string { return proto.CompactTextString(m) }
+func (*BatchCreateTestResultsRequest) ProtoMessage()    {}
+func (*BatchCreateTestResultsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{6}
+}
+
+func (m *BatchCreateTestResultsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchCreateTestResultsRequest.Unmarshal(m, b)
+}
+func (m *BatchCreateTestResultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchCreateTestResultsRequest.Marshal(b, m, deterministic)
+}
+func (m *BatchCreateTestResultsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchCreateTestResultsRequest.Merge(m, src)
+}
+func (m *BatchCreateTestResultsRequest) XXX_Size() int {
+	return xxx_messageInfo_BatchCreateTestResultsRequest.Size(m)
+}
+func (m *BatchCreateTestResultsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchCreateTestResultsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchCreateTestResultsRequest proto.InternalMessageInfo
+
+func (m *BatchCreateTestResultsRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *BatchCreateTestResultsRequest) GetRequests() []*CreateTestResultRequest {
+	if m != nil {
+		return m.Requests
+	}
+	return nil
+}
+
+func (m *BatchCreateTestResultsRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+// A response message for BatchCreateTestResults RPC.
+type BatchCreateTestResultsResponse struct {
+	// Test results created.
+	TestResults          []*TestResult `protobuf:"bytes,1,rep,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *BatchCreateTestResultsResponse) Reset()         { *m = BatchCreateTestResultsResponse{} }
+func (m *BatchCreateTestResultsResponse) String() string { return proto.CompactTextString(m) }
+func (*BatchCreateTestResultsResponse) ProtoMessage()    {}
+func (*BatchCreateTestResultsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{7}
+}
+
+func (m *BatchCreateTestResultsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchCreateTestResultsResponse.Unmarshal(m, b)
+}
+func (m *BatchCreateTestResultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchCreateTestResultsResponse.Marshal(b, m, deterministic)
+}
+func (m *BatchCreateTestResultsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchCreateTestResultsResponse.Merge(m, src)
+}
+func (m *BatchCreateTestResultsResponse) XXX_Size() int {
+	return xxx_messageInfo_BatchCreateTestResultsResponse.Size(m)
+}
+func (m *BatchCreateTestResultsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchCreateTestResultsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchCreateTestResultsResponse proto.InternalMessageInfo
+
+func (m *BatchCreateTestResultsResponse) GetTestResults() []*TestResult {
+	if m != nil {
+		return m.TestResults
+	}
+	return nil
+}
+
+// A request message for CreateTestExoneration RPC.
+type CreateTestExonerationRequest struct {
+	// Name of the parent invocation, see Invocation.name.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// The TestExoneration to create.
+	TestExoneration *TestExoneration `protobuf:"bytes,2,opt,name=TestExoneration,proto3" json:"TestExoneration,omitempty"`
+	// A unique identifier for this request. Restricted to 36 ASCII characters.
+	// A random UUID is recommended.
+	// This request is only idempotent if a `request_id` is provided.
+	RequestId            string   `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateTestExonerationRequest) Reset()         { *m = CreateTestExonerationRequest{} }
+func (m *CreateTestExonerationRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateTestExonerationRequest) ProtoMessage()    {}
+func (*CreateTestExonerationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{8}
+}
+
+func (m *CreateTestExonerationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateTestExonerationRequest.Unmarshal(m, b)
+}
+func (m *CreateTestExonerationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateTestExonerationRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateTestExonerationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateTestExonerationRequest.Merge(m, src)
+}
+func (m *CreateTestExonerationRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateTestExonerationRequest.Size(m)
+}
+func (m *CreateTestExonerationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateTestExonerationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateTestExonerationRequest proto.InternalMessageInfo
+
+func (m *CreateTestExonerationRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *CreateTestExonerationRequest) GetTestExoneration() *TestExoneration {
+	if m != nil {
+		return m.TestExoneration
+	}
+	return nil
+}
+
+func (m *CreateTestExonerationRequest) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
+	}
+	return ""
+}
+
+// A request message for BatchCreateTestExonerations RPC.
+type BatchCreateTestExonerationsRequest struct {
+	// Name of the parent invocation, see Invocation.name.
+	Parent string `protobuf:"bytes,1,opt,name=parent,proto3" json:"parent,omitempty"`
+	// Requests to create TestExonerations.
+	// requests[i].parent MUST be either empty or equal to parent in this message.
+	Requests             []*CreateTestExonerationRequest `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
+}
+
+func (m *BatchCreateTestExonerationsRequest) Reset()         { *m = BatchCreateTestExonerationsRequest{} }
+func (m *BatchCreateTestExonerationsRequest) String() string { return proto.CompactTextString(m) }
+func (*BatchCreateTestExonerationsRequest) ProtoMessage()    {}
+func (*BatchCreateTestExonerationsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{9}
+}
+
+func (m *BatchCreateTestExonerationsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchCreateTestExonerationsRequest.Unmarshal(m, b)
+}
+func (m *BatchCreateTestExonerationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchCreateTestExonerationsRequest.Marshal(b, m, deterministic)
+}
+func (m *BatchCreateTestExonerationsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchCreateTestExonerationsRequest.Merge(m, src)
+}
+func (m *BatchCreateTestExonerationsRequest) XXX_Size() int {
+	return xxx_messageInfo_BatchCreateTestExonerationsRequest.Size(m)
+}
+func (m *BatchCreateTestExonerationsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchCreateTestExonerationsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchCreateTestExonerationsRequest proto.InternalMessageInfo
+
+func (m *BatchCreateTestExonerationsRequest) GetParent() string {
+	if m != nil {
+		return m.Parent
+	}
+	return ""
+}
+
+func (m *BatchCreateTestExonerationsRequest) GetRequests() []*CreateTestExonerationRequest {
+	if m != nil {
+		return m.Requests
+	}
+	return nil
+}
+
+// A response message for BatchCreateTestExonerations RPC.
+type BatchCreateTestExonerationsResponse struct {
+	// Test exonerations created.
+	TestExonerations     []*TestExoneration `protobuf:"bytes,1,rep,name=test_exonerations,json=testExonerations,proto3" json:"test_exonerations,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *BatchCreateTestExonerationsResponse) Reset()         { *m = BatchCreateTestExonerationsResponse{} }
+func (m *BatchCreateTestExonerationsResponse) String() string { return proto.CompactTextString(m) }
+func (*BatchCreateTestExonerationsResponse) ProtoMessage()    {}
+func (*BatchCreateTestExonerationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{10}
+}
+
+func (m *BatchCreateTestExonerationsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchCreateTestExonerationsResponse.Unmarshal(m, b)
+}
+func (m *BatchCreateTestExonerationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchCreateTestExonerationsResponse.Marshal(b, m, deterministic)
+}
+func (m *BatchCreateTestExonerationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchCreateTestExonerationsResponse.Merge(m, src)
+}
+func (m *BatchCreateTestExonerationsResponse) XXX_Size() int {
+	return xxx_messageInfo_BatchCreateTestExonerationsResponse.Size(m)
+}
+func (m *BatchCreateTestExonerationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchCreateTestExonerationsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchCreateTestExonerationsResponse proto.InternalMessageInfo
+
+func (m *BatchCreateTestExonerationsResponse) GetTestExonerations() []*TestExoneration {
+	if m != nil {
+		return m.TestExonerations
+	}
+	return nil
+}
+
+// A request message for DeriveInvocation RPC.
+type DeriveInvocationRequest struct {
+	// Derive the invocation from the Swarming task.
+	SwarmingTask *DeriveInvocationRequest_SwarmingTask `protobuf:"bytes,1,opt,name=swarming_task,json=swarmingTask,proto3" json:"swarming_task,omitempty"`
 	// Test path prefix.
 	//
 	// Examples: "gn:{label}/".
@@ -122,53 +631,54 @@ type DeriveInvocationFromSwarmingRequest struct {
 	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *DeriveInvocationFromSwarmingRequest) Reset()         { *m = DeriveInvocationFromSwarmingRequest{} }
-func (m *DeriveInvocationFromSwarmingRequest) String() string { return proto.CompactTextString(m) }
-func (*DeriveInvocationFromSwarmingRequest) ProtoMessage()    {}
-func (*DeriveInvocationFromSwarmingRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{1}
+func (m *DeriveInvocationRequest) Reset()         { *m = DeriveInvocationRequest{} }
+func (m *DeriveInvocationRequest) String() string { return proto.CompactTextString(m) }
+func (*DeriveInvocationRequest) ProtoMessage()    {}
+func (*DeriveInvocationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{11}
 }
 
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Unmarshal(m, b)
+func (m *DeriveInvocationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeriveInvocationRequest.Unmarshal(m, b)
 }
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Marshal(b, m, deterministic)
+func (m *DeriveInvocationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeriveInvocationRequest.Marshal(b, m, deterministic)
 }
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Merge(m, src)
+func (m *DeriveInvocationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeriveInvocationRequest.Merge(m, src)
 }
-func (m *DeriveInvocationFromSwarmingRequest) XXX_Size() int {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest.Size(m)
+func (m *DeriveInvocationRequest) XXX_Size() int {
+	return xxx_messageInfo_DeriveInvocationRequest.Size(m)
 }
-func (m *DeriveInvocationFromSwarmingRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest.DiscardUnknown(m)
+func (m *DeriveInvocationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeriveInvocationRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeriveInvocationFromSwarmingRequest proto.InternalMessageInfo
+var xxx_messageInfo_DeriveInvocationRequest proto.InternalMessageInfo
 
-func (m *DeriveInvocationFromSwarmingRequest) GetTask() *DeriveInvocationFromSwarmingRequest_SwarmingTask {
+func (m *DeriveInvocationRequest) GetSwarmingTask() *DeriveInvocationRequest_SwarmingTask {
 	if m != nil {
-		return m.Task
+		return m.SwarmingTask
 	}
 	return nil
 }
 
-func (m *DeriveInvocationFromSwarmingRequest) GetTestPathPrefix() string {
+func (m *DeriveInvocationRequest) GetTestPathPrefix() string {
 	if m != nil {
 		return m.TestPathPrefix
 	}
 	return ""
 }
 
-func (m *DeriveInvocationFromSwarmingRequest) GetBaseTestVariant() *VariantDef {
+func (m *DeriveInvocationRequest) GetBaseTestVariant() *VariantDef {
 	if m != nil {
 		return m.BaseTestVariant
 	}
 	return nil
 }
 
-type DeriveInvocationFromSwarmingRequest_SwarmingTask struct {
+// Identifies a swarming task.
+type DeriveInvocationRequest_SwarmingTask struct {
 	// Swarming host of task.
 	Hostname string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	// ID of swarming task to process and insert.
@@ -178,53 +688,110 @@ type DeriveInvocationFromSwarmingRequest_SwarmingTask struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) Reset() {
-	*m = DeriveInvocationFromSwarmingRequest_SwarmingTask{}
-}
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) String() string {
-	return proto.CompactTextString(m)
-}
-func (*DeriveInvocationFromSwarmingRequest_SwarmingTask) ProtoMessage() {}
-func (*DeriveInvocationFromSwarmingRequest_SwarmingTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_7445f3675a5ef248, []int{1, 0}
+func (m *DeriveInvocationRequest_SwarmingTask) Reset()         { *m = DeriveInvocationRequest_SwarmingTask{} }
+func (m *DeriveInvocationRequest_SwarmingTask) String() string { return proto.CompactTextString(m) }
+func (*DeriveInvocationRequest_SwarmingTask) ProtoMessage()    {}
+func (*DeriveInvocationRequest_SwarmingTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{11, 0}
 }
 
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Unmarshal(m, b)
+func (m *DeriveInvocationRequest_SwarmingTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeriveInvocationRequest_SwarmingTask.Unmarshal(m, b)
 }
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Marshal(b, m, deterministic)
+func (m *DeriveInvocationRequest_SwarmingTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeriveInvocationRequest_SwarmingTask.Marshal(b, m, deterministic)
 }
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Merge(m, src)
+func (m *DeriveInvocationRequest_SwarmingTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeriveInvocationRequest_SwarmingTask.Merge(m, src)
 }
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_Size() int {
-	return xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.Size(m)
+func (m *DeriveInvocationRequest_SwarmingTask) XXX_Size() int {
+	return xxx_messageInfo_DeriveInvocationRequest_SwarmingTask.Size(m)
 }
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask.DiscardUnknown(m)
+func (m *DeriveInvocationRequest_SwarmingTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeriveInvocationRequest_SwarmingTask.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeriveInvocationFromSwarmingRequest_SwarmingTask proto.InternalMessageInfo
+var xxx_messageInfo_DeriveInvocationRequest_SwarmingTask proto.InternalMessageInfo
 
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) GetHostname() string {
+func (m *DeriveInvocationRequest_SwarmingTask) GetHostname() string {
 	if m != nil {
 		return m.Hostname
 	}
 	return ""
 }
 
-func (m *DeriveInvocationFromSwarmingRequest_SwarmingTask) GetId() string {
+func (m *DeriveInvocationRequest_SwarmingTask) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
+// A response message for DeriveInvocation RPC.
+type DeriveInvocationResponse struct {
+	// Derived invocation.
+	Invocation *Invocation `protobuf:"bytes,1,opt,name=invocation,proto3" json:"invocation,omitempty"`
+	// Drived test results.
+	TestResults          []*TestResult `protobuf:"bytes,2,rep,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *DeriveInvocationResponse) Reset()         { *m = DeriveInvocationResponse{} }
+func (m *DeriveInvocationResponse) String() string { return proto.CompactTextString(m) }
+func (*DeriveInvocationResponse) ProtoMessage()    {}
+func (*DeriveInvocationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_7445f3675a5ef248, []int{12}
+}
+
+func (m *DeriveInvocationResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeriveInvocationResponse.Unmarshal(m, b)
+}
+func (m *DeriveInvocationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeriveInvocationResponse.Marshal(b, m, deterministic)
+}
+func (m *DeriveInvocationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeriveInvocationResponse.Merge(m, src)
+}
+func (m *DeriveInvocationResponse) XXX_Size() int {
+	return xxx_messageInfo_DeriveInvocationResponse.Size(m)
+}
+func (m *DeriveInvocationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeriveInvocationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeriveInvocationResponse proto.InternalMessageInfo
+
+func (m *DeriveInvocationResponse) GetInvocation() *Invocation {
+	if m != nil {
+		return m.Invocation
+	}
+	return nil
+}
+
+func (m *DeriveInvocationResponse) GetTestResults() []*TestResult {
+	if m != nil {
+		return m.TestResults
+	}
+	return nil
+}
+
 func init() {
-	proto.RegisterType((*UpdateInvocationRequest)(nil), "luci.resultsdb.UpdateInvocationRequest")
-	proto.RegisterType((*DeriveInvocationFromSwarmingRequest)(nil), "luci.resultsdb.DeriveInvocationFromSwarmingRequest")
-	proto.RegisterType((*DeriveInvocationFromSwarmingRequest_SwarmingTask)(nil), "luci.resultsdb.DeriveInvocationFromSwarmingRequest.SwarmingTask")
+	proto.RegisterType((*CreateInvocationRequest)(nil), "luci.resultdb.CreateInvocationRequest")
+	proto.RegisterType((*UpdateInvocationRequest)(nil), "luci.resultdb.UpdateInvocationRequest")
+	proto.RegisterType((*FinalizeInvocationRequest)(nil), "luci.resultdb.FinalizeInvocationRequest")
+	proto.RegisterType((*CreateInclusionRequest)(nil), "luci.resultdb.CreateInclusionRequest")
+	proto.RegisterType((*UpdateInclusionRequest)(nil), "luci.resultdb.UpdateInclusionRequest")
+	proto.RegisterType((*CreateTestResultRequest)(nil), "luci.resultdb.CreateTestResultRequest")
+	proto.RegisterType((*BatchCreateTestResultsRequest)(nil), "luci.resultdb.BatchCreateTestResultsRequest")
+	proto.RegisterType((*BatchCreateTestResultsResponse)(nil), "luci.resultdb.BatchCreateTestResultsResponse")
+	proto.RegisterType((*CreateTestExonerationRequest)(nil), "luci.resultdb.CreateTestExonerationRequest")
+	proto.RegisterType((*BatchCreateTestExonerationsRequest)(nil), "luci.resultdb.BatchCreateTestExonerationsRequest")
+	proto.RegisterType((*BatchCreateTestExonerationsResponse)(nil), "luci.resultdb.BatchCreateTestExonerationsResponse")
+	proto.RegisterType((*DeriveInvocationRequest)(nil), "luci.resultdb.DeriveInvocationRequest")
+	proto.RegisterType((*DeriveInvocationRequest_SwarmingTask)(nil), "luci.resultdb.DeriveInvocationRequest.SwarmingTask")
+	proto.RegisterType((*DeriveInvocationResponse)(nil), "luci.resultdb.DeriveInvocationResponse")
 }
 
 func init() {
@@ -232,34 +799,61 @@ func init() {
 }
 
 var fileDescriptor_7445f3675a5ef248 = []byte{
-	// 419 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0xc1, 0x8e, 0xd3, 0x30,
-	0x10, 0xdd, 0x06, 0x84, 0xb6, 0xb3, 0xa8, 0x14, 0x1f, 0xa0, 0x0a, 0x20, 0xad, 0xc2, 0x81, 0x9e,
-	0x1c, 0x6d, 0x16, 0x71, 0x58, 0x2e, 0x08, 0x95, 0x4a, 0x95, 0x38, 0x54, 0xa1, 0xe5, 0xc0, 0xa5,
-	0x72, 0x12, 0x37, 0xb1, 0x5a, 0xc7, 0xa9, 0xed, 0x04, 0xf8, 0x1d, 0x6e, 0xfc, 0x25, 0x4a, 0xe2,
-	0xb4, 0xa1, 0x82, 0x28, 0xda, 0x5b, 0xfc, 0xfc, 0xe6, 0xcd, 0x3c, 0xcf, 0x0b, 0xbc, 0x8d, 0x05,
-	0x0e, 0x13, 0x29, 0x38, 0xcb, 0x39, 0x16, 0x32, 0x76, 0xf7, 0x79, 0xc8, 0x5c, 0x49, 0x55, 0xbe,
-	0xd7, 0xca, 0xcd, 0xa4, 0xd0, 0xc2, 0x2d, 0x6e, 0x5c, 0x49, 0x43, 0x21, 0x23, 0x2a, 0x71, 0x85,
-	0xa0, 0x51, 0xc9, 0xc2, 0x86, 0x15, 0x05, 0xf6, 0x8b, 0x58, 0x88, 0x78, 0x4f, 0x6b, 0x7e, 0x90,
-	0x6f, 0x5d, 0xca, 0x33, 0xfd, 0xb3, 0x26, 0xdb, 0x5e, 0xbf, 0x16, 0xa1, 0xe0, 0x5c, 0xa4, 0xa6,
-	0xe6, 0x5d, 0xbf, 0x1a, 0x96, 0x16, 0x22, 0x24, 0x9a, 0x35, 0x75, 0x8e, 0x86, 0xe7, 0xeb, 0x2c,
-	0x22, 0x9a, 0x2e, 0x8e, 0x37, 0x3e, 0x3d, 0xe4, 0x54, 0x69, 0xf4, 0x0a, 0x40, 0xd6, 0x9f, 0x1b,
-	0x16, 0x4d, 0x06, 0xd7, 0x83, 0xe9, 0xd0, 0x1f, 0x1a, 0x64, 0x11, 0xa1, 0x3b, 0x80, 0x93, 0xda,
-	0xc4, 0xba, 0x1e, 0x4c, 0xaf, 0x3c, 0x1b, 0xff, 0xed, 0x13, 0xb7, 0x54, 0x5b, 0x6c, 0xe7, 0xb7,
-	0x05, 0xaf, 0x67, 0x54, 0xb2, 0xa2, 0xd5, 0x76, 0x2e, 0x05, 0xff, 0xf2, 0x9d, 0x48, 0xce, 0xd2,
-	0xb8, 0x19, 0x61, 0x05, 0x0f, 0x35, 0x51, 0xbb, 0xaa, 0xf9, 0x95, 0xf7, 0xe1, 0x5c, 0xbd, 0x87,
-	0x04, 0x6e, 0xce, 0x2b, 0xa2, 0x76, 0x7e, 0xa5, 0x86, 0xa6, 0x30, 0xd6, 0xa5, 0xab, 0x8c, 0xe8,
-	0x64, 0x93, 0x49, 0xba, 0x65, 0x3f, 0xaa, 0xf9, 0x87, 0xfe, 0xa8, 0xc4, 0x97, 0x44, 0x27, 0xcb,
-	0x0a, 0x45, 0x73, 0x78, 0x1a, 0x10, 0x45, 0x37, 0x15, 0xbd, 0x20, 0x92, 0x91, 0x54, 0x4f, 0x1e,
-	0xfc, 0xdb, 0xea, 0xd7, 0xfa, 0x7a, 0x46, 0xb7, 0xfe, 0x93, 0xb2, 0x68, 0x45, 0x95, 0x36, 0x98,
-	0x7d, 0x07, 0x8f, 0xdb, 0x73, 0x20, 0x1b, 0x2e, 0x13, 0xa1, 0x74, 0x4a, 0x38, 0x35, 0x0f, 0x7b,
-	0x3c, 0xa3, 0x11, 0x58, 0x2c, 0x32, 0xf3, 0x58, 0x2c, 0xf2, 0x7e, 0x59, 0x70, 0xe9, 0x9b, 0x34,
-	0xa1, 0xcf, 0x30, 0x5e, 0xa4, 0x8a, 0x4a, 0x7d, 0x32, 0x8d, 0x3a, 0x1e, 0xdd, 0xee, 0xb8, 0x73,
-	0x2e, 0xd0, 0x1a, 0xc6, 0xe7, 0xcb, 0x47, 0x6f, 0xce, 0x2b, 0xfe, 0x13, 0x0f, 0xfb, 0x19, 0xae,
-	0x33, 0x8c, 0x9b, 0x0c, 0xe3, 0x4f, 0x65, 0x86, 0x9d, 0x0b, 0x74, 0x80, 0x97, 0x5d, 0x9b, 0x41,
-	0xb7, 0xf7, 0xd8, 0x63, 0xb7, 0x93, 0x8f, 0x37, 0xdf, 0xdc, 0x5e, 0x3f, 0xc0, 0x7b, 0x03, 0x64,
-	0x41, 0xf0, 0xa8, 0xc2, 0x6e, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0xac, 0x1c, 0xf5, 0x83, 0xd1,
-	0x03, 0x00, 0x00,
+	// 863 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0x4d, 0x6f, 0xc3, 0x44,
+	0x10, 0x8d, 0x53, 0x54, 0x9a, 0x49, 0xda, 0xa6, 0x2b, 0x91, 0xa6, 0x2e, 0xad, 0xa2, 0xad, 0x80,
+	0x48, 0x80, 0xad, 0xa6, 0xa8, 0x88, 0x96, 0x53, 0x69, 0x0b, 0x15, 0x42, 0xaa, 0x4c, 0xf9, 0x10,
+	0x48, 0x44, 0x4e, 0xbc, 0x49, 0xac, 0xc6, 0x1f, 0xec, 0x6e, 0xd2, 0x96, 0x3b, 0x9c, 0xe0, 0x80,
+	0xb8, 0x71, 0x81, 0x1f, 0xc8, 0x8f, 0x40, 0xb6, 0x37, 0xb1, 0xb3, 0xb6, 0xe3, 0x44, 0xbd, 0xd9,
+	0xe3, 0x99, 0xb7, 0x6f, 0xe6, 0xcd, 0xce, 0x18, 0x3e, 0x1a, 0x7a, 0x5a, 0x7f, 0x44, 0x3d, 0xc7,
+	0x9e, 0x38, 0x9a, 0x47, 0x87, 0xfa, 0x78, 0xd2, 0xb7, 0x75, 0x4a, 0xd8, 0x64, 0xcc, 0x99, 0xee,
+	0x53, 0x8f, 0x7b, 0xfa, 0xf4, 0x54, 0xa7, 0xa4, 0xef, 0x51, 0x8b, 0x50, 0x2d, 0xb4, 0xa0, 0xed,
+	0xc0, 0x4b, 0x8b, 0xbc, 0xac, 0x9e, 0x7a, 0x38, 0xf4, 0xbc, 0xe1, 0x98, 0x44, 0xee, 0xbd, 0xc9,
+	0x40, 0x27, 0x8e, 0xcf, 0x5f, 0x22, 0x5f, 0xb5, 0x25, 0x7f, 0x1c, 0xd8, 0x64, 0x6c, 0x75, 0x1d,
+	0x93, 0x3d, 0x0a, 0x8f, 0xce, 0x6a, 0x1c, 0xfa, 0x9e, 0xe3, 0x78, 0xae, 0x88, 0x39, 0x5f, 0x2d,
+	0xc6, 0x76, 0xa7, 0x5e, 0xdf, 0xe4, 0xf6, 0x3c, 0xee, 0xe3, 0xd5, 0xe2, 0x38, 0x61, 0xbc, 0x1b,
+	0x59, 0xa3, 0x40, 0xfc, 0x02, 0xfb, 0x9f, 0x51, 0x62, 0x72, 0x72, 0x37, 0x87, 0x34, 0xc8, 0xcf,
+	0x13, 0xc2, 0x38, 0x3a, 0x81, 0xed, 0xf8, 0x9c, 0xae, 0x6d, 0x35, 0x95, 0x96, 0xd2, 0xae, 0x18,
+	0xb5, 0xd8, 0x78, 0x67, 0xa1, 0x4f, 0x00, 0xe2, 0xf7, 0x66, 0xb9, 0xa5, 0xb4, 0xab, 0x9d, 0x03,
+	0x6d, 0xa1, 0x8e, 0x5a, 0x02, 0x3a, 0xe1, 0x8c, 0xff, 0x54, 0x60, 0xff, 0x1b, 0xdf, 0xca, 0x3c,
+	0x7b, 0x11, 0x56, 0x59, 0x03, 0x16, 0x5d, 0x42, 0x75, 0x12, 0xa2, 0x86, 0x5a, 0x08, 0x4a, 0xaa,
+	0x16, 0xc9, 0xa5, 0xcd, 0xe4, 0xd2, 0x6e, 0x03, 0xb9, 0xbe, 0x32, 0xd9, 0xa3, 0x01, 0x91, 0x7b,
+	0xf0, 0x8c, 0x75, 0x38, 0xb8, 0xb5, 0x5d, 0x73, 0x6c, 0xff, 0x92, 0x41, 0x0a, 0xc1, 0x1b, 0xae,
+	0xe9, 0x10, 0x51, 0x87, 0xf0, 0x19, 0x8f, 0xa0, 0x31, 0xab, 0x5f, 0x7f, 0x3c, 0x61, 0x09, 0xef,
+	0x06, 0x6c, 0xfa, 0x26, 0x25, 0x2e, 0x17, 0xfe, 0xe2, 0x0d, 0x9d, 0x43, 0xc5, 0x9e, 0xf9, 0x36,
+	0x37, 0x42, 0x76, 0xcd, 0x54, 0x66, 0x33, 0xac, 0xd8, 0x15, 0xff, 0xa1, 0x40, 0x63, 0x56, 0x2e,
+	0xe9, 0xa8, 0x05, 0x48, 0x65, 0x65, 0xc8, 0xd7, 0x95, 0xea, 0x77, 0x65, 0xd6, 0x3a, 0x0f, 0x84,
+	0x71, 0x23, 0x3c, 0xa8, 0x28, 0xf7, 0x0b, 0xa8, 0x26, 0x5a, 0x30, 0xa7, 0x5d, 0x12, 0x70, 0xc0,
+	0xe7, 0xcf, 0xe8, 0x08, 0x80, 0x46, 0xf0, 0x41, 0x2f, 0x6e, 0x84, 0xb8, 0x15, 0x61, 0xb9, 0xb3,
+	0xf0, 0xdf, 0x0a, 0x1c, 0x5d, 0x99, 0xbc, 0x3f, 0x92, 0x39, 0xb1, 0x22, 0x52, 0x57, 0xb0, 0x25,
+	0x60, 0x58, 0xb3, 0xdc, 0xda, 0x68, 0x57, 0x3b, 0xef, 0x4a, 0x8c, 0x72, 0xd2, 0x34, 0xe6, 0x71,
+	0x45, 0xe4, 0x7e, 0x82, 0xe3, 0x3c, 0x6e, 0xcc, 0xf7, 0x5c, 0x46, 0xd0, 0xa7, 0x50, 0x4b, 0x54,
+	0x86, 0x35, 0x95, 0x90, 0xc8, 0x92, 0xd2, 0x54, 0xe3, 0xd2, 0x30, 0xfc, 0x8f, 0x02, 0x6f, 0xc7,
+	0xd8, 0x37, 0xcf, 0x9e, 0x4b, 0xe8, 0x42, 0xeb, 0xe6, 0xe5, 0xfe, 0x05, 0xec, 0x4a, 0x11, 0x42,
+	0x94, 0xe3, 0x8c, 0x93, 0x93, 0xb8, 0x72, 0x58, 0x51, 0x05, 0x7e, 0x55, 0x00, 0x4b, 0x25, 0x48,
+	0x44, 0x17, 0x6a, 0xf4, 0x79, 0x4a, 0xa3, 0xf7, 0x73, 0x35, 0x4a, 0xa7, 0x1f, 0x0b, 0x85, 0x29,
+	0x9c, 0x2c, 0xa5, 0x21, 0xe4, 0xf8, 0x12, 0xf6, 0x42, 0x39, 0x48, 0xe2, 0xa3, 0xd0, 0xa4, 0xa8,
+	0x32, 0x75, 0x2e, 0x81, 0xe2, 0x7f, 0xcb, 0xb0, 0x7f, 0x4d, 0xa8, 0x3d, 0xcd, 0x98, 0x29, 0xdf,
+	0xc3, 0x36, 0x7b, 0x32, 0xa9, 0x63, 0xbb, 0xc3, 0x2e, 0x0f, 0x2e, 0x61, 0x74, 0x7d, 0xcf, 0xa4,
+	0x43, 0x72, 0xc2, 0xb5, 0xaf, 0x45, 0xec, 0x43, 0x70, 0x3b, 0x6b, 0x2c, 0xf1, 0x86, 0xda, 0x10,
+	0x32, 0xe9, 0xfa, 0x26, 0x1f, 0x75, 0x7d, 0x4a, 0x06, 0xf6, 0x73, 0xa8, 0x6d, 0xc5, 0xd8, 0x09,
+	0xec, 0xf7, 0x26, 0x1f, 0xdd, 0x87, 0x56, 0x74, 0x03, 0x7b, 0x3d, 0x93, 0x91, 0x6e, 0xe8, 0x3e,
+	0x35, 0xa9, 0x6d, 0xba, 0x5c, 0x4c, 0x26, 0xb9, 0x01, 0xbf, 0x8d, 0xbe, 0x5e, 0x93, 0x81, 0xb1,
+	0x1b, 0xc4, 0x04, 0xc9, 0x0b, 0x9b, 0x7a, 0x01, 0xb5, 0x24, 0x1d, 0xa4, 0xc2, 0xd6, 0xc8, 0x63,
+	0x3c, 0x31, 0x32, 0xe7, 0xef, 0x68, 0x07, 0xca, 0xb6, 0x25, 0xe8, 0x94, 0x6d, 0x0b, 0xff, 0xa5,
+	0x40, 0x33, 0x9d, 0xa3, 0x10, 0xe3, 0x15, 0xcb, 0x40, 0xbe, 0x56, 0xe5, 0x75, 0xae, 0x55, 0xe7,
+	0xbf, 0x37, 0x61, 0xcb, 0x10, 0xbf, 0x08, 0xe8, 0x3b, 0xa8, 0xcb, 0x9b, 0x12, 0x65, 0x0f, 0x8a,
+	0x94, 0x4c, 0x6a, 0x3e, 0x5b, 0x5c, 0x42, 0x0f, 0x50, 0x97, 0xd7, 0x60, 0x0a, 0x38, 0x67, 0x4f,
+	0xaa, 0x8d, 0xd4, 0xb0, 0xbe, 0x09, 0xfe, 0x51, 0x70, 0x09, 0xfd, 0x08, 0x28, 0xbd, 0xc9, 0x50,
+	0x5b, 0xc2, 0xcd, 0x5d, 0x76, 0x45, 0x94, 0x77, 0xa5, 0xad, 0x87, 0xde, 0xc9, 0x29, 0xc5, 0xe2,
+	0xaa, 0x52, 0x73, 0xf7, 0x52, 0x84, 0x2a, 0x2d, 0xb8, 0x14, 0x6a, 0xf6, 0x02, 0x5c, 0x8a, 0x3a,
+	0xd7, 0x2d, 0x56, 0x19, 0xad, 0x38, 0xe0, 0xd5, 0xfc, 0x46, 0xc1, 0x25, 0xf4, 0x04, 0x8d, 0xec,
+	0xa1, 0x8e, 0x3e, 0x90, 0xc2, 0x96, 0xee, 0x25, 0xf5, 0xc3, 0x15, 0xbd, 0xa3, 0xdb, 0x80, 0x4b,
+	0x68, 0x00, 0x6f, 0x65, 0x8e, 0x2f, 0xb4, 0xce, 0x4c, 0x54, 0x0b, 0xe6, 0x18, 0x2e, 0xa1, 0xdf,
+	0x14, 0x38, 0x5c, 0x32, 0x2c, 0xd1, 0xe9, 0x72, 0xe2, 0x19, 0xf3, 0x5d, 0xed, 0xac, 0x13, 0x32,
+	0x4f, 0x98, 0x40, 0x5d, 0x1e, 0x0e, 0x29, 0x09, 0x73, 0x26, 0xa4, 0xfa, 0x5e, 0xa1, 0xdf, 0xec,
+	0x98, 0xab, 0xd3, 0x1f, 0xf4, 0x95, 0x7e, 0xa3, 0x2f, 0x85, 0xc1, 0xef, 0xf5, 0x36, 0x43, 0xdb,
+	0xd9, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff, 0xa7, 0x5d, 0x04, 0xc2, 0x70, 0x0c, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -284,17 +878,32 @@ type RecorderClient interface {
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
-	InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error)
-	// Updates an existing non-final invocation.
-	// See UpdateInvocationRequest for semantics.
+	CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
+	// Updates an existing non-finalized invocation.
+	// If the invocation is already final on the server, FAILED_PRECONDITION is
+	// returned.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-	// Derives an invocation given a swarming task and inserts if not already
-	// present.
+	// Transitions the given invocation to the state FINALIZED.
+	FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
+	// Includes an invocation in the given non-finalized invocation.
+	CreateInclusion(ctx context.Context, in *CreateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error)
+	// Updates the inclusion edge, e.g. marks it as inconsequential.
+	UpdateInclusion(ctx context.Context, in *UpdateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error)
+	// Appends a test result to a non-finalized invocation.
+	CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
+	// Atomically appends a batch of test results to a non-finalized invocation.
+	BatchCreateTestResults(ctx context.Context, in *BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*BatchCreateTestResultsResponse, error)
+	// Appends an test exoneration to a non-finalized invocation.
+	CreateTestExoneration(ctx context.Context, in *CreateTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error)
+	// Atomically appends a batch of test exonerations to a non-finalized
+	// invocation.
+	BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error)
+	// Derives an invocation and test results from a swarming task.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
 	// tasks make RPCs directly.
-	DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error)
+	DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*DeriveInvocationResponse, error)
 }
 type recorderPRPCClient struct {
 	client *prpc.Client
@@ -304,9 +913,9 @@ func NewRecorderPRPCClient(client *prpc.Client) RecorderClient {
 	return &recorderPRPCClient{client}
 }
 
-func (c *recorderPRPCClient) InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderPRPCClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "InsertInvocation", in, out, opts...)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "CreateInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -315,16 +924,79 @@ func (c *recorderPRPCClient) InsertInvocation(ctx context.Context, in *Invocatio
 
 func (c *recorderPRPCClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "UpdateInvocation", in, out, opts...)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "UpdateInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recorderPRPCClient) DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderPRPCClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.client.Call(ctx, "luci.resultsdb.Recorder", "DeriveInvocationFromSwarming", in, out, opts...)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "FinalizeInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) CreateInclusion(ctx context.Context, in *CreateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error) {
+	out := new(Inclusion)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "CreateInclusion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) UpdateInclusion(ctx context.Context, in *UpdateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error) {
+	out := new(Inclusion)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "UpdateInclusion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error) {
+	out := new(TestResult)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "CreateTestResult", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) BatchCreateTestResults(ctx context.Context, in *BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*BatchCreateTestResultsResponse, error) {
+	out := new(BatchCreateTestResultsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "BatchCreateTestResults", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) CreateTestExoneration(ctx context.Context, in *CreateTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error) {
+	out := new(TestExoneration)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "CreateTestExoneration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error) {
+	out := new(BatchCreateTestExonerationsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "BatchCreateTestExonerations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderPRPCClient) DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*DeriveInvocationResponse, error) {
+	out := new(DeriveInvocationResponse)
+	err := c.client.Call(ctx, "luci.resultdb.Recorder", "DeriveInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -339,9 +1011,9 @@ func NewRecorderClient(cc *grpc.ClientConn) RecorderClient {
 	return &recorderClient{cc}
 }
 
-func (c *recorderClient) InsertInvocation(ctx context.Context, in *Invocation, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderClient) CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/InsertInvocation", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/CreateInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -350,16 +1022,79 @@ func (c *recorderClient) InsertInvocation(ctx context.Context, in *Invocation, o
 
 func (c *recorderClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/UpdateInvocation", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/UpdateInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recorderClient) DeriveInvocationFromSwarming(ctx context.Context, in *DeriveInvocationFromSwarmingRequest, opts ...grpc.CallOption) (*Invocation, error) {
+func (c *recorderClient) FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	out := new(Invocation)
-	err := c.cc.Invoke(ctx, "/luci.resultsdb.Recorder/DeriveInvocationFromSwarming", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/FinalizeInvocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) CreateInclusion(ctx context.Context, in *CreateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error) {
+	out := new(Inclusion)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/CreateInclusion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) UpdateInclusion(ctx context.Context, in *UpdateInclusionRequest, opts ...grpc.CallOption) (*Inclusion, error) {
+	out := new(Inclusion)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/UpdateInclusion", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error) {
+	out := new(TestResult)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/CreateTestResult", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) BatchCreateTestResults(ctx context.Context, in *BatchCreateTestResultsRequest, opts ...grpc.CallOption) (*BatchCreateTestResultsResponse, error) {
+	out := new(BatchCreateTestResultsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/BatchCreateTestResults", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) CreateTestExoneration(ctx context.Context, in *CreateTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error) {
+	out := new(TestExoneration)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/CreateTestExoneration", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error) {
+	out := new(BatchCreateTestExonerationsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/BatchCreateTestExonerations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recorderClient) DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*DeriveInvocationResponse, error) {
+	out := new(DeriveInvocationResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.Recorder/DeriveInvocation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -378,51 +1113,87 @@ type RecorderServer interface {
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
-	InsertInvocation(context.Context, *Invocation) (*Invocation, error)
-	// Updates an existing non-final invocation.
-	// See UpdateInvocationRequest for semantics.
+	CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error)
+	// Updates an existing non-finalized invocation.
+	// If the invocation is already final on the server, FAILED_PRECONDITION is
+	// returned.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*empty.Empty, error)
-	// Derives an invocation given a swarming task and inserts if not already
-	// present.
+	// Transitions the given invocation to the state FINALIZED.
+	FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error)
+	// Includes an invocation in the given non-finalized invocation.
+	CreateInclusion(context.Context, *CreateInclusionRequest) (*Inclusion, error)
+	// Updates the inclusion edge, e.g. marks it as inconsequential.
+	UpdateInclusion(context.Context, *UpdateInclusionRequest) (*Inclusion, error)
+	// Appends a test result to a non-finalized invocation.
+	CreateTestResult(context.Context, *CreateTestResultRequest) (*TestResult, error)
+	// Atomically appends a batch of test results to a non-finalized invocation.
+	BatchCreateTestResults(context.Context, *BatchCreateTestResultsRequest) (*BatchCreateTestResultsResponse, error)
+	// Appends an test exoneration to a non-finalized invocation.
+	CreateTestExoneration(context.Context, *CreateTestExonerationRequest) (*TestExoneration, error)
+	// Atomically appends a batch of test exonerations to a non-finalized
+	// invocation.
+	BatchCreateTestExonerations(context.Context, *BatchCreateTestExonerationsRequest) (*BatchCreateTestExonerationsResponse, error)
+	// Derives an invocation and test results from a swarming task.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
 	// tasks make RPCs directly.
-	DeriveInvocationFromSwarming(context.Context, *DeriveInvocationFromSwarmingRequest) (*Invocation, error)
+	DeriveInvocation(context.Context, *DeriveInvocationRequest) (*DeriveInvocationResponse, error)
 }
 
 // UnimplementedRecorderServer can be embedded to have forward compatible implementations.
 type UnimplementedRecorderServer struct {
 }
 
-func (*UnimplementedRecorderServer) InsertInvocation(ctx context.Context, req *Invocation) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InsertInvocation not implemented")
+func (*UnimplementedRecorderServer) CreateInvocation(ctx context.Context, req *CreateInvocationRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateInvocation not implemented")
 }
 func (*UnimplementedRecorderServer) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateInvocation not implemented")
 }
-func (*UnimplementedRecorderServer) DeriveInvocationFromSwarming(ctx context.Context, req *DeriveInvocationFromSwarmingRequest) (*Invocation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeriveInvocationFromSwarming not implemented")
+func (*UnimplementedRecorderServer) FinalizeInvocation(ctx context.Context, req *FinalizeInvocationRequest) (*Invocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinalizeInvocation not implemented")
+}
+func (*UnimplementedRecorderServer) CreateInclusion(ctx context.Context, req *CreateInclusionRequest) (*Inclusion, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateInclusion not implemented")
+}
+func (*UnimplementedRecorderServer) UpdateInclusion(ctx context.Context, req *UpdateInclusionRequest) (*Inclusion, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInclusion not implemented")
+}
+func (*UnimplementedRecorderServer) CreateTestResult(ctx context.Context, req *CreateTestResultRequest) (*TestResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTestResult not implemented")
+}
+func (*UnimplementedRecorderServer) BatchCreateTestResults(ctx context.Context, req *BatchCreateTestResultsRequest) (*BatchCreateTestResultsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchCreateTestResults not implemented")
+}
+func (*UnimplementedRecorderServer) CreateTestExoneration(ctx context.Context, req *CreateTestExonerationRequest) (*TestExoneration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTestExoneration not implemented")
+}
+func (*UnimplementedRecorderServer) BatchCreateTestExonerations(ctx context.Context, req *BatchCreateTestExonerationsRequest) (*BatchCreateTestExonerationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchCreateTestExonerations not implemented")
+}
+func (*UnimplementedRecorderServer) DeriveInvocation(ctx context.Context, req *DeriveInvocationRequest) (*DeriveInvocationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeriveInvocation not implemented")
 }
 
 func RegisterRecorderServer(s prpc.Registrar, srv RecorderServer) {
 	s.RegisterService(&_Recorder_serviceDesc, srv)
 }
 
-func _Recorder_InsertInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Invocation)
+func _Recorder_CreateInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInvocationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecorderServer).InsertInvocation(ctx, in)
+		return srv.(RecorderServer).CreateInvocation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.resultsdb.Recorder/InsertInvocation",
+		FullMethod: "/luci.resultdb.Recorder/CreateInvocation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).InsertInvocation(ctx, req.(*Invocation))
+		return srv.(RecorderServer).CreateInvocation(ctx, req.(*CreateInvocationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -437,7 +1208,7 @@ func _Recorder_UpdateInvocation_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.resultsdb.Recorder/UpdateInvocation",
+		FullMethod: "/luci.resultdb.Recorder/UpdateInvocation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RecorderServer).UpdateInvocation(ctx, req.(*UpdateInvocationRequest))
@@ -445,39 +1216,193 @@ func _Recorder_UpdateInvocation_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Recorder_DeriveInvocationFromSwarming_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeriveInvocationFromSwarmingRequest)
+func _Recorder_FinalizeInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FinalizeInvocationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecorderServer).DeriveInvocationFromSwarming(ctx, in)
+		return srv.(RecorderServer).FinalizeInvocation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/luci.resultsdb.Recorder/DeriveInvocationFromSwarming",
+		FullMethod: "/luci.resultdb.Recorder/FinalizeInvocation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).DeriveInvocationFromSwarming(ctx, req.(*DeriveInvocationFromSwarmingRequest))
+		return srv.(RecorderServer).FinalizeInvocation(ctx, req.(*FinalizeInvocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_CreateInclusion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInclusionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).CreateInclusion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/CreateInclusion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).CreateInclusion(ctx, req.(*CreateInclusionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_UpdateInclusion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInclusionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).UpdateInclusion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/UpdateInclusion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).UpdateInclusion(ctx, req.(*UpdateInclusionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_CreateTestResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTestResultRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).CreateTestResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/CreateTestResult",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).CreateTestResult(ctx, req.(*CreateTestResultRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_BatchCreateTestResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchCreateTestResultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).BatchCreateTestResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/BatchCreateTestResults",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).BatchCreateTestResults(ctx, req.(*BatchCreateTestResultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_CreateTestExoneration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTestExonerationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).CreateTestExoneration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/CreateTestExoneration",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).CreateTestExoneration(ctx, req.(*CreateTestExonerationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_BatchCreateTestExonerations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchCreateTestExonerationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).BatchCreateTestExonerations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/BatchCreateTestExonerations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).BatchCreateTestExonerations(ctx, req.(*BatchCreateTestExonerationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Recorder_DeriveInvocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeriveInvocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecorderServer).DeriveInvocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.Recorder/DeriveInvocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecorderServer).DeriveInvocation(ctx, req.(*DeriveInvocationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 var _Recorder_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "luci.resultsdb.Recorder",
+	ServiceName: "luci.resultdb.Recorder",
 	HandlerType: (*RecorderServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InsertInvocation",
-			Handler:    _Recorder_InsertInvocation_Handler,
+			MethodName: "CreateInvocation",
+			Handler:    _Recorder_CreateInvocation_Handler,
 		},
 		{
 			MethodName: "UpdateInvocation",
 			Handler:    _Recorder_UpdateInvocation_Handler,
 		},
 		{
-			MethodName: "DeriveInvocationFromSwarming",
-			Handler:    _Recorder_DeriveInvocationFromSwarming_Handler,
+			MethodName: "FinalizeInvocation",
+			Handler:    _Recorder_FinalizeInvocation_Handler,
+		},
+		{
+			MethodName: "CreateInclusion",
+			Handler:    _Recorder_CreateInclusion_Handler,
+		},
+		{
+			MethodName: "UpdateInclusion",
+			Handler:    _Recorder_UpdateInclusion_Handler,
+		},
+		{
+			MethodName: "CreateTestResult",
+			Handler:    _Recorder_CreateTestResult_Handler,
+		},
+		{
+			MethodName: "BatchCreateTestResults",
+			Handler:    _Recorder_BatchCreateTestResults_Handler,
+		},
+		{
+			MethodName: "CreateTestExoneration",
+			Handler:    _Recorder_CreateTestExoneration_Handler,
+		},
+		{
+			MethodName: "BatchCreateTestExonerations",
+			Handler:    _Recorder_BatchCreateTestExonerations_Handler,
+		},
+		{
+			MethodName: "DeriveInvocation",
+			Handler:    _Recorder_DeriveInvocation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
