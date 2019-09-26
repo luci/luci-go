@@ -29,14 +29,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
 // getBanner parses the OS information from the build and maybe returns a banner.
-func getBanner(c context.Context, b *buildbot.Build) *ui.LogoBanner {
+func getBanner(c context.Context, b *buildbotapi.Build) *ui.LogoBanner {
 	osLogo := func() *ui.Logo {
 		result := &ui.Logo{}
 		switch b.OSFamily {
@@ -62,7 +62,7 @@ func getBanner(c context.Context, b *buildbot.Build) *ui.LogoBanner {
 
 // summary extracts the top level summary from a buildbot build as a
 // BuildComponent
-func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
+func summary(c context.Context, b *buildbotapi.Build) ui.BuildComponent {
 	// TODO(hinoka): use b.toStatus()
 	// Status
 	var status model.Status
@@ -122,7 +122,7 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(c context.Context, b *buildbot.Build) (result []*ui.BuildComponent) {
+func components(c context.Context, b *buildbotapi.Build) (result []*ui.BuildComponent) {
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
@@ -262,7 +262,7 @@ type Prop struct {
 
 // properties extracts all properties from buildbot builds and groups them into
 // property groups.
-func properties(b *buildbot.Build) (result []*ui.PropertyGroup) {
+func properties(b *buildbotapi.Build) (result []*ui.PropertyGroup) {
 	groups := map[string]*ui.PropertyGroup{}
 	allProps := map[string]Prop{}
 	for _, prop := range b.Properties {
@@ -302,7 +302,7 @@ func properties(b *buildbot.Build) (result []*ui.PropertyGroup) {
 
 // blame extracts the commit and blame information from a buildbot build and
 // returns it as a list of Commits.
-func blame(b *buildbot.Build) (result []*ui.Commit) {
+func blame(b *buildbotapi.Build) (result []*ui.Commit) {
 	if b.Sourcestamp != nil {
 		for _, c := range b.Sourcestamp.Changes {
 			files := c.GetFiles()
@@ -321,7 +321,7 @@ func blame(b *buildbot.Build) (result []*ui.Commit) {
 
 // sourcestamp extracts the source stamp from various parts of a buildbot build,
 // including the properties.
-func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
+func sourcestamp(c context.Context, b *buildbotapi.Build) *ui.Trigger {
 	ss := &ui.Trigger{}
 	var rietveld url.URL
 	var gerrit url.URL
@@ -397,7 +397,7 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 	return ss
 }
 
-func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool) *ui.MiloBuildLegacy {
+func renderBuild(c context.Context, b *buildbotapi.Build, includeStepsAndProps bool) *ui.MiloBuildLegacy {
 	result := &ui.MiloBuildLegacy{
 		Trigger: sourcestamp(c, b),
 		Summary: summary(c, b),
@@ -411,7 +411,7 @@ func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool
 }
 
 // GetBuild fetches a buildbot build and translates it into a MiloBuildLegacy.
-func GetBuild(c context.Context, id buildbot.BuildID) (*ui.MiloBuildLegacy, error) {
+func GetBuild(c context.Context, id buildbotapi.BuildID) (*ui.MiloBuildLegacy, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}
