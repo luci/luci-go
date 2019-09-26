@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buildstore implements storage of //milo/api/buildbot/* types.
+// Package buildstore implements storage of //milo/buildsource/buildbot/buildbotapi/* types.
 package buildstore
