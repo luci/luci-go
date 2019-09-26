@@ -166,11 +166,12 @@ func makeFeedbackLink(c *router.Context, build *ui.MiloBuildLegacy) string {
 // makeBuild partially populates a buildbucketpb.Build. Currently it attempts to
 // make available .Builder.Project, .Builder.Bucket, and .Builder.Builder.
 func makeBuild(params httprouter.Params, build *ui.MiloBuildLegacy) *buildbucketpb.Build {
+	// NOTE: on led builds, some of these params may not be populated.
 	return &buildbucketpb.Build{
 		Builder: &buildbucketpb.BuilderID{
-			Project: build.Trigger.Project,           // equivalent params.ByName("project")
-			Bucket:  params.ByName("bucket"),         // way to get from ui.MiloBuildLegacy so don't need params here?
-			Builder: build.Summary.ParentLabel.Label, // params.ByName("builder")
+			Project: params.ByName("project"), // equivalent build.Trigger.Project
+			Bucket:  params.ByName("bucket"),  // way to get from ui.MiloBuildLegacy so don't need params here?
+			Builder: params.ByName("builder"), // build.Summary.ParentLabel.Label
 		},
 	}
 }
