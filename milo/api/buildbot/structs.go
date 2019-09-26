@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package buildbotapi defines types used in Buildbot build protocol,
+// Package buildbot defines types used in Buildbot build protocol,
 // e.g. build, step, log, etc.
 // The types can used together with encoding/json package.
-package buildbotapi
+package buildbot
 
 import (
 	"encoding/json"
@@ -109,7 +109,7 @@ func (p *Property) UnmarshalJSON(d []byte) error {
 	return nil
 }
 
-// Build is a single build json on buildbotapi.
+// Build is a single build json on buildbot.
 type Build struct {
 	Master      string
 	Blame       []string `json:"blame"` // email addresses

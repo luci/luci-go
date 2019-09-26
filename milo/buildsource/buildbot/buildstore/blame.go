@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/git"
 )
 
@@ -46,7 +46,7 @@ var commitHashRe = regexp.MustCompile(`^[a-f0-9]{40}$`)
 // b.SourceStamp.Revision and builds previous to b.
 //
 // Memcaches results.
-func blame(c context.Context, b *buildbotapi.Build) error {
+func blame(c context.Context, b *buildbot.Build) error {
 	if err := fetchChangesCached(c, b); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func blame(c context.Context, b *buildbotapi.Build) error {
 }
 
 // fetchChangesCached is same as fetchChanges, but with memcaching.
-func fetchChangesCached(c context.Context, b *buildbotapi.Build) error {
+func fetchChangesCached(c context.Context, b *buildbot.Build) error {
 	report := func(err error, msg string) {
 		logging.WithError(err).Errorf(c, "build %q change memcaching: %s", b.ID(), msg)
 	}
@@ -101,11 +101,11 @@ func fetchChangesCached(c context.Context, b *buildbotapi.Build) error {
 //
 // Uses memcache to read the revision of the previous build.
 // If not available, loads the previous build that has a commit hash revision.
-func fetchChanges(c context.Context, b *buildbotapi.Build) error {
+func fetchChanges(c context.Context, b *buildbot.Build) error {
 	memcache.Set(c, buildRevCache(c, b))
 
 	// initialize the slice so that when serialized to JSON, it is [], not null.
-	b.Sourcestamp.Changes = []buildbotapi.Change{}
+	b.Sourcestamp.Changes = []buildbot.Change{}
 
 	host, project, err := gitiles.ParseRepoURL(b.Sourcestamp.Repository)
 	if err != nil {
@@ -165,9 +165,9 @@ func fetchChanges(c context.Context, b *buildbotapi.Build) error {
 }
 
 // changeFromGitiles converts a gitiles.Commit to a buildbot change.
-func changeFromGitiles(repoURL, branch string, commit *gitpb.Commit) buildbotapi.Change {
+func changeFromGitiles(repoURL, branch string, commit *gitpb.Commit) buildbot.Change {
 	ct, _ := ptypes.Timestamp(commit.Committer.Time)
-	return buildbotapi.Change{
+	return buildbot.Change{
 		At:         ct.Format("Mon _2 Jan 2006 15:04:05"),
 		Branch:     &branch,
 		Comments:   commit.Message,
@@ -184,7 +184,7 @@ func changeFromGitiles(repoURL, branch string, commit *gitpb.Commit) buildbotapi
 // getPrevRev returns revision of the closest previous build with a commit
 // hash, or "" if not found.
 // Memcaches results.
-func getPrevRev(c context.Context, b *buildbotapi.Build, maxRecursionDepth int) (string, error) {
+func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (string, error) {
 	// note: we cannot use exponential scan here because there may be build
 	// number gaps anywhere, for example given build numbers 10 20 30 40,
 	// if we check 25 while scanning [20, 40), we don't know if we should continue
@@ -198,7 +198,7 @@ func getPrevRev(c context.Context, b *buildbotapi.Build, maxRecursionDepth int) 
 		return "", nil
 	}
 
-	prev := &buildbotapi.Build{
+	prev := &buildbot.Build{
 		Master:      b.Master,
 		Buildername: b.Buildername,
 		Number:      b.Number - 1,
@@ -242,7 +242,7 @@ func getPrevRev(c context.Context, b *buildbotapi.Build, maxRecursionDepth int) 
 
 // buildRevCache returns a memcache.Item for the build's revision.
 // Initializes the value with current revision.
-func buildRevCache(c context.Context, b *buildbotapi.Build) memcache.Item {
+func buildRevCache(c context.Context, b *buildbot.Build) memcache.Item {
 	item := memcache.NewItem(c, "buildbot_revision/"+b.ID().String())
 	if b.Sourcestamp != nil {
 		item.SetValue([]byte(b.Sourcestamp.Revision))

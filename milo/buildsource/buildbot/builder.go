@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -41,7 +41,7 @@ type builderRef struct {
 // buildMap contains all of the current build within a master json.  We use this
 // because buildbot returns all current builds as within the slaves portion,
 // whereas it's easier to map then by builders instead.
-type buildMap map[builderRef]*buildbotapi.Build
+type buildMap map[builderRef]*buildbot.Build
 
 // mergeText merges buildbot summary texts, which sometimes separates
 // words that should be merged together, this combines them into a single
@@ -78,7 +78,7 @@ func mergeText(text []string) []string {
 }
 
 func summarizeSlavePool(
-	c context.Context, baseURL string, slaves []string, slaveMap map[string]*buildbotapi.Slave) *ui.MachinePool {
+	c context.Context, baseURL string, slaves []string, slaveMap map[string]*buildbot.Slave) *ui.MachinePool {
 
 	bots := make([]model.Bot, len(slaves))
 	for i, slaveName := range slaves {

@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 )
@@ -49,23 +49,23 @@ var ErrNoBuildNumber = errors.BoolTag{Key: errors.NewTagKey("no buildnumber")}
 //
 // Does not populate OSFamily, OSVersion, Blame or SourceStamp.Changes
 // fields.
-func buildFromBuildbucket(c context.Context, master string, b *deprecated.Build, fetchAnnotations bool) (*buildbotapi.Build, error) {
+func buildFromBuildbucket(c context.Context, master string, b *deprecated.Build, fetchAnnotations bool) (*buildbot.Build, error) {
 	num, err := buildNumber(b)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &buildbotapi.Build{
+	res := &buildbot.Build{
 		Emulated:    true,
 		ViewPath:    (&model.BuildSummary{BuildID: "buildbucket/" + b.Address()}).SelfLink(),
 		Master:      master,
 		Buildername: b.Builder,
 		Number:      num,
 		Results:     statusResult(b.Status),
-		TimeStamp:   buildbotapi.Time{b.UpdateTime},
-		Times: buildbotapi.TimeRange{
-			Start:  buildbotapi.Time{b.StartTime},
-			Finish: buildbotapi.Time{b.CompletionTime},
+		TimeStamp:   buildbot.Time{b.UpdateTime},
+		Times: buildbot.TimeRange{
+			Start:  buildbot.Time{b.StartTime},
+			Finish: buildbot.Time{b.CompletionTime},
 		},
 		// TODO(nodir): use buildbucket access API when it is ready,
 		// or, perhaps, just delete this code.
@@ -73,11 +73,11 @@ func buildFromBuildbucket(c context.Context, master string, b *deprecated.Build,
 		// that the requester does not have access to, in the first place.
 		Internal:    b.Bucket != "luci.chromium.try",
 		Finished:    protoutil.IsEnded(b.Status),
-		Sourcestamp: &buildbotapi.SourceStamp{},
+		Sourcestamp: &buildbot.SourceStamp{},
 
 		// non-nil slice because we want an array, not null,
 		// when converted to JSON
-		Steps: []buildbotapi.Step{},
+		Steps: []buildbot.Step{},
 	}
 
 	for _, bs := range b.Tags[bbv1.TagBuildSet] {
@@ -118,7 +118,7 @@ func buildFromBuildbucket(c context.Context, master string, b *deprecated.Build,
 				if !s.IsFinished {
 					res.Currentstep = s.Name
 				}
-				if s.Results.Result != buildbotapi.Success {
+				if s.Results.Result != buildbot.Success {
 					res.Text = append(res.Text, fmt.Sprintf("%s %s", s.Results.Result, s.Name))
 				}
 			}
@@ -166,16 +166,16 @@ func buildNumber(b *deprecated.Build) (int, error) {
 	return strconv.Atoi(parts[2])
 }
 
-func statusResult(status buildbucketpb.Status) buildbotapi.Result {
+func statusResult(status buildbucketpb.Status) buildbot.Result {
 	switch status {
 	case buildbucketpb.Status_SCHEDULED, buildbucketpb.Status_STARTED:
-		return buildbotapi.NoResult
+		return buildbot.NoResult
 	case buildbucketpb.Status_SUCCESS:
-		return buildbotapi.Success
+		return buildbot.Success
 	case buildbucketpb.Status_FAILURE:
-		return buildbotapi.Failure
+		return buildbot.Failure
 	case buildbucketpb.Status_INFRA_FAILURE, buildbucketpb.Status_CANCELED:
-		return buildbotapi.Exception
+		return buildbot.Exception
 	default:
 		panic(errors.Reason("unexpected buildbucket status %q", status).Err())
 	}

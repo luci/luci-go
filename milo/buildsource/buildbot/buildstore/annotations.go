@@ -35,7 +35,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
+	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -101,7 +101,7 @@ type annotationConverter struct {
 // addSteps converts annotation substeps to buildbot steps and appends them
 // dest.
 // c is used only for logging.
-func (ac *annotationConverter) addSteps(c context.Context, dest *[]buildbotapi.Step, src []*miloProto.Step_Substep, stepNamePrefix string) error {
+func (ac *annotationConverter) addSteps(c context.Context, dest *[]buildbot.Step, src []*miloProto.Step_Substep, stepNamePrefix string) error {
 	for _, substep := range src {
 		stepSrc := substep.GetStep()
 		if stepSrc == nil {
@@ -120,11 +120,11 @@ func (ac *annotationConverter) addSteps(c context.Context, dest *[]buildbotapi.S
 }
 
 // step converts an annotation step to a buildbot step.
-func (ac *annotationConverter) step(c context.Context, src *miloProto.Step) (*buildbotapi.Step, error) {
+func (ac *annotationConverter) step(c context.Context, src *miloProto.Step) (*buildbot.Step, error) {
 	// This implementation is based on
 	// https://chromium.googlesource.com/infra/luci/luci-go/+/7ad046489c578e339b873886d6973abbe43cc137/milo/buildsource/rawpresentation/logDogBuild.go#47
 
-	res := &buildbotapi.Step{
+	res := &buildbot.Step{
 		Name:       src.Name,
 		IsStarted:  true,
 		IsFinished: src.Ended != nil,
@@ -133,13 +133,13 @@ func (ac *annotationConverter) step(c context.Context, src *miloProto.Step) (*bu
 	// Convert step result.
 	switch {
 	case src.Status == miloProto.Status_SUCCESS:
-		res.Results.Result = buildbotapi.Success
+		res.Results.Result = buildbot.Success
 
 	case src.Status == miloProto.Status_FAILURE:
-		res.Results.Result = buildbotapi.Failure
+		res.Results.Result = buildbot.Failure
 		if fd := src.GetFailureDetails(); fd != nil {
 			if fd.Type != miloProto.FailureDetails_GENERAL {
-				res.Results.Result = buildbotapi.Exception
+				res.Results.Result = buildbot.Exception
 			}
 			if fd.Text != "" {
 				res.Text = append(res.Text, fd.Text)
@@ -147,10 +147,10 @@ func (ac *annotationConverter) step(c context.Context, src *miloProto.Step) (*bu
 		}
 
 	case !ac.buildCompletedTime.IsZero():
-		res.Results.Result = buildbotapi.Exception
+		res.Results.Result = buildbot.Exception
 
 	default:
-		res.Results.Result = buildbotapi.NoResult
+		res.Results.Result = buildbot.NoResult
 	}
 
 	// annotee never initializes src.Link
@@ -201,14 +201,14 @@ func (ac *annotationConverter) step(c context.Context, src *miloProto.Step) (*bu
 	return res, nil
 }
 
-func (ac *annotationConverter) log(src *miloProto.Link) (*buildbotapi.Log, error) {
+func (ac *annotationConverter) log(src *miloProto.Link) (*buildbot.Log, error) {
 	// This implementation is based on
 	// https://chromium.googlesource.com/infra/luci/luci-go/+/7ad046489c578e339b873886d6973abbe43cc137/milo/buildsource/swarming/build.go#798
 
 	// Milo ignores miloProto.Link.AliasLink
 	// Also we don't have it in practice.
 
-	log := &buildbotapi.Log{Name: src.Label}
+	log := &buildbot.Log{Name: src.Label}
 	switch v := src.Value.(type) {
 	case *miloProto.Link_LogdogStream:
 		// This is the typical case.
@@ -234,8 +234,8 @@ func (ac *annotationConverter) log(src *miloProto.Link) (*buildbotapi.Log, error
 	return log, nil
 }
 
-func extractProperties(s *miloProto.Step) []*buildbotapi.Property {
-	props := map[string]*buildbotapi.Property{}
+func extractProperties(s *miloProto.Step) []*buildbot.Property {
+	props := map[string]*buildbot.Property{}
 
 	var extract func(s *miloProto.Step)
 	extract = func(s *miloProto.Step) {
@@ -247,7 +247,7 @@ func extractProperties(s *miloProto.Step) []*buildbotapi.Property {
 				v = p.Value
 			}
 
-			props[p.Name] = &buildbotapi.Property{
+			props[p.Name] = &buildbot.Property{
 				Name:   p.Name,
 				Value:  v,
 				Source: s.Name,
@@ -268,7 +268,7 @@ func extractProperties(s *miloProto.Step) []*buildbotapi.Property {
 	}
 	sort.Strings(names)
 
-	ret := make([]*buildbotapi.Property, len(names))
+	ret := make([]*buildbot.Property, len(names))
 	for i, n := range names {
 		ret[i] = props[n]
 	}
