@@ -34,6 +34,7 @@ package buildmerge
 
 import (
 	"context"
+	"net/url"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -129,6 +130,8 @@ type Agent struct {
 //     we should monitor streams.
 //   * base - The "model" Build message that all generated builds should start
 //     with. All build proto streams will be merged onto a copy of this message.
+//     Any Output.Log's which have non-absolute URLs will have their Url and
+//     ViewUrl absolutized relative to userNamespace using calculateURLs.
 //   * calculateURLs - A function to calculate Log.Url and Log.ViewUrl values.
 //     Should be a pure function.
 //
@@ -164,6 +167,14 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 		userRootURL:   userRootURL,
 		baseBuild:     proto.Clone(base).(*bbpb.Build),
 	}
+	for _, log := range ret.baseBuild.GetOutput().GetLogs() {
+		u, err := url.Parse(log.Url)
+		if err == nil && u.Scheme == "" {
+			log.Url, log.ViewUrl = calculateURLs(
+				userNamespace, types.StreamName(log.Url))
+		}
+	}
+
 	var err error
 	ret.mergeCh, err = dispatcher.NewChannel(ctx, &dispatcher.Options{
 		QPSLimit: rate.NewLimiter(rate.Inf, 1),

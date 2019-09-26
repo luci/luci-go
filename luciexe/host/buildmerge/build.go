@@ -17,6 +17,7 @@ package buildmerge
 import (
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -106,6 +107,8 @@ func updateStepFromBuild(step *bbpb.Step, build *bbpb.Build) {
 //
 // In this scenario, `base` would be the input build to a task, and `build`
 // would be the outputs from the running luciexe.
+//
+// As a special case, Output is proto.Merge'd.
 func updateBaseFromUserBuild(base, build *bbpb.Build) {
 	if build == nil {
 		return
@@ -116,5 +119,11 @@ func updateBaseFromUserBuild(base, build *bbpb.Build) {
 	base.UpdateTime = build.UpdateTime
 	base.EndTime = build.EndTime
 	base.Tags = build.Tags
-	base.Output = build.Output
+
+	if build.Output != nil {
+		if base.Output == nil {
+			base.Output = &bbpb.Build_Output{}
+		}
+		proto.Merge(base.Output, build.GetOutput())
+	}
 }
