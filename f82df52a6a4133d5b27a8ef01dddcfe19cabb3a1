@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "acb50dd0_9147c15a",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2019-09-26T23:39:24Z",
+      "side": 1,
+      "message": "I think compression is useful generally (assuming the transport doesn\u0027t do it).  It\u0027s just that due to GAE limits it\u0027s a hard blocker for us, but non-GAE users would also benefit.",
+      "parentUuid": "126f4dd4_632b27ae",
+      "revId": "f82df52a6a4133d5b27a8ef01dddcfe19cabb3a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "959b262e_6ec66d27",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 1
@@ -48,6 +66,30 @@
       "writtenOn": "2019-09-26T23:19:11Z",
       "side": 1,
       "message": "pedanticity aside(5*1024*1024), do you know if gzip encoding is applied transparently at transport level automatically?\nIf not, then this should be much lower.",
+      "range": {
+        "startLine": 246,
+        "startChar": 26,
+        "endLine": 246,
+        "endChar": 41
+      },
+      "revId": "f82df52a6a4133d5b27a8ef01dddcfe19cabb3a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cbb0a80_245e2345",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2019-09-26T23:39:24Z",
+      "side": 1,
+      "message": "I don\u0027t know about the transport level.\n\nI\u0027m cheating here and setting a high limit just so we can test that this actually works, since I suspect we\u0027re the only ones who are sending files \u003e5MB right now.  Once we\u0027ve verified that this actually works, I definitely agree with lowering the limit if the transport doesn\u0027t do it.\n\nPedantically\n\nM \u003d 10^6\nMi \u003d 2^20\n\nhttps://en.wikipedia.org/wiki/Binary_prefix\n\nI don\u0027t care if LUCI wants to stick with with the \"incorrect\" binary prefixes though.",
+      "parentUuid": "959b262e_6ec66d27",
       "range": {
         "startLine": 246,
         "startChar": 26,
