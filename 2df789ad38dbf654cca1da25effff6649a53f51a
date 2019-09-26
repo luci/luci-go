@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e4369e82_dd61bb79",
+        "filename": "results/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5d31794_2ce2fe07",
+      "range": {
+        "startLine": 23,
+        "startChar": 23,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6bbcff67_55784c48",
         "filename": "results/invocation.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f789ecf_25f86da4",
+        "filename": "results/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "you are right. I\u0027ve sorted by test path first",
+      "parentUuid": "6bbcff67_55784c48",
+      "range": {
+        "startLine": 39,
+        "startChar": 16,
+        "endLine": 39,
+        "endChar": 20
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "99252d45_440760f1",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f42dd0b7_fe2ce2c4",
+      "range": {
+        "startLine": 90,
+        "startChar": 40,
+        "endLine": 90,
+        "endChar": 46
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ee5dd62_67fa5a34",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 4
@@ -82,6 +154,30 @@
       "writtenOn": "2019-09-26T23:04:06Z",
       "side": 1,
       "message": "Nit: Parse doesn\u0027t quite seem to describe the behavior. Parsing is usually taking some input where we don\u0027t already know the structure, and analyzing its structure.\n\nWe have the structure here already, we\u0027re just converting it to another structure. Put another way, I would actually expect \"parse\" to apply more to the action of converting the JSON input (which is structured, we just don\u0027t know what that structure is yet) to a structured GTestResults.",
+      "range": {
+        "startLine": 93,
+        "startChar": 23,
+        "endLine": 93,
+        "endChar": 28
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0f0419b_4a275d10",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "suggestions? Renamed to ToProtos",
+      "parentUuid": "1ee5dd62_67fa5a34",
       "range": {
         "startLine": 93,
         "startChar": 23,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "8297e431_bd5fa274",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "sorting by name and then by iteration would require maintaining testResult:iteration map which we don\u0027t have.\n\nsorting by iteration and then name has a benefit of being closer to the original, and also closer to the chronological order.",
+      "parentUuid": "ee9bb2d1_f334ecc8",
+      "range": {
+        "startLine": 107,
+        "startChar": 43,
+        "endLine": 107,
+        "endChar": 56
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "79cac855_518ab7e7",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 4
@@ -128,6 +248,30 @@
       "writtenOn": "2019-09-26T23:04:06Z",
       "side": 1,
       "message": "What\u0027s the benefit of this rather than putting the\n\n var testNames []string\n\nhere, or\n\n testNames :\u003d make([]string, len(data))\n\n? Is it trying to avoid reallocation in iterations after the first?",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 108,
+        "endChar": 27
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "742e2f35_bf790b36",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "yeah, it avoids reallocation, and is rather simple",
+      "parentUuid": "79cac855_518ab7e7",
       "range": {
         "startLine": 108,
         "startChar": 2,
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "9122b68f_1d99c9b7",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "oops thanks",
+      "parentUuid": "c373403b_30ca1d22",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 9
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff961838_f385a4ea",
         "filename": "results/recorder/chromium/formats/gtest_test.go",
         "patchSetId": 4
@@ -183,6 +351,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "960daaca_42b47f76",
+        "filename": "results/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff961838_f385a4ea",
+      "range": {
+        "startLine": 127,
+        "startChar": 10,
+        "endLine": 127,
+        "endChar": 14
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "3a3d0d16_8220df16",
+        "filename": "results/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "math is implemented in common.go and is tested by common_test.go. This test is specific to gtest\n\nShouldAlmostEqual is not needed here because Nanos is an integer",
+      "parentUuid": "fb6b5ed7_a7eaccc5",
+      "range": {
+        "startLine": 150,
+        "startChar": 30,
+        "endLine": 150,
+        "endChar": 44
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37239196_d5d55547",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -229,6 +445,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eeaf798_9b1840da",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done\n\nwe should probably use rdb everywhere in another CL",
+      "parentUuid": "37239196_d5d55547",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 35
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -255,6 +495,30 @@
     },
     {
       "key": {
+        "uuid": "6b90adde_ab04a305",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "957f25cd_8560d6e9",
+      "range": {
+        "startLine": 95,
+        "startChar": 40,
+        "endLine": 95,
+        "endChar": 46
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca105c1b_4ecf1f8f",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -278,6 +542,30 @@
     },
     {
       "key": {
+        "uuid": "c3e6a686_cb5dc48b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca105c1b_4ecf1f8f",
+      "range": {
+        "startLine": 98,
+        "startChar": 26,
+        "endLine": 98,
+        "endChar": 31
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8b9d54a5_2824b853",
         "filename": "results/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -289,6 +577,30 @@
       "writtenOn": "2019-09-26T23:04:06Z",
       "side": 1,
       "message": "What\u0027s the rationale between having this function modify its arguments, rather than returning the slice and appending them at the callsite?",
+      "range": {
+        "startLine": 237,
+        "startChar": 30,
+        "endLine": 237,
+        "endChar": 59
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bd7c62e_ec4d287a",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "it is more efficient (no small slices) and ~same amount of code",
+      "parentUuid": "8b9d54a5_2824b853",
       "range": {
         "startLine": 237,
         "startChar": 30,
@@ -321,6 +633,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf87df3a_cad644de",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-26T23:53:27Z",
+      "side": 1,
+      "message": "thanks!",
+      "parentUuid": "bda9691f_f84a1cae",
+      "range": {
+        "startLine": 254,
+        "startChar": 28,
+        "endLine": 254,
+        "endChar": 43
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
