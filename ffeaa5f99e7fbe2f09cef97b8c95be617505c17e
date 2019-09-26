@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dbedd13e_5197c555",
+        "filename": "common/proto/google/descutil/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-26T07:00:00Z",
+      "side": 1,
+      "message": "This blacklist is very adhoc :-/\n\nAlso it could have been `tag \u003e\u003d 50000`. Per convention (documented in https://developers.google.com/protocol-buffers/docs/proto#customoptions), custom options are in range 50000-99999:\n\n\"\"\"\nThis range is reserved for internal use within individual organizations, so you can use numbers in this range freely for in-house applications.\n\"\"\"",
+      "range": {
+        "startLine": 284,
+        "startChar": 17,
+        "endLine": 284,
+        "endChar": 32
+      },
+      "revId": "ffeaa5f99e7fbe2f09cef97b8c95be617505c17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
