@@ -281,12 +281,13 @@ func At(descProto proto.Message, path []int32) (interface{}, error) {
 			cur = cur.Index(int(path[i]))
 		} else if _, ok := cur.Interface().(proto.Message); ok {
 			tag := int(path[i])
-			if tag == 999 {
-				// this is an "UnintepretedOption" field.
-				// protoc produces inconsistent source code location paths for
-				// options that are not used, e.g. if go_package option is
-				// specified, but go code is not generated.
-				// We do not support uninterpreted options
+			if tag == 999 || tag == 73700 {
+				// 999 is an "UnintepretedOption" field.
+				//
+				// 73700 is a FileOption from common/proto/options.proto
+				// "luci.file_metadata".
+				//
+				// We do not support file options currently.
 				return nil, nil
 			}
 			// The tag->field index mapping could be precomputed.
