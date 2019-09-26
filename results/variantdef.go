@@ -28,9 +28,9 @@ import (
 // It is the "Def" part of a VariantDef proto.
 type VariantDefMap map[string]string
 
-// Validates the receiver VariantDefMap by checking characters and length of the keys and values.
+// Validate validates the receiver VariantDefMap by checking characters and length of the keys and values.
 func (d VariantDefMap) Validate() error {
-	// TODO: Implement.
+	// TODO(jchinlee): Implement.
 	return nil
 }
 
@@ -47,11 +47,10 @@ func (d VariantDefMap) ID() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Proto converts the VariantDefMap to a fully fledged resultspb.VariantDef proto.
+// Proto converts the VariantDefMap to a resultspb.VariantDef proto.
 func (d VariantDefMap) Proto() *resultspb.VariantDef {
 	return &resultspb.VariantDef{
-		Def:    d,
-		Digest: d.ID(),
+		Def: d,
 	}
 }
 
