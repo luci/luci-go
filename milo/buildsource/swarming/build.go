@@ -589,31 +589,6 @@ func swarmingFetchMaybeLogs(c context.Context, svc swarmingService, taskID strin
 	return fr, logDogStreamAddr, err
 }
 
-// resolveLogDogStreamAddrFromTags returns a configured AnnotationStream given
-// the tags swarming task's tags.
-func resolveLogDogStreamAddrFromTags(tags map[string]string) (*types.StreamAddr, error) {
-	// If we don't have a LUCI project, abort.
-	luciProject, logLocation := tags["luci_project"], tags["log_location"]
-	switch {
-	case luciProject == "":
-		return nil, errors.New("no 'luci_project' tag")
-	case logLocation == "":
-		return nil, errors.New("no 'log_location' tag")
-	}
-
-	addr, err := types.ParseURL(logLocation)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not parse LogDog stream from location").Err()
-	}
-
-	// The LogDog stream's project should match the LUCI project.
-	if string(addr.Project) != luciProject {
-		return nil, errors.Reason("stream project %q doesn't match LUCI project %q", addr.Project, luciProject).Err()
-	}
-
-	return addr, nil
-}
-
 // buildFromLogs returns a milo build from just the swarming log and result data.
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuildLegacy, error) {
