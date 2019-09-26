@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -82,6 +83,7 @@ func main() {
 
 	opts := &host.Options{
 		ViewerURL: fmt.Sprintf("https://ci.chromium.org/p/%d", input.Build.Id),
+		BaseBuild: input.Build,
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
@@ -96,6 +98,23 @@ func main() {
 		exePath, err = resolveExe(exePath)
 		check(errors.Annotate(err, "resolving %q", input.ExecutablePath).Err())
 	}
+
+	// TODO(iannucci): this is sketchy, but we preemptively add the log entries
+	// for the top level user stdout/stderr streams.
+	//
+	// Really, `invoke.Start` is the one that knows how to arrange the
+	// Output.Logs, but host.Run makes a copy of this build immediately. Find
+	// a way to set these up nicely (maybe have opts.BaseBuild be a function
+	// returning an immutable bbpb.Build?).
+	input.Build.Output = &bbpb.Build_Output{
+		Logs: []*bbpb.Log{
+			{Name: "stdout", Url: "stdout"},
+			{Name: "stderr", Url: "stderr"},
+		},
+	}
+
+	logging.Infof(ctx, "Initial build proto:\n%s",
+		proto.MarshalTextString(input.Build))
 
 	builds, err := host.Run(cctx, opts, func(ctx context.Context) error {
 		subp, err := invoke.Start(ctx, exePath, input.Build, &invoke.Options{

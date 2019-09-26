@@ -21,9 +21,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	. "github.com/smartystreets/goconvey/convey"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSetErrorOnBuild(t *testing.T) {
@@ -173,7 +176,7 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			buildClone := proto.Clone(build).(*bbpb.Build)
 			buildClone.Steps = append(buildClone.Steps, &bbpb.Step{Name: "sup"})
 			updateBaseFromUserBuild(base, build)
-			So(base, ShouldResemble, buildClone)
+			So(base, ShouldResembleProto, buildClone)
 		})
 
 		Convey(`nil build`, func() {
@@ -184,6 +187,31 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			baseClone := proto.Clone(base).(*bbpb.Build)
 			updateBaseFromUserBuild(base, nil)
 			So(base, ShouldResemble, baseClone)
+		})
+
+		Convey(`output is merged`, func() {
+			base := &bbpb.Build{
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{
+						{Name: "hello"},
+					},
+				},
+			}
+			updateBaseFromUserBuild(base, &bbpb.Build{
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{
+						{Name: "world"},
+					},
+				},
+			})
+			So(base, ShouldResembleProto, &bbpb.Build{
+				Output: &bbpb.Build_Output{
+					Logs: []*bbpb.Log{
+						{Name: "hello"},
+						{Name: "world"},
+					},
+				},
+			})
 		})
 	})
 }
