@@ -18,7 +18,7 @@ package luci.resultdb;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/results/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
 // A result of a functional test case.
 // Often a single test case is executed multiple times and has multiple results,

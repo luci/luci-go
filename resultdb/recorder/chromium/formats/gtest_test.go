@@ -19,8 +19,8 @@ import (
 	"context"
 	"testing"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
-	"go.chromium.org/luci/results/util"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -17,9 +17,9 @@ syntax = "proto3";
 package luci.resultdb;
 
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/results/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 
 // A conceptual container of results. Immutable once finalized.
 // It represents all results of some computation; examples: swarming task,

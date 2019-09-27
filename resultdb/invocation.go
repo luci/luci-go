@@ -17,7 +17,7 @@ package results
 import (
 	"sort"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // NormalizeInvocation converts inv to the canonical form.

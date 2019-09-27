@@ -20,7 +20,7 @@ import (
 	"io"
 	"sort"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // VariantDefMap contains the key:val pairs that define a Variant.

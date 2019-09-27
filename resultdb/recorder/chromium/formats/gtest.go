@@ -27,11 +27,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/results"
+	"go.chromium.org/luci/resultdb"
 
-	rdb "go.chromium.org/luci/results"
-	resultspb "go.chromium.org/luci/results/proto/v1"
-	"go.chromium.org/luci/results/util"
+	rdb "go.chromium.org/luci/resultdb"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/util"
 )
 
 // GTestResults represents the structure as described to be generated in

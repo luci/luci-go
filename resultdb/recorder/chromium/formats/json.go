@@ -25,10 +25,10 @@ import (
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	rdb "go.chromium.org/luci/results"
+	rdb "go.chromium.org/luci/resultdb"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
-	"go.chromium.org/luci/results/util"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/util"
 )
 
 const testNamePrefixKey = "test_name_prefix"

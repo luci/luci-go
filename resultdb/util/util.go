@@ -17,7 +17,7 @@ package util
 import (
 	"fmt"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // StringPair creates a resultspb.StringPair with the given strings as key/value field values.

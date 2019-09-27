@@ -19,7 +19,7 @@ import (
 
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	resultspb "go.chromium.org/luci/results/proto/v1"
+	resultspb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // RecorderServer implements resultspb.RecorderServer.

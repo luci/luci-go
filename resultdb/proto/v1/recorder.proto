@@ -17,11 +17,11 @@ syntax = "proto3";
 package luci.resultdb;
 
 import "google/protobuf/field_mask.proto";
-import "go.chromium.org/luci/results/proto/v1/common.proto";
-import "go.chromium.org/luci/results/proto/v1/invocation.proto";
-import "go.chromium.org/luci/results/proto/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
-option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 
 // Service to record test results.
 //
