@@ -15,17 +15,17 @@
 package butler
 
 import (
-	"context"
 	"io"
+	"time"
 
-	"go.chromium.org/luci/common/clock"
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
 type stream struct {
-	context.Context
+	log logging.Logger
+	now func() time.Time
 
 	name types.StreamName
 
@@ -39,20 +39,17 @@ func (s *stream) readChunk() bool {
 
 	amount, err := s.r.Read(d.Bytes())
 	if amount > 0 {
-		d.Bind(amount, clock.Now(s))
+		d.Bind(amount, s.now())
+
+		s.log.Debugf("Read %d bytes", amount)
 
 		// Add the data to our bundler endpoint. This may block waiting for the
 		// bundler to consume data.
-		log.Fields{
-			"numBytes": amount,
-		}.Debugf(s, "Read byte(s).")
 
 		err := s.bs.Append(d)
 		d = nil // Append takes ownership of "d" regardless of error.
 		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Errorf(s, "Failed to Append to stream.")
+			s.log.Errorf("Failed to Append to the stream: %s", err)
 			return false
 		}
 	}
@@ -68,11 +65,11 @@ func (s *stream) readChunk() bool {
 		break
 
 	case io.EOF:
-		log.WithError(err).Debugf(s, "Stream encountered EOF.")
+		s.log.Debugf("Stream encountered EOF.")
 		return false
 
 	default:
-		log.WithError(err).Errorf(s, "Stream encountered error during Read.")
+		s.log.Errorf("Stream encountered error during Read: %s", err)
 		return false
 	}
 
@@ -81,9 +78,7 @@ func (s *stream) readChunk() bool {
 
 func (s *stream) closeStream() {
 	if err := s.c.Close(); err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-		}.Warningf(s, "Error closing stream.")
+		s.log.Warningf("Error closing stream: ", err)
 	}
 	s.bs.Close()
 }

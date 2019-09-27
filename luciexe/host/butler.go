@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -25,7 +26,12 @@ import (
 
 // startButler sets up a Butler streamserver, and exports it to the environment.
 func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
-	butler, err := butler.New(ctx, butler.Config{
+	butlerCtx := ctx
+	if logging.GetLevel(ctx) < opts.ButlerLogLevel {
+		butlerCtx = logging.SetLevel(ctx, opts.ButlerLogLevel)
+	}
+
+	butler, err := butler.New(butlerCtx, butler.Config{
 		BufferLogs: true,
 		GlobalTags: opts.logdogTags,
 		Output:     opts.LogdogOutput,
