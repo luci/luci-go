@@ -168,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "f21a8671_871fed41",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T18:03:09Z",
+      "side": 1,
+      "message": "I like it!",
+      "parentUuid": "30af5470_4d76c0cb",
+      "range": {
+        "startLine": 40,
+        "startChar": 22,
+        "endLine": 40,
+        "endChar": 23
+      },
+      "revId": "d2ffb568c6e244c33062576533d904c6a5275d31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7f5b9c8b_629c27f4",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 2
