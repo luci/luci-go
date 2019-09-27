@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -116,7 +117,7 @@ func TestListenerStreamServer(t *testing.T) {
 	Convey(`A stream server using a testing Listener`, t, func() {
 		var tl *testListener
 		s := &StreamServer{
-			Context: context.Background(),
+			log:     logging.Get(context.Background()),
 			address: "test",
 			gen: func() (net.Listener, error) {
 				if tl != nil {

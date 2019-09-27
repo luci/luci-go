@@ -49,6 +49,14 @@ type Options struct {
 	// to the butler agent.
 	ButlerLogLevel logging.Level
 
+	// If set, enables logging at context level for the butler streamserver.
+	// If unset (the default), logging in the butler streamserver is set to
+	//   Warning.
+	//
+	// Streamsever logging is generally redundant with the butler logs at level
+	// Info or Debug.
+	StreamServerDisableLogAdjustment bool
+
 	// ExeAuth describes the LUCI Auth environment to run the user code within.
 	//
 	// `Run` will manage the lifecycle of ExeAuth entirely.
