@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/logging"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/logdog/client/butler/output"
@@ -27,9 +26,6 @@ import (
 )
 
 func mkLogdogOutput(ctx context.Context, opts *bbpb.BuildInfra_LogDog) (output.Output, error) {
-	// butler debug logging is WAY too verbose.
-	ctx = logging.SetLevel(ctx, logging.Info)
-
 	return (&logdog.Config{
 		Auth: auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 			Scopes: []string{
