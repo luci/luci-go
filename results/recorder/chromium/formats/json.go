@@ -18,15 +18,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-
 	rdb "go.chromium.org/luci/results"
+
 	resultspb "go.chromium.org/luci/results/proto/v1"
 	"go.chromium.org/luci/results/util"
 )
@@ -89,44 +89,29 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 	return nil
 }
 
-// ToInvocation converts a JSONTestResults to a (partial) resultspb.Invocation.
-func (r *JSONTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
+// ToProtos converts test results in r []*resultspb.TestResult and updates inv
+// in-place accordingly.
+// If an error is returned, inv is left unchanged.
+//
+// Does not populate TestResult.Name.
+func (r *JSONTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvocationRequest, inv *resultspb.Invocation) ([]*resultspb.TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
 
-	// Get the variant for these tests and their results.
-	// There is only one variant shared by them all, the BaseTestVariant.
-	variantDefMap := rdb.VariantDefMap(req.BaseTestVariant.Def)
-	if err := variantDefMap.Validate(); err != nil {
-		return nil, errors.Annotate(err, "failed to validate variant def %q", variantDefMap).Err()
+	// Sort the test name to make the output deterministic.
+	testNames := make([]string, 0, len(r.Tests))
+	for name := range r.Tests {
+		testNames = append(testNames, name)
 	}
-	variantDef := variantDefMap.Proto()
+	sort.Strings(testNames)
 
-	// Populate the Invocation.
-	inv := &resultspb.Invocation{
-		Incomplete:  r.Interrupted,
-		VariantDefs: map[string]*resultspb.VariantDef{variantDef.Digest: variantDef},
-		Tags:        util.StringPairs("test_framework", "json"),
-	}
-
-	// Generate and populate results associated with each test path.
-	inv.Tests = make([]*resultspb.Invocation_Test, 0, len(r.Tests))
-	for name, fields := range r.Tests {
-		rpbs, err := fields.toProtos()
-		if err != nil {
+	ret := make([]*resultspb.TestResult, 0, len(r.Tests))
+	for _, name := range testNames {
+		testPath := req.TestPathPrefix + name
+		if err := r.Tests[name].toProtos(&ret, testPath); err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
-
-		inv.Tests = append(inv.Tests, &resultspb.Invocation_Test{
-			Path: req.TestPathPrefix + name,
-			Variants: []*resultspb.Invocation_TestVariant{
-				{
-					VariantId: variantDef.Digest,
-					Results:   rpbs,
-				},
-			},
-		})
 	}
 
 	// Get tags from metadata if any.
@@ -134,6 +119,24 @@ func (r *JSONTestResults) ToInvocation(ctx context.Context, req *resultspb.Deriv
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO(jchinlee): move this block of code to the callsite.
+	// It is NOT specific to GTest.
+	if err := rdb.VariantDefMap(req.BaseTestVariant.Def).Validate(); err != nil {
+		return nil, errors.Annotate(err, "invalid base test variant $q").Err()
+	}
+	inv.BaseTestVariantDef = req.BaseTestVariant
+
+	// The code below does not return errors, so it is safe to make in-place
+	// modifications of inv.
+
+	if r.Interrupted {
+		inv.State = resultspb.Invocation_INTERRUPTED
+	} else {
+		inv.State = resultspb.Invocation_COMPLETED
+	}
+
+	inv.Tags = append(inv.Tags, util.StringPair("test_framework", "json"))
 	for _, tag := range tags {
 		inv.Tags = append(inv.Tags, util.StringPair("json_format_tag", tag))
 	}
@@ -142,7 +145,7 @@ func (r *JSONTestResults) ToInvocation(ctx context.Context, req *resultspb.Deriv
 	}
 
 	rdb.NormalizeInvocation(inv)
-	return inv, nil
+	return ret, nil
 }
 
 // convertTests converts the trie of tests.
@@ -165,10 +168,10 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		if curPath != "" {
 			testPath = fmt.Sprintf("%s%s%s", curPath, delim, key)
 		} else {
-			if prefixJson, ok := r.Metadata[testNamePrefixKey]; ok {
+			if prefixJSON, ok := r.Metadata[testNamePrefixKey]; ok {
 				var prefix string
-				if err := json.Unmarshal(prefixJson, &prefix); err != nil {
-					return errors.Annotate(err, "%s not string, got %q", testNamePrefixKey, prefixJson).Err()
+				if err := json.Unmarshal(prefixJSON, &prefix); err != nil {
+					return errors.Annotate(err, "%s not string, got %q", testNamePrefixKey, prefixJSON).Err()
 				}
 				testPath = prefix + key
 			}
@@ -191,7 +194,6 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 			return errors.Annotate(err, "error attempting conversion of %q as intermediated node", value).Err()
 		}
 	}
-
 	return nil
 }
 
@@ -210,23 +212,23 @@ func (r *JSONTestResults) extractTags() ([]string, error) {
 	return tags, nil
 }
 
-func ofJSONStatus(s string) (resultspb.Status, error) {
+func fromJSONStatus(s string) (resultspb.TestStatus, error) {
 	switch s {
 	case "CRASH":
-		return resultspb.Status_CRASH, nil
+		return resultspb.TestStatus_CRASH, nil
 	case "FAIL":
-		return resultspb.Status_FAIL, nil
+		return resultspb.TestStatus_FAIL, nil
 	case "PASS":
-		return resultspb.Status_PASS, nil
+		return resultspb.TestStatus_PASS, nil
 	case "SKIP":
-		return resultspb.Status_SKIP, nil
+		return resultspb.TestStatus_SKIP, nil
 	case "TIMEOUT":
-		return resultspb.Status_ABORT, nil
+		return resultspb.TestStatus_ABORT, nil
 
 	// The below are web test-specific statuses. They are officially deprecated, but in practice
 	// still generated by the tests and should be converted.
 	case "IMAGE", "TEXT", "IMAGE+TEXT", "AUDIO", "LEAK", "MISSING":
-		return resultspb.Status_FAIL, nil
+		return resultspb.TestStatus_FAIL, nil
 
 	default:
 		// There are a number of web test-specific statuses not handled here as they are deprecated.
@@ -234,8 +236,9 @@ func ofJSONStatus(s string) (resultspb.Status, error) {
 	}
 }
 
-// toProtos converts the TestFields into a slice of resultspb.TestResult.
-func (f *TestFields) toProtos() ([]*resultspb.TestResult, error) {
+// toProtos converts the TestFields into zero or more resultspb.TestResult and
+// appends them to dest.
+func (f *TestFields) toProtos(dest *[]*resultspb.TestResult, testPath string) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -244,7 +247,7 @@ func (f *TestFields) toProtos() ([]*resultspb.TestResult, error) {
 	// Time and Times are both optional, but if Times is present, its length should match the number
 	// of runs. Otherwise we have only Time as the duration of the first run.
 	if len(f.Times) > 0 && len(f.Times) != len(actualStatuses) {
-		return nil, errors.Reason(
+		return errors.Reason(
 			"%d durations populated but has %d test statuses; should match",
 			len(f.Times), len(actualStatuses)).Err()
 	}
@@ -252,32 +255,32 @@ func (f *TestFields) toProtos() ([]*resultspb.TestResult, error) {
 	var durations []float64
 	if len(f.Times) > 0 {
 		durations = f.Times
-	} else {
+	} else if f.Time != 0 { // Do not set duration if it is unknown.
 		durations = []float64{f.Time}
 	}
 
 	// Populate protos.
-	rpbs := make([]*resultspb.TestResult, len(actualStatuses))
 	for i, runStatus := range actualStatuses {
-		status, err := ofJSONStatus(runStatus)
+		status, err := fromJSONStatus(runStatus)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		rpbs[i] = &resultspb.TestResult{
-			Expected: &wrappers.BoolValue{
-				Value: expectedSet.Has(runStatus),
-			},
-			Status: status,
-			Tags:   util.StringPairs("json_format_status", runStatus),
+		tr := &resultspb.TestResult{
+			TestPath: testPath,
+			Expected: expectedSet.Has(runStatus),
+			Status:   status,
+			Tags:     util.StringPairs("json_format_status", runStatus),
 		}
 
 		if i < len(durations) {
-			rpbs[i].Duration = secondsToDuration(durations[i])
+			tr.Duration = secondsToDuration(durations[i])
 		}
 
 		// TODO(jchinlee): Populate artifacts.
+
+		*dest = append(*dest, tr)
 	}
 
-	return rpbs, nil
+	return nil
 }

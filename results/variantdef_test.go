@@ -38,7 +38,6 @@ func TestVariantUtils(t *testing.T) {
 				"k2": "v2",
 				"k3": "v3",
 			},
-			Digest: "6b12ab2958d568f28ca588b136468adbc0ed3a9978a4192c961f754061dbbae0",
 		})
 	})
 }

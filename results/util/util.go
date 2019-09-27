@@ -39,3 +39,13 @@ func StringPairs(pairs ...string) []*resultspb.StringPair {
 	}
 	return strpairs
 }
+
+// StringPairsContain checks if item is present in pairs.
+func StringPairsContain(pairs []*resultspb.StringPair, item *resultspb.StringPair) bool {
+	for _, p := range pairs {
+		if p.Key == item.Key && p.Value == item.Value {
+			return true
+		}
+	}
+	return false
+}

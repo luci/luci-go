@@ -27,46 +27,6 @@ import (
 func TestInvocationUtils(t *testing.T) {
 	Convey(`Normalization works`, t, func() {
 		inv := &resultspb.Invocation{
-			Tests: []*resultspb.Invocation_Test{
-				{
-					Path: "c4/c2/t1",
-					Variants: []*resultspb.Invocation_TestVariant{
-						{
-							VariantId: "d16357edf00d",
-							Results: []*resultspb.TestResult{
-								{
-									ResultId: "1",
-									Tags: util.StringPairs(
-										"k2", "v3",
-										"k1", "v1",
-										"k2", "v2",
-									),
-								},
-								{
-									ResultId: "2",
-									Tags: util.StringPairs(
-										"k2", "v2",
-										"k3", "v3",
-										"k1", "v1",
-									),
-								},
-							},
-						},
-						{
-							VariantId: "600df00d",
-						},
-						{
-							VariantId: "baadc0ffee",
-						},
-					},
-				},
-				{
-					Path: "c3/c1/t2",
-				},
-				{
-					Path: "c4/c1/t3",
-				},
-			},
 			Tags: util.StringPairs(
 				"k2", "v21",
 				"k2", "v20",
@@ -78,40 +38,12 @@ func TestInvocationUtils(t *testing.T) {
 
 		NormalizeInvocation(inv)
 
-		Convey(`with ordered tags`, func() {
-			So(inv.Tags, ShouldResembleProto, util.StringPairs(
-				"k1", "v1",
-				"k2", "v20",
-				"k2", "v21",
-				"k3", "v30",
-				"k3", "v31",
-			))
-		})
-
-		Convey(`with ordered tests`, func() {
-			testPaths := make([]string, len(inv.Tests))
-			for i, test := range inv.Tests {
-				testPaths[i] = test.Path
-			}
-			So(testPaths, ShouldResemble, []string{
-				"c3/c1/t2",
-				"c4/c1/t3",
-				"c4/c2/t1",
-			})
-
-			Convey(`and ordered variants`, func() {
-				test := inv.Tests[2]
-				So(test, ShouldNotBeNil)
-				testVariants := make([]string, len(test.Variants))
-				for i, variant := range test.Variants {
-					testVariants[i] = variant.VariantId
-				}
-				So(testVariants, ShouldResemble, []string{
-					"600df00d",
-					"baadc0ffee",
-					"d16357edf00d",
-				})
-			})
-		})
+		So(inv.Tags, ShouldResembleProto, util.StringPairs(
+			"k1", "v1",
+			"k2", "v20",
+			"k2", "v21",
+			"k3", "v30",
+			"k3", "v31",
+		))
 	})
 }

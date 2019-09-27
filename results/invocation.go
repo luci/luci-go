@@ -20,29 +20,33 @@ import (
 	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
-// NormalizeInvocation takes an invocation and orders repeated fields.
+// NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *resultspb.Invocation) {
-	for _, test := range inv.Tests {
-		for _, variant := range test.Variants {
-			for _, result := range variant.Results {
-				sortTagsInPlace(result.Tags)
-			}
-		}
-
-		sort.Slice(test.Variants, func(i, j int) bool {
-			return test.Variants[i].VariantId < test.Variants[j].VariantId
-		})
-	}
-
-	sort.Slice(inv.Tests, func(i, j int) bool {
-		return inv.Tests[i].Path < inv.Tests[j].Path
-	})
-
-	sortTagsInPlace(inv.Tags)
+	sortStringPairs(inv.Tags)
 }
 
-// sortTagsInPlace sorts in-place the tags slice lexicographically by key, then value.
-func sortTagsInPlace(tags []*resultspb.StringPair) {
+// NormalizeTestResult converts inv to the canonical form.
+func NormalizeTestResult(tr *resultspb.TestResult) {
+	sortStringPairs(tr.Tags)
+}
+
+// NormalizeTestResultSlice converts trs to the canonical form.
+func NormalizeTestResultSlice(trs []*resultspb.TestResult) {
+	for _, tr := range trs {
+		NormalizeTestResult(tr)
+	}
+	sort.Slice(trs, func(i, j int) bool {
+		a := trs[i]
+		b := trs[j]
+		if a.TestPath != b.TestPath {
+			return a.TestPath < b.TestPath
+		}
+		return a.Name < b.Name
+	})
+}
+
+// sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
+func sortStringPairs(tags []*resultspb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
 			return tags[i].Key < tags[j].Key

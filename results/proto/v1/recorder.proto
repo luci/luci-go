@@ -14,19 +14,24 @@
 
 syntax = "proto3";
 
-package luci.resultsdb;
+package luci.resultdb;
 
-// TODO(jchinlee): Update protos and clarify documentation when finalized.
-// Currently, these are for experimentation/iteration.
-
-import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/results/proto/v1/common.proto";
 import "go.chromium.org/luci/results/proto/v1/invocation.proto";
+import "go.chromium.org/luci/results/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/results/proto/v1;resultspb";
 
 // Service to record test results.
+//
+// CreateInvocation response includes a metadata key "update_token".
+// It MUST be passed to all other mutation RPCs, such as CreateTestResult.
+// Otherwise the request will fail with UNAUTHENTICATED error code.
 service Recorder {
+
+  // == Invocations ============================================================
+
   // Creates a new invocation.
   // The request specifies the invocation id and its contents.
   //
@@ -37,49 +42,201 @@ service Recorder {
   //
   // If invocation with the given ID already exists, returns ALREADY_EXISTS
   // error code.
-  rpc InsertInvocation(Invocation) returns (Invocation) {};
+  rpc CreateInvocation(CreateInvocationRequest) returns (Invocation) {};
 
-  // Updates an existing non-final invocation.
-  // See UpdateInvocationRequest for semantics.
-  rpc UpdateInvocation(UpdateInvocationRequest) returns (google.protobuf.Empty) {};
+  // Updates an existing non-finalized invocation.
+  // If the invocation is already final on the server, FAILED_PRECONDITION is
+  // returned.
+  rpc UpdateInvocation(UpdateInvocationRequest) returns (Invocation) {};
 
-  // Derives an invocation given a swarming task and inserts if not already
-  // present.
+  // Transitions the given invocation to the state FINALIZED.
+  rpc FinalizeInvocation(FinalizeInvocationRequest) returns (Invocation) {};
+
+  // Includes an invocation in the given non-finalized invocation.
+  rpc CreateInclusion(CreateInclusionRequest) returns (Inclusion) {};
+
+  // Sets Inclusion.override_by and ensures a new Inclusion exists.
+  rpc OverrideInclusion(OverrideInclusionRequest) returns (OverrideInclusionResponse) {};
+
+  // == Test results ===========================================================
+
+  // Appends a test result to a non-finalized invocation.
+  rpc CreateTestResult(CreateTestResultRequest) returns (TestResult) {};
+  // Atomically appends a batch of test results to a non-finalized invocation.
+  rpc BatchCreateTestResults(BatchCreateTestResultsRequest) returns (BatchCreateTestResultsResponse) {};
+
+  // Appends a test exoneration to a non-finalized invocation.
+  rpc CreateTestExoneration(CreateTestExonerationRequest) returns (TestExoneration) {};
+  // Atomically appends a batch of test exonerations to a non-finalized
+  // invocation.
+  rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest) returns (BatchCreateTestExonerationsResponse) {};
+
+  // == Misc ===================================================================
+
+  // Derives an invocation and test results from a swarming task.
   //
   // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
   // in which we derive invocations given swarming task IDs, rather than have
   // tasks make RPCs directly.
-  rpc DeriveInvocationFromSwarming(DeriveInvocationFromSwarmingRequest) returns (Invocation) {};
+  rpc DeriveInvocation(DeriveInvocationRequest) returns (DeriveInvocationResponse) {};
 }
 
-// A request for UpdateInvocation RPC.
-message UpdateInvocationRequest {
-  // If a request with same (invocation.id, request_id) was processed
-  // successfully, then this request is a noop.
-  // In other words, UpdateInvocation is idempotent.
-  // Required.
-  string request_id = 1;
 
-  // Invocation to update.
-  //
-  // All repeated fields in the Invocation are appended, not replaced.
-  // Examples of repeated fields: test results, exonerations, inclusions.
-  // It is not possible to remove previously added elements.
-  // Some elements may be mutated, e.g. Invocation.Inclusion.inconsequential,
-  // see its docs.
-  //
-  // If invocation.final is true, finalizes the invocation.
-  // If invocation.deadline is specified, overwrites the server-stored value.
-  //
-  // Invocation.update_token is required and must match the token
-  // returned by InsertInvocation.
-  //
-  // If the invocation is already final on the server, FAILED_PRECONDITION is
-  // returned.
+// == Invocations ==============================================================
+
+// A request message for CreateInvocation.
+message CreateInvocationRequest {
+  // Invocation identifier, becomes a part of the invocation.name.
+  // LUCI systems MAY create invocations with nicely formatted IDs, such as
+  // "build-1234567890". All other clients MUST use GUIDs.
+  string invocation_id = 1;
+
+  // Invocation data to insert.
   Invocation invocation = 2;
 }
 
-message DeriveInvocationFromSwarmingRequest {
+// A request message for UpdateInvocation RPC.
+message UpdateInvocationRequest {
+  // Invocation to update.
+  Invocation invocation = 1;
+
+  // The list of fields to be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// A request message for FinalizeInvocation RPC.
+message FinalizeInvocationRequest {
+  // Name of the invocation to finalize.
+  string name = 1;
+}
+
+// A request message for CreateInclusion RPC.
+message CreateInclusionRequest {
+  // Name of the invocation to extend.
+  string parent = 1;
+
+  // Name of the included invocation and whether it is consequential.
+  Inclusion inclusion = 3;
+}
+
+// A request message for OverrideInclusion RPC.
+message OverrideInclusionRequest {
+  // Name of the including invocation, see Invocation.name.
+  // For example, name of the buildbucket build invocation that includes
+  // swarming task invocations.
+  string including_invocation = 1;
+
+  // Name of the previously included invocation.
+  // For example, invocation of a died swarming task that we intend to retry
+  // and replace with another swarming task.
+  // This inclusion MUST exist.
+  string overridden_included_invocation = 2;
+
+  // Name of the new included invocation that overrides the previously included
+  // invocation.
+  // For example, invocation for the new swarming task which represents a retry
+  // of a died task.
+  //
+  // If this invocation was not included before, an Inclusion is created.
+  string overriding_included_invocation = 3;
+}
+
+// A response message for OverrideInclusion RPC.
+message OverrideInclusionResponse {
+  // The overridden inclusion.
+  // For example, the inclusion of a died swarming task.
+  Inclusion overridden_inclusion = 1;
+
+  // The inclusion that has overridden the other inclusion.
+  // For example, the inclusion of the swarming task retry.
+  Inclusion overriding_inclusion = 2;
+}
+
+// A request message for CreateTestResult RPC.
+message CreateTestResultRequest {
+  // Name of the parent invocation, see Invocation.name.
+  string parent = 1;
+
+  // The test result to create.
+  TestResult test_result = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided, so it is
+  // strongly recommended to populate this field.
+  //
+  // Impl note: this field is used to compute the spanner-level result id, which
+  // will encode tuple (request_id, index_of_request)", where
+  // - request_id is a random GUID if not provided by the user
+  // - index_of_request is 0 in CreateTestResult RPC, or index of the request
+  //   in BatchCreateTestResultsRequest in the batch RPC.
+  // TODO(jchinlee): remove this impl note when it is converted into code.
+  string request_id = 3;
+}
+
+// == Test results =============================================================
+
+// A request message for BatchCreateTestResults RPC.
+message BatchCreateTestResultsRequest {
+  // Name of the parent invocation, see Invocation.name.
+  string parent = 1;
+
+  // Requests to create test results.
+  // requests[i].parent MUST be either empty or equal to parent in this message.
+  // requests[i].request_id MUST be either empty or equal to request_id in
+  // this message.
+  repeated CreateTestResultRequest requests = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided, so it is
+  // strongly recommended to populate this field.
+  //
+  string request_id = 3;
+}
+
+// A response message for BatchCreateTestResults RPC.
+message BatchCreateTestResultsResponse {
+  // Test results created.
+  repeated TestResult test_results = 1;
+}
+
+// A request message for CreateTestExoneration RPC.
+message CreateTestExonerationRequest {
+  // Name of the parent invocation, see Invocation.name.
+  string parent = 1;
+
+  // The TestExoneration to create.
+  TestExoneration test_exoneration = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 3;
+}
+
+// A request message for BatchCreateTestExonerations RPC.
+message BatchCreateTestExonerationsRequest {
+  // Name of the parent invocation, see Invocation.name.
+  string parent = 1;
+
+  // Requests to create TestExonerations.
+  // requests[i].parent MUST be either empty or equal to parent in this message.
+  repeated CreateTestExonerationRequest requests = 2;
+}
+
+// A response message for BatchCreateTestExonerations RPC.
+message BatchCreateTestExonerationsResponse {
+  // Test exonerations created.
+  repeated TestExoneration test_exonerations = 1;
+}
+
+// == Misc =====================================================================
+
+// A request message for DeriveInvocation RPC.
+message DeriveInvocationRequest {
+
+  // Identifies a swarming task.
   message SwarmingTask {
     // Swarming host of task.
     string hostname = 1;
@@ -87,8 +244,9 @@ message DeriveInvocationFromSwarmingRequest {
     // ID of swarming task to process and insert.
     string id = 2;
   }
-  // Swarming task from which to derive invocation.
-  SwarmingTask task = 1;
+
+  // Derive the invocation from the Swarming task.
+  SwarmingTask swarming_task = 1;
 
   // Test path prefix.
   //
@@ -110,4 +268,13 @@ message DeriveInvocationFromSwarmingRequest {
   // For Chromium, expected keys in the def map are "bucket", "builder", and
   // "test_suite".
   VariantDef base_test_variant = 3;
+}
+
+// A response message for DeriveInvocation RPC.
+message DeriveInvocationResponse {
+  // Derived invocation.
+  Invocation invocation = 1;
+
+  // Derived test results.
+  repeated TestResult test_results = 2;
 }

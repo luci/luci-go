@@ -6,9 +6,6 @@ package resultspb
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	math "math"
 )
 
@@ -23,207 +20,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Machine-readable status of a test result.
-type Status int32
-
-const (
-	// Status was not specified.
-	// Not to be used in actual test results; serves as a default value for an
-	// unset field.
-	Status_STATUS_UNSPECIFIED Status = 0
-	// The test case has passed.
-	Status_PASS Status = 1
-	// The test case has failed.
-	// Suggests that the code under test is incorrect, but it is also possible
-	// that the test is incorrect or it is a flake.
-	Status_FAIL Status = 2
-	// The case has crashed during execution.
-	// The outcome is inconclusive: the code under test might or might not be
-	// correct, but the test+code is incorrect.
-	Status_CRASH Status = 3
-	// The test case has started, but was aborted before finishing.
-	// A common reason: timeout.
-	Status_ABORT Status = 4
-	// The test case did not execute.
-	// Examples:
-	// - The execution of the collection of test cases, such as a test
-	//   binary, was aborted prematurely and execution of some test cases was
-	//   skipped.
-	// - The test harness configuration specified that the test case must be
-	//   skipped.
-	Status_SKIP Status = 5
-)
-
-var Status_name = map[int32]string{
-	0: "STATUS_UNSPECIFIED",
-	1: "PASS",
-	2: "FAIL",
-	3: "CRASH",
-	4: "ABORT",
-	5: "SKIP",
-}
-
-var Status_value = map[string]int32{
-	"STATUS_UNSPECIFIED": 0,
-	"PASS":               1,
-	"FAIL":               2,
-	"CRASH":              3,
-	"ABORT":              4,
-	"SKIP":               5,
-}
-
-func (x Status) String() string {
-	return proto.EnumName(Status_name, int32(x))
-}
-
-func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{0}
-}
-
-// A result of a functional test case.
-// Often a single test case is executed multiple times and has multiple results,
-// a single test suite has multiple test cases,
-// and the same test suite can be executed in different variants
-// (OS, GPU, compile flags, etc).
-//
-// This message does not specify the test path. It should be available in the
-// message that embeds this message.
-type TestResult struct {
-	// Identifies a test result.
-	// MUST be unique for a given invocation id and a test path.
-	// Globally, a test result is identified by a tuple
-	// (invocation_id, test_path, result_id).
-	//
-	// MUST be provided by the client on insertion.
-	// Regex: ^[a-z][a-z0-9_\-]*$.
-	// Examples: a number or a GUID.
-	ResultId string `protobuf:"bytes,1,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
-	// Whether the result of test case execution is expected.
-	// In a typical Chromium CL, 99%+ of test results are expected.
-	// Users are typically interested only in the unexpected results.
-	//
-	// An unexpected result != test case failure. There are test cases that are
-	// expected to fail/skip/crash. The test harness compares the actual status
-	// with the expected one and this field is the result of the comparison.
-	//
-	// If unset on insertion, then set to (Status == PASS).
-	// Guaranteed to be set when reading the invocation.
-	Expected *wrappers.BoolValue `protobuf:"bytes,2,opt,name=expected,proto3" json:"expected,omitempty"`
-	// Machine-readable status of the test case.
-	// MUST NOT be STATUS_UNSPECIFIED.
-	Status Status `protobuf:"varint,3,opt,name=status,proto3,enum=luci.resultsdb.Status" json:"status,omitempty"`
-	// Human-readable explanation of the result.
-	// Markdown spec: https://spec.commonmark.org/0.29/
-	SummaryMarkdown string `protobuf:"bytes,4,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
-	// The point in time when the test case started to execute.
-	// Optional: not all test harnesses record it.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// Duration of the test case execution.
-	Duration *duration.Duration `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
-	// Metadata for this test result.
-	// It might describe this particular execution or the test case.
-	Tags []*StringPair `protobuf:"bytes,7,rep,name=tags,proto3" json:"tags,omitempty"`
-	// Artifacts consumed by this test result.
-	//
-	// Example: building a Chrome OS image is expensive and non-deterministic, so
-	// they are retained and used as input artifact to a test case.
-	InputArtifacts []*Artifact `protobuf:"bytes,8,rep,name=input_artifacts,json=inputArtifacts,proto3" json:"input_artifacts,omitempty"`
-	// Artifacts produced by this test result.
-	// Examples: traces, logs, screenshots, memory dumps, profiler output.
-	OutputArtifacts      []*Artifact `protobuf:"bytes,9,rep,name=output_artifacts,json=outputArtifacts,proto3" json:"output_artifacts,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
-}
-
-func (m *TestResult) Reset()         { *m = TestResult{} }
-func (m *TestResult) String() string { return proto.CompactTextString(m) }
-func (*TestResult) ProtoMessage()    {}
-func (*TestResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{0}
-}
-
-func (m *TestResult) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TestResult.Unmarshal(m, b)
-}
-func (m *TestResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TestResult.Marshal(b, m, deterministic)
-}
-func (m *TestResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestResult.Merge(m, src)
-}
-func (m *TestResult) XXX_Size() int {
-	return xxx_messageInfo_TestResult.Size(m)
-}
-func (m *TestResult) XXX_DiscardUnknown() {
-	xxx_messageInfo_TestResult.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TestResult proto.InternalMessageInfo
-
-func (m *TestResult) GetResultId() string {
-	if m != nil {
-		return m.ResultId
-	}
-	return ""
-}
-
-func (m *TestResult) GetExpected() *wrappers.BoolValue {
-	if m != nil {
-		return m.Expected
-	}
-	return nil
-}
-
-func (m *TestResult) GetStatus() Status {
-	if m != nil {
-		return m.Status
-	}
-	return Status_STATUS_UNSPECIFIED
-}
-
-func (m *TestResult) GetSummaryMarkdown() string {
-	if m != nil {
-		return m.SummaryMarkdown
-	}
-	return ""
-}
-
-func (m *TestResult) GetStartTime() *timestamp.Timestamp {
-	if m != nil {
-		return m.StartTime
-	}
-	return nil
-}
-
-func (m *TestResult) GetDuration() *duration.Duration {
-	if m != nil {
-		return m.Duration
-	}
-	return nil
-}
-
-func (m *TestResult) GetTags() []*StringPair {
-	if m != nil {
-		return m.Tags
-	}
-	return nil
-}
-
-func (m *TestResult) GetInputArtifacts() []*Artifact {
-	if m != nil {
-		return m.InputArtifacts
-	}
-	return nil
-}
-
-func (m *TestResult) GetOutputArtifacts() []*Artifact {
-	if m != nil {
-		return m.OutputArtifacts
-	}
-	return nil
-}
-
 // A key-value map describing one variant of a test case.
 //
 // The same test case can be executed in different ways, for example on
@@ -233,15 +29,15 @@ func (m *TestResult) GetOutputArtifacts() []*Artifact {
 // A test case with a specific variant definition is called test variant.
 //
 // Guidelines for variant definition design:
-// - This rule guides what keys must be present in the definition.
+// - This rule guides what keys MUST be present in the definition.
 //   A single expected result of a given test variant is enough to consider it
 //   passing (potentially flakily). If it is important to differentiate across
 //   a certain dimension (e.g. whether web tests are executed with or without
-//   site per process isolation), then there must be a key that captures the
+//   site per process isolation), then there MUST be a key that captures the
 //   dimension (e.g. a name from test_suites.pyl).
 //   Otherwise, a pass in one variant will hide a failure of another one.
 //
-// - This rule guides what keys must NOT be present in the definition.
+// - This rule guides what keys MUST NOT be present in the definition.
 //   A change in the key-value set essentially resets the test result history.
 //   For example, if GN args are among variant key-value pairs, then adding a
 //   new GN arg changes the identity of the test variant and resets its history.
@@ -255,22 +51,17 @@ type VariantDef struct {
 	// The definition of the variant.
 	// Key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
 	// Max key length: 32.
-	Def map[string]string `protobuf:"bytes,1,rep,name=def,proto3" json:"def,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Hash of the def. Used to refer to the variant definition.
-	//
-	// Formula:
-	// hex(sha256(''.join('%s:%s\n' % (k, v) for k, v in sorted(def.items()))))
-	Digest               string   `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Def                  map[string]string `protobuf:"bytes,1,rep,name=def,proto3" json:"def,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *VariantDef) Reset()         { *m = VariantDef{} }
 func (m *VariantDef) String() string { return proto.CompactTextString(m) }
 func (*VariantDef) ProtoMessage()    {}
 func (*VariantDef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{1}
+	return fileDescriptor_6721ae6a14ce615e, []int{0}
 }
 
 func (m *VariantDef) XXX_Unmarshal(b []byte) error {
@@ -298,110 +89,7 @@ func (m *VariantDef) GetDef() map[string]string {
 	return nil
 }
 
-func (m *VariantDef) GetDigest() string {
-	if m != nil {
-		return m.Digest
-	}
-	return ""
-}
-
-// A file produced/consumed by a test case.
-// See TestResult.output_artifacts for examples.
-type Artifact struct {
-	// A slash-separated relative path, identifies the artifact.
-	// Example: "traces/a.txt".
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Machine-readable URL to fetch the contents of the artifact.
-	// Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
-	FetchUrl string `protobuf:"bytes,2,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
-	// Human-consumable URL to the file content.
-	// Typically a URL of a page where the user can view/download the arficact.
-	ViewUrl string `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
-	// Media type of the artifact.
-	// Logs are typically "plain/text" and screenshots are typically "image/png".
-	ContentType string `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	// Size of the file, in bytes.
-	// Can be used in UI to decide whether to fetch an artifact and display it
-	// inline, or only show a link if it is too large.
-	Size int64 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
-	// Contents of the artifact if it is stored inline with the test result.
-	// Empty for artifacts stored elsewhere. To fetch such artifacts, use
-	// fetch_url.
-	// Size must be <= 8KB.
-	Contents             []byte   `protobuf:"bytes,6,opt,name=contents,proto3" json:"contents,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Artifact) Reset()         { *m = Artifact{} }
-func (m *Artifact) String() string { return proto.CompactTextString(m) }
-func (*Artifact) ProtoMessage()    {}
-func (*Artifact) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{2}
-}
-
-func (m *Artifact) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Artifact.Unmarshal(m, b)
-}
-func (m *Artifact) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Artifact.Marshal(b, m, deterministic)
-}
-func (m *Artifact) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Artifact.Merge(m, src)
-}
-func (m *Artifact) XXX_Size() int {
-	return xxx_messageInfo_Artifact.Size(m)
-}
-func (m *Artifact) XXX_DiscardUnknown() {
-	xxx_messageInfo_Artifact.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Artifact proto.InternalMessageInfo
-
-func (m *Artifact) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *Artifact) GetFetchUrl() string {
-	if m != nil {
-		return m.FetchUrl
-	}
-	return ""
-}
-
-func (m *Artifact) GetViewUrl() string {
-	if m != nil {
-		return m.ViewUrl
-	}
-	return ""
-}
-
-func (m *Artifact) GetContentType() string {
-	if m != nil {
-		return m.ContentType
-	}
-	return ""
-}
-
-func (m *Artifact) GetSize() int64 {
-	if m != nil {
-		return m.Size
-	}
-	return 0
-}
-
-func (m *Artifact) GetContents() []byte {
-	if m != nil {
-		return m.Contents
-	}
-	return nil
-}
-
-// A string key-value pair. Typically used for tagging, see TestResult.tags
+// A string key-value pair. Typically used for tagging, see Invocation.tags
 type StringPair struct {
 	// Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
 	// Max length: 64
@@ -418,7 +106,7 @@ func (m *StringPair) Reset()         { *m = StringPair{} }
 func (m *StringPair) String() string { return proto.CompactTextString(m) }
 func (*StringPair) ProtoMessage()    {}
 func (*StringPair) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{3}
+	return fileDescriptor_6721ae6a14ce615e, []int{1}
 }
 
 func (m *StringPair) XXX_Unmarshal(b []byte) error {
@@ -453,61 +141,10 @@ func (m *StringPair) GetValue() string {
 	return ""
 }
 
-// Indicates the test subject (e.g. a CL) is absolved from blame
-// for an unexpected result of a test variant.
-// For example, the test variant fails both with and without CL, so it is not
-// CL's fault.
-//
-// See also Invocation.tests.variants.exonerations.
-type Exoneration struct {
-	// Reasoning behind the exoneration, in markdown.
-	// Markdown spec: https://spec.commonmark.org/0.29/
-	ExplanationMarkdown  string   `protobuf:"bytes,1,opt,name=explanation_markdown,json=explanationMarkdown,proto3" json:"explanation_markdown,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Exoneration) Reset()         { *m = Exoneration{} }
-func (m *Exoneration) String() string { return proto.CompactTextString(m) }
-func (*Exoneration) ProtoMessage()    {}
-func (*Exoneration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_6721ae6a14ce615e, []int{4}
-}
-
-func (m *Exoneration) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Exoneration.Unmarshal(m, b)
-}
-func (m *Exoneration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Exoneration.Marshal(b, m, deterministic)
-}
-func (m *Exoneration) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Exoneration.Merge(m, src)
-}
-func (m *Exoneration) XXX_Size() int {
-	return xxx_messageInfo_Exoneration.Size(m)
-}
-func (m *Exoneration) XXX_DiscardUnknown() {
-	xxx_messageInfo_Exoneration.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Exoneration proto.InternalMessageInfo
-
-func (m *Exoneration) GetExplanationMarkdown() string {
-	if m != nil {
-		return m.ExplanationMarkdown
-	}
-	return ""
-}
-
 func init() {
-	proto.RegisterEnum("luci.resultsdb.Status", Status_name, Status_value)
-	proto.RegisterType((*TestResult)(nil), "luci.resultsdb.TestResult")
-	proto.RegisterType((*VariantDef)(nil), "luci.resultsdb.VariantDef")
-	proto.RegisterMapType((map[string]string)(nil), "luci.resultsdb.VariantDef.DefEntry")
-	proto.RegisterType((*Artifact)(nil), "luci.resultsdb.Artifact")
-	proto.RegisterType((*StringPair)(nil), "luci.resultsdb.StringPair")
-	proto.RegisterType((*Exoneration)(nil), "luci.resultsdb.Exoneration")
+	proto.RegisterType((*VariantDef)(nil), "luci.resultdb.VariantDef")
+	proto.RegisterMapType((map[string]string)(nil), "luci.resultdb.VariantDef.DefEntry")
+	proto.RegisterType((*StringPair)(nil), "luci.resultdb.StringPair")
 }
 
 func init() {
@@ -515,46 +152,18 @@ func init() {
 }
 
 var fileDescriptor_6721ae6a14ce615e = []byte{
-	// 647 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdd, 0x4e, 0xdb, 0x3e,
-	0x14, 0xff, 0x87, 0xb4, 0x25, 0x3d, 0x20, 0x88, 0xfc, 0x47, 0x28, 0x74, 0xd2, 0xd6, 0x75, 0x37,
-	0x6c, 0x17, 0xa9, 0x60, 0x03, 0xed, 0xe3, 0x66, 0x85, 0x16, 0xad, 0xda, 0x57, 0xe5, 0x14, 0x2e,
-	0x76, 0x13, 0xb9, 0x89, 0x1b, 0x22, 0x92, 0x38, 0xb2, 0x1d, 0xa0, 0x7b, 0x8d, 0x3d, 0xc5, 0x5e,
-	0x6c, 0xcf, 0x31, 0xc5, 0x71, 0xca, 0x00, 0x4d, 0xe3, 0xee, 0x9c, 0xf3, 0xfb, 0xb0, 0x8f, 0xfb,
-	0x6b, 0x60, 0x3f, 0x62, 0x6e, 0x70, 0xce, 0x59, 0x1a, 0x17, 0xa9, 0xcb, 0x78, 0xd4, 0x4f, 0x8a,
-	0x20, 0xee, 0x73, 0x2a, 0x8a, 0x44, 0x8a, 0x7e, 0xce, 0x99, 0x64, 0xfd, 0xcb, 0xbd, 0x7e, 0xc0,
-	0xd2, 0x94, 0x65, 0xae, 0xea, 0xd1, 0x46, 0xc9, 0x71, 0x35, 0x27, 0x9c, 0x75, 0x1e, 0x47, 0x8c,
-	0x45, 0x09, 0xad, 0xd8, 0xb3, 0x62, 0xde, 0x0f, 0x0b, 0x4e, 0x64, 0x5c, 0xf3, 0x3b, 0x4f, 0xee,
-	0xe2, 0x32, 0x4e, 0xa9, 0x90, 0x24, 0xcd, 0x35, 0xe1, 0x9e, 0xc1, 0x15, 0x27, 0x79, 0x4e, 0xb9,
-	0xa8, 0xf0, 0xde, 0x2f, 0x13, 0x60, 0x4a, 0x85, 0xc4, 0xea, 0x48, 0xf4, 0x08, 0xda, 0xd5, 0xe1,
-	0x7e, 0x1c, 0x3a, 0x46, 0xd7, 0xd8, 0x6d, 0x63, 0xab, 0x1a, 0x8c, 0x43, 0x74, 0x08, 0x16, 0xbd,
-	0xce, 0x69, 0x20, 0x69, 0xe8, 0xac, 0x74, 0x8d, 0xdd, 0xb5, 0xfd, 0x8e, 0x5b, 0xd9, 0xbb, 0xb5,
-	0xbd, 0x7b, 0xc4, 0x58, 0x72, 0x46, 0x92, 0x82, 0xe2, 0x25, 0x17, 0xb9, 0xd0, 0x12, 0x92, 0xc8,
-	0x42, 0x38, 0x66, 0xd7, 0xd8, 0xdd, 0xd8, 0xdf, 0x76, 0x6f, 0x6f, 0xe9, 0x7a, 0x0a, 0xc5, 0x9a,
-	0x85, 0x9e, 0x83, 0x2d, 0x8a, 0x34, 0x25, 0x7c, 0xe1, 0xa7, 0x84, 0x5f, 0x84, 0xec, 0x2a, 0x73,
-	0x1a, 0xea, 0x2e, 0x9b, 0x7a, 0xfe, 0x59, 0x8f, 0xd1, 0x1b, 0x00, 0x21, 0x09, 0x97, 0x7e, 0xb9,
-	0xb7, 0xd3, 0xfc, 0xcb, 0xa5, 0xa6, 0xf5, 0xa3, 0xe0, 0xb6, 0x62, 0x97, 0x3d, 0x3a, 0x00, 0xab,
-	0x7e, 0x4c, 0xa7, 0xa5, 0x84, 0x3b, 0xf7, 0x84, 0x43, 0x4d, 0xc0, 0x4b, 0x2a, 0x72, 0xa1, 0x21,
-	0x49, 0x24, 0x9c, 0xd5, 0xae, 0xa9, 0xce, 0xba, 0xb7, 0x0a, 0x8f, 0xb3, 0x68, 0x42, 0x62, 0x8e,
-	0x15, 0x0f, 0x0d, 0x60, 0x33, 0xce, 0xf2, 0x42, 0xfa, 0x84, 0xcb, 0x78, 0x4e, 0x02, 0x29, 0x1c,
-	0x4b, 0x49, 0x9d, 0xbb, 0xd2, 0x81, 0x26, 0xe0, 0x0d, 0x25, 0xa8, 0x5b, 0x81, 0x8e, 0xc1, 0x66,
-	0x85, 0xbc, 0xed, 0xd1, 0xfe, 0x87, 0xc7, 0x66, 0xa5, 0x58, 0x9a, 0xf4, 0x7e, 0x18, 0x00, 0x67,
-	0x84, 0xc7, 0x24, 0x93, 0x43, 0x3a, 0x47, 0x07, 0x60, 0x86, 0x74, 0xee, 0x18, 0xca, 0xe6, 0xd9,
-	0x5d, 0x9b, 0x1b, 0xa2, 0x3b, 0xa4, 0xf3, 0x51, 0x26, 0xf9, 0x02, 0x97, 0x7c, 0xb4, 0x0d, 0xad,
-	0x30, 0x8e, 0xa8, 0x90, 0x2a, 0x00, 0x6d, 0xac, 0xbb, 0xce, 0x21, 0x58, 0x35, 0x11, 0xd9, 0x60,
-	0x5e, 0xd0, 0x85, 0x4e, 0x4f, 0x59, 0xa2, 0x2d, 0x68, 0x5e, 0x96, 0x99, 0xd0, 0xa2, 0xaa, 0x79,
-	0xbb, 0xf2, 0xda, 0xe8, 0xfd, 0x34, 0xc0, 0xaa, 0xef, 0x88, 0x10, 0x34, 0x32, 0x92, 0x52, 0xad,
-	0x54, 0x75, 0x19, 0xc8, 0x39, 0x95, 0xc1, 0xb9, 0x5f, 0xf0, 0x44, 0xcb, 0x2d, 0x35, 0x38, 0xe5,
-	0x09, 0xda, 0x01, 0xeb, 0x32, 0xa6, 0x57, 0x0a, 0x33, 0x15, 0xb6, 0x5a, 0xf6, 0x25, 0xf4, 0x14,
-	0xd6, 0x03, 0x96, 0x49, 0x9a, 0x49, 0x5f, 0x2e, 0x72, 0xaa, 0xf3, 0xb3, 0xa6, 0x67, 0xd3, 0x45,
-	0x4e, 0xcb, 0xe3, 0x44, 0xfc, 0xbd, 0x4a, 0x8d, 0x89, 0x55, 0x8d, 0x3a, 0x60, 0x69, 0x8a, 0x50,
-	0xa1, 0x58, 0xc7, 0xcb, 0xbe, 0xf7, 0x0a, 0xe0, 0xe6, 0xd7, 0x7d, 0xe8, 0x96, 0xbd, 0xf7, 0xb0,
-	0x36, 0xba, 0x66, 0x19, 0xd5, 0xf1, 0xd9, 0x83, 0x2d, 0x7a, 0x9d, 0x27, 0x24, 0x53, 0xed, 0x4d,
-	0xbe, 0x2b, 0x9f, 0xff, 0xff, 0xc0, 0xea, 0x8c, 0xbf, 0x98, 0x42, 0xab, 0xfa, 0x83, 0xa0, 0x6d,
-	0x40, 0xde, 0x74, 0x30, 0x3d, 0xf5, 0xfc, 0xd3, 0x2f, 0xde, 0x64, 0x74, 0x3c, 0x3e, 0x19, 0x8f,
-	0x86, 0xf6, 0x7f, 0xc8, 0x82, 0xc6, 0x64, 0xe0, 0x79, 0xb6, 0x51, 0x56, 0x27, 0x83, 0xf1, 0x27,
-	0x7b, 0x05, 0xb5, 0xa1, 0x79, 0x8c, 0x07, 0xde, 0x07, 0xdb, 0x2c, 0xcb, 0xc1, 0xd1, 0x57, 0x3c,
-	0xb5, 0x1b, 0x25, 0xee, 0x7d, 0x1c, 0x4f, 0xec, 0xe6, 0xd1, 0xde, 0xb7, 0xfe, 0x83, 0xbe, 0x4f,
-	0xef, 0xf4, 0x20, 0x9f, 0xcd, 0x5a, 0x6a, 0xf6, 0xf2, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0x78,
-	0x5a, 0x54, 0x5b, 0xd9, 0x04, 0x00, 0x00,
+	// 202 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4a, 0xcf, 0xd7, 0x4b,
+	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
+	0xd4, 0x2f, 0x4a, 0x2d, 0x2e, 0xcd, 0x29, 0x29, 0xd6, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0xd7, 0x2f,
+	0x33, 0xd4, 0x4f, 0xce, 0xcf, 0xcd, 0xcd, 0xcf, 0xd3, 0x03, 0xf3, 0x85, 0x78, 0x41, 0x6a, 0xf4,
+	0x20, 0x6a, 0x52, 0x92, 0x94, 0xaa, 0xb8, 0xb8, 0xc2, 0x12, 0x8b, 0x32, 0x13, 0xf3, 0x4a, 0x5c,
+	0x52, 0xd3, 0x84, 0x4c, 0xb8, 0x98, 0x53, 0x52, 0xd3, 0x24, 0x18, 0x15, 0x98, 0x35, 0xb8, 0x8d,
+	0x94, 0xf4, 0x50, 0x94, 0xea, 0x21, 0xd4, 0xe9, 0xb9, 0xa4, 0xa6, 0xb9, 0xe6, 0x95, 0x14, 0x55,
+	0x06, 0x81, 0x94, 0x4b, 0x99, 0x71, 0x71, 0xc0, 0x04, 0x84, 0x04, 0xb8, 0x98, 0xb3, 0x53, 0x2b,
+	0x25, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0x40, 0x4c, 0x21, 0x11, 0x2e, 0xd6, 0xb2, 0xc4, 0x9c,
+	0xd2, 0x54, 0x09, 0x26, 0xb0, 0x18, 0x84, 0x63, 0xc5, 0x64, 0xc1, 0xa8, 0x64, 0xc2, 0xc5, 0x15,
+	0x5c, 0x52, 0x94, 0x99, 0x97, 0x1e, 0x90, 0x98, 0x59, 0x44, 0xac, 0x4e, 0x27, 0xc3, 0x28, 0x7d,
+	0xa2, 0xbc, 0x6d, 0x0d, 0x15, 0x28, 0x48, 0x4a, 0x62, 0x03, 0x8b, 0x19, 0x03, 0x02, 0x00, 0x00,
+	0xff, 0xff, 0xa4, 0x80, 0x84, 0x83, 0x30, 0x01, 0x00, 0x00,
 }
