@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d98c3750_febedd6a",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T22:42:59Z",
+      "side": 1,
+      "message": "i am not sure GetInvocation is very reusable as is. It will probably be implemented with ReadOnlyTransaction, but that means it cannot be used in the context of another type of txn.\n\nAlso, all we need here is one field (state), so https://godoc.org/cloud.google.com/go/spanner#ReadOnlyTransaction.ReadRow",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96dfe8d0_90dd6309",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T22:42:59Z",
+      "side": 1,
+      "message": "please dedup",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 17
+      },
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dabd904_6b63ba57",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T22:42:59Z",
+      "side": 1,
+      "message": "we fetch task result twice, here and in L65. Let\u0027s do it once.\n\nThat\u0027s why, when we work top to bottom, we less often need to modify code that we\u0027ve written before. Now we need to split fetchOutputJSON into a part that fetches task result and a part that fetches isolate",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "224e45bf_60689179",
+        "filename": "results/recorder/spanner/spanner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T22:42:59Z",
+      "side": 1,
+      "message": "it should be [][]interface{}\n\nbecause we typically need to insert many rows in the same table, with same columns",
+      "range": {
+        "startLine": 38,
+        "startChar": 6,
+        "endLine": 38,
+        "endChar": 8
+      },
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
