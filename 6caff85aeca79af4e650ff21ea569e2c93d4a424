@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69776a7f_60b4642a",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T00:54:13Z",
+      "side": 1,
+      "message": "Actually, would you please make this `of` to match `ofJSONStatus`? (I\u0027d noticed this when writing the JSON function but didn\u0027t want to mix the change into that CL) Thanks!",
+      "range": {
+        "startLine": 164,
+        "startChar": 5,
+        "endLine": 164,
+        "endChar": 9
+      },
+      "revId": "6caff85aeca79af4e650ff21ea569e2c93d4a424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

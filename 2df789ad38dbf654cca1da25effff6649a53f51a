@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "ba54e9d4_e4e8f793",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T00:54:13Z",
+      "side": 1,
+      "message": "SG, thanks",
+      "parentUuid": "d0f0419b_4a275d10",
+      "range": {
+        "startLine": 93,
+        "startChar": 23,
+        "endLine": 93,
+        "endChar": 28
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee9bb2d1_f334ecc8",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 4
@@ -237,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "cffad60c_1a498b3e",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T00:54:13Z",
+      "side": 1,
+      "message": "Right, we would have to track that information additionally.\n\nI\u0027m still uncertain how much it\u0027ll end up being used in practice that the structure of what\u0027s returned is closer to the original and is closer to preserving chronological order, but I\u0027m OK with keeping it this way, certainly for now.",
+      "parentUuid": "8297e431_bd5fa274",
+      "range": {
+        "startLine": 107,
+        "startChar": 43,
+        "endLine": 107,
+        "endChar": 56
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79cac855_518ab7e7",
         "filename": "results/recorder/chromium/formats/gtest.go",
         "patchSetId": 4
@@ -281,6 +329,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76ee8304_b19bbbf0",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T00:54:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "742e2f35_bf790b36",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 108,
+        "endChar": 27
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -610,6 +682,30 @@
       "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02abd17e_b079bc8b",
+        "filename": "results/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-09-27T00:54:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2bd7c62e_ec4d287a",
+      "range": {
+        "startLine": 237,
+        "startChar": 30,
+        "endLine": 237,
+        "endChar": 59
+      },
+      "revId": "2df789ad38dbf654cca1da25effff6649a53f51a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
