@@ -23,6 +23,29 @@
       "revId": "14abc45451a3b306edd51fb9e929b83e6d13f25b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2fe18d9_a6d8698f",
+        "filename": "common/logging/gologger/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-09-27T18:52:47Z",
+      "side": 1,
+      "message": "fixed to rendering of fields only once as well in next patchset",
+      "range": {
+        "startLine": 115,
+        "startChar": 6,
+        "endLine": 115,
+        "endChar": 12
+      },
+      "revId": "14abc45451a3b306edd51fb9e929b83e6d13f25b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
