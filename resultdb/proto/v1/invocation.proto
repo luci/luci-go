@@ -1,0 +1,134 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb;
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
+
+// A conceptual container of results. Immutable once finalized.
+// It represents all results of some computation; examples: swarming task,
+// buildbucket build, CQ attempt.
+// Composable: can include other invocations, see inclusion.proto.
+message Invocation {
+  // The resource name of this invocation. OUTPUT_ONLY.
+  // Format: invocations/{INVOCATION_ID}
+  string name = 1;
+
+  enum State {
+    // The default value. This value is used if the state is omitted.
+    STATE_UNSPECIFIED = 0;
+
+    // The invocation was created and accepts new results.
+    ACTIVE = 1;
+
+    // The invocation is finalized and contains all the results that the
+    // associated computation was expected to compute; unlike INTERRUPTED state.
+    //
+    // The invocation is immutable and no longer accepts new results.
+    COMPLETED = 2;
+
+    // The invocation is finalized and does NOT contain all the results that the
+    // associated computation was expected to compute.
+    // The computation was interrupted prematurely.
+    //
+    // Such invocation should be discarded.
+    // Often the associated computation is retried.
+    //
+    // The invocation is immutable and no longer accepts new results.
+    INTERRUPTED = 3;
+  }
+
+  // Current state of the invocation. OUTPUT_ONLY.
+  State state = 2;
+
+  // When the invocation was created. OUTPUT_ONLY.
+  google.protobuf.Timestamp create_time = 3;
+
+  // Invocation-level string key-value pairs.
+  // A key can be repeated.
+  repeated StringPair tags = 4;
+
+  // == Finalization ===========================================================
+
+  // When the invocation was finalized, i.e. transitioned to COMPLETED or
+  // INTERRUPTED state. OUTPUT_ONLY.
+  // If this field is set, implies that the invocation is finalized.
+  google.protobuf.Timestamp finalize_time = 5;
+
+  // Timestamp when the invocation will be forcefully finalized.
+  // Can be extended with UpdateInvocation until finalized.
+  google.protobuf.Timestamp deadline = 6;
+
+  // == Test results specific ==================================================
+
+  // Base variant definition for test results in this invocation.
+  // A particular test result can have additional key-value pairs.
+  VariantDef base_test_variant_def = 7;
+}
+
+// One inclusion edge in the invocation DAG.
+//
+// Invocations are composable: one invocation can include zero or more other
+// invocations, representing a cumulative result. For example, a Buildbucket
+// build invocation can include invocations of all child swarming tasks and
+// represent overall result of the build, encapsulating the internal structure
+// of the build from the client that just needs to load test results scoped
+// to the build.
+//
+// The graph is directed and acyclic. There can be at most one edge between a
+// given pair of invocations.
+// Including invocation MUST NOT be finalized.
+// Included invocation MAY be finalized.
+message Inclusion {
+  // Resource name, identifier of the inclusion. OUTPUT_ONLY.
+  // Format: invocations/{INCLUDING_INVOCATION_ID}/inclusions/{INCLUDED_INVOCATION_ID}
+  // This implies that there can be only one direct edge between a given pair of
+  // invocations.
+  string name = 1;
+
+  // Name of the included invocation.
+  // FORMAT: invocations/{INCLUDED_INVOCATION_ID}.
+  string included_invocation = 2;
+
+  // Name of the another inclusion that overrides this one. OUTPUT_ONLY.
+  // If set, the invocation by this inclusion no longer influences the final
+  // outcome of the including invocation. A typical example is a retry: the
+  // new attempt overrides the previous one.
+  //
+  // Use recorder.OverrideInclusion to set this field.
+  string overridden_by = 3;
+
+  // Whether the included invocation is finalized before the including
+  // invocation. OUTPUT_ONLY.
+  // The formula for the field is
+  //   included_inv.finalize_time < including_inv.finalize_time
+  // If the included invocation is finalized, but the including invocation is
+  // not yet, the edge is ready. If both are not finalized yet, the edge is not ready *yet*,
+  // but its value may change over time, until the including invocation is
+  // finalized.
+  //
+  // In practice, either
+  // - an edge is ready because the including is expected to wait for its
+  //   children to conclude its own result, OR
+  // - it does not matter e.g. if the including was canceled and finalized
+  //   prematurely.
+  //
+  // By default, QueryTestResults ignores un-ready inclusions.
+  bool ready = 4;
+}
