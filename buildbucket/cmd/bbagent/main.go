@@ -84,7 +84,7 @@ func main() {
 	opts := &host.Options{
 		BaseBuild:      input.Build,
 		ButlerLogLevel: logging.Info,
-		ViewerURL:      fmt.Sprintf("https://ci.chromium.org/p/%d", input.Build.Id),
+		ViewerURL:      fmt.Sprintf("https://ci.chromium.org/b/%d", input.Build.Id),
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
