@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "a4e03f23_844b65b0",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1161844
+      },
+      "writtenOn": "2019-09-27T01:32:46Z",
+      "side": 1,
+      "message": "I would not expect Go to do that automatically, being the type of language it is.\n\nWould that be TLS compression?  I can\u0027t think of any other transport compression that would be commonly added under HTTP.  TLS compression is vulnerable to attacks like CRIME, so it would be surprising in a bad way if Go added that silently.\n\nI took a quick look but didn\u0027t see anything https://godoc.org/crypto/tls#Config",
+      "parentUuid": "c9204afa_ea6eadad",
+      "revId": "f82df52a6a4133d5b27a8ef01dddcfe19cabb3a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "959b262e_6ec66d27",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 1
