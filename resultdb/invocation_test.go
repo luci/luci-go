@@ -17,7 +17,7 @@ package resultdb
 import (
 	"testing"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -26,7 +26,7 @@ import (
 
 func TestInvocationUtils(t *testing.T) {
 	Convey(`Normalization works`, t, func() {
-		inv := &resultspb.Invocation{
+		inv := &pb.Invocation{
 			Tags: util.StringPairs(
 				"k2", "v21",
 				"k2", "v20",
