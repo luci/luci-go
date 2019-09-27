@@ -16,7 +16,6 @@ package gerrit
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -241,22 +240,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 
 func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
-	headers := textInputHeaders()
-	content := req.Content
-	const compressionLimit = 5000000 // 5 MB
-	if len(content) > compressionLimit {
-		headers["Content-Encoding"] = "gzip"
-		var b bytes.Buffer
-		w := gzip.NewWriter(&b)
-		if _, err := io.Copy(w, bytes.NewReader(content)); err != nil {
-			return nil, errors.Annotate(err, "change edit file content").Err()
-		}
-		if err := w.Close(); err != nil {
-			return nil, errors.Annotate(err, "change edit file content").Err()
-		}
-		content = b.Bytes()
-	}
-	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, headers, content, http.StatusNoContent); err != nil {
+	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit file content").Err()
 	}
 	return &empty.Empty{}, nil
