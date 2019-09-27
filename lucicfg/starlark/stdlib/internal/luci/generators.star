@@ -258,7 +258,6 @@ def _buildbucket_builders(bucket, swarming_host):
         expiration_secs = optional_sec(node.props.expiration_timeout),
         build_numbers = _buildbucket_toggle(node.props.build_numbers),
         experimental = _buildbucket_toggle(node.props.experimental),
-        luci_migration_host = node.props.luci_migration_host,
         task_template_canary_percentage = optional_UInt32Value(
             node.props.task_template_canary_percentage),
     ))

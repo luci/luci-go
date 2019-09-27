@@ -16,7 +16,6 @@ luci.builder.defaults.triggering_policy.set(scheduler.greedy_batching(max_batch_
 luci.builder.defaults.build_numbers.set(True)
 luci.builder.defaults.experimental.set(True)
 luci.builder.defaults.task_template_canary_percentage.set(90)
-luci.builder.defaults.luci_migration_host.set('default-migration-host')
 
 luci.recipe.defaults.cipd_package.set('cipd/default')
 luci.recipe.defaults.cipd_version.set('refs/default')
@@ -74,7 +73,6 @@ luci.builder(
     build_numbers = False,
     experimental = False,
     task_template_canary_percentage = 0,
-    luci_migration_host = '',
 )
 
 
@@ -108,7 +106,6 @@ luci.builder(
 #       build_numbers: YES
 #       service_account: "default@example.com"
 #       experimental: YES
-#       luci_migration_host: "default-migration-host"
 #       task_template_canary_percentage: <
 #         value: 90
 #       >
@@ -143,7 +140,6 @@ luci.builder(
 #       build_numbers: YES
 #       service_account: "default@example.com"
 #       experimental: YES
-#       luci_migration_host: "default-migration-host"
 #       task_template_canary_percentage: <
 #         value: 90
 #       >

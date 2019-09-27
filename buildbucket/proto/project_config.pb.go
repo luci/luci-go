@@ -400,20 +400,14 @@ type Builder struct {
 	AutoBuilderDimension Toggle `protobuf:"varint,17,opt,name=auto_builder_dimension,json=autoBuilderDimension,proto3,enum=buildbucket.Toggle" json:"auto_builder_dimension,omitempty"`
 	// If YES, by default a new build in this builder will be marked as
 	// experimental.
+	//
 	// This is useful for inherently experimental builders that use production
 	// recipes.
-	// See also luci_migration_host field.
 	Experimental Toggle `protobuf:"varint,18,opt,name=experimental,proto3,enum=buildbucket.Toggle" json:"experimental,omitempty"`
-	// If not empty and not "-", and a build request is not marked as
-	// experimental/prod explicitly and has "mastername" property, buildbucket
-	// will contact this instance of luci-migration app to determine whether the
-	// builder is experimental.
-	// On success, this takes precedence over Builder.experimental proto field
-	// (above).
+	// DEPRECATED
 	//
-	// Special value "-" means no luci_migration_host specified.
-	// Useful in a builder that wants to override luci_migration_host
-	// specified in builder_defaults or mixin.
+	// Using this field will result in buildbucket rejecting your config. Just
+	// remove it from your config and you should be good to go :).
 	LuciMigrationHost string `protobuf:"bytes,19,opt,name=luci_migration_host,json=luciMigrationHost,proto3" json:"luci_migration_host,omitempty"`
 	// Percentage of builds that should use a canary swarming task template.
 	// A value from 0 to 100.
