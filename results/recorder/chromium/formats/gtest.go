@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -26,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/results"
 
 	rdb "go.chromium.org/luci/results"
 	resultspb "go.chromium.org/luci/results/proto/v1"
@@ -83,118 +85,109 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 	return nil
 }
 
-// ToInvocation converts a GTestResults to a (partial) resultspb.Invocation.
-func (r *GTestResults) ToInvocation(ctx context.Context, req *resultspb.DeriveInvocationFromSwarmingRequest) (*resultspb.Invocation, error) {
-	// testsToVariants maps GTest base name to the variant IDs present to Results.
-	// We store these maps to handle the same test and variants appearing in multiple iterations.
-	testsToVariants := map[string]map[string][]*resultspb.TestResult{}
-	variantDefs := map[string]*resultspb.VariantDef{}
-
+// ToProtos converts test results in r []*resultspb.TestResult and updates inv
+// in-place accordingly.
+// If an error is returned, inv is left unchanged.
+//
+// Does not populate TestResult.Name.
+func (r *GTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvocationRequest, inv *resultspb.Invocation) ([]*resultspb.TestResult, error) {
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
 		logging.Infof(ctx,
-			"Got %d iterations for task %s on %s", len(r.PerIterationData), req.Task.Id, req.Task.Hostname)
+			"Got %d iterations for task %s on %s", len(r.PerIterationData), req.SwarmingTask.Id, req.SwarmingTask.Hostname)
 	}
 
-	// Assume the invocation is complete for now; if any results are NOTRUN, we'll mark as otherwise.
-	incomplete := false
+	// Assume the invocation was not interrupted; if any results are NOTRUN,
+	// we'll mark as otherwise.
+	interrupted := false
 
-	for i, data := range r.PerIterationData {
-		for name, results := range data {
+	var ret []*resultspb.TestResult
+	var testNames []string
+	for _, data := range r.PerIterationData {
+		// Sort the test name to make the output deterministic.
+		testNames = testNames[:0]
+		for name := range data {
+			testNames = append(testNames, name)
+		}
+		sort.Strings(testNames)
+
+		for _, name := range testNames {
 			baseName, params := extractGTestParameters(name)
+			testPath := req.TestPathPrefix + baseName
 
-			// Derive the variant definition from base variant and params.
-			variantDefMap := rdb.MergeTestVariantMaps(req.BaseTestVariant.Def, params)
-			if err := variantDefMap.Validate(); err != nil {
-				return nil, errors.Annotate(err,
-					"iteration %d of test %s failed to validate variant def", i, name).Err()
-			}
-			variantDef := variantDefMap.Proto()
-			varID := variantDef.Digest
-			if _, ok := variantDefs[varID]; !ok {
-				variantDefs[varID] = variantDef
-			}
-
-			// Generate individual result protos.
-			rpbs := make([]*resultspb.TestResult, len(results))
-			for i, result := range results {
-				if rpb, err := r.convertRunResult(ctx, name, result); err != nil {
+			for i, result := range data[name] {
+				// Store the processed test result into the correct part of the overall map.
+				rpb, err := r.convertTestResult(ctx, testPath, name, result)
+				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
+				}
 
-				} else {
-					rpbs[i] = rpb
+				if len(params) > 0 {
+					rpb.ExtraVariantPairs = params.Proto()
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
 				// results indicates the task was incomplete.
 				// TODO(jchinlee): Check how unexpected SKIPPED tests should be handled.
 				if result.Status == "NOTRUN" {
-					incomplete = true
+					interrupted = true
 				}
-			}
 
-			// Store the processed test result into the correct part of the overall map.
-			testPath := req.TestPathPrefix + baseName
-			if _, ok := testsToVariants[testPath]; !ok {
-				testsToVariants[testPath] = map[string][]*resultspb.TestResult{}
+				ret = append(ret, rpb)
 			}
-			testsToVariants[testPath][varID] = append(testsToVariants[testPath][varID], rpbs...)
 		}
 	}
 
-	// Now that we have all the results mapped by test path and variant, populate the invocation.
-	inv := &resultspb.Invocation{
-		Incomplete:  incomplete,
-		VariantDefs: variantDefs,
-		Tags:        util.StringPairs("test_framework", "gtest"),
+	// TODO(jchinlee): move this block of code to the callsite.
+	// It is NOT specific to GTest.
+	if err := results.VariantDefMap(req.BaseTestVariant.Def).Validate(); err != nil {
+		return nil, errors.Annotate(err, "invalid base test variant $q").Err()
 	}
+	inv.BaseTestVariantDef = req.BaseTestVariant
 
-	for testPath, variants := range testsToVariants {
-		testpb := &resultspb.Invocation_Test{Path: testPath}
+	// The code below does not return errors, so it is safe to make in-place
+	// modifications of inv.
 
-		for id, results := range variants {
-			testpb.Variants = append(testpb.Variants, &resultspb.Invocation_TestVariant{
-				VariantId: id,
-				Results:   results,
-			})
-		}
-
-		inv.Tests = append(inv.Tests, testpb)
+	if interrupted {
+		inv.State = resultspb.Invocation_INTERRUPTED
+	} else {
+		inv.State = resultspb.Invocation_COMPLETED
 	}
 
 	// Populate the tags.
 	for _, tag := range r.GlobalTags {
 		inv.Tags = append(inv.Tags, util.StringPair("gtest_global_tag", tag))
 	}
+	inv.Tags = append(inv.Tags, util.StringPair("test_framework", "gtest"))
 
 	rdb.NormalizeInvocation(inv)
-	return inv, nil
+	return ret, nil
 }
 
-func toGTestStatus(s string) (resultspb.Status, error) {
+func fromGTestStatus(s string) (resultspb.TestStatus, error) {
 	switch s {
 	case "SUCCESS":
-		return resultspb.Status_PASS, nil
+		return resultspb.TestStatus_PASS, nil
 	case "FAILURE":
-		return resultspb.Status_FAIL, nil
+		return resultspb.TestStatus_FAIL, nil
 	case "FAILURE_ON_EXIT":
-		return resultspb.Status_FAIL, nil
+		return resultspb.TestStatus_FAIL, nil
 	case "TIMEOUT":
-		return resultspb.Status_ABORT, nil
+		return resultspb.TestStatus_ABORT, nil
 	case "CRASH":
-		return resultspb.Status_CRASH, nil
+		return resultspb.TestStatus_CRASH, nil
 	case "SKIPPED":
-		return resultspb.Status_SKIP, nil
+		return resultspb.TestStatus_SKIP, nil
 	case "EXCESSIVE_OUTPUT":
-		return resultspb.Status_FAIL, nil
+		return resultspb.TestStatus_FAIL, nil
 	case "NOTRUN":
-		return resultspb.Status_SKIP, nil
+		return resultspb.TestStatus_SKIP, nil
 	default:
 		// This would only happen if the set of possible GTest result statuses change and resultsdb has
 		// not been updated to match.
-		return resultspb.Status_STATUS_UNSPECIFIED, errors.Reason("unknown GTest status %q", s).Err()
+		return resultspb.TestStatus_STATUS_UNSPECIFIED, errors.Reason("unknown GTest status %q", s).Err()
 	}
 }
 
@@ -206,16 +199,26 @@ func extractGTestParameters(testPath string) (basePath string, params rdb.Varian
 	return
 }
 
-func (r *GTestResults) convertRunResult(ctx context.Context, name string, result *GTestRunResult) (*resultspb.TestResult, error) {
-	status, err := toGTestStatus(result.Status)
+func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name string, result *GTestRunResult) (*resultspb.TestResult, error) {
+	status, err := fromGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
 	rpb := &resultspb.TestResult{
+		TestPath: testPath,
 		Status:   status,
-		Tags:     util.StringPairs("gtest_status", result.Status),
-		Duration: secondsToDuration(1e-6 * float64(result.ElapsedTimeMs)),
+		Tags: util.StringPairs(
+			// Store the original GTest status.
+			"gtest_status", result.Status,
+			// Store the correct output snippet.
+			"lossless_snippet", strconv.FormatBool(result.LosslessSnippet),
+		),
+	}
+
+	// Do not set duration if it is unknown.
+	if result.ElapsedTimeMs != 0 {
+		rpb.Duration = secondsToDuration(1e-6 * float64(result.ElapsedTimeMs))
 	}
 
 	// Write the summary.
@@ -231,17 +234,11 @@ func (r *GTestResults) convertRunResult(ctx context.Context, name string, result
 		}
 	}
 
-	// Store the correct output snippet.
-	rpb.Tags = append(
-		rpb.Tags,
-		util.StringPair("lossless_snippet", strconv.FormatBool(result.LosslessSnippet)),
-	)
-
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
 		rpb.Tags = append(rpb.Tags,
-			util.StringPair("file", loc.File),
-			util.StringPair("line", strconv.Itoa(loc.Line)),
+			util.StringPair("gtest_file", loc.File),
+			util.StringPair("gtest_line", strconv.Itoa(loc.Line)),
 		)
 	}
 

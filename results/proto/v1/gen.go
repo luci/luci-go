@@ -15,5 +15,6 @@
 package resultspb
 
 //go:generate cproto
-//go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package resultspb -write_package_comment=false
-//go:generate goimports -w rpc.mock.pb.go
+//go:generate mockgen -source resultdb.pb.go -destination resultdb.mock.pb.go -package resultspb -write_package_comment=false
+//go:generate mockgen -source recorder.pb.go -destination recorder.mock.pb.go -package resultspb -write_package_comment=false
+//go:generate goimports -w resultdb.mock.pb.go recorder.mock.pb.go

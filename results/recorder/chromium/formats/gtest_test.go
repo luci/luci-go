@@ -17,9 +17,7 @@ package formats
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"testing"
-	"unicode/utf8"
 
 	resultspb "go.chromium.org/luci/results/proto/v1"
 	"go.chromium.org/luci/results/util"
@@ -125,83 +123,78 @@ func TestGTestConversions(t *testing.T) {
 		})
 	})
 
-	Convey(`To Invocation works`, t, func() {
-		results := &GTestResults{
-			AllTests:   []string{"test1", "test2", "test3"},
-			GlobalTags: []string{"tag2", "tag1"},
-			PerIterationData: []map[string][]*GTestRunResult{
-				{
-					"test1": {
-						{
-							Status:              "SUCCESS",
-							ElapsedTimeMs:       10,
-							LosslessSnippet:     true,
-							OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMCBtcyk=",
-						},
-						{
-							Status:              "SUCCESS",
-							ElapsedTimeMs:       12,
-							LosslessSnippet:     true,
-							OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMiBtcyk=",
-						},
-					},
-					"test2": {
-						{
-							Status:              "EXCESSIVE_OUTPUT",
-							OutputSnippetBase64: "Qnl0ZXM6IDB4QzAgMHg4QSAweDNEIDB4MjcKPGEgYsCKPSdjJy8+",
-						},
-						{
-							Status:              "FAILURE_ON_EXIT",
-							OutputSnippetBase64: "Qnl0ZXM6IDB4QzAgMHg4QSAweDNEIDB4MjcKPGEgYsCKPSdjJy8+",
-						},
-					},
-					"test3": {
-						{Status: "FAILURE"},
-						{Status: "SUCCESS"},
-						{Status: "FAILURE_ON_EXIT"},
-					},
-				},
-				{
-					"test1": {
-						{
-							Status:              "SUCCESS",
-							ElapsedTimeMs:       14,
-							LosslessSnippet:     true,
-							OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxNCBtcyk=",
-						},
-						{
-							Status:              "SUCCESS",
-							ElapsedTimeMs:       16,
-							LosslessSnippet:     true,
-							OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxNiBtcyk=",
-						},
-					},
-					"test2": {
-						{
-							Status:              "FAILURE",
-							OutputSnippetBase64: "Qnl0ZXM6IDB4QzAgMHg4QSAweDNEIDB4MjcKPGEgYsCKPSdjJy8+",
-						},
-						{
-							Status:              "FAILURE_ON_EXIT",
-							OutputSnippetBase64: "Qnl0ZXM6IDB4QzAgMHg4QSAweDNEIDB4MjcKPGEgYsCKPSdjJy8+",
-						},
-					},
-					"test3": {
-						{Status: "CRASH"},
-						{Status: "NOTRUN"},
-						{Status: "EXCESSIVE_OUTPUT"},
-					},
-				},
-			},
-			TestLocations: map[string]*Location{
-				"test1": {File: "fileA.cc", Line: 12},
-				"test2": {File: "fileA.cc", Line: 24},
-				"test3": {File: "fileB.cc", Line: 36},
-			},
-		}
+	Convey("convertTestResult", t, func() {
+		Convey("EXCESSIVE_OUTPUT", func() {
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				Status: "EXCESSIVE_OUTPUT",
+			})
+			So(err, ShouldBeNil)
+			So(tr.Status, ShouldEqual, resultspb.TestStatus_FAIL)
+			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "EXCESSIVE_OUTPUT")), ShouldBeTrue)
+		})
 
-		req := &resultspb.DeriveInvocationFromSwarmingRequest{
-			Task: &resultspb.DeriveInvocationFromSwarmingRequest_SwarmingTask{
+		Convey("NOTRUN", func() {
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				Status: "NOTRUN",
+			})
+			So(err, ShouldBeNil)
+			So(tr.Status, ShouldEqual, resultspb.TestStatus_SKIP)
+			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
+		})
+
+		Convey("Duration", func() {
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				Status:        "SUCCESS",
+				ElapsedTimeMs: 1e6,
+			})
+			So(err, ShouldBeNil)
+			So(tr.Duration.GetSeconds(), ShouldEqual, 1)
+			So(tr.Duration.GetNanos(), ShouldEqual, 0)
+		})
+
+		Convey("snippet", func() {
+			Convey("valid", func() {
+				tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+					Status:              "SUCCESS",
+					LosslessSnippet:     true,
+					OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMCBtcyk=",
+				})
+				So(err, ShouldBeNil)
+				So(tr.SummaryMarkdown, ShouldEqual, "[ RUN      ] FooTest.TestDoBar\n(10 ms)")
+			})
+
+			Convey("invalid does not cause a fatal error", func() {
+				tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+					Status:              "SUCCESS",
+					LosslessSnippet:     true,
+					OutputSnippetBase64: "invalid base64",
+				})
+				So(err, ShouldBeNil)
+				So(tr.SummaryMarkdown, ShouldEqual, "")
+			})
+		})
+
+		Convey("testLocations", func() {
+			results := &GTestResults{
+				TestLocations: map[string]*Location{
+					"TestName": {
+						File: "TestFile",
+						Line: 54,
+					},
+				},
+			}
+			tr, err := results.convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				Status: "SUCCESS",
+			})
+			So(err, ShouldBeNil)
+			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
+			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_line", "54")), ShouldBeTrue)
+		})
+	})
+
+	Convey(`ToProtos`, t, func() {
+		req := &resultspb.DeriveInvocationRequest{
+			SwarmingTask: &resultspb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: "host-swarming",
 				Id:       "123",
 			},
@@ -213,111 +206,154 @@ func TestGTestConversions(t *testing.T) {
 			}},
 		}
 
-		inv, err := results.ToInvocation(ctx, req)
-		So(err, ShouldBeNil)
-		So(inv.Incomplete, ShouldBeTrue)
-		So(inv.Tags, ShouldResembleProto, util.StringPairs(
-				"gtest_global_tag", "tag1",
-				"gtest_global_tag", "tag2",
-				"test_framework", "gtest",
-			),
-		)
+		inv := &resultspb.Invocation{}
 
-		// Check tests.
-		So(inv.Tests, ShouldHaveLength, 3)
-
-		Convey(`grouping by test name works`, func() {
-			So(inv.Tests[0].Path, ShouldEqual, "prefix/test1")
-			So(inv.Tests[1].Path, ShouldEqual, "prefix/test2")
-			So(inv.Tests[2].Path, ShouldEqual, "prefix/test3")
-		})
-
-		Convey(`grouping by variant works`, func() {
-			// They all have one and the same variant so far.
-			So(inv.Tests[0].Variants, ShouldHaveLength, 1)
-			So(inv.Tests[1].Variants, ShouldHaveLength, 1)
-			So(inv.Tests[2].Variants, ShouldHaveLength, 1)
-		})
-
-		Convey(`collecting runs per tests works`, func() {
-			So(inv.Tests[0].Variants[0].Results, ShouldHaveLength, 4)
-			So(inv.Tests[1].Variants[0].Results, ShouldHaveLength, 4)
-			So(inv.Tests[2].Variants[0].Results, ShouldHaveLength, 6)
-		})
-
-		Convey(`statuses mapped correctly`, func() {
-			// Sanity check.
-			testResults := inv.Tests[2].Variants[0].Results
-			statuses := make([]resultspb.Status, len(testResults))
-			for i, r := range testResults {
-				statuses[i] = r.Status
-			}
-			So(statuses, ShouldResemble, []resultspb.Status{
-				resultspb.Status_FAIL,
-				resultspb.Status_PASS,
-				resultspb.Status_FAIL,
-				resultspb.Status_CRASH,
-				resultspb.Status_SKIP,
-				resultspb.Status_FAIL,
-			})
-		})
-
-		Convey(`durations captured correctly`, func() {
-			testResults := inv.Tests[0].Variants[0].Results
-			expectedDurationsNs := []int32{10000, 12000, 14000, 16000}
-			So(testResults, ShouldHaveLength, len(expectedDurationsNs))
-			for i, r := range testResults {
-				So(r.Duration.Seconds, ShouldEqual, 0)
-				So(r.Duration.Nanos, ShouldAlmostEqual, expectedDurationsNs[i], 100)
-			}
-		})
-
-		Convey(`summaries captured correctly`, func() {
-			Convey(`for lossless snippets`, func() {
-				testResults := inv.Tests[0].Variants[0].Results
-				summaries := make([]string, len(testResults))
-				for i, r := range testResults {
-					summaries[i] = r.SummaryMarkdown
-				}
-				So(summaries, ShouldResemble, []string{
-					"[ RUN      ] FooTest.TestDoBar\n(10 ms)",
-					"[ RUN      ] FooTest.TestDoBar\n(12 ms)",
-					"[ RUN      ] FooTest.TestDoBar\n(14 ms)",
-					"[ RUN      ] FooTest.TestDoBar\n(16 ms)",
-				})
-			})
-
-			Convey(`for lossy snippets`, func() {
-				testResults := inv.Tests[1].Variants[0].Results
-				expectedText := fmt.Sprintf("Bytes: 0xC0 0x8A 0x3D 0x27\n<a b%c='c'/>", utf8.RuneError)
-				for _, r := range testResults {
-					So(r.SummaryMarkdown, ShouldEqual, expectedText)
-				}
-			})
-
-			Convey(`for missing snippets`, func() {
-				So(inv.Tests[2].Variants[0].Results[0].SummaryMarkdown, ShouldEqual, "")
-			})
-		})
-
-		Convey(`test tags work`, func() {
-			testResults := inv.Tests[0].Variants[0].Results
-			for _, r := range testResults {
-				So(r.Tags, ShouldResembleProto, util.StringPairs(
-					"file", "fileA.cc",
-					"gtest_status", "SUCCESS",
-					"line", "12",
-					"lossless_snippet", "true",
-				))
+		Convey("Works", func() {
+			results := &GTestResults{
+				PerIterationData: []map[string][]*GTestRunResult{
+					{
+						"test1": {
+							{
+								Status: "SUCCESS",
+							},
+							{
+								Status: "FAILURE",
+							},
+						},
+						"test2": {
+							{
+								Status: "EXCESSIVE_OUTPUT",
+							},
+							{
+								Status: "FAILURE_ON_EXIT",
+							},
+						},
+					},
+					{
+						"test1": {
+							{
+								Status: "SUCCESS",
+							},
+							{
+								Status: "SUCCESS",
+							},
+						},
+						"test2": {
+							{
+								Status: "FAILURE",
+							},
+							{
+								Status: "FAILURE_ON_EXIT",
+							},
+						},
+					},
+				},
 			}
 
-			testResults = inv.Tests[1].Variants[0].Results
-			So(testResults[0].Tags, ShouldResembleProto, util.StringPairs(
-				"file", "fileA.cc",
-				"gtest_status", "EXCESSIVE_OUTPUT",
-				"line", "24",
-				"lossless_snippet", "false",
-			))
+			testResults, err := results.ToProtos(ctx, req, inv)
+			So(err, ShouldBeNil)
+			So(util.StringPairsContain(inv.Tags, util.StringPair("test_framework", "gtest")), ShouldBeTrue)
+			So(testResults, ShouldResembleProto, []*resultspb.TestResult{
+				// Iteration 1.
+				{
+					TestPath: "prefix/test1",
+					Status:   resultspb.TestStatus_PASS,
+					Tags: util.StringPairs(
+						"gtest_status", "SUCCESS",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test1",
+					Status:   resultspb.TestStatus_FAIL,
+					Tags: util.StringPairs(
+						"gtest_status", "FAILURE",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test2",
+					Status:   resultspb.TestStatus_FAIL,
+					Tags: util.StringPairs(
+						"gtest_status", "EXCESSIVE_OUTPUT",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test2",
+					Status:   resultspb.TestStatus_FAIL,
+					Tags: util.StringPairs(
+						"gtest_status", "FAILURE_ON_EXIT",
+						"lossless_snippet", "false",
+					),
+				},
+
+				// Iteration 2.
+				{
+					TestPath: "prefix/test1",
+					Status:   resultspb.TestStatus_PASS,
+					Tags: util.StringPairs(
+						"gtest_status", "SUCCESS",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test1",
+					Status:   resultspb.TestStatus_PASS,
+					Tags: util.StringPairs(
+						"gtest_status", "SUCCESS",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test2",
+					Status:   resultspb.TestStatus_FAIL,
+					Tags: util.StringPairs(
+						"gtest_status", "FAILURE",
+						"lossless_snippet", "false",
+					),
+				},
+				{
+					TestPath: "prefix/test2",
+					Status:   resultspb.TestStatus_FAIL,
+					Tags: util.StringPairs(
+						"gtest_status", "FAILURE_ON_EXIT",
+						"lossless_snippet", "false",
+					),
+				},
+			})
+		})
+
+		Convey("GlobalTags", func() {
+			results := &GTestResults{
+				GlobalTags: []string{"tag2", "tag1"},
+				PerIterationData: []map[string][]*GTestRunResult{
+					{
+						"test1": {
+							{Status: "SUCCESS"},
+						},
+					},
+				},
+			}
+
+			_, err := results.ToProtos(ctx, req, inv)
+			So(err, ShouldBeNil)
+			So(util.StringPairsContain(inv.Tags, util.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
+			So(util.StringPairsContain(inv.Tags, util.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
+		})
+
+		Convey("Interrupted", func() {
+			results := &GTestResults{
+				PerIterationData: []map[string][]*GTestRunResult{
+					{
+						"test1": {{Status: "NOTRUN"}},
+					},
+				},
+			}
+
+			_, err := results.ToProtos(ctx, req, inv)
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, resultspb.Invocation_INTERRUPTED)
 		})
 	})
 }
