@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb"
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/util"
 )
 
@@ -89,7 +89,7 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 // If an error is returned, inv is left unchanged.
 //
 // Does not populate TestResult.Name.
-func (r *GTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvocationRequest, inv *resultspb.Invocation) ([]*resultspb.TestResult, error) {
+func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
@@ -101,7 +101,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvoca
 	// we'll mark as otherwise.
 	interrupted := false
 
-	var ret []*resultspb.TestResult
+	var ret []*pb.TestResult
 	var testNames []string
 	for _, data := range r.PerIterationData {
 		// Sort the test name to make the output deterministic.
@@ -150,9 +150,9 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvoca
 	// modifications of inv.
 
 	if interrupted {
-		inv.State = resultspb.Invocation_INTERRUPTED
+		inv.State = pb.Invocation_INTERRUPTED
 	} else {
-		inv.State = resultspb.Invocation_COMPLETED
+		inv.State = pb.Invocation_COMPLETED
 	}
 
 	// Populate the tags.
@@ -165,28 +165,28 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *resultspb.DeriveInvoca
 	return ret, nil
 }
 
-func fromGTestStatus(s string) (resultspb.TestStatus, error) {
+func fromGTestStatus(s string) (pb.TestStatus, error) {
 	switch s {
 	case "SUCCESS":
-		return resultspb.TestStatus_PASS, nil
+		return pb.TestStatus_PASS, nil
 	case "FAILURE":
-		return resultspb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, nil
 	case "FAILURE_ON_EXIT":
-		return resultspb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, nil
 	case "TIMEOUT":
-		return resultspb.TestStatus_ABORT, nil
+		return pb.TestStatus_ABORT, nil
 	case "CRASH":
-		return resultspb.TestStatus_CRASH, nil
+		return pb.TestStatus_CRASH, nil
 	case "SKIPPED":
-		return resultspb.TestStatus_SKIP, nil
+		return pb.TestStatus_SKIP, nil
 	case "EXCESSIVE_OUTPUT":
-		return resultspb.TestStatus_FAIL, nil
+		return pb.TestStatus_FAIL, nil
 	case "NOTRUN":
-		return resultspb.TestStatus_SKIP, nil
+		return pb.TestStatus_SKIP, nil
 	default:
 		// This would only happen if the set of possible GTest result statuses change and resultsdb has
 		// not been updated to match.
-		return resultspb.TestStatus_STATUS_UNSPECIFIED, errors.Reason("unknown GTest status %q", s).Err()
+		return pb.TestStatus_STATUS_UNSPECIFIED, errors.Reason("unknown GTest status %q", s).Err()
 	}
 }
 
@@ -198,13 +198,13 @@ func extractGTestParameters(testPath string) (basePath string, params resultdb.V
 	return
 }
 
-func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name string, result *GTestRunResult) (*resultspb.TestResult, error) {
+func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name string, result *GTestRunResult) (*pb.TestResult, error) {
 	status, err := fromGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
-	rpb := &resultspb.TestResult{
+	rpb := &pb.TestResult{
 		TestPath: testPath,
 		Status:   status,
 		Tags: util.StringPairs(

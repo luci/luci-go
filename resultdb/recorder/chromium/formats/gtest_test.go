@@ -19,7 +19,7 @@ import (
 	"context"
 	"testing"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -129,7 +129,7 @@ func TestGTestConversions(t *testing.T) {
 				Status: "EXCESSIVE_OUTPUT",
 			})
 			So(err, ShouldBeNil)
-			So(tr.Status, ShouldEqual, resultspb.TestStatus_FAIL)
+			So(tr.Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "EXCESSIVE_OUTPUT")), ShouldBeTrue)
 		})
 
@@ -138,7 +138,7 @@ func TestGTestConversions(t *testing.T) {
 				Status: "NOTRUN",
 			})
 			So(err, ShouldBeNil)
-			So(tr.Status, ShouldEqual, resultspb.TestStatus_SKIP)
+			So(tr.Status, ShouldEqual, pb.TestStatus_SKIP)
 			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
 		})
 
@@ -193,20 +193,20 @@ func TestGTestConversions(t *testing.T) {
 	})
 
 	Convey(`ToProtos`, t, func() {
-		req := &resultspb.DeriveInvocationRequest{
-			SwarmingTask: &resultspb.DeriveInvocationRequest_SwarmingTask{
+		req := &pb.DeriveInvocationRequest{
+			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: "host-swarming",
 				Id:       "123",
 			},
 			TestPathPrefix: "prefix/",
-			BaseTestVariant: &resultspb.VariantDef{Def: map[string]string{
+			BaseTestVariant: &pb.VariantDef{Def: map[string]string{
 				"bucket":     "bkt",
 				"builder":    "blder",
 				"test_suite": "foo_unittests",
 			}},
 		}
 
-		inv := &resultspb.Invocation{}
+		inv := &pb.Invocation{}
 
 		Convey("Works", func() {
 			results := &GTestResults{
@@ -253,11 +253,11 @@ func TestGTestConversions(t *testing.T) {
 			testResults, err := results.ToProtos(ctx, req, inv)
 			So(err, ShouldBeNil)
 			So(util.StringPairsContain(inv.Tags, util.StringPair("test_framework", "gtest")), ShouldBeTrue)
-			So(testResults, ShouldResembleProto, []*resultspb.TestResult{
+			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
 					TestPath: "prefix/test1",
-					Status:   resultspb.TestStatus_PASS,
+					Status:   pb.TestStatus_PASS,
 					Tags: util.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
@@ -265,7 +265,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test1",
-					Status:   resultspb.TestStatus_FAIL,
+					Status:   pb.TestStatus_FAIL,
 					Tags: util.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
@@ -273,7 +273,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test2",
-					Status:   resultspb.TestStatus_FAIL,
+					Status:   pb.TestStatus_FAIL,
 					Tags: util.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
 						"lossless_snippet", "false",
@@ -281,7 +281,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test2",
-					Status:   resultspb.TestStatus_FAIL,
+					Status:   pb.TestStatus_FAIL,
 					Tags: util.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",
@@ -291,7 +291,7 @@ func TestGTestConversions(t *testing.T) {
 				// Iteration 2.
 				{
 					TestPath: "prefix/test1",
-					Status:   resultspb.TestStatus_PASS,
+					Status:   pb.TestStatus_PASS,
 					Tags: util.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
@@ -299,7 +299,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test1",
-					Status:   resultspb.TestStatus_PASS,
+					Status:   pb.TestStatus_PASS,
 					Tags: util.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
@@ -307,7 +307,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test2",
-					Status:   resultspb.TestStatus_FAIL,
+					Status:   pb.TestStatus_FAIL,
 					Tags: util.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
@@ -315,7 +315,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/test2",
-					Status:   resultspb.TestStatus_FAIL,
+					Status:   pb.TestStatus_FAIL,
 					Tags: util.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",
@@ -353,7 +353,7 @@ func TestGTestConversions(t *testing.T) {
 
 			_, err := results.ToProtos(ctx, req, inv)
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, resultspb.Invocation_INTERRUPTED)
+			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		})
 	})
 }

@@ -17,21 +17,21 @@ package resultdb
 import (
 	"sort"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // NormalizeInvocation converts inv to the canonical form.
-func NormalizeInvocation(inv *resultspb.Invocation) {
+func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
 }
 
 // NormalizeTestResult converts inv to the canonical form.
-func NormalizeTestResult(tr *resultspb.TestResult) {
+func NormalizeTestResult(tr *pb.TestResult) {
 	sortStringPairs(tr.Tags)
 }
 
 // NormalizeTestResultSlice converts trs to the canonical form.
-func NormalizeTestResultSlice(trs []*resultspb.TestResult) {
+func NormalizeTestResultSlice(trs []*pb.TestResult) {
 	for _, tr := range trs {
 		NormalizeTestResult(tr)
 	}
@@ -46,7 +46,7 @@ func NormalizeTestResultSlice(trs []*resultspb.TestResult) {
 }
 
 // sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
-func sortStringPairs(tags []*resultspb.StringPair) {
+func sortStringPairs(tags []*pb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
 			return tags[i].Key < tags[j].Key
