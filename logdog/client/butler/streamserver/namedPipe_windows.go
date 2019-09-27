@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
@@ -49,7 +50,7 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 
 	ctx = log.SetField(ctx, "path", path)
 	return &StreamServer{
-		Context: ctx,
+		log:     logging.Get(ctx),
 		address: "net.pipe:" + path,
 		gen: func() (net.Listener, error) {
 			log.Infof(ctx, "Creating Windows server socket Listener.")

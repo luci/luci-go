@@ -22,7 +22,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -43,7 +43,7 @@ type streamParams struct {
 // Named Pipe, depending on the platform). Local processes on the machine may
 // connect to this named pipe to stream data to Logdog.
 type StreamServer struct {
-	context.Context
+	log logging.Logger
 
 	// address is the string returned by the Address method.
 	address string
@@ -139,13 +139,13 @@ func (s *StreamServer) serve() {
 	nextID := 0
 	clientWG := sync.WaitGroup{}
 	for {
-		log.Debugf(s, "Beginning Accept() loop cycle.")
+		s.log.Debugf("Beginning Accept() loop cycle.")
 		conn, err := s.l.Accept()
 		if err != nil {
 			if atomic.LoadInt32(&s.closed) != 0 {
-				log.WithError(err).Debugf(s, "Error during Accept() encountered (closed).")
+				s.log.Debugf("Error during Accept() encountered (closed): %s", err)
 			} else {
-				log.WithError(err).Errorf(s, "Error during Accept().")
+				s.log.Errorf("Error during Accept(): %s", err)
 			}
 			break
 		}
@@ -153,15 +153,11 @@ func (s *StreamServer) serve() {
 		// Spawn a goroutine to handle this connection. This goroutine will take
 		// ownership of the connection, closing it as appropriate.
 		client := &streamClient{
+			log:     s.log,
 			closedC: s.closedC,
 			id:      nextID,
 			conn:    conn,
 		}
-		client.Context = log.SetFields(s, log.Fields{
-			"id":     client.id,
-			"local":  client.conn.LocalAddr(),
-			"remote": client.conn.RemoteAddr(),
-		})
 
 		clientWG.Add(1)
 		go func() {
@@ -172,15 +168,11 @@ func (s *StreamServer) serve() {
 				var err error
 				params, err = client.handle()
 				if err != nil {
-					log.Fields{
-						log.ErrorKey: err,
-					}.Errorf(client, "Failed to negotitate stream client.")
+					s.log.Errorf("Failed to negotitate stream client: %s", err)
 					params = nil
 				}
 			}, func(p *paniccatcher.Panic) {
-				log.Fields{
-					"panicReason": p.Reason,
-				}.Errorf(client, "Panic during client handshake:\n%s", p.Stack)
+				s.log.Errorf("Panic during client handshake:\n%s\n%s", p.Reason, p.Stack)
 				params = nil
 			})
 
@@ -193,7 +185,7 @@ func (s *StreamServer) serve() {
 					break
 
 				case <-s.closedC:
-					log.Warningf(client, "Closed with client in hand. Cleaning up client.")
+					s.log.Warningf("Closed with client in hand. Cleaning up client.")
 					params.rc.Close()
 					params = nil
 				}
@@ -209,14 +201,12 @@ func (s *StreamServer) serve() {
 
 	// Wait for client connections to finish.
 	clientWG.Wait()
-	log.Fields{
-		"totalConnections": nextID,
-	}.Infof(s, "Exiting serve loop.")
+	s.log.Infof("Exiting serve loop. Served %d connections", nextID)
 }
 
 // streamClient manages a single client connection.
 type streamClient struct {
-	context.Context
+	log logging.Logger
 
 	closedC chan struct{} // Signal channel to indicate that the server has closed.
 	id      int           // Client ID, used for debugging correlation.
@@ -235,7 +225,7 @@ type streamClient struct {
 // This method returns the negotiated stream parameters, or nil if the
 // negotiation failed and the client was closed.
 func (c *streamClient) handle() (*streamParams, error) {
-	log.Infof(c, "Received new connection.")
+	c.log.Infof("Received new connection.")
 
 	// Close the connection as a failsafe. If we have already decoupled it, this
 	// will end up being a no-op.
@@ -243,7 +233,7 @@ func (c *streamClient) handle() (*streamParams, error) {
 
 	// Perform our handshake. We pass the connection explicitly into this method
 	// because it can get decoupled during operation.
-	p, err := handshake(c, c.conn)
+	p, err := c.handshake()
 	if err != nil {
 		return nil, err
 	}
@@ -258,10 +248,10 @@ func (c *streamClient) handle() (*streamParams, error) {
 //
 // The client connection opens with a handshake protocol. Once complete, the
 // connection itself becomes the stream.
-func handshake(ctx context.Context, conn net.Conn) (*logpb.LogStreamDescriptor, error) {
-	log.Infof(ctx, "Beginning handshake.")
+func (c *streamClient) handshake() (*logpb.LogStreamDescriptor, error) {
+	c.log.Infof("Beginning handshake.")
 	flags := &streamproto.Flags{}
-	if err := flags.FromHandshake(conn); err != nil {
+	if err := flags.FromHandshake(c.conn); err != nil {
 		return nil, err
 	}
 	return flags.Descriptor(), nil
@@ -272,9 +262,7 @@ func (c *streamClient) closeConn() {
 	conn := c.decoupleConn()
 	if conn != nil {
 		if err := conn.Close(); err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-			}.Warningf(c, "Error on connection close.")
+			c.log.Warningf("Error on connection close: %s", err)
 		}
 	}
 }

@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
 )
 
@@ -62,7 +63,7 @@ func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 
 	ctx = log.SetField(ctx, "namedPipePath", path)
 	return &StreamServer{
-		Context: ctx,
+		log:     logging.Get(ctx),
 		address: "unix:" + path,
 		gen: func() (net.Listener, error) {
 			log.Infof(ctx, "Creating POSIX server socket Listener.")

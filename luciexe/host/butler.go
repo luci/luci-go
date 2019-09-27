@@ -40,7 +40,11 @@ func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
 		return nil, err
 	}
 
-	sserv, err := streamserver.New(ctx, opts.streamServerPath)
+	streamServerCtx := ctx
+	if !opts.StreamServerDisableLogAdjustment {
+		streamServerCtx = logging.SetLevel(ctx, logging.Warning)
+	}
+	sserv, err := streamserver.New(streamServerCtx, opts.streamServerPath)
 	if err != nil {
 		return nil, err
 	}
