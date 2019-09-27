@@ -404,3 +404,16 @@ func TestIsEmptyDir(t *testing.T) {
 		})
 	})
 }
+
+func TestIsDir(t *testing.T) {
+	Convey("IsDir", t, func() {
+		withTempDir(t, func(dir string) {
+			So(IsDir(dir), ShouldBeTrue)
+			So(IsDir(filepath.Join(dir, "not_exists")), ShouldBeFalse)
+
+			file := filepath.Join(dir, "file")
+			So(ioutil.WriteFile(file, []byte(""), 0644), ShouldBeNil)
+			So(IsDir(file), ShouldBeFalse)
+		})
+	})
+}
