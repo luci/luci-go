@@ -22,6 +22,30 @@
       "revId": "6caff85aeca79af4e650ff21ea569e2c93d4a424",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa69ad11_526dffc5",
+        "filename": "results/recorder/chromium/formats/gtest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T01:34:26Z",
+      "side": 1,
+      "message": "could you elaborate more? I don\u0027t quite understand \"of\" here. This func does conversion. Typical words for conversion are \"to\" and \"from\". We already use \"to\" (ToInvocation, ToProtos, secondsToDuration) and the opposite of \"to\" is \"from\", not \"of\"",
+      "parentUuid": "69776a7f_60b4642a",
+      "range": {
+        "startLine": 164,
+        "startChar": 5,
+        "endLine": 164,
+        "endChar": 9
+      },
+      "revId": "6caff85aeca79af4e650ff21ea569e2c93d4a424",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
