@@ -22,7 +22,9 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -138,10 +140,11 @@ func TestStream(t *testing.T) {
 		rc := &testReadCloser{}
 
 		s := &stream{
-			Context: c,
-			r:       rc,
-			c:       rc,
-			bs:      bs,
+			log: logging.Get(c),
+			now: clock.Get(c).Now,
+			r:   rc,
+			c:   rc,
+			bs:  bs,
 		}
 
 		Convey(`Will read chunks until EOF.`, func() {

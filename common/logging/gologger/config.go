@@ -109,7 +109,12 @@ func (lc *LoggerConfig) NewLogger(c context.Context) logging.Logger {
 		}
 		lc.w = &goLoggerWrapper{l: logger}
 	})
-	return &loggerImpl{lc.w, c}
+	ret := &loggerImpl{goLoggerWrapper: lc.w}
+	if c != nil {
+		ret.level = logging.GetLevel(c)
+		ret.fields = logging.GetFields(c)
+	}
+	return ret
 }
 
 // Use registers go-logging based logger as default logger of the context.
