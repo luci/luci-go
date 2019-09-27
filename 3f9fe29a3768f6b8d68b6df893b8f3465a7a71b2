@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "99d7e2e8_08448ab3",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T18:09:20Z",
+      "side": 1,
+      "message": "what jchinlee said",
+      "parentUuid": "d10691a4_9321cb3b",
+      "range": {
+        "startLine": 115,
+        "startChar": 9,
+        "endLine": 115,
+        "endChar": 22
+      },
+      "revId": "3f9fe29a3768f6b8d68b6df893b8f3465a7a71b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "531fe683_dcd96332",
         "filename": "results/proto/v1/invocation.proto",
         "patchSetId": 6
@@ -93,6 +117,30 @@
       "revId": "3f9fe29a3768f6b8d68b6df893b8f3465a7a71b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "238a58b3_3117e1f1",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-27T18:09:20Z",
+      "side": 1,
+      "message": "what jchinlee said",
+      "parentUuid": "0519a15b_ef1f1c66",
+      "range": {
+        "startLine": 133,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 17
+      },
+      "revId": "3f9fe29a3768f6b8d68b6df893b8f3465a7a71b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
