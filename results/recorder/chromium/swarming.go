@@ -27,6 +27,11 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/results"
+	pb "go.chromium.org/luci/results/proto/v1"
+	"go.chromium.org/luci/results/recorder/chromium/formats"
+	"go.chromium.org/luci/results/recorder/spanner"
 )
 
 const (
@@ -34,17 +39,81 @@ const (
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 )
 
-// fetchOutputJSON fetches the output.json from the given task on the given host.
+// WriteInvocation writes the invocation associated with the given swarming task.
 //
-// TODO: convert the bytes.Buffer to a resultspb.Invocation.
-func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID string) ([]byte, error) {
-	// Set up swarming service for getting task info.
+// If the task is a dedup of another task, the invocation returned is the underlying one; otherwise,
+// the invocation returned is associated with the swarming task itself.
+func WriteInvocation(ctx context.Context, req *pb.DeriveInvocationRequest, cl *http.Client, swarmingURL, taskID string, spannerCl *spanner.Client) (*pb.Invocation, error) {
+	swarmSvc, err := getSwarmSvc(cl, swarmingURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if we even need to write this invocation: is it finalized?
+	invID, err := getInvocationId(ctx, swarmSvc, swarmingURL, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	if inv, err := spannerCl.GetInvocation(ctx, invID); err != nil {
+		return nil, err
+	} else if inv != nil && results.IsFinal(inv) {
+		return inv, nil
+	}
+
+	// We may need to write the invocation, so fetch the output JSON.
+	buf, err := fetchOutputJSON(ctx, cl, swarmSvc, swarmingURL, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	inv := &pb.Invocation{}
+
+	// Try to convert the buffer treating its format as the JSON Test Results Format.
+	jsonFormat := &formats.JSONTestResults{}
+	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(buf))
+	if jsonErr == nil {
+		results, err := jsonFormat.ToProtos(ctx, req, inv)
+		if err != nil {
+			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
+		}
+
+		if err := spannerCl.WriteTestResults(ctx, invID, inv, results); err != nil {
+			return nil, err
+		}
+		return inv, nil
+	}
+
+	// Try to convert the buffer treating its format as that of GTests.
+	gtestFormat := &formats.GTestResults{}
+	gtestErr := gtestFormat.ConvertFromJSON(ctx, bytes.NewReader(buf))
+	if gtestErr == nil {
+		results, err := gtestFormat.ToProtos(ctx, req, inv)
+		if err != nil {
+			return nil, errors.Annotate(err, "converting as GTest results format").Err()
+		}
+
+		if err := spannerCl.WriteTestResults(ctx, invID, inv, results); err != nil {
+			return nil, err
+		}
+		return inv, nil
+	}
+
+	return nil, errors.NewMultiError(jsonErr, gtestErr)
+}
+
+func getSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, error) {
 	swarmSvc, err := swarmingAPI.New(cl)
 	if err != nil {
 		return nil, err
 	}
-	swarmSvc.BasePath = fmt.Sprintf("%s/%s", swarmingURL, swarmingAPIEndpoint)
 
+	swarmSvc.BasePath = fmt.Sprintf("%s/%s", swarmingURL, swarmingAPIEndpoint)
+	return swarmSvc, nil
+}
+
+// fetchOutputJSON fetches the output.json from the given task on the given host.
+func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmSvc *swarmingAPI.Service, swarmingURL, taskID string) ([]byte, error) {
 	// Get the ref for the isolated outs of the given task.
 	ref, err := getOutputsRef(ctx, swarmSvc, taskID)
 	if err != nil {
@@ -99,4 +168,22 @@ func getOutputsRef(ctx context.Context, swarmSvc *swarmingAPI.Service, taskID st
 	}
 
 	return taskResult.OutputsRef, nil
+}
+
+// getInvocationId gets the ID of the invocation associated with a task and swarming service.
+func getInvocationId(ctx context.Context, swarmSvc *swarmingAPI.Service, swarmingURL, taskID string) (string, error) {
+	logging.Infof(ctx, "Fetching outputs ref for task %s (%s)", taskID, swarmSvc.BasePath)
+	taskResult, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
+	if err != nil {
+		return "", err
+	}
+
+	// If the task was deduped, then the invocation associated with it is just the one associated
+	// to the task from which it was deduped.
+	if taskResult.DedupedFrom != "" {
+		return getInvocationId(ctx, swarmSvc, swarmingURL, taskResult.DedupedFrom)
+	}
+
+	// Otherwise, use the hostname and task run ID.
+	return fmt.Sprintf("%s/%s", swarmingURL, taskResult.RunId), nil
 }

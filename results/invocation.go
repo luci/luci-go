@@ -20,6 +20,16 @@ import (
 	resultspb "go.chromium.org/luci/results/proto/v1"
 )
 
+// IsFinal returns whether inv is in a final state and is hence now immutable.
+func IsFinal(inv *resultspb.Invocation) bool {
+	switch inv.State {
+	case resultspb.Invocation_COMPLETED, resultspb.Invocation_INTERRUPTED:
+		return true
+	default:
+		return false
+	}
+}
+
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *resultspb.Invocation) {
 	sortStringPairs(inv.Tags)

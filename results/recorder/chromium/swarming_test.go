@@ -32,9 +32,10 @@ import (
 )
 
 func TestFetchingOutputJson(t *testing.T) {
-	Convey(`Getting output JSON file`, t, func() {
-		ctx := context.Background()
+	t.Parallel()
+	ctx := context.Background()
 
+	Convey(`Getting output JSON file`, t, func() {
 		// Set up fake isolatedserver.
 		isoFake := isolatedfake.New()
 		isoServer := httptest.NewServer(isoFake)
@@ -79,20 +80,57 @@ func TestFetchingOutputJson(t *testing.T) {
 		}))
 		defer swarmingFake.Close()
 
+		swarmSvc, err := getSwarmSvc(http.DefaultClient, swarmingFake.URL)
+		So(err, ShouldBeNil)
+
 		Convey(`successfully gets output file`, func() {
-			buf, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "successful-task")
+			buf, err := fetchOutputJSON(ctx, http.DefaultClient, swarmSvc, swarmingFake.URL, "successful-task")
 			So(err, ShouldBeNil)
 			So(buf, ShouldResemble, []byte("f00df00d"))
 		})
 
 		Convey(`errs if no outputs`, func() {
-			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "no-outputs-task")
+			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmSvc, swarmingFake.URL, "no-outputs-task")
 			So(err, ShouldErrLike, "had no isolated outputs")
 		})
 
 		Convey(`errs if no output file`, func() {
-			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmingFake.URL, "no-output-file-task")
+			_, err := fetchOutputJSON(ctx, http.DefaultClient, swarmSvc, swarmingFake.URL, "no-output-file-task")
 			So(err, ShouldErrLike, "missing expected output output.json in isolated outputs")
+		})
+	})
+
+	Convey(`Getting Invocation ID`, t, func() {
+		swarmingFake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+
+			var resp string
+			switch {
+			case strings.Contains(path, "deduped-task"):
+				resp = `{"deduped_from" : "parent-task", "run_id": "123410"}`
+			case strings.Contains(path, "parent-task"):
+				resp = `{"run_id": "abcd12"}`
+			default:
+				resp = `{}`
+			}
+
+			io.WriteString(w, resp)
+		}))
+		defer swarmingFake.Close()
+
+		swarmSvc, err := getSwarmSvc(http.DefaultClient, swarmingFake.URL)
+		So(err, ShouldBeNil)
+
+		Convey(`for parent task`, func() {
+			id, err := getInvocationId(ctx, swarmSvc, swarmingFake.URL, "parent-task")
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, fmt.Sprintf("%s/abcd12", swarmingFake.URL))
+		})
+
+		Convey(`for deduped task`, func() {
+			id, err := getInvocationId(ctx, swarmSvc, swarmingFake.URL, "deduped-task")
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, fmt.Sprintf("%s/abcd12", swarmingFake.URL))
 		})
 	})
 }
