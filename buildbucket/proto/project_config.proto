@@ -76,11 +76,10 @@ message AclSet {
 //
 // Next tag: 25.
 message Builder {
-  reserved 8;  // cipd_packages.
+  reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
   reserved 13; // auto_builder_dimension of the old format.
   reserved 15; // experimental of the old format.
-  reserved 19; // luci_migration_host.
 
   // Describes a cache directory persisted on a bot.
   // Prerequisite reading in BuildInfra.Swarming.CacheEntry message in
@@ -386,7 +385,20 @@ message Builder {
   // experimental.
   // This is useful for inherently experimental builders that use production
   // recipes.
+  // See also luci_migration_host field.
   Toggle experimental = 18;
+
+  // If not empty and not "-", and a build request is not marked as
+  // experimental/prod explicitly and has "mastername" property, buildbucket
+  // will contact this instance of luci-migration app to determine whether the
+  // builder is experimental.
+  // On success, this takes precedence over Builder.experimental proto field
+  // (above).
+  //
+  // Special value "-" means no luci_migration_host specified.
+  // Useful in a builder that wants to override luci_migration_host
+  // specified in builder_defaults or mixin.
+  string luci_migration_host = 19;
 
   // Percentage of builds that should use a canary swarming task template.
   // A value from 0 to 100.
