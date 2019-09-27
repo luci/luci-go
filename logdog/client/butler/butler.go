@@ -446,10 +446,11 @@ func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error
 	streamCtx := log.SetField(b.ctx, "stream", d.Name)
 	logging.Infof(streamCtx, "adding stream")
 	s := stream{
-		Context: streamCtx,
-		r:       rc,
-		c:       rc,
-		name:    types.StreamName(d.Name),
+		log:  logging.Get(streamCtx),
+		now:  clock.Get(streamCtx).Now,
+		r:    rc,
+		c:    rc,
+		name: types.StreamName(d.Name),
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "d", so
@@ -507,7 +508,7 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 					break
 
 				case <-b.streamStopC:
-					log.Debugf(s, "Received stop signal.")
+					s.log.Debugf("Received stop signal.")
 					closeStream()
 				}
 

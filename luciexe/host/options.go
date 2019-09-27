@@ -42,6 +42,13 @@ type Options struct {
 	// If nil, will use the 'null' logdog Output.
 	LogdogOutput ldOutput.Output
 
+	// Butler is VERY noisy at debug level, potentially amplifying client writes
+	// by up to two orders of magnitude.
+	//
+	// If this is higher than the log level in the context, this will be applied
+	// to the butler agent.
+	ButlerLogLevel logging.Level
+
 	// ExeAuth describes the LUCI Auth environment to run the user code within.
 	//
 	// `Run` will manage the lifecycle of ExeAuth entirely.
