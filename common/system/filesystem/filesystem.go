@@ -368,3 +368,13 @@ func IsEmptyDir(dir string) (bool, error) {
 
 	return false, errors.Annotate(err, "failed to call Readdirnames(1) for %s", dir).Err()
 }
+
+// IsDir returns true if |path| is directory.
+// This is just a thin wrapper around os.Stat(...).
+func IsDir(path string) bool {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return stat.IsDir()
+}
