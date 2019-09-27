@@ -26,6 +26,30 @@
     },
     {
       "key": {
+        "uuid": "effad2fa_8218bb73",
+        "filename": "buildbucket/cmd/bbagent/logdog_output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-27T19:13:25Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "24d19475_f87e7abf",
+      "range": {
+        "startLine": 30,
+        "startChar": 17,
+        "endLine": 30,
+        "endChar": 24
+      },
+      "revId": "e61de29fd076a75009026da1f300d4276de2cf84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "865ca00c_0f007a40",
         "filename": "common/logging/gologger/config.go",
         "patchSetId": 2
@@ -47,6 +71,30 @@
       "revId": "e61de29fd076a75009026da1f300d4276de2cf84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89cd130f_87a36e48",
+        "filename": "common/logging/gologger/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-27T19:13:25Z",
+      "side": 0,
+      "message": "I like the new way.",
+      "parentUuid": "865ca00c_0f007a40",
+      "range": {
+        "startLine": 112,
+        "startChar": 9,
+        "endLine": 112,
+        "endChar": 19
+      },
+      "revId": "e61de29fd076a75009026da1f300d4276de2cf84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

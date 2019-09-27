@@ -26,6 +26,30 @@
     },
     {
       "key": {
+        "uuid": "bd389fd5_c453d831",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-27T19:13:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b2670c68_e543837d",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 16
+      },
+      "revId": "14abc45451a3b306edd51fb9e929b83e6d13f25b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2fe18d9_a6d8698f",
         "filename": "common/logging/gologger/config.go",
         "patchSetId": 2
@@ -46,6 +70,30 @@
       "revId": "14abc45451a3b306edd51fb9e929b83e6d13f25b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d581180_194af6e8",
+        "filename": "common/logging/gologger/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-09-27T19:13:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d2fe18d9_a6d8698f",
+      "range": {
+        "startLine": 115,
+        "startChar": 6,
+        "endLine": 115,
+        "endChar": 12
+      },
+      "revId": "14abc45451a3b306edd51fb9e929b83e6d13f25b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
