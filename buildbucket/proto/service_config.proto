@@ -71,8 +71,7 @@ message SwarmingSettings {
   // "{TASK_RUN_DIR}/cipd_bin_packages/bin" are prepended to $PATH.
   repeated Package user_packages = 5;
 
-  // IGNORED; to be removed after transition to bbagent_package.
-  Package luci_runner_package = 6;
+  reserved 6; // luci_runner_package
 
   // Package of buildbucket agent,
   // https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/buildbucket/cmd/bbagent
