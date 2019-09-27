@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 			logging.Warningf(c.Context, "DEV Hello warning world")
 			c.Writer.Write([]byte("DEV Hello, world"))
 		})
-		resultspb.RegisterRecorderServer(srv.PRPC, &RecorderServer{})
+		pb.RegisterRecorderServer(srv.PRPC, &RecorderServer{})
 		return nil
 	})
 }
