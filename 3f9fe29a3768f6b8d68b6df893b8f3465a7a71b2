@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "01df7f90_03c8a8ed",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-27T17:04:02Z",
+      "side": 1,
+      "message": "Will there be another inclusion for the retry invocation? Or this inclusion will be reused?",
+      "range": {
+        "startLine": 115,
+        "startChar": 9,
+        "endLine": 115,
+        "endChar": 22
+      },
+      "revId": "3f9fe29a3768f6b8d68b6df893b8f3465a7a71b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "531fe683_dcd96332",
+        "filename": "results/proto/v1/invocation.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-09-27T17:04:02Z",
+      "side": 1,
+      "message": "If the included invocation is INTERRUPTED, will the inclusion be ready?",
+      "range": {
+        "startLine": 133,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 17
+      },
+      "revId": "3f9fe29a3768f6b8d68b6df893b8f3465a7a71b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
