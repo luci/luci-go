@@ -58,7 +58,7 @@ func (state *coordinatorState) sendBatches(ctx context.Context, now time.Time, s
 	if state.canceled {
 		for _, batch := range state.buf.ForceLeaseAll() {
 			state.dbg("  >dropping batch: canceled")
-			state.opts.DropFn(batch)
+			state.opts.DropFn(batch, false)
 			state.buf.ACK(batch)
 		}
 		return 0
@@ -154,14 +154,14 @@ func (state *coordinatorState) handleResult(ctx context.Context, result workerRe
 	state.dbg("    ERR(%s)", result.err)
 	if retry := state.opts.ErrorFn(result.batch, result.err); !retry {
 		state.dbg("    NO RETRY (dropping batch)")
-		state.opts.DropFn(result.batch)
+		state.opts.DropFn(result.batch, false)
 		state.buf.ACK(result.batch)
 		return
 	}
 
 	if state.canceled {
 		state.dbg("    NO RETRY (dropping batch: canceled context)")
-		state.opts.DropFn(result.batch)
+		state.opts.DropFn(result.batch, false)
 		state.buf.ACK(result.batch)
 		return
 	}
@@ -180,6 +180,7 @@ func (state *coordinatorState) run(ctx context.Context, send SendFn) {
 	if state.opts.DrainedFn != nil {
 		defer state.opts.DrainedFn()
 	}
+	defer state.opts.DropFn(nil, true)
 	defer close(state.resultCh)
 	defer state.timer.Stop()
 
@@ -225,12 +226,12 @@ loop:
 				state.dbg("    dropped batch (canceled)")
 				state.opts.DropFn(&buffer.Batch{
 					Data: []interface{}{itm},
-				})
+				}, false)
 				continue
 			}
 			if dropped := state.buf.AddNoBlock(now, itm); dropped != nil {
 				state.dbg("    dropped batch")
-				state.opts.DropFn(dropped)
+				state.opts.DropFn(dropped, false)
 			}
 
 		case result := <-state.getNextTimingEvent(now, resDelay):

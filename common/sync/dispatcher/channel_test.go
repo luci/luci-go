@@ -35,7 +35,12 @@ import (
 
 func dummySendFn(*buffer.Batch) error { return nil }
 
-func noDrop(dropped *buffer.Batch) { panic(fmt.Sprintf("dropping %+v", dropped)) }
+func noDrop(dropped *buffer.Batch, flush bool) {
+	if flush {
+		return
+	}
+	panic(fmt.Sprintf("dropping %+v", dropped))
+}
 
 func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...interface{})) {
 	if testing.Verbose() {
@@ -170,7 +175,10 @@ func TestContextShutdown(t *testing.T) {
 
 		ch, err := NewChannel(cctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
-			DropFn: func(dropped *buffer.Batch) {
+			DropFn: func(dropped *buffer.Batch, flush bool) {
+				if flush {
+					return
+				}
 				droppedBatches = append(droppedBatches, dropped.Data[0].(string))
 			},
 			Buffer: buffer.Options{
@@ -298,7 +306,10 @@ func TestExplicitDrops(t *testing.T) {
 
 		ch, err := NewChannel(ctx, &Options{
 			QPSLimit: rate.NewLimiter(rate.Inf, 0),
-			DropFn: func(batch *buffer.Batch) {
+			DropFn: func(batch *buffer.Batch, flush bool) {
+				if flush {
+					return
+				}
 				droppedBatches = append(droppedBatches, batch.Data[0].(int))
 			},
 			ErrorFn: func(batch *buffer.Batch, err error) (retry bool) {
@@ -482,20 +493,16 @@ func TestCloseDeadlockRegression(t *testing.T) {
 			ch.C <- nil
 			// Now ensure we're in the send function
 			<-inSendFn
-			Println("unblocked")
 
 			ch.C <- nil // this will go into UnleasedItemCount
-			Println("pushed")
 
 			// While still in the send function, cancel the context and close the
 			// channel.
 			cancel()
 			ch.Close()
-			Println("closed")
 
 			// Now unblock the send function
 			close(holdSendFn)
-			Println("unheld")
 
 			// We should drain properly
 			<-ch.DrainC

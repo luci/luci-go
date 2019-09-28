@@ -36,8 +36,9 @@ import (
 )
 
 // options for the dispatcher.Channel
-func channelOpts() *dispatcher.Options {
+func channelOpts(ctx context.Context) *dispatcher.Options {
 	return &dispatcher.Options{
+		QPSLimit: rate.NewLimiter(1, 1),
 		Buffer: buffer.Options{
 			BatchSize:    1,
 			MaxLeases:    1,
@@ -54,7 +55,7 @@ func channelOpts() *dispatcher.Options {
 				}
 			},
 		},
-		QPSLimit: rate.NewLimiter(1, 1),
+		DropFn: dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
 	}
 }
 
@@ -107,7 +108,7 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 		sendFn = mkSendFn(ctx, secrets, bbpb.NewBuildsPRPCClient(prpcClient))
 	}
 
-	return dispatcher.NewChannel(ctx, channelOpts(), sendFn)
+	return dispatcher.NewChannel(ctx, channelOpts(ctx), sendFn)
 }
 
 func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.BuildsClient) dispatcher.SendFn {
