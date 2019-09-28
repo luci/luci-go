@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/time/rate"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -76,9 +77,14 @@ type Options struct {
 	// DO NOT WRITE TO THE CHANNEL DIRECTLY FROM THIS FUNCTION. Doing so will very
 	// likely cause deadlocks.
 	//
+	// When the channel is fully drained, this will be invoked exactly once with
+	// `(nil, true)`. This will occur immediately before the DrainedFn is called.
+	// Some drop functions buffer their information, and this gives them an
+	// opportunity to flush out any buffered data.
+	//
 	// Default: logs (at Info level if FullBehavior==DropOldestBatch, or Warning
 	// level otherwise) the number of data items in the Batch being dropped.
-	DropFn func(*buffer.Batch)
+	DropFn func(b *buffer.Batch, flush bool)
 
 	// [OPTIONAL] Called exactly once when the associated Channel is closed and
 	// has fully drained its buffer, but before DrainC is closed.
@@ -108,8 +114,11 @@ type Options struct {
 	testingDbg func(string, ...interface{})
 }
 
-func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch) {
-	return func(dropped *buffer.Batch) {
+func defaultDropFnFactory(ctx context.Context, fullBehavior buffer.FullBehavior) func(*buffer.Batch, bool) {
+	return func(dropped *buffer.Batch, flush bool) {
+		if flush {
+			return
+		}
 		logFn := logging.Warningf
 		if _, ok := fullBehavior.(*buffer.DropOldestBatch); ok {
 			logFn = logging.Infof
@@ -134,5 +143,34 @@ func defaultErrorFnFactory(ctx context.Context) ErrorFn {
 			len(failedBatch.Data), failedBatch.Meta, err)
 
 		return
+	}
+}
+
+// DropFnQuiet is an implementation of Options.DropFn which drops batches
+// without logging anything.
+func DropFnQuiet(*buffer.Batch, bool) {}
+
+// DropFnSummarized returns an implementation of Options.DropFn which counts the
+// number of dropped batches, and only reports it at the rate provided.
+//
+// Unlike the default log function, this only logs the number of dropped items
+// and the duration that they were collected over.
+func DropFnSummarized(ctx context.Context, lim *rate.Limiter) func(*buffer.Batch, bool) {
+	durationStart := clock.Now(ctx)
+	dropCount := 0
+	return func(b *buffer.Batch, flush bool) {
+		dataLen := 0
+		if b != nil {
+			dataLen = len(b.Data)
+		}
+		if lim.Allow() || flush {
+			now := clock.Now(ctx)
+			logging.Infof(
+				ctx, "dropped %d items over %s", dropCount+dataLen, now.Sub(durationStart))
+			durationStart = now
+			dropCount = 0
+		} else {
+			dropCount += dataLen
+		}
 	}
 }

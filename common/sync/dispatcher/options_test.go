@@ -29,7 +29,7 @@ import (
 func TestOptionValidationGood(t *testing.T) {
 	fullOptions := Options{
 		ErrorFn:  func(*buffer.Batch, error) bool { return false },
-		DropFn:   func(*buffer.Batch) {},
+		DropFn:   DropFnQuiet,
 		QPSLimit: rate.NewLimiter(rate.Inf, 0),
 	}
 

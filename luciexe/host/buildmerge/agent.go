@@ -180,6 +180,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 			BatchSize:    1,
 			FullBehavior: &buffer.DropOldestBatch{},
 		},
+		DropFn:    dispatcher.DropFnQuiet,
 		DrainedFn: ret.finalize,
 	}, ret.sendMerge)
 	if err != nil {
