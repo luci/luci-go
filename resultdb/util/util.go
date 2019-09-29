@@ -17,23 +17,23 @@ package util
 import (
 	"fmt"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// StringPair creates a resultspb.StringPair with the given strings as key/value field values.
-func StringPair(k, v string) *resultspb.StringPair {
-	return &resultspb.StringPair{Key: k, Value: v}
+// StringPair creates a pb.StringPair with the given strings as key/value field values.
+func StringPair(k, v string) *pb.StringPair {
+	return &pb.StringPair{Key: k, Value: v}
 }
 
-// StringPairs creates a slice of resultspb.StringPair from a list of strings alternating key/value.
+// StringPairs creates a slice of pb.StringPair from a list of strings alternating key/value.
 //
 // Panics if an odd number of tokens is passed.
-func StringPairs(pairs ...string) []*resultspb.StringPair {
+func StringPairs(pairs ...string) []*pb.StringPair {
 	if len(pairs)%2 != 0 {
 		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
 	}
 
-	strpairs := make([]*resultspb.StringPair, len(pairs)/2)
+	strpairs := make([]*pb.StringPair, len(pairs)/2)
 	for i := range strpairs {
 		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
 	}
@@ -41,7 +41,7 @@ func StringPairs(pairs ...string) []*resultspb.StringPair {
 }
 
 // StringPairsContain checks if item is present in pairs.
-func StringPairsContain(pairs []*resultspb.StringPair, item *resultspb.StringPair) bool {
+func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
 	for _, p := range pairs {
 		if p.Key == item.Key && p.Value == item.Value {
 			return true

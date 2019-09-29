@@ -20,7 +20,7 @@ import (
 	"io"
 	"sort"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // VariantDefMap contains the key:val pairs that define a Variant.
@@ -47,9 +47,9 @@ func (d VariantDefMap) ID() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Proto converts the VariantDefMap to a resultspb.VariantDef proto.
-func (d VariantDefMap) Proto() *resultspb.VariantDef {
-	return &resultspb.VariantDef{
+// Proto converts the VariantDefMap to a pb.VariantDef proto.
+func (d VariantDefMap) Proto() *pb.VariantDef {
+	return &pb.VariantDef{
 		Def: d,
 	}
 }

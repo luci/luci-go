@@ -89,7 +89,7 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 	return nil
 }
 
-// ToProtos converts test results in r []*resultspb.TestResult and updates inv
+// ToProtos converts test results in r []*pb.TestResult and updates inv
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
@@ -236,7 +236,7 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
-// toProtos converts the TestFields into zero or more resultspb.TestResult and
+// toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string) error {
 	// Process statuses.

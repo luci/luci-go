@@ -84,7 +84,7 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 	return nil
 }
 
-// ToProtos converts test results in r []*resultspb.TestResult and updates inv
+// ToProtos converts test results in r []*pb.TestResult and updates inv
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
