@@ -113,7 +113,7 @@ message FinalizeInvocationRequest {
 // A request message for CreateInclusion RPC.
 message CreateInclusionRequest {
   // Name of the invocation to extend.
-  string parent = 1;
+  string invocation = 1;
 
   // Name of the included invocation and whether it is consequential.
   Inclusion inclusion = 3;
@@ -155,7 +155,7 @@ message OverrideInclusionResponse {
 // A request message for CreateTestResult RPC.
 message CreateTestResultRequest {
   // Name of the parent invocation, see Invocation.name.
-  string parent = 1;
+  string invocation = 1;
 
   // The test result to create.
   TestResult test_result = 2;
@@ -179,10 +179,11 @@ message CreateTestResultRequest {
 // A request message for BatchCreateTestResults RPC.
 message BatchCreateTestResultsRequest {
   // Name of the parent invocation, see Invocation.name.
-  string parent = 1;
+  string invocation = 1;
 
   // Requests to create test results.
-  // requests[i].parent MUST be either empty or equal to parent in this message.
+  // requests[i].invocation MUST be either empty or equal to invocation in this
+  // message.
   // requests[i].request_id MUST be either empty or equal to request_id in
   // this message.
   repeated CreateTestResultRequest requests = 2;
@@ -204,7 +205,7 @@ message BatchCreateTestResultsResponse {
 // A request message for CreateTestExoneration RPC.
 message CreateTestExonerationRequest {
   // Name of the parent invocation, see Invocation.name.
-  string parent = 1;
+  string invocation = 1;
 
   // The TestExoneration to create.
   TestExoneration test_exoneration = 2;
@@ -218,10 +219,11 @@ message CreateTestExonerationRequest {
 // A request message for BatchCreateTestExonerations RPC.
 message BatchCreateTestExonerationsRequest {
   // Name of the parent invocation, see Invocation.name.
-  string parent = 1;
+  string invocation = 1;
 
   // Requests to create TestExonerations.
-  // requests[i].parent MUST be either empty or equal to parent in this message.
+  // requests[i].invocation MUST be either empty or equal to invocation in this
+  // message.
   repeated CreateTestExonerationRequest requests = 2;
 }
 
