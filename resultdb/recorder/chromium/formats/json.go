@@ -27,8 +27,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/util"
 )
 
 const testNamePrefixKey = "test_name_prefix"
@@ -136,15 +136,15 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 		inv.State = pb.Invocation_COMPLETED
 	}
 
-	inv.Tags = append(inv.Tags, util.StringPair("test_framework", "json"))
+	inv.Tags = append(inv.Tags, pbutil.StringPair("test_framework", "json"))
 	for _, tag := range tags {
-		inv.Tags = append(inv.Tags, util.StringPair("json_format_tag", tag))
+		inv.Tags = append(inv.Tags, pbutil.StringPair("json_format_tag", tag))
 	}
 	if r.BuildNumber != "" {
-		inv.Tags = append(inv.Tags, util.StringPair("build_number", r.BuildNumber))
+		inv.Tags = append(inv.Tags, pbutil.StringPair("build_number", r.BuildNumber))
 	}
 
-	resultdb.NormalizeInvocation(inv)
+	pbutil.NormalizeInvocation(inv)
 	return ret, nil
 }
 
@@ -270,7 +270,7 @@ func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string) error {
 			TestPath: testPath,
 			Expected: expectedSet.Has(runStatus),
 			Status:   status,
-			Tags:     util.StringPairs("json_format_status", runStatus),
+			Tags:     pbutil.StringPairs("json_format_status", runStatus),
 		}
 
 		if i < len(durations) {

@@ -12,37 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package pbutil
 
 import (
+	"fmt"
 	"sort"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// NormalizeInvocation converts inv to the canonical form.
-func NormalizeInvocation(inv *pb.Invocation) {
-	sortStringPairs(inv.Tags)
+// StringPair creates a pb.StringPair with the given strings as key/value field values.
+func StringPair(k, v string) *pb.StringPair {
+	return &pb.StringPair{Key: k, Value: v}
 }
 
-// NormalizeTestResult converts inv to the canonical form.
-func NormalizeTestResult(tr *pb.TestResult) {
-	sortStringPairs(tr.Tags)
-}
-
-// NormalizeTestResultSlice converts trs to the canonical form.
-func NormalizeTestResultSlice(trs []*pb.TestResult) {
-	for _, tr := range trs {
-		NormalizeTestResult(tr)
+// StringPairs creates a slice of pb.StringPair from a list of strings alternating key/value.
+//
+// Panics if an odd number of tokens is passed.
+func StringPairs(pairs ...string) []*pb.StringPair {
+	if len(pairs)%2 != 0 {
+		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
 	}
-	sort.Slice(trs, func(i, j int) bool {
-		a := trs[i]
-		b := trs[j]
-		if a.TestPath != b.TestPath {
-			return a.TestPath < b.TestPath
+
+	strpairs := make([]*pb.StringPair, len(pairs)/2)
+	for i := range strpairs {
+		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
+	}
+	return strpairs
+}
+
+// StringPairsContain checks if item is present in pairs.
+func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
+	for _, p := range pairs {
+		if p.Key == item.Key && p.Value == item.Value {
+			return true
 		}
-		return a.Name < b.Name
-	})
+	}
+	return false
 }
 
 // sortStringPairs sorts in-place the tags slice lexicographically by key, then value.

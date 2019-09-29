@@ -23,8 +23,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -182,7 +182,7 @@ func TestJSONConversions(t *testing.T) {
 		testResults, err := results.ToProtos(ctx, req, inv)
 		So(err, ShouldBeNil)
 		So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
-		So(inv.Tags, ShouldResembleProto, util.StringPairs(
+		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
 			"json_format_tag", "desktop",
 			"json_format_tag", "linux",
 			"json_format_tag", "ubuntu",
@@ -196,21 +196,21 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 3e8},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c1/c2/t1.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 2e8},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c1/c2/t1.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 1e8},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 
 			// Test 2.
@@ -219,28 +219,28 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c1/c2/t2.html",
 				Status:   pb.TestStatus_FAIL,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     util.StringPairs("json_format_status", "FAIL"),
+				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
 			},
 			{
 				TestPath: "prefix/c1/c2/t2.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c1/c2/t2.html",
 				Status:   pb.TestStatus_CRASH,
 				Expected: false,
 				Duration: &duration.Duration{Nanos: 5e7},
-				Tags:     util.StringPairs("json_format_status", "CRASH"),
+				Tags:     pbutil.StringPairs("json_format_status", "CRASH"),
 			},
 
 			// Test 3
@@ -248,7 +248,7 @@ func TestJSONConversions(t *testing.T) {
 				TestPath: "prefix/c2/t3.html",
 				Status:   pb.TestStatus_FAIL,
 				Expected: false,
-				Tags:     util.StringPairs("json_format_status", "FAIL"),
+				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
 			},
 
 			// Test 4
@@ -257,19 +257,19 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 3e8},
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c2/t4.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
 				TestPath: "prefix/c2/t4.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
-				Tags:     util.StringPairs("json_format_status", "PASS"),
+				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 		})
 	})

@@ -12,38 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resultdb
+package pbutil
 
 import (
+	"fmt"
 	"testing"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestInvocationUtils(t *testing.T) {
-	Convey(`Normalization works`, t, func() {
-		inv := &pb.Invocation{
-			Tags: util.StringPairs(
-				"k2", "v21",
-				"k2", "v20",
-				"k3", "v30",
-				"k1", "v1",
-				"k3", "v31",
-			),
-		}
+func TestStringPairs(t *testing.T) {
+	Convey(`Works`, t, func() {
+		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*pb.StringPair{
+			{Key: "k1", Value: "v1"},
+			{Key: "k2", Value: "v2"},
+		})
 
-		NormalizeInvocation(inv)
-
-		So(inv.Tags, ShouldResembleProto, util.StringPairs(
-			"k1", "v1",
-			"k2", "v20",
-			"k2", "v21",
-			"k3", "v30",
-			"k3", "v31",
-		))
+		Convey(`and fails if provided with incomplete pairs`, func() {
+			tokens := []string{"k1", "v1", "k2"}
+			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
+				fmt.Sprintf("odd number of tokens in %q", tokens))
+		})
 	})
 }
