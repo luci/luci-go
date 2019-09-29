@@ -18,6 +18,17 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// ParseInvocationName parses an invocation name.
+func ParseInvocationName(name string) (id string, err error) {
+	err = ParseResourceName(name, "invocations/{invocation_id}", &id)
+	return
+}
+
+// InvocationName formats an invocation name.
+func InvocationName(id string) string {
+	return "invocations/" + id
+}
+
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
