@@ -18,6 +18,30 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const invocationIDPattern = `[a-z][a-z0-9_\-]*`
+
+var invocationIDRe = regexpfFull("%s", invocationIDPattern)
+var invocationNameRe = regexpfFull("invocations/(%s)", invocationIDPattern)
+
+// ValidateInvocationID returns an error if id is invalid.
+func ValidateInvocationID(id string) error {
+	if !invocationIDRe.MatchString(id) {
+		return doesNotMatch(invocationIDRe)
+	}
+	return nil
+}
+
+// ParseInvocationName extracts invocation id from name.
+func ParseInvocationName(name string) (id string, err error) {
+	err = parseName(name, invocationNameRe, &id)
+	return
+}
+
+// InvocationName produces an invocation name from an id.
+func InvocationName(id string) string {
+	return "invocations/" + id
+}
+
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
