@@ -19,8 +19,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/util"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -130,7 +130,7 @@ func TestGTestConversions(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(tr.Status, ShouldEqual, pb.TestStatus_FAIL)
-			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "EXCESSIVE_OUTPUT")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "EXCESSIVE_OUTPUT")), ShouldBeTrue)
 		})
 
 		Convey("NOTRUN", func() {
@@ -139,7 +139,7 @@ func TestGTestConversions(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(tr.Status, ShouldEqual, pb.TestStatus_SKIP)
-			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
 		})
 
 		Convey("Duration", func() {
@@ -187,8 +187,8 @@ func TestGTestConversions(t *testing.T) {
 				Status: "SUCCESS",
 			})
 			So(err, ShouldBeNil)
-			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
-			So(util.StringPairsContain(tr.Tags, util.StringPair("gtest_line", "54")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_line", "54")), ShouldBeTrue)
 		})
 	})
 
@@ -252,13 +252,13 @@ func TestGTestConversions(t *testing.T) {
 
 			testResults, err := results.ToProtos(ctx, req, inv)
 			So(err, ShouldBeNil)
-			So(util.StringPairsContain(inv.Tags, util.StringPair("test_framework", "gtest")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("test_framework", "gtest")), ShouldBeTrue)
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
 					TestPath: "prefix/test1",
 					Status:   pb.TestStatus_PASS,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
 					),
@@ -266,7 +266,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test1",
 					Status:   pb.TestStatus_FAIL,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
 					),
@@ -274,7 +274,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test2",
 					Status:   pb.TestStatus_FAIL,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
 						"lossless_snippet", "false",
 					),
@@ -282,7 +282,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test2",
 					Status:   pb.TestStatus_FAIL,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",
 					),
@@ -292,7 +292,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test1",
 					Status:   pb.TestStatus_PASS,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
 					),
@@ -300,7 +300,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test1",
 					Status:   pb.TestStatus_PASS,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
 						"lossless_snippet", "false",
 					),
@@ -308,7 +308,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test2",
 					Status:   pb.TestStatus_FAIL,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
 					),
@@ -316,7 +316,7 @@ func TestGTestConversions(t *testing.T) {
 				{
 					TestPath: "prefix/test2",
 					Status:   pb.TestStatus_FAIL,
-					Tags: util.StringPairs(
+					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",
 					),
@@ -338,8 +338,8 @@ func TestGTestConversions(t *testing.T) {
 
 			_, err := results.ToProtos(ctx, req, inv)
 			So(err, ShouldBeNil)
-			So(util.StringPairsContain(inv.Tags, util.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
-			So(util.StringPairsContain(inv.Tags, util.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
 		})
 
 		Convey("Interrupted", func() {

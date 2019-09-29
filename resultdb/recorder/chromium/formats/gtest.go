@@ -29,8 +29,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/util"
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -157,11 +157,11 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 
 	// Populate the tags.
 	for _, tag := range r.GlobalTags {
-		inv.Tags = append(inv.Tags, util.StringPair("gtest_global_tag", tag))
+		inv.Tags = append(inv.Tags, pbutil.StringPair("gtest_global_tag", tag))
 	}
-	inv.Tags = append(inv.Tags, util.StringPair("test_framework", "gtest"))
+	inv.Tags = append(inv.Tags, pbutil.StringPair("test_framework", "gtest"))
 
-	resultdb.NormalizeInvocation(inv)
+	pbutil.NormalizeInvocation(inv)
 	return ret, nil
 }
 
@@ -207,7 +207,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name str
 	rpb := &pb.TestResult{
 		TestPath: testPath,
 		Status:   status,
-		Tags: util.StringPairs(
+		Tags: pbutil.StringPairs(
 			// Store the original GTest status.
 			"gtest_status", result.Status,
 			// Store the correct output snippet.
@@ -236,8 +236,8 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name str
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
 		rpb.Tags = append(rpb.Tags,
-			util.StringPair("gtest_file", loc.File),
-			util.StringPair("gtest_line", strconv.Itoa(loc.Line)),
+			pbutil.StringPair("gtest_file", loc.File),
+			pbutil.StringPair("gtest_line", strconv.Itoa(loc.Line)),
 		)
 	}
 
