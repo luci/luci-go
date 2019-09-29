@@ -23,6 +23,31 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestInvocationName(t *testing.T) {
+	Convey("ParseInvocationName", t, func() {
+		Convey("Parse", func() {
+			id, err := ParseInvocationName("invocations/a")
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, "a")
+		})
+
+		Convey("Wrong number of components", func() {
+			_, err := ParseInvocationName("invocations")
+			So(err, ShouldErrLike, `does not match format "invocations/{invocation_id}"`)
+		})
+
+		Convey("Invalid prefix", func() {
+			_, err := ParseInvocationName("invocation/a")
+			So(err, ShouldErrLike, `does not match format "invocations/{invocation_id}"`)
+		})
+
+		Convey("Format", func() {
+			So(InvocationName("a"), ShouldEqual, "invocations/a")
+		})
+
+	})
+}
+
 func TestInvocationUtils(t *testing.T) {
 	Convey(`Normalization works`, t, func() {
 		inv := &pb.Invocation{
