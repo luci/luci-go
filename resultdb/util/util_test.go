@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"testing"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStringPairs(t *testing.T) {
 	Convey(`Works`, t, func() {
-		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*resultspb.StringPair{
+		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*pb.StringPair{
 			{Key: "k1", Value: "v1"},
 			{Key: "k2", Value: "v2"},
 		})

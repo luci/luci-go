@@ -36,7 +36,7 @@ const (
 
 // fetchOutputJSON fetches the output.json from the given task on the given host.
 //
-// TODO: convert the bytes.Buffer to a resultspb.Invocation.
+// TODO: convert the bytes.Buffer to a pb.Invocation.
 func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID string) ([]byte, error) {
 	// Set up swarming service for getting task info.
 	swarmSvc, err := swarmingAPI.New(cl)

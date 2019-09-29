@@ -17,7 +17,7 @@ package resultdb
 import (
 	"testing"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -32,7 +32,7 @@ func TestVariantUtils(t *testing.T) {
 		}
 
 		varpb := def.Proto()
-		So(varpb, ShouldResembleProto, &resultspb.VariantDef{
+		So(varpb, ShouldResembleProto, &pb.VariantDef{
 			Def: map[string]string{
 				"k1": "v1",
 				"k2": "v2",

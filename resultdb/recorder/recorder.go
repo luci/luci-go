@@ -19,10 +19,10 @@ import (
 
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	resultspb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// RecorderServer implements resultspb.RecorderServer.
+// RecorderServer implements pb.RecorderServer.
 //
 // This is not typically used directly by the end client, but by intermediaries
 // such as the Uploader, which handles uploading test results from swarming
@@ -30,52 +30,52 @@ import (
 type RecorderServer struct {
 }
 
-// CreateInvocation implements resultspb.RecorderServer.
-func (s *RecorderServer) CreateInvocation(ctx context.Context, in *resultspb.CreateInvocationRequest) (*resultspb.Invocation, error) {
+// CreateInvocation implements pb.RecorderServer.
+func (s *RecorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// UpdateInvocation implements resultspb.RecorderServer.
-func (s *RecorderServer) UpdateInvocation(ctx context.Context, in *resultspb.UpdateInvocationRequest) (*resultspb.Invocation, error) {
+// UpdateInvocation implements pb.RecorderServer.
+func (s *RecorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// FinalizeInvocation implements resultspb.RecorderServer.
-func (s *RecorderServer) FinalizeInvocation(ctx context.Context, in *resultspb.FinalizeInvocationRequest) (*resultspb.Invocation, error) {
+// FinalizeInvocation implements pb.RecorderServer.
+func (s *RecorderServer) FinalizeInvocation(ctx context.Context, in *pb.FinalizeInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// CreateInclusion implements resultspb.RecorderServer.
-func (s *RecorderServer) CreateInclusion(ctx context.Context, in *resultspb.CreateInclusionRequest) (*resultspb.Inclusion, error) {
+// CreateInclusion implements pb.RecorderServer.
+func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclusionRequest) (*pb.Inclusion, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// OverrideInclusion implements resultspb.RecorderServer.
-func (s *RecorderServer) OverrideInclusion(ctx context.Context, in *resultspb.OverrideInclusionRequest) (*resultspb.OverrideInclusionResponse, error) {
+// OverrideInclusion implements pb.RecorderServer.
+func (s *RecorderServer) OverrideInclusion(ctx context.Context, in *pb.OverrideInclusionRequest) (*pb.OverrideInclusionResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// CreateTestResult implements resultspb.RecorderServer.
-func (s *RecorderServer) CreateTestResult(ctx context.Context, in *resultspb.CreateTestResultRequest) (*resultspb.TestResult, error) {
+// CreateTestResult implements pb.RecorderServer.
+func (s *RecorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTestResultRequest) (*pb.TestResult, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// BatchCreateTestResults implements resultspb.RecorderServer.
-func (s *RecorderServer) BatchCreateTestResults(ctx context.Context, in *resultspb.BatchCreateTestResultsRequest) (*resultspb.BatchCreateTestResultsResponse, error) {
+// BatchCreateTestResults implements pb.RecorderServer.
+func (s *RecorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// CreateTestExoneration implements resultspb.RecorderServer.
-func (s *RecorderServer) CreateTestExoneration(ctx context.Context, in *resultspb.CreateTestExonerationRequest) (*resultspb.TestExoneration, error) {
+// CreateTestExoneration implements pb.RecorderServer.
+func (s *RecorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// BatchCreateTestExonerations implements resultspb.RecorderServer.
-func (s *RecorderServer) BatchCreateTestExonerations(ctx context.Context, in *resultspb.BatchCreateTestExonerationsRequest) (*resultspb.BatchCreateTestExonerationsResponse, error) {
+// BatchCreateTestExonerations implements pb.RecorderServer.
+func (s *RecorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
 
-// DeriveInvocation implements resultspb.RecorderServer.
-func (s *RecorderServer) DeriveInvocation(ctx context.Context, in *resultspb.DeriveInvocationRequest) (*resultspb.DeriveInvocationResponse, error) {
+// DeriveInvocation implements pb.RecorderServer.
+func (s *RecorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.DeriveInvocationResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
