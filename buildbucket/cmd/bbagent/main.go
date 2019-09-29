@@ -41,7 +41,7 @@ import (
 )
 
 func main() {
-	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Debug)
+	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 
 	check := func(err error) {
 		if err != nil {
@@ -83,7 +83,7 @@ func main() {
 
 	opts := &host.Options{
 		BaseBuild:      input.Build,
-		ButlerLogLevel: logging.Info,
+		ButlerLogLevel: logging.Warning,
 		ViewerURL:      fmt.Sprintf("https://ci.chromium.org/b/%d", input.Build.Id),
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
