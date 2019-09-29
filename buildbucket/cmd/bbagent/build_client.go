@@ -55,7 +55,8 @@ func channelOpts(ctx context.Context) *dispatcher.Options {
 				}
 			},
 		},
-		DropFn: dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
+		DropFn:  dispatcher.DropFnSummarized(ctx, rate.NewLimiter(.1, 1)),
+		ErrorFn: dispatcher.ErrorFnQuiet,
 	}
 }
 
@@ -143,7 +144,7 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.Build
 			b.Data[0] = nil
 		}
 
-		timeout := 5 * time.Second
+		timeout := 10 * time.Second
 		if final {
 			timeout = time.Minute
 		}
@@ -151,6 +152,8 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.Build
 		defer cancel()
 
 		_, err := client.UpdateBuild(tctx, req)
+		// TODO(iannucci): Always tag errors as transient for the 'final' build
+		// update?
 		return err
 	}
 }

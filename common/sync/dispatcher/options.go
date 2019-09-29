@@ -146,6 +146,12 @@ func defaultErrorFnFactory(ctx context.Context) ErrorFn {
 	}
 }
 
+// ErrorFnQuiet is an implementation of Options.ErrorFn which doesn't log the
+// batch, but does check for `transient.Tag` to determine `retry`.
+func ErrorFnQuiet(b *buffer.Batch, err error) (retry bool) {
+	return transient.Tag.In(err)
+}
+
 // DropFnQuiet is an implementation of Options.DropFn which drops batches
 // without logging anything.
 func DropFnQuiet(*buffer.Batch, bool) {}
