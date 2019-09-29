@@ -28,42 +28,6 @@ message BuildSecrets {
   string build_token = 1;
 }
 
-// Arguments for luci_runner command.
-// All paths are relateive to the runner process' working directory.
-message RunnerArgs {
-  // Buildbucket service hostname, e.g. "cr-buildbucket.appspot.com".
-  string buildbucket_host = 1;
-
-  // LogDog service hostname, e.g. "logs.chromium.org".
-  //
-  // As a special case, if this is "file://path/to/log/root" the logs will
-  // be written to the given local path.
-  string logdog_host = 2;
-
-  // Path to the user executable.
-  // Required.
-  string executable_dir = 3;
-
-  // Path to a directory where each subdirectory is a cache dir.
-  // Managed by Swarming.
-  // Required.
-  string cache_dir = 4;
-
-	// List of Gerrit hosts to force git authentication for.
-	//
-	// By default public hosts are accessed anonymously, and the anonymous access
-	// has very low quota. Context needs to know all such hostnames in advance to
-	// be able to force authenticated access to them.
-  repeated string known_public_gerrit_hosts = 5;
-
-  // Use this LUCI context logical account for system-level operations.
-  string luci_system_account = 6;
-
-  // Initial state of the build, including immutable state such as id and input
-  // properties.
-  Build build = 7;
-}
-
 // Arguments for bbagent command.
 //
 // All paths are relateive to bbagent's working directory.
