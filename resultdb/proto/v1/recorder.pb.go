@@ -32,6 +32,8 @@ type CreateInvocationRequest struct {
 	// Invocation identifier, becomes a part of the invocation.name.
 	// LUCI systems MAY create invocations with nicely formatted IDs, such as
 	// "build-1234567890". All other clients MUST use GUIDs.
+	//
+	// Regex: ^[a-z][a-z0-9_\-]*$.
 	InvocationId string `protobuf:"bytes,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
 	// Invocation data to insert.
 	Invocation           *Invocation `protobuf:"bytes,2,opt,name=invocation,proto3" json:"invocation,omitempty"`
