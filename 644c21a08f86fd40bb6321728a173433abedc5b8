@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1357df5b_8d8ad08e",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 376,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-09-30T23:21:08Z",
+      "side": 1,
+      "message": "This can be \"permissions denied\" or some other unexpected error. Treating it as \"this is not a directory\" is incorrect. IsDir should return (bool, error).",
+      "range": {
+        "startLine": 376,
+        "startChar": 4,
+        "endLine": 376,
+        "endChar": 14
+      },
+      "revId": "644c21a08f86fd40bb6321728a173433abedc5b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
