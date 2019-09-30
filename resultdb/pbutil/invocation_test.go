@@ -23,6 +23,26 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestInvocationName(t *testing.T) {
+	Convey("ParseInvocationName", t, func() {
+		Convey("Parse", func() {
+			id, err := ParseInvocationName("invocations/a")
+			So(err, ShouldBeNil)
+			So(id, ShouldEqual, "a")
+		})
+
+		Convey("Invalid", func() {
+			_, err := ParseInvocationName("invocations/-")
+			So(err, ShouldErrLike, `does not match ^invocations/([a-z][a-z0-9_\-]*)$`)
+		})
+
+		Convey("Format", func() {
+			So(InvocationName("a"), ShouldEqual, "invocations/a")
+		})
+
+	})
+}
+
 func TestInvocationUtils(t *testing.T) {
 	Convey(`Normalization works`, t, func() {
 		inv := &pb.Invocation{

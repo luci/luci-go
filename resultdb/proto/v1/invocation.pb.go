@@ -185,9 +185,10 @@ func (m *Invocation) GetBaseTestVariantDef() *VariantDef {
 // Included invocation MAY be finalized.
 type Inclusion struct {
 	// Resource name, identifier of the inclusion. OUTPUT_ONLY.
-	// Format: invocations/{INCLUDING_INVOCATION_ID}/inclusions/{INCLUDED_INVOCATION_ID}
+	// Format:
+	// invocations/{INCLUDING_INVOCATION_ID}/inclusions/{INCLUDED_INVOCATION_ID}
 	// This implies that there can be only one direct edge between a given pair of
-	// invocations.
+	// invocations
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the included invocation.
 	// FORMAT: invocations/{INCLUDED_INVOCATION_ID}.
@@ -204,9 +205,9 @@ type Inclusion struct {
 	// The formula for the field is
 	//   included_inv.finalize_time < including_inv.finalize_time
 	// If the included invocation is finalized, but the including invocation is
-	// not yet, the edge is ready. If both are not finalized yet, the edge is not ready *yet*,
-	// but its value may change over time, until the including invocation is
-	// finalized.
+	// not yet, the edge is ready. If both are not finalized yet, the edge is not
+	// ready *yet*, but its value may change over time, until the including
+	// invocation is finalized.
 	//
 	// In practice, either
 	// - an edge is ready because the including is expected to wait for its
