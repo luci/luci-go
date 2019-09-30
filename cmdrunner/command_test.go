@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/common/system/environ"
@@ -237,5 +238,27 @@ func TestUploadThenDelete(t *testing.T) {
 			So(stats.ItemsCold, ShouldNotBeEmpty)
 			So(stats.ItemsHot, ShouldBeEmpty)
 		})
+	}))
+}
+
+func TestChangeTreeReadOnly(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("changeTreeReadOnly", t, testfs.MustWithTempDir(t, "", func(dir string) {
+		// Only do very simple check.
+		So(changeTreeReadOnly(ctx, dir, nil), ShouldBeNil)
+
+		readOnly := isolated.Writable
+		So(changeTreeReadOnly(ctx, dir, &readOnly), ShouldBeNil)
+
+		readOnly = isolated.FilesReadOnly
+		So(changeTreeReadOnly(ctx, dir, &readOnly), ShouldBeNil)
+
+		readOnly = isolated.DirsReadOnly
+		So(changeTreeReadOnly(ctx, dir, &readOnly), ShouldBeNil)
+
+		readOnly = -1
+		So(changeTreeReadOnly(ctx, dir, &readOnly), ShouldNotBeNil)
 	}))
 }
