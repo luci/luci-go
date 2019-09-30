@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/luciexe/host"
 	"go.chromium.org/luci/luciexe/invoke"
 
+	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -54,7 +55,7 @@ func main() {
 		check(errors.Reason("expected 1 argument after arg0, got %d", len(os.Args)-1).Err())
 	}
 
-	input, err := parseBBAgentArgs(os.Args[1])
+	input, err := bbinput.Parse(os.Args[1])
 	check(errors.Annotate(err, "could not unmarshal BBAgentArgs").Err())
 
 	sctx, err := lucictx.SwitchLocalAccount(ctx, "system")

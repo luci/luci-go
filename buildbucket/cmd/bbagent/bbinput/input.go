@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package bbinput
 
 import (
 	"bytes"
@@ -25,7 +25,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-func parseBBAgentArgs(encodedData string) (*bbpb.BBAgentArgs, error) {
+// Parse parses the base64(zlib(proto.Marshal(BBAgentArgs))) `encodedData`.
+func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 	if encodedData == "" {
 		return nil, errors.New("inputs required")
 	}
