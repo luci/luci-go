@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f91527b1_751e5519",
+        "filename": "resultdb/pbutil/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2019-09-30T23:12:56Z",
+      "side": 1,
+      "message": "r.String()?",
+      "range": {
+        "startLine": 29,
+        "startChar": 43,
+        "endLine": 29,
+        "endChar": 59
+      },
+      "revId": "f123dc21619c0ed051397508c8f3949fe85c1f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "786406f7_42861830",
+        "filename": "resultdb/pbutil/inclusion.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2019-09-30T23:12:56Z",
+      "side": 1,
+      "message": "Maybe I don\u0027t understand go as well as I thought, but wouldn\u0027t the compiler complain about a statement outside of a function? Or is it sufficient that this starts with \u0027var\u0027?",
+      "revId": "f123dc21619c0ed051397508c8f3949fe85c1f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
