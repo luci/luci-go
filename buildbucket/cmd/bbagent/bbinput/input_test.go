@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package bbinput
 
 import (
 	"testing"
@@ -37,10 +37,10 @@ func TestInputOK(t *testing.T) {
 		}},
 	}
 
-	Convey(`parseBBAgentArgs (ok)`, t, func() {
+	Convey(`Parse (ok)`, t, func() {
 		for _, tc := range tests {
 			Convey(tc.name, func() {
-				ret, err := parseBBAgentArgs(tc.input)
+				ret, err := Parse(tc.input)
 				So(err, ShouldBeNil)
 				So(ret, ShouldResembleProto, tc.expect)
 			})
@@ -63,10 +63,10 @@ func TestInputBad(t *testing.T) {
 		{"proto", "eJxLSswDQgAITwJi", "parsing proto"},
 	}
 
-	Convey(`parseBBAgentArgs (err)`, t, func() {
+	Convey(`Parse (err)`, t, func() {
 		for _, tc := range tests {
 			Convey(tc.name, func() {
-				_, err := parseBBAgentArgs(tc.input)
+				_, err := Parse(tc.input)
 				So(err, ShouldErrLike, tc.expect)
 			})
 		}
