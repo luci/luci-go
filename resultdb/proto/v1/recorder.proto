@@ -89,6 +89,8 @@ message CreateInvocationRequest {
   // Invocation identifier, becomes a part of the invocation.name.
   // LUCI systems MAY create invocations with nicely formatted IDs, such as
   // "build-1234567890". All other clients MUST use GUIDs.
+  //
+  // Regex: ^[a-z][a-z0-9_\-]*$.
   string invocation_id = 1;
 
   // Invocation data to insert.
@@ -113,7 +115,7 @@ message FinalizeInvocationRequest {
 // A request message for CreateInclusion RPC.
 message CreateInclusionRequest {
   // Name of the invocation to extend.
-  string invocation = 1;
+  string including_invocation = 1;
 
   // Name of the included invocation and whether it is consequential.
   Inclusion inclusion = 3;
