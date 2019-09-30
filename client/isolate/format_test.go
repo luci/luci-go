@@ -37,8 +37,8 @@ func TestReadOnlyValue(t *testing.T) {
 		So(NotSet.ToIsolated(), ShouldBeNil)
 		So(ReadOnlyValue(100).ToIsolated(), ShouldBeNil)
 		tmp := new(isolated.ReadOnlyValue)
-		*tmp = isolated.Writeable
-		So(Writeable.ToIsolated(), ShouldResemble, tmp)
+		*tmp = isolated.Writable
+		So(Writable.ToIsolated(), ShouldResemble, tmp)
 		*tmp = isolated.FilesReadOnly
 		So(FilesReadOnly.ToIsolated(), ShouldResemble, tmp)
 		*tmp = isolated.DirsReadOnly

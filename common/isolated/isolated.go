@@ -23,9 +23,9 @@ const IsolatedFormatVersion = "1.4"
 type ReadOnlyValue int
 
 const (
-	// Writeable means that both files and directories are writeable. This should
+	// Writable means that both files and directories are writeable. This should
 	// not be used.
-	Writeable ReadOnlyValue = 0
+	Writable ReadOnlyValue = 0
 	// FilesReadOnly means that files are read only but directories are
 	// writeable. This permits the process executed to create temporary files in
 	// the current directory. This is the recommended value and this is the
