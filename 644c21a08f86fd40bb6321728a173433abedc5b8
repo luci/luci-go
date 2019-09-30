@@ -22,6 +22,30 @@
       "revId": "644c21a08f86fd40bb6321728a173433abedc5b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83ab55e2_bdd30077",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 376,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-30T23:44:58Z",
+      "side": 1,
+      "message": "Good point, thanks for catching. It should check for os.IsNotExit().",
+      "parentUuid": "1357df5b_8d8ad08e",
+      "range": {
+        "startLine": 376,
+        "startChar": 4,
+        "endLine": 376,
+        "endChar": 14
+      },
+      "revId": "644c21a08f86fd40bb6321728a173433abedc5b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
