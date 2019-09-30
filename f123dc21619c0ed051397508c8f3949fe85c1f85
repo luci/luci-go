@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cd00cb44_0d240862",
+        "filename": "resultdb/pbutil/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-30T23:35:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f91527b1_751e5519",
+      "range": {
+        "startLine": 29,
+        "startChar": 43,
+        "endLine": 29,
+        "endChar": 59
+      },
+      "revId": "f123dc21619c0ed051397508c8f3949fe85c1f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "786406f7_42861830",
         "filename": "resultdb/pbutil/inclusion.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "f123dc21619c0ed051397508c8f3949fe85c1f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfdedb6b_85d9d47d",
+        "filename": "resultdb/pbutil/inclusion.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-09-30T23:35:38Z",
+      "side": 1,
+      "message": "it does not compile. It is sufficient inclusionNameRe to be a variable for this",
+      "parentUuid": "786406f7_42861830",
+      "revId": "f123dc21619c0ed051397508c8f3949fe85c1f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
