@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39a4f8b5_88891340",
+        "filename": "cmdrunner/command.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-09-30T14:14:13Z",
+      "side": 1,
+      "message": "I don\u0027t think it\u0027s a good pattern, if you want to have a default value, I think it should be done at call site, not here as a pointer.\n\nAnother option is to change https://godoc.org/go.chromium.org/luci/common/isolated#ReadOnlyValue to have 0 be a default value but I don\u0027t think it\u0027s necessary or useful here.",
+      "revId": "fc7ccfb4e9682c4745d5015c3bac2a13a60499a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
