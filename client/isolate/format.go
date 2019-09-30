@@ -47,7 +47,7 @@ type ReadOnlyValue int
 // Possible kinds of read only values.
 const (
 	NotSet        ReadOnlyValue = -1
-	Writeable     ReadOnlyValue = 0
+	Writable      ReadOnlyValue = 0
 	FilesReadOnly ReadOnlyValue = 1
 	DirsReadOnly  ReadOnlyValue = 2
 )
@@ -57,9 +57,9 @@ const (
 func (r ReadOnlyValue) ToIsolated() (out *isolated.ReadOnlyValue) {
 	switch r {
 	case NotSet:
-	case Writeable:
+	case Writable:
 		out = new(isolated.ReadOnlyValue)
-		*out = isolated.Writeable
+		*out = isolated.Writable
 	case FilesReadOnly:
 		out = new(isolated.ReadOnlyValue)
 		*out = isolated.FilesReadOnly
