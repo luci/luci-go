@@ -72,6 +72,10 @@ type Agent struct {
 	// all builds at the time this Agent was Close()'d.
 	MergedBuildC <-chan *bbpb.Build
 
+	// Wait on this channel for the Agent to drain. Will only drain after calling
+	// Close() at least once.
+	DrainC <-chan struct{}
+
 	// used to cancel in-progress sendMerge calls.
 	ctx context.Context
 
@@ -189,6 +193,7 @@ func New(ctx context.Context, userNamespace types.StreamName, base *bbpb.Build, 
 	ret.informNewData = func() {
 		ret.mergeCh.C <- nil // content doesn't matter
 	}
+	ret.DrainC = ret.mergeCh.DrainC
 
 	return ret
 }
