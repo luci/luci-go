@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d127013_dc650049",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-01T11:55:06Z",
+      "side": 1,
+      "message": "You mean the reverse, it\u0027s to \"include\"\n\nAlso, \"swarming ui\" -\u003e \"bot dimensions\"",
+      "range": {
+        "startLine": 9,
+        "startChar": 11,
+        "endLine": 9,
+        "endChar": 21
+      },
+      "revId": "8ff2b5dfc91cf83b5be438ab80ff08fd700fb8e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
