@@ -51,6 +51,10 @@ type spy struct {
 	// it will block the merge build process.
 	MergedBuildC <-chan *bbpb.Build
 
+	// Wait on this channel for the spy to drain. Will only drain after calling
+	// Close() at least once.
+	DrainC <-chan struct{}
+
 	// Close makes the spy stop processing data, and will cause MergedBuildC to
 	// close.
 	//
@@ -98,6 +102,7 @@ func spyOn(ctx context.Context, b *butler.Butler, base *bbpb.Build) *spy {
 	builds.Attach(b)
 	return &spy{
 		MergedBuildC:  fwdChan,
+		DrainC:        builds.DrainC,
 		Close:         builds.Close,
 		UserNamespace: types.StreamName(userNamespace).AsNamespace(),
 	}

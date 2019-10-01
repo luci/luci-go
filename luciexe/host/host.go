@@ -89,6 +89,8 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	agent := spyOn(ctx, butler, opts.BaseBuild)
 	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
+		logging.Infof(ctx, "waiting for buildmerge spy to finish")
+		<-agent.DrainC
 		return nil
 	})
 

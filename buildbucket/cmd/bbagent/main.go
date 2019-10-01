@@ -42,6 +42,10 @@ import (
 )
 
 func main() {
+	os.Exit(mainImpl())
+}
+
+func mainImpl() int {
 	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 
 	check := func(err error) {
@@ -144,8 +148,9 @@ func main() {
 	}
 
 	if finalStatus != bbpb.Status_SUCCESS {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func resolveExe(path string) (string, error) {
