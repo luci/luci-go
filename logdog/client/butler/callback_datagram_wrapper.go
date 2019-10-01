@@ -12,37 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffered_callback
+package butler
 
 import (
-	"fmt"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
 // assertGetDatagram panics if the passed LogEntry does not contain Datagram data, or returns it.
 func assertGetDatagram(le *logpb.LogEntry) *logpb.Datagram {
 	if dg := le.GetDatagram(); dg == nil {
-		panic(
-			errors.Annotate(
-				InvalidStreamType,
-				fmt.Sprintf("got %T, expected *logpb.LogEntry_Datagram", le.Content),
-			).Err(),
-		)
+		panic(errors.Reason(
+			"wrong StreamType: got %T, expected *logpb.LogEntry_Datagram", le.Content,
+		).Err())
 	} else {
 		return dg
 	}
 }
 
-// GetWrappedDatagramCallback wraps a passed callback meant to be called on complete Datagrams so
+// getWrappedDatagramCallback wraps a passed callback meant to be called on complete Datagrams so
 // that it is actually called on complete Datagrams.
 //
 // The wrapped callback panics if:
 // - the passed LogEntry is not a Datagram LogEntry
 // - it receives a complete Datagram while partial Datagrams are still buffered
-func GetWrappedDatagramCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkCallback {
+func getWrappedDatagramCallback(cb StreamChunkCallback) StreamChunkCallback {
 	if cb == nil {
 		return nil
 	}
@@ -105,7 +99,9 @@ func GetWrappedDatagramCallback(cb bundler.StreamChunkCallback) bundler.StreamCh
 		// callback and be done.
 		if dg.Partial == nil {
 			if buf != nil {
-				panic(LostDatagramChunk)
+				panic(errors.New(
+					"got self-contained Datagram LogEntry while buffered LogEntries exist",
+				))
 			}
 			flushData(dg.Data)
 			return
