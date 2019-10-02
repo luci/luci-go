@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f35a7df_756efdc5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-02T00:17:46Z",
+      "side": 1,
+      "message": "This is the only reason? To report it as a dimension?",
+      "revId": "0efff0c55a1ec749284bdae0a626d7cb2ea6ce11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa9efe15_7d5d120c",
+        "filename": "gce/cmd/agent/swarming-start-bot.bat.tmpl",
+        "patchSetId": 7
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-02T00:17:46Z",
+      "side": 1,
+      "message": "set only applies to the current shell, setx is needed for subsequent shells.",
+      "revId": "0efff0c55a1ec749284bdae0a626d7cb2ea6ce11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
