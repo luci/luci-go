@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
-	"go.chromium.org/luci/common/sync/cancelcond"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -66,11 +65,11 @@ type Bundler struct {
 	finishedC chan struct{}
 	bundleC   chan *logpb.ButlerLogBundle
 
-	// streamsLock is a lock around the `streams` map and its contents.
+	// streamsLock is a lock around the `streams` map and its contents. You must
+	// also hold this lock in order to push into streamsNotify.
 	streamsLock sync.Mutex
-	// streamsCond is a Cond bound to streamsLock, used to signal Next() when new
-	// data is available.
-	streamsCond *cancelcond.Cond
+	// streamsNotify has a buffer size of 1 and acts as a select-able semaphore.
+	streamsNotify chan struct{}
 	// streams is the set of currently-registered Streams.
 	streams map[string]bundlerStream
 	// flushing is true if we're blocking on CloseAndFlush().
@@ -83,12 +82,12 @@ type Bundler struct {
 // New instantiates a new Bundler instance.
 func New(c Config) *Bundler {
 	b := Bundler{
-		c:         &c,
-		finishedC: make(chan struct{}),
-		bundleC:   make(chan *logpb.ButlerLogBundle),
-		streams:   map[string]bundlerStream{},
+		c:             &c,
+		finishedC:     make(chan struct{}),
+		bundleC:       make(chan *logpb.ButlerLogBundle),
+		streams:       map[string]bundlerStream{},
+		streamsNotify: make(chan struct{}, 1),
 	}
-	b.streamsCond = cancelcond.New(&b.streamsLock)
 
 	go b.makeBundles()
 	return &b
@@ -186,8 +185,8 @@ func (b *Bundler) startFlushing() {
 
 	if !b.flushing {
 		b.flushing = true
-		b.signalStreamUpdateLocked()
 	}
+	b.signalStreamUpdateLocked()
 }
 
 // makeBundles is run in its own goroutine. It runs continuously, responding
@@ -279,17 +278,18 @@ func (b *Bundler) makeBundles() {
 			//
 			// This will release our state lock during switch execution. The lock will
 			// be held after the switch statement has finished.
-			//
-			// TODO(iannucci): remove this contex/condition in favor of a channel.
 			switch {
 			case has && nextExpire.After(state.now):
 				// No immediate data, so block until the next known data expiration
 				// time.
-				condC, cancel := context.WithDeadline(context.Background(), nextExpire)
-				func() {
-					defer cancel()
-					b.streamsCond.Wait(condC)
-				}()
+				cctx, cancel := context.WithDeadline(context.Background(), nextExpire)
+				b.streamsLock.Unlock()
+				select {
+				case <-b.streamsNotify:
+				case <-cctx.Done():
+				}
+				b.streamsLock.Lock()
+				cancel()
 
 			case has:
 				// There is more data, and it has already expired, so go immediately.
@@ -298,7 +298,9 @@ func (b *Bundler) makeBundles() {
 			default:
 				// No data, and no enqueued stream data, so block indefinitely until we
 				// get a signal.
-				b.streamsCond.Wait(context.Background())
+				b.streamsLock.Unlock()
+				<-b.streamsNotify
+				b.streamsLock.Lock()
 			}
 		}
 
@@ -409,7 +411,10 @@ func (b *Bundler) signalStreamUpdate() {
 }
 
 func (b *Bundler) signalStreamUpdateLocked() {
-	b.streamsCond.Broadcast()
+	select {
+	case b.streamsNotify <- struct{}{}:
+	default:
+	}
 }
 
 // nextPrefixIndex is a goroutine-safe method that returns the next prefix index
