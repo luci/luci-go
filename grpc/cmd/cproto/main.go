@@ -67,6 +67,10 @@ var googlePackages = map[string]string{
 	"google/rpc/code.proto":          "google.golang.org/genproto/googleapis/rpc/code",
 	"google/rpc/error_details.proto": "google.golang.org/genproto/googleapis/rpc/errdetails",
 	"google/rpc/status.proto":        "google.golang.org/genproto/googleapis/rpc/status",
+
+	"google/api/http.proto":           "google.golang.org/genproto/googleapis/api/annotations",
+	"google/api/field_behavior.proto": "google.golang.org/genproto/googleapis/api/annotations",
+	"google/api/resource.proto":       "google.golang.org/genproto/googleapis/api/annotations",
 }
 
 // compile runs protoc on protoFiles. protoFiles must be relative to dir.
