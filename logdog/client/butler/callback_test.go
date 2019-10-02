@@ -93,5 +93,15 @@ func TestButlerCallbacks(t *testing.T) {
 				"Hello!\n", "This\n", "is\n", "a\n", "test.", "<EOF>",
 			})
 		})
+
+		Convey(`is called for target_stream (without data)`, func() {
+			s := newTestStream("target_stream")
+			So(b.AddStream(s, s.desc), ShouldBeNil)
+			s.data(nil, io.EOF)
+			b.Activate()
+			So(b.Wait(), ShouldBeNil)
+
+			So(streamLines, ShouldResemble, []string{"<EOF>"})
+		})
 	})
 }
