@@ -53,22 +53,6 @@ type Stream interface {
 	Close()
 }
 
-// StreamRegistrationCallback is a callback to invoke when a new stream is
-// registered with this bundler.
-//
-// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
-// should treat it as read-only.
-//
-// See streamConfig.callback.
-type StreamRegistrationCallback func(*logpb.LogStreamDescriptor) StreamChunkCallback
-
-// StreamChunkCallback is a callback to invoke on a complete LogEntry.
-//
-// Called once with nil when this stream has come to an end.
-//
-// See streamConfig.callback.
-type StreamChunkCallback func(*logpb.LogEntry)
-
 // streamConfig is the set of static configuration parameters for the stream.
 type streamConfig struct {
 	// name is the name of this stream.
@@ -94,10 +78,6 @@ type streamConfig struct {
 	//
 	// The stream's append lock will be held when this method is called.
 	onAppend func(bool)
-
-	// nextBundleEntryCallback is called synchronously when a complete LogEntry enters the stream.
-	// See client/butler/buffered_callback/doc.go for more details.
-	nextBundleEntryCallback StreamChunkCallback
 }
 
 // streamImpl is a Stream implementation that is bound to a Bundler.
@@ -301,9 +281,6 @@ func (s *streamImpl) nextBundleEntry(bb *builder, aggressive bool) bool {
 		if s.lastLogEntry != nil {
 			bb.setStreamTerminal(&s.c.template, s.lastLogEntry.StreamIndex)
 		}
-		if s.c.nextBundleEntryCallback != nil {
-			s.c.nextBundleEntryCallback(nil)
-		}
 		s.setDrained()
 	}
 
@@ -338,11 +315,6 @@ func (s *streamImpl) nextBundleEntryLocked(bb *builder, aggressive bool) (bool, 
 			// Enforce basic log entry consistency.
 			if err := s.fixupLogEntry(s.lastLogEntry, le); err != nil {
 				return err
-			}
-
-			// Call callback.
-			if s.c.nextBundleEntryCallback != nil {
-				s.c.nextBundleEntryCallback(le)
 			}
 
 			emittedLog = true

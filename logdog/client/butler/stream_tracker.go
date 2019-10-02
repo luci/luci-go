@@ -86,7 +86,7 @@ func (s *streamTracker) RegisterStream(name types.StreamName) error {
 	return nil
 }
 
-func (s *streamTracker) CompleteStream(name types.StreamName) error {
+func (s *streamTracker) CompleteStream(name types.StreamName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -103,7 +103,6 @@ func (s *streamTracker) CompleteStream(name types.StreamName) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (s *streamTracker) CloseNamespace(ns types.StreamName) <-chan struct{} {

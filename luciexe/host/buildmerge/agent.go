@@ -49,7 +49,6 @@ import (
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
 	"golang.org/x/time/rate"
@@ -205,7 +204,7 @@ func (a *Agent) Attach(b *butler.Butler) {
 	b.AddStreamRegistrationCallback(a.onNewStream, true)
 }
 
-func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkCallback {
 	if !a.collectingData() {
 		return nil
 	}

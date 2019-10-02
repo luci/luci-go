@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffered_callback
+package butler
 
 import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type line struct {
@@ -48,7 +46,7 @@ func mkTextLogEntry(lines []line, seq uint64) *logpb.LogEntry {
 	return le
 }
 
-func mkWrappedTextCb(values *[]string, seq *[]uint64) bundler.StreamChunkCallback {
+func mkWrappedTextCb(values *[]string, seq *[]uint64) StreamChunkCallback {
 	cb := func(le *logpb.LogEntry) {
 		if le == nil {
 			return
@@ -60,7 +58,7 @@ func mkWrappedTextCb(values *[]string, seq *[]uint64) bundler.StreamChunkCallbac
 		}
 		*seq = append(*seq, le.Sequence)
 	}
-	return GetWrappedTextCallback(cb)
+	return getWrappedTextCallback(cb)
 }
 
 func TestTextReassembler(t *testing.T) {
@@ -143,11 +141,8 @@ func TestTextReassembler(t *testing.T) {
 				func() {
 					cbWrapped(&logpb.LogEntry{Content: &logpb.LogEntry_Datagram{}})
 				},
-				assertions.ShouldPanicLike,
-				errors.Annotate(
-					InvalidStreamType,
-					fmt.Sprintf("got *logpb.LogEntry_Datagram, expected *logpb.LogEntry_Text"),
-				).Err(),
+				ShouldPanicLike,
+				"expected *logpb.LogEntry_Text",
 			)
 		})
 
@@ -160,8 +155,8 @@ func TestTextReassembler(t *testing.T) {
 							{"e yo", ""},
 						}, 2))
 					},
-					ShouldPanicWith,
-					PartialLineNotLast,
+					ShouldPanicLike,
+					"partial line not last",
 				)
 			})
 
@@ -174,8 +169,8 @@ func TestTextReassembler(t *testing.T) {
 							{"e you", "\n"},
 						}, 2))
 					},
-					ShouldPanicWith,
-					PartialLineNotLast,
+					ShouldPanicLike,
+					"partial line not last",
 				)
 			})
 		})

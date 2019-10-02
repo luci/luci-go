@@ -12,31 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffered_callback
+package butler
 
 import (
-	"fmt"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
 // assertGetText panics if the passed LogEntry does not contain Text data, or returns it.
 func assertGetText(le *logpb.LogEntry) *logpb.Text {
 	if txt := le.GetText(); txt == nil {
-		panic(
-			errors.Annotate(
-				InvalidStreamType,
-				fmt.Sprintf("got %T, expected *logpb.LogEntry_Text", le.Content),
-			).Err(),
-		)
+		panic(errors.Reason(
+			"wrong StreamType: got %T, expected *logpb.LogEntry_Text", le.Content,
+		).Err())
 	} else {
 		return txt
 	}
 }
 
-// GetWrappedTextCallback wraps a passed callback meant to be called at the
+// getWrappedTextCallback wraps a passed callback meant to be called at the
 // ends of Text lines so that it is actually called at the end of Text lines.
 //
 // Does not wrap callback to guarantee being called at the end of *every* Text
@@ -45,7 +39,7 @@ func assertGetText(le *logpb.LogEntry) *logpb.Text {
 // The wrapped callback panics if:
 // - the passed LogEntry is not a Text LogEntry
 // - the passed LogEntry has lines in a form other than described in log.proto
-func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkCallback {
+func getWrappedTextCallback(cb StreamChunkCallback) StreamChunkCallback {
 	if cb == nil {
 		return nil
 	}
@@ -100,7 +94,7 @@ func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkC
 
 		if firstLine.Delimiter == "" {
 			if len(txt.Lines) > 1 {
-				panic(PartialLineNotLast)
+				panic(errors.New("partial line not last in LogEntry"))
 			}
 			return
 		}
@@ -131,7 +125,7 @@ func GetWrappedTextCallback(cb bundler.StreamChunkCallback) bundler.StreamChunkC
 
 		for _, line := range wholeLines {
 			if line.Delimiter == "" {
-				panic(PartialLineNotLast)
+				panic(errors.New("partial line not last in LogEntry"))
 			}
 			buf = append(buf, line)
 		}
