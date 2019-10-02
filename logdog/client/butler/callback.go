@@ -17,6 +17,7 @@ package butler
 import (
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // StreamRegistrationCallback is a callback to invoke when a new stream is
@@ -102,17 +103,38 @@ func (b *Butler) runCallbacks(bundle *logpb.ButlerLogBundle) {
 	for _, entry := range bundle.Entries {
 		name := entry.Desc.Name
 		cb := cbsCopy[name]
-		if cb == nil {
-			continue
-		}
-		for _, log := range entry.Logs {
-			cb(log)
+		if cb != nil {
+			for _, log := range entry.Logs {
+				cb(log)
+			}
 		}
 		if entry.Terminal {
-			cb(nil)
-			b.streamCallbacksMu.Lock()
-			delete(b.streamCallbacks, name)
-			b.streamCallbacksMu.Unlock()
+			b.finalCallback(name)
 		}
 	}
+}
+
+// finalCallback is called from two places.
+//
+// Once, from runStreams, in the event that the stream read NO data from the
+// user.
+//
+// The other, from runCallbacks, in the event that the bundler produced the
+// terminal index for the stream.
+//
+// Ideally this would ONLY be used from runCallbacks... however bundler treats
+// streams-with-data and streams-without-data asymmetrically.
+//
+// TODO(iannucci): Make ALL streams appear via bundler, even empty ones.
+func (b *Butler) finalCallback(name string) {
+	b.streamCallbacksMu.Lock()
+	cb, ok := b.streamCallbacks[name]
+	if ok {
+		delete(b.streamCallbacks, name)
+	}
+	b.streamCallbacksMu.Unlock()
+	if cb != nil {
+		cb(nil)
+	}
+	b.streams.DrainedStream(types.StreamName(name))
 }
