@@ -109,7 +109,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 		cctx, cancel := clock.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		logging.Infof(ctx, "waiting up to 30 seconds for user logs to flush")
-		leftovers := butler.CloseNamespace(cctx, agent.UserNamespace)
+		leftovers := butler.DrainNamespace(cctx, agent.UserNamespace)
 		if len(leftovers) > 0 {
 			builder := strings.Builder{}
 			for _, leftover := range leftovers {

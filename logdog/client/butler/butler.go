@@ -272,19 +272,19 @@ func (b *Butler) Streams() []types.StreamName {
 	return b.streams.Seen()
 }
 
-// CloseNamespace prevents any new streams from being registered in the given
+// DrainNamespace prevents any new streams from being registered in the given
 // namespace, and waits for all existing streams in that namespace to drain.
 //
 // If this exits due to context cancelation, it returns the list of stream names
 // in the namespace which are still open.
-func (b *Butler) CloseNamespace(ctx context.Context, namespace types.StreamName) []types.StreamName {
-	ch := b.streams.CloseNamespace(namespace)
+func (b *Butler) DrainNamespace(ctx context.Context, namespace types.StreamName) []types.StreamName {
+	ch := b.streams.DrainNamespace(namespace)
 
 	select {
 	case <-ch:
 		return nil
 	case <-ctx.Done():
-		return b.streams.Active(namespace)
+		return b.streams.Draining(namespace)
 	}
 }
 
@@ -447,7 +447,12 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 				go func(s *stream) {
 					defer close(finishedC)
 
+					didSomething := false
 					for s.readChunk() {
+						didSomething = true
+					}
+					if !didSomething {
+						b.finalCallback(string(s.name))
 					}
 				}(s)
 
@@ -473,13 +478,13 @@ func (b *Butler) runStreams(activateC chan struct{}) {
 			// If this is the last active stream and we've been activated, exit the
 			// monitor.
 			b.streams.CompleteStream(s.name)
-			if b.streams.ActiveCount() == 0 && activateC == nil {
+			if b.streams.RunningCount() == 0 && activateC == nil {
 				return
 			}
 
 		case <-activateC:
 			// If we're not managing any streams, then we're done.
-			if b.streams.ActiveCount() == 0 {
+			if b.streams.RunningCount() == 0 {
 				return
 			}
 

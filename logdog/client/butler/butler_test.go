@@ -615,7 +615,7 @@ func TestButler(t *testing.T) {
 					singleNS := singleNS
 					go func() {
 						defer ret.Done()
-						cvctx.So(b.CloseNamespace(c, singleNS), ShouldBeNil)
+						cvctx.So(b.DrainNamespace(c, singleNS), ShouldBeNil)
 					}()
 				}
 				return ch
@@ -635,7 +635,7 @@ func TestButler(t *testing.T) {
 			}
 
 			Convey(`waiting for already-empty namespace works`, func() {
-				So(b.CloseNamespace(c, "other"), ShouldBeNil)
+				So(b.DrainNamespace(c, "other"), ShouldBeNil)
 			})
 
 			Convey(`can wait at a deep level`, func(cvctx C) {
@@ -667,7 +667,7 @@ func TestButler(t *testing.T) {
 			Convey(`can cancel the wait and see leftovers`, func() {
 				cctx, cancel := context.WithCancel(c)
 				cancel()
-				So(b.CloseNamespace(cctx, "ns"), ShouldResemble, []types.StreamName{
+				So(b.DrainNamespace(cctx, "ns"), ShouldResemble, []types.StreamName{
 					"ns/deep/s",
 					"ns/s",
 				})

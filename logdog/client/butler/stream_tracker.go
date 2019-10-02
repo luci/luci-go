@@ -28,23 +28,25 @@ var errClosedNamespace = errors.New("already closed")
 var errAlreadyRegistered = errors.New("duplicate registration")
 
 type namespaceTracker struct {
-	closer chan struct{}
-	active stringset.Set
+	closer   chan struct{}
+	draining stringset.Set
 }
 
 type streamTracker struct {
 	mu sync.RWMutex
 
-	seen   stringset.Set
-	active stringset.Set
+	seen     stringset.Set
+	running  stringset.Set
+	draining stringset.Set
 
 	closedNamespaces map[types.StreamName]*namespaceTracker
 }
 
 func newStreamTracker() *streamTracker {
 	ret := &streamTracker{
-		seen:   stringset.New(100),
-		active: stringset.New(100),
+		seen:     stringset.New(100),
+		running:  stringset.New(100),
+		draining: stringset.New(100),
 
 		closedNamespaces: map[types.StreamName]*namespaceTracker{},
 	}
@@ -82,7 +84,8 @@ func (s *streamTracker) RegisterStream(name types.StreamName) error {
 	}
 
 	s.seen.Add(string(name))
-	s.active.Add(string(name))
+	s.running.Add(string(name))
+	s.draining.Add(string(name))
 	return nil
 }
 
@@ -92,12 +95,22 @@ func (s *streamTracker) CompleteStream(name types.StreamName) {
 
 	nameS := string(name)
 
-	s.active.Del(nameS)
+	s.running.Del(nameS)
+}
+
+func (s *streamTracker) DrainedStream(name types.StreamName) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	nameS := string(name)
+
+	s.running.Del(nameS)
+	s.draining.Del(nameS)
 
 	for _, ns := range name.Namespaces() {
 		if tracker, ok := s.closedNamespaces[ns]; ok {
-			if tracker.active.Del(nameS) {
-				if tracker.active.Len() == 0 {
+			if tracker.draining.Del(nameS) {
+				if tracker.draining.Len() == 0 {
 					close(tracker.closer)
 				}
 			}
@@ -105,7 +118,7 @@ func (s *streamTracker) CompleteStream(name types.StreamName) {
 	}
 }
 
-func (s *streamTracker) CloseNamespace(ns types.StreamName) <-chan struct{} {
+func (s *streamTracker) DrainNamespace(ns types.StreamName) <-chan struct{} {
 	ns = ns.AsNamespace()
 
 	s.mu.RLock()
@@ -122,19 +135,19 @@ func (s *streamTracker) CloseNamespace(ns types.StreamName) <-chan struct{} {
 	}
 
 	tracker := &namespaceTracker{
-		active: stringset.New(s.active.Len()),
-		closer: make(chan struct{}),
+		draining: stringset.New(s.draining.Len()),
+		closer:   make(chan struct{}),
 	}
 	s.closedNamespaces[ns] = tracker
 
-	s.active.Iter(func(name string) bool {
+	s.draining.Iter(func(name string) bool {
 		if strings.HasPrefix(name, string(ns)) {
-			tracker.active.Add(name)
+			tracker.draining.Add(name)
 		}
 		return true
 	})
 
-	if tracker.active.Len() == 0 {
+	if tracker.draining.Len() == 0 {
 		close(tracker.closer)
 	}
 	return tracker.closer
@@ -158,24 +171,24 @@ func (s *streamTracker) Seen() []types.StreamName {
 	return ([]types.StreamName)(streams)
 }
 
-func (s *streamTracker) ActiveCount() int {
+func (s *streamTracker) RunningCount() int {
 	// TODO(iannucci): the use of this function is racy; the Butler should have
 	// a very distinct shutdown sequence of:
 	//   * Close() - no new streams are allowed to be registered.
-	//   * WaitDrained() - no streams are being processed any more.
+	//   * WaitDrained() - all streams are done draining.
 	//
 	// Currently the shutdown process "activates" the current runStreams, meaning
-	// it will terminate when there are no active streams, THEN it shuts down the
+	// it will terminate when there are no running streams, THEN it shuts down the
 	// stream server (preventing new registrations), THEN it runs another
 	// runStreams to "clean up" any remaining streams.
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.active.Len()
+	return s.running.Len()
 }
 
-// Active returns a sorted list of stream names that are still active in the
+// Draining returns a sorted list of stream names that are still draining in the
 // given namespace.
-func (s *streamTracker) Active(ns types.StreamName) []types.StreamName {
+func (s *streamTracker) Draining(ns types.StreamName) []types.StreamName {
 	ns = ns.AsNamespace()
 	nsS := string(ns)
 
@@ -185,7 +198,7 @@ func (s *streamTracker) Active(ns types.StreamName) []types.StreamName {
 		defer s.mu.RUnlock()
 		streams = make([]types.StreamName, 0, s.seen.Len())
 
-		s.active.Iter(func(s string) bool {
+		s.draining.Iter(func(s string) bool {
 			if strings.HasPrefix(s, nsS) {
 				streams = append(streams, types.StreamName(s))
 			}
