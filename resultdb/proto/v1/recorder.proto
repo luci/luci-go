@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb;
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
@@ -35,9 +36,6 @@ service Recorder {
   // Creates a new invocation.
   // The request specifies the invocation id and its contents.
   //
-  // The invocation can be created as finalized. Then it is immutable from the
-  // start.
-  //
   // The response includes Invocation.update_token for future updates.
   //
   // If invocation with the given ID already exists, returns ALREADY_EXISTS
@@ -56,20 +54,24 @@ service Recorder {
   rpc CreateInclusion(CreateInclusionRequest) returns (Inclusion) {};
 
   // Sets Inclusion.override_by and ensures a new Inclusion exists.
-  rpc OverrideInclusion(OverrideInclusionRequest) returns (OverrideInclusionResponse) {};
+  rpc OverrideInclusion(OverrideInclusionRequest)
+      returns (OverrideInclusionResponse) {};
 
   // == Test results ===========================================================
 
   // Appends a test result to a non-finalized invocation.
   rpc CreateTestResult(CreateTestResultRequest) returns (TestResult) {};
   // Atomically appends a batch of test results to a non-finalized invocation.
-  rpc BatchCreateTestResults(BatchCreateTestResultsRequest) returns (BatchCreateTestResultsResponse) {};
+  rpc BatchCreateTestResults(BatchCreateTestResultsRequest)
+      returns (BatchCreateTestResultsResponse) {};
 
   // Appends a test exoneration to a non-finalized invocation.
-  rpc CreateTestExoneration(CreateTestExonerationRequest) returns (TestExoneration) {};
+  rpc CreateTestExoneration(CreateTestExonerationRequest)
+      returns (TestExoneration) {};
   // Atomically appends a batch of test exonerations to a non-finalized
   // invocation.
-  rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest) returns (BatchCreateTestExonerationsResponse) {};
+  rpc BatchCreateTestExonerations(BatchCreateTestExonerationsRequest)
+      returns (BatchCreateTestExonerationsResponse) {};
 
   // == Misc ===================================================================
 
@@ -78,9 +80,9 @@ service Recorder {
   // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
   // in which we derive invocations given swarming task IDs, rather than have
   // tasks make RPCs directly.
-  rpc DeriveInvocation(DeriveInvocationRequest) returns (DeriveInvocationResponse) {};
+  rpc DeriveInvocation(DeriveInvocationRequest)
+      returns (DeriveInvocationResponse) {};
 }
-
 
 // == Invocations ==============================================================
 
@@ -91,16 +93,16 @@ message CreateInvocationRequest {
   // "build-1234567890". All other clients MUST use GUIDs.
   //
   // Regex: ^[a-z][a-z0-9_\-]*$.
-  string invocation_id = 1;
+  string invocation_id = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Invocation data to insert.
-  Invocation invocation = 2;
+  Invocation invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for UpdateInvocation RPC.
 message UpdateInvocationRequest {
   // Invocation to update.
-  Invocation invocation = 1;
+  Invocation invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The list of fields to be updated.
   google.protobuf.FieldMask update_mask = 2;
@@ -109,16 +111,16 @@ message UpdateInvocationRequest {
 // A request message for FinalizeInvocation RPC.
 message FinalizeInvocationRequest {
   // Name of the invocation to finalize.
-  string name = 1;
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for CreateInclusion RPC.
 message CreateInclusionRequest {
   // Name of the invocation to extend.
-  string including_invocation = 1;
+  string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Name of the included invocation and whether it is consequential.
-  Inclusion inclusion = 3;
+  Inclusion inclusion = 3 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for OverrideInclusion RPC.
@@ -126,13 +128,14 @@ message OverrideInclusionRequest {
   // Name of the including invocation, see Invocation.name.
   // For example, name of the buildbucket build invocation that includes
   // swarming task invocations.
-  string including_invocation = 1;
+  string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Name of the previously included invocation.
   // For example, invocation of a died swarming task that we intend to retry
   // and replace with another swarming task.
   // This inclusion MUST exist.
-  string overridden_included_invocation = 2;
+  string overridden_included_invocation = 2
+      [ (google.api.field_behavior) = REQUIRED ];
 
   // Name of the new included invocation that overrides the previously included
   // invocation.
@@ -140,7 +143,8 @@ message OverrideInclusionRequest {
   // of a died task.
   //
   // If this invocation was not included before, an Inclusion is created.
-  string overriding_included_invocation = 3;
+  string overriding_included_invocation = 3
+      [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A response message for OverrideInclusion RPC.
@@ -157,10 +161,10 @@ message OverrideInclusionResponse {
 // A request message for CreateTestResult RPC.
 message CreateTestResultRequest {
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The test result to create.
-  TestResult test_result = 2;
+  TestResult test_result = 2 [ (google.api.field_behavior) = REQUIRED ];
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
@@ -181,7 +185,7 @@ message CreateTestResultRequest {
 // A request message for BatchCreateTestResults RPC.
 message BatchCreateTestResultsRequest {
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Requests to create test results.
   // requests[i].invocation MUST be either empty or equal to invocation in this
@@ -207,10 +211,11 @@ message BatchCreateTestResultsResponse {
 // A request message for CreateTestExoneration RPC.
 message CreateTestExonerationRequest {
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The TestExoneration to create.
-  TestExoneration test_exoneration = 2;
+  TestExoneration test_exoneration = 2
+      [ (google.api.field_behavior) = REQUIRED ];
 
   // A unique identifier for this request. Restricted to 36 ASCII characters.
   // A random UUID is recommended.
@@ -221,7 +226,7 @@ message CreateTestExonerationRequest {
 // A request message for BatchCreateTestExonerations RPC.
 message BatchCreateTestExonerationsRequest {
   // Name of the parent invocation, see Invocation.name.
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Requests to create TestExonerations.
   // requests[i].invocation MUST be either empty or equal to invocation in this
@@ -243,14 +248,14 @@ message DeriveInvocationRequest {
   // Identifies a swarming task.
   message SwarmingTask {
     // Swarming host of task.
-    string hostname = 1;
+    string hostname = 1 [ (google.api.field_behavior) = REQUIRED ];
 
     // ID of swarming task to process and insert.
-    string id = 2;
+    string id = 2 [ (google.api.field_behavior) = REQUIRED ];
   }
 
   // Derive the invocation from the Swarming task.
-  SwarmingTask swarming_task = 1;
+  SwarmingTask swarming_task = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Test path prefix.
   //

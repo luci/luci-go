@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb;
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
@@ -26,9 +27,12 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 message Invocation {
-  // The resource name of this invocation. OUTPUT_ONLY.
+  // The resource name of this invocation.
   // Format: invocations/{INVOCATION_ID}
-  string name = 1;
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   enum State {
     // The default value. This value is used if the state is omitted.
@@ -54,11 +58,14 @@ message Invocation {
     INTERRUPTED = 3;
   }
 
-  // Current state of the invocation. OUTPUT_ONLY.
-  State state = 2;
+  // Current state of the invocation.
+  State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
-  // When the invocation was created. OUTPUT_ONLY.
-  google.protobuf.Timestamp create_time = 3;
+  // When the invocation was created.
+  google.protobuf.Timestamp create_time = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // Invocation-level string key-value pairs.
   // A key can be repeated.
@@ -67,9 +74,10 @@ message Invocation {
   // == Finalization ===========================================================
 
   // When the invocation was finalized, i.e. transitioned to COMPLETED or
-  // INTERRUPTED state. OUTPUT_ONLY.
+  // INTERRUPTED state.
   // If this field is set, implies that the invocation is finalized.
-  google.protobuf.Timestamp finalize_time = 5;
+  google.protobuf.Timestamp finalize_time = 5
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Timestamp when the invocation will be forcefully finalized.
   // Can be extended with UpdateInvocation until finalized.
@@ -96,12 +104,15 @@ message Invocation {
 // Including invocation MUST NOT be finalized.
 // Included invocation MAY be finalized.
 message Inclusion {
-  // Resource name, identifier of the inclusion. OUTPUT_ONLY.
+  // Resource name, identifier of the inclusion.
   // Format:
   // invocations/{INCLUDING_INVOCATION_ID}/inclusions/{INCLUDED_INVOCATION_ID}
   // This implies that there can be only one direct edge between a given pair of
   // invocations
-  string name = 1;
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // Name of the included invocation.
   // FORMAT: invocations/{INCLUDED_INVOCATION_ID}.
@@ -113,10 +124,10 @@ message Inclusion {
   // new attempt overrides the previous one.
   //
   // Use recorder.OverrideInclusion to set this field.
-  string overridden_by = 3;
+  string overridden_by = 3 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Whether the included invocation is finalized before the including
-  // invocation. OUTPUT_ONLY.
+  // invocation.
   // The formula for the field is
   //   included_inv.finalize_time < including_inv.finalize_time
   // If the included invocation is finalized, but the including invocation is
@@ -131,5 +142,5 @@ message Inclusion {
   //   prematurely.
   //
   // By default, QueryTestResults ignores un-ready inclusions.
-  bool ready = 4;
+  bool ready = 4 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }

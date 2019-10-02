@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb;
 
+import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
@@ -35,37 +36,41 @@ service ResultDB {
   //
   // Note: response does not contain test results of included invocations.
   // Use QueryTestResults instead.
-  rpc ListTestResults(ListTestResultsRequest) returns (ListTestResultsResponse) {};
+  rpc ListTestResults(ListTestResultsRequest)
+      returns (ListTestResultsResponse) {};
 
   // Retrieves a test exoneration.
-  rpc GetTestExoneration(GetTestExonerationRequest) returns (TestExoneration) {};
+  rpc GetTestExoneration(GetTestExonerationRequest) returns (TestExoneration) {
+  };
 
   // Retrieves test exonerations for a parent invocation.
-  rpc ListTestExonerations(ListTestExonerationsRequest) returns (ListTestExonerationsResponse) {};
+  rpc ListTestExonerations(ListTestExonerationsRequest)
+      returns (ListTestExonerationsResponse) {};
 
   // Retrieves test results from an invocation.
   // Supports invocation inclusions.
   // Supports filtering based on "TestResult.expected", exonerations, test
   // path and variant.
-  rpc QueryTestResults(QueryTestResultsRequest) returns (QueryTestResultsResponse) {};
+  rpc QueryTestResults(QueryTestResultsRequest)
+      returns (QueryTestResultsResponse) {};
 }
 
 // A request message for GetInvocation RPC.
 message GetInvocationRequest {
   // The name of the invocation to request, see Invocation.name.
-  string name = 1;
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for GetTestResult RPC.
 message GetTestResultRequest {
   // The name of the test result to request, see TestResult.name.
-  string name = 1;
+  string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for ListTestResults RPC.
 message ListTestResultsRequest {
   // Name of the invocation, e.g. "invocations/{id}".
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The maximum number of test results to return.
   //
@@ -103,7 +108,7 @@ message GetTestExonerationRequest {
 // A request message for ListTestExonerations RPC.
 message ListTestExonerationsRequest {
   // Name of the invocation, e.g. "invocations/{id}".
-  string invocation = 1;
+  string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The maximum number of test exonerations to return.
   //
@@ -115,8 +120,8 @@ message ListTestExonerationsRequest {
   // A page token, received from a previous `ListTestExonerations` call.
   // Provide this to retrieve the subsequent page.
   //
-  // When paginating, all other parameters provided to `ListTestExonerations` MUST
-  // match the call that provided the page token.
+  // When paginating, all other parameters provided to `ListTestExonerations`
+  // MUST match the call that provided the page token.
   string page_token = 3;
 }
 
