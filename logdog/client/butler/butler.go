@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/buffered_callback"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
@@ -76,7 +75,7 @@ func (c *Config) Validate() error {
 }
 
 type registeredCallback struct {
-	cb   bundler.StreamRegistrationCallback
+	cb   StreamRegistrationCallback
 	wrap bool
 }
 
@@ -91,6 +90,8 @@ type Butler struct {
 	// streamRegistrationCallbacks is the list of callbacks the Bundler
 	streamRegistrationCallbacksMu sync.RWMutex
 	streamRegistrationCallbacks   []registeredCallback
+	streamCallbacksMu             sync.RWMutex
+	streamCallbacks               map[string]StreamChunkCallback
 
 	// bundler is the Bundler instance.
 	bundler *bundler.Bundler
@@ -137,6 +138,8 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		c:   &config,
 		ctx: ctx,
 
+		streamCallbacks: map[string]StreamChunkCallback{},
+
 		bundlerDrainedC: make(chan struct{}),
 
 		streamsFinishedC: make(chan struct{}),
@@ -150,10 +153,9 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 
 	bc := bundler.Config{
-		Clock:                        clock.Get(ctx),
-		MaxBufferedBytes:             streamBufferSize,
-		MaxBundleSize:                config.Output.MaxSize(),
-		StreamRegistrationCallbackFn: b.newStreamCallback,
+		Clock:            clock.Get(ctx),
+		MaxBufferedBytes: streamBufferSize,
+		MaxBundleSize:    config.Output.MaxSize(),
 	}
 	if config.BufferLogs {
 		bc.MaxBufferDelay = config.MaxBufferAge
@@ -179,6 +181,8 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 				if bundle == nil {
 					return
 				}
+
+				b.runCallbacks(bundle)
 
 				workC <- func() error {
 					b.c.Output.SendBundle(bundle)
@@ -206,60 +210,6 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}()
 
 	return b, nil
-}
-
-// AddStreamRegistrationCallback adds a new callback to this Butler.
-//
-// The callback is called on new streams and returns a chunk callback to attach
-// to the stream or nil if you don't want to monitor the stream.
-//
-// If multiple callbacks are all interested in the same stream, the first one
-// wins.
-//
-// Wrapping
-//
-// If `wrap` is true, the callback is wrapped internally to buffer LogEntries
-// until they're complete.
-//
-// In wrapped callbacks for text and datagram streams, LogEntry .TimeOffset,
-// and .PrefixIndex will be 0. .StreamIndex and .Sequence WILL NOT correspond
-// to the values that the logdog service sees. They will, however, be
-// internally consistent within the stream.
-//
-// Wrapped datagram streams never send a partial datagram; If the logdog
-// server or stream is shut down while we have a partial datagram buffered,
-// the partially buffered datagram will not be observed by the buffered
-// callback.
-//
-// Wrapping a binary stream is a noop (i.e. your callback will see the exact
-// same values wrapped and unwrapped).
-//
-// When the stream ends (either due to EOF from the user, or when the butler
-// is stopped), your callback will be invoked exactly once with `nil`.
-func (b *Butler) AddStreamRegistrationCallback(cb bundler.StreamRegistrationCallback, wrap bool) {
-	b.streamRegistrationCallbacksMu.Lock()
-	defer b.streamRegistrationCallbacksMu.Unlock()
-	b.streamRegistrationCallbacks = append(b.streamRegistrationCallbacks,
-		registeredCallback{cb, wrap})
-}
-
-func (b *Butler) newStreamCallback(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
-	b.streamRegistrationCallbacksMu.RLock()
-	defer b.streamRegistrationCallbacksMu.RUnlock()
-	for _, cb := range b.streamRegistrationCallbacks {
-		if ret := cb.cb(desc); ret != nil {
-			if cb.wrap {
-				switch desc.StreamType {
-				case logpb.StreamType_TEXT:
-					return buffered_callback.GetWrappedTextCallback(ret)
-				case logpb.StreamType_DATAGRAM:
-					return buffered_callback.GetWrappedDatagramCallback(ret)
-				}
-			}
-			return ret
-		}
-	}
-	return nil
 }
 
 // Wait blocks until the Butler instance has completed, returning with the
@@ -437,6 +387,7 @@ func (b *Butler) AddStream(rc io.ReadCloser, d *logpb.LogStreamDescriptor) error
 		}
 	}
 
+	b.maybeAddStreamCallback(d)
 	if err := b.streams.RegisterStream(types.StreamName(d.Name)); err != nil {
 		logging.WithError(err).Errorf(b.ctx, "failed to register stream")
 		return err

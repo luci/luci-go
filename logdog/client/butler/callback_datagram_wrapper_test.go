@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffered_callback
+package butler
 
 import (
-	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
-	"go.chromium.org/luci/logdog/client/butler/bundler"
+
+	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkDatagramLogEntry(data []byte, partial, last bool, index uint32, size uint64, seq uint64) *logpb.LogEntry {
@@ -43,7 +40,7 @@ func mkDatagramLogEntry(data []byte, partial, last bool, index uint32, size uint
 	return le
 }
 
-func mkWrappedDatagramCb(values *[][]byte, seq *[]uint64) bundler.StreamChunkCallback {
+func mkWrappedDatagramCb(values *[][]byte, seq *[]uint64) StreamChunkCallback {
 	cb := func(le *logpb.LogEntry) {
 		if le == nil {
 			return
@@ -51,7 +48,7 @@ func mkWrappedDatagramCb(values *[][]byte, seq *[]uint64) bundler.StreamChunkCal
 		*values = append(*values, append(le.GetDatagram().Data, 0xbb))
 		*seq = append(*seq, le.Sequence)
 	}
-	return GetWrappedDatagramCallback(cb)
+	return getWrappedDatagramCallback(cb)
 }
 
 func TestDatagramReassembler(t *testing.T) {
@@ -101,11 +98,8 @@ func TestDatagramReassembler(t *testing.T) {
 				func() {
 					cbWrapped(&logpb.LogEntry{Content: &logpb.LogEntry_Text{}})
 				},
-				assertions.ShouldPanicLike,
-				errors.Annotate(
-					InvalidStreamType,
-					fmt.Sprintf("got *logpb.LogEntry_Text, expected *logpb.LogEntry_Datagram"),
-				).Err(),
+				ShouldPanicLike,
+				"expected *logpb.LogEntry_Datagram",
 			)
 		})
 
@@ -116,8 +110,8 @@ func TestDatagramReassembler(t *testing.T) {
 				func() {
 					cbWrapped(mkDatagramLogEntry([]byte{0xbb}, false, true, 0, 1, 1))
 				},
-				ShouldPanicWith,
-				LostDatagramChunk,
+				ShouldPanicLike,
+				"got self-contained Datagram LogEntry while buffered LogEntries exist",
 			)
 		})
 	})
