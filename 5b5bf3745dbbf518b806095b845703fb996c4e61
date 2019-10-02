@@ -22,6 +22,30 @@
       "revId": "5b5bf3745dbbf518b806095b845703fb996c4e61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "325fdd23_fe051775",
+        "filename": "logdog/client/butler/callback.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-02T04:21:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d904e4d2_62fe92ab",
+      "range": {
+        "startLine": 23,
+        "startChar": 24,
+        "endLine": 23,
+        "endChar": 31
+      },
+      "revId": "5b5bf3745dbbf518b806095b845703fb996c4e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
