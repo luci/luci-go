@@ -41,13 +41,10 @@ type Instances struct {
 // Ensure Instances implements instances.InstancesServer.
 var _ instances.InstancesServer = &Instances{}
 
-// Delete handles a request to delete an instance asynchronously.
-func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empty.Empty, error) {
-	if req.GetId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
-	}
+// deleteByID asynchronously deletes the instance matching the given ID.
+func deleteByID(c context.Context, id string) (*empty.Empty, error) {
 	vm := &model.VM{
-		ID: req.Id,
+		ID: id,
 	}
 	if err := datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
@@ -67,6 +64,36 @@ func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empt
 		return nil, err
 	}
 	return &empty.Empty{}, nil
+}
+
+// deleteByHostname asynchronously deletes the instance matching the given
+// hostname.
+func deleteByHostname(c context.Context, hostname string) (*empty.Empty, error) {
+	var vms []*model.VM
+	// Hostnames are globally unique, so there should be at most one match.
+	q := datastore.NewQuery(model.VMKind).Eq("hostname", hostname).Limit(1)
+	switch err := datastore.GetAll(c, q, &vms); {
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch VM").Err()
+	case len(vms) == 0:
+		return &empty.Empty{}, nil
+	default:
+		return deleteByID(c, vms[0].ID)
+	}
+}
+
+// Delete handles a request to delete an instance asynchronously.
+func (*Instances) Delete(c context.Context, req *instances.DeleteRequest) (*empty.Empty, error) {
+	switch {
+	case req.GetId() == "" && req.GetHostname() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "ID or hostname is required")
+	case req.Id != "" && req.Hostname != "":
+		return nil, status.Errorf(codes.InvalidArgument, "exactly one of ID or hostname is required")
+	case req.Id != "":
+		return deleteByID(c, req.Id)
+	default:
+		return deleteByHostname(c, req.Hostname)
+	}
 }
 
 // toInstance returns an *instances.Instance representation of the given
