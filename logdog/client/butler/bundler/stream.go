@@ -191,6 +191,16 @@ func (s *streamImpl) Close() {
 
 func (s *streamImpl) closeLocked() {
 	s.closed = true
+	if s.c.onAppend != nil {
+		// If anyone is listening, notify that our state has changed; it doesn't
+		// actually matter WHEN this state notification happens, just that it
+		// happens after closed=true.
+		//
+		// The current implementation of Bundler has this as b.signalStreamUpdate(),
+		// which is synchronized with Bundler.streamsLock so doing this without
+		// a goroutine can lead to deadlock.
+		go s.c.onAppend(true)
+	}
 }
 
 func (s *streamImpl) name() string {

@@ -19,6 +19,7 @@ import (
 	"io"
 	"testing"
 
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/common/types"
@@ -30,7 +31,7 @@ func TestButlerCallbacks(t *testing.T) {
 	t.Parallel()
 
 	Convey(`A testing Butler instance`, t, func() {
-		c := context.Background()
+		c := gologger.StdConfig.Use(context.Background())
 		b, err := New(c, Config{
 			Output:     &null.Output{},
 			BufferLogs: false,
