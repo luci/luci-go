@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"os/signal"
 
 	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/venv"
@@ -61,6 +62,18 @@ func execImpl(c context.Context, argv []string, env environ.Env, dir string, set
 			panic(err)
 		}
 	}
+
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt)
+	go func() {
+		<-ch
+		logging.Debugf(c, "os.Interrupt recieved, restoring signal handler.")
+		signal.Stop(ch)
+		// Due to the nature of os.Interrupt (either CTRL_C_EVENT or
+		// CTRL_BREAK_EVENT), they're sent to the entire process group. Since we
+		// haven't created a separate group for `cmd`, we don't need to relay the
+		// signal (since `cmd` would have gotten it as well).
+	}()
 
 	err := cmd.Run()
 	if rc, has := exitcode.Get(err); has {
