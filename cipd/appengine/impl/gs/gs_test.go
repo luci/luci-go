@@ -111,7 +111,7 @@ func TestImpl(t *testing.T) {
 		defer srv.Close()
 
 		gs := &impl{
-			c:                ctx,
+			ctx:              ctx,
 			testingTransport: http.DefaultTransport,
 			testingBasePath:  srv.URL,
 		}

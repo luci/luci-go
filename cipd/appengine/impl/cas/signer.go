@@ -33,12 +33,12 @@ type signer struct {
 }
 
 // defaultSigner uses the default app account for signing.
-func defaultSigner(c context.Context) (*signer, error) {
-	s := auth.GetSigner(c)
+func defaultSigner(ctx context.Context) (*signer, error) {
+	s := auth.GetSigner(ctx)
 	if s == nil {
 		return nil, errors.Reason("a default signer is not available").Err()
 	}
-	info, err := s.ServiceInfo(c)
+	info, err := s.ServiceInfo(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to grab the signer info").Err()
 	}
@@ -49,8 +49,8 @@ func defaultSigner(c context.Context) (*signer, error) {
 }
 
 // iamSigner uses SignBytes IAM API for signing.
-func iamSigner(c context.Context, actAs string) (*signer, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(iam.OAuthScope))
+func iamSigner(ctx context.Context, actAs string) (*signer, error) {
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(iam.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to grab RPC transport").Err()
 	}

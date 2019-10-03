@@ -81,17 +81,17 @@ func (op *Operation) ToProto(wrappedID string) *api.UploadOperation {
 //
 // Returns only transient errors. All callback errors are tagged as transient
 // as well.
-func (op *Operation) Advance(c context.Context, cb func(context.Context, *Operation) error) (*Operation, error) {
+func (op *Operation) Advance(ctx context.Context, cb func(context.Context, *Operation) error) (*Operation, error) {
 	fresh := &Operation{ID: op.ID}
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, fresh); err != nil || fresh.Status != op.Status {
+	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		if err := datastore.Get(ctx, fresh); err != nil || fresh.Status != op.Status {
 			return err
 		}
-		if err := cb(c, fresh); err != nil {
+		if err := cb(ctx, fresh); err != nil {
 			return err
 		}
-		fresh.UpdatedTS = clock.Now(c).UTC()
-		return datastore.Put(c, fresh)
+		fresh.UpdatedTS = clock.Now(ctx).UTC()
+		return datastore.Put(ctx, fresh)
 	}, nil)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to update the upload operation").

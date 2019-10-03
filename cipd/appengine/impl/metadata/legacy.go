@@ -78,8 +78,8 @@ type legacyStorageImpl struct {
 // of legacy entities.
 //
 // The result also always includes the hardcoded root metadata.
-func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error) {
-	md, _, err := getMetadataImpl(c, prefix)
+func (legacyStorageImpl) GetMetadata(ctx context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+	md, _, err := getMetadataImpl(ctx, prefix)
 	return md, err
 }
 
@@ -87,7 +87,7 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 //
 // As a bonus it returns all packageACL entities it fetched. This is used by
 // VisitMetadata to avoid unnecessary refetches.
-func getMetadataImpl(c context.Context, prefix string) ([]*api.PrefixMetadata, []*packageACL, error) {
+func getMetadataImpl(ctx context.Context, prefix string) ([]*api.PrefixMetadata, []*packageACL, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
@@ -114,18 +114,18 @@ func getMetadataImpl(c context.Context, prefix string) ([]*api.PrefixMetadata, [
 	// Prepare the keys.
 	ents := make([]*packageACL, 0, len(pfxs)*len(legacyRoles))
 	for _, p := range pfxs {
-		ents = prefixACLs(c, p, ents)
+		ents = prefixACLs(ctx, p, ents)
 	}
 
 	// Fetch everything. ErrNoSuchEntity errors are fine, everything else is not.
-	if err = datastore.Get(c, ents); isInternalDSError(err) {
+	if err = datastore.Get(ctx, ents); isInternalDSError(err) {
 		return nil, nil, errors.Annotate(err, "datastore error when fetching PackageACL").Tag(transient.Tag).Err()
 	}
 
 	// Combine the result into a bunch of PrefixMetadata structs.
 	legLen := len(legacyRoles)
 	for i, pfx := range pfxs {
-		if md := mergeIntoPrefixMetadata(c, pfx, ents[i*legLen:(i+1)*legLen]); md != nil {
+		if md := mergeIntoPrefixMetadata(ctx, pfx, ents[i*legLen:(i+1)*legLen]); md != nil {
 			out = append(out, md)
 		}
 	}
@@ -133,7 +133,7 @@ func getMetadataImpl(c context.Context, prefix string) ([]*api.PrefixMetadata, [
 }
 
 // VisitMetadata is part of Storage interface.
-func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visitor) error {
+func (legacyStorageImpl) VisitMetadata(ctx context.Context, prefix string, cb Visitor) error {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return errors.Annotate(err, "bad prefix given to VisitMetadata").Err()
@@ -141,7 +141,7 @@ func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visi
 
 	// Visit 'prefix' directly first, per VisitMetadata contract. There's a chance
 	// we won't need to recurse deeper at all and can skip all expensive fetches.
-	md, ents, err := getMetadataImpl(c, prefix)
+	md, ents, err := getMetadataImpl(ctx, prefix)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visi
 	//
 	// The traversal will be started form "a/b", but we still need the nodes
 	// leading to the root to get all inherited metadata.
-	gr.insert(c, ents)
+	gr.insert(ctx, ents)
 
 	// Fetch each per-role subtree separately, they have different key prefixes.
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
@@ -179,10 +179,10 @@ func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visi
 		for _, role := range legacyRoles {
 			role := role
 			tasks <- func() error {
-				listing, err := listACLsByPrefix(c, role, prefix)
+				listing, err := listACLsByPrefix(ctx, role, prefix)
 				if err == nil {
 					mu.Lock()
-					gr.insert(c, listing)
+					gr.insert(ctx, listing)
 					mu.Unlock()
 				}
 				return err
@@ -200,7 +200,7 @@ func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visi
 	pfx := gr.node(prefix)
 
 	// Calculate all PrefixMetadata entries in the graph.
-	gr.freeze(c)
+	gr.freeze(ctx)
 
 	// Traverse the graph, but make sure to skip 'prefix' itself, we've already
 	// visited it at the very beginning.
@@ -221,7 +221,7 @@ func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visi
 // It assembles prefix metadata from a bunch of packageACL entities, passes it
 // to the callback for modification, then deconstructs it back into a bunch of
 // packageACL entities, to be saved in the datastore. All done transactionally.
-func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
+func (legacyStorageImpl) UpdateMetadata(ctx context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
@@ -233,13 +233,13 @@ func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb fun
 	var cbErr error                 // error from 'cb'
 	var updated *api.PrefixMetadata // updated metadata to return
 
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		cbErr = nil // reset in case the transaction is being retried
 		updated = nil
 
 		// Fetch the existing metadata.
-		ents := prefixACLs(c, prefix, nil)
-		if err := datastore.Get(c, ents); isInternalDSError(err) {
+		ents := prefixACLs(ctx, prefix, nil)
+		if err := datastore.Get(ctx, ents); isInternalDSError(err) {
 			return errors.Annotate(err, "datastore error when fetching PackageACL").Err()
 		}
 
@@ -247,7 +247,7 @@ func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb fun
 		// existing metadata, in which case we construct the default metadata
 		// with no fingerprint (to indicate it is new), see UpdateMetadata doc in
 		// Storage interface.
-		updated = mergeIntoPrefixMetadata(c, prefix, ents)
+		updated = mergeIntoPrefixMetadata(ctx, prefix, ents)
 		if updated == nil {
 			updated = &api.PrefixMetadata{Prefix: prefix}
 		}
@@ -274,10 +274,10 @@ func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb fun
 		// we store ACLs in legacy entities doesn't preserve order of Acls entries
 		// in the proto, or order of principals inside Acls, so we need to
 		// "reformat" the updated metadata before calculating its fingerprint.
-		if err := applyACLDiff(c, ents, updated); err != nil {
+		if err := applyACLDiff(ctx, ents, updated); err != nil {
 			return errors.Annotate(err, "failed to update PackageACL entities").Err()
 		}
-		updated = mergeIntoPrefixMetadata(c, prefix, ents)
+		updated = mergeIntoPrefixMetadata(ctx, prefix, ents)
 		return nil
 	}, &datastore.TransactionOptions{XG: true})
 
@@ -382,8 +382,8 @@ func rootMetadata() *api.PrefixMetadata {
 }
 
 // rootKey returns a key of the root entity that stores ACL hierarchy.
-func rootKey(c context.Context) *datastore.Key {
-	return datastore.NewKey(c, "PackageACLRoot", "acls", 0, nil)
+func rootKey(ctx context.Context) *datastore.Key {
+	return datastore.NewKey(ctx, "PackageACLRoot", "acls", 0, nil)
 }
 
 // prefixACLs appends empty packageACL entities (with keys populated) to the
@@ -391,8 +391,8 @@ func rootKey(c context.Context) *datastore.Key {
 //
 // The added entities have keys '<role>:<prefix>' where <role> goes over all
 // possible roles. Adds exactly len(legacyRoles) entities.
-func prefixACLs(c context.Context, prefix string, in []*packageACL) []*packageACL {
-	root := rootKey(c)
+func prefixACLs(ctx context.Context, prefix string, in []*packageACL) []*packageACL {
+	root := rootKey(ctx)
 	for _, r := range legacyRoles {
 		in = append(in, &packageACL{
 			ID:     r + ":" + prefix,
@@ -407,10 +407,10 @@ func prefixACLs(c context.Context, prefix string, in []*packageACL) []*packageAC
 // not empty. Returns nil of all entities are empty.
 //
 // The entities are expected to have IDs matching ones generated by
-// prefixACLs(c, prefix). Panics otherwise.
+// prefixACLs(ctx, prefix). Panics otherwise.
 //
 // Logs and skips invalid principal names (should not be happening in reality).
-func mergeIntoPrefixMetadata(c context.Context, prefix string, ents []*packageACL) *api.PrefixMetadata {
+func mergeIntoPrefixMetadata(ctx context.Context, prefix string, ents []*packageACL) *api.PrefixMetadata {
 	if len(ents) != len(legacyRoles) {
 		panic(fmt.Sprintf("expecting %d entities, got %d", len(legacyRoles), len(ents)))
 	}
@@ -445,7 +445,7 @@ func mergeIntoPrefixMetadata(c context.Context, prefix string, ents []*packageAC
 		principals := make([]string, 0, len(pkgACL.Users)+len(pkgACL.Groups))
 		for _, u := range pkgACL.Users {
 			if _, err := identity.MakeIdentity(u); err != nil {
-				logging.Errorf(c, "Bad identity %q in PackageACL %q - %s", u, pkgACL.ID, err)
+				logging.Errorf(ctx, "Bad identity %q in PackageACL %q - %s", u, pkgACL.ID, err)
 			} else {
 				principals = append(principals, u)
 			}
@@ -484,7 +484,7 @@ func mergeIntoPrefixMetadata(c context.Context, prefix string, ents []*packageAC
 //
 // 'ents' are expected to have len(legacyRoles) entries, ordered by legacyRoles
 // roles. Panics otherwise.
-func applyACLDiff(c context.Context, ents []*packageACL, md *api.PrefixMetadata) error {
+func applyACLDiff(ctx context.Context, ents []*packageACL, md *api.PrefixMetadata) error {
 	if len(ents) != len(legacyRoles) {
 		panic(fmt.Sprintf("expecting %d entities, got %d", len(legacyRoles), len(ents)))
 	}
@@ -528,7 +528,7 @@ func applyACLDiff(c context.Context, ents []*packageACL, md *api.PrefixMetadata)
 		toPut = append(toPut, oldACL)
 	}
 
-	return datastore.Put(c, toPut)
+	return datastore.Put(ctx, toPut)
 }
 
 func isEqualStrSlice(a, b []string) bool {
@@ -551,7 +551,7 @@ func isEqualStrSlice(a, b []string) bool {
 // listed. Only ACLs strictly underneath are.
 //
 // The return value is sorted by prefix.
-func listACLsByPrefix(c context.Context, role, prefix string) (acls []*packageACL, err error) {
+func listACLsByPrefix(ctx context.Context, role, prefix string) (acls []*packageACL, err error) {
 	if prefix, err = common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
@@ -561,20 +561,20 @@ func listACLsByPrefix(c context.Context, role, prefix string) (acls []*packageAC
 		keyPfx += prefix + "/"
 	}
 
-	root := rootKey(c)
+	root := rootKey(ctx)
 
 	// Note: __key__ queries are already ordered by key.
 	q := datastore.NewQuery("PackageACL").Ancestor(root)
-	q = q.Gt("__key__", datastore.KeyForObj(c, &packageACL{
+	q = q.Gt("__key__", datastore.KeyForObj(ctx, &packageACL{
 		ID:     keyPfx + "\x00",
 		Parent: root,
 	}))
-	q = q.Lt("__key__", datastore.KeyForObj(c, &packageACL{
+	q = q.Lt("__key__", datastore.KeyForObj(ctx, &packageACL{
 		ID:     keyPfx + "\xff",
 		Parent: root,
 	}))
 
-	if err = datastore.GetAll(c, q, &acls); err != nil {
+	if err = datastore.GetAll(ctx, q, &acls); err != nil {
 		return nil, errors.Annotate(err, "failed to query the list of ACLs").Tag(transient.Tag).Err()
 	}
 	return
@@ -664,17 +664,17 @@ func (n *metadataNode) attachACL(role string, e *packageACL) {
 // PrefixMetadata from attached ACLs.
 //
 // The context is used only for logging.
-func (n *metadataNode) freeze(c context.Context) {
+func (n *metadataNode) freeze(ctx context.Context) {
 	n.assertNonFrozen()
 
 	// md may be already non-nil for the root, this is fine.
 	if n.md == nil {
-		n.md = mergeIntoPrefixMetadata(c, n.prefix, n.acls)
+		n.md = mergeIntoPrefixMetadata(ctx, n.prefix, n.acls)
 	}
 	n.acls = nil // mark as frozen, release unnecessary memory
 
 	for _, child := range n.children {
-		child.freeze(c)
+		child.freeze(ctx)
 	}
 }
 
@@ -769,14 +769,14 @@ func (g *metadataGraph) node(path string) *metadataNode {
 //
 // Silently ignores empty entities (based on ModifiedTS value). Logs and ignores
 // broken ones. The context is used only for logging.
-func (g *metadataGraph) insert(c context.Context, ents []*packageACL) {
+func (g *metadataGraph) insert(ctx context.Context, ents []*packageACL) {
 	for _, e := range ents {
 		if e.ModifiedTS.IsZero() {
 			continue // zero body, no such entity in the datastore, skip
 		}
 		role, pfx, err := e.parseKey()
 		if err != nil {
-			logging.Errorf(c, "Skipping bad PackageACL entity - %s", err)
+			logging.Errorf(ctx, "Skipping bad PackageACL entity - %s", err)
 			continue
 		}
 		g.node(pfx).attachACL(role, e)
@@ -787,6 +787,6 @@ func (g *metadataGraph) insert(c context.Context, ents []*packageACL) {
 //
 // The graph is not modifiable after this point, but it becomes traversable.
 // The context is used only for logging.
-func (g *metadataGraph) freeze(c context.Context) {
-	g.root.freeze(c)
+func (g *metadataGraph) freeze(ctx context.Context) {
+	g.root.freeze(ctx)
 }

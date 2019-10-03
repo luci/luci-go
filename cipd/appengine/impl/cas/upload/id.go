@@ -36,13 +36,13 @@ var opToken = tokens.TokenKind{
 }
 
 // NewOpID returns new unique upload operation ID.
-func NewOpID(c context.Context) (int64, error) {
+func NewOpID(ctx context.Context) (int64, error) {
 	// Note: AllocateIDs modifies passed slice in place, by replacing the keys
 	// there.
 	keys := []*datastore.Key{
-		datastore.NewKey(c, "cas.UploadOperation", "", 0, nil),
+		datastore.NewKey(ctx, "cas.UploadOperation", "", 0, nil),
 	}
-	if err := datastore.AllocateIDs(c, keys); err != nil {
+	if err := datastore.AllocateIDs(ctx, keys); err != nil {
 		return 0, errors.Annotate(err, "failed to generate upload operation ID").
 			Tag(transient.Tag).Err()
 	}
@@ -53,15 +53,15 @@ func NewOpID(c context.Context) (int64, error) {
 //
 // The string is bound to the given caller, i.e UnwrapOpID will correctly
 // validate HMAC only if it receives the exact same caller.
-func WrapOpID(c context.Context, id int64, caller identity.Identity) (string, error) {
-	return opToken.Generate(c, []byte(caller), map[string]string{
+func WrapOpID(ctx context.Context, id int64, caller identity.Identity) (string, error) {
+	return opToken.Generate(ctx, []byte(caller), map[string]string{
 		"id": strconv.FormatInt(id, 10),
 	}, 0)
 }
 
 // UnwrapOpID extracts upload operation ID from a HMAC-protected string.
-func UnwrapOpID(c context.Context, token string, caller identity.Identity) (int64, error) {
-	body, err := opToken.Validate(c, token, []byte(caller))
+func UnwrapOpID(ctx context.Context, token string, caller identity.Identity) (int64, error) {
+	body, err := opToken.Validate(ctx, token, []byte(caller))
 	if err != nil {
 		return 0, errors.Annotate(err, "failed to validate upload operation ID token").Err()
 	}

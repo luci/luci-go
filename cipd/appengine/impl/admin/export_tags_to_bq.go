@@ -52,16 +52,16 @@ func init() {
 	})
 }
 
-func exportTagsToBQ(c context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+func exportTagsToBQ(ctx context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
 	rows := make([]bigquery.ValueSaver, 0, len(keys))
-	err := multiGetTags(c, keys, func(key *datastore.Key, tag *model.Tag) error {
+	err := multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		// These checks should never be hit, but just in case...
 		switch {
 		case key.Parent() == nil:
-			logging.Errorf(c, "Skipping orphaned tag: %s", key.Encode())
+			logging.Errorf(ctx, "Skipping orphaned tag: %s", key.Encode())
 			return nil
 		case tag.Instance.Parent() == nil:
-			logging.Errorf(c, "Skipping tag in orphaned instances: %s", key.Encode())
+			logging.Errorf(ctx, "Skipping tag in orphaned instances: %s", key.Encode())
 			return nil
 		}
 		msg := tag.Proto()
@@ -82,7 +82,7 @@ func exportTagsToBQ(c context.Context, job mapper.JobID, _ *api.JobConfig, keys 
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
-	return uploadToBQ(c, job, rows)
+	return uploadToBQ(ctx, job, rows)
 }
 
 // bqInsertID returns a hash of its inputs.
@@ -93,21 +93,21 @@ func bqInsertID(seed string, job mapper.JobID, key *datastore.Key) string {
 }
 
 // uploadToBQ makes insertAll RPC to push rows to BigQuery.
-func uploadToBQ(c context.Context, job mapper.JobID, rows []bigquery.ValueSaver) error {
+func uploadToBQ(ctx context.Context, job mapper.JobID, rows []bigquery.ValueSaver) error {
 	if len(rows) == 0 {
 		return nil
 	}
-	logging.Infof(c, "Uploading %d rows to exported_tags_%d", len(rows), job)
+	logging.Infof(ctx, "Uploading %d rows to exported_tags_%d", len(rows), job)
 
 	// Note: auth.GetTokenSource doesn't work with BQ on GAE, since it starts to
 	// demand "real" Appengine context. http.Client is OK though.
-	t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(bigquery.Scope))
+	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(bigquery.Scope))
 	if err != nil {
 		return errors.Annotate(err, "failed to grab RPC transport").Err()
 	}
 
-	appID := info.TrimmedAppID(c)
-	client, err := bigquery.NewClient(c, appID, option.WithHTTPClient(&http.Client{
+	appID := info.TrimmedAppID(ctx)
+	client, err := bigquery.NewClient(ctx, appID, option.WithHTTPClient(&http.Client{
 		Transport: t,
 	}))
 	if err != nil {
@@ -118,7 +118,7 @@ func uploadToBQ(c context.Context, job mapper.JobID, rows []bigquery.ValueSaver)
 	// Each mapper job will get its own table.
 	ins := client.Dataset("cipd").Table("exported_tags").Inserter()
 	ins.TableTemplateSuffix = fmt.Sprintf("_%d", job)
-	err = ins.Put(c, rows)
+	err = ins.Put(ctx, rows)
 
 	// PutMultiError happens when rows are malformed, a retry won't help.
 	if _, ok := err.(bigquery.PutMultiError); ok {
