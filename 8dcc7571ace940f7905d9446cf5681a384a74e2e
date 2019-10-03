@@ -33,6 +33,24 @@
       "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94bfed44_1a95b87a",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T17:33:27Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "95750230_46fa419b",
+      "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
