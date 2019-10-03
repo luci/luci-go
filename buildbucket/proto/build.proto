@@ -393,10 +393,17 @@ message BuildInfra {
     string name = 2;
   }
 
+  // Milo-specific information
+  message Milo {
+    // THe hostname of the Milo service which can render UI for this build.
+    string hostname = 1;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
+  Milo milo = 5;
 }
 
 // Identifies a builder.
