@@ -18,6 +18,7 @@ package streamclient
 
 import (
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 
@@ -40,6 +41,9 @@ func (u *unixDialer) conn(f streamproto.Flags) (*net.UnixConn, error) {
 		conn.Close()
 		return nil, errors.Annotate(err, "writing handshake").Err()
 	}
+	// wait for the server to close its write end, then close our read end.
+	io.Copy(ioutil.Discard, conn)
+	conn.CloseRead()
 	return conn, nil
 }
 

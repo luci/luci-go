@@ -19,6 +19,7 @@ package streamclient
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"os"
 	"syscall"
 	"time"
@@ -61,10 +62,11 @@ func dialFilePipe(path string) (*os.File, error) {
 		return nil, errors.Annotate(err, "unable to render %q to UTF16", path).Err()
 	}
 
+	dwDesiredAccess := uint32(syscall.GENERIC_READ | syscall.GENERIC_WRITE)
 	for {
 		h, err := syscall.CreateFile(
-			pPath,                 // lpFileName
-			syscall.GENERIC_WRITE, // dwDesiredAccess - Only need to write stuff
+			pPath, // lpFileName
+			dwDesiredAccess,
 			0,                     // dwShareMode - "exclusive"
 			nil,                   // lpSecurityAttributes - ignored for existing files
 			syscall.OPEN_EXISTING, // dwCreationDisposition
@@ -91,8 +93,10 @@ type winPipeDialer struct {
 }
 
 func (u *winPipeDialer) conn(forProcess bool, f streamproto.Flags) (conn io.WriteCloser, err error) {
+	var rawConn io.ReadWriteCloser
+
 	if forProcess {
-		if conn, err = dialFilePipe(u.pipeName); err != nil {
+		if rawConn, err = dialFilePipe(u.pipeName); err != nil {
 			return nil, errors.Annotate(err, "opening named pipe (synchronous) %q", u.pipeName).Err()
 		}
 	} else {
@@ -100,15 +104,21 @@ func (u *winPipeDialer) conn(forProcess bool, f streamproto.Flags) (conn io.Writ
 		//
 		// TODO(iannucci): Support timeouts for ALL connection methods as part of
 		// the New*Stream public interface.
-		if conn, err = winio.DialPipeContext(context.Background(), u.pipeName); err != nil {
+		if rawConn, err = winio.DialPipeContext(context.Background(), u.pipeName); err != nil {
 			return nil, errors.Annotate(err, "opening named pipe %q", u.pipeName).Err()
 		}
 	}
+	conn = rawConn
 
 	if err = f.WriteHandshake(conn); err != nil {
-		conn.Close()
 		return nil, errors.Annotate(err, "writing handshake").Err()
 	}
+
+	// winio helpfully returns io.EOF when ReadFile with a non-empty buffer
+	// returns 0 bytes, which is exactly what happens when you call CloseWrite on
+	// a winio named pipe.
+	io.Copy(ioutil.Discard, rawConn)
+	// no equivalent of CloseRead
 	return
 }
 
