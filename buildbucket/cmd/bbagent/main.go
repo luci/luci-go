@@ -28,7 +28,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
@@ -87,16 +86,11 @@ func mainImpl() int {
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// TODO(iannucci): find a real way to get the milo hostname
-	miloHost := "ci.chromium.org"
-	if strings.Contains(input.Build.Infra.Buildbucket.Hostname, "-dev.") {
-		miloHost = "luci-milo-dev.appspot.com"
-	}
-
 	opts := &host.Options{
 		BaseBuild:      input.Build,
 		ButlerLogLevel: logging.Warning,
-		ViewerURL:      fmt.Sprintf("https://%s/b/%d", miloHost, input.Build.Id),
+		ViewerURL: fmt.Sprintf("https://%s/build/%d",
+			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
 	}
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
