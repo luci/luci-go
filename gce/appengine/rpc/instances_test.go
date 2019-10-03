@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/empty"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 
@@ -36,6 +38,81 @@ func TestInstances(t *testing.T) {
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
+
+		Convey("Delete", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					_, err := srv.Delete(c, nil)
+					So(err, ShouldErrLike, "ID or hostname is required")
+				})
+
+				Convey("empty", func() {
+					req := &instances.DeleteRequest{}
+					_, err := srv.Delete(c, req)
+					So(err, ShouldErrLike, "ID or hostname is required")
+				})
+
+				Convey("both", func() {
+					req := &instances.DeleteRequest{
+						Id:       "id",
+						Hostname: "hostname",
+					}
+					_, err := srv.Delete(c, req)
+					So(err, ShouldErrLike, "exactly one of ID or hostname is required")
+				})
+			})
+
+			Convey("valid", func() {
+				vm := &model.VM{
+					ID:       "id",
+					Hostname: "hostname",
+				}
+
+				Convey("id", func() {
+					req := &instances.DeleteRequest{
+						Id: "id",
+					}
+
+					Convey("deletes", func() {
+						So(datastore.Put(c, vm), ShouldBeNil)
+						rsp, err := srv.Delete(c, req)
+						So(err, ShouldBeNil)
+						So(rsp, ShouldResemble, &empty.Empty{})
+						So(datastore.Get(c, vm), ShouldBeNil)
+						So(vm.Drained, ShouldBeTrue)
+					})
+
+					Convey("deleted", func() {
+						rsp, err := srv.Delete(c, req)
+						So(err, ShouldBeNil)
+						So(rsp, ShouldResemble, &empty.Empty{})
+						So(datastore.Get(c, vm), ShouldResemble, datastore.ErrNoSuchEntity)
+					})
+				})
+
+				Convey("hostname", func() {
+					req := &instances.DeleteRequest{
+						Hostname: "hostname",
+					}
+
+					Convey("deletes", func() {
+						So(datastore.Put(c, vm), ShouldBeNil)
+						rsp, err := srv.Delete(c, req)
+						So(err, ShouldBeNil)
+						So(rsp, ShouldResemble, &empty.Empty{})
+						So(datastore.Get(c, vm), ShouldBeNil)
+						So(vm.Drained, ShouldBeTrue)
+					})
+
+					Convey("deleted", func() {
+						rsp, err := srv.Delete(c, req)
+						So(err, ShouldBeNil)
+						So(rsp, ShouldResemble, &empty.Empty{})
+						So(datastore.Get(c, vm), ShouldResemble, datastore.ErrNoSuchEntity)
+					})
+				})
+			})
+		})
 
 		Convey("List", func() {
 			Convey("invalid", func() {

@@ -78,6 +78,9 @@ message Instance {
 message DeleteRequest {
   // The ID of the instance to delete.
   string id = 1;
+
+  // The hostname of the instance to delete.
+  string hostname = 2;
 }
 
 // A request to get an existing instance.
