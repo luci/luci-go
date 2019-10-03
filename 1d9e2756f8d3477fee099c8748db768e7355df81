@@ -39,6 +39,24 @@
       "revId": "1d9e2756f8d3477fee099c8748db768e7355df81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c62d4a_f77904b4",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T17:32:30Z",
+      "side": 1,
+      "message": "yes, please. Does this mean we don\u0027t need this CL?",
+      "parentUuid": "af6a8c2e_2d673191",
+      "revId": "1d9e2756f8d3477fee099c8748db768e7355df81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
