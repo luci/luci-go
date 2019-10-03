@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb;
 
+import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
@@ -29,13 +30,17 @@ import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 // This message does not specify the test path.
 // It should be available in the message that embeds this message.
 message TestResult {
-  // Resource name. OUTPUT_ONLY.
+  // Resource name.
   // Format: "invocations/{INVOCATION_ID}/testResults/{RESULT_ID}".
   //
-  // Impl detail: {RESULT_ID} encodes a tuple (test_path, spanner_level_result_id)
+  // Impl detail: {RESULT_ID} encodes a tuple (test_path,
+  // spanner_level_result_id)
   // TODO(jchinlee): remove this note when this comment is turned into
   // implementation.
-  string name = 1;
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // Test path, a unique identifier of the test in a LUCI project.
   //
@@ -54,7 +59,7 @@ message TestResult {
   //   the common prefix "a/b/e:".
   // This can be used in UI.
   // LUCI does not interpret test paths in any other way.
-  string test_path = 2;
+  string test_path = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Added to Invocation.base_test_variant_def of the parent invocation.
   // The complete variant definition of this test result is the result of
@@ -62,7 +67,8 @@ message TestResult {
   //
   // MUST NOT have keys present in Invocation.test_variant_def, or MUST
   // have the same value.
-  VariantDef extra_variant_pairs = 3;
+  VariantDef extra_variant_pairs = 3
+      [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Whether the result of test case execution is expected.
   // In a typical Chromium CL, 99%+ of test results are expected.
@@ -71,36 +77,39 @@ message TestResult {
   // An unexpected result != test case failure. There are test cases that are
   // expected to fail/skip/crash. The test harness compares the actual status
   // with the expected one(s) and this field is the result of the comparison.
-  bool expected = 4;
+  bool expected = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Machine-readable status of the test case.
   // MUST NOT be STATUS_UNSPECIFIED.
-  TestStatus status = 5;
+  TestStatus status = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Human-readable explanation of the result.
   // Markdown spec: https://spec.commonmark.org/0.29/
-  string summary_markdown = 6;
+  string summary_markdown = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
-  // Optional: not all test harnesses record it.
-  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp start_time = 7
+      [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Duration of the test case execution.
-  google.protobuf.Duration duration = 8;
+  google.protobuf.Duration duration = 8
+      [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Metadata for this test result.
   // It might describe this particular execution or the test case.
-  repeated StringPair tags = 9;
+  repeated StringPair tags = 9 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Artifacts consumed by this test result.
   //
   // Example: building a Chrome OS image is expensive and non-deterministic, so
   // they are retained and used as input artifact to a test case.
-  repeated Artifact input_artifacts = 10;
+  repeated Artifact input_artifacts = 10
+      [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Artifacts produced by this test result.
   // Examples: traces, logs, screenshots, memory dumps, profiler output.
-  repeated Artifact output_artifacts = 11;
+  repeated Artifact output_artifacts = 11
+      [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Machine-readable status of a test result.
@@ -142,32 +151,30 @@ enum TestStatus {
 message Artifact {
   // A slash-separated relative path, identifies the artifact.
   // Example: "traces/a.txt".
-  string name = 1;
-
+  string name = 1 [ (google.api.field_behavior) = IMMUTABLE ];
   // Machine-readable URL to fetch the contents of the artifact.
   // Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
-  string fetch_url = 2;
+  string fetch_url = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Human-consumable URL to the file content.
   // Typically a URL of a page where the user can view/download the arficact.
-  string view_url = 3;
+  string view_url = 3 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Media type of the artifact.
   // Logs are typically "plain/text" and screenshots are typically "image/png".
-  string content_type = 4;  // media type
+  string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Size of the file, in bytes.
   // Can be used in UI to decide whether to fetch an artifact and display it
   // inline, or only show a link if it is too large.
-  int64 size = 5;
+  int64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Contents of the artifact if it is stored inline with the test result.
   // Empty for artifacts stored elsewhere. To fetch such artifacts, use
   // fetch_url.
   // Size MUST be <= 8KB.
-  bytes contents = 6;
+  bytes contents = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 }
-
 
 // A pair of test path and a variant definition, identifying a variant of a
 // test.
@@ -179,21 +186,23 @@ message TestVariant {
   VariantDef variant = 2;
 }
 
-
 // Indicates the test subject (e.g. a CL) is absolved from blame
 // for an unexpected result of a test variant.
 // For example, the test variant fails both with and without CL, so it is not
 // CL's fault.
 message TestExoneration {
-  // The resource name of the exoneration. OUTPUT_ONLY.
+  // The resource name of the exoneration.
   // Format: invocations/{INVOCATION_ID}/testExonerations/{EXONERATION_ID}.
   // EXONERATION_ID is server-generated.
-  string name = 1;
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
 
   // Failure of this test variant is forgiven.
-  TestVariant test_variant = 2;
+  TestVariant test_variant = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Reasoning behind the exoneration, in markdown.
   // Markdown spec: https://spec.commonmark.org/0.29/
-  string explanation_markdown = 3;
+  string explanation_markdown = 3 [ (google.api.field_behavior) = IMMUTABLE ];
 }
