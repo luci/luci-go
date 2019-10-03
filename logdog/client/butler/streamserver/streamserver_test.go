@@ -264,9 +264,8 @@ func testClientServer(svr *StreamServer, client *streamclient.Client) {
 	})
 
 	// now we need to close down the write side; normally the Butler would do
-	// this. We currently ignore the error because the client does not block on
-	// reading from `rc`.
-	rc.CloseWrite()
+	// this.
+	So(rc.CloseWrite(), ShouldBeNil)
 
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(rc)
