@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "16b51917_7b1bc6e4",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:46:03Z",
+      "side": 1,
+      "message": "in another comment I made a suggestion on what to do in this particular CL.",
+      "parentUuid": "15497c64_4094761a",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "96dfe8d0_90dd6309",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 1
