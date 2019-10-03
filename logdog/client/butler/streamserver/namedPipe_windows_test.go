@@ -28,14 +28,15 @@ import (
 func TestWindowsNamedPipeServer(t *testing.T) {
 	t.Parallel()
 
-	// TODO(crbug.com/963705): This test is flaky. Hangs with non-insignificant
-	// probability.
-	SkipConvey(`A named pipe server`, t, func() {
+	Convey(`A named pipe server`, t, func() {
 		ctx := context.Background()
 
-		Convey(`Will refuse to create if there is an empty path.`, func() {
-			_, err := newStreamServer(ctx, "")
-			So(err, ShouldErrLike, "cannot have empty name")
+		Convey(`Will generate a prefix if none is provided.`, func() {
+			srv, err := newStreamServer(ctx, "")
+			So(err, ShouldBeNil)
+			defer srv.Close()
+
+			So(srv.Address(), ShouldStartWith, "net.pipe:"+defaultWinPipePrefix)
 		})
 
 		Convey(`Will refuse to create if longer than maximum length.`, func() {
@@ -53,7 +54,7 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 			client, err := streamclient.New(svr.Address(), "")
 			So(err, ShouldBeNil)
 
-			testClientServer(t, svr, client)
+			testClientServer(svr, client)
 		})
 	})
 }
