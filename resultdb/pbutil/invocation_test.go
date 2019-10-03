@@ -65,4 +65,18 @@ func TestInvocationUtils(t *testing.T) {
 			"k3", "v31",
 		))
 	})
+
+	Convey("Mapping final state works", t, func() {
+		Convey("ACTIVE", func() {
+			So(IsFinal(pb.Invocation_ACTIVE), ShouldBeFalse)
+		})
+
+		Convey("COMPLETED", func() {
+			So(IsFinal(pb.Invocation_COMPLETED), ShouldBeTrue)
+		})
+
+		Convey("INTERRUPTED", func() {
+			So(IsFinal(pb.Invocation_INTERRUPTED), ShouldBeTrue)
+		})
+	})
 }
