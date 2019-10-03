@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4623e121_758550ac",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T16:25:30Z",
+      "side": 1,
+      "message": "ah, i see.",
+      "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95750230_46fa419b",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T16:25:30Z",
+      "side": 1,
+      "message": "https://cr-buildbucket.appspot.com/build/8900647385010049712 works.\ncan we use that instead?",
+      "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
