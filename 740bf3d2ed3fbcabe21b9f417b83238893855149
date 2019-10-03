@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "15497c64_4094761a",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-03T18:08:33Z",
+      "side": 1,
+      "message": "IIUC, when writing the TestResults to Spanner, we\u0027ll need to check the Invocation.State in a ReadWriteTransaction, whereas here we only need ReadOnlyTransaction, so we\u0027d want to have both implementations anyway.",
+      "parentUuid": "4210312d_e8688e2e",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96dfe8d0_90dd6309",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 1
