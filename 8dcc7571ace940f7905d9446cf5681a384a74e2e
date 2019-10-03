@@ -69,6 +69,24 @@
       "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "db66024b_5f7c9e39",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-03T18:09:57Z",
+      "side": 1,
+      "message": "CL: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1838134",
+      "parentUuid": "b4ef5af7_d40d7903",
+      "revId": "8dcc7571ace940f7905d9446cf5681a384a74e2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
