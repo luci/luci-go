@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4210312d_e8688e2e",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-03T17:31:39Z",
+      "side": 1,
+      "message": "Could you elaborate on the change you mean for this CL?\n\nIf WriteInvocation returns the latest invocation stored associated with the task ID, then we do need to fetch that invocation somehow if it\u0027s finalized, and it not being used in the context of another transaction here should be fine, no? Would renaming GetInvocation to make explicit that this fetch happens only within a ReadOnlyTransaction address the concern? Do you mean to do the fetch in two stages, conditional on the status returned?",
+      "parentUuid": "d98c3750_febedd6a",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96dfe8d0_90dd6309",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "6f8af311_6d07b637",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-03T17:31:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96dfe8d0_90dd6309",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 17
+      },
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8dabd904_6b63ba57",
         "filename": "results/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -56,6 +98,24 @@
       "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eac0881d_381d9d4f",
+        "filename": "results/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-03T17:31:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8dabd904_6b63ba57",
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -79,6 +139,30 @@
       "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0ac1932_c91679c8",
+        "filename": "results/recorder/spanner/spanner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-03T17:31:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "224e45bf_60689179",
+      "range": {
+        "startLine": 38,
+        "startChar": 6,
+        "endLine": 38,
+        "endChar": 8
+      },
+      "revId": "740bf3d2ed3fbcabe21b9f417b83238893855149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
