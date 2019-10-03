@@ -527,14 +527,13 @@ func (c *contextRun) Run(a subcommands.Application, args []string, env subcomman
 	// Launch the process and wait for it to finish. Return its exit code.
 	logging.Debugf(ctx, "Running %q", cmd.Args)
 	cmd.Env = cmdEnv.Sorted()
-	switch code, hasCode := exitcode.Get(cmd.Run()); {
-	case err == nil:
+	if err = cmd.Run(); err == nil {
 		return 0
-	case hasCode:
-		return code
-	default:
-		return ExitCodeInternalError
 	}
+	if code, hasCode := exitcode.Get(err); hasCode {
+		return code
+	}
+	return ExitCodeInternalError
 }
 
 ////////////////////////////////////////////////////////////////////////////////
