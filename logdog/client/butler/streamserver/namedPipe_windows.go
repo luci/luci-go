@@ -33,12 +33,10 @@ const maxWindowsNamedPipeLength = 256
 
 var winpipeCounter uint64
 
-const defaultWinPipePrefix = "logdog_butler"
-
 // newStreamServer instantiates a new Windows named pipe server instance.
 func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) {
 	if prefix == "" {
-		prefix = defaultWinPipePrefix
+		prefix = "logdog_butler"
 	}
 
 	path := fmt.Sprintf("%s.%d.%d", prefix, os.Getpid(), atomic.AddUint64(&winpipeCounter, 1))

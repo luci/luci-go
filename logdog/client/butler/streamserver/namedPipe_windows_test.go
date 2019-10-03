@@ -31,16 +31,14 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 	Convey(`A named pipe server`, t, func() {
 		ctx := context.Background()
 
-		Convey(`Will generate a prefix if none is provided.`, func() {
-			srv, err := newStreamServer(ctx, "")
-			So(err, ShouldBeNil)
-
-			So(srv.Address(), ShouldStartWith, "net.pipe:"+defaultWinPipePrefix)
+		Convey(`Will refuse to create if there is an empty path.`, func() {
+			_, err := newStreamServer(ctx, "")
+			So(err, ShouldErrLike, "cannot have empty name")
 		})
 
 		Convey(`Will refuse to create if longer than maximum length.`, func() {
 			_, err := newStreamServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
-			So(err, ShouldErrLike, "path exceeds maximum length")
+			So(err, ShouldErrLike, "name exceeds maximum length")
 		})
 
 		Convey(`When created and listening.`, func() {
