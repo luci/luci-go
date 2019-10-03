@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7563f6af_c8c44593",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T22:02:18Z",
+      "side": 1,
+      "message": "makes",
+      "range": {
+        "startLine": 9,
+        "startChar": 5,
+        "endLine": 9,
+        "endChar": 15
+      },
+      "revId": "cf0e9d594bc2f3453700fc55d7f001239d150eec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21e0f802_8ea27047",
+        "filename": "logdog/client/butlerlib/streamclient/protocol_netpipe.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T22:02:18Z",
+      "side": 1,
+      "message": "optional: removing named return args would make things clearer",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 15
+      },
+      "revId": "cf0e9d594bc2f3453700fc55d7f001239d150eec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
