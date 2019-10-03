@@ -1,0 +1,318 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0f7d2bd_8c5e2b28",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "nit: IsFinalized, to be more consistent with https://aip.dev/216#enum-values guideline to use past tenses",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 12
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28fe36a0_d654b9c3",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "this looks like we will passing this often in any method that needs to make http requests. Should we pass it through context then?\n\nsame with spanner client. A spanner client maintains a persistent GRPC connection. Ideally we put into the context on app startup, and keep it there. Here is what I had WIP https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1832385/1/resultdb/storage/common.go\nI will probably not be able to land this soon enough because of the problems with my laptop.",
+      "range": {
+        "startLine": 46,
+        "startChar": 75,
+        "endLine": 46,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83b7ff8a_90669b0c",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "this data is already present in req. Why do we pass it additionally?",
+      "range": {
+        "startLine": 46,
+        "startChar": 92,
+        "endLine": 46,
+        "endChar": 119
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86214f13_d7416aec",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "we should check http status code and return an error with appropriate grpc code. For example, if the task does not exist, we should return NOT_FOUND.\n\nright now, this will unconditionally cause an INTERNAL error which translates to HTTP 500, like there is something wrong with our service\n\nsame in L152",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c3d0fe_acc74fcb",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "nit: ID",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 20
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1a9ae88_e5b8cb38",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "is this code dead? we already checked for error in L55",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e2deab7_084f0720",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "a deduped task may not be deduped to a deduped task, so I think we can just do\n\n   task, err \u003d swarmSvc.Task.Result(task.DedupedFrom).Context(ctx).Do()\n\nin L150\n\n--\n\notherwise a loop would be simpler than a recursive call?",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c83b27a7_e772e1a9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "id must incorporate test path prefix and base variant hash, since those may be different in each request\n\nconsider hash(marshal(req))",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f31b2691_29f0d0d2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "this name sounds like it is a func without side effects, but actually it writes to spanner. It seems to have two responsibilities: conversion and writing. Let\u0027s keep one: conversion and move writing to the callsite. Then we don\u0027t need spannerCl param here.",
+      "range": {
+        "startLine": 161,
+        "startChar": 5,
+        "endLine": 161,
+        "endChar": 22
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "241c21a7_6ff0a954",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "i read name \"buf\" as this method reuses buffer allocated by someone else, but actually this is the JSON that this method is supposed to convert. I think it would be more readable if this was named something to entail that this is the output.json that we are converting",
+      "range": {
+        "startLine": 161,
+        "startChar": 118,
+        "endLine": 161,
+        "endChar": 121
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0aa4ae9e_72abe520",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "it would be simpler to just write bytes.NewReader(buf) twice, in L169 and in L173",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66f0dc40_a1a4aa79",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "right now  part of the json-specific code is L168-169 and a part in L182-184. It would be more readable if they were closer to each other. Consider inverting `jsonErr !\u003d nil`",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "899c45c6_3b319304",
+        "filename": "resultdb/recorder/chromium/swarming_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "this test could be stronger if we asserted the full path. I.e. if the code sent a request \"sdlkfjslkdfjskljfd/successful-task\", this test would pass",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7624d632_91477d64",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "What is this package? In your results structure doc, you had \"storage\" package, not this.\nAlso it is inside recorder, which means ResultDB service won\u0027t be able to use it. Is this intentional?\n\ni think there is more design to do here, and this CL currently combines swarming, isolate, conversion and spanner. Let\u0027s make it smaller by excluding the controversial part (spanner package design) from it, so that we can land the CL sooner. The parts where we are supposed to interact with spanner can be replaced with TODOs for now",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daead6f8_83b5bbd4",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "Did you see the \"spanner testing\" thread? It appears that testing against real spanner is not too painful.  If so, we might not need this, even though we talked about this earlier.\nI am happy to talk about this more, since discussing design in CL comments is not very effective.",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bbde885_74f5ce87",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-03T18:43:43Z",
+      "side": 1,
+      "message": "why this parameter is needed? invID is already there.",
+      "range": {
+        "startLine": 48,
+        "startChar": 70,
+        "endLine": 48,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
