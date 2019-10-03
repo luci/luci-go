@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c95f6b0c_58dcc43c",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-03T21:39:56Z",
+      "side": 1,
+      "message": "note; this change is backwards compatible with existing clients. However, the other changes here (e.g. to streamclient) are not backwards compatible with the existing butler servers (i.e. just kitchen).\n\nWhen we land this, we probably should update kitchen so that it\u0027s compatible with both old and new clients.\n\nActually, I\u0027m going to split this in half along that line",
+      "range": {
+        "startLine": 359,
+        "startChar": 17,
+        "endLine": 359,
+        "endChar": 27
+      },
+      "revId": "b2c81b33bb13c99994da18fee69ac3bf17042a5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
