@@ -22,6 +22,23 @@
       "revId": "1d9e2756f8d3477fee099c8748db768e7355df81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af6a8c2e_2d673191",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T16:29:13Z",
+      "side": 1,
+      "message": "can we instead rely on bb\u0027s own redirect like\nhttps://cr-buildbucket.appspot.com/build/8900647385010049712 \n?",
+      "revId": "1d9e2756f8d3477fee099c8748db768e7355df81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
