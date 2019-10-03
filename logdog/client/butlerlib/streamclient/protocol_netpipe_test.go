@@ -30,9 +30,6 @@ import (
 )
 
 func TestNamedPipe(t *testing.T) {
-	// TODO(crbug.com/998936): fix this test.
-	t.Skip()
-
 	t.Parallel()
 
 	counter := 0

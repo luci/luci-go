@@ -17,6 +17,7 @@ package streamclient
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -34,10 +35,15 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+type readCloseWriteCloser interface {
+	io.ReadCloser
+	CloseWrite() error
+}
+
 // acceptOne runs a trivial socket server to listen for a single connection,
 // then push it over a channel.
-func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
-	ret := make(chan net.Conn)
+func acceptOne(mkListen func() (net.Listener, error)) <-chan readCloseWriteCloser {
+	ret := make(chan readCloseWriteCloser)
 
 	listener, err := mkListen()
 	if err != nil {
@@ -45,6 +51,8 @@ func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
 	}
 
 	go func() {
+		defer close(ret)
+
 		conn, err := listener.Accept()
 		if err != nil {
 			panic(err)
@@ -52,10 +60,8 @@ func acceptOne(mkListen func() (net.Listener, error)) <-chan net.Conn {
 		if err := listener.Close(); err != nil {
 			panic(errors.Annotate(err, "closing listener").Err())
 		}
-		go func() {
-			defer close(ret)
-			ret <- conn
-		}()
+
+		ret <- conn.(readCloseWriteCloser)
 	}()
 
 	return ret
@@ -84,7 +90,7 @@ func init() {
 //
 // Because of the descrepancies between *nix and windows regarding the
 // ForProcess Option, testing that aspect is optional.
-func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *Client, forProcessTest bool) {
+func runWireProtocolTest(ctx context.Context, dataChan <-chan readCloseWriteCloser, client *Client, forProcessTest bool) {
 	Convey(`in-process`, func() {
 		Convey(`text+binary`, func(c C) {
 			go func() {
@@ -106,6 +112,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 				Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 			})
+			So(conn.CloseWrite(), ShouldBeNil)
 
 			body, err := ioutil.ReadAll(conn)
 			So(err, ShouldBeNil)
@@ -132,6 +139,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 				Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 			})
+			So(conn.CloseWrite(), ShouldBeNil)
 
 			reader := recordio.NewReader(conn, 1024)
 			frame, err := reader.ReadFrameAll()
@@ -168,6 +176,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})
+				So(conn.CloseWrite(), ShouldBeNil)
 
 				body, err := ioutil.ReadAll(conn)
 				So(err, ShouldBeNil)
@@ -194,6 +203,7 @@ func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
 				})
+				So(conn.CloseWrite(), ShouldBeNil)
 
 				body, err := ioutil.ReadAll(conn)
 				So(err, ShouldBeNil)
