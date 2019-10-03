@@ -65,7 +65,7 @@ func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 	return &StreamServer{
 		log:     logging.Get(ctx),
 		address: "unix:" + path,
-		gen: func() (net.Listener, error) {
+		gen: func() (listener, error) {
 			log.Infof(ctx, "Creating POSIX server socket Listener.")
 
 			// Cleanup any previous named pipe. We don't bother checking for the file
@@ -87,7 +87,7 @@ func newStreamServer(ctx context.Context, path string) (*StreamServer, error) {
 				Listener: l,
 				path:     path,
 			}
-			return &ul, nil
+			return mkListener(&ul), nil
 		},
 	}, nil
 }

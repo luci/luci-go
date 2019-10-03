@@ -51,7 +51,7 @@ func newTestListener() *testListener {
 	}
 }
 
-func (l *testListener) Accept() (net.Conn, error) {
+func (l *testListener) Accept() (ReadCloseWriteCloser, error) {
 	if l.err != nil {
 		return nil, l.err
 	}
@@ -91,25 +91,8 @@ func (c *testListenerConn) Read(d []byte) (int, error) {
 	return c.Buffer.Read(d)
 }
 
-func (c *testListenerConn) Close() error         { return nil }
-func (c *testListenerConn) LocalAddr() net.Addr  { return testAddr("local") }
-func (c *testListenerConn) RemoteAddr() net.Addr { return testAddr("remote") }
-
-func (c *testListenerConn) SetReadDeadline(t time.Time) error {
-	c.readDeadline = t
-	return nil
-}
-
-func (c *testListenerConn) SetWriteDeadline(t time.Time) error {
-	c.writeDeadline = t
-	return nil
-}
-
-func (c *testListenerConn) SetDeadline(t time.Time) error {
-	c.readDeadline = t
-	c.writeDeadline = t
-	return nil
-}
+func (c *testListenerConn) Close() error      { return nil }
+func (c *testListenerConn) CloseWrite() error { return nil }
 
 func TestListenerStreamServer(t *testing.T) {
 	t.Parallel()
@@ -119,7 +102,7 @@ func TestListenerStreamServer(t *testing.T) {
 		s := &StreamServer{
 			log:     logging.Get(context.Background()),
 			address: "test",
-			gen: func() (net.Listener, error) {
+			gen: func() (listener, error) {
 				if tl != nil {
 					panic("gen called more than once")
 				}
@@ -135,7 +118,7 @@ func TestListenerStreamServer(t *testing.T) {
 		})
 
 		Convey(`Will fail to Listen if the Listener could not be created.`, func() {
-			s.gen = func() (net.Listener, error) {
+			s.gen = func() (listener, error) {
 				return nil, errors.New("test error")
 			}
 			So(s.Listen(), ShouldNotBeNil)
@@ -243,7 +226,7 @@ func TestListenerStreamServer(t *testing.T) {
 // server.
 //
 // svr must be in listening state when this is called.
-func testClientServer(t *testing.T, svr *StreamServer, client *streamclient.Client) {
+func testClientServer(svr *StreamServer, client *streamclient.Client) {
 	ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 	data := []byte("ohaithere")
 
@@ -279,6 +262,11 @@ func testClientServer(t *testing.T, svr *StreamServer, client *streamclient.Clie
 		ContentType: "text/plain",
 		Timestamp:   stamp,
 	})
+
+	// now we need to close down the write side; normally the Butler would do
+	// this. We currently ignore the error because the client does not block on
+	// reading from `rc`.
+	rc.CloseWrite()
 
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(rc)

@@ -17,7 +17,6 @@ package streamserver
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"sync/atomic"
 
@@ -52,17 +51,18 @@ func newStreamServer(ctx context.Context, prefix string) (*StreamServer, error) 
 	return &StreamServer{
 		log:     logging.Get(ctx),
 		address: "net.pipe:" + path,
-		gen: func() (net.Listener, error) {
+		gen: func() (listener, error) {
 			log.Infof(ctx, "Creating Windows server socket Listener.")
 
 			l, err := winio.ListenPipe(realPath, &winio.PipeConfig{
 				InputBufferSize:  1024 * 1024,
 				OutputBufferSize: 1024 * 1024,
+				MessageMode:      true,
 			})
 			if err != nil {
 				return nil, errors.Annotate(err, "failed to listen on named pipe").Err()
 			}
-			return l, nil
+			return mkListener(l), nil
 		},
 	}, nil
 }
