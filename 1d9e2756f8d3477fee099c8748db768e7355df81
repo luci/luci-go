@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff698b23_eed81bec",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-03T16:21:47Z",
+      "side": 1,
+      "message": "h",
+      "range": {
+        "startLine": 398,
+        "startChar": 8,
+        "endLine": 398,
+        "endChar": 9
+      },
+      "revId": "1d9e2756f8d3477fee099c8748db768e7355df81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
