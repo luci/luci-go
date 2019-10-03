@@ -30,9 +30,6 @@ import (
 )
 
 func TestNamedPipe(t *testing.T) {
-	// TODO(crbug.com/998936): fix this test.
-	t.Skip()
-
 	t.Parallel()
 
 	counter := 0
@@ -47,7 +44,13 @@ func TestNamedPipe(t *testing.T) {
 		counter++
 
 		dataChan := acceptOne(func() (net.Listener, error) {
-			return winio.ListenPipe(streamproto.LocalNamedPipePath(name), nil)
+			return winio.ListenPipe(streamproto.LocalNamedPipePath(name), &winio.PipeConfig{
+				// These buffer sizes are less important, but this is how `streamserver`
+				// configures its pipe, so have them here for consistency.
+				InputBufferSize:  1024 * 1024,
+				OutputBufferSize: 1024 * 1024,
+				MessageMode:      true, // This is important; it allows CloseWrite()
+			})
 		})
 		client, err := New("net.pipe:"+name, "")
 		So(err, ShouldBeNil)
