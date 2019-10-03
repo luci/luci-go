@@ -28,11 +28,42 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 )
 
+// ReadCloseWriteCloser represents a client connection.
+//
+// CloseWrite must be called once this stream has been registered/accounted
+// for, and lets the client know that the server will be reading its data.
+type ReadCloseWriteCloser interface {
+	io.ReadCloser
+	CloseWrite() error
+}
+
+type listener interface {
+	io.Closer
+	Accept() (ReadCloseWriteCloser, error)
+	Addr() net.Addr
+}
+
+func mkListener(l net.Listener) listener {
+	return &accepterImpl{l}
+}
+
+type accepterImpl struct {
+	net.Listener
+}
+
+func (a *accepterImpl) Accept() (ReadCloseWriteCloser, error) {
+	conn, err := a.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return conn.(ReadCloseWriteCloser), nil
+}
+
 // streamParams are parameters representing a negotiated stream ready to
 // deliver.
 type streamParams struct {
 	// The stream's ReadCloser connection.
-	rc io.ReadCloser
+	rc ReadCloseWriteCloser
 	// Negotiated stream descriptor.
 	descriptor *logpb.LogStreamDescriptor
 }
@@ -51,8 +82,8 @@ type StreamServer struct {
 	// gen is a generator function that is called to produce the stream server's
 	// Listener. On success, it returns the instantiated Listener, which will be
 	// closed when the stream server is closed.
-	gen   func() (net.Listener, error)
-	l     net.Listener
+	gen   func() (listener, error)
+	l     listener
 	laddr string
 
 	streamParamsC   chan *streamParams
@@ -104,7 +135,7 @@ func (s *StreamServer) Listen() error {
 
 // Next blocks, returning a new Stream when one is available. If the stream
 // server has closed, this will return nil.
-func (s *StreamServer) Next() (io.ReadCloser, *logpb.LogStreamDescriptor) {
+func (s *StreamServer) Next() (ReadCloseWriteCloser, *logpb.LogStreamDescriptor) {
 	if streamParams, ok := <-s.streamParamsC; ok {
 		return streamParams.rc, streamParams.descriptor
 	}
@@ -208,9 +239,9 @@ func (s *StreamServer) serve() {
 type streamClient struct {
 	log logging.Logger
 
-	closedC chan struct{} // Signal channel to indicate that the server has closed.
-	id      int           // Client ID, used for debugging correlation.
-	conn    net.Conn      // The underlying client connection.
+	closedC chan struct{}        // Signal channel to indicate that the server has closed.
+	id      int                  // Client ID, used for debugging correlation.
+	conn    ReadCloseWriteCloser // The underlying client connection.
 
 	// decoupleMu is used to ensure that decoupleConn is called at most one time.
 	decoupleMu sync.Mutex
@@ -269,7 +300,7 @@ func (c *streamClient) closeConn() {
 
 // Decouples the active connection, returning it and setting the connection to
 // nil.
-func (c *streamClient) decoupleConn() (conn net.Conn) {
+func (c *streamClient) decoupleConn() (conn ReadCloseWriteCloser) {
 	c.decoupleMu.Lock()
 	defer c.decoupleMu.Unlock()
 

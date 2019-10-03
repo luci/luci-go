@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 
@@ -201,6 +202,10 @@ func (ts *testStream) Read(b []byte) (int, error) {
 	}
 }
 
+// TODO(iannucci): make this close a channel in testStream so tests can
+// synchronize with the server registering the testStream.
+func (ts *testStream) CloseWrite() error { return nil }
+
 type testStreamServer struct {
 	err     error
 	onNext  func()
@@ -217,7 +222,7 @@ func (tss *testStreamServer) Address() string { return "test" }
 
 func (tss *testStreamServer) Listen() error { return tss.err }
 
-func (tss *testStreamServer) Next() (io.ReadCloser, *logpb.LogStreamDescriptor) {
+func (tss *testStreamServer) Next() (streamserver.ReadCloseWriteCloser, *logpb.LogStreamDescriptor) {
 	if tss.onNext != nil {
 		tss.onNext()
 	}
@@ -368,7 +373,7 @@ func TestButler(t *testing.T) {
 				// 'closeStreams' is closed. We do this to ensure Bundler doesn't
 				// "drain" and unregister the stream before GetStreamDescs() calls
 				// below have a chance to notice it exists.
-				newTestStream := func() io.ReadCloser {
+				newTestStream := func() streamserver.ReadCloseWriteCloser {
 					return &testStream{
 						closedC: make(chan struct{}),
 						inC:     closeStreams,

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"sync"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -294,7 +296,7 @@ func (b *Butler) DrainNamespace(ctx context.Context, namespace types.StreamName)
 // TODO(iannucci): internalize streamserver to butler; there's no need for it to
 // be managed by the user.
 type StreamServer interface {
-	Next() (io.ReadCloser, *logpb.LogStreamDescriptor)
+	Next() (streamserver.ReadCloseWriteCloser, *logpb.LogStreamDescriptor)
 	Close()
 }
 
@@ -330,14 +332,32 @@ func (b *Butler) AddStreamServer(streamServer StreamServer) {
 			//
 			// We run this in a function so we can ensure cleanup on failure.
 			if err := b.AddStream(rc, config); err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-				}.Errorf(ctx, "Failed to add stream.")
+				logging.Errorf(ctx, "Failed to add stream %q: %s", config.Name, err)
 
 				if err := rc.Close(); err != nil {
-					log.Fields{
-						log.ErrorKey: err,
-					}.Warningf(ctx, "Failed to close stream.")
+					logging.Warningf(ctx, "Failed to close stream %q: %s", config.Name, err)
+				}
+			} else {
+				// TODO(iannucci): once all logdog clients are reading until EOF from
+				// this socket, maybe write all information (like the logdog:// url,
+				// view url, etc.) to the socket before closing. This would allow:
+				//   * establishing a real RPC interface over the butler socket
+				//   * removal of all logdog environment variables except for the socket
+				//     address.
+				//
+				// NOTE: On Windows this is implemented by:
+				//   * All named pipes are opened in 'message' mode
+				//   * CloseWrite writes an empty message to the pipe (and then will
+				//     return errors on any further attempts to write to the pipe).
+				// This doesn't actually "close" anything and the client could still
+				// read from the pipe (they would just block until we close it, because
+				// we aren't writing any more data to it).
+				//
+				// NOTE: On POSIX, closing the write end is a bit racy; it may return
+				// "socket is not connected" if the client already wrote everything it
+				// wanted to and closed their end. So, we just ignore these errors.
+				if err := rc.CloseWrite(); runtime.GOOS != "windows" && err != nil {
+					logging.Warningf(ctx, "failed to CloseWrite %q: %s", config.Name, err)
 				}
 			}
 		}
