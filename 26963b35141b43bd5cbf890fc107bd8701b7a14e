@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "011f44d2_2bfe7e13",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0427dbf2_e971e79b",
+      "range": {
+        "startLine": 49,
+        "startChar": 15,
+        "endLine": 49,
+        "endChar": 21
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5ead7fa_36625e6f",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -36,6 +60,30 @@
       "writtenOn": "2019-10-04T19:56:17Z",
       "side": 1,
       "message": "sorry if my comment wasn\u0027t clear. I meant, let\u0027s use the pattern used in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1832385/1/resultdb/storage/common.go to propagate http.Client via context, so that we don\u0027t write `cl *http.Client` parameter in each method that needs to make http requests, directly or indirectly.",
+      "range": {
+        "startLine": 51,
+        "startChar": 74,
+        "endLine": 51,
+        "endChar": 90
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ad8b234_1f1f5ac1",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Thanks for the clarification! Let me know what you think; I just adapted storage/common.go in that CL",
+      "parentUuid": "a5ead7fa_36625e6f",
       "range": {
         "startLine": 51,
         "startChar": 74,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "3cb3b589_a96b1bc1",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18a272a0_9916c3f5",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 44
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45a8ec99_c6e20f43",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "8b04eb6e_1b5f6e1a",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45a8ec99_c6e20f43",
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0243f2cf_ac1c72e6",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -99,6 +189,30 @@
       "writtenOn": "2019-10-04T19:56:17Z",
       "side": 1,
       "message": "HTTP 500 means internal server error, which maps to https://godoc.org/google.golang.org/grpc/codes#Internal",
+      "range": {
+        "startLine": 127,
+        "startChar": 19,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cc81a02_7941bdde",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "If swarming is 5xx, we return 5xx ourselves instead of tag as unavailable and retry later?",
+      "parentUuid": "0243f2cf_ac1c72e6",
       "range": {
         "startLine": 127,
         "startChar": 19,
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "a82d5d1f_fce2db00",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9ca48fa_17f09fba",
+      "range": {
+        "startLine": 129,
+        "startChar": 16,
+        "endLine": 129,
+        "endChar": 24
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c410b724_54a35397",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "c68302ef_e24e6bd3",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c410b724_54a35397",
+      "range": {
+        "startLine": 202,
+        "startChar": 5,
+        "endLine": 202,
+        "endChar": 18
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa1f01b5_fb66aa4b",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -168,6 +330,24 @@
       "writtenOn": "2019-10-04T19:56:17Z",
       "side": 1,
       "message": "returned error is ignored",
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "756daf13_2c9b2cfb",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "We shouldn\u0027t ever not be able to encode a proto? I\u0027ve set it to return the error, let me know what you think (vs e.g. panic)",
+      "parentUuid": "aa1f01b5_fb66aa4b",
       "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

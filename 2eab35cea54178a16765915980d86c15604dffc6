@@ -262,6 +262,24 @@
     },
     {
       "key": {
+        "uuid": "a19d5e95_dac2375a",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T21:49:58Z",
+      "side": 1,
+      "message": "OK, thanks. I\u0027ll keep it out of this CL for now, but may do a followup later to include it.",
+      "parentUuid": "6e7bfd49_69e7671a",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "36c3d0fe_acc74fcb",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
