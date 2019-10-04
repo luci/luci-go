@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af71a39e_645d50b4",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-04T22:30:21Z",
+      "side": 1,
+      "message": "Can getDatastoreBuild be inlined here?",
+      "revId": "76dfe381c6fddf403c660261ae4072c02bf1d502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
