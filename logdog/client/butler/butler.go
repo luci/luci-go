@@ -356,7 +356,7 @@ func (b *Butler) AddStreamServer(streamServer StreamServer) {
 				// NOTE: On POSIX, closing the write end is a bit racy; it may return
 				// "socket is not connected" if the client already wrote everything it
 				// wanted to and closed their end. So, we just ignore these errors.
-				if err := rc.CloseWrite(); runtime.GOOS != "windows" && err != nil {
+				if err := rc.CloseWrite(); runtime.GOOS == "windows" && err != nil {
 					logging.Warningf(ctx, "failed to CloseWrite %q: %s", config.Name, err)
 				}
 			}
