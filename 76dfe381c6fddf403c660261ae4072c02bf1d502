@@ -16,6 +16,24 @@
       "revId": "76dfe381c6fddf403c660261ae4072c02bf1d502",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fbf7fab_f24504af",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T23:08:20Z",
+      "side": 1,
+      "message": "Done, but i had to change 1 other user.",
+      "parentUuid": "af71a39e_645d50b4",
+      "revId": "76dfe381c6fddf403c660261ae4072c02bf1d502",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
