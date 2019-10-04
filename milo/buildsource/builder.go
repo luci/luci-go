@@ -22,7 +22,7 @@ import (
 
 // BuilderID is the universal ID of a builder, and has the form:
 //   buildbucket/bucket/builder
-//   buildbot/master/builder
+//   buildbot/master/builder   (deprecated)
 type BuilderID string
 
 // Split breaks the BuilderID into pieces.
@@ -58,9 +58,9 @@ func (b BuilderID) Split() (backend, backendGroup, builderName string, err error
 	return
 }
 
-// Get allows you to obtain the resp.Builder that corresponds with this
+// GetLegacy allows you to obtain the resp.Builder that corresponds with this
 // BuilderID.
-func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.BuilderLegacy, error) {
+func (b BuilderID) GetLegacy(c context.Context, limit int, cursor string) (*ui.BuilderLegacy, error) {
 	// TODO(iannucci): replace these implementations with a BuildSummary query.
 	source, group, builderName, err := b.Split()
 	if err != nil {

@@ -20,7 +20,7 @@ func BuilderHandlerLegacy(c *router.Context, builderID buildsource.BuilderID) er
 	if tLimit := GetLimit(c.Request, -1); tLimit >= 0 {
 		limit = tLimit
 	}
-	builder, err := builderID.Get(c.Context, limit, c.Request.FormValue("cursor"))
+	builder, err := builderID.GetLegacy(c.Context, limit, c.Request.FormValue("cursor"))
 	if err != nil {
 		return err
 	}
