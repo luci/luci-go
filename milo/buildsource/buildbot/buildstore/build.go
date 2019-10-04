@@ -26,12 +26,9 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/buildbucket/deprecated"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -60,110 +57,6 @@ const maxDataSize = 950000
 // Returns (nil, nil) if build is not found.
 // Does not check access.
 func GetBuild(c context.Context, id buildbotapi.BuildID) (*buildbotapi.Build, error) {
-	return getBuild(c, id, true, true)
-}
-
-// getBuild returns a build by master, builder and number.
-// The returned build may be coming from datastore or Buildbucket RPC.
-// Returns (nil, nil) if build is not found.
-func getBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotations, fetchChanges bool) (*buildbotapi.Build, error) {
-	if !EmulationEnabled(c) {
-		return getDatastoreBuild(c, id)
-	}
-
-	// Is it a LUCI build?
-	build, err := getEmulatedBuild(c, id, fetchAnnotations, fetchChanges)
-	switch {
-	case err != nil:
-		return nil, err
-	case build != nil:
-		// does not exist or experimental.
-		return build, nil
-	}
-
-	// Is it a Buildbot build?
-	build, err = getDatastoreBuild(c, id)
-	switch {
-	case err != nil:
-		return nil, err
-	case build == nil:
-		return nil, nil
-	case build.Experimental():
-		return nil, nil
-	default:
-		return build, nil
-	}
-}
-
-// EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
-// Returns (nil, nil) if build is not found.
-func EmulationOf(c context.Context, id buildbotapi.BuildID) (*deprecated.Build, error) {
-	bb, err := buildbucketClient(c)
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := BucketOf(c, id.Master)
-	switch {
-	case err != nil:
-		return nil, err
-	case bucket == "":
-		return nil, nil
-	}
-
-	msgs, _, err := bb.Search().
-		// this search is optimized, a datastore.get.
-		Tag(strpair.Format(bbv1.TagBuildAddress, bbv1.FormatBuildAddress(0, bucket, id.Builder, id.Number))).
-		Context(c).
-		Fetch(1, nil)
-	switch {
-	case err != nil:
-		return nil, err
-	case len(msgs) == 0:
-		return nil, nil
-	default:
-		var b deprecated.Build
-		return &b, b.ParseMessage(msgs[0])
-	}
-}
-
-// getEmulatedBuild returns a buildbot build derived from a LUCI build.
-// Returns (nil, nil) if build is not found.
-func getEmulatedBuild(c context.Context, id buildbotapi.BuildID, fetchAnnotations, fetchChanges bool) (*buildbotapi.Build, error) {
-	if err := id.Validate(); err != nil {
-		return nil, err
-	}
-
-	buildbucketBuild, err := EmulationOf(c, id)
-	switch {
-	case err != nil:
-		return nil, err
-	case buildbucketBuild == nil:
-		return nil, nil
-	}
-
-	buildbotBuild, err := buildFromBuildbucket(c, id.Master, buildbucketBuild, fetchAnnotations)
-	switch {
-	case ErrNoBuildNumber.In(err):
-		// This is an old buildbucket build without a build number.  Just drop it.
-		// All emulated builds should have a build number.
-		return nil, nil
-	case err != nil:
-		return nil, err
-	}
-
-	if fetchChanges {
-		if err := blame(c, buildbotBuild); err != nil {
-			return nil, err
-		}
-	}
-
-	return buildbotBuild, nil
-}
-
-// getDatastoreBuild returns a buildbot build from the datastore.
-// Returns (nil, nil) if build is not found.
-func getDatastoreBuild(c context.Context, id buildbotapi.BuildID) (*buildbotapi.Build, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}
