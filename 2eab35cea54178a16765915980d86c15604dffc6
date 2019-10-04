@@ -244,6 +244,24 @@
     },
     {
       "key": {
+        "uuid": "6e7bfd49_69e7671a",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T19:56:17Z",
+      "side": 1,
+      "message": "i think what you have is good enough. \nluci-standard mapping is embedded in https://godoc.org/github.com/luci/luci-go/grpc/grpcutil#CodeStatus\nconsider adding the opposite of that func, StatusCode or something, reuse it in this CL. Up to you.",
+      "parentUuid": "5d6b3b8d_0842d046",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "36c3d0fe_acc74fcb",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -868,6 +886,30 @@
       "side": 1,
       "message": "Oh, OK. I thought to put it under a spanner package would be closer along the lines of SRP, and also would allow us to write Invocations and TestResults to Spanner even in non-Chromium/swarming use cases, but I\u0027m happy to start with it in swarming.",
       "parentUuid": "117ecbd0_9249046a",
+      "range": {
+        "startLine": 48,
+        "startChar": 70,
+        "endLine": 48,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "902b8730_23524920",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T19:56:17Z",
+      "side": 1,
+      "message": "non-Chromium/swarming use cases won\u0027t write test results and invocations in the same txn, because inv must already exist by that time.\nExample: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1832385/1/resultdb/recorder/inclusion.go",
+      "parentUuid": "8998b905_d0140824",
       "range": {
         "startLine": 48,
         "startChar": 70,
