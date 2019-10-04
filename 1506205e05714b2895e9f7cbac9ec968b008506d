@@ -1,0 +1,152 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20c3826e_09c1903e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "this is also a hostname. It must be a part of req.SwarmingTask.Hostname already",
+      "range": {
+        "startLine": 54,
+        "startChar": 39,
+        "endLine": 54,
+        "endChar": 51
+      },
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ea3e509_ffd0ad8a",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "in another comment, I mean let\u0027s just a TODO here instead of a func call",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d95e385c_3b038098",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "there is no guarantee that a non-nil error is necessarily a googleapi.Error",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b06e1bd3_dae19b62",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "higher in the stack, someone might errors.Annotate() this error, hiding the status. A more standard approach in luci-go is to apply a gRPC code tag, see grpcutil package",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2b6b8a8_777545ab",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "why no error code here?",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74d3fefa_b7d532ce",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "wouldn\u0027t it be simpler to write\n\n  for task.DedupedFrom !\u003d \"\" {\n\n?",
+      "range": {
+        "startLine": 183,
+        "startChar": 1,
+        "endLine": 187,
+        "endChar": 3
+      },
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15d3c62d_bc31ec23",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "why not marshal directly into h?\n\njson.NewEncoder(h).Encode(canonicalReq)",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14fa1f5c_505a41d8",
+        "filename": "resultdb/recorder/chromium/swarming_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:45:50Z",
+      "side": 1,
+      "message": "all switch cases check path for equality. Would be simpler to write\n\nswitch path { \n  case ...",
+      "revId": "1506205e05714b2895e9f7cbac9ec968b008506d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
