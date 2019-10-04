@@ -144,9 +144,15 @@ func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.Build
 			b.Data[0] = nil
 		}
 
-		timeout := 10 * time.Second
+		var timeout time.Duration
 		if final {
-			timeout = time.Minute
+			timeout = 5 * time.Minute
+		} else {
+			// Scale the timeout by the number of steps present.
+			timeout = time.Duration(len(req.Build.GetSteps())) * (50 * time.Millisecond)
+			if timeout < (2 * time.Second) {
+				timeout = 2 * time.Second
+			}
 		}
 		tctx, cancel := clock.WithTimeout(ctx, timeout)
 		defer cancel()
