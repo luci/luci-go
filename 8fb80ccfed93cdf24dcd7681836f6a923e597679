@@ -16,6 +16,24 @@
       "revId": "8fb80ccfed93cdf24dcd7681836f6a923e597679",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "116bd67a_043406a8",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-04T17:52:55Z",
+      "side": 1,
+      "message": "good call.",
+      "parentUuid": "05391c24_92b49650",
+      "revId": "8fb80ccfed93cdf24dcd7681836f6a923e597679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
