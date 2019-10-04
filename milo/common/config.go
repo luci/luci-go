@@ -682,6 +682,24 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		if console.HeaderId != "" && console.Header != nil {
 			ctx.Errorf("cannot specify both header and header_id")
 		}
+		for j, b := range console.Builders {
+			ctx.Enter("builders #%d", j+1)
+			for k, name := range b.Name {
+				ctx.Enter("builders #%d: %q", k+1, name)
+				switch {
+				case name == "":
+					ctx.Errorf("name must be non-empty")
+				case strings.HasPrefix(name, "buildbucket/"):
+					// OK
+				case strings.HasPrefix(name, "buildbot/"):
+					ctx.Errorf("buildbot builders are no longer supported")
+				default:
+					ctx.Errorf(`name must be in the form of "buildbucket/<bucket>/<builder>"`)
+				}
+				ctx.Exit()
+			}
+			ctx.Exit()
+		}
 		ctx.Exit()
 	}
 	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
