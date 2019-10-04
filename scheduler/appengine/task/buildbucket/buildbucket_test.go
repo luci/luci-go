@@ -402,6 +402,41 @@ func TestTriggeredFlow(t *testing.T) {
 	})
 }
 
+func TestPassedTriggers(t *testing.T) {
+	t.Parallel()
+
+	Convey(fmt.Sprintf("Passed to buildbucket triggers are capped at %d", maxTriggersAsSchedulerProperty), t, func(ctx C) {
+		c := memory.Use(context.Background())
+		ctl := fakeController("doesn't matter")
+		triggers := make([]*internal.Trigger, 0, maxTriggersAsSchedulerProperty+10)
+		add := func(i int) {
+			triggers = append(triggers, &internal.Trigger{
+				Id:      fmt.Sprintf("id=%d", i),
+				Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", fmt.Sprintf("sha1=%d", i)),
+			})
+		}
+		for i := 0; i < maxTriggersAsSchedulerProperty; i++ {
+			add(i)
+		}
+
+		propertiesString := func() string {
+			ctl.Req = task.Request{IncomingTriggers: triggers}
+			v, err := schedulerProperty(c, ctl)
+			So(err, ShouldBeNil)
+			return v.String()
+		}
+
+		s := propertiesString()
+		So(s, ShouldContainSubstring, "sha1=0")
+		So(s, ShouldContainSubstring, fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty-1))
+
+		add(maxTriggersAsSchedulerProperty)
+		s = propertiesString()
+		So(s, ShouldContainSubstring, fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty))
+		So(s, ShouldNotContainSubstring, "sha1=0")
+	})
+}
+
 func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
 	return &internal.Trigger_Gitiles{
 		Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: rev},

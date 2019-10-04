@@ -305,6 +305,8 @@ type Request struct {
 	//
 	// Task managers may use them, but they are encouraged to accept task
 	// parameters through Properties and Tags instead.
+	//
+	// Already sorted by time they were emitted (oldest first).
 	IncomingTriggers []*internal.Trigger
 
 	// Properties are arbitrary key-value pairs derived from the triggers by the
