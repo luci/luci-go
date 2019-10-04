@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef05fcdf_841b83ec",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 511,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-04T23:17:47Z",
+      "side": 1,
+      "message": "please add logging",
+      "range": {
+        "startLine": 508,
+        "startChar": 1,
+        "endLine": 511,
+        "endChar": 2
+      },
+      "revId": "ba937ebc61e8950e1dac07e2cab4bf6e61372a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55d2f726_b7b9c4d4",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-04T23:17:47Z",
+      "side": 1,
+      "message": "... (oldest first)",
+      "range": {
+        "startLine": 309,
+        "startChar": 12,
+        "endLine": 309,
+        "endChar": 44
+      },
+      "revId": "ba937ebc61e8950e1dac07e2cab4bf6e61372a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
