@@ -727,6 +727,30 @@
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "117ecbd0_9249046a",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T16:52:40Z",
+      "side": 1,
+      "message": "\u003e the func is called WriteTestResults, but sounds like you intend to write invocation too? sounds like two purposes?\n\ni must clarify that this would be OK if this was in swarming.go, but putting it in separate package imposes a bit of requirement for this to be generic. I does not appear to be reusable, so it is better to live closer to its only usage. In that case, one func that writes both invocation and test results is OK and is the right way to do this.",
+      "parentUuid": "f1580ccd_2e1ff65e",
+      "range": {
+        "startLine": 48,
+        "startChar": 70,
+        "endLine": 48,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
