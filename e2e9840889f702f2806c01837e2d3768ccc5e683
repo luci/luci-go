@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3aa5f775_49ebbf8a",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T19:43:52Z",
+      "side": 1,
+      "message": "// NOTE: we\u0027ve disabled retries at prpc layer, so timeout here really is for just 1 RPC call.",
+      "revId": "e2e9840889f702f2806c01837e2d3768ccc5e683",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
