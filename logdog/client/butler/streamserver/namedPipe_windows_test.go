@@ -26,6 +26,8 @@ import (
 )
 
 func TestWindowsNamedPipeServer(t *testing.T) {
+	t.Skip("test disabled on windows for flake: crbug.com/998936")
+
 	t.Parallel()
 
 	Convey(`A named pipe server`, t, func() {
