@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aebb3ab7_c6c1b9dd",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T05:24:43Z",
+      "side": 1,
+      "message": "is it still used?",
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d040fc1_05eaa4bc",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T05:24:43Z",
+      "side": 1,
+      "message": "i think all code below in this func is dead\nhttps://osscs.corp.google.com/search?q\u003dGetMaster%20f:milo\u0026ss\u003dchromium\nno GetMaster call passes refreshState\u003dtrue",
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "872021d1_d1595a0e",
+        "filename": "milo/buildsource/buildbot/buildstore/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T05:24:43Z",
+      "side": 1,
+      "message": "is it used?",
+      "range": {
+        "startLine": 135,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
