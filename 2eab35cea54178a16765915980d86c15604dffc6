@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "61c95e58_451dd574",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0f7d2bd_8c5e2b28",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 12
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28fe36a0_d654b9c3",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "e7c47336_29ae43d9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83b7ff8a_90669b0c",
+      "range": {
+        "startLine": 46,
+        "startChar": 92,
+        "endLine": 46,
+        "endChar": 119
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2731eb29_6cb4799f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "SG, I can add stubs for that into storage/spanner as that thread is resolved, how does that sound?",
+      "parentUuid": "28fe36a0_d654b9c3",
+      "range": {
+        "startLine": 46,
+        "startChar": 75,
+        "endLine": 46,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "86214f13_d7416aec",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -82,6 +154,24 @@
       "writtenOn": "2019-10-03T18:43:43Z",
       "side": 1,
       "message": "we should check http status code and return an error with appropriate grpc code. For example, if the task does not exist, we should return NOT_FOUND.\n\nright now, this will unconditionally cause an INTERNAL error which translates to HTTP 500, like there is something wrong with our service\n\nsame in L152",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b88eb7a_ed58e13d",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Handled 404 and 5xx, let me know what you think",
+      "parentUuid": "86214f13_d7416aec",
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "0fdaff03_26f2e3bf",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36c3d0fe_acc74fcb",
+      "range": {
+        "startLine": 142,
+        "startChar": 18,
+        "endLine": 142,
+        "endChar": 20
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1a9ae88_e5b8cb38",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -125,6 +239,24 @@
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e033a540_e0204b33",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1a9ae88_e5b8cb38",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +277,24 @@
     },
     {
       "key": {
+        "uuid": "9a42a820_9d713389",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "I think so too (deduped task may not be deduped to a deduped task), but I\u0027ll do loop to err on the side of safety. If you prefer the single call (but maybe log if we are still getting DedupedFrom in the second call), just let me know.",
+      "parentUuid": "1e2deab7_084f0720",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c83b27a7_e772e1a9",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -159,6 +309,24 @@
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0a70095_c331a774",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c83b27a7_e772e1a9",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +376,54 @@
     },
     {
       "key": {
+        "uuid": "bdf1de39_c1ac9bf7",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "\"data\"?",
+      "parentUuid": "241c21a7_6ff0a954",
+      "range": {
+        "startLine": 161,
+        "startChar": 118,
+        "endLine": 161,
+        "endChar": 121
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3e9e3b3_c70c6ae8",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f31b2691_29f0d0d2",
+      "range": {
+        "startLine": 161,
+        "startChar": 5,
+        "endLine": 161,
+        "endChar": 22
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0aa4ae9e_72abe520",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -222,6 +438,24 @@
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "560979ae_42fbdb40",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0aa4ae9e_72abe520",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -242,6 +476,24 @@
     },
     {
       "key": {
+        "uuid": "6fdb4d54_4ba6c198",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66f0dc40_a1a4aa79",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "899c45c6_3b319304",
         "filename": "resultdb/recorder/chromium/swarming_test.go",
         "patchSetId": 4
@@ -259,6 +511,24 @@
     },
     {
       "key": {
+        "uuid": "3d4478bd_454a11f6",
+        "filename": "resultdb/recorder/chromium/swarming_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "899c45c6_3b319304",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7624d632_91477d64",
         "filename": "resultdb/recorder/spanner/spanner.go",
         "patchSetId": 4
@@ -270,6 +540,24 @@
       "writtenOn": "2019-10-03T18:43:43Z",
       "side": 1,
       "message": "What is this package? In your results structure doc, you had \"storage\" package, not this.\nAlso it is inside recorder, which means ResultDB service won\u0027t be able to use it. Is this intentional?\n\ni think there is more design to do here, and this CL currently combines swarming, isolate, conversion and spanner. Let\u0027s make it smaller by excluding the controversial part (spanner package design) from it, so that we can land the CL sooner. The parts where we are supposed to interact with spanner can be replaced with TODOs for now",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48feeb4b_3676f802",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Yes, I put it under \"spanner\" package because the discussion around the \"storage\" package was in the direction of inlining Spanner functionality, and not keeping an overall \"storage\" package for the different storage types (spanner, BQ). Accordingly it\u0027s also under \"recorder\" to keep the write functionality closer to where it\u0027s actually used.\n\nMaybe you meant something else by inlining?\n\nI\u0027m happy to separate out functionality, which is why I pulled out the parts that would actually read and write from spanner with all actual implementation as TODO (and even signatures subject to change). How would you like it structured instead?",
+      "parentUuid": "7624d632_91477d64",
       "revId": "2eab35cea54178a16765915980d86c15604dffc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -293,6 +581,24 @@
     },
     {
       "key": {
+        "uuid": "2d9ba414_4456ee92",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Yes, I did see it, thanks. I thought that it still wasn\u0027t entirely clear how painful it would be in practice (doesn\u0027t the performance hit take effect whenever we change the test binary, which is exactly when we\u0027d run the tests?), but if it\u0027s not then I\u0027m happy to get rid of this tracking field.\n\nAlternatively, if we want to keep testing how using real Spanner will perform, I\u0027m also happy with keeping this field in here for now (since we\u0027ll need to generate the mutations anyway, so it\u0027s just a question of keeping them in a field or not).\n\nLet me know what you\u0027re thinking!",
+      "parentUuid": "daead6f8_83b5bbd4",
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5bbde885_74f5ce87",
         "filename": "resultdb/recorder/spanner/spanner.go",
         "patchSetId": 4
@@ -304,6 +610,30 @@
       "writtenOn": "2019-10-03T18:43:43Z",
       "side": 1,
       "message": "why this parameter is needed? invID is already there.",
+      "range": {
+        "startLine": 48,
+        "startChar": 70,
+        "endLine": 48,
+        "endChar": 90
+      },
+      "revId": "2eab35cea54178a16765915980d86c15604dffc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19b46f14_7673b51d",
+        "filename": "resultdb/recorder/spanner/spanner.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-04T15:46:21Z",
+      "side": 1,
+      "message": "Don\u0027t we need to write the new invocation if it doesn\u0027t already exist?",
+      "parentUuid": "5bbde885_74f5ce87",
       "range": {
         "startLine": 48,
         "startChar": 70,
