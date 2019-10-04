@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5acad536_bb7275bb",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T07:51:51Z",
+      "side": 1,
+      "message": "nope, gone!",
+      "parentUuid": "aebb3ab7_c6c1b9dd",
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d040fc1_05eaa4bc",
         "filename": "milo/buildsource/buildbot/buildstore/master.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6da694b6_40853101",
+        "filename": "milo/buildsource/buildbot/buildstore/master.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T07:51:51Z",
+      "side": 1,
+      "message": "indeed!",
+      "parentUuid": "8d040fc1_05eaa4bc",
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6a2e2bb_abcb18d2",
+        "filename": "milo/buildsource/buildbot/buildstore/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T07:51:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "872021d1_d1595a0e",
+      "range": {
+        "startLine": 135,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "ad87064ebf6e35fde59c0868bc38c5a62b2e1e81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
