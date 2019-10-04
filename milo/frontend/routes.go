@@ -21,10 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-
-	"google.golang.org/grpc/metadata"
-
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -36,7 +32,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 )
@@ -113,8 +108,8 @@ func Run(templatePath string) {
 
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
-	r.GET("/buildbot/:master/:builder/:number", htmlMW.Extend(emulationMiddleware), handleError(handleBuildbotBuild))
-	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
+	r.GET("/buildbot/:master/:builder/:number", htmlMW, handleError(handleBuildbotBuild))
+	r.GET("/buildbot/:master/:builder/", htmlMW, handleError(func(c *router.Context) error {
 		return BuilderHandlerLegacy(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
 	}))
@@ -134,30 +129,6 @@ func Run(templatePath string) {
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
 
 	http.DefaultServeMux.Handle("/", r)
-}
-
-func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	deprecatable, ok := req.(interface {
-		GetExcludeDeprecated() bool
-	})
-	if ok && !deprecatable.GetExcludeDeprecated() {
-		ua := "-"
-		if md, ok := metadata.FromIncomingContext(c); ok {
-			if m := md["user-agent"]; len(m) > 0 {
-				ua = m[0]
-			}
-		}
-		logging.Warningf(c, "user agent %q might be using deprecated API!", ua)
-	}
-
-	noemu, ok := req.(interface {
-		GetNoEmulation() bool
-	})
-	// Turn off emulation mode if the request sets the no emulation flag to true.
-	emulation := !(ok && noemu.GetNoEmulation())
-
-	return buildstore.WithEmulation(c, emulation), nil
-
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error

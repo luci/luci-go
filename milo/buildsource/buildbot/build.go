@@ -96,10 +96,6 @@ func summary(c context.Context, b *buildbotapi.Build) ui.BuildComponent {
 		fmt.Sprintf("#%d", b.Number),
 		fmt.Sprintf("/buildbot/%s/%s/%d", b.Master, b.Buildername, b.Number),
 		fmt.Sprintf("Build number %d on master %s builder %s", b.Number, b.Master, b.Buildername))
-	// Perpetuate emulation mode, if it is currently on.
-	if buildstore.EmulationEnabled(c) {
-		label.URL += "?emulation=1"
-	}
 	parent := ui.NewLink(b.Buildername, ".", fmt.Sprintf("Parent builder %s", b.Buildername))
 
 	// Do a best effort lookup for the bot information to fill in OS/Platform info.
