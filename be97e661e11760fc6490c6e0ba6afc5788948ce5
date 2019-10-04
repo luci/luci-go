@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75d15787_83c6d47a",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-04T08:18:12Z",
+      "side": 1,
+      "message": "why...?",
+      "range": {
+        "startLine": 271,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 9
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9658a4d_26e0f10f",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-04T08:18:12Z",
+      "side": 1,
+      "message": "Hm... maybe Infra.Swarming to mirror build? bonus points to use the same field #\u0027s as Infra.Swarming.",
+      "range": {
+        "startLine": 310,
+        "startChar": 10,
+        "endLine": 310,
+        "endChar": 18
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
