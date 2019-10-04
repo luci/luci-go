@@ -36,7 +36,6 @@ import (
 	"go.chromium.org/luci/server/templates"
 
 	"go.chromium.org/luci/milo/buildsource"
-	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -72,7 +71,6 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 
 	// Cron endpoints
-	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
@@ -133,7 +131,6 @@ func Run(templatePath string) {
 	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(handleRawPresentationBuild))
 
 	// PubSub subscription endpoints.
-	r.POST("/_ah/push-handlers/buildbot", backendMW, buildbot.PubSubHandler)
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
 
 	http.DefaultServeMux.Handle("/", r)
