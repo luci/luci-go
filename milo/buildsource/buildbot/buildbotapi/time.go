@@ -57,12 +57,6 @@ type TimeRange struct {
 	Start, Finish Time
 }
 
-// MkTimeRange is a shorthand for:
-//   buildbotapi.TimeRange{Start: start, Finish: finish}
-func MkTimeRange(start, finish Time) TimeRange {
-	return TimeRange{start, finish}
-}
-
 func (t *TimeRange) MarshalJSON() ([]byte, error) {
 	buildbotFormat := []Time{t.Start, t.Finish}
 	return json.Marshal(buildbotFormat)
