@@ -16,17 +16,29 @@ package chromium
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/recorder/spanner"
 )
 
 const (
@@ -34,19 +46,87 @@ const (
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 )
 
-// fetchOutputJSON fetches the output.json from the given task on the given host.
+// WriteInvocation writes the invocation associated with the given swarming task.
 //
-// TODO: convert the bytes.Buffer to a pb.Invocation.
-func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID string) ([]byte, error) {
-	// Set up swarming service for getting task info.
+// If the task is a dedup of another task, the invocation returned is the underlying one; otherwise,
+// the invocation returned is associated with the swarming task itself.
+func WriteInvocation(ctx context.Context, req *pb.DeriveInvocationRequest, cl *http.Client, spannerCl *spanner.Client) (*pb.Invocation, error) {
+	swarmingURL := fmt.Sprintf("https://%s.appspot.com", req.SwarmingTask.Hostname)
+	taskID := req.SwarmingTask.Id
+
+	swarmSvc, err := getSwarmSvc(cl, swarmingURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the swarming task.
+	task, err := getSwarmingTask(ctx, taskID, swarmSvc)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if we even need to write this invocation: is it finalized?
+	invID, err := getInvocationID(ctx, task, swarmSvc, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if inv, err := spannerCl.GetInvocation(ctx, invID); err != nil {
+		return nil, err
+	} else if inv != nil && pbutil.IsFinalized(inv.State) {
+		return inv, nil
+	}
+
+	// We may need to write the invocation, so fetch the output JSON.
+	buf, err := fetchOutputJSON(ctx, task, cl)
+	if err != nil {
+		return nil, errors.Annotate(err, "task %s (%s)", taskID, swarmingURL).Err()
+	}
+
+	// Get invocation and test results using the correct format.
+	inv, results, err := convertOutputJSON(ctx, req, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	// Write them.
+	if err := spannerCl.WriteTestResults(ctx, invID, inv, results); err != nil {
+		return nil, err
+	}
+	return inv, nil
+}
+
+func getSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, error) {
 	swarmSvc, err := swarmingAPI.New(cl)
 	if err != nil {
 		return nil, err
 	}
-	swarmSvc.BasePath = fmt.Sprintf("%s/%s", swarmingURL, swarmingAPIEndpoint)
 
+	swarmSvc.BasePath = fmt.Sprintf("%s/%s", swarmingURL, swarmingAPIEndpoint)
+	return swarmSvc, nil
+}
+
+// getSwarmingTask fetches the task from swarming, annotating errors with gRPC codes as needed.
+func getSwarmingTask(ctx context.Context, taskID string, swarmSvc *swarmingAPI.Service) (*swarmingAPI.SwarmingRpcsTaskResult, error) {
+	task, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
+	if err != nil {
+		err, _ := err.(*googleapi.Error)
+		if err.Code == http.StatusNotFound {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
+
+		if err.Code >= 500 {
+			return nil, transient.Tag.Apply(err)
+		}
+	}
+
+	return task, nil
+}
+
+// fetchOutputJSON fetches the output.json from the given task on the given host.
+func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, cl *http.Client) ([]byte, error) {
 	// Get the ref for the isolated outs of the given task.
-	ref, err := getOutputsRef(ctx, swarmSvc, taskID)
+	ref, err := getOutputsRef(ctx, task)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +136,7 @@ func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID s
 
 	// Fetch the isolate.
 	logging.Infof(
-		ctx, "Fetching %s for isolated outs of task %s in %s", ref.Isolated, taskID, swarmingURL)
+		ctx, "Fetching %s for isolated outs of task %s", ref.Isolated, task.TaskId)
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
 		return nil, err
@@ -70,13 +150,13 @@ func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID s
 	outputFile, ok := isolates.Files[outputJSONFileName]
 	if !ok {
 		return nil, errors.Reason(
-			"missing expected output %s in isolated outputs of task %s in %s",
-			outputJSONFileName, taskID, swarmingURL).Err()
+			"missing expected output %s in isolated outputs",
+			outputJSONFileName).Err()
 	}
 
 	// Now fetch (from the same server and namespace) the output file by digest.
 	logging.Infof(
-		ctx, "Fetching %s for output of task %s in %s", outputFile.Digest, taskID, swarmingURL)
+		ctx, "Fetching %s for output of task %s", outputFile.Digest, task.TaskId)
 	buf = &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, outputFile.Digest, buf); err != nil {
 		return nil, err
@@ -87,16 +167,71 @@ func fetchOutputJSON(ctx context.Context, cl *http.Client, swarmingURL, taskID s
 
 // getOutputsRef gets the data needed to fetch the isolated outputs given a task and swarming
 // service.
-func getOutputsRef(ctx context.Context, swarmSvc *swarmingAPI.Service, taskID string) (*swarmingAPI.SwarmingRpcsFilesRef, error) {
-	logging.Infof(ctx, "Fetching outputs ref for task %s (%s)", taskID, swarmSvc.BasePath)
-	taskResult, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
+func getOutputsRef(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult) (*swarmingAPI.SwarmingRpcsFilesRef, error) {
+	if task.OutputsRef == nil || task.OutputsRef.Isolated == "" {
+		return nil, errors.Reason("no isolated outputs").Err()
+	}
+
+	return task.OutputsRef, nil
+}
+
+// getInvocationID gets the ID of the invocation associated with a task and swarming service.
+func getInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, req *pb.DeriveInvocationRequest) (string, error) {
+	// If the task was deduped, then the invocation associated with it is just the one associated
+	// to the task from which it was deduped.
+	var err error
+	dedupedFromID := task.DedupedFrom
+	for {
+		if dedupedFromID == "" {
+			break
+		}
+
+		task, err = getSwarmingTask(ctx, dedupedFromID, swarmSvc)
+		if err != nil {
+			return "", err
+		}
+		dedupedFromID = task.DedupedFrom
+	}
+
+	// Get request information to include in ID.
+	canonicalReq, _ := proto.Clone(req).(*pb.DeriveInvocationRequest)
+	canonicalReq.SwarmingTask.Id = task.RunId
+	h := sha256.New()
+	reqBytes, err := json.Marshal(canonicalReq)
 	if err != nil {
-		return nil, err
+		return "", err
+	}
+	h.Write(reqBytes)
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// convertOutputJSON gets the Invocation and TestResults associated with the the given data.
+//
+// It tries to convert to JSON Test Results format, then GTest format.
+func convertOutputJSON(ctx context.Context, req *pb.DeriveInvocationRequest, data []byte) (*pb.Invocation, []*pb.TestResult, error) {
+	inv := &pb.Invocation{}
+
+	// Try to convert the buffer treating its format as the JSON Test Results Format.
+	jsonFormat := &formats.JSONTestResults{}
+	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
+	if jsonErr == nil {
+		results, err := jsonFormat.ToProtos(ctx, req, inv)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
+		}
+		return inv, results, nil
 	}
 
-	if taskResult.OutputsRef == nil || taskResult.OutputsRef.Isolated == "" {
-		return nil, errors.Reason("Task %s (%s) had no isolated outputs", taskID, swarmSvc.BasePath).Err()
+	// Try to convert the buffer treating its format as that of GTests.
+	gtestFormat := &formats.GTestResults{}
+	gtestErr := gtestFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
+	if gtestErr == nil {
+		results, err := gtestFormat.ToProtos(ctx, req, inv)
+		if err != nil {
+			return nil, nil, errors.Annotate(err, "converting as GTest results format").Err()
+		}
+		return inv, results, nil
 	}
 
-	return taskResult.OutputsRef, nil
+	return nil, nil, errors.NewMultiError(jsonErr, gtestErr)
 }
