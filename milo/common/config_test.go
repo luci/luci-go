@@ -61,6 +61,17 @@ func TestConfig(t *testing.T) {
 				So(ve.Errors[4].Error(), ShouldContainSubstring, "missing ref")
 				So(ve.Errors[5].Error(), ShouldContainSubstring, "header non-existent not defined")
 			})
+			Convey("Load bad config due to console builder's definitions", func() {
+				content := []byte(badConsoleCfg)
+				validateProjectCfg(ctx, configSet, path, content)
+				err := ctx.Finalize()
+				ve, ok := err.(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 3)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "buildbot builders")
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "name must be non-empty")
+				So(ve.Errors[2].Error(), ShouldContainSubstring, "name must be in the form of")
+			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -270,6 +281,27 @@ consoles: {
 		name: "buildbucket/luci.foo.other/baz"
 		category: "main|other"
 		short_name: "o"
+	}
+}
+`
+
+var badConsoleCfg = `
+consoles: {
+	id: "baz"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "refs/heads/master"
+	manifest_name: "REVISION"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		name: "buildbot/master.blah/bar"
+		category: "main"
+		short_name: "s"
+	}
+	builders: {
+		name: ""
+	}
+	builders: {
+		name: "bad/scheme"
 	}
 }
 `
