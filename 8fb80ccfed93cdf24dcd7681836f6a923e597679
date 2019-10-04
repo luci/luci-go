@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "05391c24_92b49650",
+        "filename": "buildbucket/cmd/bbagent/build_client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-04T16:48:20Z",
+      "side": 1,
+      "message": "cap by 5 minutes?",
+      "revId": "8fb80ccfed93cdf24dcd7681836f6a923e597679",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
