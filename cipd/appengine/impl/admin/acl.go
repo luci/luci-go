@@ -44,15 +44,15 @@ func AdminAPI(d *tq.Dispatcher) api.AdminServer {
 
 // checkAdminPrelude is called before each RPC to check the caller is in
 // "administrators" group.
-func checkAdminPrelude(c context.Context, method string, req proto.Message) (context.Context, error) {
-	switch yep, err := auth.IsMember(c, AdminGroup); {
+func checkAdminPrelude(ctx context.Context, method string, req proto.Message) (context.Context, error) {
+	switch yep, err := auth.IsMember(ctx, AdminGroup); {
 	case err != nil:
-		logging.WithError(err).Errorf(c, "IsMember(%q) failed", AdminGroup)
+		logging.WithError(err).Errorf(ctx, "IsMember(%q) failed", AdminGroup)
 		return nil, status.Errorf(codes.Internal, "failed to check ACL")
 	case !yep:
-		logging.Warningf(c, "Denying access to %q for %q, not in %q group", method, auth.CurrentIdentity(c), AdminGroup)
+		logging.Warningf(ctx, "Denying access to %q for %q, not in %q group", method, auth.CurrentIdentity(ctx), AdminGroup)
 		return nil, status.Errorf(codes.PermissionDenied, "not allowed")
 	}
-	logging.Infof(c, "Admin %q is calling %q", auth.CurrentIdentity(c), method)
-	return c, nil
+	logging.Infof(ctx, "Admin %q is calling %q", auth.CurrentIdentity(ctx), method)
+	return ctx, nil
 }

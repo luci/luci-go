@@ -46,23 +46,23 @@ func SetupTest() (context.Context, *adminImpl) {
 }
 
 // RunMapper launches a mapper and runs it till successful completion.
-func RunMapper(c context.Context, admin *adminImpl, cfg *api.JobConfig) (mapper.JobID, error) {
+func RunMapper(ctx context.Context, admin *adminImpl, cfg *api.JobConfig) (mapper.JobID, error) {
 	// Launching the job creates an initial tq task.
-	jobID, err := admin.LaunchJob(c, cfg)
+	jobID, err := admin.LaunchJob(ctx, cfg)
 	if err != nil {
 		return 0, err
 	}
 
 	// Run the tq loop until there are no more pending tasks.
-	tq := tqtesting.GetTestable(c, admin.tq)
-	_, _, err = tq.RunSimulation(c, nil)
+	tq := tqtesting.GetTestable(ctx, admin.tq)
+	_, _, err = tq.RunSimulation(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
 
 	// Collect the result. Should be successful, otherwise RunSimulation would
 	// have returned an error (it aborts on a first error from a tq task).
-	state, err := admin.GetJobState(c, jobID)
+	state, err := admin.GetJobState(ctx, jobID)
 	if err != nil {
 		return 0, err
 	}

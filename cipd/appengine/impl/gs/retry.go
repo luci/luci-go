@@ -59,8 +59,8 @@ func StatusCodeTag(code int) errors.TagValue {
 //
 // If the request never reached GS, StatusCode(err) would return 0 and the error
 // will be tagged as transient.
-func withRetry(c context.Context, call func() error) error {
-	return retry.Retry(c, transient.Only(retry.Default), func() error {
+func withRetry(ctx context.Context, call func() error) error {
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := call()
 		if err == nil {
 			return nil
@@ -83,6 +83,6 @@ func withRetry(c context.Context, call func() error) error {
 		}
 		return ann.Err()
 	}, func(err error, d time.Duration) {
-		logging.WithError(err).Errorf(c, "Transient error when accessing GS. Retrying in %s...", d)
+		logging.WithError(err).Errorf(ctx, "Transient error when accessing GS. Retrying in %s...", d)
 	})
 }

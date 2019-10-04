@@ -39,26 +39,26 @@ func Public(internal api.StorageServer) api.StorageServer {
 }
 
 // aclPrelude is called before each RPC to check ACLs.
-func aclPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+func aclPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
 	acl, ok := perMethodACL[methodName]
 	if !ok {
 		panic(fmt.Sprintf("method %q is not defined in perMethodACL", methodName))
 	}
 	if acl.group != "*" {
-		switch yep, err := auth.IsMember(c, acl.group); {
+		switch yep, err := auth.IsMember(ctx, acl.group); {
 		case err != nil:
-			logging.WithError(err).Errorf(c, "IsMember(%q) failed", acl.group)
+			logging.WithError(err).Errorf(ctx, "IsMember(%q) failed", acl.group)
 			return nil, status.Errorf(codes.Internal, "failed to check ACL")
 		case !yep:
 			return nil, status.Errorf(codes.PermissionDenied, "not allowed")
 		}
 	}
 	if acl.check != nil {
-		if err := acl.check(c, req); err != nil {
+		if err := acl.check(ctx, req); err != nil {
 			return nil, err
 		}
 	}
-	return c, nil
+	return ctx, nil
 }
 
 // perMethodACL defines a group to check when authorizing an RPC call plus a
@@ -67,7 +67,7 @@ func aclPrelude(c context.Context, methodName string, req proto.Message) (contex
 // Group "*" means "allow anyone to call the method".
 var perMethodACL = map[string]struct {
 	group string
-	check func(c context.Context, req proto.Message) error
+	check func(ctx context.Context, req proto.Message) error
 }{
 	"GetObjectURL": {"administrators", nil},
 
@@ -81,7 +81,7 @@ var perMethodACL = map[string]struct {
 	"CancelUpload": {"*", nil},
 }
 
-func denyForceHash(c context.Context, req proto.Message) error {
+func denyForceHash(ctx context.Context, req proto.Message) error {
 	if req.(*api.FinishUploadRequest).ForceHash != nil {
 		return status.Errorf(codes.PermissionDenied, "usage of 'force_hash' is forbidden")
 	}

@@ -67,7 +67,7 @@ func toStatus(err error) error {
 }
 
 // LaunchJob implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) LaunchJob(c context.Context, cfg *api.JobConfig) (*api.JobID, error) {
+func (impl *adminImpl) LaunchJob(ctx context.Context, cfg *api.JobConfig) (*api.JobID, error) {
 	def, ok := mappers[cfg.Kind] // see mappers.go
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "unknown mapper kind")
@@ -82,7 +82,7 @@ func (impl *adminImpl) LaunchJob(c context.Context, cfg *api.JobConfig) (*api.Jo
 	launchCfg.Mapper = def.mapperID()
 	launchCfg.Params = cfgBlob
 
-	jid, err := impl.ctl.LaunchJob(c, &launchCfg)
+	jid, err := impl.ctl.LaunchJob(ctx, &launchCfg)
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -91,8 +91,8 @@ func (impl *adminImpl) LaunchJob(c context.Context, cfg *api.JobConfig) (*api.Jo
 }
 
 // AbortJob implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) AbortJob(c context.Context, id *api.JobID) (*empty.Empty, error) {
-	_, err := impl.ctl.AbortJob(c, mapper.JobID(id.JobId))
+func (impl *adminImpl) AbortJob(ctx context.Context, id *api.JobID) (*empty.Empty, error) {
+	_, err := impl.ctl.AbortJob(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -100,8 +100,8 @@ func (impl *adminImpl) AbortJob(c context.Context, id *api.JobID) (*empty.Empty,
 }
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) GetJobState(c context.Context, id *api.JobID) (*api.JobState, error) {
-	job, err := impl.ctl.GetJob(c, mapper.JobID(id.JobId))
+func (impl *adminImpl) GetJobState(ctx context.Context, id *api.JobID) (*api.JobState, error) {
+	job, err := impl.ctl.GetJob(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -109,7 +109,7 @@ func (impl *adminImpl) GetJobState(c context.Context, id *api.JobID) (*api.JobSt
 	if err := proto.Unmarshal(job.Config.Params, cfg); err != nil {
 		return nil, toStatus(errors.Annotate(err, "failed to unmarshal JobConfig").Err())
 	}
-	info, err := job.FetchInfo(c)
+	info, err := job.FetchInfo(ctx)
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -117,8 +117,8 @@ func (impl *adminImpl) GetJobState(c context.Context, id *api.JobID) (*api.JobSt
 }
 
 // GetJobState implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) FixMarkedTags(c context.Context, id *api.JobID) (*api.TagFixReport, error) {
-	tags, err := fixMarkedTags(c, mapper.JobID(id.JobId))
+func (impl *adminImpl) FixMarkedTags(ctx context.Context, id *api.JobID) (*api.TagFixReport, error) {
+	tags, err := fixMarkedTags(ctx, mapper.JobID(id.JobId))
 	if err != nil {
 		return nil, toStatus(err)
 	}

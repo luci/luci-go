@@ -112,7 +112,7 @@ func TestGetObjectURL(t *testing.T) {
 		settings: func(context.Context) (*settings.Settings, error) {
 			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
 		},
-		getSignedURL: func(c context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
+		getSignedURL: func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
 			return "http//signed.example.com" + gsPath + "?f=" + filename, signErr
 		},
 	}
@@ -201,27 +201,27 @@ type publishCall struct {
 	srcGen int64
 }
 
-func (m *mockedGS) Exists(c context.Context, path string) (bool, error) {
+func (m *mockedGS) Exists(ctx context.Context, path string) (bool, error) {
 	return m.exists, nil
 }
 
-func (m *mockedGS) StartUpload(c context.Context, path string) (string, error) {
+func (m *mockedGS) StartUpload(ctx context.Context, path string) (string, error) {
 	return "http://upload-url.example.com/for/+" + path, nil
 }
 
-func (m *mockedGS) CancelUpload(c context.Context, uploadURL string) error {
+func (m *mockedGS) CancelUpload(ctx context.Context, uploadURL string) error {
 	m.cancelUploadCalls = append(m.cancelUploadCalls, uploadURL)
 	return nil
 }
 
-func (m *mockedGS) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
+func (m *mockedGS) Reader(ctx context.Context, path string, gen int64) (gs.Reader, error) {
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}
 	return nil, errors.Reason("file %q is missing", path).Tag(gs.StatusCodeTag(http.StatusNotFound)).Err()
 }
 
-func (m *mockedGS) Publish(c context.Context, dst, src string, srcGen int64) error {
+func (m *mockedGS) Publish(ctx context.Context, dst, src string, srcGen int64) error {
 	if m.publisCalls == nil {
 		panic("didn't expect Publish calls")
 	}
@@ -229,7 +229,7 @@ func (m *mockedGS) Publish(c context.Context, dst, src string, srcGen int64) err
 	return m.publishErr
 }
 
-func (m *mockedGS) Delete(c context.Context, path string) error {
+func (m *mockedGS) Delete(ctx context.Context, path string) error {
 	if m.deleteCalls == nil {
 		panic("didn't expect Delete calls")
 	}

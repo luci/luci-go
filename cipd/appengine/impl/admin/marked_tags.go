@@ -78,7 +78,7 @@ func queryMarkedTags(job mapper.JobID) *datastore.Query {
 //
 // If the callback returns an error this error is returned immediately by
 // multiGetTags.
-func multiGetTags(c context.Context, keys []*datastore.Key, cb func(*datastore.Key, *model.Tag) error) error {
+func multiGetTags(ctx context.Context, keys []*datastore.Key, cb func(*datastore.Key, *model.Tag) error) error {
 	tags := make([]model.Tag, len(keys))
 	for i, k := range keys {
 		tags[i] = model.Tag{
@@ -88,7 +88,7 @@ func multiGetTags(c context.Context, keys []*datastore.Key, cb func(*datastore.K
 	}
 
 	errAt := func(idx int) error { return nil }
-	if err := datastore.Get(c, tags); err != nil {
+	if err := datastore.Get(ctx, tags); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
 			return errors.Annotate(err, "GetMulti RPC error when fetching %d tags", len(tags)).Tag(transient.Tag).Err()
@@ -115,9 +115,9 @@ func multiGetTags(c context.Context, keys []*datastore.Key, cb func(*datastore.K
 // with the human-readable reason why the tag was marked.
 //
 // Such marked tags are then stored in the datastore and later can be queried.
-func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
+func visitAndMarkTags(ctx context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
 	var marked []*markedTag
-	err := multiGetTags(c, keys, func(key *datastore.Key, tag *model.Tag) error {
+	err := multiGetTags(ctx, keys, func(key *datastore.Key, tag *model.Tag) error {
 		if why := cb(tag); why != "" {
 			mt := &markedTag{
 				Job: job,
@@ -134,7 +134,7 @@ func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key
 		return err
 	}
 
-	if err := datastore.Put(c, marked); err != nil {
+	if err := datastore.Put(ctx, marked); err != nil {
 		return errors.Annotate(err, "failed to store %d markedTag(s)", len(marked)).Tag(transient.Tag).Err()
 	}
 	return nil
