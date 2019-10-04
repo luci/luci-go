@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b9dac24_d4708bca",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T20:04:37Z",
+      "side": 1,
+      "message": "i didn\u0027t understand this comment",
+      "parentUuid": "75d15787_83c6d47a",
+      "range": {
+        "startLine": 271,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 9
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a9658a4d_26e0f10f",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -42,6 +66,70 @@
         "endLine": 310,
         "endChar": 18
       },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f5624db_9be2be66",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T20:04:37Z",
+      "side": 1,
+      "message": "it already does not mirror Build. If we wanted them to be mirrors, we\u0027d want to use Build itself.\n\nScheduleBuildRequest and Build are quite different, so i think it is ok not to couple them.\nFor example, ScheduleBuildRequest by itself is not sufficient. A builder configuration must live on the server, and together they may produce a Build.\n\nWhen we have time, I\u0027d expect this service to grow\n  rpc CreateBuild(CreateBuildRequest) Build\n\nwith\n\n  message CreateBuildRequest {\n    Build build;\n  }",
+      "parentUuid": "a9658a4d_26e0f10f",
+      "range": {
+        "startLine": 310,
+        "startChar": 10,
+        "endLine": 310,
+        "endChar": 18
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "977f89d2_94c07e99",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T20:04:37Z",
+      "side": 1,
+      "message": "child builds",
+      "range": {
+        "startLine": 317,
+        "startChar": 70,
+        "endLine": 317,
+        "endChar": 76
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "037d5304_700a2008",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-04T20:04:37Z",
+      "side": 1,
+      "message": "what happens if this task run does not exist / this task does not exist?\ndoes swarming check anything when creating a swarming task?\n\nwill this RPC return InvalidArgument in this case? ideally it is documented",
       "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
