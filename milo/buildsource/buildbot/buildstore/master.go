@@ -100,35 +100,14 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		return m, nil
 	}
 
-	emulation := EmulationEnabled(c)
-	if emulation {
-		// Emulation does not support this Slaves field.
-		m.Slaves = nil
-		for _, b := range m.Builders {
-			b.Slaves = nil
-			b.PendingBuildStates = nil
+	var refreshBuilds []*buildEntity
+	for _, slave := range m.Slaves {
+		for _, b := range slave.Runningbuilds {
+			refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
 		}
-		// Add in pure-luci builders, if not found in buildbot.
-		builders, err := getLUCIBuilders(c, name)
-		if err != nil {
-			return nil, err
-		}
-		for _, builder := range builders {
-			if _, ok := m.Builders[builder]; !ok {
-				m.Builders[builder] = &buildbotapi.Builder{Buildername: builder}
-			}
-		}
-
-	} else {
-		var refreshBuilds []*buildEntity
-		for _, slave := range m.Slaves {
-			for _, b := range slave.Runningbuilds {
-				refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
-			}
-		}
-		if err = datastore.Get(c, refreshBuilds); err != nil {
-			return nil, errors.Annotate(err, "refresh builds").Err()
-		}
+	}
+	if err = datastore.Get(c, refreshBuilds); err != nil {
+		return nil, errors.Annotate(err, "refresh builds").Err()
 	}
 
 	// Inject cached builds information.
@@ -156,46 +135,6 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 				for i, b := range res.Builds {
 					builder.CachedBuilds[i] = b.Number
 				}
-
-				if emulation {
-					// builder.PendingBuilds and builder.CurrentBuilds
-					// contain only buildbot data. Add LUCI data.
-
-					// This will load both Buildbot and LUCI builds, merged.
-					q := Query{
-						Master:   name,
-						Builder:  builderName,
-						Finished: No,
-
-						// we will ignore buildbot builds
-						KeyOnly:           true,
-						NoAnnotationFetch: true,
-					}
-					res, err := GetBuilds(c, q)
-					if err != nil {
-						return err
-					}
-
-					// Pending buildbot builds are "build requests".
-					// They did not turn into builds yet and we don't know if
-					// they will be come experimental or not. The moment one
-					// turns into a build, it will excluded from
-					// builder.PendingBuilds and will possibly not included
-					// in CurrentBuilds in case it is experimental.
-					// Thus, not zeroing builder.PendingBuilds.
-
-					// In contrast to Golang, nil in JSON is not a valid array.
-					// so do not set CurrentBuilds to nil.
-					builder.CurrentBuilds = make([]int, 0, len(res.Builds))
-					for _, b := range res.Builds {
-						if b.Times.Start.IsZero() {
-							builder.PendingBuilds++
-						} else {
-							builder.CurrentBuilds = append(builder.CurrentBuilds, b.Number)
-						}
-					}
-				}
-
 				return nil
 			}
 		}

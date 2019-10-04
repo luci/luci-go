@@ -47,7 +47,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
@@ -585,13 +584,6 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 		c.Context = git.WithProject(c.Context, luciProject)
 		next(c)
 	}
-}
-
-// emulationMiddleware enables buildstore emulation if "emulation" query
-// string parameter is not empty.
-func emulationMiddleware(c *router.Context, next router.Handler) {
-	c.Context = buildstore.WithEmulation(c.Context, c.Request.FormValue("emulation") != "")
-	next(c)
 }
 
 // ProjectLinks returns the navigation list surrounding a project and optionally group.
