@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -60,20 +59,8 @@ func handleBuildbotBuild(c *router.Context) error {
 		return err
 	}
 
-	// If this build is emulated, redirect to LUCI.
-	b, err := buildstore.EmulationOf(c.Context, id)
-	switch {
-	case err != nil:
-		return err
-	case b != nil && b.Number != nil:
-		u := *c.Request.URL
-		u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, *b.Number)
-		http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
-		return nil
-	default:
-		build, err := buildbot.GetBuild(c.Context, id)
-		return renderBuildLegacy(c, build, false, err)
-	}
+	build, err := buildbot.GetBuild(c.Context, id)
+	return renderBuildLegacy(c, build, false, err)
 }
 
 func handleSwarmingBuild(c *router.Context) error {

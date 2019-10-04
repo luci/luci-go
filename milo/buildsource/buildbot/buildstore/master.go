@@ -75,14 +75,11 @@ func getLUCIBuilders(c context.Context, master string) ([]string, error) {
 
 // GetMaster fetches a master.
 //
-// If refreshState is true, refreshes individual builds from the datastore
-// and the list of Cached builds.
-//
 // If any of the master's builders is emulated, the returned Master
 // does not have any slave information or pending build states.
 //
 // Does not check access.
-func GetMaster(c context.Context, name string, refreshState bool) (*Master, error) {
+func GetMaster(c context.Context, name string) (*Master, error) {
 	entity := masterEntity{Name: name}
 	err := datastore.Get(c, &entity)
 	if err == datastore.ErrNoSuchEntity {
@@ -91,115 +88,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 	if err != nil {
 		return nil, err
 	}
-
-	m, err := entity.decode(c)
-	if err != nil {
-		return nil, err
-	}
-	if !refreshState {
-		return m, nil
-	}
-
-	emulation := EmulationEnabled(c)
-	if emulation {
-		// Emulation does not support this Slaves field.
-		m.Slaves = nil
-		for _, b := range m.Builders {
-			b.Slaves = nil
-			b.PendingBuildStates = nil
-		}
-		// Add in pure-luci builders, if not found in buildbot.
-		builders, err := getLUCIBuilders(c, name)
-		if err != nil {
-			return nil, err
-		}
-		for _, builder := range builders {
-			if _, ok := m.Builders[builder]; !ok {
-				m.Builders[builder] = &buildbotapi.Builder{Buildername: builder}
-			}
-		}
-
-	} else {
-		var refreshBuilds []*buildEntity
-		for _, slave := range m.Slaves {
-			for _, b := range slave.Runningbuilds {
-				refreshBuilds = append(refreshBuilds, (*buildEntity)(b))
-			}
-		}
-		if err = datastore.Get(c, refreshBuilds); err != nil {
-			return nil, errors.Annotate(err, "refresh builds").Err()
-		}
-	}
-
-	// Inject cached builds information.
-	return m, parallel.WorkPool(4, func(work chan<- func() error) {
-		for builderName, builder := range m.Builders {
-			builderName := builderName
-			builder := builder
-			work <- func() error {
-				// Get the most recent 50 buildNums on the builder to simulate what the
-				// cachedBuilds field looks like from the real buildbot master json.
-				q := Query{
-					Master:   name,
-					Builder:  builderName,
-					Finished: Yes,
-					Limit:    50,
-
-					NoAnnotationFetch: true,
-					KeyOnly:           true,
-				}
-				res, err := GetBuilds(c, q)
-				if err != nil {
-					return err
-				}
-				builder.CachedBuilds = make([]int, len(res.Builds))
-				for i, b := range res.Builds {
-					builder.CachedBuilds[i] = b.Number
-				}
-
-				if emulation {
-					// builder.PendingBuilds and builder.CurrentBuilds
-					// contain only buildbot data. Add LUCI data.
-
-					// This will load both Buildbot and LUCI builds, merged.
-					q := Query{
-						Master:   name,
-						Builder:  builderName,
-						Finished: No,
-
-						// we will ignore buildbot builds
-						KeyOnly:           true,
-						NoAnnotationFetch: true,
-					}
-					res, err := GetBuilds(c, q)
-					if err != nil {
-						return err
-					}
-
-					// Pending buildbot builds are "build requests".
-					// They did not turn into builds yet and we don't know if
-					// they will be come experimental or not. The moment one
-					// turns into a build, it will excluded from
-					// builder.PendingBuilds and will possibly not included
-					// in CurrentBuilds in case it is experimental.
-					// Thus, not zeroing builder.PendingBuilds.
-
-					// In contrast to Golang, nil in JSON is not a valid array.
-					// so do not set CurrentBuilds to nil.
-					builder.CurrentBuilds = make([]int, 0, len(res.Builds))
-					for _, b := range res.Builds {
-						if b.Times.Start.IsZero() {
-							builder.PendingBuilds++
-						} else {
-							builder.CurrentBuilds = append(builder.CurrentBuilds, b.Number)
-						}
-					}
-				}
-
-				return nil
-			}
-		}
-	})
+	return entity.decode(c)
 }
 
 // AllMasters returns all buildbot masters.

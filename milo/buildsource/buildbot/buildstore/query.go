@@ -16,25 +16,14 @@ package buildstore
 
 import (
 	"context"
-	"net/http"
 	"sort"
 	"strconv"
 
-	"google.golang.org/api/googleapi"
-
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/memcache"
-	"go.chromium.org/luci/buildbucket/deprecated"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildbotapi"
-	"go.chromium.org/luci/milo/git"
 )
 
 // Ternary has 3 defined values: either (zero), yes and no.
@@ -116,34 +105,7 @@ func GetBuilds(c context.Context, q Query) (*QueryResult, error) {
 	case q.Builder == "":
 		return nil, errors.New("builder is required")
 	}
-
-	if !EmulationEnabled(c) {
-		return getDatastoreBuilds(c, q, true)
-	}
-
-	var emulatedBuilds, buildbotBuilds []*buildbotapi.Build
-	err := parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() (err error) {
-			res, err := getDatastoreBuilds(c, q, false)
-			if res != nil {
-				buildbotBuilds = res.Builds
-			}
-			return
-		}
-		work <- func() (err error) {
-			emulatedBuilds, err = getEmulatedBuilds(c, q)
-			return
-		}
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "could not load builds").Err()
-	}
-
-	mergedBuilds := mergeBuilds(emulatedBuilds, buildbotBuilds)
-	if q.Limit > 0 && len(mergedBuilds) > q.Limit {
-		mergedBuilds = mergedBuilds[:q.Limit]
-	}
-	return &QueryResult{Builds: mergedBuilds}, nil
+	return getDatastoreBuilds(c, q, true)
 }
 
 // mergeBuilds merges builds from a and b to one slice.
@@ -168,122 +130,6 @@ func mergeBuilds(a, b []*buildbotapi.Build) []*buildbotapi.Build {
 		return ret[i].Number > ret[j].Number
 	})
 	return ret
-}
-
-func getEmulatedBuilds(c context.Context, q Query) ([]*buildbotapi.Build, error) {
-	if q.Cursor != "" {
-		// build query emulation does not support cursors
-		logging.Warningf(c, "ignoring cursor %q", q.Cursor)
-		q.Cursor = ""
-	}
-
-	bb, err := buildbucketClient(c)
-	if err != nil {
-		return nil, err
-	}
-
-	bucket, err := BucketOf(c, q.Master)
-	switch {
-	case err != nil:
-		return nil, errors.Annotate(err, "could not get bucket of %q", q.Master).Err()
-	case bucket == "":
-		return nil, nil
-	}
-
-	// Extract project and annotate context to use project scoped account.
-	project, _ := deprecated.BucketNameToV2(bucket)
-	if project == "" {
-		return nil, errors.Annotate(err, "unable to extract project from bucket name").Err()
-	}
-	c = git.WithProject(c, project)
-
-	search := bb.Search().
-		Bucket(bucket).
-		Tag(strpair.Format(bbv1.TagBuilder, q.Builder)).
-		Context(c)
-	switch q.Finished {
-	case Yes:
-		search.Status(bbv1.StatusCompleted)
-	case No:
-		search.Status(bbv1.StatusFilterIncomplete)
-	}
-
-	start := clock.Now(c)
-	msgs, _, err := search.Fetch(q.Limit, nil)
-	switch apiErr, _ := err.(*googleapi.Error); {
-	case apiErr != nil && apiErr.Code == http.StatusForbidden:
-		logging.Warningf(c, "%q does not have access to bucket %q. Returning 0 builds.",
-			auth.CurrentIdentity(c),
-			bucket)
-		return nil, nil
-	case err != nil:
-		return nil, errors.Annotate(err, "searching on buildbucket").Err()
-	}
-
-	logging.Infof(c, "buildbucket search took %s", clock.Since(c, start))
-
-	buildsTemp := make([]*buildbotapi.Build, len(msgs))
-	start = clock.Now(c)
-	err = parallel.WorkPool(10, func(work chan<- func() error) {
-		for i, msg := range msgs {
-			i := i
-			msg := msg
-			work <- func() error {
-				var buildbucketBuild deprecated.Build
-				if err := buildbucketBuild.ParseMessage(msg); err != nil {
-					return err
-				}
-				// may load annotations from logdog, that's why parallelized.
-				b, err := buildFromBuildbucket(c, q.Master, &buildbucketBuild, !q.NoAnnotationFetch)
-				switch {
-				case ErrNoBuildNumber.In(err):
-					return nil
-				case err != nil:
-					return err
-				}
-				buildsTemp[i] = b
-				return nil
-			}
-		}
-	})
-	if err != nil {
-		return nil, err
-	}
-	logging.Infof(c, "conversion from buildbucket builds took %s", clock.Since(c, start))
-
-	// Remove nil builds. I.E. The ones without build numbers.
-	builds := make([]*buildbotapi.Build, 0, len(buildsTemp))
-	for _, b := range buildsTemp {
-		if b != nil {
-			builds = append(builds, b)
-		}
-	}
-
-	if !q.NoChangeFetch && len(builds) > 0 {
-		start = clock.Now(c)
-		// We need to compute blamelist for multiple builds.
-		// 1) We don't have a guarantee that the numbers are contiguous
-		// 2) For some builds, we may have cached changes
-		// => compute blamelist for each build individually
-
-		// cache build revisions before fetching changes
-		// in case build numbers are contiguous.
-		caches := make([]memcache.Item, len(builds))
-		for i, b := range builds {
-			caches[i] = buildRevCache(c, b)
-		}
-		memcache.Set(c, caches...)
-
-		// compute blamelist serially so that git cache is reused.
-		for _, b := range builds {
-			if err := blame(c, b); err != nil {
-				return nil, errors.Annotate(err, "blamelist computation for build #%d failed", b.Number).Err()
-			}
-		}
-
-		logging.Infof(c, "blamelist computation took %s", clock.Since(c, start))
-	}
-	return builds, nil
 }
 
 func getDatastoreBuilds(c context.Context, q Query, includeExperimental bool) (*QueryResult, error) {
