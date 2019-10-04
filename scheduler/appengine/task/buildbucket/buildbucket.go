@@ -47,6 +47,9 @@ import (
 const (
 	statusCheckTimerName     = "check-buildbucket-build-status"
 	statusCheckTimerInterval = time.Minute
+	// Maximum number of triggers to be emitted into $recipe_engine/scheduler
+	// property. See also https://crbug.com/1006914.
+	maxTriggersAsSchedulerProperty = 100
 )
 
 // TaskManager implements task.Manager interface for tasks defined with
@@ -501,7 +504,12 @@ func schedulerProperty(ctx context.Context, ctl task.Controller) (*structpb.Valu
 	triggerList := &structpb.ListValue{}
 	m := &jsonpb.Marshaler{}
 	um := &jsonpb.Unmarshaler{}
-	for _, tInternal := range ctl.Request().IncomingTriggers {
+
+	ts := ctl.Request().IncomingTriggers
+	if len(ts) > maxTriggersAsSchedulerProperty {
+		ts = ts[len(ts)-maxTriggersAsSchedulerProperty : len(ts)]
+	}
+	for _, tInternal := range ts {
 		buf.Reset()
 		tPublic := internal.ToPublicTrigger(tInternal)
 		if err := m.Marshal(buf, tPublic); err != nil {
