@@ -217,7 +217,7 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkC
 	}
 
 	var err error
-	var zlib bool
+	zlib := false
 	switch desc.ContentType {
 	case luciexe.BuildProtoContentType:
 	case luciexe.BuildProtoZlibContentType:
