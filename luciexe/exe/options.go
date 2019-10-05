@@ -20,7 +20,7 @@ type Option func(*config)
 // If level is NoCompression, it's the same as not specifying this option (i.e.
 // no zlib wrapper will be used at all).
 func WithZlibCompression(level int) Option {
-	if level <= 0 {
+	if level <= zlib.NoCompression {
 		return nil
 	}
 	if level > zlib.BestCompression {
