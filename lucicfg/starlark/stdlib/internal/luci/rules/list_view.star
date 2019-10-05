@@ -57,10 +57,6 @@ def _list_view(
   [Referring to builders in other projects](#external_builders) for more
   details.
 
-  Also note that declaring Buildbot builders (which is deprecated) requires the
-  use of luci.list_view_entry(...). It's the only way to provide a reference to
-  a Buildbot builder (see `buildbot` field).
-
   Args:
     name: a name of this view, will show up in URLs. Note that names of
         luci.list_view(...) and luci.console_view(...) are in the same namespace
