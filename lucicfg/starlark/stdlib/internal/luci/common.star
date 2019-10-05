@@ -110,8 +110,11 @@ def _bucket_scoped_key(kind, attr, ref, allow_external=False):
   chunks = validate.string(attr, ref).split(':', 1)
   if len(chunks) == 2:
     proj, ref = chunks[0], chunks[1]
-    if proj and not allow_external:
-      fail('reference to %s in external project %r is not allowed here' % (kind, proj))
+    if proj:
+      if not allow_external:
+        fail('reference to %s in external project %r is not allowed here' % (kind, proj))
+      if proj == '*':
+        fail('buildbot builders no longer allowed here')
   else:
     proj, ref = '', chunks[0]
 
