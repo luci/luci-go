@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0f31a38e_e1492519",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e061b43a_cfc59a7d",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "94beace0_20b0bbcc",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -30,6 +48,30 @@
       "writtenOn": "2019-10-05T00:27:39Z",
       "side": 1,
       "message": "i think we want to return it even if it is not finalized, since we never want to overwrite an existing invocation",
+      "range": {
+        "startLine": 77,
+        "startChar": 15,
+        "endLine": 77,
+        "endChar": 48
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "320e075b_980ffe6f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Hm, come to think of it this bit is a little strange because we don\u0027t expect invocations from swarming tasks /not/ to be finalized. In particular, if we get a task that already has its invocation (possibly deduped) uploaded, then we don\u0027t need to return the TestResults for the client to call BatchCreateTestResults (which would only have effect on a non-finalized invocation anyway).\n\nSo we can either have DeriveInvocation return nil TestResults in this case, which means clients shouldn\u0027t expect to be able to inspect any TestResults from a DeriveInvocation response, or we can fetch the associated TestResults and return them, which seems wasteful here because it\u0027ll be an extra RPC to Spanner without having any guaranteed use later, but doesn\u0027t have potentially surprising behavior. Thoughts? (I\u0027ve gone with the first alternative for now but am happy to change it)",
+      "parentUuid": "94beace0_20b0bbcc",
       "range": {
         "startLine": 77,
         "startChar": 15,
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "24b26d2c_7e9283a4",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e544980a_e42f7a41",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9be0e68f_4419c626",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -79,6 +139,30 @@
       "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ec3b2c0_86a97826",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9be0e68f_4419c626",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 4
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "9b73a187_b58760a1",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5f0794a_bdf9bf99",
+      "range": {
+        "startLine": 95,
+        "startChar": 8,
+        "endLine": 95,
+        "endChar": 11
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9fa20ef_aa2daa7a",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -125,6 +233,30 @@
       "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ff86d10_451e7aa4",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9fa20ef_aa2daa7a",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 17
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "ecd98b49_d7db0438",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0090c27b_72244aa3",
+      "range": {
+        "startLine": 133,
+        "startChar": 84,
+        "endLine": 133,
+        "endChar": 86
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf266ca6_4aee40e7",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -162,6 +318,24 @@
       "writtenOn": "2019-10-05T00:27:39Z",
       "side": 1,
       "message": "the invocation id namespace is global, so we better separate derived invocations from others.\nlet\u0027s prefix with \"derived_from_swarming_\" or something like that. I don\u0027t like this prefix, it is mouthful, maybe you can come up with something better?",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f5b8123_106090d7",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "\"derived_from_swarming_\" is a little long but I\u0027m fine with it; \"from_swarming_\" is shorter and retains the most important bit, if you agree \"derived\" is sufficiently implicit?\n\nI\u0027ve made the change but am happy to rename it (also I\u0027m guessing you mean prefix the hash, not hash the prefix too?)",
+      "parentUuid": "bf266ca6_4aee40e7",
       "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "807be3f6_f589c4d9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78854f2a_669d5de5",
+      "range": {
+        "startLine": 206,
+        "startChar": 21,
+        "endLine": 206,
+        "endChar": 92
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45849700_0a4c5711",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -205,6 +403,24 @@
       "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a1e5f90_c26bf41c",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-05T01:41:51Z",
+      "side": 1,
+      "message": "Done\n\n(Wasn\u0027t sure if you\u0027d prefer it in a separate CL)",
+      "parentUuid": "45849700_0a4c5711",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
