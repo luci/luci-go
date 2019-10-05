@@ -241,6 +241,24 @@
       "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4573708b_62f2eff3",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-05T00:39:56Z",
+      "side": 1,
+      "message": "Fixing swarming is on my list of work for this bug.\n\nDo you think something extra has to be added to doc here?",
+      "parentUuid": "ba06376a_b9837eb2",
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
