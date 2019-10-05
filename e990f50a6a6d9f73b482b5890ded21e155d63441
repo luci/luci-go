@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa0698f8_fc79e511",
+        "filename": "luciexe/exe/options.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-05T07:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc8242b9_5afa4afe",
+      "range": {
+        "startLine": 23,
+        "startChar": 13,
+        "endLine": 23,
+        "endChar": 14
+      },
+      "revId": "e990f50a6a6d9f73b482b5890ded21e155d63441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c016e49b_9984774a",
         "filename": "luciexe/host/buildmerge/agent.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "e990f50a6a6d9f73b482b5890ded21e155d63441",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3384e6a6_82e1fedf",
+        "filename": "luciexe/host/buildmerge/agent.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-05T07:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c016e49b_9984774a",
+      "range": {
+        "startLine": 220,
+        "startChar": 1,
+        "endLine": 220,
+        "endChar": 14
+      },
+      "revId": "e990f50a6a6d9f73b482b5890ded21e155d63441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
