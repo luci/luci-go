@@ -23,6 +23,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func init() {
+	bufferLogs = false
+}
+
 func TestButler(t *testing.T) {
 	Convey(`test butler environment`, t, func() {
 		ctx, closer := testCtx()
