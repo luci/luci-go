@@ -24,5 +24,5 @@ const (
 	MaxLogEntryDataSize = 10 * 1024 * 1024
 
 	// MaxDatagramSize is the maximum size, in bytes, of datagram data.
-	MaxDatagramSize int = MaxLogEntryDataSize
+	MaxDatagramSize int = 3 * MaxLogEntryDataSize
 )
