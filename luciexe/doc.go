@@ -59,7 +59,7 @@
 //       * Golang: go.chromium.org/luci/logdog/client/butlerlib/bootstrap
 //       * Python: infra_libs.logdog.bootstrap
 //   * Hook the butler to intercept and merge build.proto streams into a single
-//     build.proto stream.
+//     build.proto (zlib-compressed) stream.
 //   * Set up a local LUCI ambient authentication service which luciexe's can
 //     use to mint auth tokens.
 //   * Prepare an empty temporary directory which will house tempdirs and
@@ -154,6 +154,10 @@
 //
 //   Content-Type: "application/luci+proto; message=buildbucket.v2.Build"
 //   Type: Datagram
+//
+// Additionally, a build.proto stream may append "; encoding=zlib" to the
+// Content-Type (and compress each message accordingly). This is useful for when
+// you potentially have very large builds.
 //
 // Each datagram MUST be a valid binary-encoded buildbucket.v2.Build message.
 // The state of the build is defined as the last Build message sent on this

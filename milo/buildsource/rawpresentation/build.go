@@ -15,15 +15,17 @@
 package rawpresentation
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
@@ -36,6 +38,7 @@ import (
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/logdog/common/viewer"
+	"go.chromium.org/luci/luciexe"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -151,7 +154,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 			as.step = &step
 		}
 
-	case protoutil.BuildMediaType:
+	case luciexe.BuildProtoZlibContentType:
 		var build bbpb.Build
 		toUnmarshal = &build
 		followup = func() {
@@ -172,8 +175,21 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 		return errors.New("Datagram stream does not have datagram data")
 	}
 
+	z, err := zlib.NewReader(bytes.NewBuffer(dg.Data))
+	if err != nil {
+		return errors.Annotate(
+			err, "Datagram is marked as compressed, but failed to open zlib stream",
+		).Err()
+	}
+	data, err := ioutil.ReadAll(z)
+	if err != nil {
+		return errors.Annotate(
+			err, "Datagram is marked as compressed, but failed to decompress",
+		).Err()
+	}
+
 	// Attempt to decode the protobuf.
-	if err := proto.Unmarshal(dg.Data, toUnmarshal); err != nil {
+	if err := proto.Unmarshal(data, toUnmarshal); err != nil {
 		return err
 	}
 	followup()

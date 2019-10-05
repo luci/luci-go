@@ -217,14 +217,20 @@ func (a *Agent) onNewStream(desc *logpb.LogStreamDescriptor) butler.StreamChunkC
 	}
 
 	var err error
-	if desc.ContentType != luciexe.BuildProtoContentType {
+	var zlib bool
+	switch desc.ContentType {
+	case luciexe.BuildProtoContentType:
+	case luciexe.BuildProtoZlibContentType:
+		zlib = true
+	default:
 		err = errors.Reason("stream %q has content type %q, expected %q", desc.Name, desc.ContentType, luciexe.BuildProtoContentType).Err()
-	} else if desc.StreamType != logpb.StreamType_DATAGRAM {
+	}
+	if err == nil && desc.StreamType != logpb.StreamType_DATAGRAM {
 		err = errors.Reason("stream %q has type %q, expected %q", desc.Name, desc.StreamType, logpb.StreamType_DATAGRAM).Err()
 	}
 
 	url, _ := a.calculateURLs("", types.StreamName(desc.Name))
-	bState := newBuildStateTracker(a.ctx, a, namespace, err)
+	bState := newBuildStateTracker(a.ctx, a, namespace, zlib, err)
 
 	a.statesMu.Lock()
 	defer a.statesMu.Unlock()
