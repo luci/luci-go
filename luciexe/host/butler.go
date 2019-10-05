@@ -24,6 +24,9 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 )
 
+// overridden in tests
+var bufferLogs = true
+
 // startButler sets up a Butler streamserver, and exports it to the environment.
 func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
 	butlerCtx := ctx
@@ -32,7 +35,7 @@ func startButler(ctx context.Context, opts *Options) (*butler.Butler, error) {
 	}
 
 	butler, err := butler.New(butlerCtx, butler.Config{
-		BufferLogs: true,
+		BufferLogs: bufferLogs,
 		GlobalTags: opts.logdogTags,
 		Output:     opts.LogdogOutput,
 	})
