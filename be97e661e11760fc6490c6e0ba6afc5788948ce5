@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "7cda31f0_5f134d88",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-05T00:26:07Z",
+      "side": 1,
+      "message": "I added it because fields\u0027s numbers are no longer sorted, so it\u0027s more difficult to find which field is next.",
+      "parentUuid": "7b9dac24_d4708bca",
+      "range": {
+        "startLine": 271,
+        "startChar": 5,
+        "endLine": 271,
+        "endChar": 9
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9658a4d_26e0f10f",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "4ea1ce9b_78e5db05",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-05T00:26:07Z",
+      "side": 1,
+      "message": "leaving as is then.",
+      "parentUuid": "7f5624db_9be2be66",
+      "range": {
+        "startLine": 310,
+        "startChar": 10,
+        "endLine": 310,
+        "endChar": 18
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "977f89d2_94c07e99",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -119,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "fde11df8_a3f7f505",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-05T00:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "977f89d2_94c07e99",
+      "range": {
+        "startLine": 317,
+        "startChar": 70,
+        "endLine": 317,
+        "endChar": 76
+      },
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "037d5304_700a2008",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -130,6 +202,24 @@
       "writtenOn": "2019-10-04T20:04:37Z",
       "side": 1,
       "message": "what happens if this task run does not exist / this task does not exist?\ndoes swarming check anything when creating a swarming task?\n\nwill this RPC return InvalidArgument in this case? ideally it is documented",
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d11a9e2f_2829c90c",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-05T00:26:07Z",
+      "side": 1,
+      "message": "Swarming checks, but ends up with 500s (according to maruel@)\nHowever, I thought bb calls into swarming async, hence my doc that incorrect parent_task_id will be silently accepted, but result in build failure.\n\nDo you think bb should make sync request to swarming to verify parent_id exists?",
+      "parentUuid": "037d5304_700a2008",
       "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
