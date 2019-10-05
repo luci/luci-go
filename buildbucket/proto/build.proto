@@ -267,6 +267,8 @@ message BuildInfra {
   }
 
   // Swarming-specific information.
+  //
+  // Next ID: 10.
   message Swarming {
     // Describes a cache directory persisted on a bot.
     //
@@ -339,6 +341,12 @@ message BuildInfra {
     // Swarming task id.
     // Not guaranteed to be populated at the build creation time.
     string task_id = 2;
+
+    // Swarming run id of the parent task from which this build is triggered.
+    // If set, swarming promises to ensure this build won't outlive its parent
+    // swarming task (which may or may not itself be a Buildbucket build).
+    // Populated at the build creation time.
+    string parent_run_id = 9;
 
     // Task service account email address.
     // This is the service account used for all authenticated requests by the
