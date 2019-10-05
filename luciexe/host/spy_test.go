@@ -15,6 +15,8 @@
 package host
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"runtime"
 	"testing"
@@ -53,7 +55,7 @@ func TestSpy(t *testing.T) {
 
 				stream, err := bs.Client.NewDatagramStream(
 					ctx, luciexe.BuildProtoStreamSuffix,
-					streamclient.WithContentType(luciexe.BuildProtoContentType))
+					streamclient.WithContentType(luciexe.BuildProtoZlibContentType))
 				c.So(err, ShouldBeNil)
 				defer stream.Close()
 
@@ -62,6 +64,13 @@ func TestSpy(t *testing.T) {
 					Status:          bbpb.Status_SUCCESS,
 				})
 				c.So(err, ShouldBeNil)
+
+				buf := bytes.Buffer{}
+				z := zlib.NewWriter(&buf)
+				_, err = z.Write(data)
+				c.So(err, ShouldBeNil)
+				c.So(z.Close(), ShouldBeNil)
+				data = buf.Bytes()
 
 				err = stream.WriteDatagram(data)
 				c.So(err, ShouldBeNil)

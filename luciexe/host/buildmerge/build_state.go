@@ -15,8 +15,11 @@
 package buildmerge
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
@@ -63,6 +66,9 @@ type buildStateTracker struct {
 
 	ldNamespace types.StreamName
 
+	// True iff we should expect zlib-compressed datagrams.
+	zlib bool
+
 	// We use this mutex to synchronize closure and sending operations on the work
 	// channel; `work` is configured, if it's running, to immediately accept any
 	// items pushed to it, so it's safe to hold this while sending on work.C.
@@ -88,6 +94,17 @@ type buildStateTracker struct {
 func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) {
 	var parsedBuild *bbpb.Build
 	err := func() error {
+		if t.zlib {
+			z, err := zlib.NewReader(bytes.NewBuffer(data))
+			if err != nil {
+				return errors.Annotate(err, "constructing decompressor for Build").Err()
+			}
+			data, err = ioutil.ReadAll(z)
+			if err != nil {
+				return errors.Annotate(err, "decompressing Build").Err()
+			}
+		}
+
 		build := &bbpb.Build{}
 		if err := proto.Unmarshal(data, build); err != nil {
 			return errors.Annotate(err, "parsing Build").Err()
@@ -144,10 +161,11 @@ func (t *buildStateTracker) processDataUnlocked(state *buildState, data []byte) 
 // (closed) state where getLatest always returns a fixed Build in the
 // INFRA_FAILURE state with `err` reflected in the build's SummaryMarkdown
 // field.
-func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.StreamName, err error) *buildStateTracker {
+func newBuildStateTracker(ctx context.Context, merger *Agent, namespace types.StreamName, zlib bool, err error) *buildStateTracker {
 	ret := &buildStateTracker{
 		ctx:         ctx,
 		merger:      merger,
+		zlib:        zlib,
 		ldNamespace: namespace.AsNamespace(),
 		latestState: &buildState{},
 	}

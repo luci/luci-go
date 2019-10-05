@@ -15,6 +15,8 @@
 package exe
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
 	"io"
@@ -126,29 +128,58 @@ func buildFrom(in io.Reader, build *bbpb.Build) {
 	}
 }
 
-func mkBuildStream(ctx context.Context, build *bbpb.Build, bootstrapGet bsg) (BuildSender, func() error) {
+func mkBuildStream(ctx context.Context, build *bbpb.Build, zlibLevel int, bootstrapGet bsg) (BuildSender, func() error) {
 	ldClient, err := bootstrapGet()
 	if err != nil {
 		panic(errors.Annotate(err, "unable to make Logdog Client").Err())
 	}
+
+	cType := luciexe.BuildProtoContentType
+	if zlibLevel > 0 {
+		cType = luciexe.BuildProtoZlibContentType
+	}
 	buildStream, err := ldClient.Client.NewDatagramStream(
 		ctx, luciexe.BuildProtoStreamSuffix,
-		streamclient.WithContentType(luciexe.BuildProtoContentType))
+		streamclient.WithContentType(cType))
 	if err != nil {
 		panic(err)
 	}
 
 	// TODO(iannucci): come up with a better API for this?
 	var sendBuildMu sync.Mutex
+	var buf *bytes.Buffer
+	var z *zlib.Writer
+
+	if zlibLevel > 0 {
+		buf = &bytes.Buffer{}
+		z, err = zlib.NewWriterLevel(buf, zlibLevel)
+		if err != nil {
+			panic(errors.Annotate(err, "unable to create zlib.Writer").Err())
+		}
+	}
+
 	return func() {
 		sendBuildMu.Lock()
 		defer sendBuildMu.Unlock()
 
-		buf, err := proto.Marshal(build)
+		data, err := proto.Marshal(build)
 		if err != nil {
 			panic(errors.Annotate(err, "unable to marshal Build state").Err())
 		}
-		if err := buildStream.WriteDatagram(buf); err != nil {
+
+		if buf != nil {
+			buf.Reset()
+			z.Reset(buf)
+			if _, err := z.Write(data); err != nil {
+				panic(errors.Annotate(err, "unable to write to zlib.Writer").Err())
+			}
+			if err := z.Close(); err != nil {
+				panic(errors.Annotate(err, "unable to close zlib.Writer").Err())
+			}
+			data = buf.Bytes()
+		}
+
+		if err := buildStream.WriteDatagram(data); err != nil {
 			panic(errors.Annotate(err, "unable to write Build state").Err())
 		}
 	}, buildStream.Close
@@ -176,8 +207,8 @@ func mkBuildStream(ctx context.Context, build *bbpb.Build, bootstrapGet bsg) (Bu
 // wrong. If main panics, this is converted to an INFRA_FAILURE. If main returns
 // a non-nil error, this is converted to FAILURE, unless the InfraErrorTag is
 // set on the error (in which case it's converted to INFRA_FAILURE).
-func Run(main MainFn) {
-	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), &os.Args, bootstrap.Get, main))
+func Run(main MainFn, options ...Option) {
+	os.Exit(runCtx(gologger.StdConfig.Use(context.Background()), &os.Args, bootstrap.Get, options, main))
 }
 
 func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
@@ -187,14 +218,21 @@ func appendError(build *bbpb.Build, flavor string, errlike interface{}) {
 	build.SummaryMarkdown += fmt.Sprintf("Final %s: %s", flavor, errlike)
 }
 
-func runCtx(ctx context.Context, args *[]string, bootstrapGet bsg, main MainFn) int {
+func runCtx(ctx context.Context, args *[]string, bootstrapGet bsg, opts []Option, main MainFn) int {
+	cfg := &config{}
+	for _, o := range opts {
+		if o != nil {
+			o(cfg)
+		}
+	}
+
 	build := &bbpb.Build{}
 	if handleFn := mkOutputHandler(args, build); handleFn != nil {
 		defer handleFn()
 	}
 
 	buildFrom(os.Stdin, build)
-	sendBuild, closer := mkBuildStream(ctx, build, bootstrapGet)
+	sendBuild, closer := mkBuildStream(ctx, build, cfg.zlibLevel, bootstrapGet)
 	defer func() {
 		if err := closer(); err != nil {
 			panic(err)
