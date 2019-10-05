@@ -1,0 +1,210 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e061b43a_cfc59a7d",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "we should also bail out if the task did not complete yet",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94beace0_20b0bbcc",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "i think we want to return it even if it is not finalized, since we never want to overwrite an existing invocation",
+      "range": {
+        "startLine": 77,
+        "startChar": 15,
+        "endLine": 77,
+        "endChar": 48
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e544980a_e42f7a41",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "this func is called WriteInvocation but in this case it does not write an invocation.\nPerhaps DeriveInvocation would be better",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9be0e68f_4419c626",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "outputJSON",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 4
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5f0794a_bdf9bf99",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "the caller will need test results, https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/v1/recorder.proto;l\u003d288?q\u003dDeriveInvocationResponse\u0026ss\u003dchromium\nso i think we need to return test results we got at L89",
+      "range": {
+        "startLine": 95,
+        "startChar": 8,
+        "endLine": 95,
+        "endChar": 11
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9fa20ef_aa2daa7a",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "err\n\nand then we don\u0027t need L125-127",
+      "range": {
+        "startLine": 129,
+        "startChar": 14,
+        "endLine": 129,
+        "endChar": 17
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0090c27b_72244aa3",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "i think fetchOutputJSON should retrieve the client from ctx, since it has it",
+      "range": {
+        "startLine": 133,
+        "startChar": 84,
+        "endLine": 133,
+        "endChar": 86
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf266ca6_4aee40e7",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "the invocation id namespace is global, so we better separate derived invocations from others.\nlet\u0027s prefix with \"derived_from_swarming_\" or something like that. I don\u0027t like this prefix, it is mouthful, maybe you can come up with something better?",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78854f2a_669d5de5",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "nit: invocations/test results are not associated with the given data.\nhow about \"converts data to Invocation and TestResults\"",
+      "range": {
+        "startLine": 206,
+        "startChar": 21,
+        "endLine": 206,
+        "endChar": 92
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45849700_0a4c5711",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "now that we call ToProtos, it is time to do\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/recorder/chromium/formats/json.go;l\u003d123?q\u003dConvertFromJSON\u0026ss\u003dchromium\nand\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/recorder/chromium/formats/gtest.go;l\u003d142",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

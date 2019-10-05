@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "4e972736_059efcd1",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ad8b234_1f1f5ac1",
+      "range": {
+        "startLine": 51,
+        "startChar": 74,
+        "endLine": 51,
+        "endChar": 90
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18a272a0_9916c3f5",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -225,6 +249,30 @@
     },
     {
       "key": {
+        "uuid": "7f783dbe_1bd31265",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "returning http 5xx and returning a tag as unavailable is not mutually exclusive.\n\nwhen you say retry, do you mean the client retries or we retry?\n\ni am not sure i understand your comment. If we return grpcutil.Internal here, it will result in HTTP 500 for our client and i expect our client to retry.\n\nwhat you have in ps9 is fine",
+      "parentUuid": "9cc81a02_7941bdde",
+      "range": {
+        "startLine": 127,
+        "startChar": 19,
+        "endLine": 127,
+        "endChar": 33
+      },
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9ca48fa_17f09fba",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -351,6 +399,24 @@
       "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2887a588_a650b9be",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:27:39Z",
+      "side": 1,
+      "message": "either is fine",
+      "parentUuid": "756daf13_2c9b2cfb",
+      "revId": "26963b35141b43bd5cbf890fc107bd8701b7a14e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
