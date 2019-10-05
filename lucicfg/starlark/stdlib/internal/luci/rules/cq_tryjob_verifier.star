@@ -138,8 +138,7 @@ def _cq_tryjob_verifier(
     builder: a builder to launch when verifying a CL, see luci.builder(...).
         Can also be a reference to a builder defined in another project. See
         [Referring to builders in other projects](#external_builders) for more
-        details. For **deprecated case** of referring to a Buildbot builder,
-        use `*:<master>/<builder>`, e.g. `*:master.tryserver.chromium/android`.
+        details.
         Required.
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
