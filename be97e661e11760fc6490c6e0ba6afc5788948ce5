@@ -223,6 +223,24 @@
       "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba06376a_b9837eb2",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T00:30:29Z",
+      "side": 1,
+      "message": "adding that swarming communication back to the build creation code path would be messy. I was very happy when i removed that complexity, so I think asynchronously making the build as infra_failure is not too bad. We shouldn\u0027t see it often\n\nif swarming returns http 500, we might not be able to distinguish this from other http 500s, so maybe we should fix swarming to return 400",
+      "parentUuid": "d11a9e2f_2829c90c",
+      "revId": "be97e661e11760fc6490c6e0ba6afc5788948ce5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
