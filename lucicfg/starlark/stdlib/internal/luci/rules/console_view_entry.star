@@ -24,8 +24,7 @@ def _console_view_entry(
       *,
       short_name=None,
       category=None,
-      console_view=None,
-      buildbot=None
+      console_view=None
   ):
   """A builder entry in some luci.console_view(...).
 
@@ -58,9 +57,7 @@ def _console_view_entry(
   Args:
     builder: a builder to add, see luci.builder(...). Can also be a reference
         to a builder defined in another project. See [Referring to builders in
-        other projects](#external_builders) for more details. Can be omitted
-        for **extra deprecated** case of Buildbot-only views. `buildbot` field
-        must be set in this case.
+        other projects](#external_builders) for more details.
     short_name: a shorter name of the builder. The recommendation is to keep
         this name as short as reasonable, as longer names take up more
         horizontal space.
@@ -73,15 +70,11 @@ def _console_view_entry(
     console_view: a console view to add the builder to. Can be omitted if
         `console_view_entry` is used inline inside some luci.console_view(...)
         declaration.
-    buildbot: a reference to an equivalent Buildbot builder, given as
-        `<master>/<builder>` string. **Deprecated**. Exists only to aid in the
-        migration off Buildbot.
   """
   return view.add_entry(
       kind = kinds.CONSOLE_VIEW_ENTRY,
       view = keys.console_view(console_view) if console_view else None,
       builder = builder,
-      buildbot = buildbot,
       props = {
           'short_name': validate.string('short_name', short_name, required=False),
           'category': validate.string('category', category, required=False),

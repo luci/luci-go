@@ -1225,10 +1225,6 @@ Note that list views support builders defined in other projects. See
 [Referring to builders in other projects](#external_builders) for more
 details.
 
-Also note that declaring Buildbot builders (which is deprecated) requires the
-use of [luci.list_view_entry(...)](#luci.list_view_entry). It's the only way to provide a reference to
-a Buildbot builder (see `buildbot` field).
-
 #### Arguments {#luci.list_view-args}
 
 * **name**: a name of this view, will show up in URLs. Note that names of [luci.list_view(...)](#luci.list_view) and [luci.console_view(...)](#luci.console_view) are in the same namespace i.e. defining a list view with the same name as some console view (and vice versa) causes an error. Required.
@@ -1242,7 +1238,7 @@ a Buildbot builder (see `buildbot` field).
 ### luci.list_view_entry {#luci.list_view_entry}
 
 ```python
-luci.list_view_entry(builder = None, list_view = None, buildbot = None)
+luci.list_view_entry(builder = None, list_view = None)
 ```
 
 
@@ -1272,9 +1268,8 @@ can be omitted in this case:
 
 #### Arguments {#luci.list_view_entry-args}
 
-* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details.
 * **list_view**: a list view to add the builder to. Can be omitted if `list_view_entry` is used inline inside some [luci.list_view(...)](#luci.list_view) declaration.
-* **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
 
 
@@ -1429,7 +1424,6 @@ luci.console_view_entry(
     short_name = None,
     category = None,
     console_view = None,
-    buildbot = None,
 )
 ```
 
@@ -1465,11 +1459,10 @@ the console declaration. In particular useful in functions. For example:
 
 #### Arguments {#luci.console_view_entry-args}
 
-* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Can be omitted for **extra deprecated** case of Buildbot-only views. `buildbot` field must be set in this case.
+* **builder**: a builder to add, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details.
 * **short_name**: a shorter name of the builder. The recommendation is to keep this name as short as reasonable, as longer names take up more horizontal space.
 * **category**: a string of the form `term1|term2|...` that describes the hierarchy of the builder columns. Neighboring builders with common ancestors will have their column headers merged. In expanded view, each leaf category or builder under a non-leaf category will have it's own column. The recommendation for maximum densification is not to mix subcategories and builders for children of each category.
 * **console_view**: a console view to add the builder to. Can be omitted if `console_view_entry` is used inline inside some [luci.console_view(...)](#luci.console_view) declaration.
-* **buildbot**: a reference to an equivalent Buildbot builder, given as `<master>/<builder>` string. **Deprecated**. Exists only to aid in the migration off Buildbot.
 
 
 
