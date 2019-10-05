@@ -27,6 +27,11 @@ const (
 	// stream.
 	BuildProtoContentType = protoutil.BuildMediaType
 
+	// BuildProtoZlibContentType is the ContentType of the compressed
+	// build.proto LogDog datagram stream. It's the same as BuildProtoContentType
+	// except it's compressed with zlib.
+	BuildProtoZlibContentType = BuildProtoContentType + "; encoding=zlib"
+
 	// BuildProtoStreamSuffix is the logdog stream name suffix for sub-lucictx
 	// programs to output their build.proto stream to.
 	//

@@ -65,7 +65,7 @@ func TestBuildState(t *testing.T) {
 		}
 
 		Convey(`opened in error state`, func() {
-			bs := newBuildStateTracker(ctx, merger, "ns/", errors.New("nope"))
+			bs := newBuildStateTracker(ctx, merger, "ns/", false, errors.New("nope"))
 			wait() // for final build
 			So(bs.getLatest(), ShouldResemble, &buildState{
 				build: &bbpb.Build{
@@ -80,7 +80,7 @@ func TestBuildState(t *testing.T) {
 		})
 
 		Convey(`basic`, func() {
-			bs := newBuildStateTracker(ctx, merger, "ns/", nil)
+			bs := newBuildStateTracker(ctx, merger, "ns/", false, nil)
 
 			Convey(`ignores updates when merger cancels context`, func() {
 				cancel()

@@ -15,6 +15,8 @@
 package host
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
 	"os"
@@ -115,7 +117,7 @@ func teeLogdog(ctx context.Context, in <-chan *bbpb.Build, ldClient *streamclien
 
 	dgStream, err := ldClient.NewDatagramStream(
 		ctx, luciexe.BuildProtoStreamSuffix,
-		streamclient.WithContentType(luciexe.BuildProtoContentType))
+		streamclient.WithContentType(luciexe.BuildProtoZlibContentType))
 	if err != nil {
 		panic(err)
 	}
@@ -127,19 +129,39 @@ func teeLogdog(ctx context.Context, in <-chan *bbpb.Build, ldClient *streamclien
 				panic(err)
 			}
 		}()
+
+		// keep buf and z between rounds; this means we should be able to "learn"
+		// how to compress build.proto's between rounds, too, since zlib.Reset()
+		// keeps the compressor dictionary.
+		buf := bytes.Buffer{}
+		z := zlib.NewWriter(&buf)
+		done := make(chan struct{})
+
 		for build := range in {
-			done := make(chan struct{})
 			go func() {
-				defer close(done)
+				defer func() {
+					done <- struct{}{}
+				}()
 				out <- build
 			}()
+
 			buildData, err := proto.Marshal(build)
 			if err != nil {
 				panic(err)
 			}
-			if err := dgStream.WriteDatagram(buildData); err != nil {
+
+			buf.Reset()
+			z.Reset(&buf)
+			if _, err := z.Write(buildData); err != nil {
 				panic(err)
 			}
+			if err := z.Close(); err != nil {
+				panic(err)
+			}
+			if err := dgStream.WriteDatagram(buf.Bytes()); err != nil {
+				panic(err)
+			}
+
 			<-done
 		}
 	}()
