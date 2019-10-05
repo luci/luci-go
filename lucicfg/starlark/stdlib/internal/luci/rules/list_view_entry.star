@@ -17,7 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds', 'view')
 
 
-def _list_view_entry(ctx, builder=None, *, list_view=None, buildbot=None):
+def _list_view_entry(ctx, builder=None, *, list_view=None):
   """A builder entry in some luci.list_view(...).
 
   Can be used to declare that a builder belongs to a list view outside of
@@ -44,21 +44,15 @@ def _list_view_entry(ctx, builder=None, *, list_view=None, buildbot=None):
   Args:
     builder: a builder to add, see luci.builder(...). Can also be a reference
         to a builder defined in another project. See [Referring to builders in
-        other projects](#external_builders) for more details. Can be omitted
-        for **extra deprecated** case of Buildbot-only views. `buildbot` field
-        must be set in this case.
+        other projects](#external_builders) for more details.
     list_view: a list view to add the builder to. Can be omitted if
         `list_view_entry` is used inline inside some luci.list_view(...)
         declaration.
-    buildbot: a reference to an equivalent Buildbot builder, given as
-        `<master>/<builder>` string. **Deprecated**. Exists only to aid in the
-        migration off Buildbot.
   """
   return view.add_entry(
       kind = kinds.LIST_VIEW_ENTRY,
       view = keys.list_view(list_view) if list_view else None,
       builder = builder,
-      buildbot = buildbot,
   )
 
 

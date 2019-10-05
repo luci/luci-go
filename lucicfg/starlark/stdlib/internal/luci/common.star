@@ -481,7 +481,7 @@ def _view_add_view(key, entry_kind, entry_ctor, entries, props):
   return graph.keyset(key, milo_view_key)
 
 
-def _view_add_entry(kind, view, builder, buildbot, props=None):
+def _view_add_entry(kind, view, builder, props=None):
   """Adds *_view_entry node.
 
   Common implementation for list_view_node and console_view_node. Allows
@@ -490,27 +490,20 @@ def _view_add_entry(kind, view, builder, buildbot, props=None):
   Args:
     kind: a kind of the node to add (e.g. LIST_VIEW_ENTRY).
     view: a key of the parent *_view to add the entry to, if known.
-    builder: a reference to builder (or None if unknown).
-    buildbot: a string with a reference to equivalent buildbot builder.
-    props: properties for the added node, mutated by adding 'buildbot' key.
+    builder: a reference to builder.
+    props: properties for the added node.
 
   Returns:
     A keyset with the added key.
   """
-  if builder != None:
-    builder = keys.builder_ref(builder, attr='builder', allow_external=True)
-  buildbot = validate.string('buildbot', buildbot, required=False)
-
-  if builder == None and buildbot == None:
-    fail('either "builder" or "buildbot" are required')
-
-  props = props or {}
-  props['buildbot'] = buildbot
+  if builder == None:
+    fail("'builder' is required")
+  builder = keys.builder_ref(builder, attr='builder', allow_external=True)
 
   # Note: name of this node is important only for error messages. It isn't
   # showing up in any generated files and by construction it can't accidentally
   # collide with some other name.
-  key = keys.unique(kind, builder.id if builder else buildbot)
+  key = keys.unique(kind, builder.id)
   graph.add_node(key, props)
   if view != None:
     graph.add_edge(parent=view, child=key)
