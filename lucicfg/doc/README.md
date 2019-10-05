@@ -1831,7 +1831,7 @@ For example:
 
 #### Arguments {#luci.cq_tryjob_verifier-args}
 
-* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. For **deprecated case** of referring to a Buildbot builder, use `*:<master>/<builder>`, e.g. `*:master.tryserver.chromium/android`. Required.
+* **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
