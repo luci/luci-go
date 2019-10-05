@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87a9140c_afb0a7a3",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:23:44Z",
+      "side": 1,
+      "message": "i think the main piece of semantics here is that the new build is a child of the specified task. Its lifetime limitation is a side of effect, and we might add more in the future, so I think I\u0027d make the first sentence talk about parent-child relationship, and THEN about lifetime.",
+      "revId": "6c99999b81381837579981de0620eaae73333492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
