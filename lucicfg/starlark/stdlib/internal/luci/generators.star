@@ -634,17 +634,11 @@ def _milo_builder_pb(entry, view, project_name, seen):
     milo_pb.Builder or None on errors.
   """
   builder_pb = milo_pb.Builder()
-  if entry.props.buildbot:
-    builder_pb.name.append('buildbot/%s' % entry.props.buildbot)
-
-  # Note: this is a one-item list for regular entries and an empty list for
-  # entries that have only deprecated Buildbot references. Other cases are
-  # impossible per *_view_entry implementation.
+  # Note: this is a one-item list for regular entries per *_view_entry
+  # implementation.
   refs = graph.children(entry.key, kinds.BUILDER_REF)
-  if len(refs) > 1:
+  if len(refs) != 1:
     fail('impossible result %s' % (refs,))
-  if len(refs) == 0:
-    return builder_pb  # pure Buildbot entry, we don't care much for them
 
   # Grab BUILDER node and ensure it hasn't be added to this view yet.
   builder = builder_ref.follow(refs[0], context_node=entry)

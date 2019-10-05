@@ -235,7 +235,6 @@ luci.list_view(
         'ci/generically named builder',
         luci.list_view_entry(
             builder = 'linux ci builder',
-            buildbot = 'master/builder',
         ),
     ],
 )
@@ -244,12 +243,6 @@ luci.list_view_entry(
     list_view = 'List view',
     builder = 'inline/triggered builder',
 )
-
-luci.list_view_entry(
-    list_view = 'List view',
-    buildbot = 'master/very buildbot',
-)
-
 
 # Console views.
 
@@ -270,7 +263,6 @@ luci.console_view(
     entries = [
         luci.console_view_entry(
             builder = 'linux ci builder',
-            buildbot = 'master/builder',
             category = 'a|b',
             short_name = 'lnx',
         ),
@@ -284,11 +276,6 @@ luci.console_view(
 luci.console_view_entry(
     console_view = 'Console view',
     builder = 'inline/triggered builder',
-)
-
-luci.console_view_entry(
-    console_view = 'Console view',
-    buildbot = 'master/very buildbot',
 )
 
 
@@ -676,14 +663,10 @@ lucicfg.emit(
 #     name: "buildbucket/luci.infra.ci/generically named builder"
 #   >
 #   builders: <
-#     name: "buildbot/master/builder"
 #     name: "buildbucket/luci.infra.ci/linux ci builder"
 #   >
 #   builders: <
 #     name: "buildbucket/luci.infra.inline/triggered builder"
-#   >
-#   builders: <
-#     name: "buildbot/master/very buildbot"
 #   >
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
 #   builder_view_only: true
@@ -697,7 +680,6 @@ lucicfg.emit(
 #   exclude_ref: "refs/heads/master"
 #   manifest_name: "REVISION"
 #   builders: <
-#     name: "buildbot/master/builder"
 #     name: "buildbucket/luci.infra.ci/linux ci builder"
 #     category: "a|b"
 #     short_name: "lnx"
@@ -708,9 +690,6 @@ lucicfg.emit(
 #   >
 #   builders: <
 #     name: "buildbucket/luci.infra.inline/triggered builder"
-#   >
-#   builders: <
-#     name: "buildbot/master/very buildbot"
 #   >
 #   favicon_url: "https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico"
 #   header: <
