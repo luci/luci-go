@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd5ee92d_581ce546",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "in L126 we have this nice catch-all which catches almost everything, except errors which aren\u0027t googleapi.Error. I think it would be move it here, so that it catches everything indeed:\n\n  return task, errors.Annotate(err, \"\").Tag(grpcutil.InternalTag).Err()\n\nthen we don\u0027t need L125-126\n\nnote that errors.Annotate(nil, ....).Tag(....).Err() returns nil",
+      "range": {
+        "startLine": 130,
+        "startChar": 14,
+        "endLine": 130,
+        "endChar": 17
+      },
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "879b1ffe_a26cc889",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "nit: move closer to the usage or inline (there is only one usage)",
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c648f35c_501a2eba",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "i think this situation might happen in BOT_DIED case. We shouldn\u0027t be failing with INTERNAL error in this case, but handle it properly, e.g. return INVALID_ARGUMENT or return an INTERRUPTED invocation with OK status. Maybe we should enumerate all possible task states and proceed only on those where it makes sense to expect output.json\n\nLet\u0027s add a TODO for now, this CL is already rather large.",
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5698fdc_8ce38d17",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "did you mean\n\n  %q\", req.BaseTestVariant.Def\n\n?",
+      "range": {
+        "startLine": 217,
+        "startChar": 67,
+        "endLine": 217,
+        "endChar": 70
+      },
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "708a0f06_433e4d53",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": ".Tag(grpcutil.InvalidArgumentTag)",
+      "range": {
+        "startLine": 217,
+        "startChar": 71,
+        "endLine": 217,
+        "endChar": 72
+      },
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0f58e8d_a87e5ca9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "inv :\u003d \u0026pb.Invocation { BaseTetVariantDef: req.BaseTestVariant }",
+      "revId": "24eed98cafa437f2a6c9be230192abb3b107b170",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

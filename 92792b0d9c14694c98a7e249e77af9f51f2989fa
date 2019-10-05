@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "23c4694a_c8349918",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "i think these are great points!\n\n1) yes, it would require read test results right here, which essentially duplication of ListTestResults RPC. Looks like we need to change DeriveInvocation RPC to return Invocation message, and ditch DeriveInvocationResponse entirely. So let\u0027s return Invocation in this func? Sorry, this is exactly what you had before.\n\n2) yes, it is an exception to have a swarming-derived non-finalized task. In such case, it is better to fail fast by returning an INTERNAL error (because it would indicate that something went wrong in our code)",
+      "parentUuid": "320e075b_980ffe6f",
+      "range": {
+        "startLine": 77,
+        "startChar": 15,
+        "endLine": 77,
+        "endChar": 48
+      },
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e544980a_e42f7a41",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -342,6 +366,24 @@
     },
     {
       "key": {
+        "uuid": "64634af2_dc997cd9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "from_swarming_ is fine",
+      "parentUuid": "3f5b8123_106090d7",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78854f2a_669d5de5",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 9
@@ -418,6 +460,24 @@
       "side": 1,
       "message": "Done\n\n(Wasn\u0027t sure if you\u0027d prefer it in a separate CL)",
       "parentUuid": "45849700_0a4c5711",
+      "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0944726d_d8faed7d",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-05T04:46:03Z",
+      "side": 1,
+      "message": "i meant this one, thanks",
+      "parentUuid": "1a1e5f90_c26bf41c",
       "revId": "92792b0d9c14694c98a7e249e77af9f51f2989fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
