@@ -196,7 +196,7 @@ message UpdateBuildRequest {
 
 // A request message for ScheduleBuild rpc.
 //
-// Next ID: 15.
+// Next ID: 16.
 message ScheduleBuildRequest {
   // ** STRONGLY RECOMMENDED **.
   // A unique string id used for detecting duplicate requests.
@@ -305,6 +305,29 @@ message ScheduleBuildRequest {
   // Overrides Builder.exe in the config.
   // Supported subfields: cipd_version.
   Executable exe = 14;
+
+  // Swarming specific part of the build request.
+  message Swarming {
+    // If specified, parent_run_id should match actual Swarming task run ID the
+    // caller is running as and results in swarming server ensuring that the newly
+    // triggered build will not outlive its parent.
+    //
+    // Typical use is for triggering and waiting on child build(s) from within
+    // 1 parent build and if child build(s) on their own aren't useful. Then,
+    // if parent build ends for whatever reason, all not yet finished child
+    // builds aren't useful and it's desirable to terminate them, too.
+    //
+    // If the Builder config does not specify a swarming backend, the request
+    // will fail with InvalidArgument error code.
+    //
+    // The parent_run_id is assumed to be from the same swarming server as the
+    // one the new build is to be executed on. The ScheduleBuildRequest doesn't
+    // check if parent_run_id refers to actually existing task, but eventually
+    // the new build will fail if so.
+    string parent_run_id = 1;
+  }
+  // Swarming specific part of the build request.
+  Swarming swarming = 15;
 }
 
 // A request message for CancelBuild rpc.
