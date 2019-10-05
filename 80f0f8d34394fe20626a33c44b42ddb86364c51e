@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "010502da_8d794adb",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/common.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 503,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-05T01:11:51Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 503,
+        "startChar": 2,
+        "endLine": 503,
+        "endChar": 21
+      },
+      "revId": "80f0f8d34394fe20626a33c44b42ddb86364c51e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78a5ff79_583704d6",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 640,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-05T01:11:51Z",
+      "side": 1,
+      "message": "!\u003d 1 (I think...)",
+      "range": {
+        "startLine": 640,
+        "startChar": 15,
+        "endLine": 640,
+        "endChar": 18
+      },
+      "revId": "80f0f8d34394fe20626a33c44b42ddb86364c51e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
