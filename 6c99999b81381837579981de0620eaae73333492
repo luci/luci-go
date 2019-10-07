@@ -16,6 +16,24 @@
       "revId": "6c99999b81381837579981de0620eaae73333492",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b2ff32b_9875afa9",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-07T18:31:18Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "87a9140c_afb0a7a3",
+      "revId": "6c99999b81381837579981de0620eaae73333492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
