@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -119,13 +118,6 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO(jchinlee): move this block of code to the callsite.
-	// It is NOT specific to GTest.
-	if err := resultdb.VariantDefMap(req.BaseTestVariant.Def).Validate(); err != nil {
-		return nil, errors.Annotate(err, "invalid base test variant $q").Err()
-	}
-	inv.BaseTestVariantDef = req.BaseTestVariant
 
 	// The code below does not return errors, so it is safe to make in-place
 	// modifications of inv.

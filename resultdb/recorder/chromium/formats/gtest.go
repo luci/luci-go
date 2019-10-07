@@ -139,13 +139,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 		}
 	}
 
-	// TODO(jchinlee): move this block of code to the callsite.
-	// It is NOT specific to GTest.
-	if err := resultdb.VariantDefMap(req.BaseTestVariant.Def).Validate(); err != nil {
-		return nil, errors.Annotate(err, "invalid base test variant $q").Err()
-	}
-	inv.BaseTestVariantDef = req.BaseTestVariant
-
 	// The code below does not return errors, so it is safe to make in-place
 	// modifications of inv.
 
