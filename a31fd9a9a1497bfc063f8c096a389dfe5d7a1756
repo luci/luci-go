@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dea1650_41bdbd35",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-07T21:46:07Z",
+      "side": 1,
+      "message": "we need most of this for non-interrupted invocation too, right? can we make this reusable?\n\nthere is duplication between L107 and L255",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 42
+      },
+      "revId": "a31fd9a9a1497bfc063f8c096a389dfe5d7a1756",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

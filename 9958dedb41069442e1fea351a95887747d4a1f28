@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "85529327_6cadcbfa",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-07T21:46:07Z",
+      "side": 1,
+      "message": "i think it would be simpler to decouple presence of outputs ref from the state.\n\nif outputs ref are there, we fetch that and try to parse test results\n\nif state is any of these \"interrupted\" states, then the inv is marked as interrupted",
+      "parentUuid": "e9f5d85d_b8609b76",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 6
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7395113b_4279dfe7",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "7c7df1e5_ae4c69af",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-07T21:46:07Z",
+      "side": 1,
+      "message": "right, we are not writing to spanner, but there is return in L110 which means we will reach L128 where we plan to write to spanner",
+      "parentUuid": "7f752ae3_ff77430e",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -125,6 +173,24 @@
       "side": 1,
       "message": "Sure! I split it up in order to avoid the Swarming RPC to get task output for the type of interruption for which we don\u0027t expect isolated outputs, but if that\u0027s a negligible cost, then consolidating them would be cleaner, yes.",
       "parentUuid": "33145199_0f4b9502",
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32d5d090_32613104",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-07T21:46:07Z",
+      "side": 1,
+      "message": "there wouldn\u0027t be an extra RPC if we check state right here. We fetch isolate below",
+      "parentUuid": "c1bc49bb_efd4c102",
       "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -177,6 +243,24 @@
       "side": 1,
       "message": "The difficulty is that for some \"interrupted\" states, we may still get outputs (related to your first question), which the caller doesn\u0027t necessarily know until it calls getOutputsRef.",
       "parentUuid": "1b4d3221_a5e23d36",
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ffe915b_e4520f03",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-07T21:46:07Z",
+      "side": 1,
+      "message": "i would understand your comment if it required an RPC to see if there are outputs ref, but it is the same struct, so I don\u0027t see the difficulty",
+      "parentUuid": "3ab92bee_373ce2b7",
       "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
