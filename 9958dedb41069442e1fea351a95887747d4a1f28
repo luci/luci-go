@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7f752ae3_ff77430e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T21:22:12Z",
+      "side": 1,
+      "message": "This comment is wrong, sorry. This was from when I had the code block before \"Get Invocation from Spanner\" above, and is made even more obsolete if we consolidate the checks into a single switch.\n\nGiven that, would you please elaborate on \"let\u0027s save to spanner\"? IIUC we\u0027re not writing to Spanner at all in this function call.\n\nThis also touches on the question we\u0027ve bounced around a few times, which is regarding what to do in case a request comes to derive (with the expectation of later writing if necessary) an invocation that already exists in Spanner. We previously decided to return only the invocation, but in the event that the invocation /doesn\u0027t/ already exist in Spanner, we need to return the TestResults in order to write them later.",
+      "parentUuid": "7395113b_4279dfe7",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
