@@ -327,8 +327,10 @@ func (l *Log) Flush(ctx context.Context) (int, error) {
 	softDeadline := startTime.Add(l.flushTimeout()) // when to stop pulling tasks
 	hardDeadline := softDeadline.Add(time.Minute)   // when to abort all calls
 
-	softDeadlineCtx, _ := clock.WithDeadline(ctx, softDeadline)
-	hardDeadlineCtx, _ := clock.WithDeadline(ctx, hardDeadline)
+	softDeadlineCtx, cancel := clock.WithDeadline(ctx, softDeadline)
+	defer cancel()
+	hardDeadlineCtx, cancel := clock.WithDeadline(ctx, hardDeadline)
+	defer cancel()
 
 	stats, err := taskqueue.Stats(ctx, l.QueueName)
 	if err != nil {
@@ -361,22 +363,20 @@ func (l *Log) Flush(ctx context.Context) (int, error) {
 	for clock.Now(ctx).Before(softDeadline) {
 		rpcCtx, cancel := clock.WithTimeout(softDeadlineCtx, 15*time.Second) // RPC timeout
 		tasks, err := taskqueue.Lease(rpcCtx, l.batchesPerRequest(), l.QueueName, hardDeadline.Sub(clock.Now(ctx)))
+		cancel()
 		if err != nil {
 			lastLeaseErr = err
 			if clock.Now(ctx).Add(sleep).After(softDeadline) {
 				logging.Warningf(ctx, "Error while leasing, giving up: %s", err)
-				cancel()
 				break
 			}
 			logging.Warningf(ctx, "Error while leasing, sleeping %s: %s", err, sleep)
 			clock.Sleep(clock.Tag(softDeadlineCtx, "lease-retry"), sleep)
 			sleep *= 2
-			cancel()
 			continue
 		}
 		sleep = time.Second
 		if len(tasks) == 0 {
-			cancel()
 			break
 		}
 		if l.beforeSendChunk != nil {
@@ -393,7 +393,6 @@ func (l *Log) Flush(ctx context.Context) (int, error) {
 				}
 			},
 		})
-		cancel()
 	}
 
 	sent, err := flusher.waitAll()

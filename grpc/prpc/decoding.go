@@ -109,7 +109,9 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 			if err != nil {
 				return origC, fmt.Errorf("%s header: %s", HeaderTimeout, err)
 			}
-			c, _ = clock.WithTimeout(c, timeout)
+			var cancel context.CancelFunc
+			c, cancel = clock.WithTimeout(c, timeout)
+			defer cancel()
 
 		case headerAccept, headerContentType:
 		// readMessage and writeMessage handle these headers.
