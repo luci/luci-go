@@ -23,10 +23,12 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -44,6 +46,13 @@ import (
 const (
 	outputJSONFileName  = "output.json"
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
+)
+
+var (
+	noOutputTaskStates      = stringset.NewFromSlice("BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE")
+	maybeNoOutputTaskStates = stringset.NewFromSlice("KILLED", "TIMED_OUT")
+
+	isInterruptedTask = errors.BoolTag{Key: errors.NewTagKey("swarming task interrupted")}
 )
 
 // DeriveInvocation derives the invocation associated with the given swarming task.
@@ -67,17 +76,16 @@ func DeriveInvocation(ctx context.Context, req *pb.DeriveInvocationRequest) (*pb
 	}
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		return nil, errors.Reason(
-			"cannot write Invocation of incomplete task %s on %s (%s)",
+			"unexpected incomplete task %s on %s (%s)",
 			taskID, swarmingURL, task.State).Err()
 	}
 
-	// Check if we even need to write this invocation: is it finalized?
-	// TODO(jchinlee): Actually use returned Invocation ID.
-	_, err = getInvocationID(ctx, task, swarmSvc, req)
+	invID, err := getInvocationID(ctx, task, swarmSvc, req)
 	if err != nil {
 		return nil, err
 	}
 
+	// Check if we even need to write this invocation: is it finalized?
 	// TODO(jchinlee): Get Invocation from Spanner.
 	var inv *pb.Invocation
 	if inv != nil {
@@ -89,9 +97,26 @@ func DeriveInvocation(ctx context.Context, req *pb.DeriveInvocationRequest) (*pb
 		return inv, nil
 	}
 
+	// If we expect no outputs based on task state, bail early and don't even check Spanner.
+	timeNow := ptypes.TimestampNow()
+	interruptedInv := &pb.Invocation{
+		Name:               "invocations/" + invID,
+		State:              pb.Invocation_INTERRUPTED,
+		CreateTime:         timeNow,
+		FinalizeTime:       timeNow,
+		BaseTestVariantDef: req.BaseTestVariant,
+	}
+	if noOutputTaskStates.Has(task.State) {
+		return interruptedInv, nil
+	}
+
 	// We may need to write the invocation, so fetch the output JSON.
 	outputJSON, err := fetchOutputJSON(ctx, task)
 	if err != nil {
+		if isInterruptedTask.In(err) {
+			return interruptedInv, nil
+		}
+
 		return nil, errors.Annotate(err, "task %s (%s)", taskID, swarmingURL).Err()
 	}
 
@@ -180,9 +205,15 @@ func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 // getOutputsRef gets the data needed to fetch the isolated outputs given a task and swarming
 // service.
 func getOutputsRef(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult) (*swarmingAPI.SwarmingRpcsFilesRef, error) {
-	// TODO(jchinlee): Handle BOT_DIED, which may have the below state but shouldn't error internally.
 	if task.OutputsRef == nil || task.OutputsRef.Isolated == "" {
-		return nil, errors.Reason("no isolated outputs").Err()
+		err := errors.Reason("no isolated outputs").Err()
+
+		// For some interrupted states, we may or may not get outputs.
+		if maybeNoOutputTaskStates.Has(task.State) {
+			err = errors.Annotate(err, "").Tag(isInterruptedTask).Err()
+		}
+
+		return nil, err
 	}
 
 	return task.OutputsRef, nil
