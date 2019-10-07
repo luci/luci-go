@@ -96,6 +96,17 @@ func cmdAdd(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.noCanary, "nocanary", false, doc(`
 				Force the build to NOT use canary infrastructure.
 			`))
+			r.Flags.StringVar(&r.swarmingParentRunID, "swarming-parent-run-id", "", doc(`
+				Establish parent->child relationship between provided swarming task (parent)
+				and the build to be triggered (child).
+
+				Provided value must be an ID of the swarming task sharing the same
+				swarming server as the build being created. If parent task completes
+				before the newly created build does, then swarming server will
+				forcefully terminate the build.
+
+				This makes the child build lifetime bounded by the lifetime of the given swarming task.
+			`))
 			return r
 		},
 	}
@@ -107,10 +118,11 @@ type addRun struct {
 	commitFlag
 	tagsFlag
 
-	ref              string
-	experimental     bool
-	canary, noCanary bool
-	properties       structpb.Struct
+	ref                 string
+	experimental        bool
+	canary, noCanary    bool
+	properties          structpb.Struct
+	swarmingParentRunID string
 }
 
 func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -150,6 +162,7 @@ func (r *addRun) prepareBaseRequest(ctx context.Context) (*pb.ScheduleBuildReque
 		Tags:       r.Tags(),
 		Fields:     &field_mask.FieldMask{Paths: []string{"*"}},
 		Properties: &r.properties,
+		Swarming:   &pb.ScheduleBuildRequest_Swarming{ParentRunId: r.swarmingParentRunID},
 	}
 
 	switch {
