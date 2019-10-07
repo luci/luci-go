@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "7beca098_b9cbbe06",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T21:51:55Z",
+      "side": 1,
+      "message": "Then we still need to have the isInterruptedTask tag, no? Otherwise, how can we distinguish between \"we failed because unexpectedly there was no outputs ref\", vs. \"we failed because fetching from Isolated failed\"?\n\nUnless, for example, we don\u0027t fail at all if there was no outputs ref (and just log it, for instance).",
+      "parentUuid": "85529327_6cadcbfa",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 6
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7395113b_4279dfe7",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -132,6 +156,30 @@
       "side": 1,
       "message": "right, we are not writing to spanner, but there is return in L110 which means we will reach L128 where we plan to write to spanner",
       "parentUuid": "7f752ae3_ff77430e",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40d83ef0_b2b95261",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T21:51:55Z",
+      "side": 1,
+      "message": "Sure. I was wondering about if we want to change anything with how TestResults are handled; right now they pretty much get lost from the convertOutputJSON because we neither return nor write them here. Thoughts?",
+      "parentUuid": "7c7df1e5_ae4c69af",
       "range": {
         "startLine": 100,
         "startChar": 63,
