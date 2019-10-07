@@ -28,7 +28,8 @@ import (
 // until reaching a deadline.
 func Waiter(c context.Context, why string, d time.Duration) func() error {
 	var attempt int32
-	c, _ = clock.WithTimeout(c, d)
+	// TODO(crbug/1006920): Find a way to call cancel.
+	c, _ := clock.WithTimeout(c, d)
 	return func() error {
 		if attempt++; attempt > 50 {
 			attempt = 50 // cap sleeping time at max 5 sec
