@@ -22,6 +22,30 @@
       "revId": "d30492c0ce1255df47ecd11d36e6a4cc0d21e28b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbafdc84_1e896daa",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-07T20:36:05Z",
+      "side": 1,
+      "message": "Here\u0027s a reference doc: https://github.com/google/googletest/blob/master/googletest/docs/advanced.md\n\nBased on the test names I looked it seems this should be a number, but I\u0027m not sure.",
+      "parentUuid": "26fab644_ac0b26b6",
+      "range": {
+        "startLine": 44,
+        "startChar": 49,
+        "endLine": 44,
+        "endChar": 54
+      },
+      "revId": "d30492c0ce1255df47ecd11d36e6a4cc0d21e28b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
