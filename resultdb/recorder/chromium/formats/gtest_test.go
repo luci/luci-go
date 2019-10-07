@@ -19,6 +19,7 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -189,6 +190,53 @@ func TestGTestConversions(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_line", "54")), ShouldBeTrue)
+		})
+	})
+
+	Convey(`extractGTestParameters`, t, func() {
+		Convey(`type parametrized`, func() {
+			Convey(`with instantiation`, func() {
+				basePath, params := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+					"param/instantiation": "MyInstantiation",
+					"param/index": "1",
+				}))
+			})
+
+			Convey(`without instantiation`, func() {
+				basePath, params := extractGTestParameters("FooTest/1.DoesBar")
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{"param/index": "1"}))
+			})
+		})
+
+		Convey(`value parametrized`, func() {
+			Convey(`with instantiation`, func() {
+				basePath, params := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+					"param/instantiation": "MyInstantiation",
+					"param/index": "1",
+				}))
+			})
+
+			Convey(`without instantiation`, func() {
+				basePath, params := extractGTestParameters("FooTest.DoesBar/1")
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{"param/index": "1"}))
+			})
+		})
+
+		Convey(`not parametrized`, func() {
+			basePath, params := extractGTestParameters("FooTest.DoesBar")
+			So(basePath, ShouldEqual, "FooTest.DoesBar")
+			So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{}))
+		})
+
+		Convey(`with magic prefixes`, func() {
+			basePath, _ := extractGTestParameters("FooTest.PRE_MANUAL_DoesBar")
+			So(basePath, ShouldEqual, "FooTest.DoesBar")
 		})
 	})
 

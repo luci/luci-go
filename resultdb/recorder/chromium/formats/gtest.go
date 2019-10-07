@@ -17,7 +17,9 @@ package formats
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +33,19 @@ import (
 	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+var (
+	// Test name prefixes that may be present and must be stripped from the base path.
+	prefixes = []string{"MANUAL_", "PRE_"}
+
+	// Type parametrized tests have rough form:
+	// <instantiation>/<fixture name>/<type parameter index>.<test name>
+	typeParamRE = regexp.MustCompile(`^(\w+/)?(\w+)/(\w+)\.(\w+)$`)
+
+	// Value parametrized tests have rough form:
+	// <instantiation>/<fixture name>.<test name>/<value parameter index>
+	valueParamRE = regexp.MustCompile(`^(\w+/)?(\w+\.\w+)/(\w+)$`)
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -192,9 +207,34 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 
 // extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
 func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap) {
-	// TODO(jchinlee): Implement.
 	basePath = testPath
 	params = resultdb.VariantDefMap{}
+
+	var instantiation, paramIndex string
+
+	// Tests can be only one of type- or value-parametrized.
+	if match := typeParamRE.FindStringSubmatch(basePath); match != nil {
+		// Extract type parameter.
+		instantiation, paramIndex = strings.TrimSuffix(match[1], "/"), match[3]
+		basePath = fmt.Sprintf("%s.%s", match[2], match[4])
+	} else if match := valueParamRE.FindStringSubmatch(basePath); match != nil {
+		// Extract value parameter.
+		instantiation, paramIndex = strings.TrimSuffix(match[1], "/"), match[3]
+		basePath = match[2]
+	}
+
+	// Strip prefixes from basePath if necessary.
+	for _, prefix := range prefixes {
+		basePath = strings.ReplaceAll(basePath, prefix, "")
+	}
+
+	params = resultdb.VariantDefMap{}
+	if instantiation != "" {
+		params["param/instantiation"] = instantiation
+	}
+	if paramIndex != "" {
+		params["param/index"] = paramIndex
+	}
 	return
 }
 
