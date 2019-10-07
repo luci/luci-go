@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e9f5d85d_b8609b76",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T20:28:08Z",
+      "side": 1,
+      "message": "https://chromium-swarm.appspot.com/task?id\u003d47bdcda0c4228d10 for KILLED, https://chromium-swarm.appspot.com/task?id\u003d47c066ef6ee35110 for TIMED_OUT (just from filtering for KILLED and TIMED_OUT tasks and checking those with isolated outputs, did not search for CQ-specific builders)",
+      "parentUuid": "272d10ad_7d03ecbc",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 6
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7395113b_4279dfe7",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -65,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "c1bc49bb_efd4c102",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T20:28:08Z",
+      "side": 1,
+      "message": "Sure! I split it up in order to avoid the Swarming RPC to get task output for the type of interruption for which we don\u0027t expect isolated outputs, but if that\u0027s a negligible cost, then consolidating them would be cleaner, yes.",
+      "parentUuid": "33145199_0f4b9502",
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "06dc3083_e13d0021",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -93,6 +135,24 @@
       "writtenOn": "2019-10-07T20:03:31Z",
       "side": 1,
       "message": "it would be simpler not even try to call getOutputsRef if we state indicates an interruption. Then we don\u0027t need isInterruptedTask tag. The caller has the knowledge to make this decision",
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ab92bee_373ce2b7",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T20:28:08Z",
+      "side": 1,
+      "message": "The difficulty is that for some \"interrupted\" states, we may still get outputs (related to your first question), which the caller doesn\u0027t necessarily know until it calls getOutputsRef.",
+      "parentUuid": "1b4d3221_a5e23d36",
       "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
