@@ -37,18 +37,108 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestFetchingOutputJson(t *testing.T) {
+func TestSwarming(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	ctx = internal.WithHTTPClient(ctx, http.DefaultClient)
 
-	Convey(`Getting output JSON file`, t, func() {
-		// Set up fake isolatedserver.
-		isoFake := isolatedfake.New()
-		isoServer := httptest.NewServer(isoFake)
-		defer isoServer.Close()
+	// Set up fake isolatedserver.
+	isoFake := isolatedfake.New()
+	isoServer := httptest.NewServer(isoFake)
+	defer isoServer.Close()
 
-		// Inject objects.
+	Convey(`DeriveInvocation bails correctly for respective Swarming states`, t, func() {
+		// Inject isolated object.
+		fileDigest := isoFake.Inject("ns", []byte("invalid test data"))
+		isoOut := isolated.Isolated{
+			Files: map[string]isolated.File{"output.json": {Digest: fileDigest}},
+		}
+		isoOutBytes, err := json.Marshal(isoOut)
+		So(err, ShouldBeNil)
+		outputsDigest := isoFake.Inject("ns", isoOutBytes)
+
+		// Set up fake swarming service.
+		swarmingFake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+
+			var resp string
+			switch path {
+			case fmt.Sprintf("/%stask/pending-task/result", swarmingAPIEndpoint):
+				resp = `{"state": "PENDING"}`
+			case fmt.Sprintf("/%stask/bot-died-task/result", swarmingAPIEndpoint):
+				resp = `{"state": "BOT_DIED"}`
+			case fmt.Sprintf("/%stask/timed-out-task/result", swarmingAPIEndpoint):
+				resp = `{"state": "TIMED_OUT"}`
+			case fmt.Sprintf("/%stask/timed-out-outputs-task/result", swarmingAPIEndpoint):
+				resp = fmt.Sprintf(
+					`{"state": "TIMED_OUT",
+						"outputs_ref": {"isolatedserver": "%s", "namespace": "ns", "isolated": "%s"}
+						}`,
+					isoServer.URL, outputsDigest)
+			default:
+				resp = `{"state": "INVALID"}`
+			}
+
+			io.WriteString(w, resp)
+		}))
+		defer swarmingFake.Close()
+
+		Convey(`that are not finalized`, func() {
+			req := &pb.DeriveInvocationRequest{
+				SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+					Hostname: swarmingFake.URL,
+					Id:       "pending-task",
+				},
+			}
+			_, err := DeriveInvocation(ctx, req)
+			So(err, ShouldErrLike, "unexpected incomplete task")
+		})
+
+		Convey(`that are finalized wih no outputs expected`, func() {
+			req := &pb.DeriveInvocationRequest{
+				SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+					Hostname: swarmingFake.URL,
+					Id:       "bot-died-task",
+				},
+			}
+			inv, err := DeriveInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+		})
+
+		Convey(`that are finalized and not expected to contain isolated outputs`, func() {
+			Convey(`and don't`, func() {
+				req := &pb.DeriveInvocationRequest{
+					SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+						Hostname: swarmingFake.URL,
+						Id:       "timed-out-task",
+					},
+				}
+				inv, err := DeriveInvocation(ctx, req)
+				So(err, ShouldBeNil)
+				So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+			})
+
+			Convey(`but do`, func() {
+				req := &pb.DeriveInvocationRequest{
+					SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+						Hostname: swarmingFake.URL,
+						Id:       "timed-out-outputs-task",
+					},
+					BaseTestVariant: &pb.VariantDef{Def: map[string]string{
+						"bucket":     "bkt",
+						"builder":    "blder",
+						"test_suite": "foo_unittests",
+					}},
+				}
+				_, err := DeriveInvocation(ctx, req)
+				So(err, ShouldErrLike, "invalid character 'i' looking for beginning of value")
+			})
+		})
+	})
+
+	Convey(`Getting output JSON file`, t, func() {
+		// Inject isolated objects.
 		fileDigest := isoFake.Inject("ns", []byte("f00df00d"))
 		isoOut := isolated.Isolated{
 			Files: map[string]isolated.File{"output.json": {Digest: fileDigest}},
