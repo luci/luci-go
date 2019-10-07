@@ -35,6 +35,11 @@ service Gerrit {
   rpc ChangeEditFileContent(ChangeEditFileContentRequest)
       returns (google.protobuf.Empty);
 
+  // Delete a single file within an existing change edit.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
+  rpc DeleteEditFileContent(DeleteEditFileContentRequest) returns (google.protobuf.Empty);
+
   // Publish all changes in a a change edit.
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
@@ -336,6 +341,23 @@ message ChangeEditFileContentRequest {
 
   // New content of the file. Overwrites existing contents entirely.
   bytes content = 4;
+}
+
+// Information for deleting contents of single file in a change edit.
+//
+// Fields encode the path arguments of
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#delete-edit-file
+message DeleteEditFileContentRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Path to the file to edit inside the project.
+  string file_path = 3;
 }
 
 // Information for publishing a change edit.
