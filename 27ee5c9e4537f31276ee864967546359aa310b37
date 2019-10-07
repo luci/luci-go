@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8592aa3_834097c5",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-07T23:10:02Z",
+      "side": 1,
+      "message": "^",
+      "revId": "27ee5c9e4537f31276ee864967546359aa310b37",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
