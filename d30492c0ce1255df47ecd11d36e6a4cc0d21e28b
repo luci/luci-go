@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26fab644_ac0b26b6",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-07T15:20:06Z",
+      "side": 1,
+      "message": "Chan: what are examples of where the generated test name actually has an alphabetic token here, instead of just numeric? (same for \u003cvalue parameter index\u003e below)\n\nIf they are actually always numeric, maybe we can be stricter and use \\d.",
+      "range": {
+        "startLine": 44,
+        "startChar": 49,
+        "endLine": 44,
+        "endChar": 54
+      },
+      "revId": "d30492c0ce1255df47ecd11d36e6a4cc0d21e28b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
