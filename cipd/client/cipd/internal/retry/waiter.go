@@ -26,20 +26,21 @@ import (
 
 // Waiter returns a stateful callback which sleeps a bit on each invocation
 // until reaching a deadline.
-func Waiter(c context.Context, why string, d time.Duration) func() error {
+func Waiter(ctx context.Context, why string, d time.Duration) func() error {
 	var attempt int32
-	c, _ = clock.WithTimeout(c, d)
+	// TODO(crbug/1006920): Find a way to call cancel.
+	ctx, _ = clock.WithTimeout(ctx, d)
 	return func() error {
 		if attempt++; attempt > 50 {
 			attempt = 50 // cap sleeping time at max 5 sec
 		}
 		delay := time.Duration(rand.Int31n(100*attempt)) * time.Millisecond
 		if attempt > 10 {
-			logging.Warningf(c, "%s: retrying after %s...", why, delay)
+			logging.Warningf(ctx, "%s: retrying after %s...", why, delay)
 		} else {
-			logging.Debugf(c, "%s: retrying after %s...", why, delay)
+			logging.Debugf(ctx, "%s: retrying after %s...", why, delay)
 		}
-		tr := clock.Sleep(c, delay)
+		tr := clock.Sleep(ctx, delay)
 		return tr.Err
 	}
 }
