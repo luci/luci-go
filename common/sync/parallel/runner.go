@@ -103,25 +103,24 @@ func (r *Runner) init() {
 	})
 }
 
-// disaptchLoop is run in a goroutine. It reads tasks from workC and executes
+// dispatchLoop is run in a goroutine. It reads tasks from workC and executes
 // them.
 func (r *Runner) dispatchLoop(sustained int, maximum int) {
 	defer close(r.dispatchFinishedC)
 
-	// If a Maximum is set, use Semaphore to enforce it.
 	if maximum > 0 {
 		spawnC := make(Semaphore, maximum)
 		r.dispatchLoopBody(sustained, spawnC.Lock, spawnC.Unlock)
 		spawnC.TakeAll()
-	} else {
-		// Unbounded number of goroutines. Use a WaitGroup to track them, and block
-		// until all of the task goroutines have completed.
-		var wg sync.WaitGroup
-		r.dispatchLoopBody(sustained, func() { wg.Add(1) }, wg.Done)
-		wg.Wait()
+		return
 	}
+	var wg sync.WaitGroup
+	r.dispatchLoopBody(sustained, func() { wg.Add(1) }, wg.Done)
+	wg.Wait()
 }
 
+// dispatchLoopBody starts up to 'sustained' continuous goroutine, plus as many
+// one-shot goroutines as 'before' allows.
 func (r *Runner) dispatchLoopBody(sustained int, before, after func()) {
 	numSustained := 0
 	for {
@@ -132,24 +131,22 @@ func (r *Runner) dispatchLoopBody(sustained int, before, after func()) {
 			return
 		}
 
-		// Spawn a work goroutine.
-		isSustained := numSustained < sustained
-		if isSustained {
+		if numSustained < sustained {
+			// Spawn a work goroutine to continue working asynchronously.
 			numSustained++
-		}
-
-		go func() {
-			defer after()
-
-			// Execute the work that the outer loop pulled
-			work.execute()
-
-			// Sustained execution loop.
-			if isSustained {
+			go func() {
+				defer after()
+				work.execute()
 				for work := range r.workC {
 					work.execute()
 				}
-			}
+			}()
+			continue
+		}
+		// Still spawn a goroutine.
+		go func() {
+			defer after()
+			work.execute()
 		}()
 	}
 }
