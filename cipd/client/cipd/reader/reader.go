@@ -26,6 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -147,7 +148,7 @@ type fileToExtract struct {
 //
 // If withManifest is WithoutManifest, the function will fail if the manifest is
 // among 'files' (as a precaution against unintended override of manifests).
-func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
+func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, maxThreads int, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == pkg.ManifestName {
@@ -252,7 +253,13 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	}
 	close(fileQueue)
 
-	workerCount := 1
+	if maxThreads <= 0 {
+		maxThreads = runtime.NumCPU()
+	}
+	workerCount := len(files)
+	if workerCount > maxThreads {
+		workerCount = maxThreads
+	}
 	// Spawn worker threads to do the CPU-intensive extraction in parallel.
 	err = parallel.WorkPool(workerCount, func(tasks chan<- func() error) {
 		for {
@@ -322,7 +329,7 @@ func excludeNoNameFiles(files []pkg.FileInfo) []pkg.FileInfo {
 //
 // It guarantees that if extraction fails for some reason, there'll be no
 // garbage laying around.
-func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
+func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, maxThreads int, withManifest pkg.ManifestMode) (extracted []pkg.FileInfo, err error) {
 	if err := dest.Begin(ctx); err != nil {
 		return nil, err
 	}
@@ -338,7 +345,7 @@ func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.Transactional
 		}
 	}()
 
-	return ExtractFiles(ctx, files, dest, withManifest)
+	return ExtractFiles(ctx, files, dest, maxThreads, withManifest)
 }
 
 // progressReporter periodically logs progress of the extraction.
