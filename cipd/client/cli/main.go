@@ -627,6 +627,18 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// deployOptions mixin.
+
+type deployOptions struct {
+	maxThreads int
+}
+
+func (opts *deployOptions) registerFlags(f *flag.FlagSet) {
+	f.IntVar(&opts.maxThreads, "max-threads", 1,
+		"Number of worker threads for extracting packages. If 0, uses CPU count.")
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // hashOptions mixin.
 
 // allAlgos is used in the flag help text, it is "sha256, sha1, ...".
@@ -1068,6 +1080,7 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
 			c.ensureFileOptions.registerFlags(&c.Flags, withEnsureOutFlag, withLegacyListFlag)
+			c.deployOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -1077,6 +1090,7 @@ type ensureRun struct {
 	cipdSubcommand
 	clientOptions
 	ensureFileOptions
+	deployOptions
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -1090,11 +1104,11 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return c.done(nil, err)
 	}
 
-	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
+	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, c.maxThreads, false, c.clientOptions)
 	return c.done(pins, err)
 }
 
-func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
+func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, maxThreads int, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -1109,7 +1123,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 		return nil, nil, err
 	}
 
-	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, maxThreads, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
@@ -1284,7 +1298,9 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
 
-	_, actions, err := ensurePackages(ctx, ef, "", true, c.clientOptions)
+	// Since this is a dry run, the maxThreads value won't have any effect, so
+	// just pass 1.
+	_, actions, err := ensurePackages(ctx, ef, "", 1, true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {
@@ -2202,6 +2218,7 @@ func cmdDeploy() *subcommands.Command {
 			c := &deployRun{}
 			c.registerBaseFlags()
 			c.hashOptions.registerFlags(&c.Flags)
+			c.deployOptions.registerFlags(&c.Flags)
 			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
 			return c
 		},
@@ -2211,6 +2228,7 @@ func cmdDeploy() *subcommands.Command {
 type deployRun struct {
 	cipdSubcommand
 	hashOptions
+	deployOptions
 
 	rootDir string
 }
@@ -2220,10 +2238,10 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo()))
+	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), c.maxThreads))
 }
 
-func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo) (common.Pin, error) {
+func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo, maxThreads int) (common.Pin, error) {
 	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
 		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,
@@ -2240,7 +2258,7 @@ func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo
 
 	// TODO(iannucci): add subdir arg to deployRun
 
-	return d.DeployInstance(ctx, "", inst)
+	return d.DeployInstance(ctx, "", inst, maxThreads)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2859,6 +2877,7 @@ func cmdRepairDeployment(params Parameters) *subcommands.Command {
 			c := &repairDeploymentRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.deployOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -2867,6 +2886,7 @@ func cmdRepairDeployment(params Parameters) *subcommands.Command {
 type repairDeploymentRun struct {
 	cipdSubcommand
 	clientOptions
+	deployOptions
 }
 
 func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -2874,15 +2894,15 @@ func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(repairDeployment(ctx, c.clientOptions))
+	return c.done(repairDeployment(ctx, c.clientOptions, c.maxThreads))
 }
 
-func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
+func repairDeployment(ctx context.Context, clientOpts clientOptions, maxThreads int) (cipd.ActionMap, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return client.RepairDeployment(ctx, cipd.CheckIntegrity)
+	return client.RepairDeployment(ctx, cipd.CheckIntegrity, maxThreads)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
