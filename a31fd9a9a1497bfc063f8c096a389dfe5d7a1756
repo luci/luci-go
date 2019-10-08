@@ -22,6 +22,30 @@
       "revId": "a31fd9a9a1497bfc063f8c096a389dfe5d7a1756",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eda2f2a1_f73f988e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-08T02:39:05Z",
+      "side": 1,
+      "message": "Done\n\nMoved to deriveProtosForWriting L118",
+      "parentUuid": "2dea1650_41bdbd35",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 42
+      },
+      "revId": "a31fd9a9a1497bfc063f8c096a389dfe5d7a1756",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
