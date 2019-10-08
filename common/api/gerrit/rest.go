@@ -248,7 +248,9 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 
 func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
-	if _, _, err := c.callRaw(ctx, "DELETE", path, url.Values{}, textInputHeaders(), []byte{}, http.StatusNoContent); err != nil {
+	var data struct{}
+	var resp changeInfo
+	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, &resp, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
 	return &empty.Empty{}, nil
