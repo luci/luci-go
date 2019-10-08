@@ -369,7 +369,7 @@ func cacheFromCIPDLocked(ctx context.Context, t *testing.T, cachePath, name, has
 			return errors.Annotate(err, "failed to resolve CIPD version for %s @%s", pkg, version).Err()
 		}
 
-		if err := client.FetchAndDeployInstance(ctx, "", pin); err != nil {
+		if err := client.FetchAndDeployInstance(ctx, "", pin, 1); err != nil {
 			return errors.Annotate(err, "failed to fetch/deploy CIPD package").Err()
 		}
 
