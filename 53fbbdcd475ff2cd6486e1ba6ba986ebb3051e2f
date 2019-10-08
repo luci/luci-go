@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "90fdc25d_99ebe729",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-08T22:12:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5722c716_dbb111ae",
+      "range": {
+        "startLine": 55,
+        "startChar": 7,
+        "endLine": 55,
+        "endChar": 10
+      },
+      "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "edb05a7f_4bb413ba",
         "filename": "common/spantest/spantest.go",
         "patchSetId": 11
@@ -45,6 +69,30 @@
       "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7aa231c_3d7bc8c5",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-08T22:12:03Z",
+      "side": 1,
+      "message": "thanks. I meant \\s not \\S",
+      "parentUuid": "edb05a7f_4bb413ba",
+      "range": {
+        "startLine": 78,
+        "startChar": 45,
+        "endLine": 78,
+        "endChar": 47
+      },
+      "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
