@@ -2,6 +2,121 @@
   "comments": [
     {
       "key": {
+        "uuid": "aafb7946_ea545bd0",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:24:43Z",
+      "side": 1,
+      "message": "os.Getenv is good enough...",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 33
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f315ffdc_056f5acf",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:24:43Z",
+      "side": 1,
+      "message": "please add a note somewhere that tests that use SpannerTestContext must not use t.Parallel()",
+      "range": {
+        "startLine": 47,
+        "startChar": 3,
+        "endLine": 47,
+        "endChar": 21
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86381762_78732a50",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:24:43Z",
+      "side": 1,
+      "message": "why not hardcode it then? internal/span/init_db.sql is already hardcoded, but then for some reason it does a search",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 68
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1350684f_00ecc830",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:24:43Z",
+      "side": 1,
+      "message": "is the expectations that individual tests will check RunIntegrationTests too?",
+      "range": {
+        "startLine": 96,
+        "startChar": 10,
+        "endLine": 96,
+        "endChar": 17
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ac56da1_45f80684",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:24:43Z",
+      "side": 1,
+      "message": "This will skip db.Drop. Defers are not run on os.Exit.",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 13
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7823d03e_5e418d36",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 12
