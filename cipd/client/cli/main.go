@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -638,6 +639,20 @@ func (opts *deployOptions) registerFlags(f *flag.FlagSet) {
 		"Number of worker threads for extracting packages. If 0, uses CPU count.")
 }
 
+func (opts *deployOptions) loadFromEnv(ctx context.Context) error {
+	getEnv := cli.MakeGetEnv(ctx)
+	if opts.maxThreads == 1 {
+		if v := getEnv(cipd.EnvMaxThreads); v != "" {
+			maxThreads, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			opts.maxThreads = maxThreads
+		}
+	}
+	return nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // hashOptions mixin.
 
@@ -1098,6 +1113,10 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
+
+	if err := c.loadFromEnv(ctx); err != nil {
+		return 1
+	}
 
 	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
@@ -2238,6 +2257,9 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
+	if err := c.loadFromEnv(ctx); err != nil {
+		return 1
+	}
 	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), c.maxThreads))
 }
 
@@ -2894,6 +2916,9 @@ func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
+	if err := c.loadFromEnv(ctx); err != nil {
+		return 1
+	}
 	return c.done(repairDeployment(ctx, c.clientOptions, c.maxThreads))
 }
 
@@ -2933,6 +2958,11 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
+			},
+			cipd.EnvMaxThreads: {
+				Advanced: true,
+				ShortDesc: "Number of worker threads for extracting packages. " +
+					"If 0, uses CPU count. (-max-threads, if given and not 1, takes precedence.)",
 			},
 		},
 
