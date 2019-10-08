@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -638,6 +639,19 @@ func (opts *deployOptions) registerFlags(f *flag.FlagSet) {
 		"Number of worker threads for extracting packages. If 0, uses CPU count.")
 }
 
+func (opts *deployOptions) loadMaxThreads(ctx context.Context) (int, error) {
+	if opts.maxThreads == 1 {
+		if v := cli.Getenv(ctx, cipd.EnvMaxThreads); v != "" {
+			maxThreads, err := strconv.Atoi(v)
+			if err != nil {
+				return opts.maxThreads, fmt.Errorf("bad %s: not an integer - %s", cipd.EnvMaxThreads, v)
+			}
+			opts.maxThreads = maxThreads
+		}
+	}
+	return opts.maxThreads, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // hashOptions mixin.
 
@@ -1099,12 +1113,17 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
+	maxThreads, err := c.loadMaxThreads(ctx)
+	if err != nil {
+		return c.done(nil, err)
+	}
+
 	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
 
-	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, c.maxThreads, false, c.clientOptions)
+	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, maxThreads, false, c.clientOptions)
 	return c.done(pins, err)
 }
 
@@ -2238,7 +2257,11 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), c.maxThreads))
+	maxThreads, err := c.loadMaxThreads(ctx)
+	if err != nil {
+		return c.done(nil, err)
+	}
+	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo(), maxThreads))
 }
 
 func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo, maxThreads int) (common.Pin, error) {
@@ -2894,7 +2917,11 @@ func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(repairDeployment(ctx, c.clientOptions, c.maxThreads))
+	maxThreads, err := c.loadMaxThreads(ctx)
+	if err != nil {
+		return c.done(nil, err)
+	}
+	return c.done(repairDeployment(ctx, c.clientOptions, maxThreads))
 }
 
 func repairDeployment(ctx context.Context, clientOpts clientOptions, maxThreads int) (cipd.ActionMap, error) {
@@ -2933,6 +2960,11 @@ func GetApplication(params Parameters) *cli.Application {
 			cipd.EnvCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
+			},
+			cipd.EnvMaxThreads: {
+				Advanced: true,
+				ShortDesc: "Number of worker threads for extracting packages. " +
+					"If 0, uses CPU count. (-max-threads, if given and not 1, takes precedence.)",
 			},
 		},
 
