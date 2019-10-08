@@ -46,6 +46,30 @@
       "revId": "d30492c0ce1255df47ecd11d36e6a4cc0d21e28b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a177e53_c5493b60",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-08T02:56:43Z",
+      "side": 1,
+      "message": "I see, thanks.\n\nThe source /seems/ to suggest that we should expect alphabetical values, so I\u0027ll keep it as is, but yeah, I didn\u0027t see any test names that actually had alphabetical values rather than a numerical one.",
+      "parentUuid": "dbafdc84_1e896daa",
+      "range": {
+        "startLine": 44,
+        "startChar": 49,
+        "endLine": 44,
+        "endChar": 54
+      },
+      "revId": "d30492c0ce1255df47ecd11d36e6a4cc0d21e28b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
