@@ -134,7 +134,7 @@ type Deployer interface {
 	// Due to a historical bug, if inst contains any files which are intended to
 	// be deployed to `.cipd/*`, they will not be extracted and you'll see
 	// warnings logged.
-	DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (common.Pin, error)
+	DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, maxThreads int) (common.Pin, error)
 
 	// CheckDeployed checks whether a given package is deployed at the given
 	// subdir.
@@ -170,7 +170,7 @@ type Deployer interface {
 	// 'pin' indicates an instances that is supposed to be installed in the given
 	// subdir. If there's no such package there or its version is different from
 	// the one specified in the pin, returns an error.
-	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, params RepairParams) error
+	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error
 
 	// TempFile returns os.File located in <base>/.cipd/tmp/*.
 	//
@@ -204,7 +204,7 @@ func New(root string) Deployer {
 
 type errDeployer struct{ err error }
 
-func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance) (common.Pin, error) {
+func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance, int) (common.Pin, error) {
 	return common.Pin{}, d.err
 }
 
@@ -218,7 +218,7 @@ func (d errDeployer) FindDeployed(context.Context) (out common.PinSliceBySubdir,
 
 func (d errDeployer) RemoveDeployed(context.Context, string, string) error { return d.err }
 
-func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, RepairParams) error {
+func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, int, RepairParams) error {
 	return d.err
 }
 
@@ -292,7 +292,7 @@ type deployerImpl struct {
 	fs fs.FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (pin common.Pin, err error) {
+func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance, maxThreads int) (pin common.Pin, err error) {
 	if err = common.ValidateSubdir(subdir); err != nil {
 		return common.Pin{}, err
 	}
@@ -342,7 +342,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), pkg.WithManifest); err != nil {
+	if _, err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), maxThreads, pkg.WithManifest); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -579,7 +579,7 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 	return d.fs.EnsureDirectoryGone(ctx, deployed.packagePath)
 }
 
-func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, params RepairParams) error {
+func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, maxThreads int, params RepairParams) error {
 	switch {
 	case len(params.ToRedeploy) != 0 && params.Instance == nil:
 		panic("if ToRedeploy is not empty, Instance must be given too")
@@ -673,7 +673,8 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 	if len(repair) != 0 {
 		logging.Infof(ctx, "Repairing %d files...", len(repair))
-		if _, err := reader.ExtractFiles(ctx, repair, fs.ExistingDestination(p.instancePath, d.fs), pkg.WithoutManifest); err != nil {
+		dest := fs.ExistingDestination(p.instancePath, d.fs)
+		if _, err := reader.ExtractFiles(ctx, repair, dest, maxThreads, pkg.WithoutManifest); err != nil {
 			return err
 		}
 	}
