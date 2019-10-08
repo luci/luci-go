@@ -61,6 +61,9 @@ const (
 
 	// ConfigServiceHost is the default host of LUCI config service.
 	ConfigServiceHost = "luci-config.appspot.com"
+
+	// TestSpannerInstance is the name of the Spanner instance used for testing.
+	TestSpannerInstance = "projects/chops-spanner-testing/instances/testing"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
