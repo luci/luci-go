@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7823d03e_5e418d36",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:16:58Z",
+      "side": 1,
+      "message": "this should be in a another CL",
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -93,6 +93,29 @@
       "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be1c68bf_130516e9",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-08T22:16:58Z",
+      "side": 1,
+      "message": "This is not unique enough, multiple parallel tests can all start in the same second (with the same user on the same machine, IIRC go test ./... runs different test binaries in parallel). Bots will also all use chrome-bot, and may also collide in time. Consider using true random.",
+      "range": {
+        "startLine": 154,
+        "startChar": 34,
+        "endLine": 154,
+        "endChar": 51
+      },
+      "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
