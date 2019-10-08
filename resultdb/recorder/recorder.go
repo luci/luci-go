@@ -45,11 +45,6 @@ func (s *RecorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 	return nil, grpcutil.Unimplemented
 }
 
-// CreateInclusion implements pb.RecorderServer.
-func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclusionRequest) (*pb.Inclusion, error) {
-	return nil, grpcutil.Unimplemented
-}
-
 // OverrideInclusion implements pb.RecorderServer.
 func (s *RecorderServer) OverrideInclusion(ctx context.Context, in *pb.OverrideInclusionRequest) (*pb.OverrideInclusionResponse, error) {
 	return nil, grpcutil.Unimplemented
