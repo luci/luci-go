@@ -372,6 +372,7 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 		req.Header.Set(k, v)
 	}
 
+	logging.Debugf(ctx, "request: %v\nrequest header: %v\nrequest body: %v", req, req.Header, req.Body)
 	res, err := ctxhttp.Do(ctx, c.Client, req)
 	if err != nil {
 		return -1, []byte{}, status.Errorf(codes.Internal, "failed to execute Post HTTP request: %s", err)
