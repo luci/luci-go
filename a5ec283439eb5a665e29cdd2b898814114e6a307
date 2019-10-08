@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9615310b_254c7c9a",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-08T19:29:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a249877_42d019cc",
+      "range": {
+        "startLine": 226,
+        "startChar": 0,
+        "endLine": 247,
+        "endChar": 0
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a26cec84_a4a79a46",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 8
@@ -93,6 +117,30 @@
       "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed19d8a1_b50030b9",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-08T19:29:31Z",
+      "side": 1,
+      "message": "(actually done now)",
+      "parentUuid": "661e8094_6b2e1ae1",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 257,
+        "endChar": 3
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -143,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "87b7c1cb_95947c2b",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-08T19:29:31Z",
+      "side": 1,
+      "message": "Done. The order of files in the manifest is preserved, though the ordering of the files listed in the tests is still non-deterministic when using multiple threads, so I kept the testing logic to ignore ordering.",
+      "parentUuid": "40fe0d11_b1d4bc12",
+      "range": {
+        "startLine": 305,
+        "startChar": 1,
+        "endLine": 305,
+        "endChar": 27
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "950e0190_01d7fe7e",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 8
@@ -187,6 +259,30 @@
       "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5388c7e_190c406e",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-08T19:29:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41ecf4bc_94881754",
+      "range": {
+        "startLine": 391,
+        "startChar": 63,
+        "endLine": 391,
+        "endChar": 64
+      },
+      "revId": "a5ec283439eb5a665e29cdd2b898814114e6a307",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
