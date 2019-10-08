@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5722c716_dbb111ae",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-08T22:09:54Z",
+      "side": 1,
+      "message": "Nit: lieu",
+      "range": {
+        "startLine": 55,
+        "startChar": 7,
+        "endLine": 55,
+        "endChar": 10
+      },
+      "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edb05a7f_4bb413ba",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-08T22:09:54Z",
+      "side": 1,
+      "message": "Curious: this matches e.g.\n\n \"CREATE TABLE Foo (Bar STRING(64)) PRIMARY KEY (Bar);sissboombaa\\nCREATE TABLE BAZ [...]\"\n\nWhen would we want to make use of this feature and use [non-whitespace] strings following the semicolon?",
+      "range": {
+        "startLine": 78,
+        "startChar": 45,
+        "endLine": 78,
+        "endChar": 47
+      },
+      "revId": "53fbbdcd475ff2cd6486e1ba6ba986ebb3051e2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
