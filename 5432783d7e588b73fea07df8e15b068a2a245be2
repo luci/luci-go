@@ -46,6 +46,53 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b397182_ee8111d2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T05:12:10Z",
+      "side": 1,
+      "message": "Got it, that makes sense.",
+      "parentUuid": "d7a826d3_dffbe0e2",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 23
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cdef8f9f_c2c83709",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T05:12:10Z",
+      "side": 1,
+      "message": "Optional: just use \"swarming_\" as prefix?",
+      "range": {
+        "startLine": 236,
+        "startChar": 9,
+        "endLine": 236,
+        "endChar": 23
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
