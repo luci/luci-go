@@ -85,7 +85,7 @@ message Invocation {
 
   // == Test results specific ==================================================
 
-  // Base variant definition for test results in this invocation.
+  // Variant definition pairs common for all test results in this invocation.
   // A particular test result can have additional key-value pairs.
   VariantDef base_test_variant_def = 7;
 }

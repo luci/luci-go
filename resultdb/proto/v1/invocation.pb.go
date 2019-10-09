@@ -89,7 +89,7 @@ type Invocation struct {
 	// Timestamp when the invocation will be forcefully finalized.
 	// Can be extended with UpdateInvocation until finalized.
 	Deadline *timestamp.Timestamp `protobuf:"bytes,6,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	// Base variant definition for test results in this invocation.
+	// Variant definition pairs common for all test results in this invocation.
 	// A particular test result can have additional key-value pairs.
 	BaseTestVariantDef   *VariantDef `protobuf:"bytes,7,opt,name=base_test_variant_def,json=baseTestVariantDef,proto3" json:"base_test_variant_def,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
