@@ -22,6 +22,29 @@
       "revId": "a6dd251b6c8e0324c6fe8f7d8e85c69489d61811",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f36a3f17_fd356c54",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-09T15:47:48Z",
+      "side": 1,
+      "message": "why all this instead of \n  return os.Getenv(IntegrationTestEnvVar) \u003d\u003d \"1\"\n?",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 13
+      },
+      "revId": "a6dd251b6c8e0324c6fe8f7d8e85c69489d61811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

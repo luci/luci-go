@@ -166,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "9eec4a3d_29cb9a6c",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-09T15:47:48Z",
+      "side": 1,
+      "message": "oh, right...",
+      "parentUuid": "d2ee97c0_38b59abe",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 68
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1350684f_00ecc830",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12
