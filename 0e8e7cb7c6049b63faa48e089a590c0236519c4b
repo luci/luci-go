@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "cba7ab89_78acc691",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "what\u0027s rough about it? do you mean the form below is not accurate?",
+      "range": {
+        "startLine": 42,
+        "startChar": 33,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d25ed3a_55742bcf",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -19,6 +42,132 @@
         "endLine": 44,
         "endChar": 43
       },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e4ee851_c637e0f4",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "if it is truly a param *index*, this should be \\d\n\nsame below",
+      "range": {
+        "startLine": 44,
+        "startChar": 51,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4a33e9a_ad240b6e",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "should this be [^/] ?",
+      "range": {
+        "startLine": 44,
+        "startChar": 37,
+        "endLine": 44,
+        "endChar": 39
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0db8c46_dca9198b",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "instead of trimming suffix here, let\u0027s fix the problem at the source, which is the regex:\n\n  ^((\\w+)/)?(\\w+\\.\\w+)/(\\w+)$\n\nsame below",
+      "range": {
+        "startLine": 209,
+        "startChar": 38,
+        "endLine": 209,
+        "endChar": 48
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b28d88bf_de4f7053",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "i think it would be easier to read if this two lines, and more consistent with line below (basePath got a dedicated line, others didn\u0027t)\n\nsame below",
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcd63506_ec21677a",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "this replaces everywhere, not necessarily a prefix\nit should replace only prefix",
+      "range": {
+        "startLine": 219,
+        "startChar": 21,
+        "endLine": 219,
+        "endChar": 31
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38d20950_ab189436",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:32:06Z",
+      "side": 1,
+      "message": "nit: would be less code if we did\n\n  params[\"param/index\"] \u003d match[3]\n\nabove",
       "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
