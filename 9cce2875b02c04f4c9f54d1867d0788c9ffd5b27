@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b13003b1_396998c5",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2019-10-09T02:42:23Z",
+      "side": 1,
+      "message": "Isn\u0027t this potentially racy? You read everything that\u0027s in stdin, and before you manage to close it, Docker will write in some more.",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "9cce2875b02c04f4c9f54d1867d0788c9ffd5b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
