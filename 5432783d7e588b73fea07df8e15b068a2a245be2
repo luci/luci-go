@@ -22,6 +22,30 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7a826d3_dffbe0e2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T01:42:57Z",
+      "side": 1,
+      "message": "Not dumb!\n\nIt\u0027s a placeholder for when we actually do the fetch from Spanner. It\u0027s actually very possible this will change, too (so that e.g. we fetch the state first separately, then the invocation /if needed/; in that case we would not need this line at all and use \":\u003d\" in L87 below).",
+      "parentUuid": "06cbea8c_b2a357eb",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 23
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
