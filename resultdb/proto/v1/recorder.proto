@@ -119,8 +119,9 @@ message CreateInclusionRequest {
   // Name of the invocation to extend.
   string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
-  // Name of the included invocation and whether it is consequential.
-  Inclusion inclusion = 3 [ (google.api.field_behavior) = REQUIRED ];
+  // Contains the name of the included invocation and whether it is
+  // consequential.
+  Inclusion inclusion = 2 [ (google.api.field_behavior) = REQUIRED ];
 }
 
 // A request message for OverrideInclusion RPC.
