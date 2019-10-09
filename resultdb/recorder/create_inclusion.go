@@ -17,8 +17,9 @@ package main
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
 	"cloud.google.com/go/spanner"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -33,40 +34,44 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 	if err := pbutil.ValidateCreateInclusionRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
+	var (
+		includingInvID = pbutil.MustParseInvocationName(in.IncludingInvocation)
+		includedInvID  = pbutil.MustParseInvocationName(in.Inclusion.IncludedInvocation)
+	)
 
-	includingInvID := pbutil.MustParseInvocationName(in.IncludingInvocation)
-	includedInvID := pbutil.MustParseInvocationName(in.Inclusion.IncludedInvocation)
+	// Check permissions before opening a RW txn.
+	client := span.Client(ctx)
+	if err := mayMutateInvocation(ctx, client.Single(), includingInvID); err != nil {
+		return nil, err
+	}
 
 	ret := &pb.Inclusion{
 		Name:               pbutil.InclusionName(includingInvID, includedInvID),
 		IncludedInvocation: in.Inclusion.IncludedInvocation,
 	}
+	_, err := client.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Read from Spanner concurrently.
+		eg, ctx := errgroup.WithContext(ctx)
 
-	_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		if err := mayMutateInvocation(ctx, txn, includingInvID); err != nil {
+		// Check invocation state again.
+		eg.Go(func() error {
+			return mayMutateInvocation(ctx, txn, includingInvID)
+		})
+
+		// Compute ret.Ready.
+		eg.Go(func() (err error) {
+			includedInvState, err := readInvocationState(ctx, txn, includedInvID)
+			if err != nil {
+				return err
+			}
+			ret.Ready = pbutil.IsFinalized(includedInvState)
+			return nil
+		})
+		if err := eg.Wait(); err != nil {
 			return err
 		}
 
-		// Read the state of the included invocation to determine inclusion readiness.
-		// TODO(nodir): unhardcode Spanner table and column names.
-		var includedInvState int64
-		err := span.ReadRow(ctx, txn, "Invocations", spanner.Key{includedInvID}, map[string]interface{}{
-			"State": &includedInvState,
-		})
-		switch {
-		case spanner.ErrCode(err) == codes.NotFound:
-			return errors.Reason("invocation %q not found", in.Inclusion.IncludedInvocation).
-				InternalReason("%s", err).
-				Tag(grpcutil.NotFoundTag).
-				Err()
-
-		case err != nil:
-			return errors.Annotate(err, "failed to retrieve included invocation").Err()
-
-		default:
-			ret.Ready = pbutil.IsFinalized(pb.Invocation_State(includedInvState))
-		}
-
+		// Write to Spanner concurrently.
 		return txn.BufferWrite([]*spanner.Mutation{
 			// Use InsertOrUpdate instead of Insert to ensure the request is
 			// idempotent.
@@ -81,4 +86,13 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 		return nil, err
 	}
 	return ret, nil
+}
+
+func readInvocationState(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string) (pb.Invocation_State, error) {
+	var state int64
+	err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"State": &state})
+	if err != nil {
+		return 0, err
+	}
+	return pb.Invocation_State(state), nil
 }

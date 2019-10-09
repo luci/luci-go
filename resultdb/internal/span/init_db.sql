@@ -95,7 +95,7 @@ CREATE TABLE Inclusions (
 
   -- Whether the included invocation is finalized before the including one.
   -- See also Inclusion.ready in invocation.proto
-  Ready BOOL,
+  Ready BOOL NOT NULL,
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

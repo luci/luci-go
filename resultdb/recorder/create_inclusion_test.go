@@ -17,11 +17,13 @@ package main
 import (
 	"testing"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -39,26 +41,24 @@ func TestCreateInclusion(t *testing.T) {
 
 		insInv := testutil.InsertInvocation
 
-		Convey("no invocations", func() {
-			_, err := recorder.CreateInclusion(ctx, &pb.CreateInclusionRequest{
-				IncludingInvocation: "invocations/including",
-				Inclusion: &pb.Inclusion{
-					IncludedInvocation: "invocations/included",
-				},
-			})
+		req := &pb.CreateInclusionRequest{
+			IncludingInvocation: "invocations/including",
+			Inclusion: &pb.Inclusion{
+				IncludedInvocation: "invocations/included",
+			},
+		}
+
+		Convey("no including invocation", func() {
+			testutil.MustApply(ctx, insInv("included", pb.Invocation_ACTIVE, token))
+			_, err := recorder.CreateInclusion(ctx, req)
 			So(err, ShouldErrLike, `invocation "invocations/including" not found`)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
-		Convey("no including", func() {
+		Convey("no included invocation", func() {
 			testutil.MustApply(ctx, insInv("including", pb.Invocation_ACTIVE, token))
 
-			_, err := recorder.CreateInclusion(ctx, &pb.CreateInclusionRequest{
-				IncludingInvocation: "invocations/including",
-				Inclusion: &pb.Inclusion{
-					IncludedInvocation: "invocations/included",
-				},
-			})
+			_, err := recorder.CreateInclusion(ctx, req)
 			So(err, ShouldErrLike, `invocation "invocations/included" not found`)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
@@ -69,18 +69,18 @@ func TestCreateInclusion(t *testing.T) {
 				insInv("included", pb.Invocation_COMPLETED, ""),
 			)
 
-			incl, err := recorder.CreateInclusion(ctx, &pb.CreateInclusionRequest{
-				IncludingInvocation: "invocations/including",
-				Inclusion: &pb.Inclusion{
-					IncludedInvocation: "invocations/included",
-				},
-			})
+			incl, err := recorder.CreateInclusion(ctx, req)
 			So(err, ShouldBeNil)
 			So(incl, ShouldResembleProto, &pb.Inclusion{
 				Name:               "invocations/including/inclusions/included",
 				IncludedInvocation: "invocations/included",
 				Ready:              true,
 			})
+
+			var ready bool
+			err = span.ReadRow(ctx, span.Client(ctx).Single(), "Inclusions", spanner.Key{"including", "included"}, map[string]interface{}{"Ready": &ready})
+			So(err, ShouldBeNil)
+			So(ready, ShouldBeTrue)
 		})
 
 		Convey("unready", func() {

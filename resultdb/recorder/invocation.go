@@ -34,7 +34,7 @@ const updateTokenMetadataKey = "update_token"
 // mayMutateInvocation returns an error if the requester may not mutate the
 // invocation.
 // ctx must contain "update_token" metadata value.
-func mayMutateInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string) error {
+func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error {
 	// Extract the update token from the incoming context.
 	md, _ := metadata.FromIncomingContext(ctx)
 	userToken := md.Get(updateTokenMetadataKey)
@@ -55,6 +55,7 @@ func mayMutateInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return errors.Reason("invocation %q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
+
 	case err != nil:
 		return err
 
