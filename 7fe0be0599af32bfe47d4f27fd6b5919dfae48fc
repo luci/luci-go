@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "87aa401b_b3b920b3",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T07:46:41Z",
+      "side": 1,
+      "message": "Nit: this seems inconsistent with the above?",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 14
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aafb7946_ea545bd0",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12

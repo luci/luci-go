@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "253c9ac0_dae3ab94",
+        "filename": "common/spantest/spantest.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T07:46:41Z",
+      "side": 1,
+      "message": "Curious: is there something particular we\u0027re trying to avoid with modding? It shortens the DB name, but at the cost of mandating a 10000 limit on parallelism (mod username). Maybe we don\u0027t expect there ever to be more than 10000 at once; OTOH the largest uint32 is 4294967295, which doesn\u0027t seem all that long.",
+      "range": {
+        "startLine": 160,
+        "startChar": 41,
+        "endLine": 160,
+        "endChar": 46
+      },
+      "revId": "a6dd251b6c8e0324c6fe8f7d8e85c69489d61811",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
