@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "79cf7fe6_fd9a8b83",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aafb7946_ea545bd0",
+      "range": {
+        "startLine": 42,
+        "startChar": 8,
+        "endLine": 42,
+        "endChar": 33
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f315ffdc_056f5acf",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "12b9603c_7f230bca",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f315ffdc_056f5acf",
+      "range": {
+        "startLine": 47,
+        "startChar": 3,
+        "endLine": 47,
+        "endChar": 21
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86381762_78732a50",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12
@@ -59,6 +107,30 @@
       "writtenOn": "2019-10-08T22:24:43Z",
       "side": 1,
       "message": "why not hardcode it then? internal/span/init_db.sql is already hardcoded, but then for some reason it does a search",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 68
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ee97c0_38b59abe",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "hardcode to what? in each test binary, CWD is the path to the package, so i gotta search for the root",
+      "parentUuid": "86381762_78732a50",
       "range": {
         "startLine": 64,
         "startChar": 2,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "1ff4e914_e4051126",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "they are expected to call SpannerTestContext which skips the test if RunIntegrationTests() return false",
+      "parentUuid": "1350684f_00ecc830",
+      "range": {
+        "startLine": 96,
+        "startChar": 10,
+        "endLine": 96,
+        "endChar": 17
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ac56da1_45f80684",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "543b4105_73c7d791",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ac56da1_45f80684",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 13
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7823d03e_5e418d36",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 12
@@ -131,6 +251,24 @@
       "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2dda581_7f0f4cfd",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T06:15:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7823d03e_5e418d36",
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
