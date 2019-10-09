@@ -76,11 +76,9 @@ CREATE INDEX InvocationsByExpectedTestResultsExpirationWeek ON Invocations (Expe
 -- Index of invocations by a tag.
 CREATE TABLE InvocationsByTag (
   -- Format: "${sha256_hex(tag)}_${key}:${value}".
-  TagId STRING(MAX) NOT NULL,
-
-  -- FK to Invocations.InvocationId.
+  TagID STRING(MAX),
   InvocationId STRING(MAX) NOT NULL
-) PRIMARY KEY (TagId, InvocationId);
+) PRIMARY KEY (TagID, InvocationId);
 
 -- Stores "inclusion" edges between invocations.
 -- Interleaved in Invocations table.
