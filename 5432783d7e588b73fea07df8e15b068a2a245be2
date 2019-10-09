@@ -199,6 +199,23 @@
     },
     {
       "key": {
+        "uuid": "997b32f4_d5b01aee",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:52:23Z",
+      "side": 1,
+      "message": "all errors returned by this func must have correct grpc code",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a412d0cf_b6d776df",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
