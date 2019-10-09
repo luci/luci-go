@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83f9840f_75c77f07",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T18:51:26Z",
+      "side": 1,
+      "message": "Is it really a name?",
+      "range": {
+        "startLine": 123,
+        "startChar": 5,
+        "endLine": 123,
+        "endChar": 17
+      },
+      "revId": "c8cb76e99ee786c729dbbb6a269e7bca19632553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b246daf1_b6fd19a5",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T18:51:26Z",
+      "side": 1,
+      "message": "why not 2?",
+      "range": {
+        "startLine": 124,
+        "startChar": 24,
+        "endLine": 124,
+        "endChar": 26
+      },
+      "revId": "c8cb76e99ee786c729dbbb6a269e7bca19632553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
