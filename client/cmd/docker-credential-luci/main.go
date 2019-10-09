@@ -30,58 +30,40 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/logging/gologger"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-var (
-	flags    authcli.Flags
-	lifetime time.Duration
-)
-
-func init() {
-	defaults := chromeinfra.DefaultAuthOptions()
-	defaults.Scopes = []string{auth.OAuthScopeEmail, "https://www.googleapis.com/auth/cloud-platform"}
-	flags.RegisterScopesFlag = true
-	flags.Register(flag.CommandLine, defaults)
-	flag.DurationVar(
-		&lifetime, "lifetime", time.Minute,
-		"Minimum token lifetime. If existing token expired and refresh token or service account is not present, returns nothing.",
-	)
-
+func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: docker-credential-luci command\n")
+		fmt.Fprintf(os.Stderr, "usage: docker-credential-luci <command>\n")
 		flag.PrintDefaults()
 	}
-}
-
-func main() {
 	flag.Parse()
 
-	if len(flag.Args()) != 2 {
-		fmt.Fprintln(os.Stderr, "invalid number of arguments")
-		os.Exit(1)
-	}
-
-	opts, err := flags.Options()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-	if lifetime > 45*time.Minute {
-		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 45m")
+	args := flag.Args()
+	if len(args) != 1 {
+		fmt.Fprintf(os.Stderr, "docker-credential-luci: expecting only one argument, got %d\n", len(args))
 		os.Exit(1)
 	}
 
 	ctx := gologger.StdConfig.Use(context.Background())
+
+	opts := chromeinfra.DefaultAuthOptions()
+	opts.Scopes = []string{
+		auth.OAuthScopeEmail,
+		"https://www.googleapis.com/auth/cloud-platform",
+	}
 	auth := auth.NewAuthenticator(ctx, auth.SilentLogin, opts)
 
-	// We only use the command and ignore the payload.
-	switch flag.Args()[0] {
+	// We only use the command and ignore the payload in stdin. Still need to
+	// close it, otherwise it is possible (though very unlikely) docker CLI will
+	// get stuck writing to a pipe no one is reading.
+	os.Stdin.Close()
+
+	switch args[0] {
 	case "get":
-		t, err := auth.GetAccessToken(lifetime)
+		t, err := auth.GetAccessToken(3 * time.Minute)
 		if err != nil {
 			printErr("cannot get access token", err)
 			os.Exit(1)
@@ -100,15 +82,15 @@ func main() {
 			os.Exit(1)
 		}
 	default:
-		// We don't support the "store" command and hence ignore it.
+		// We don't support the "store" and "list" commands and hence ignore them.
 	}
 }
 
 func printErr(prefix string, err error) {
 	switch {
 	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "not running with a service account and not logged it")
+		fmt.Fprintln(os.Stderr, "docker-credential-luci: not running with a service account and not logged it")
 	case err != nil:
-		fmt.Fprintf(os.Stderr, "%s: %v\n", prefix, err)
+		fmt.Fprintf(os.Stderr, "docker-credential-luci: %s: %v\n", prefix, err)
 	}
 }
