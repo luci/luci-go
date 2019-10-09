@@ -24,9 +24,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/resultdb/internal/span"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -168,4 +170,19 @@ func fatalIf(err error) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+// InsertInvocation returns a spanner mutation that inserts an invocation.
+func InsertInvocation(id string, state pb.Invocation_State, updateToken string) *spanner.Mutation {
+	return spanner.InsertMap("Invocations", map[string]interface{}{
+		"InvocationId":                      id,
+		"State":                             int64(state),
+		"Realm":                             "",
+		"UpdateToken":                       updateToken,
+		"InvocationExpirationTime":          testclock.TestRecentTimeUTC,
+		"InvocationExpirationWeek":          testclock.TestRecentTimeUTC,
+		"ExpectedTestResultsExpirationTime": testclock.TestRecentTimeUTC,
+		"ExpectedTestResultsExpirationWeek": testclock.TestRecentTimeUTC,
+		"CreateTime":                        testclock.TestRecentTimeUTC,
+	})
 }
