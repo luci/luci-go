@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cb60a04_c682408c",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T22:10:22Z",
+      "side": 1,
+      "message": "Nit: drop one of the \u0027either\u0027s.",
+      "range": {
+        "startLine": 128,
+        "startChar": 10,
+        "endLine": 128,
+        "endChar": 26
+      },
+      "revId": "298e8a5c4946884e7bb479cd92a5bd5254927e2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
