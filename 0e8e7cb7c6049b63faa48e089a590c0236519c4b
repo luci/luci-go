@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2c5c3123_38731677",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "I mean the below form is human readable but doesn\u0027t e.g. capture that instantiation is optional, and that index may or may not be an actual index (see the thread below). It is meant to give context to the regex and make reading the regex easier.\n\nThe most accurate and precise way to describe the regex would be to repeat the regex (perhaps annotating with named groups).\n\nI changed the phrasing but to me it looks less human readable; suggestions welcome.",
+      "parentUuid": "cba7ab89_78acc691",
+      "range": {
+        "startLine": 42,
+        "startChar": 33,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d25ed3a_55742bcf",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -94,6 +118,78 @@
     },
     {
       "key": {
+        "uuid": "d0b6b83e_c1392980",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "Looks like it\u0027s possible based on https://cs.chromium.org/chromium/src/third_party/googletest/src/googletest/include/gtest/internal/gtest-internal.h?l\u003d706\u0026rcl\u003df2fb48c3b3d79a75a88a99fba6576b25d42ec528 (note the conditional slash if \"prefix\" is empty string), but I didn\u0027t actually see any examples of type parametrized tests that don\u0027t have an instantiation.",
+      "parentUuid": "9d25ed3a_55742bcf",
+      "range": {
+        "startLine": 44,
+        "startChar": 36,
+        "endLine": 44,
+        "endChar": 43
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eddac7a1_7f1a6d68",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "Yes, there was a thread about this earlier.\n\nIt appears that in /practice/, neither Chan nor I have seen cases in which this is not an index (\\d). In theory, it looks like this can in fact be an alphabetical string if the user provides a name generator [1], [2]; it\u0027s the default generator that provides a numerical index [3]\n\nI understand this is not entirely along the lines of param/index that is to be part of Chrome test ID, but I have not yet found evidence of how Chrome is using gtest that guarantees no name generator provided.\n\n[1] https://cs.chromium.org/chromium/src/third_party/googletest/src/googletest/include/gtest/internal/gtest-internal.h?l\u003d707\u0026rcl\u003df2fb48c3b3d79a75a88a99fba6576b25d42ec528\n[2] https://cs.chromium.org/chromium/src/third_party/googletest/src/googletest/include/gtest/internal/gtest-internal.h?l\u003d655\u0026rcl\u003df2fb48c3b3d79a75a88a99fba6576b25d42ec528\n[3] https://cs.chromium.org/chromium/src/third_party/googletest/src/googletest/include/gtest/gtest-message.h?l\u003d209\u0026rcl\u003df2fb48c3b3d79a75a88a99fba6576b25d42ec528",
+      "parentUuid": "0e4ee851_c637e0f4",
+      "range": {
+        "startLine": 44,
+        "startChar": 51,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3685d4d_047ef069",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "No. INSTANTIATE_TYPED_TEST_SUITE_P is a macro [1] that sticks the first argument into a variable name; if we had e.g. spaces that would fail to compile.\n\n[1] https://cs.chromium.org/chromium/src/third_party/googletest/src/googletest/include/gtest/gtest-typed-test.h?l\u003d307\u0026rcl\u003df2fb48c3b3d79a75a88a99fba6576b25d42ec528",
+      "parentUuid": "b4a33e9a_ad240b6e",
+      "range": {
+        "startLine": 44,
+        "startChar": 37,
+        "endLine": 44,
+        "endChar": 39
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a0db8c46_dca9198b",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -134,6 +230,48 @@
     },
     {
       "key": {
+        "uuid": "8e1442b1_e11c0848",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "Done\n\n(Reasoning was that the parameter extraction could get its own line, and base path could get its own line)",
+      "parentUuid": "b28d88bf_de4f7053",
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e330a3d0_9213b026",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0db8c46_dca9198b",
+      "range": {
+        "startLine": 209,
+        "startChar": 38,
+        "endLine": 209,
+        "endChar": 48
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dcd63506_ec21677a",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -145,6 +283,30 @@
       "writtenOn": "2019-10-09T16:32:06Z",
       "side": 1,
       "message": "this replaces everywhere, not necessarily a prefix\nit should replace only prefix",
+      "range": {
+        "startLine": 219,
+        "startChar": 21,
+        "endLine": 219,
+        "endChar": 31
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab17a5ae_71649dd4",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "The \"prefix\" can appear in the middle of the basePath string, e.g. FooTest.PRE_DoesBar, and also multiple times [1].\n\nI believe \"prefix\" in fact /only/ precedes the test name, not the suite name, in which case an alternative would be to extract those pieces separately, and then strip prefixes until there are none. I\u0027ve made that change; let me know if you prefer to that or to keep this.\n\n[1] https://cs.chromium.org/chromium/src/chrome/browser/policy/policy_browsertest.cc?l\u003d881\u0026rcl\u003d017195ae23277916e2de3d5a2e989c0ac4905a98",
+      "parentUuid": "dcd63506_ec21677a",
       "range": {
         "startLine": 219,
         "startChar": 21,
@@ -171,6 +333,24 @@
       "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f162ca2b_438b4cf0",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T22:52:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38d20950_ab189436",
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
