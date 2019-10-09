@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "a4ac1267_9beae858",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T20:53:18Z",
+      "side": 1,
+      "message": "Yes, ID vs. Id, thanks (I don\u0027t actually mind either way but mentioned it in case it was unintentional)",
+      "parentUuid": "1b95de7f_f6dd2a15",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 14
+      },
+      "revId": "7fe0be0599af32bfe47d4f27fd6b5919dfae48fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aafb7946_ea545bd0",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 12
