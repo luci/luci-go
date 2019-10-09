@@ -49,31 +49,32 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 
 		// Read the state of the included invocation to determine inclusion readiness.
 		// TODO(nodir): unhardcode Spanner table and column names.
-		// TODO(nodir): generalize reading invocations.
-		includedRow, err := txn.ReadRow(ctx, "Invocations", spanner.Key{includedInvID}, []string{"State"})
+		var includedInvState int64
+		err := span.ReadRow(ctx, txn, "Invocations", spanner.Key{includedInvID}, map[string]interface{}{
+			"State": &includedInvState,
+		})
 		switch {
 		case spanner.ErrCode(err) == codes.NotFound:
 			return errors.Reason("invocation %q not found", in.Inclusion.IncludedInvocation).
 				InternalReason("%s", err).
 				Tag(grpcutil.NotFoundTag).
 				Err()
+
 		case err != nil:
 			return errors.Annotate(err, "failed to retrieve included invocation").Err()
+
+		default:
+			ret.Ready = pbutil.IsFinalized(pb.Invocation_State(includedInvState))
 		}
-		var includedInvState int64
-		if err := includedRow.Columns(&includedInvState); err != nil {
-			return err
-		}
-		ret.Ready = pbutil.IsFinalized(pb.Invocation_State(includedInvState))
 
 		return txn.BufferWrite([]*spanner.Mutation{
 			// Use InsertOrUpdate instead of Insert to ensure the request is
 			// idempotent.
-			spanner.InsertOrUpdate(
-				"Inclusions",
-				[]string{"InvocationID", "IncludedInvocationID", "Ready"},
-				[]interface{}{includingInvID, includedInvID, ret.Ready},
-			),
+			spanner.InsertOrUpdateMap("Inclusions", map[string]interface{}{
+				"InvocationID":         includingInvID,
+				"IncludedInvocationID": includedInvID,
+				"Ready":                ret.Ready,
+			}),
 		})
 	})
 	if err != nil {
