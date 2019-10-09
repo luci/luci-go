@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1534a564_6ac8c68c",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T21:43:46Z",
+      "side": 1,
+      "message": "rephrased in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1850662/\nthis is unrelated to this CL",
+      "parentUuid": "83f9840f_75c77f07",
+      "range": {
+        "startLine": 123,
+        "startChar": 5,
+        "endLine": 123,
+        "endChar": 17
+      },
+      "revId": "c8cb76e99ee786c729dbbb6a269e7bca19632553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b246daf1_b6fd19a5",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "c8cb76e99ee786c729dbbb6a269e7bca19632553",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a237d6ec_aeb94c34",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T21:43:46Z",
+      "side": 1,
+      "message": "done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1850662/\nthis is unrelated to this CL",
+      "parentUuid": "b246daf1_b6fd19a5",
+      "range": {
+        "startLine": 124,
+        "startChar": 24,
+        "endLine": 124,
+        "endChar": 26
+      },
+      "revId": "c8cb76e99ee786c729dbbb6a269e7bca19632553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
