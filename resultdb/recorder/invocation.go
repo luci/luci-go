@@ -17,6 +17,8 @@ package main
 import (
 	"context"
 
+	"go.chromium.org/luci/resultdb/internal/span"
+
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -45,19 +47,15 @@ func mayMutateInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	}
 
 	// Read the invocation from Spanner.
-	row, err := txn.ReadRow(ctx, "Invocations", spanner.Key{invID}, []string{"UpdateToken", "State"})
+	var updateToken string
+	var state int64
+	err := span.ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, map[string]interface{}{
+		"UpdateToken": &updateToken,
+		"State":       &state,
+	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return errors.Reason("invocation %q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
-	case err != nil:
-		return err
-	}
-
-	// Check invocation state and update token.
-	// TODO(nodir): generalize reading spanner rows.
-	var updateToken string
-	var state int64
-	switch err := row.Columns(&updateToken, &state); {
 	case err != nil:
 		return err
 
