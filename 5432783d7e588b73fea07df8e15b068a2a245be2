@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "06cbea8c_b2a357eb",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-09T01:37:59Z",
+      "side": 1,
+      "message": "Sorry if it\u0027s a dumb question, but here inv is just declared? If so why do we need to check if it\u0027s empty or not?",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 23
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
