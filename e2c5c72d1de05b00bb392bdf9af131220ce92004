@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "283b64e8_ba4e8807",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "nit: the order of assignments seems arbitrary. Consider the order from generic to concrete: suite, name, instantiation, param. Here and below",
+      "revId": "e2c5c72d1de05b00bb392bdf9af131220ce92004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73a2e991_1d9ff6aa",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "general principle: let\u0027s not include information what the caller already has. \ntestPath is repeated in the error message in L136",
+      "range": {
+        "startLine": 234,
+        "startChar": 23,
+        "endLine": 234,
+        "endChar": 39
+      },
+      "revId": "e2c5c72d1de05b00bb392bdf9af131220ce92004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6d51360_5a0b6f17",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "name\n\nwe are stripping from name, not basePath",
+      "range": {
+        "startLine": 238,
+        "startChar": 24,
+        "endLine": 238,
+        "endChar": 32
+      },
+      "revId": "e2c5c72d1de05b00bb392bdf9af131220ce92004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "703c7dc5_670e8527",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "my earlier comment applies to both param/index and param/instantiation.\nnow this is inconsistent with param/index. Let\u0027s move this up too",
+      "revId": "e2c5c72d1de05b00bb392bdf9af131220ce92004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f6daa64_6fc81187",
+        "filename": "resultdb/variantdef.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "i think this belongs to chromium package, because this is chromium specific",
+      "revId": "e2c5c72d1de05b00bb392bdf9af131220ce92004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

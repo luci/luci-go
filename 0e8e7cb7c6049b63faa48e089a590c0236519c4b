@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d8e69a74_a6af6e88",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "thanks for the clarification. I think real world examples would helpful and easier to read. It would be consistent with what I\u0027ve seen before in the code base. Right now we have essentially a spec written two ways.",
+      "parentUuid": "2c5c3123_38731677",
+      "range": {
+        "startLine": 42,
+        "startChar": 33,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d25ed3a_55742bcf",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -187,6 +211,54 @@
       "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c62e11a_f621cd42",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "i see. The param/index was designed with understanding that this can be only a number. Sounds like this was wrong. Please suggest a modification to the param/index design. I guess that would be an edit in go/chrome-infra-ids. Should it be param/name or something?\n\nnot blocking this CL on this. A TODO in this CL would do",
+      "parentUuid": "eddac7a1_7f1a6d68",
+      "range": {
+        "startLine": 44,
+        "startChar": 51,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7d3bad0_dfff852b",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T23:25:26Z",
+      "side": 1,
+      "message": "thanks. hopefully macro can contain only [0-9A-Za-z_]",
+      "parentUuid": "e3685d4d_047ef069",
+      "range": {
+        "startLine": 44,
+        "startChar": 37,
+        "endLine": 44,
+        "endChar": 39
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
