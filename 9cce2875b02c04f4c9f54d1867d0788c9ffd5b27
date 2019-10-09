@@ -22,6 +22,30 @@
       "revId": "9cce2875b02c04f4c9f54d1867d0788c9ffd5b27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df639753_1f3c800a",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-09T02:51:06Z",
+      "side": 1,
+      "message": "Good point. Actually, we can just close os.Stdin and it will work fine (per comments for Stdin in https://golang.org/pkg/os/exec/ which I assume docker is using). So just closing now, without reading anything (I confirm it works locally, at least nothing is getting stuck or errors out).",
+      "parentUuid": "b13003b1_396998c5",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "9cce2875b02c04f4c9f54d1867d0788c9ffd5b27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
