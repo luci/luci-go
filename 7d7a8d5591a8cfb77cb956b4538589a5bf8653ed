@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "f2adef46_3eb6f9df",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-09T21:59:22Z",
+      "side": 1,
+      "message": "When might this be NULL?",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 21
+      },
+      "revId": "7d7a8d5591a8cfb77cb956b4538589a5bf8653ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97b56c72_9fc0a2cf",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 1
