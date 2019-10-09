@@ -43,7 +43,7 @@ CREATE TABLE Invocations (
 
   -- Secret token that a client must provide to mutate this or any of the
   -- interleaved rows.
-  UpdateToken STRING(64),
+  UpdateToken STRING(64) NOT NULL,
 
   -- When the invocation was created.
   CreateTime TIMESTAMP NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE Invocations (
   FinalizeTime TIMESTAMP,
 
   -- When to force invocation finalization with state INTERRUPTED.
-  Deadline TIMESTAMP,
+  Deadline TIMESTAMP NOT NULL,
 
   -- Variant definition pairs common for all test results in this invocation.
   -- Each string is a colon-separated key-value pair.
@@ -97,7 +97,7 @@ CREATE TABLE Inclusions (
 
   -- Whether the included invocation is finalized before the including one.
   -- See also Inclusion.ready in invocation.proto
-  Ready BOOL,
+  Ready BOOL NOT NULL,
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
@@ -125,8 +125,7 @@ CREATE TABLE TestResults (
   CommitTimestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- Whether the test status was unexpected
-  -- MUST either be either NULL or False, to keep null-filtered index below
-  -- thin.
+  -- MUST be either NULL or False, to keep null-filtered index below thin.
   IsUnexpected BOOL,
 
   -- Test status, see TestStatus in test_result.proto.
