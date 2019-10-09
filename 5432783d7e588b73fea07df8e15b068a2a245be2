@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "67b03db2_a22c6448",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "nit: this var is a bit misleading because we have \"task\" and \"taskID\" variables, and \"taskID\" does not necessarily correspond to \"task\" after getting \"origin\" task.\n\ndo we really need it? i thikk \"req.SwarmingTask.Id\" reads more easily because it is clearly the original task id from the request",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 7
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe02d938_32bc44e8",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "note that this requires invocation ID, so you will have to move getInvocationID call back later",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "06cbea8c_b2a357eb",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -73,6 +113,160 @@
     },
     {
       "key": {
+        "uuid": "359bfc5d_ad1f1f9e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "nit: this does not add any additional error information that the caller does not already have. Let\u0027s return err as is",
+      "range": {
+        "startLine": 89,
+        "startChar": 35,
+        "endLine": 89,
+        "endChar": 50
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85f8f184_2877cdc2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "nit: this and finalizeTime variables are superfluous\n\nif inv.CreateTime, err \u003d convertSwarmingTs(task.CreatedTs); err !\u003d nil {\n  return nil, nil, errors.Annotate(err, \"created_ts\").Err()\n}",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 11
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8368fa7_e97c9596",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "it looks this variable is only compared to \"\" with the intention whether to call fetchOutputJSON.\nA boolean would be simpler:\n\n  hasOutputJSON :\u003d task.OutputsRef !\u003d nil \u0026\u0026 task.OutputsRef.Isolated !\u003d \"\"\n\n1LOC vs 7\n\n---\n\nstepping back, we might not need this. see below",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 20
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f04b131d_ae6890a3",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "at this point we know that there is need to continue, but the reader has to read past the switch statement. Let\u0027s just return\n\n  return nil, errors.Reason(\"unexpectedly incomplete\").Err()",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a412d0cf_b6d776df",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "at this point we know that there is no need to continue. Why don\u0027t we just return\n\n  return inv, nil\n\nhere?",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f62ac95_cc4e4232",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "this switch statement mixes decisions (what actions to take) and actions themselves. In this switch-case  we know that that output.json must be fetched; otherwise it is an error. It would simpler and less code to do\n\nmustFetchOutputJSON :\u003d false\nswitch {\n.....\ncase \"COMPLETED\":\n  mustFetchOutputJSON \u003d true\n}\n\nswitch {\ncase task.OutputsRef !\u003d nil \u0026\u0026 task.OutputsRef.Isolated !\u003d \"\":\n  // fetch. check the error. convert json\n\ncase mustFetchOutputJSON:\n  // return the error\n}",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfb9f2ef_8e142fde",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "inv.State is not set\n\nshould we set it in L117 to COMPLETED by default?",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d8cab78_63506c05",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "nit: declaring this variable outside of the loop makes the reader think \"is it used after the loop?\", but it is not.\n\nlet\u0027s declare inside the loop",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cdef8f9f_c2c83709",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -90,6 +284,86 @@
         "endLine": 236,
         "endChar": 23
       },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd4c4408_338b0607",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "now that we have the deriveProtosForWriting that processes the request, and initializes other Invocation fields, it is better place for this code than this func. This code has nothing to do with JSON conversion actually.\n\nyet again, top-bottom approach would have prevented that because we\u0027d write deriveProtosForWriting first, populate invocation fields there, and leave a TODO to convert json",
+      "range": {
+        "startLine": 280,
+        "startChar": 0,
+        "endLine": 289,
+        "endChar": 2
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e94d135_88bc0e24",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "if !strings.HasSuffix(ts, \"Z\")",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 323,
+        "endChar": 30
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b7dd39b_21df8124",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "nit: let\u0027s move down as much as possible",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "332a467d_4d764aa8",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "unnecessary",
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

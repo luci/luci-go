@@ -240,6 +240,30 @@
     },
     {
       "key": {
+        "uuid": "4fc20c14_4331ce1e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-09T16:02:35Z",
+      "side": 1,
+      "message": "i think we should write them to spanner, together with invocation.",
+      "parentUuid": "40d83ef0_b2b95261",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
