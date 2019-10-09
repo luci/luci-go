@@ -23,6 +23,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const (
+	TestInstantiationKey = "param/instantiation"
+	TestParameterKey = "param/index"
+)
+
 // VariantDefMap contains the key:val pairs that define a Variant.
 //
 // It is the "Def" part of a VariantDef proto.

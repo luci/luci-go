@@ -17,7 +17,9 @@ package formats
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +33,22 @@ import (
 	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+var (
+	// Test name prefixes that may be present and must be stripped from the base path.
+	prefixes = []string{"MANUAL_", "PRE_"}
+
+	// Test base paths look like: <suite name>.<test name>
+	basePathRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
+
+	// Type parametrized tests look like:
+	// <optional <instantiation>/><suite name>/<type parameter index or name>.<test name>
+	typeParamRE = regexp.MustCompile(`^((\w+)/)?(\w+)/(\w+)\.(\w+)$`)
+
+	// Value parametrized tests look like:
+	// <optional <instantiation>/><suite name>.<test name>/<value parameter index>
+	valueParamRE = regexp.MustCompile(`^((\w+)/)?(\w+)\.(\w+)/(\w+)$`)
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -112,7 +130,12 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 		sort.Strings(testNames)
 
 		for _, name := range testNames {
-			baseName, params := extractGTestParameters(name)
+			baseName, params, err := extractGTestParameters(name)
+			if err != nil {
+				return nil, errors.Annotate(err,
+					"failed to extract test base name and parameters from %q", name).Err()
+			}
+
 			testPath := req.TestPathPrefix + baseName
 
 			for i, result := range data[name] {
@@ -184,10 +207,52 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 }
 
 // extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
-func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap) {
-	// TODO(jchinlee): Implement.
-	basePath = testPath
+func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap, err error) {
+	var suite, name string
+	var instantiation string
 	params = resultdb.VariantDefMap{}
+
+	// Tests can be only one of type- or value-parametrized, if parametrized at all.
+	if match := typeParamRE.FindStringSubmatch(testPath); match != nil {
+		// Extract type parameter.
+		instantiation = match[2]
+		params[resultdb.TestParameterKey] = match[4]
+		suite = match[3]
+		name = match[5]
+	} else if match := valueParamRE.FindStringSubmatch(testPath); match != nil {
+		// Extract value parameter.
+		instantiation = match[2]
+		params[resultdb.TestParameterKey] = match[5]
+		suite = match[3]
+		name = match[4]
+	} else if match := basePathRE.FindStringSubmatch(testPath); match != nil {
+		// Otherwise our testPath should not be parametrized, so extract the suite and name.
+		suite = match[1]
+		name = match[2]
+	} else {
+		// Otherwise testPath format is unrecognized.
+		err = errors.Reason("test path %q of unknown form", testPath).Err()
+		return
+	}
+
+	// Strip prefixes from basePath if necessary.
+	for {
+		strippedName := name
+		for _, prefix := range prefixes {
+			strippedName = strings.TrimPrefix(strippedName, prefix)
+		}
+		if strippedName == name {
+			break
+		}
+		name = strippedName
+	}
+	basePath = fmt.Sprintf("%s.%s", suite, name)
+
+	// Populate instantiation if present.
+	if instantiation != "" {
+		params[resultdb.TestInstantiationKey] = instantiation
+	}
+
 	return
 }
 

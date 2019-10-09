@@ -19,6 +19,7 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -192,6 +193,59 @@ func TestGTestConversions(t *testing.T) {
 		})
 	})
 
+	Convey(`extractGTestParameters`, t, func() {
+		Convey(`type parametrized`, func() {
+			Convey(`with instantiation`, func() {
+				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
+				So(err, ShouldBeNil)
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+					"param/instantiation": "MyInstantiation",
+					"param/index": "1",
+				}))
+			})
+
+			Convey(`without instantiation`, func() {
+				basePath, params, err := extractGTestParameters("FooTest/1.DoesBar")
+				So(err, ShouldBeNil)
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{"param/index": "1"}))
+			})
+		})
+
+		Convey(`value parametrized`, func() {
+			Convey(`with instantiation`, func() {
+				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
+				So(err, ShouldBeNil)
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+					"param/instantiation": "MyInstantiation",
+					"param/index": "1",
+				}))
+			})
+
+			Convey(`without instantiation`, func() {
+				basePath, params, err := extractGTestParameters("FooTest.DoesBar/1")
+				So(err, ShouldBeNil)
+				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{"param/index": "1"}))
+			})
+		})
+
+		Convey(`not parametrized`, func() {
+			basePath, params, err := extractGTestParameters("FooTest.DoesBar")
+			So(err, ShouldBeNil)
+			So(basePath, ShouldEqual, "FooTest.DoesBar")
+			So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{}))
+		})
+
+		Convey(`with magic prefixes`, func() {
+			basePath, _, err := extractGTestParameters("FooTest.PRE_PRE_MANUAL_DoesBar")
+			So(err, ShouldBeNil)
+			So(basePath, ShouldEqual, "FooTest.DoesBar")
+		})
+	})
+
 	Convey(`ToProtos`, t, func() {
 		req := &pb.DeriveInvocationRequest{
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
@@ -212,7 +266,7 @@ func TestGTestConversions(t *testing.T) {
 			results := &GTestResults{
 				PerIterationData: []map[string][]*GTestRunResult{
 					{
-						"test1": {
+						"BazTest.DoesQux": {
 							{
 								Status: "SUCCESS",
 							},
@@ -220,7 +274,7 @@ func TestGTestConversions(t *testing.T) {
 								Status: "FAILURE",
 							},
 						},
-						"test2": {
+						"FooTest.DoesBar": {
 							{
 								Status: "EXCESSIVE_OUTPUT",
 							},
@@ -230,7 +284,7 @@ func TestGTestConversions(t *testing.T) {
 						},
 					},
 					{
-						"test1": {
+						"BazTest.DoesQux": {
 							{
 								Status: "SUCCESS",
 							},
@@ -238,7 +292,7 @@ func TestGTestConversions(t *testing.T) {
 								Status: "SUCCESS",
 							},
 						},
-						"test2": {
+						"FooTest.DoesBar": {
 							{
 								Status: "FAILURE",
 							},
@@ -256,7 +310,7 @@ func TestGTestConversions(t *testing.T) {
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
-					TestPath: "prefix/test1",
+					TestPath: "prefix/BazTest.DoesQux",
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
@@ -264,7 +318,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test1",
+					TestPath: "prefix/BazTest.DoesQux",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -272,7 +326,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test2",
+					TestPath: "prefix/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
@@ -280,7 +334,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test2",
+					TestPath: "prefix/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -290,7 +344,7 @@ func TestGTestConversions(t *testing.T) {
 
 				// Iteration 2.
 				{
-					TestPath: "prefix/test1",
+					TestPath: "prefix/BazTest.DoesQux",
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
@@ -298,7 +352,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test1",
+					TestPath: "prefix/BazTest.DoesQux",
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
@@ -306,7 +360,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test2",
+					TestPath: "prefix/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -314,7 +368,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/test2",
+					TestPath: "prefix/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -329,7 +383,7 @@ func TestGTestConversions(t *testing.T) {
 				GlobalTags: []string{"tag2", "tag1"},
 				PerIterationData: []map[string][]*GTestRunResult{
 					{
-						"test1": {
+						"BazTest.DoesQux": {
 							{Status: "SUCCESS"},
 						},
 					},
@@ -346,7 +400,7 @@ func TestGTestConversions(t *testing.T) {
 			results := &GTestResults{
 				PerIterationData: []map[string][]*GTestRunResult{
 					{
-						"test1": {{Status: "NOTRUN"}},
+						"BazTest.DoesQux": {{Status: "NOTRUN"}},
 					},
 				},
 			}
