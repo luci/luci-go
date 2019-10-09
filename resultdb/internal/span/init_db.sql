@@ -43,7 +43,7 @@ CREATE TABLE Invocations (
 
   -- Secret token that a client must provide to mutate this or any of the
   -- interleaved rows.
-  UpdateToken STRING(64),
+  UpdateToken STRING(64) NOT NULL,
 
   -- When the invocation was created.
   CreateTime TIMESTAMP NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE Inclusions (
 
   -- Whether the included invocation is finalized before the including one.
   -- See also Inclusion.ready in invocation.proto
-  Ready BOOL,
+  Ready BOOL NOT NULL,
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
@@ -127,7 +127,7 @@ CREATE TABLE TestResults (
   -- Whether the test status was unexpected
   -- MUST either be either NULL or False, to keep null-filtered index below
   -- thin.
-  IsUnexpected BOOL,
+  IsUnexpected BOOL NOT NULL,
 
   -- Test status, see TestStatus in test_result.proto.
   Status INT64 NOT NULL,
