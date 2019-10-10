@@ -35,6 +35,9 @@ deploy:
 	kubectl patch deployment $(service)-service -p \
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
 
+test-recorder:
+	INTEGRATION_TESTS=1 go test -v ${projdir}/recorder
+
 # Helpers
 .setup-bindir:
 	mkdir -p $(bindir)
