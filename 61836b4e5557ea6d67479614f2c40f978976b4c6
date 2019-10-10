@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4856e34e_00cf1be0",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-10-10T23:26:31Z",
+      "side": 1,
+      "message": "use testfs like\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cmdrunner/command_test.go?l\u003d181\u0026rcl\u003d219e65c287cb8358cef2d9ef2712de50af7a1371\n?",
+      "revId": "61836b4e5557ea6d67479614f2c40f978976b4c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57b70877_917be273",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-10-10T23:26:31Z",
+      "side": 1,
+      "message": "Use https://golang.org/pkg/os/#MkdirAll ?",
+      "range": {
+        "startLine": 284,
+        "startChar": 0,
+        "endLine": 285,
+        "endChar": 41
+      },
+      "revId": "61836b4e5557ea6d67479614f2c40f978976b4c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ece079a0_bf3eeb85",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-10-10T23:26:31Z",
+      "side": 1,
+      "message": "I think this part is not necessary for this CL.",
+      "range": {
+        "startLine": 363,
+        "startChar": 0,
+        "endLine": 372,
+        "endChar": 22
+      },
+      "revId": "61836b4e5557ea6d67479614f2c40f978976b4c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
