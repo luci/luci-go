@@ -288,6 +288,30 @@
     },
     {
       "key": {
+        "uuid": "81cf4fdb_fe0c3ece",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:55:33Z",
+      "side": 1,
+      "message": "\u003e Given the code changes, does this still require action in this CL?\n\nno, this is CL is fine in this regard\n\n\u003e \n\u003e I have another WIP with function with signature like\n\u003e \n\u003e  func WriteProtos(ctx context.Context, inv *pb.Invocation, results []*pb.TestResult, realm, updateToken string) error\n\u003e \n\u003e which will write the invocation and results (needs rebase and update over the Spanner testing framework changes).\n\nquick feedback for this signature:\n1) i don\u0027t think we will use this func outside of the package, so it should be internal\n2) why realm is separate? inv proto has realm\n3) why do we need updateToken? we don\u0027t intend to update this invocation anymore and the column allows nulls",
+      "parentUuid": "f39de35f_07ceacb4",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
