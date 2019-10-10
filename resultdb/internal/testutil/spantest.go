@@ -183,3 +183,12 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string) 
 		"Deadline":                          testclock.TestRecentTimeUTC.Add(time.Minute),
 	})
 }
+
+// InsertInclusion returns a spanner mutation that inserts an inclusion.
+func InsertInclusion(includingInvID, includedInvID string, ready bool) *spanner.Mutation {
+	return spanner.InsertMap("Inclusions", map[string]interface{}{
+		"InvocationId":         includingInvID,
+		"IncludedInvocationId": includedInvID,
+		"Ready":                ready,
+	})
+}
