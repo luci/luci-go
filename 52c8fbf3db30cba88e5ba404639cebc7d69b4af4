@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0b11aca4_d5a2badc",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T09:25:52Z",
+      "side": 1,
+      "message": "yes, i think we will need to move some of this code around in the CL that adds UpdateInvocationRequest. From go/how-to-write-software\n\n\u003e The system should always look like it was designed to do exactly what it does now. Refactor it continuously so that it always looks like this, either before a change or immediately after it.",
+      "parentUuid": "9195fc75_2ef0b82e",
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12d7ea60_690d4066",
         "filename": "resultdb/pbutil/invocation.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "19ea03db_c29cd410",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T09:25:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "12d7ea60_690d4066",
+      "range": {
+        "startLine": 95,
+        "startChar": 7,
+        "endLine": 95,
+        "endChar": 41
+      },
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1a60013_8558dfeb",
         "filename": "resultdb/pbutil/strpair.go",
         "patchSetId": 2
@@ -62,6 +104,30 @@
       "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b79350b6_f59e28b6",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T09:25:52Z",
+      "side": 1,
+      "message": "you are right. i was going to say \"but our regexes do not allow that\", however this is pair is invalid! so we don\u0027t actually have guarantees that there are no weird symbols. done",
+      "parentUuid": "a1a60013_8558dfeb",
+      "range": {
+        "startLine": 90,
+        "startChar": 32,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
