@@ -253,3 +253,122 @@ func TestArchiveFileNotFoundReturnsError(t *testing.T) {
 		So(a.Close(), ShouldBeNil)
 	})
 }
+
+// Test archival of a single directory.
+func TestArchiveDir(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey(`Isolating a single directory should archive the contents, not the dir`, t, func() {
+		server := isolatedfake.New()
+		ts := httptest.NewServer(server)
+		defer ts.Close()
+		namespace := isolatedclient.DefaultNamespace
+		a := archiver.New(ctx, isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil), nil)
+
+		// Setup temporary directory.
+		//   /base/subdir/foo
+		//   /base/subdir/bar
+		//   /base/subdir/baz.isolate
+		// Result:
+		//   /baz.isolated
+		tmpDir, err := ioutil.TempDir("", "isolate")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(tmpDir); err != nil {
+				t.Fail()
+			}
+		}()
+		baseDir := filepath.Join(tmpDir, "base")
+		subDir := filepath.Join(baseDir, "subdir")
+		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
+		So(os.Mkdir(subDir, 0700), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(subDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(subDir, "bar"), []byte("bar"), 0600), ShouldBeNil)
+		isolate := `{
+                  'variables': {
+                    'files': [
+                      './',
+                    ],
+                  },
+                }`
+		isolatePath := filepath.Join(subDir, "baz.isolate")
+		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+
+		opts := &ArchiveOptions{
+			Isolate:  isolatePath,
+			Isolated: filepath.Join(tmpDir, "baz.isolated"),
+		}
+		item := Archive(a, opts)
+		So(item.DisplayName, ShouldResemble, "baz.isolated")
+		item.WaitForHashed()
+		So(item.Error(), ShouldBeNil)
+		So(a.Close(), ShouldBeNil)
+
+		mode := 0600
+		if runtime.GOOS == "windows" {
+			mode = 0666
+		}
+
+		//   /subdir/
+		fooHash := isolated.HexDigest("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
+		barHash := isolated.HexDigest("62cdb7020ff920e5aa642c3d4066950dd1f01f4d")
+		bazHash := isolated.HexDigest("dfe2138a5f964f254b334255217f719367cd1231")
+		subdirIsolatedData := isolated.Isolated{
+			Algo: "sha-1",
+			Files: map[string]isolated.File{
+				"foo":         isolated.BasicFile(fooHash, mode, 3),
+				"bar":         isolated.BasicFile(barHash, mode, 3),
+				"baz.isolate": isolated.BasicFile(bazHash, mode, 155),
+			},
+			Version: isolated.IsolatedFormatVersion,
+		}
+		encoded, err := json.Marshal(subdirIsolatedData)
+		So(err, ShouldBeNil)
+		subdirIsolatedEncoded := string(encoded) + "\n"
+		h := isolated.GetHash(namespace)
+		subdirIsolatedHash := isolated.HashBytes(h, []byte(subdirIsolatedEncoded))
+
+		isolatedData := isolated.Isolated{
+			Algo:     "sha-1",
+			Files:    map[string]isolated.File{},
+			Includes: isolated.HexDigests{subdirIsolatedHash},
+			Version:  isolated.IsolatedFormatVersion,
+		}
+		encoded, err = json.Marshal(isolatedData)
+		So(err, ShouldBeNil)
+		isolatedEncoded := string(encoded) + "\n"
+		isolatedHash := isolated.HashBytes(h, []byte(isolatedEncoded))
+
+		expected := map[string]map[isolated.HexDigest]string{
+			namespace: {
+				fooHash:            "foo",
+				barHash:            "bar",
+				bazHash:            isolate,
+				subdirIsolatedHash: subdirIsolatedEncoded,
+				isolatedHash:       isolatedEncoded,
+			},
+		}
+
+		actual := map[string]map[isolated.HexDigest]string{}
+		for n, c := range server.Contents() {
+			actual[n] = map[isolated.HexDigest]string{}
+			for k, v := range c {
+				actual[n][k] = string(v)
+			}
+		}
+		So(actual, ShouldResemble, expected)
+		So(item.Digest(), ShouldResemble, isolatedHash)
+
+		stats := a.Stats()
+		So(stats.TotalHits(), ShouldBeZeroValue)
+		So(stats.TotalBytesHits(), ShouldResemble, units.Size(0))
+		size := 3 + 3 + len(isolate) + len(subdirIsolatedEncoded) + len(isolatedEncoded)
+		So(stats.TotalMisses(), ShouldEqual, 5)
+		So(stats.TotalBytesPushed(), ShouldResemble, units.Size(size))
+		So(server.Error(), ShouldBeNil)
+		digest, err := isolated.HashFile(h, filepath.Join(tmpDir, "baz.isolated"))
+		So(digest, ShouldResemble, isolateservice.HandlersEndpointsV1Digest{Digest: string(isolatedHash), IsIsolated: false, Size: int64(len(isolatedEncoded))})
+		So(err, ShouldBeNil)
+	})
+}
