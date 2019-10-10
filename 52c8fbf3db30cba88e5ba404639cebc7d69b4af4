@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9195fc75_2ef0b82e",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T09:14:41Z",
+      "side": 1,
+      "message": "I don\u0027t feel strongly about it, particularly in this CL, but will we want to share some of this logic with UpdateInvocationRequest validation? I\u0027m aware a field mask is passed in UpdateInvocation, which makes it a little different.",
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12d7ea60_690d4066",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T09:14:41Z",
+      "side": 1,
+      "message": "Not `deadline.Sub(now) \u003c 10*time.Second`? I\u0027m reading the error as \"deadline cannot be less than 10 seconds past `now`\"; this change would also be consistent with the next case.\n\nAlternatively, if now.Sub(deadline) \u003e -10*time.Second was meant, that would also work. (I personally prefer the former.)\n\nRegardless, please also add a testcase for the deadline being e.g. 5s in the future.",
+      "range": {
+        "startLine": 95,
+        "startChar": 7,
+        "endLine": 95,
+        "endChar": 41
+      },
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1a60013_8558dfeb",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T09:14:41Z",
+      "side": 1,
+      "message": "Why not %q here? (Same question for ValidateVariantDef)",
+      "range": {
+        "startLine": 90,
+        "startChar": 32,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
