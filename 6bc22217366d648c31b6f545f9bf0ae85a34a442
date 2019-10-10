@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1b56d1e0_69050232",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T02:26:45Z",
+      "side": 1,
+      "message": "the purpose of this package is to implement all Recorder RPCs. If we put all RPC implementations in one file, then essentially entire package will end up implemented in one file. It would be very large.",
+      "parentUuid": "935abbb1_89f53bea",
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0d461d61_4f6e261b",
         "filename": "resultdb/recorder/create_inclusion.go",
         "patchSetId": 7
@@ -30,6 +48,30 @@
       "writtenOn": "2019-10-10T00:32:22Z",
       "side": 1,
       "message": "change to \n\n\t\"golang.org/x/sync/errgroup\"\n\n\t\"cloud.google.com/go/spanner\"\n?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 29
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b86e2da0_947286d1",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T02:26:45Z",
+      "side": 1,
+      "message": "elaborate please?\nthe import blocks used in this codebase are:\n1. stdlib\n2. third party packages\n3. luci packages\n4. packages of this app (resultdb)",
+      "parentUuid": "0d461d61_4f6e261b",
       "range": {
         "startLine": 20,
         "startChar": 0,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "0694282e_b643b8ea",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T02:26:45Z",
+      "side": 1,
+      "message": "\u003e Looks like only the included invocation name is being used. \n\nn.IncludingInvocation is used via includingInvID variable\n\n\u003e \n\u003e Probably change CreateInclusionRequest \n\nchange how?\n\n\u003e or add a TODO if this RPS will be updated to use other info in included invocation (consequential?).\n\n\"consequential\" was replaced by overriding. Also it belongs to inclusion, not invocation. So I am not sure what you mean here",
+      "parentUuid": "330b7c85_674bc638",
+      "range": {
+        "startLine": 38,
+        "startChar": 50,
+        "endLine": 38,
+        "endChar": 81
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9c0a8670_471284af",
         "filename": "resultdb/recorder/create_inclusion.go",
         "patchSetId": 7
@@ -85,6 +151,30 @@
       "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e497dc53_356c7957",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T02:26:45Z",
+      "side": 1,
+      "message": "added a comment to explain",
+      "parentUuid": "9c0a8670_471284af",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
