@@ -17,7 +17,9 @@ package formats
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -31,6 +33,41 @@ import (
 	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+const (
+	testInstantiationKey = "param/instantiation"
+	testParameterKey     = "param/id"
+)
+
+var (
+	// Prefixes that may be present in the test name and must be stripped before forming the base path.
+	prefixes = []string{"MANUAL_", "PRE_"}
+
+	// Test base paths look like FooTest.DoesBar: "FooTest" is the suite and "DoesBar" the test name.
+	basePathRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
+
+	// Type parametrized test examples:
+	// - MyInstantiation/FooTest/1.DoesBar
+	// - FooTest/1.DoesBar
+	// - FooType/MyType.DoesBar
+	//
+	// In the above examples, "FooTest" is the suite, "DoesBar" the test name, "MyInstantiation" the
+	// optional instantiation, "1" the index of the type on which the test has been instantiated, if
+	// no string representation for the type has been provided, and "MyType" is the user-provided
+	// string representation of the type on which the test has been instantiated.
+	typeParamRE = regexp.MustCompile(`^((\w+)/)?(\w+)/(\w+)\.(\w+)$`)
+
+	// Value parametrized tests examples:
+	// - MyInstantiation/FooTest.DoesBar/1
+	// - FooTest.DoesBar/1
+	// - FooTest.DoesBar/TestValue
+	//
+	// In the above examples, "FooTest" is the suite, "DoesBar" the test name, "MyInstantiation" the
+	// optional instantiation, "1" the index of the value on which the test has been instantiated, if
+	// no string representation for the value has been provided, and "TestValue" is the user-provided
+	// string representation of the value on which the test has been instantiated.
+	valueParamRE = regexp.MustCompile(`^((\w+)/)?(\w+)\.(\w+)/(\w+)$`)
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -112,7 +149,12 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 		sort.Strings(testNames)
 
 		for _, name := range testNames {
-			baseName, params := extractGTestParameters(name)
+			baseName, params, err := extractGTestParameters(name)
+			if err != nil {
+				return nil, errors.Annotate(err,
+					"failed to extract test base name and parameters from %q", name).Err()
+			}
+
 			testPath := req.TestPathPrefix + baseName
 
 			for i, result := range data[name] {
@@ -184,10 +226,46 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 }
 
 // extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
-func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap) {
-	// TODO(jchinlee): Implement.
-	basePath = testPath
+func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap, err error) {
+	var suite, name string
 	params = resultdb.VariantDefMap{}
+
+	// Tests can be only one of type- or value-parametrized, if parametrized at all.
+	if match := typeParamRE.FindStringSubmatch(testPath); match != nil {
+		// Extract type parameter.
+		suite = match[3]
+		name = match[5]
+		params[testInstantiationKey] = match[2]
+		params[testParameterKey] = match[4]
+	} else if match := valueParamRE.FindStringSubmatch(testPath); match != nil {
+		// Extract value parameter.
+		suite = match[3]
+		name = match[4]
+		params[testInstantiationKey] = match[2]
+		params[testParameterKey] = match[5]
+	} else if match := basePathRE.FindStringSubmatch(testPath); match != nil {
+		// Otherwise our testPath should not be parametrized, so extract the suite and name.
+		suite = match[1]
+		name = match[2]
+	} else {
+		// Otherwise testPath format is unrecognized.
+		err = errors.Reason("test path of unknown format").Err()
+		return
+	}
+
+	// Strip prefixes from test name if necessary.
+	for {
+		strippedName := name
+		for _, prefix := range prefixes {
+			strippedName = strings.TrimPrefix(strippedName, prefix)
+		}
+		if strippedName == name {
+			break
+		}
+		name = strippedName
+	}
+	basePath = fmt.Sprintf("%s.%s", suite, name)
+
 	return
 }
 
