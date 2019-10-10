@@ -16,14 +16,19 @@ package pbutil
 
 import (
 	"testing"
+	"time"
+
+	"go.chromium.org/luci/common/clock/testclock"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"github.com/golang/protobuf/ptypes"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInvocationName(t *testing.T) {
+	t.Parallel()
 	Convey("ParseInvocationName", t, func() {
 		Convey("Parse", func() {
 			id, err := ParseInvocationName("invocations/a")
@@ -44,6 +49,7 @@ func TestInvocationName(t *testing.T) {
 }
 
 func TestInvocationUtils(t *testing.T) {
+	t.Parallel()
 	Convey(`Normalization works`, t, func() {
 		inv := &pb.Invocation{
 			Tags: StringPairs(
@@ -77,6 +83,90 @@ func TestInvocationUtils(t *testing.T) {
 
 		Convey("INTERRUPTED", func() {
 			So(IsFinalized(pb.Invocation_INTERRUPTED), ShouldBeTrue)
+		})
+	})
+}
+
+func TestValidateCreateInvocationRequest(t *testing.T) {
+	t.Parallel()
+	now := testclock.TestRecentTimeUTC
+	Convey(`TestValidateCreateInvocationRequest`, t, func() {
+		Convey(`empty`, func() {
+			err := ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
+			So(err, ShouldErrLike, `invocation_id: does not match`)
+		})
+
+		Convey(`invalid id`, func() {
+			err := ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "1",
+			}, now)
+			So(err, ShouldErrLike, `invocation_id: does not match`)
+		})
+
+		Convey(`invalid tags`, func() {
+			err := ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "abc",
+				Invocation: &pb.Invocation{
+					Tags: StringPairs("1", "a"),
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
+		})
+
+		Convey(`deadline in the past`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
+			So(err, ShouldBeNil)
+			err = ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation.deadline must be at least 10 seconds in the future`)
+		})
+
+		Convey(`deadline in the future`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(1e3 * time.Hour))
+			So(err, ShouldBeNil)
+			err = ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation.deadline must be before 48h in the future`)
+		})
+
+		Convey(`invalid variant def`, func() {
+			err := ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "abc",
+				Invocation: &pb.Invocation{
+					BaseTestVariantDef: &pb.VariantDef{
+						Def: map[string]string{"1": "a"},
+					},
+				},
+			}, now)
+			So(err, ShouldErrLike, `invocation.base_test_variant_def: "1":"a": key: does not match`)
+		})
+
+		Convey(`valid`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(time.Hour))
+			So(err, ShouldBeNil)
+
+			err = ValidateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags: StringPairs("a", "b", "a", "c", "d", "e"),
+					BaseTestVariantDef: &pb.&pb.VariantDef{
+						Def: map[string]string{
+							"a": "b",
+							"c": "d",
+						},
+					},
+				},
+			}, now)
+			So(err, ShouldBeNil)
 		})
 	})
 }
