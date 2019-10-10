@@ -312,6 +312,30 @@
     },
     {
       "key": {
+        "uuid": "20151326_104839b6",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T18:55:35Z",
+      "side": 1,
+      "message": "Thanks.\n\nRe. feedback:\n+ The realm is in the proto itself? I don\u0027t see it... Or as request metadata?\n+ This was meant for more general use of writing invocations, not just invocations-from-swarming, in which case general invocations might want updateToken. Won\u0027t the functionality otherwise have a lot of overlap?",
+      "parentUuid": "81cf4fdb_fe0c3ece",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
