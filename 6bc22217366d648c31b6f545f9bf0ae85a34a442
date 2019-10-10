@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "935abbb1_89f53bea",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-10T00:32:22Z",
+      "side": 1,
+      "message": "It looks like every implementation of a RPC is in a separate file. Any benefit of doing this?",
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d461d61_4f6e261b",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-10T00:32:22Z",
+      "side": 1,
+      "message": "change to \n\n\t\"golang.org/x/sync/errgroup\"\n\n\t\"cloud.google.com/go/spanner\"\n?",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 29
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "330b7c85_674bc638",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-10T00:32:22Z",
+      "side": 1,
+      "message": "Looks like only the included invocation name is being used. \n\nProbably change CreateInclusionRequest or add a TODO if this RPS will be updated to use other info in included invocation (consequential?).",
+      "range": {
+        "startLine": 38,
+        "startChar": 50,
+        "endLine": 38,
+        "endChar": 81
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c0a8670_471284af",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-10T00:32:22Z",
+      "side": 1,
+      "message": "Why create a new one? Can in.Inclusion be used directly?\n\n(This comment could be conflicting with another comment of mine)",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
