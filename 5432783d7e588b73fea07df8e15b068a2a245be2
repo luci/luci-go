@@ -366,6 +366,24 @@
     },
     {
       "key": {
+        "uuid": "e342011f_4f0f9178",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a17b0f2_d4beb55f",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a412d0cf_b6d776df",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -468,6 +486,24 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "470b867f_8c3ef058",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "i agree with your reasoning. what you did is better",
+      "parentUuid": "209ecce4_80785256",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -644,6 +680,30 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "652da4d6_9964d9d8",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "thanks. we already import strings package in this binary, so not importing it in this particular file does make a difference.",
+      "parentUuid": "e2fbe0e2_3c5987e9",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 323,
+        "endChar": 30
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

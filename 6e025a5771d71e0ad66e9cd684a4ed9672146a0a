@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f881dcf_57d56787",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "hm, why do we require BaseTestVariant? It is not marked as required in the proto\n\nin L107 we can use req.GetBaseTestVariant().GetDef() to protect ourselves from nils",
+      "range": {
+        "startLine": 101,
+        "startChar": 0,
+        "endLine": 105,
+        "endChar": 2
+      },
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "457c05b7_0fefae08",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "for another CL: ideally we follow the pattern already started in pbutil package: each request has Validate\u003crequestMessage\u003e function. Each RPC calls it first thing\nSorry, I could have realized this earlier.",
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53800088_da7789e2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "pbutil.InvocationName(invID)",
+      "range": {
+        "startLine": 120,
+        "startChar": 22,
+        "endLine": 120,
+        "endChar": 44
+      },
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da782b4f_d027a6df",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "this condition is only true if we reached L168. It would be simpler to move L178-180 there and loose this if statement. It also means we can define outputJSON inside the switch-case, rather than outside of the switch",
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5622c0f7_020c4fd2",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "please add a TODO to handle error code here. If the isolate does not exist (e.g. expired), it should not turn into an INTERNAL or UNKNOWN error code",
+      "range": {
+        "startLine": 255,
+        "startChar": 14,
+        "endLine": 255,
+        "endChar": 17
+      },
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "563ddfe3_e694b62f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:52:06Z",
+      "side": 1,
+      "message": "should this be NotFound?\n\ni\u0027ve noticed that spanner returns NotFound if, say, I make a typo in a column name. It tells me that column foo is not found.\nhttps://godoc.org/google.golang.org/grpc/codes#NotFound is, perhaps, intentionally vague. Emphasis mine:\n\n\n    // NotFound means **some** requested entity (e.g., file or directory) was\n    // not found.",
+      "range": {
+        "startLine": 267,
+        "startChar": 36,
+        "endLine": 267,
+        "endChar": 57
+      },
+      "revId": "6e025a5771d71e0ad66e9cd684a4ed9672146a0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
