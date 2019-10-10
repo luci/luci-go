@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "4f10e8f4_4dbefd60",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-10T23:52:28Z",
+      "side": 1,
+      "message": "Based on the discussion on CreateInclusion RPC, I\u0027m thinking should this be an Inclusion instead? Since it\u0027s possible that we\u0027ll need to create a new overriding inclusion.",
+      "range": {
+        "startLine": 42,
+        "startChar": 54,
+        "endLine": 42,
+        "endChar": 82
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c092e95d_e0b7d2be",
         "filename": "resultdb/recorder/override_invocation.go",
         "patchSetId": 11
