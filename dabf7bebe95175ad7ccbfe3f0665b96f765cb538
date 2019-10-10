@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7be03bf3_e5d396a7",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c188e9b_7b9f36ae",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 34
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e991b170_cfc097cf",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd662157_94dad62f",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e991b170_cfc097cf",
+      "range": {
+        "startLine": 35,
+        "startChar": 23,
+        "endLine": 35,
+        "endChar": 78
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "7dd673a3_f5ebaa99",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e807c6e1_401110b8",
+      "range": {
+        "startLine": 178,
+        "startChar": 49,
+        "endLine": 178,
+        "endChar": 66
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d6223d1_05623b2b",
         "filename": "resultdb/recorder/create_inclusion.go",
         "patchSetId": 10
@@ -91,6 +163,30 @@
       "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ccf1bc7_ab3d1461",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "it aligns \"\u003d\" so it looks nice. \nit is more apparent in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1850497/11/resultdb/recorder/override_invocation.go#40",
+      "parentUuid": "9d6223d1_05623b2b",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 6
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "fe670f5b_355745bc",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "yes, this code happens to ensure we won\u0027t error but that\u0027s not the intention. The intention is to make this RPC idempotent. If we use Insert, it will not be idempotent. If we use InsertUpdate, it is idempotent.\n\ndoes this make sense? how can i improve this comment to deliver the point better?",
+      "parentUuid": "85c4d6a6_0af474fa",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5073afff_3d61f521",
         "filename": "resultdb/recorder/create_inclusion_test.go",
         "patchSetId": 10
@@ -131,6 +251,24 @@
       "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c1f4989_56998f94",
+        "filename": "resultdb/recorder/create_inclusion_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T23:53:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5073afff_3d61f521",
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
