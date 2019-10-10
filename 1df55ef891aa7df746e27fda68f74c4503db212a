@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b6c03af7_a0f35647",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T09:32:03Z",
+      "side": 1,
+      "message": "LGTM",
+      "parentUuid": "5d0d152b_d4afab93",
+      "range": {
+        "startLine": 45,
+        "startChar": 73,
+        "endLine": 45,
+        "endChar": 82
+      },
+      "revId": "1df55ef891aa7df746e27fda68f74c4503db212a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db9a33be_65847318",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 6
