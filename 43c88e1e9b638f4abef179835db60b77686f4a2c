@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09764811_194a9568",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T18:00:00Z",
+      "side": 1,
+      "message": "Curious: why don\u0027t we use $(service) here too?\n\n(yes, we don\u0027t have the other services yet, but that applies to the other targets as well)",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "43c88e1e9b638f4abef179835db60b77686f4a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
