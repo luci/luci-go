@@ -382,6 +382,30 @@
     },
     {
       "key": {
+        "uuid": "d7be78d2_df08b0fa",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T09:28:58Z",
+      "side": 1,
+      "message": "Great, thanks! Updated the key.\n\nIn that case the \"todo\" is done for all practical purposes, since we\u0027ll account for the possibility of alphabetical identifiers (which are definitely supported by GTest), even if Chromium doesn\u0027t use them.",
+      "parentUuid": "a9b9b16d_1b792412",
+      "range": {
+        "startLine": 44,
+        "startChar": 51,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0db8c46_dca9198b",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
