@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c188e9b_7b9f36ae",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Nit: Please include a more specific reference (i.e. \"in span/util.go\", or \"see span.ReadRow comment\")",
+      "range": {
+        "startLine": 30,
+        "startChar": 3,
+        "endLine": 30,
+        "endChar": 34
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e991b170_cfc097cf",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Curious: does this count as information the caller already has? If not, why not? (same for L41)",
+      "range": {
+        "startLine": 35,
+        "startChar": 23,
+        "endLine": 35,
+        "endChar": 78
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e807c6e1_401110b8",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Optional: (these fields aren\u0027t used yet) do we want /all/ of these times to be in the past? We are then trying to insert an invocation that e.g. supposedly already expired.",
+      "range": {
+        "startLine": 178,
+        "startChar": 49,
+        "endLine": 178,
+        "endChar": 66
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d6223d1_05623b2b",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Curious: what\u0027s the benefit of this over just \":\u003d\"?",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 6
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85c4d6a6_0af474fa",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Nit: I\u0027m not sure idempotent is precisely the word we\u0027re looking for, since Insert will just /fail/ if the key is already present, not insert it twice. Does that match your understanding?\n\nIf that\u0027s the case, then what we\u0027re doing here is just ensuring we won\u0027t error if we try to insert the same inclusion twice, so maybe we\u0027re looking more for robustness.",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5073afff_3d61f521",
+        "filename": "resultdb/recorder/create_inclusion_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:04:37Z",
+      "side": 1,
+      "message": "Nit: remove for consistency with \"no including invocation\" testcase (or optionally add a line above)",
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
