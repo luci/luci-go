@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d32eb934_32528405",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67b03db2_a22c6448",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 7
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe02d938_32bc44e8",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -36,6 +60,24 @@
       "writtenOn": "2019-10-09T16:02:35Z",
       "side": 1,
       "message": "note that this requires invocation ID, so you will have to move getInvocationID call back later",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d3a83c03_0aaa5b93",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Yes, thanks",
+      "parentUuid": "fe02d938_32bc44e8",
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -136,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "279734e1_fdd70a0b",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "359bfc5d_ad1f1f9e",
+      "range": {
+        "startLine": 89,
+        "startChar": 35,
+        "endLine": 89,
+        "endChar": 50
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85f8f184_2877cdc2",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -159,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "2a9780df_c7d05662",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85f8f184_2877cdc2",
+      "range": {
+        "startLine": 107,
+        "startChar": 1,
+        "endLine": 107,
+        "endChar": 11
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8368fa7_e97c9596",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -179,6 +269,30 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0189b9cf_622e4ee4",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a8368fa7_e97c9596",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 20
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -216,6 +330,42 @@
     },
     {
       "key": {
+        "uuid": "de65463e_6ea7ff54",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f04b131d_ae6890a3",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a17b0f2_d4beb55f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "PTAL, thanks",
+      "parentUuid": "997b32f4_d5b01aee",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a412d0cf_b6d776df",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -230,6 +380,24 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5674a87_6c964d02",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a412d0cf_b6d776df",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -250,6 +418,24 @@
     },
     {
       "key": {
+        "uuid": "028babbd_e9a6c7fd",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5f62ac95_cc4e4232",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cfb9f2ef_8e142fde",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -261,6 +447,24 @@
       "writtenOn": "2019-10-09T16:02:35Z",
       "side": 1,
       "message": "inv.State is not set\n\nshould we set it in L117 to COMPLETED by default?",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "209ecce4_80785256",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "The state gets set in gtest.go and json.go, but moving that assignment here sounds good.\n\nDo you prefer to set to COMPLETED by default, or just set that between L153 and L154? Defaulting to a \"good\" state seems generally riskier than more conservatively defaulting to STATUS_UNSPECIFIED. In this case we happen to know all our cases are covered though.\n\nMade the move and set to COMPLETED between L153 and L154 for now, let me know what you think.",
+      "parentUuid": "cfb9f2ef_8e142fde",
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -281,6 +485,24 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "316a81e9_f809cb71",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d8cab78_63506c05",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -307,6 +529,30 @@
     },
     {
       "key": {
+        "uuid": "f10d2128_eab142dd",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdef8f9f_c2c83709",
+      "range": {
+        "startLine": 236,
+        "startChar": 9,
+        "endLine": 236,
+        "endChar": 23
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd4c4408_338b0607",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -330,6 +576,30 @@
     },
     {
       "key": {
+        "uuid": "dd961f29_99d54de1",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd4c4408_338b0607",
+      "range": {
+        "startLine": 280,
+        "startChar": 0,
+        "endLine": 289,
+        "endChar": 2
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e94d135_88bc0e24",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -341,6 +611,30 @@
       "writtenOn": "2019-10-09T16:02:35Z",
       "side": 1,
       "message": "if !strings.HasSuffix(ts, \"Z\")",
+      "range": {
+        "startLine": 323,
+        "startChar": 4,
+        "endLine": 323,
+        "endChar": 30
+      },
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2fbe0e2_3c5987e9",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 323,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "strings is probably not that large a library, but this would require importing it for what is otherwise one char array lookup. Do we care?\n\nMade the change for now.",
+      "parentUuid": "6e94d135_88bc0e24",
       "range": {
         "startLine": 323,
         "startChar": 4,
@@ -370,6 +664,24 @@
     },
     {
       "key": {
+        "uuid": "6f2fc5e4_f4e8409c",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b7dd39b_21df8124",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "332a467d_4d764aa8",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 8
@@ -384,6 +696,24 @@
       "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdebe243_41f9514c",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T02:18:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "332a467d_4d764aa8",
+      "revId": "5432783d7e588b73fea07df8e15b068a2a245be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
