@@ -52,7 +52,7 @@ CREATE TABLE Invocations (
   FinalizeTime TIMESTAMP,
 
   -- When to force invocation finalization with state INTERRUPTED.
-  Deadline TIMESTAMP NOT NULL,
+  Deadline TIMESTAMP,
 
   -- Variant definition pairs common for all test results in this invocation.
   -- Each string is a colon-separated key-value pair.
@@ -125,8 +125,9 @@ CREATE TABLE TestResults (
   CommitTimestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- Whether the test status was unexpected
-  -- MUST be either NULL or False, to keep null-filtered index below thin.
-  IsUnexpected BOOL,
+  -- MUST either be either NULL or False, to keep null-filtered index below
+  -- thin.
+  IsUnexpected BOOL NOT NULL,
 
   -- Test status, see TestStatus in test_result.proto.
   Status INT64 NOT NULL,

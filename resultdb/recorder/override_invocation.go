@@ -18,8 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
+
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -119,17 +120,10 @@ func (s *RecorderServer) OverrideInclusion(ctx context.Context, in *pb.OverrideI
 // If it is already overridden by overridingInvID, returns errRepeatedRequest.
 func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransaction, includingInvID, overriddenInvID, overridingInvID string) error {
 	var actualOverridingInvID spanner.NullString
-	err := span.ReadRow(ctx, txn, "Inclusions", spanner.Key{includingInvID, overriddenInvID}, map[string]interface{}{
-		"OverriddenByIncludedInvocationID": &actualOverridingInvID,
-	})
-	switch {
+	switch err := span.ReadRow(ctx, txn, "Inclusions", spanner.Key{includingInvID, overriddenInvID}, map[string]interface{}{"OverriddenByIncludedInvocationID": &actualOverridingInvID}); {
 
 	case spanner.ErrCode(err) == codes.NotFound:
-		return errors.
-			Reason(
-				"inclusion %q not found",
-				pbutil.InclusionName(includingInvID, overriddenInvID),
-			).
+		return errors.Reason("inclusion %q not found", pbutil.InclusionName(includingInvID, overriddenInvID)).
 			InternalReason("%s", err).
 			Tag(grpcutil.NotFoundTag).
 			Err()
@@ -147,11 +141,7 @@ func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransac
 
 	default:
 		return errors.
-			Reason(
-				"inclusion %q is already overridden by %q",
-				pbutil.InclusionName(includingInvID, overriddenInvID),
-				pbutil.InclusionName(includingInvID, actualOverridingInvID.StringVal),
-			).
+			Reason("inclusion %q is already overridden by %q", pbutil.InclusionName(includingInvID, overriddenInvID), pbutil.InclusionName(includingInvID, actualOverridingInvID.StringVal)).
 			Tag(grpcutil.FailedPreconditionTag).
 			Err()
 	}

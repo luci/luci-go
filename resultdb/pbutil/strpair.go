@@ -16,10 +16,18 @@ package pbutil
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
+
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+const maxStringPairKeyLength = 64
+const maxStringPairValueLength = 256
+
+var stringPairKeyRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$`)
 
 // StringPair creates a pb.StringPair with the given strings as key/value field values.
 func StringPair(k, v string) *pb.StringPair {
@@ -59,4 +67,28 @@ func sortStringPairs(tags []*pb.StringPair) {
 		}
 		return tags[i].Value < tags[j].Value
 	})
+}
+
+// ValidateStringPair returns an error if p is invalid.
+func ValidateStringPair(p *pb.StringPair) error {
+	if !stringPairKeyRe.MatchString(p.Key) {
+		return errors.Annotate(doesNotMatch(stringPairKeyRe), "key").Err()
+	}
+	if len(p.Key) > maxStringPairKeyLength {
+		return errors.Reason("key length must be less or equal to %d", maxStringPairKeyLength).Err()
+	}
+	if len(p.Value) > maxStringPairValueLength {
+		return errors.Reason("value length must be less or equal to %d", maxStringPairValueLength).Err()
+	}
+	return nil
+}
+
+// ValidateStringPairs returns an error if any of the pairs is invalid.
+func ValidateStringPairs(pairs []*pb.StringPair) error {
+	for _, p := range pairs {
+		if err := ValidateStringPair(p); err != nil {
+			return errors.Annotate(err, "%q:%q", p.Key, p.Value).Err()
+		}
+	}
+	return nil
 }
