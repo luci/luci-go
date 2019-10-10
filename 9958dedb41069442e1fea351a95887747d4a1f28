@@ -360,6 +360,30 @@
     },
     {
       "key": {
+        "uuid": "942b1c94_6d47b068",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T21:00:51Z",
+      "side": 1,
+      "message": "\u003e \u003e Thanks.\n\u003e \u003e \n\u003e \u003e Re. feedback:\n\u003e \u003e + The realm is in the proto itself? I don\u0027t see it... Or as request metadata?\n\u003e \n\u003e oh. Looks like i forgot to add it.\n\u003e \n\u003e however, proto are quite visible and require proper documentation, but Realm is based on Vadim\u0027s design doc that was not published yet, so it would be challenging to explain what is realm.\n\u003e \n\u003e It is not like DeriveInvocationRequest specifies realm, so we are bound to hardcode something. Let\u0027s hardcode \"chromium\", INSIDE your new func, so we don\u0027t have to pass the parameter.\n\u003e \nAll right, thanks.\n\n\u003e When realms are implemented, we will propagated them properly. Propagating now is a bit premature, because there is nothing to propagate yet.\n\u003e \n\u003e \u003e + This was meant for more general use of writing invocations, not just invocations-from-swarming, \n\u003e \n\u003e \n\u003e DeriveInvocation is the only RPC that writes both Invocation and TestResults, so I don\u0027t see how WriteProtos can be reused.\n\u003e I see how WriteTestResults can be reused though. But then, if it truly generic, it should not be in the chromium package. Then we have cyclic-dep problem.\n\u003e \nDo we not intend to reuse any portion of writing Invocations and TestResults?\n\n(If we have something like WriteProtos calls WriteInvocation and WriteTestResults, passing a transaction for them to use)\n\nIf we do, then perhaps we can shift things around to avoid cyclical dependencies? If not, then it\u0027s moot.\n\n\u003e was there particular reason why DeriveInvocation was implemented in chromium? i understand that the RPC itself is specific to chromium, but all other recorder RPCs are implemented in the recorder package\n\u003e \nIt\u0027s specific to swarming, and swarming was advised to have its own chromium package.\n\nNote also that chromium.DeriveInvocation doesn\u0027t actually implement the DeriveInvocation RPC itself.\n\n\u003e \u003e in which case general invocations might want updateToken. \n\u003e \n\u003e \n\u003e have you seen https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1848338/10/resultdb/recorder/invocation.go\n\u003e ?\nI\u0027ve see the CL but have not reviewed it yet, thanks for the reference.\n\n\u003e updateToken check is already implemented there.\n\u003e \n\u003e also i don\u0027t understand how update_token is relevant in DeriveInvocation. We don\u0027t plan to *update* invocation because we create it finalized.\n\nYes, we don\u0027t need to update DeriveInvocation[FromSwarming]-derived invocations. updateToken would be relevant to writing Invocations and TestResults that are not derived from swarming.",
+      "parentUuid": "17fb6cbc_ba88ca0f",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1

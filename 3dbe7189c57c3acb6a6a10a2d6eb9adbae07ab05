@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "177f91bd_8ea5a51f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T21:00:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83a5ec2f_02776204",
+      "revId": "3dbe7189c57c3acb6a6a10a2d6eb9adbae07ab05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22647c48_140b79ba",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 13
@@ -39,6 +57,30 @@
       "revId": "3dbe7189c57c3acb6a6a10a2d6eb9adbae07ab05",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34283495_8a921819",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T21:00:51Z",
+      "side": 1,
+      "message": "yes, dropped it accidentally",
+      "parentUuid": "22647c48_140b79ba",
+      "range": {
+        "startLine": 246,
+        "startChar": 72,
+        "endLine": 246,
+        "endChar": 78
+      },
+      "revId": "3dbe7189c57c3acb6a6a10a2d6eb9adbae07ab05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
