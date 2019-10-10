@@ -46,6 +46,30 @@
       "revId": "43c88e1e9b638f4abef179835db60b77686f4a2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cf897b7_54bd93d0",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T18:37:39Z",
+      "side": 1,
+      "message": "Ah, I meant `make test service\u003drecorder`, do you also find that too long?\n\nI\u0027m less asking about this due to modification concerns, but rather that it seems the testing command is/will be shareable with other services.",
+      "parentUuid": "bcf3bf90_a4346012",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 13
+      },
+      "revId": "43c88e1e9b638f4abef179835db60b77686f4a2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
