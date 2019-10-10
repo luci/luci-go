@@ -126,6 +126,30 @@
     },
     {
       "key": {
+        "uuid": "e6bdd958_fbfcd0db",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:58:02Z",
+      "side": 1,
+      "message": "fixed in that CL",
+      "parentUuid": "f757761c_f3859f75",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 29
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "330b7c85_674bc638",
         "filename": "resultdb/recorder/create_inclusion.go",
         "patchSetId": 7
@@ -197,6 +221,30 @@
     },
     {
       "key": {
+        "uuid": "d3659877_81d4d8cb",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:58:02Z",
+      "side": 1,
+      "message": "it follows https://aip.dev/133#request-message guidelines\n\none reason is that one day we may extend Inclusion to have an additional field, and we may want to accept it in CreateInclusion RPC. Then we\u0027d have to start mirroring Inclusion fields in CreateInclusionRequest message",
+      "parentUuid": "c19a37f8_bbf0d8c9",
+      "range": {
+        "startLine": 38,
+        "startChar": 50,
+        "endLine": 38,
+        "endChar": 81
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c0a8670_471284af",
         "filename": "resultdb/recorder/create_inclusion.go",
         "patchSetId": 7
@@ -265,6 +313,30 @@
       "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2d28823_71d8ad6b",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T08:58:02Z",
+      "side": 1,
+      "message": "see above",
+      "parentUuid": "67771c7d_bcdfcfef",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 2
+      },
+      "revId": "6bc22217366d648c31b6f545f9bf0ae85a34a442",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
