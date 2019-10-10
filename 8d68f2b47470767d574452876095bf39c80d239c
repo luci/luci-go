@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a2d6d87_67f06af1",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T23:41:22Z",
+      "side": 1,
+      "message": "Nit: Why not\n\n inv :\u003d req.Invocation\n if inv \u003d\u003d nil {\n  return nil\n }\n\n if err :\u003d [...]\n\n?",
+      "revId": "8d68f2b47470767d574452876095bf39c80d239c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
