@@ -38,6 +38,7 @@ const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 
 // RunIntegrationTests returns true if integration tests should run.
 func RunIntegrationTests() bool {
+	return true
 	return os.Getenv(IntegrationTestEnvVar) == "1"
 }
 
