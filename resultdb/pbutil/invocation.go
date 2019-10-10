@@ -15,6 +15,12 @@
 package pbutil
 
 import (
+	"time"
+
+	"github.com/golang/protobuf/ptypes"
+
+	"go.chromium.org/luci/common/errors"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -70,4 +76,34 @@ func IsFinalized(state pb.Invocation_State) bool {
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
+}
+
+// ValidateCreateInvocationRequest returns an error if req is invalid.
+func ValidateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
+	if err := ValidateInvocationID(req.InvocationId); err != nil {
+		return errors.Annotate(err, "invocation_id").Err()
+	}
+
+	if err := ValidateStringPairs(req.Invocation.Tags); err != nil {
+		return errors.Annotate(err, "invocation.tags").Err()
+	}
+
+	if req.Invocation.Deadline != nil {
+		switch deadline, err := ptypes.Timestamp(req.Invocation.Deadline); {
+		case err != nil:
+			return err
+		case now.Sub(deadline) > 10*time.Second:
+			return errors.Reason("invocation.deadline must be at least 10 seconds in the future").Err()
+		case deadline.Sub(now) > 2*24*time.Hour:
+			return errors.Reason("invocation.deadline must be before 48h in the future").Err()
+		}
+	}
+
+	if req.Invocation.BaseTestVariantDef != nil {
+		if err := ValidateVariantDef(req.Invocation.BaseTestVariantDef); err != nil {
+			return errors.Annotate(err, "invocation.base_test_variant_def").Err()
+		}
+	}
+
+	return nil
 }
