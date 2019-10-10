@@ -124,8 +124,6 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 
 	if r.Interrupted {
 		inv.State = pb.Invocation_INTERRUPTED
-	} else {
-		inv.State = pb.Invocation_COMPLETED
 	}
 
 	inv.Tags = append(inv.Tags, pbutil.StringPair("test_framework", "json"))
