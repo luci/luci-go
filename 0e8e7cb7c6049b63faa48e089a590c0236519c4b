@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "410d662d_70f911a1",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T00:10:47Z",
+      "side": 1,
+      "message": "Real world as in \"actually present in Chromium codebase\", or \"concrete\"? I\u0027ve put in some concrete examples.",
+      "parentUuid": "d8e69a74_a6af6e88",
+      "range": {
+        "startLine": 42,
+        "startChar": 33,
+        "endLine": 42,
+        "endChar": 38
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d25ed3a_55742bcf",
         "filename": "resultdb/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -250,6 +274,54 @@
       "side": 1,
       "message": "thanks. hopefully macro can contain only [0-9A-Za-z_]",
       "parentUuid": "e3685d4d_047ef069",
+      "range": {
+        "startLine": 44,
+        "startChar": 37,
+        "endLine": 44,
+        "endChar": 39
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc938768_5a3d09ef",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T00:10:47Z",
+      "side": 1,
+      "message": "Maybe param/id? In both cases it would be an identifier.\n\n(added comment to go/chrome-test-ids)",
+      "parentUuid": "1c62e11a_f621cd42",
+      "range": {
+        "startLine": 44,
+        "startChar": 51,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "0e8e7cb7c6049b63faa48e089a590c0236519c4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdb40b63_e4258130",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T00:10:47Z",
+      "side": 1,
+      "message": "Not to worry, variables must contain only that character set. The macro can accept more, but the compiler will complain, which is what\u0027s important.",
+      "parentUuid": "c7d3bad0_dfff852b",
       "range": {
         "startLine": 44,
         "startChar": 37,
