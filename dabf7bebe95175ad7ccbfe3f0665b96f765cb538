@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "ee7d004b_ee11d92e",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T23:58:36Z",
+      "side": 1,
+      "message": "Maybe I\u0027m not clear on what you mean by \"idempotent\" --- I understand it to mean that repeating the RPC will have no effect, which seems orthogonal to whether we use InsertOrUpdate or Insert. In both cases the state of the data table will not change --- with InsertOrUpdate we\u0027ll just write in the same data in the same row, whereas Insert will not do any insert since the key is already present --- but in the Insert case we won\u0027t error. Does that clarify where I\u0027m coming from?",
+      "parentUuid": "fe670f5b_355745bc",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5073afff_3d61f521",
         "filename": "resultdb/recorder/create_inclusion_test.go",
         "patchSetId": 10
