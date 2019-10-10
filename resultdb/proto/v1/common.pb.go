@@ -49,8 +49,8 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 //   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
 type VariantDef struct {
 	// The definition of the variant.
-	// Key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-	// Max key length: 32.
+	// Key and values must be valid StringPair keys and values, see their
+	// constraints.
 	Def                  map[string]string `protobuf:"bytes,1,rep,name=def,proto3" json:"def,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
@@ -92,10 +92,9 @@ func (m *VariantDef) GetDef() map[string]string {
 // A string key-value pair. Typically used for tagging, see Invocation.tags
 type StringPair struct {
 	// Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-	// Max length: 64
+	// Max length: 64.
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// Regex: ^[a-z][a-z0-9_]*$
-	// Max length: 64
+	// Max length: 256.
 	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

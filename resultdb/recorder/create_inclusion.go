@@ -44,7 +44,6 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 		return nil, err
 	}
 
-	// Do not reuse in.Inclusion as it may have random garbage.
 	ret := &pb.Inclusion{
 		Name:               pbutil.InclusionName(includingInvID, includedInvID),
 		IncludedInvocation: in.Inclusion.IncludedInvocation,

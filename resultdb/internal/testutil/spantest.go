@@ -180,7 +180,6 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string) 
 		"ExpectedTestResultsExpirationTime": testclock.TestRecentTimeUTC,
 		"ExpectedTestResultsExpirationWeek": testclock.TestRecentTimeUTC,
 		"CreateTime":                        testclock.TestRecentTimeUTC,
-		"Deadline":                          testclock.TestRecentTimeUTC.Add(time.Minute),
 	})
 }
 
