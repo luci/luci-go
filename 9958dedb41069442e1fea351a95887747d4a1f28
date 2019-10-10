@@ -336,6 +336,30 @@
     },
     {
       "key": {
+        "uuid": "17fb6cbc_ba88ca0f",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T19:17:40Z",
+      "side": 1,
+      "message": "\u003e Thanks.\n\u003e \n\u003e Re. feedback:\n\u003e + The realm is in the proto itself? I don\u0027t see it... Or as request metadata?\n\noh. Looks like i forgot to add it.\n\nhowever, proto are quite visible and require proper documentation, but Realm is based on Vadim\u0027s design doc that was not published yet, so it would be challenging to explain what is realm.\n\nIt is not like DeriveInvocationRequest specifies realm, so we are bound to hardcode something. Let\u0027s hardcode \"chromium\", INSIDE your new func, so we don\u0027t have to pass the parameter.\n\nWhen realms are implemented, we will propagated them properly. Propagating now is a bit premature, because there is nothing to propagate yet.\n\n\u003e + This was meant for more general use of writing invocations, not just invocations-from-swarming, \n\n\nDeriveInvocation is the only RPC that writes both Invocation and TestResults, so I don\u0027t see how WriteProtos can be reused.\nI see how WriteTestResults can be reused though. But then, if it truly generic, it should not be in the chromium package. Then we have cyclic-dep problem.\n\nwas there particular reason why DeriveInvocation was implemented in chromium? i understand that the RPC itself is specific to chromium, but all other recorder RPCs are implemented in the recorder package\n\n\u003e in which case general invocations might want updateToken. \n\n\nhave you seen https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1848338/10/resultdb/recorder/invocation.go\n?\nupdateToken check is already implemented there.\n\nalso i don\u0027t understand how update_token is relevant in DeriveInvocation. We don\u0027t plan to *update* invocation because we create it finalized.",
+      "parentUuid": "20151326_104839b6",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1

@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83a5ec2f_02776204",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T19:17:40Z",
+      "side": 1,
+      "message": "i think we should return err as is\n\nsome convertOutputJSON already mark returned error with code, so this overwrites that. Also i expect later to convertOutputJSON to return different exit codes: imagine that we are confident that our converters are correct, and occasionally output.json contains truly invalid JSON. This shouldn\u0027t an INTERNAL error\n\nbesides, in general, i don\u0027t see much value in marking errors as INTERNAL because this is a reasonable default. We could simply NOT mark it as an internal, and a catch all right before returning the error to the user",
+      "revId": "3dbe7189c57c3acb6a6a10a2d6eb9adbae07ab05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22647c48_140b79ba",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-10T19:17:40Z",
+      "side": 1,
+      "message": "should not\n\nbecause it is not our fault\n\nbasically INTERNAL indicates there is a bug in our code or state. in this case it is not a bug in our code",
+      "range": {
+        "startLine": 246,
+        "startChar": 72,
+        "endLine": 246,
+        "endChar": 78
+      },
+      "revId": "3dbe7189c57c3acb6a6a10a2d6eb9adbae07ab05",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
