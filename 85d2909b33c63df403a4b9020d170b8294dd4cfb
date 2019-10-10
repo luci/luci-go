@@ -26,6 +26,30 @@
     },
     {
       "key": {
+        "uuid": "c2a5db18_e7fa9836",
+        "filename": "buildbucket/proto/update_tables.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-10T08:56:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4015bb23_5e7fd70a",
+      "range": {
+        "startLine": 10,
+        "startChar": 30,
+        "endLine": 10,
+        "endChar": 37
+      },
+      "revId": "85d2909b33c63df403a4b9020d170b8294dd4cfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da5910a6_ecacb069",
         "filename": "buildbucket/proto/update_tables.sh",
         "patchSetId": 1
@@ -47,6 +71,30 @@
       "revId": "85d2909b33c63df403a4b9020d170b8294dd4cfb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "194e4a4b_55cb465d",
+        "filename": "buildbucket/proto/update_tables.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-10T08:56:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da5910a6_ecacb069",
+      "range": {
+        "startLine": 13,
+        "startChar": 11,
+        "endLine": 13,
+        "endChar": 17
+      },
+      "revId": "85d2909b33c63df403a4b9020d170b8294dd4cfb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
