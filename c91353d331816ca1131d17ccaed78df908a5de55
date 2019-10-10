@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c092e95d_e0b7d2be",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:57:44Z",
+      "side": 1,
+      "message": "To confirm, we need to compute this as their readiness may have changed since initial request/write? If that\u0027s indeed the case, please note that in the comment too.",
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37df6d57_fb8493ae",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:57:44Z",
+      "side": 1,
+      "message": "Curious: why not just Update? (similar below for InsertOrUpdateMap) The underlying implementation will need to extract the columns and values again.",
+      "range": {
+        "startLine": 100,
+        "startChar": 11,
+        "endLine": 100,
+        "endChar": 20
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df9ef394_cde06392",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:57:44Z",
+      "side": 1,
+      "message": "Nit: current?",
+      "range": {
+        "startLine": 121,
+        "startChar": 5,
+        "endLine": 121,
+        "endChar": 11
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5eca331_9cbf478c",
+        "filename": "resultdb/recorder/override_invocation_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-10T22:57:44Z",
+      "side": 1,
+      "message": "Nit: this looks like the inclusion was already overridden by a /different/ invocation (\"something else\")\n\nDo we maybe mean to check idempotency as a subcase of \"success\"?",
+      "range": {
+        "startLine": 94,
+        "startChar": 39,
+        "endLine": 94,
+        "endChar": 61
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
