@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a7d788d_cd53cb1d",
+        "filename": "resultdb/pbutil/inclusion.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-11T20:30:41Z",
+      "side": 1,
+      "message": "Since Inclusion is an attribute now, these functions are no longer needed either.",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95084ca6_b0360de3",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-11T20:30:41Z",
+      "side": 1,
+      "message": "Rename this to `inclusions`?",
+      "range": {
+        "startLine": 138,
+        "startChar": 30,
+        "endLine": 138,
+        "endChar": 38
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d96761ba_e90b5132",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-11T20:30:41Z",
+      "side": 1,
+      "message": "Other functions to validate requests are under pbutil, so should this one?",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 37
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09837efe_c8b66597",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-11T20:30:41Z",
+      "side": 1,
+      "message": "Should also check if the OverrideInvocation is included by the including invocation already?",
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
