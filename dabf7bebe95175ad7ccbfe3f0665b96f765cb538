@@ -261,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "fe4ecaaa_6b093e6a",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T01:24:58Z",
+      "side": 1,
+      "message": "ok, i gave it another try, PTAL. Suggestions welcome too",
+      "parentUuid": "ee7d004b_ee11d92e",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5073afff_3d61f521",
         "filename": "resultdb/recorder/create_inclusion_test.go",
         "patchSetId": 10
