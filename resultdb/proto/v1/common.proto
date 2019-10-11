@@ -47,18 +47,17 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 //   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
 message VariantDef {
   // The definition of the variant.
-  // Key regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-  // Max key length: 32.
+  // Key and values must be valid StringPair keys and values, see their
+  // constraints.
   map<string, string> def = 1;
 }
 
 // A string key-value pair. Typically used for tagging, see Invocation.tags
 message StringPair {
   // Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
-  // Max length: 64
+  // Max length: 64.
   string key = 1;
 
-  // Regex: ^[a-z][a-z0-9_]*$
-  // Max length: 64
+  // Max length: 256.
   string value = 2;
 }
