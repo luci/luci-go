@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f4db061_1c30a53a",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T22:12:00Z",
+      "side": 1,
+      "message": "Optional: Maybe \"IncludeInInvocation\" or something similar? Create/Update/FinalizeInvocation all use \"Invocation\" to refer to the invocation being acted upon, which would read a little strangely here.",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf503dcf_b85103cb",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T22:12:00Z",
+      "side": 1,
+      "message": "and be present in including_invocation?",
+      "range": {
+        "startLine": 130,
+        "startChar": 30,
+        "endLine": 130,
+        "endChar": 31
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b6bd584_bf2b6d66",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T22:12:00Z",
+      "side": 1,
+      "message": "Optional: determined to be invalid mod RPCs?\n\n(based on the thread earlier about the validation possible without RPCs)",
+      "range": {
+        "startLine": 24,
+        "startChar": 70,
+        "endLine": 24,
+        "endChar": 78
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bce4f274_b1ea2cb5",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T22:12:00Z",
+      "side": 1,
+      "message": "Thanks!\n\nThis is also parallel to where I put validateDeriveInvocationRequest, so nice to see :)",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 37
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
