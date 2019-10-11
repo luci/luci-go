@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "55fc8a2b_c8b336cd",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T00:17:43Z",
+      "side": 1,
+      "message": "Actually, another quick question: why again are we putting this under pbutil/invocation.go, instead of somewhere in recorder, or maybe in pbutil/rpc.go?\n\nA little context: I\u0027m looking at validating DeriveInvocationRequest, and putting it here doesn\u0027t seem quite the right place to put it.",
+      "revId": "8d68f2b47470767d574452876095bf39c80d239c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3a2d6d87_67f06af1",
         "filename": "resultdb/pbutil/invocation.go",
         "patchSetId": 5
