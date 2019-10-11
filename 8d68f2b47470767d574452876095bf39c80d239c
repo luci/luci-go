@@ -104,6 +104,24 @@
       "revId": "8d68f2b47470767d574452876095bf39c80d239c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14e532a5_a60b2b6f",
+        "filename": "resultdb/variantdef.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T23:56:27Z",
+      "side": 1,
+      "message": "+1 with refactoring it\n\nIt\u0027s not /technically/ proto-specific (as it\u0027s only the def part which is more general), but it seems fair to put it there.",
+      "parentUuid": "44867bd9_3564b308",
+      "revId": "8d68f2b47470767d574452876095bf39c80d239c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
