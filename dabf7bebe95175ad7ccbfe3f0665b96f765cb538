@@ -285,6 +285,30 @@
     },
     {
       "key": {
+        "uuid": "d81dc554_f2a47fef",
+        "filename": "resultdb/recorder/create_inclusion.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T01:35:21Z",
+      "side": 1,
+      "message": "I think it\u0027s the \"instead\" that I find confusing, since my understanding is that Insert /will also/ not change the underlying data, since the PK is (InvocationID, IncludedInvocationID), so we wouldn\u0027t insert a new row with a different `Ready` value anyway, hence Insert will also provide idempotency.\n\nIf that matches your understanding, how about:\n\nWe use InsertOrUpdate instead of Insert to avoid errors in case the inclusion is already there. Note we also achieve idempotency as desired; CreateInclusion with the same Inclusion will just update the row with the same PK with the exact data as before, instead of creating a new entry.",
+      "parentUuid": "fe4ecaaa_6b093e6a",
+      "range": {
+        "startLine": 73,
+        "startChar": 6,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "dabf7bebe95175ad7ccbfe3f0665b96f765cb538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5073afff_3d61f521",
         "filename": "resultdb/recorder/create_inclusion_test.go",
         "patchSetId": 10
