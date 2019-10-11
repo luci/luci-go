@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d09741ff_ef7d6cdb",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T23:20:47Z",
+      "side": 1,
+      "message": "good point. however, this violates \n\n\u003e The name must not contain prepositions (“for”, “with”, etc.).\n\nhttps://aip.dev/136\n\nideas?",
+      "parentUuid": "5f4db061_1c30a53a",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdd425fa_3e256c33",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T23:20:47Z",
+      "side": 1,
+      "message": "i think this saying the same thing. I\u0027ve rephrased to use the suggested wording.",
+      "parentUuid": "cf503dcf_b85103cb",
+      "range": {
+        "startLine": 130,
+        "startChar": 30,
+        "endLine": 130,
+        "endChar": 31
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "18e525b8_1b2e2505",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T23:20:47Z",
+      "side": 1,
+      "message": "rephrased. it is somewhat obvious that it does not make RPCs because it does not accept ctx",
+      "parentUuid": "3b6bd584_bf2b6d66",
+      "range": {
+        "startLine": 24,
+        "startChar": 70,
+        "endLine": 24,
+        "endChar": 78
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bce4f274_b1ea2cb5",
         "filename": "resultdb/recorder/include_invocation.go",
         "patchSetId": 5
@@ -82,6 +154,30 @@
       "writtenOn": "2019-10-11T22:12:00Z",
       "side": 1,
       "message": "Thanks!\n\nThis is also parallel to where I put validateDeriveInvocationRequest, so nice to see :)",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 37
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "72abbcd7_c0c0615b",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T23:20:47Z",
+      "side": 1,
+      "message": "yes, i am yet to reply to your comment in another that CL that you made a great point",
+      "parentUuid": "bce4f274_b1ea2cb5",
       "range": {
         "startLine": 25,
         "startChar": 5,
