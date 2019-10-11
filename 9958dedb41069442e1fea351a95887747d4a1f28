@@ -432,6 +432,30 @@
     },
     {
       "key": {
+        "uuid": "fb81931b_2cda9d4e",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T02:09:39Z",
+      "side": 1,
+      "message": "Yes, at that point chromium/swarming.go pretty much might as well just be renamed to recorder/derive_invocation.go\n\nI\u0027d be fine with that, what do you think?",
+      "parentUuid": "77d39bce_12d17ddb",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
