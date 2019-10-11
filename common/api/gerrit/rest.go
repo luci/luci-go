@@ -204,7 +204,7 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	for _, o := range req.Options {
 		params.Add("o", o.String())
 	}
-	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp, false); err != nil {
 		return nil, err
 	}
 
@@ -227,7 +227,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		BaseCommit: req.BaseCommit,
 	}
 
-	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, http.StatusCreated); err != nil {
+	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, false, http.StatusCreated); err != nil {
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
@@ -250,7 +250,8 @@ func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.Delete
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
 	var resp changeInfo
-	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, &resp, http.StatusNoContent); err != nil {
+	// The response cannot be json-desirealized.
+	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, &resp, true, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
 	return &empty.Empty{}, nil
@@ -278,7 +279,7 @@ func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, o
 		}
 	}
 	var resp gerritpb.ReviewResult
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, false); err != nil {
 		return nil, errors.Annotate(err, "set review").Err()
 	}
 	return &resp, nil
@@ -288,7 +289,7 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%s/submit", gerritChangeIDForRouting(req.Number, req.Project))
 	var data struct{}
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, false); err != nil {
 		return nil, errors.Annotate(err, "submit change").Err()
 	}
 	return resp.ToProto(), nil
@@ -300,7 +301,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 	data := map[string]string{
 		"message": req.Message,
 	}
-	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp, false); err != nil {
 		return nil, errors.Annotate(err, "abandon change").Err()
 	}
 	return resp.ToProto(), nil
@@ -309,7 +310,7 @@ func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeR
 func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequest, opts ...grpc.CallOption) (*gerritpb.MergeableInfo, error) {
 	var resp mergeableInfo
 	path := fmt.Sprintf("/changes/%s/revisions/%s/mergeable", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
-	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp); err != nil {
+	if _, err := c.call(ctx, "GET", path, url.Values{}, nil, &resp, false); err != nil {
 		return nil, errors.Annotate(err, "get mergeable").Err()
 	}
 	return resp.ToProto()
@@ -321,7 +322,7 @@ func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequ
 // call returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
-func (c *client) call(ctx context.Context, method, urlPath string, params url.Values, data, dest interface{}, expectedHTTPCodes ...int) (int, error) {
+func (c *client) call(ctx context.Context, method, urlPath string, params url.Values, data, dest interface{}, skipDeserialize bool, expectedHTTPCodes ...int) (int, error) {
 	headers := make(map[string]string)
 
 	var rawData []byte
@@ -342,7 +343,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 
 	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, expectedHTTPCodes...)
 	body = bytes.TrimPrefix(body, jsonPrefix)
-	if err == nil {
+	if err == nil && !skipDeserialize {
 		if err = json.Unmarshal(body, dest); err != nil {
 			return ret, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
 		}
