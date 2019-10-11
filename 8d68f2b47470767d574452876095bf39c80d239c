@@ -33,6 +33,23 @@
       "revId": "8d68f2b47470767d574452876095bf39c80d239c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd485e85_0363ea7d",
+        "filename": "resultdb/variantdef.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-11T00:53:00Z",
+      "side": 1,
+      "message": "What\u0027s the purpose of having this variantdef.go at top level?\n\nWhat\u0027s the difference between this and pbutil/variantdef.go?",
+      "revId": "8d68f2b47470767d574452876095bf39c80d239c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
