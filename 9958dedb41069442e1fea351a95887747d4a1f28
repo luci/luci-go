@@ -384,6 +384,30 @@
     },
     {
       "key": {
+        "uuid": "2e76c972_9d6250d6",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T00:50:52Z",
+      "side": 1,
+      "message": "\u003e \u003e was there particular reason why DeriveInvocation was implemented in chromium? i understand that the RPC itself is specific to chromium, but all other recorder RPCs are implemented in the recorder package\n\u003e \u003e \n\u003e It\u0027s specific to swarming, and swarming was advised to have its own chromium package.\n\u003e \n\u003e Note also that chromium.DeriveInvocation doesn\u0027t actually implement the DeriveInvocation RPC itself.\n\u003e \nTo add to this, I am adding a recorder/derive_invocation.go that does implement the DeriveInvocation RPC. If you have thoughts on moving chromium.DeriveInvocation to the resulting function versus calling it, let me know",
+      "parentUuid": "942b1c94_6d47b068",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
