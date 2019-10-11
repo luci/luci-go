@@ -408,6 +408,30 @@
     },
     {
       "key": {
+        "uuid": "77d39bce_12d17ddb",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T01:59:25Z",
+      "side": 1,
+      "message": "i\u0027d need to see what you have in mind. Unless most of this code is moved to recorder/derive_invocation.go, it seems recorder/derive_invocation.go will be pretty slim",
+      "parentUuid": "2e76c972_9d6250d6",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
