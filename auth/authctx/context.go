@@ -547,8 +547,15 @@ func (ac *Context) writeDockerConfig() error {
 		return err
 	}
 	defer f.Close()
-	config := map[string]string{
-		"credsStore": "luci",
+	config := map[string]map[string]string{
+		"credHelpers": {
+			"us.gcr.io":          "luci",
+			"staging-k8s.gcr.io": "luci",
+			"asia.gcr.io":        "luci",
+			"gcr.io":             "luci",
+			"marketplace.gcr.io": "luci",
+			"eu.gcr.io":          "luci",
+		},
 	}
 	if err := json.NewEncoder(f).Encode(&config); err != nil {
 		return errors.Annotate(err, "cannot encode configuration").Err()
