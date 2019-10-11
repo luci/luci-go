@@ -480,6 +480,30 @@
     },
     {
       "key": {
+        "uuid": "45667241_cba24ab0",
+        "filename": "resultdb/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-11T02:54:15Z",
+      "side": 1,
+      "message": "Actually, there might be enough to warrant splitting chromium/swarming.go into the the RPC in one file and everything else under chromium/; anyway I\u0027ll see how it goes.",
+      "parentUuid": "9965b9e6_2645d903",
+      "range": {
+        "startLine": 100,
+        "startChar": 63,
+        "endLine": 100,
+        "endChar": 89
+      },
+      "revId": "9958dedb41069442e1fea351a95887747d4a1f28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33145199_0f4b9502",
         "filename": "resultdb/recorder/chromium/swarming.go",
         "patchSetId": 1
