@@ -249,8 +249,8 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 func (c *client) DeleteEditFileContent(ctx context.Context, req *gerritpb.DeleteEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
 	var data struct{}
-	var resp changeInfo
-	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, &resp, http.StatusNoContent); err != nil {
+	// The response cannot be json-desirealized.
+	if _, err := c.call(ctx, "DELETE", path, url.Values{}, &data, nil, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "delete edit file content").Err()
 	}
 	return &empty.Empty{}, nil
@@ -342,7 +342,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 
 	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, expectedHTTPCodes...)
 	body = bytes.TrimPrefix(body, jsonPrefix)
-	if err == nil {
+	if err == nil && dest != nil {
 		if err = json.Unmarshal(body, dest); err != nil {
 			return ret, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
 		}
