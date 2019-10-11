@@ -22,6 +22,30 @@
       "revId": "fc4fd9f4cbbb8e79742936a67e9dcc42efd5f9d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74ecaca6_b656cbbd",
+        "filename": "auth/authctx/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 552,
+      "author": {
+        "id": 1207055
+      },
+      "writtenOn": "2019-10-11T17:32:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c134d81c_de77c8fe",
+      "range": {
+        "startLine": 552,
+        "startChar": 26,
+        "endLine": 552,
+        "endChar": 32
+      },
+      "revId": "fc4fd9f4cbbb8e79742936a67e9dcc42efd5f9d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
