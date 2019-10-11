@@ -177,7 +177,7 @@ func (vr *ValidationResult) Log(ctx context.Context) {
 		case "ERROR", "CRITICAL":
 			lvl = logging.Error
 		}
-		logging.Logf(ctx, lvl, "%s: %s", msg.Path, msg.Text)
+		logging.Logf(ctx, lvl, "%s: %s: %s", vr.ConfigSet, msg.Path, msg.Text)
 	}
 }
 
