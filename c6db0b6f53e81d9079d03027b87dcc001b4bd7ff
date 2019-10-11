@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d5736947_078e0e56",
+        "filename": "resultdb/pbutil/inclusion.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T21:07:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a7d788d_cd53cb1d",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 36,
+        "endChar": 1
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95084ca6_b0360de3",
         "filename": "resultdb/proto/v1/invocation.proto",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c6e1aca_a6737378",
+        "filename": "resultdb/proto/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T21:07:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95084ca6_b0360de3",
+      "range": {
+        "startLine": 138,
+        "startChar": 30,
+        "endLine": 138,
+        "endChar": 38
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "855e2ee2_b5bedbfe",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T21:07:49Z",
+      "side": 1,
+      "message": "in another CL Jao-ke made a good point that it is better to put these functions closer to their only usage, which is here. ValidateXXXRequest will be used only by XXX RPC implementation, which is here. Other validation functions might be used in more contexts.\n\nalso i made this function internal to make the point stronger",
+      "parentUuid": "d96761ba_e90b5132",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 37
+      },
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09837efe_c8b66597",
         "filename": "resultdb/recorder/include_invocation.go",
         "patchSetId": 4
@@ -85,6 +157,24 @@
       "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d78be227_4a8db8ab",
+        "filename": "resultdb/recorder/include_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-11T21:07:49Z",
+      "side": 1,
+      "message": "not possible without RPCs. this func does all validation it can without RPCs.",
+      "parentUuid": "09837efe_c8b66597",
+      "revId": "c6db0b6f53e81d9079d03027b87dcc001b4bd7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
