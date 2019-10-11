@@ -188,7 +188,14 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	rootDir := isolateDir
 	for _, dep := range deps {
 		// Check if the dep is outside isolateDir.
+		info, err := os.Stat(dep)
+		if err != nil {
+			return nil, "", nil, err
+		}
 		base := filepath.Dir(dep)
+		if info.IsDir() {
+			base = dep
+		}
 		for {
 			rel, err := filepath.Rel(rootDir, base)
 			if err != nil {
