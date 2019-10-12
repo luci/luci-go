@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "c3fa602c_e3b4e54a",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:11:15Z",
+      "side": 1,
+      "message": "yes. Whether X-\u003eZ overrides something or not, X is being extended with Z\u0027s contents. Note that overriding is optional. The main point of this operation is to include X into Z, but we can overriding something along the way. In other words, i think the \"overriding\" aspect should not influence the choice the verb for this purpose",
+      "parentUuid": "78903e86_ebb33017",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
