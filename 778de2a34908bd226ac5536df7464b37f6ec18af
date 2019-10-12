@@ -217,6 +217,30 @@
     },
     {
       "key": {
+        "uuid": "dfc5b0fb_d278bbbe",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:47:11Z",
+      "side": 1,
+      "message": "thanks for the discussion! done",
+      "parentUuid": "06b11796_ec2f6899",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
