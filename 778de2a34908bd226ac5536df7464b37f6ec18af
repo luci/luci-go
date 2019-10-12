@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "7fa007ab_f6ac1d0b",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-12T01:20:25Z",
+      "side": 1,
+      "message": "OK. I personally wouldn\u0027t have considered that \"extending\" (regardless of overriding) because \"extend\" is somewhat ambiguous (could be extending deadline*, extending with more test results*, or if we add other fields to Invocation that can also be augmented, that could apply to those fields as well, or not).\n\nIf you think it fits, though, then that\u0027s fine by me (and feel free to mark the discussion as resolved as you like, or we can brainstorm some more; up to you).\n\n*yes, both of these examples could with reflection be understood not to be the function since we have UpdateInvocation and CreateTestResult; my point is just that \"extend\" may not be immediately intuitive",
+      "parentUuid": "c3fa602c_e3b4e54a",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
