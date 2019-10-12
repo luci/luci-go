@@ -16,14 +16,17 @@ package pbutil
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStringPairs(t *testing.T) {
+	t.Parallel()
 	Convey(`Works`, t, func() {
 		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*pb.StringPair{
 			{Key: "k1", Value: "v1"},
@@ -34,6 +37,36 @@ func TestStringPairs(t *testing.T) {
 			tokens := []string{"k1", "v1", "k2"}
 			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
 				fmt.Sprintf("odd number of tokens in %q", tokens))
+		})
+	})
+}
+
+func TestValidateStringPair(t *testing.T) {
+	t.Parallel()
+	Convey(`TestValidateStringPairs`, t, func() {
+		Convey(`empty`, func() {
+			err := ValidateStringPair(StringPair("", ""))
+			So(err, ShouldErrLike, `key: does not match`)
+		})
+
+		Convey(`invalid key`, func() {
+			err := ValidateStringPair(StringPair("1", ""))
+			So(err, ShouldErrLike, `key: does not match`)
+		})
+
+		Convey(`long key`, func() {
+			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""))
+			So(err, ShouldErrLike, `key length must be less or equal to 64`)
+		})
+
+		Convey(`long value`, func() {
+			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
+			So(err, ShouldErrLike, `value length must be less or equal to 256`)
+		})
+
+		Convey(`valid`, func() {
+			err := ValidateStringPair(StringPair("a", "b"))
+			So(err, ShouldBeNil)
 		})
 	})
 }

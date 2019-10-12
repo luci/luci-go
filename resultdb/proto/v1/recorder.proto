@@ -96,7 +96,7 @@ message CreateInvocationRequest {
   string invocation_id = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Invocation data to insert.
-  Invocation invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
+  Invocation invocation = 2;
 }
 
 // A request message for UpdateInvocation RPC.

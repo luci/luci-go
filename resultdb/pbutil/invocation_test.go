@@ -24,6 +24,7 @@ import (
 )
 
 func TestInvocationName(t *testing.T) {
+	t.Parallel()
 	Convey("ParseInvocationName", t, func() {
 		Convey("Parse", func() {
 			id, err := ParseInvocationName("invocations/a")
@@ -44,6 +45,7 @@ func TestInvocationName(t *testing.T) {
 }
 
 func TestInvocationUtils(t *testing.T) {
+	t.Parallel()
 	Convey(`Normalization works`, t, func() {
 		inv := &pb.Invocation{
 			Tags: StringPairs(
