@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "a3bf1dad_c4173b2d",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-12T00:34:21Z",
+      "side": 1,
+      "message": "I don\u0027t feel strongly about this, and am fine with keeping IncludeInvocation. It\u0027s a little different from the rest but that\u0027s fine.\n\nBrainstormed ideas below if you were curious:\n+ \"RelateInvocation\" or \"LinkInvocation\": con is they lose the direction. What we\u0027re getting at is \"give this Invocation a child/nested [Invocation]\" --- I\u0027m not sure we have a reasonable word in English for that... pack/fill/stuff definitely don\u0027t sound right either.\n+ \"ComposeInvocation\" (invocations `included1`, `included2`, `included3` compose invocation `including`, which fits the grammatical structure of \"[Verb]Invocation\" utilizing \"invocation\" as the object): cons are 1) it may be too uncommon a word in this sense to be self-evident, and 2) it may suggest that the request message completely defines the inclusions, which is not the case.",
+      "parentUuid": "d09741ff_ef7d6cdb",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
