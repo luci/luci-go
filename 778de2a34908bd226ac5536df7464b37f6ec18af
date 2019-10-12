@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "78903e86_ebb33017",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-12T00:52:48Z",
+      "side": 1,
+      "message": "Definitely related, but is that the actually the same connotation of what we\u0027re doing?\n\nSo for instance, if we have a CQ attempt that forms an invocation X, and we include in it an invocation Y from a builder, and then override the inclusion of Y into X with the inclusion of Z into X, did we /extend/ X with Z? Open question; again, I don\u0027t feel strongly either way",
+      "parentUuid": "3dfa5ebf_5656bd0c",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
