@@ -61,7 +61,7 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 		eg.Go(func() error {
 			includedInvState, err := readInvocationState(ctx, txn, includedInvID)
 			ret.Ready = pbutil.IsFinalized(includedInvState)
-			return errors.Annotate(err, "invocation %q", pbutil.InvocationName((includedInvID))).Err()
+			return err
 		})
 
 		if err := eg.Wait(); err != nil {
@@ -69,9 +69,8 @@ func (s *RecorderServer) CreateInclusion(ctx context.Context, in *pb.CreateInclu
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			// We want idempotency, and we achieve it by using InsertOrUpdate
-			// instead of Insert, such that we don't have to check for errors
-			// in case inclusion is already there.
+			// Use InsertOrUpdate instead of Insert to ensure the request is
+			// idempotent.
 			spanner.InsertOrUpdateMap("Inclusions", map[string]interface{}{
 				"InvocationID":         includingInvID,
 				"IncludedInvocationID": includedInvID,

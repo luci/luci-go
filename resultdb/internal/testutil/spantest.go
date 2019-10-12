@@ -41,6 +41,7 @@ const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 
 // RunIntegrationTests returns true if integration tests should run.
 func RunIntegrationTests() bool {
+	return true
 	return os.Getenv(IntegrationTestEnvVar) == "1"
 }
 
@@ -170,17 +171,16 @@ func fatalIf(err error) {
 
 // InsertInvocation returns a spanner mutation that inserts an invocation.
 func InsertInvocation(id string, state pb.Invocation_State, updateToken string) *spanner.Mutation {
-	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	return spanner.InsertMap("Invocations", map[string]interface{}{
 		"InvocationId":                      id,
 		"State":                             int64(state),
 		"Realm":                             "",
 		"UpdateToken":                       updateToken,
-		"InvocationExpirationTime":          future,
-		"InvocationExpirationWeek":          future,
-		"ExpectedTestResultsExpirationTime": future,
-		"ExpectedTestResultsExpirationWeek": future,
+		"InvocationExpirationTime":          testclock.TestRecentTimeUTC,
+		"InvocationExpirationWeek":          testclock.TestRecentTimeUTC,
+		"ExpectedTestResultsExpirationTime": testclock.TestRecentTimeUTC,
+		"ExpectedTestResultsExpirationWeek": testclock.TestRecentTimeUTC,
 		"CreateTime":                        testclock.TestRecentTimeUTC,
-		"Deadline":                          testclock.TestRecentTimeUTC.Add(time.Hour),
+		"Deadline":                          testclock.TestRecentTimeUTC.Add(time.Minute),
 	})
 }

@@ -20,17 +20,27 @@ import (
 	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	"google.golang.org/grpc/codes"
 )
 
 // ReadInvocation reads one invocation within the transaction.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-// For ptrMap see ReadRow comment in util.go.
+// For ptrMap see ReadRow comment.
 func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[string]interface{}) error {
 	err := ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, ptrMap)
-	if spanner.ErrCode(err) == codes.NotFound {
-		return errors.Reason("not found").InternalReason("%s", err).Tag(grpcutil.NotFoundTag).Err()
+	switch {
+	case spanner.ErrCode(err) == codes.NotFound:
+		return errors.Reason("invocation %q not found", pbutil.InvocationName(invID)).
+			InternalReason("%s", err).
+			Tag(grpcutil.NotFoundTag).
+			Err()
+
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch invocation %q", pbutil.InvocationName((invID))).Err()
+
+	default:
+		return nil
 	}
-	return err
 }

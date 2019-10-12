@@ -55,14 +55,14 @@ func TestMayMutateInvocation(t *testing.T) {
 
 			Convey(`no invocation`, func() {
 				err := mayMutate()
-				So(err, ShouldErrLike, `invocation "invocations/inv": not found`)
+				So(err, ShouldErrLike, `invocation "invocations/inv" not found`)
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			})
 
 			Convey(`with finalized invocation`, func() {
 				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token))
 				err := mayMutate()
-				So(err, ShouldErrLike, `invocation "invocations/inv": not active`)
+				So(err, ShouldErrLike, `invocation "invocations/inv" is not active`)
 				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			})
 

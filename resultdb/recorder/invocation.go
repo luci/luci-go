@@ -49,7 +49,7 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return errors.Reason("invocation %q: not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
+		return errors.Reason("invocation %q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
 
 	case err != nil:
 		return err
@@ -58,7 +58,7 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 		return errors.Reason("invalid update token").Tag(grpcutil.PermissionDeniedTag).Err()
 
 	case pb.Invocation_State(state) != pb.Invocation_ACTIVE:
-		return errors.Reason("invocation %q: not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+		return errors.Reason("invocation %q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
 
 	default:
 		return nil

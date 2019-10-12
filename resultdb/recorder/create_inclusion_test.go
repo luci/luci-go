@@ -50,9 +50,8 @@ func TestCreateInclusion(t *testing.T) {
 
 		Convey("no including invocation", func() {
 			testutil.MustApply(ctx, insInv("included", pb.Invocation_ACTIVE, token))
-
 			_, err := recorder.CreateInclusion(ctx, req)
-			So(err, ShouldErrLike, `invocation "invocations/including": not found`)
+			So(err, ShouldErrLike, `invocation "invocations/including" not found`)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
@@ -60,7 +59,7 @@ func TestCreateInclusion(t *testing.T) {
 			testutil.MustApply(ctx, insInv("including", pb.Invocation_ACTIVE, token))
 
 			_, err := recorder.CreateInclusion(ctx, req)
-			So(err, ShouldErrLike, `invocation "invocations/included": not found`)
+			So(err, ShouldErrLike, `invocation "invocations/included" not found`)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
