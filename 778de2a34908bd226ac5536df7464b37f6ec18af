@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "db9b47a7_5e22219f",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:28:00Z",
+      "side": 1,
+      "message": "these are great counter-examples, so i take it back.\n\nperhaps RelateInvocation is better. My problem is that it is abstract because there can be different kinds of relations. The relation we are talking about is \"includes\".\n\nOne additional point is that ideally we have one term for the concept. As a user, if I know what \"inclusion\" is, from other documentation, it won\u0027t be immediately obvious that \"relate\" or any other word is how we include invocations.\n\nIf the RPC was just \"Include\", it would preserve \"include\" term, AND, perhaps, addressed your original concern because it no longer has Invocation in the name?",
+      "parentUuid": "7fa007ab_f6ac1d0b",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
