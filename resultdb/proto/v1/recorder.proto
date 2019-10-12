@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb;
 
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
@@ -51,11 +52,7 @@ service Recorder {
   rpc FinalizeInvocation(FinalizeInvocationRequest) returns (Invocation) {};
 
   // Includes an invocation in the given non-finalized invocation.
-  rpc CreateInclusion(CreateInclusionRequest) returns (Inclusion) {};
-
-  // Sets Inclusion.override_by and ensures a new Inclusion exists.
-  rpc OverrideInclusion(OverrideInclusionRequest)
-      returns (OverrideInclusionResponse) {};
+  rpc Include(IncludeRequest) returns (google.protobuf.Empty) {};
 
   // == Test results ===========================================================
 
@@ -114,49 +111,26 @@ message FinalizeInvocationRequest {
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
 
-// A request message for CreateInclusion RPC.
-message CreateInclusionRequest {
-  // Name of the invocation to extend.
+// A request message for Include RPC.
+message IncludeRequest {
+  // Name of the invocation to include into, see Invocation.name.
+  // For example, name of the buildbucket build invocation that should include
+  // a swarming task invocation.
   string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
-  // Contains the name of the included invocation and whether it is
-  // consequential.
-  Inclusion inclusion = 2 [ (google.api.field_behavior) = REQUIRED ];
-}
+  // Name of the invocation to include, see Invocation.name.
+  // For example, name of the swarming task invocation to include into a
+  // buildbucket build invocation.
+  string included_invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
 
-// A request message for OverrideInclusion RPC.
-message OverrideInclusionRequest {
-  // Name of the including invocation, see Invocation.name.
-  // For example, name of the buildbucket build invocation that includes
-  // swarming task invocations.
-  string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
-
-  // Name of the previously included invocation.
+  // Names of another invocation included in |including_invocation| that this
+  // inclusion overrides.
   // For example, invocation of a died swarming task that we intend to retry
   // and replace with another swarming task.
-  // This inclusion MUST exist.
-  string overridden_included_invocation = 2
-      [ (google.api.field_behavior) = REQUIRED ];
-
-  // Name of the new included invocation that overrides the previously included
-  // invocation.
-  // For example, invocation for the new swarming task which represents a retry
-  // of a died task.
-  //
-  // If this invocation was not included before, an Inclusion is created.
-  string overriding_included_invocation = 3
-      [ (google.api.field_behavior) = REQUIRED ];
-}
-
-// A response message for OverrideInclusion RPC.
-message OverrideInclusionResponse {
-  // The overridden inclusion.
-  // For example, the inclusion of a died swarming task.
-  Inclusion overridden_inclusion = 1;
-
-  // The inclusion that has overridden the other inclusion.
-  // For example, the inclusion of the swarming task retry.
-  Inclusion overriding_inclusion = 2;
+  // This invocation must be already included in |including_invocation|.
+  // The corresponding Invocation.InclusionAttrs.overidden_by is set to
+  // |included_invocation|.
+  string override_invocation = 3;
 }
 
 // A request message for CreateTestResult RPC.
