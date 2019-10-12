@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "d528dc5b_5303d74e",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T00:35:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b11aca4_d5a2badc",
+      "revId": "52c8fbf3db30cba88e5ba404639cebc7d69b4af4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "12d7ea60_690d4066",
         "filename": "resultdb/pbutil/invocation.go",
         "patchSetId": 2
