@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(nodir): refactor this file. Consider merging into pbutil.variantdef.go
+
 package resultdb
 
 import (
@@ -20,6 +22,7 @@ import (
 	"io"
 	"sort"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -28,10 +31,9 @@ import (
 // It is the "Def" part of a VariantDef proto.
 type VariantDefMap map[string]string
 
-// Validate validates the receiver VariantDefMap by checking characters and length of the keys and values.
+// Validate returns an error if d is invalid.
 func (d VariantDefMap) Validate() error {
-	// TODO(jchinlee): Implement.
-	return nil
+	return pbutil.ValidateVariantDef(&pb.VariantDef{Def: map[string]string(d)})
 }
 
 // ID returns a hex SHA256 hash of newline-joined "<key>:<val>" strings from the variant as an ID.
