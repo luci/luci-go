@@ -140,6 +140,24 @@
       "revId": "8d68f2b47470767d574452876095bf39c80d239c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "418be8f0_c7cf3eb6",
+        "filename": "resultdb/variantdef.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T00:35:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "995fc0ee_fb874d95",
+      "revId": "8d68f2b47470767d574452876095bf39c80d239c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
