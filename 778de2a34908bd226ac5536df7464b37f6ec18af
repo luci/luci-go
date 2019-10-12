@@ -193,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "06b11796_ec2f6899",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-12T01:36:39Z",
+      "side": 1,
+      "message": "Yep, agree with all those points. English is hard...\n\n\"Include\" SGTM; I had thought due to resource-oriented design we /had/ to have \"Invocation\" in there, but https://aip.dev/136 says only, \"The name of the method **should** be a verb followed by a noun,\" so it looks like we\u0027re good to go!",
+      "parentUuid": "db9b47a7_5e22219f",
+      "range": {
+        "startLine": 55,
+        "startChar": 6,
+        "endLine": 55,
+        "endChar": 23
+      },
+      "revId": "778de2a34908bd226ac5536df7464b37f6ec18af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf503dcf_b85103cb",
         "filename": "resultdb/proto/v1/recorder.proto",
         "patchSetId": 5
