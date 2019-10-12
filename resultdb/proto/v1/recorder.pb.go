@@ -183,6 +183,7 @@ type IncludeInvocationRequest struct {
 	// Name of the invocation to include, see Invocation.name.
 	// For example, name of the swarming task invocation to include into a
 	// buildbucket build invocation.
+	// This invocation MUST NOT already be included in |included_invocation|.
 	IncludedInvocation string `protobuf:"bytes,2,opt,name=included_invocation,json=includedInvocation,proto3" json:"included_invocation,omitempty"`
 	// Names of another invocation included in |including_invocation| that this
 	// inclusion overrides.
@@ -850,8 +851,6 @@ type RecorderClient interface {
 	// error code.
 	CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
 	// Updates an existing non-finalized invocation.
-	// If the invocation is already final on the server, FAILED_PRECONDITION is
-	// returned.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
@@ -1062,8 +1061,6 @@ type RecorderServer interface {
 	// error code.
 	CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error)
 	// Updates an existing non-finalized invocation.
-	// If the invocation is already final on the server, FAILED_PRECONDITION is
-	// returned.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*Invocation, error)
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error)
