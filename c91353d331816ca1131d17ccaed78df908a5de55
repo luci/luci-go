@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bd8f533d_dbf44fe2",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:55:23Z",
+      "side": 1,
+      "message": "Chan, thanks for this comment. This has revealed a few problems and they were addressed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1854959/5",
+      "parentUuid": "4f10e8f4_4dbefd60",
+      "range": {
+        "startLine": 42,
+        "startChar": 54,
+        "endLine": 42,
+        "endChar": 82
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c092e95d_e0b7d2be",
         "filename": "resultdb/recorder/override_invocation.go",
         "patchSetId": 11
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "c5da7445_e82700e1",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:55:23Z",
+      "side": 1,
+      "message": "no longer applies",
+      "parentUuid": "c092e95d_e0b7d2be",
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "37df6d57_fb8493ae",
         "filename": "resultdb/recorder/override_invocation.go",
         "patchSetId": 11
@@ -53,6 +95,30 @@
       "writtenOn": "2019-10-10T22:57:44Z",
       "side": 1,
       "message": "Curious: why not just Update? (similar below for InsertOrUpdateMap) The underlying implementation will need to extract the columns and values again.",
+      "range": {
+        "startLine": 100,
+        "startChar": 11,
+        "endLine": 100,
+        "endChar": 20
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f8a3240_1837171f",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:55:23Z",
+      "side": 1,
+      "message": "i tried Update() before and it was quite unreadable. I think the performance penalty is acceptable here.\n\nfor comparison, using struct is much heavier",
+      "parentUuid": "37df6d57_fb8493ae",
       "range": {
         "startLine": 100,
         "startChar": 11,
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "d49005c2_4abf777d",
+        "filename": "resultdb/recorder/override_invocation.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:55:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df9ef394_cde06392",
+      "range": {
+        "startLine": 121,
+        "startChar": 5,
+        "endLine": 121,
+        "endChar": 11
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5eca331_9cbf478c",
         "filename": "resultdb/recorder/override_invocation_test.go",
         "patchSetId": 11
@@ -108,6 +198,30 @@
       "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f20fcdc6_4d9290df",
+        "filename": "resultdb/recorder/override_invocation_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-12T01:55:23Z",
+      "side": 1,
+      "message": "great catch. fixed this test case and added the one that i intended",
+      "parentUuid": "a5eca331_9cbf478c",
+      "range": {
+        "startLine": 94,
+        "startChar": 39,
+        "endLine": 94,
+        "endChar": 61
+      },
+      "revId": "c91353d331816ca1131d17ccaed78df908a5de55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
