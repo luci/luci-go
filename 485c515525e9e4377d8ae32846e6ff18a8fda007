@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b54ba6fc_a18d957b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-13T23:54:29Z",
+      "side": 1,
+      "message": "nit: div",
+      "range": {
+        "startLine": 7,
+        "startChar": 53,
+        "endLine": 7,
+        "endChar": 56
+      },
+      "revId": "485c515525e9e4377d8ae32846e6ff18a8fda007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0be9d3c_e20e11a6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-13T23:54:29Z",
+      "side": 1,
+      "message": "Wrong bug number.",
+      "range": {
+        "startLine": 11,
+        "startChar": 4,
+        "endLine": 11,
+        "endChar": 11
+      },
+      "revId": "485c515525e9e4377d8ae32846e6ff18a8fda007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
