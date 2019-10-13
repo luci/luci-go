@@ -127,6 +127,8 @@ func (db *TempDB) Drop(ctx context.Context) error {
 	})
 }
 
+var dbNameAlphabetInversedRe = regexp.MustCompile(`[^\w]+`)
+
 // NewTempDB creates a temporary database with a random name.
 // The caller is responsible for calling Drop on the returned TempDB to
 // cleanup resources after usage.
@@ -159,7 +161,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	}
 	dbName := fmt.Sprintf("test%d", random)
 	if u, err := user.Current(); err == nil && u.Username != "" {
-		dbName += "_by_" + u.Username
+		dbName += "_by_" + dbNameAlphabetInversedRe.ReplaceAllLiteralString(u.Username, "_")
 	}
 
 	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
