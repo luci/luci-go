@@ -70,6 +70,30 @@
       "revId": "b7f56b75277067ae3afd5ffa20d6e6e64f7ec0ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e8ab560_fa5cb0f4",
+        "filename": "buildbucket/deprecated/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-14T04:44:46Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "0fc78f6e_395ac866",
+      "range": {
+        "startLine": 157,
+        "startChar": 16,
+        "endLine": 157,
+        "endChar": 45
+      },
+      "revId": "b7f56b75277067ae3afd5ffa20d6e6e64f7ec0ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
