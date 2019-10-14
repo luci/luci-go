@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "70709cef_87267d07",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T17:27:51Z",
+      "side": 1,
+      "message": "this is not enforced nor checked",
+      "range": {
+        "startLine": 192,
+        "startChar": 37,
+        "endLine": 192,
+        "endChar": 67
+      },
+      "revId": "03db6e96f22efb50b3eba51499be2335fa378169",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5a2d0fd_d2039999",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T17:27:51Z",
+      "side": 1,
+      "message": "what SetHeader?",
+      "range": {
+        "startLine": 193,
+        "startChar": 38,
+        "endLine": 193,
+        "endChar": 47
+      },
+      "revId": "03db6e96f22efb50b3eba51499be2335fa378169",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a177d87_1bfdd2e9",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T17:27:51Z",
+      "side": 1,
+      "message": "I think it would be better to forbid X-Prpc-* (for instance, this check already forgets about X-Prpc-Grpc-Timeout which shouldn\u0027t probably be set via metadata.MD).",
+      "range": {
+        "startLine": 201,
+        "startChar": 27,
+        "endLine": 201,
+        "endChar": 41
+      },
+      "revId": "03db6e96f22efb50b3eba51499be2335fa378169",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61249dc1_3d4ad4d3",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T17:27:51Z",
+      "side": 1,
+      "message": "I think this is a bit simplistic, compared to how metadata headers are read: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/grpc/prpc/decoding.go?type\u003dcs\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d117 \n\nI think encoding/decoding should be symmetric.\n\nAlso, I thought we support outgoing metadata already, but I couldn\u0027t find the code where it is sent...",
+      "range": {
+        "startLine": 204,
+        "startChar": 4,
+        "endLine": 204,
+        "endChar": 23
+      },
+      "revId": "03db6e96f22efb50b3eba51499be2335fa378169",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5ce59dc_ad8c445a",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T17:27:51Z",
+      "side": 1,
+      "message": "nit: do it after `if err !\u003d nil` check below",
+      "range": {
+        "startLine": 246,
+        "startChar": 1,
+        "endLine": 246,
+        "endChar": 10
+      },
+      "revId": "03db6e96f22efb50b3eba51499be2335fa378169",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
