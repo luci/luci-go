@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f47cfc0d_5d327eae",
+        "filename": "buildbucket/deprecated/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-14T05:01:52Z",
+      "side": 1,
+      "message": "Could this just be one line?\n\nsummary \u003d append(summary, fmt.Sprintf(\"\u003cdiv\u003e%s\u003c/div\u003e\", strings.Join(ann.Text, \" \")))",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 145,
+        "endChar": 40
+      },
+      "revId": "c0f72ce28a4ffe6f587158dca4bf81b43a7de927",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
