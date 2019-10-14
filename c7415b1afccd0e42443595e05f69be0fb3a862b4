@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "90ffe318_53f5ff0c",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:16:59Z",
+      "side": 1,
+      "message": "nit: \u0027tasks\u0027 (per how WorkPool is used elsewhere)",
+      "range": {
+        "startLine": 257,
+        "startChar": 43,
+        "endLine": 257,
+        "endChar": 52
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c38080a_a73cb142",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:16:59Z",
+      "side": 1,
+      "message": "nit: skipNoName (or something), filterFiles is too generic",
+      "range": {
+        "startLine": 308,
+        "startChar": 5,
+        "endLine": 308,
+        "endChar": 16
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0a68f5f_5e74441e",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:16:59Z",
+      "side": 1,
+      "message": "nit: please use https://github.com/golang/go/wiki/SliceTricks#filter-in-place to avoid extra memory allocation",
+      "range": {
+        "startLine": 307,
+        "startChar": 0,
+        "endLine": 316,
+        "endChar": 1
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "284f84dd_cdbb70b8",
+        "filename": "cipd/client/cipd/reader/reader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:16:59Z",
+      "side": 1,
+      "message": "is this still needed?",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 100,
+        "endChar": 1
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
