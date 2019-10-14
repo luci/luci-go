@@ -21,8 +21,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
@@ -51,59 +55,126 @@ const (
 // If the task is a dedup of another task, the invocation returned is the underlying one; otherwise,
 // the invocation returned is associated with the swarming task itself.
 func DeriveInvocation(ctx context.Context, req *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
+	// Get the swarming service to use.
 	swarmingURL := "https://" + req.SwarmingTask.Hostname
-	taskID := req.SwarmingTask.Id
-	cl := internal.HTTPClient(ctx)
-
-	swarmSvc, err := getSwarmSvc(cl, swarmingURL)
+	swarmSvc, err := getSwarmSvc(internal.HTTPClient(ctx), swarmingURL)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the swarming task.
-	task, err := getSwarmingTask(ctx, taskID, swarmSvc)
+	// Get the swarming task, deduping if necessary.
+	task, err := getSwarmingTask(ctx, req.SwarmingTask.Id, swarmSvc)
 	if err != nil {
 		return nil, err
 	}
-	if task.State == "PENDING" || task.State == "RUNNING" {
-		return nil, errors.Reason(
-			"cannot write Invocation of incomplete task %s on %s (%s)",
-			taskID, swarmingURL, task.State).Err()
+	if task, err = getOriginTask(ctx, task, swarmSvc); err != nil {
+		return nil, err
 	}
 
 	// Check if we even need to write this invocation: is it finalized?
-	// TODO(jchinlee): Actually use returned Invocation ID.
-	_, err = getInvocationID(ctx, task, swarmSvc, req)
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO(jchinlee): Get Invocation from Spanner.
 	var inv *pb.Invocation
 	if inv != nil {
 		if !pbutil.IsFinalized(inv.State) {
 			return nil, errors.Reason(
-				"attempting to derive an existing non-finalized invocation").Err()
+				"attempting to derive an existing non-finalized invocation").
+				Tag(grpcutil.InternalTag).Err()
 		}
 
 		return inv, nil
 	}
 
-	// We may need to write the invocation, so fetch the output JSON.
-	outputJSON, err := fetchOutputJSON(ctx, task)
-	if err != nil {
-		return nil, errors.Annotate(err, "task %s (%s)", taskID, swarmingURL).Err()
-	}
-
-	// Get invocation and test results using the correct format.
-	inv, _, err = convertOutputJSON(ctx, req, outputJSON)
+	inv, _, err = deriveProtosForWriting(ctx, task, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return inv, nil
+	// TODO(jchinlee): Write Invocation and TestResults to Spanner.
+
+	return inv, err
 }
 
+// deriveProtosForWriting derives the protos with the data from the given task and request.
+//
+// The derived Invocation and TestResult protos will be written by the caller.
+func deriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
+	// Validate BaseTestVariant passed in the request.
+	if err := resultdb.VariantDefMap(req.GetBaseTestVariant().GetDef()).Validate(); err != nil {
+		return nil, nil, errors.Annotate(
+			err, "invalid base test variant %q", req.BaseTestVariant.Def).
+			Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Populate fields we will need in the base invocation.
+	invID, err := getInvocationID(ctx, task, req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	inv := &pb.Invocation{
+		Name:               pbutil.InvocationName(invID),
+		BaseTestVariantDef: req.BaseTestVariant,
+	}
+
+	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Decide how to continue based on task state.
+	mustFetchOutputJSON := false
+	switch task.State {
+	// Tasks not yet completed should not be requested to be processed by the recorder.
+	case "PENDING", "RUNNING":
+		return nil, nil, errors.Reason(
+			"unexpectedly incomplete state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
+
+	// Tasks that got interrupted for which we expect no output just need to set the correct
+	// Invocation state and are done.
+	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE":
+		inv.State = pb.Invocation_INTERRUPTED
+		return inv, nil, nil
+
+	// Tasks that got interrupted for which we may get output need to set the correct Invocation state
+	// but further processing may be needed.
+	case "KILLED", "TIMED_OUT":
+		inv.State = pb.Invocation_INTERRUPTED
+
+	// For COMPLETED state, we expect normal completion and output.
+	case "COMPLETED":
+		inv.State = pb.Invocation_COMPLETED
+		mustFetchOutputJSON = true
+
+	default:
+		return nil, nil, errors.Reason(
+			"unknown swarming state %q", task.State).Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Fetch outputs, converting if any.
+	var results []*pb.TestResult
+	switch {
+	case task.OutputsRef != nil && task.OutputsRef.Isolated != "":
+		// If we have output, fetch it regardless.
+		outputJSON, err := fetchOutputJSON(ctx, task, task.OutputsRef)
+		if err != nil {
+			return nil, nil, err
+		}
+		if results, err = convertOutputJSON(ctx, inv, req, outputJSON); err != nil {
+			return nil, nil, err
+		}
+
+	case mustFetchOutputJSON:
+		// Otherwise we expect output but have none, so fail.
+		return nil, nil, errors.Reason(
+			"missing expected isolated outputs").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	return inv, results, nil
+}
+
+// getSwarmSvc gets a swarming service for the given URL.
 func getSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, error) {
 	swarmSvc, err := swarmingAPI.New(cl)
 	if err != nil {
@@ -134,14 +205,35 @@ func getSwarmingTask(ctx context.Context, taskID string, swarmSvc *swarmingAPI.S
 	return task, errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
 }
 
-// fetchOutputJSON fetches the output.json from the given task on the given host.
-func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult) ([]byte, error) {
-	// Get the ref for the isolated outs of the given task.
-	ref, err := getOutputsRef(ctx, task)
-	if err != nil {
-		return nil, err
+// getOriginTask gets the swarming task of which the given task is a dupe, or itself if it isn't.
+func getOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service) (*swarmingAPI.SwarmingRpcsTaskResult, error) {
+	// If the task was deduped, then the invocation associated with it is just the one associated
+	// to the task from which it was deduped.
+	for task.DedupedFrom != "" {
+		var err error
+		if task, err = getSwarmingTask(ctx, task.DedupedFrom, swarmSvc); err != nil {
+			return nil, err
+		}
 	}
 
+	return task, nil
+}
+
+// getInvocationID gets the ID of the invocation associated with a task and swarming service.
+func getInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (string, error) {
+	// Get request information to include in ID.
+	canonicalReq, _ := proto.Clone(req).(*pb.DeriveInvocationRequest)
+	canonicalReq.SwarmingTask.Id = task.RunId
+
+	h := sha256.New()
+	if err := json.NewEncoder(h).Encode(canonicalReq); err != nil {
+		return "", errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
+	}
+	return "swarming_" + hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// fetchOutputJSON fetches the output.json from the given task with the given ref.
+func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, ref *swarmingAPI.SwarmingRpcsFilesRef) ([]byte, error) {
 	// Get isolated client for getting isolated objects.
 	cl := internal.HTTPClient(ctx)
 	isoClient := isolatedclient.New(nil, cl, ref.Isolatedserver, ref.Namespace, nil, nil)
@@ -151,19 +243,21 @@ func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 		ctx, "Fetching %s for isolated outs of task %s", ref.Isolated, task.TaskId)
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
+		// TODO(jchinlee): handle error codes from here. Nonexisting isolates should not result in
+		// INTERNAL or UNKNOWN.
 		return nil, err
 	}
 
 	isolates := &isolated.Isolated{}
 	if err := json.Unmarshal(buf.Bytes(), isolates); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
 	}
 
 	outputFile, ok := isolates.Files[outputJSONFileName]
 	if !ok {
 		return nil, errors.Reason(
 			"missing expected output %s in isolated outputs",
-			outputJSONFileName).Err()
+			outputJSONFileName).Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Now fetch (from the same server and namespace) the output file by digest.
@@ -177,61 +271,19 @@ func fetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 	return buf.Bytes(), nil
 }
 
-// getOutputsRef gets the data needed to fetch the isolated outputs given a task and swarming
-// service.
-func getOutputsRef(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult) (*swarmingAPI.SwarmingRpcsFilesRef, error) {
-	// TODO(jchinlee): Handle BOT_DIED, which may have the below state but shouldn't error internally.
-	if task.OutputsRef == nil || task.OutputsRef.Isolated == "" {
-		return nil, errors.Reason("no isolated outputs").Err()
-	}
-
-	return task.OutputsRef, nil
-}
-
-// getInvocationID gets the ID of the invocation associated with a task and swarming service.
-func getInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, req *pb.DeriveInvocationRequest) (string, error) {
-	// If the task was deduped, then the invocation associated with it is just the one associated
-	// to the task from which it was deduped.
-	var err error
-	for task.DedupedFrom != "" {
-		task, err = getSwarmingTask(ctx, task.DedupedFrom, swarmSvc)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	// Get request information to include in ID.
-	canonicalReq, _ := proto.Clone(req).(*pb.DeriveInvocationRequest)
-	canonicalReq.SwarmingTask.Id = task.RunId
-	h := sha256.New()
-	if err := json.NewEncoder(h).Encode(canonicalReq); err != nil {
-		return "", err
-	}
-	return "from_swarming_" + hex.EncodeToString(h.Sum(nil)), nil
-}
-
-// convertOutputJSON converts the given data to Invocation and TestResults.
+// convertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func convertOutputJSON(ctx context.Context, req *pb.DeriveInvocationRequest, data []byte) (*pb.Invocation, []*pb.TestResult, error) {
-	// Validate BaseTestVariant passed in the request.
-	if err := resultdb.VariantDefMap(req.BaseTestVariant.Def).Validate(); err != nil {
-		return nil, nil, errors.Annotate(
-			err, "invalid base test variant %q", req.BaseTestVariant.Def).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-
-	inv := &pb.Invocation{BaseTestVariantDef: req.BaseTestVariant}
-
+func convertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveInvocationRequest, data []byte) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
 		results, err := jsonFormat.ToProtos(ctx, req, inv)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
+			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
-		return inv, results, nil
+		return results, nil
 	}
 
 	// Try to convert the buffer treating its format as that of GTests.
@@ -240,10 +292,26 @@ func convertOutputJSON(ctx context.Context, req *pb.DeriveInvocationRequest, dat
 	if gtestErr == nil {
 		results, err := gtestFormat.ToProtos(ctx, req, inv)
 		if err != nil {
-			return nil, nil, errors.Annotate(err, "converting as GTest results format").Err()
+			return nil, errors.Annotate(err, "converting as GTest results format").Err()
 		}
-		return inv, results, nil
+		return results, nil
 	}
 
-	return nil, nil, errors.NewMultiError(jsonErr, gtestErr)
+	// Conversion with either format failed, but this code is meant specifically for them.
+	return nil, errors.Annotate(
+		errors.NewMultiError(jsonErr, gtestErr), "").Tag(grpcutil.InternalTag).Err()
+}
+
+// convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
+func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
+	// Timestamp strings from swarming should be RFC3339 without the trailing Z; check in case.
+	if !strings.HasSuffix(ts, "Z") {
+		ts += "Z"
+	}
+
+	t, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		return nil, errors.Annotate(err, "converting timestamp string %q", ts).Err()
+	}
+	return ptypes.TimestampProto(t)
 }

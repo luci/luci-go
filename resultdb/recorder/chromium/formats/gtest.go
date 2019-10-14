@@ -186,8 +186,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 
 	if interrupted {
 		inv.State = pb.Invocation_INTERRUPTED
-	} else {
-		inv.State = pb.Invocation_COMPLETED
 	}
 
 	// Populate the tags.
