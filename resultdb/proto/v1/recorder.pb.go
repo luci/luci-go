@@ -850,8 +850,6 @@ type RecorderClient interface {
 	// error code.
 	CreateInvocation(ctx context.Context, in *CreateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
 	// Updates an existing non-finalized invocation.
-	// If the invocation is already final on the server, FAILED_PRECONDITION is
-	// returned.
 	UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(ctx context.Context, in *FinalizeInvocationRequest, opts ...grpc.CallOption) (*Invocation, error)
@@ -1062,8 +1060,6 @@ type RecorderServer interface {
 	// error code.
 	CreateInvocation(context.Context, *CreateInvocationRequest) (*Invocation, error)
 	// Updates an existing non-finalized invocation.
-	// If the invocation is already final on the server, FAILED_PRECONDITION is
-	// returned.
 	UpdateInvocation(context.Context, *UpdateInvocationRequest) (*Invocation, error)
 	// Transitions the given invocation to the state FINALIZED.
 	FinalizeInvocation(context.Context, *FinalizeInvocationRequest) (*Invocation, error)
