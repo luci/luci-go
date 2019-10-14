@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/router"
@@ -30,11 +31,17 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-type greeterService struct{}
+type greeterService struct {
+	headerMD metadata.MD
+}
 
 func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloReply, error) {
 	if req.Name == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
+	}
+
+	if s.headerMD != nil {
+		SetHeader(c, s.headerMD)
 	}
 
 	return &HelloReply{
@@ -56,7 +63,8 @@ func TestServer(t *testing.T) {
 	Convey("Greeter service", t, func() {
 		server := Server{Authenticator: NoAuthentication}
 
-		RegisterGreeterServer(&server, &greeterService{})
+		greeterSvc := &greeterService{}
+		RegisterGreeterServer(&server, greeterSvc)
 
 		Convey("Register Calc service", func() {
 			RegisterCalcServer(&server, &calcService{})
@@ -90,6 +98,14 @@ func TestServer(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(res.Body.String(), ShouldEqual, "message: \"Hello Lucy\"\n")
+			})
+
+			Convey("Header Metadata", func() {
+				greeterSvc.headerMD = metadata.Pairs("a", "1", "b", "2")
+				r.ServeHTTP(res, req)
+				So(res.Code, ShouldEqual, http.StatusOK)
+				So(res.Header()["A"], ShouldResemble, []string{"1"})
+				So(res.Header()["B"], ShouldResemble, []string{"2"})
 			})
 
 			Convey("Invalid Accept header", func() {
