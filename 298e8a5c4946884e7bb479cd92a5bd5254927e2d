@@ -22,6 +22,30 @@
       "revId": "298e8a5c4946884e7bb479cd92a5bd5254927e2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c48b36a_f2080529",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T21:23:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cb60a04_c682408c",
+      "range": {
+        "startLine": 128,
+        "startChar": 10,
+        "endLine": 128,
+        "endChar": 26
+      },
+      "revId": "298e8a5c4946884e7bb479cd92a5bd5254927e2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
