@@ -281,7 +281,7 @@ func (site *installationSite) installedPackages(ctx context.Context) (map[string
 //
 // If 'force' is true, it will reinstall the package even if it is already
 // marked as installed at requested version. On errors returns (nil, error).
-func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, force bool) (*pinInfo, error) {
+func (site *installationSite) installPackage(ctx context.Context, pkgName, version string, maxThreads int, force bool) (*pinInfo, error) {
 	if site.client == nil {
 		return nil, errors.New("client is not initialized")
 	}
@@ -315,7 +315,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	// Go for it.
 	if doInstall {
 		fmt.Printf("Installing %s (version %q)...\n", pkgName, version)
-		if err := site.client.FetchAndDeployInstance(ctx, "", resolved); err != nil {
+		if err := site.client.FetchAndDeployInstance(ctx, "", resolved, maxThreads); err != nil {
 			return nil, err
 		}
 	}
@@ -440,6 +440,7 @@ func cmdInstall(params Parameters) *subcommands.Command {
 			c.registerBaseFlags()
 			c.authFlags.Register(&c.Flags, params.DefaultAuthOptions)
 			c.siteRootOptions.registerFlags(&c.Flags)
+			c.deployOptions.registerFlags(&c.Flags)
 			c.Flags.BoolVar(&c.force, "force", false, "Refetch and reinstall the package even if already installed.")
 			return c
 		},
@@ -450,6 +451,7 @@ type installRun struct {
 	cipdSubcommand
 	authFlags authcli.Flags
 	siteRootOptions
+	deployOptions
 
 	defaultServiceURL string // used only if the site config has ServiceURL == ""
 
@@ -495,7 +497,7 @@ func (c *installRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 	site.client.BeginBatch(ctx)
 	defer site.client.EndBatch(ctx)
-	return c.done(site.installPackage(ctx, pkgName, version, c.force))
+	return c.done(site.installPackage(ctx, pkgName, version, c.maxThreads, c.force))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

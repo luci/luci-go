@@ -110,7 +110,8 @@ func TestDeployHelperProcess(t *testing.T) {
 		inst.instanceID = fmt.Sprintf("-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwF%02d", instID)
 
 		d := New(tempDir)
-		_, err = d.DeployInstance(context.Background(), "", inst)
+		maxThreads := 16
+		_, err = d.DeployInstance(context.Background(), "", inst, maxThreads)
 		if err != nil {
 			t.Fatalf("DeployInstance failed: %s", err)
 		}

@@ -130,7 +130,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.2.21"
+	UserAgent = "cipd 2.3.0"
 )
 
 func init() {
@@ -255,7 +255,7 @@ type Client interface {
 	//
 	// Deploys to the given subdir under the site root (see ClientOptions.Root).
 	// It doesn't check whether the instance is already deployed.
-	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error
+	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error
 
 	// ListPackages returns a list packages and prefixes under the given prefix.
 	ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error)
@@ -285,7 +285,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun bool) (ActionMap, error)
 
 	// CheckDeployment looks at what is supposed to be installed and compares it
 	// to what is really installed.
@@ -298,7 +298,7 @@ type Client interface {
 	// appears to be broken (per given paranoia mode).
 	//
 	// Returns an action map of what it did.
-	RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error)
+	RepairDeployment(ctx context.Context, paranoia ParanoidMode, maxThreads int) (ActionMap, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1457,21 +1457,21 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 	return err
 }
 
-func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
+func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin, maxThreads int) error {
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return err
 	}
 	return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
-		_, err := client.deployer.DeployInstance(ctx, subdir, instance)
+		_, err := client.deployer.DeployInstance(ctx, subdir, instance, maxThreads)
 		return err
 	})
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error) {
-	return client.ensurePackagesImpl(ctx, allPins, paranoia, dryRun, false)
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun bool) (ActionMap, error) {
+	return client.ensurePackagesImpl(ctx, allPins, paranoia, maxThreads, dryRun, false)
 }
 
-func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun, silent bool) (aMap ActionMap, err error) {
+func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, maxThreads int, dryRun, silent bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
@@ -1551,10 +1551,10 @@ func (client *clientImpl) ensurePackagesImpl(ctx context.Context, allPins common
 			var err error
 			if toDeploy[pin.PackageName] {
 				action = "install"
-				err = client.FetchAndDeployInstance(ctx, subdir, pin)
+				err = client.FetchAndDeployInstance(ctx, subdir, pin, maxThreads)
 			} else if plan := toRepair[pin.PackageName]; plan != nil {
 				action = "repair"
-				err = client.repairDeployed(ctx, subdir, pin, plan)
+				err = client.repairDeployed(ctx, subdir, pin, plan, maxThreads)
 			}
 			if err != nil {
 				logging.Errorf(ctx, "Failed to %s %s - %s", action, pin, err)
@@ -1586,17 +1586,17 @@ func (client *clientImpl) CheckDeployment(ctx context.Context, paranoia Paranoid
 	if err != nil {
 		return nil, err
 	}
-	return client.ensurePackagesImpl(ctx, existing, paranoia, true, true)
+	return client.ensurePackagesImpl(ctx, existing, paranoia, 1, true, true)
 }
 
-func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode) (ActionMap, error) {
+func (client *clientImpl) RepairDeployment(ctx context.Context, paranoia ParanoidMode, maxThreads int) (ActionMap, error) {
 	// And this is a real run of EnsurePackages(already installed pkgs), so it
 	// can do repairs, if necessary.
 	existing, err := client.deployer.FindDeployed(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return client.EnsurePackages(ctx, existing, paranoia, false)
+	return client.EnsurePackages(ctx, existing, paranoia, maxThreads, false)
 }
 
 // makeRepairChecker returns a function that decided whether we should attempt
@@ -1642,20 +1642,20 @@ func (client *clientImpl) makeRepairChecker(ctx context.Context, paranoia Parano
 	}
 }
 
-func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan) error {
+func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan, maxThreads int) error {
 	// Fetch the package from the backend (or the cache) if some files are really
 	// missing. Skip this if we only need to restore symlinks.
 	if len(plan.ToRedeploy) != 0 {
 		logging.Infof(ctx, "Getting %q to extract %d missing file(s) from it", pin.PackageName, len(plan.ToRedeploy))
 		return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
-			return client.deployer.RepairDeployed(ctx, subdir, pin, deployer.RepairParams{
+			return client.deployer.RepairDeployed(ctx, subdir, pin, maxThreads, deployer.RepairParams{
 				Instance:   instance,
 				ToRedeploy: plan.ToRedeploy,
 				ToRelink:   plan.ToRelink,
 			})
 		})
 	}
-	return client.deployer.RepairDeployed(ctx, subdir, pin, deployer.RepairParams{
+	return client.deployer.RepairDeployed(ctx, subdir, pin, maxThreads, deployer.RepairParams{
 		ToRelink: plan.ToRelink,
 	})
 }
