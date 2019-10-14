@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "aefb7e3d_c982a73d",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 642,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T21:40:23Z",
+      "side": 1,
+      "message": "Nah, it\u0027s fine.",
+      "parentUuid": "39a225fe_1a85cf3e",
+      "range": {
+        "startLine": 642,
+        "startChar": 0,
+        "endLine": 642,
+        "endChar": 67
+      },
+      "revId": "785828e4192d619182204c251b6fc146a0482dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da5fde56_acd95ee5",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 3
