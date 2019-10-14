@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c94c99f7_7a317a45",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15b646b5_9671547f",
+      "range": {
+        "startLine": 178,
+        "startChar": 39,
+        "endLine": 178,
+        "endChar": 66
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b58243e_940ee1c5",
         "filename": "resultdb/recorder/include.go",
         "patchSetId": 17
@@ -45,6 +69,30 @@
       "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "649c3f1a_30ea90cd",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b58243e_940ee1c5",
+      "range": {
+        "startLine": 128,
+        "startChar": 15,
+        "endLine": 128,
+        "endChar": 17
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "65842885_7cd3268a",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa1c013f_c0fd8b78",
+      "range": {
+        "startLine": 129,
+        "startChar": 23,
+        "endLine": 129,
+        "endChar": 25
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90e545b6_61952284",
         "filename": "resultdb/recorder/include.go",
         "patchSetId": 17
@@ -91,6 +163,30 @@
       "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f9fffb3_6ed0fcd5",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90e545b6_61952284",
+      "range": {
+        "startLine": 139,
+        "startChar": 15,
+        "endLine": 139,
+        "endChar": 17
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "fe480392_08e5d29a",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74fdf02a_66949801",
+      "range": {
+        "startLine": 140,
+        "startChar": 23,
+        "endLine": 140,
+        "endChar": 25
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54f0551c_1432bc48",
         "filename": "resultdb/recorder/include.go",
         "patchSetId": 17
@@ -137,6 +257,30 @@
       "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9665ce3_ca41786f",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-14T16:16:04Z",
+      "side": 1,
+      "message": "renamed the column https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1860354\nused Id here",
+      "parentUuid": "54f0551c_1432bc48",
+      "range": {
+        "startLine": 141,
+        "startChar": 35,
+        "endLine": 141,
+        "endChar": 37
+      },
+      "revId": "177271394f8526a55d8c5d1abbe19a57420a1192",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
