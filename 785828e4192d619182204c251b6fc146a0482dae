@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "39a225fe_1a85cf3e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 642,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T20:30:56Z",
+      "side": 1,
+      "message": "Done. Should I also do something to discourage direct access of c.maxThreads?",
+      "parentUuid": "34417c70_292dfe1d",
+      "range": {
+        "startLine": 642,
+        "startChar": 0,
+        "endLine": 642,
+        "endChar": 67
+      },
+      "revId": "785828e4192d619182204c251b6fc146a0482dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da5fde56_acd95ee5",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "785828e4192d619182204c251b6fc146a0482dae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e0ab1bc_707dacbe",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T20:30:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da5fde56_acd95ee5",
+      "range": {
+        "startLine": 643,
+        "startChar": 1,
+        "endLine": 643,
+        "endChar": 30
+      },
+      "revId": "785828e4192d619182204c251b6fc146a0482dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
