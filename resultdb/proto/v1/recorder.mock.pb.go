@@ -196,14 +196,14 @@ func (mr *MockRecorderClientMockRecorder) BatchCreateTestExonerations(ctx, in in
 }
 
 // DeriveInvocation mocks base method
-func (m *MockRecorderClient) DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*DeriveInvocationResponse, error) {
+func (m *MockRecorderClient) DeriveInvocation(ctx context.Context, in *DeriveInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeriveInvocation", varargs...)
-	ret0, _ := ret[0].(*DeriveInvocationResponse)
+	ret0, _ := ret[0].(*Invocation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -359,10 +359,10 @@ func (mr *MockRecorderServerMockRecorder) BatchCreateTestExonerations(arg0, arg1
 }
 
 // DeriveInvocation mocks base method
-func (m *MockRecorderServer) DeriveInvocation(arg0 context.Context, arg1 *DeriveInvocationRequest) (*DeriveInvocationResponse, error) {
+func (m *MockRecorderServer) DeriveInvocation(arg0 context.Context, arg1 *DeriveInvocationRequest) (*Invocation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeriveInvocation", arg0, arg1)
-	ret0, _ := ret[0].(*DeriveInvocationResponse)
+	ret0, _ := ret[0].(*Invocation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

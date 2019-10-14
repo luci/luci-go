@@ -74,12 +74,13 @@ service Recorder {
   // == Misc ===================================================================
 
   // Derives an invocation and test results from a swarming task.
+  // If necessary, writes them to Spanner. Returns the derived invocation;
+  // results must be separately queried.
   //
   // TODO: Remove. This is meant as a temporary rpc for the intermediary stage
   // in which we derive invocations given swarming task IDs, rather than have
   // tasks make RPCs directly.
-  rpc DeriveInvocation(DeriveInvocationRequest)
-      returns (DeriveInvocationResponse) {};
+  rpc DeriveInvocation(DeriveInvocationRequest) returns (Invocation) {};
 }
 
 // == Invocations ==============================================================
@@ -253,13 +254,4 @@ message DeriveInvocationRequest {
   // For Chromium, expected keys in the def map are "bucket", "builder", and
   // "test_suite".
   VariantDef base_test_variant = 3;
-}
-
-// A response message for DeriveInvocation RPC.
-message DeriveInvocationResponse {
-  // Derived invocation.
-  Invocation invocation = 1;
-
-  // Derived test results.
-  repeated TestResult test_results = 2;
 }
