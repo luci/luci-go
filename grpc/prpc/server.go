@@ -26,8 +26,10 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/router"
@@ -181,6 +183,34 @@ func (s *Server) handleOPTIONS(c *router.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 }
 
+var requestContextKey = "context key with *requestContext"
+
+type requestContext struct {
+	// additional headers that will be sent in the response
+	header http.Header
+}
+
+// SetHeader sets the header metadata.
+// When called multiple times, all the provided metadata will be merged.
+//
+// If ctx is not a pRPC server context, then SetHeader calls grpc.SetHeader
+// such that calling prpc.SetHeader works for both pRPC and gRPC.
+func SetHeader(ctx context.Context, md metadata.MD) error {
+	if rctx, ok := ctx.Value(&requestContextKey).(*requestContext); ok {
+		for k, vs := range md {
+			if strings.HasPrefix(k, "X-Prpc-") || k == headerContentType {
+				return errors.Reason("reserved header key %q", k).Err()
+			}
+			for _, v := range vs {
+				rctx.header.Add(metaToHeader(k, v))
+			}
+		}
+		return nil
+	}
+
+	return grpc.SetHeader(ctx, md)
+}
+
 type response struct {
 	out proto.Message
 	fmt Format
@@ -218,6 +248,8 @@ func (s *Server) call(c *router.Context, serviceName, methodName string) (r resp
 		r.err = withStatus(err, http.StatusBadRequest)
 		return
 	}
+
+	methodCtx = context.WithValue(methodCtx, &requestContextKey, &requestContext{header: c.Writer.Header()})
 
 	out, err := method.Handler(service.impl, methodCtx, func(in interface{}) error {
 		if in == nil {
