@@ -66,6 +66,6 @@ func (s *RecorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb
 }
 
 // DeriveInvocation implements pb.RecorderServer.
-func (s *RecorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.DeriveInvocationResponse, error) {
+func (s *RecorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
 }
