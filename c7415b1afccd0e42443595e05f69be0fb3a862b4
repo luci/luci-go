@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9fb582ba_770912e0",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T18:34:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "90ffe318_53f5ff0c",
+      "range": {
+        "startLine": 257,
+        "startChar": 43,
+        "endLine": 257,
+        "endChar": 52
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c38080a_a73cb142",
         "filename": "cipd/client/cipd/reader/reader.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "137771a0_9d3d737f",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T18:34:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c38080a_a73cb142",
+      "range": {
+        "startLine": 308,
+        "startChar": 5,
+        "endLine": 308,
+        "endChar": 16
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "8d82a6a4_f0ab59d5",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T18:34:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0a68f5f_5e74441e",
+      "range": {
+        "startLine": 307,
+        "startChar": 0,
+        "endLine": 316,
+        "endChar": 1
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "284f84dd_cdbb70b8",
         "filename": "cipd/client/cipd/reader/reader_test.go",
         "patchSetId": 9
@@ -91,6 +163,30 @@
       "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "352a268f_6ed6e899",
+        "filename": "cipd/client/cipd/reader/reader_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2019-10-14T18:34:40Z",
+      "side": 1,
+      "message": "Nope, thanks for catching that.",
+      "parentUuid": "284f84dd_cdbb70b8",
+      "range": {
+        "startLine": 85,
+        "startChar": 0,
+        "endLine": 100,
+        "endChar": 1
+      },
+      "revId": "c7415b1afccd0e42443595e05f69be0fb3a862b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
