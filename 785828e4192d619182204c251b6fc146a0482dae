@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34417c70_292dfe1d",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 642,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:56:52Z",
+      "side": 1,
+      "message": "This is easy to forget to call, consider changing it into `maxThreads, err :\u003d c.loadMaxThreads(ctx)` and using it everywhere where c.maxThreads is directly used now.",
+      "range": {
+        "startLine": 642,
+        "startChar": 0,
+        "endLine": 642,
+        "endChar": 67
+      },
+      "revId": "785828e4192d619182204c251b6fc146a0482dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da5fde56_acd95ee5",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 643,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-14T18:56:52Z",
+      "side": 1,
+      "message": "nit: use cli.Getenv instead, MakeGetEnv exists as a compatibility shim, it\u0027s not necessary here.",
+      "range": {
+        "startLine": 643,
+        "startChar": 1,
+        "endLine": 643,
+        "endChar": 30
+      },
+      "revId": "785828e4192d619182204c251b6fc146a0482dae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
