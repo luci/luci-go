@@ -93,7 +93,7 @@ CREATE TABLE Inclusions (
 
   -- If not NULL, this inclusion is overridden by inclusion
   -- (InvocationId, OverridenByIncludedInvocationID).
-  OverridenByIncludedInvocationID STRING (MAX),
+  OverridenByIncludedInvocationId STRING (MAX),
 
   -- Whether the included invocation is finalized before the including one.
   -- See also Inclusion.ready in invocation.proto
