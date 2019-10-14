@@ -99,6 +99,7 @@ const (
 const (
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
+	EnvMaxThreads          = "CIPD_MAX_THREADS"
 )
 
 var (
