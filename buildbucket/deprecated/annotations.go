@@ -38,18 +38,6 @@ import (
 // StepSep separates parent and child steps.
 const StepSep = "|"
 
-var markdownEscaper *strings.Replacer
-
-func init() {
-	const special = "#*_"
-	oldNew := make([]string, 2*len(special))
-	for i, c := range special {
-		oldNew[i*2] = string(c)
-		oldNew[i*2+1] = `\` + string(c)
-	}
-	markdownEscaper = strings.NewReplacer(oldNew...)
-}
-
 // ConvertBuildSteps converts a build given the root step's substeps, which must
 // be the actual steps of the build, and the Logdog URL for links conversion.
 // The provided context is used only for logging.
@@ -152,11 +140,9 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*pb.Step, ann
 	// Preserve this semantics (except, it is not safe).
 	// HTML is valid Markdown, so use it as is.
 	if len(ann.Text) > 0 {
-		escaped := make([]string, len(ann.Text))
-		for i, text := range ann.Text {
-			escaped[i] = markdownEscaper.Replace(text)
-		}
-		summary = append(summary, strings.Join(escaped, " "))
+		// enclose ann.Text in a div so they are treated as plain text or HTML.
+		// use 2 \n so the div is guaranteed to be separated from other sections
+		summary = append(summary, fmt.Sprintf("\n\n<div>%s</div>\n\n", strings.Join(ann.Text, " ")))
 	}
 
 	// Handle logs.
