@@ -30,6 +30,9 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 // CreateInvocation response includes a metadata key "update_token".
 // It MUST be passed to all other mutation RPCs, such as CreateTestResult.
 // Otherwise the request will fail with UNAUTHENTICATED error code.
+//
+// RPCs that mutate an invocation return FAILED_PRECONDITION error code if the
+// invocation is finalized.
 service Recorder {
 
   // == Invocations ============================================================
@@ -44,8 +47,6 @@ service Recorder {
   rpc CreateInvocation(CreateInvocationRequest) returns (Invocation) {};
 
   // Updates an existing non-finalized invocation.
-  // If the invocation is already final on the server, FAILED_PRECONDITION is
-  // returned.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (Invocation) {};
 
   // Transitions the given invocation to the state FINALIZED.

@@ -40,6 +40,17 @@ func ParseInvocationName(name string) (id string, err error) {
 	return m[1], nil
 }
 
+// MustParseInvocationName retrieves the invocation id.
+// Panics if the name is invalid. Useful for situations when name was already
+// validated.
+func MustParseInvocationName(name string) (id string) {
+	id, err := ParseInvocationName(name)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
 // InvocationName produces an invocation name from an id.
 // Does not validate id, use ValidateInvocationID.
 func InvocationName(id string) string {

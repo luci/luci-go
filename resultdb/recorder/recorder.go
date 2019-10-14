@@ -17,8 +17,6 @@ package main
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
-
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -44,11 +42,6 @@ func (s *RecorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 
 // FinalizeInvocation implements pb.RecorderServer.
 func (s *RecorderServer) FinalizeInvocation(ctx context.Context, in *pb.FinalizeInvocationRequest) (*pb.Invocation, error) {
-	return nil, grpcutil.Unimplemented
-}
-
-// Include implements pb.RecorderServer.
-func (s *RecorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*empty.Empty, error) {
 	return nil, grpcutil.Unimplemented
 }
 
