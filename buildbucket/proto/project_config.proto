@@ -74,7 +74,7 @@ message AclSet {
 // a user that has permissions to schedule a build to the bucket, can override
 // this config.
 //
-// Next tag: 25.
+// Next tag: 26.
 message Builder {
   reserved 8;  // cipd_packages
   reserved 11; // build_numbers of the old format.
@@ -398,6 +398,15 @@ message Builder {
   // A value from 0 to 100.
   // If omitted, a global server-defined default percentage is used.
   google.protobuf.UInt32Value task_template_canary_percentage = 22;
+
+  // If NO, then the build status SHOULD NOT be used to assess correctness of
+  // the input gitiles_commit or gerrit_changes.
+  //
+  // For example, if a pre-submit build has failed, CQ MAY still land the CL.
+  // For example, if a post-submit build has failed, CLs MAY continue landing.
+  // The critical value of the builder will be carried over as the default
+  // critical value of its builds
+  buildbucket.v2.Trinary critical = 25;
 }
 
 // Configuration of buildbucket-swarming integration for one bucket.
