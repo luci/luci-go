@@ -138,7 +138,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// Do the fetch asynchronously with datastore update.
 	go func() {
 		defer close(result)
-		c, _ := clock.WithTimeout(c, time.Duration(timeout)*time.Second)
+		c, cancel := clock.WithTimeout(c, time.Duration(timeout)*time.Second)
+		defer cancel()
 		client := &http.Client{Transport: urlfetch.Get(c)}
 		resp, err := client.Do(&http.Request{
 			Method: method,

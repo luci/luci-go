@@ -387,9 +387,9 @@ func (u *Uploader) updateUploads(ctx context.Context, count int64, status string
 // struct values are mapped to rows.
 func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 	if _, ok := ctx.Deadline(); !ok {
-		var c context.CancelFunc
-		ctx, c = context.WithTimeout(ctx, time.Minute)
-		defer c()
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Minute)
+		defer cancel()
 	}
 	rows := make([]*Row, len(messages))
 	for i, m := range messages {
