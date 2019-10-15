@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
-	"go.chromium.org/luci/tokenserver/api"
+	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/client"
 )
 
@@ -208,27 +208,28 @@ var (
 // SendMetrics is called at the end of the token update process.
 //
 // It dumps all relevant metrics to tsmon.
-func (s *StatusReport) SendMetrics(c context.Context) error {
-	c, _ = context.WithTimeout(c, 10*time.Second)
+func (s *StatusReport) SendMetrics(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	rep := s.Report()
 
-	metricVersion.Set(c, rep.TokendVersion)
+	metricVersion.Set(ctx, rep.TokendVersion)
 	if rep.ServiceVersion != "" {
-		metricServiceVersion.Set(c, rep.ServiceVersion)
+		metricServiceVersion.Set(ctx, rep.ServiceVersion)
 	}
 	if rep.TokenExpiryTS != 0 {
-		metricTokenExpiry.Set(c, rep.TokenExpiryTS*1000000)
+		metricTokenExpiry.Set(ctx, rep.TokenExpiryTS*1000000)
 	}
 	if rep.TokenLastUpdateTS != 0 {
-		metricTokenLastUpdate.Set(c, rep.TokenLastUpdateTS*1000000)
+		metricTokenLastUpdate.Set(ctx, rep.TokenLastUpdateTS*1000000)
 	}
 	if rep.TokenNextUpdateTS != 0 {
-		metricTokenNextUpdate.Set(c, rep.TokenNextUpdateTS*1000000)
+		metricTokenNextUpdate.Set(ctx, rep.TokenNextUpdateTS*1000000)
 	}
-	metricUpdateOutcome.Set(c, rep.UpdateOutcome)
-	metricUpdateReason.Set(c, rep.UpdateReason)
-	metricTotalDuration.Set(c, rep.TotalDuration)
-	metricRPCDuration.Set(c, rep.RPCDuration)
+	metricUpdateOutcome.Set(ctx, rep.UpdateOutcome)
+	metricUpdateReason.Set(ctx, rep.UpdateReason)
+	metricTotalDuration.Set(ctx, rep.TotalDuration)
+	metricRPCDuration.Set(ctx, rep.RPCDuration)
 
-	return tsmon.Flush(c)
+	return tsmon.Flush(ctx)
 }
