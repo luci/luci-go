@@ -78,7 +78,8 @@ func (r *FetchCRLRPC) FetchCRL(c context.Context, req *admin.FetchCRLRequest) (*
 	if req.Force {
 		knownETag = ""
 	}
-	fetchCtx, _ := clock.WithTimeout(c, time.Minute)
+	fetchCtx, cancel := clock.WithTimeout(c, time.Minute)
+	defer cancel()
 	crlDer, newEtag, err := fetchCRL(fetchCtx, cfg, knownETag)
 	switch {
 	case transient.Tag.In(err):

@@ -340,8 +340,8 @@ var fetchLUCIServiceIdentity = signing.FetchLUCIServiceIdentity
 func resolveServiceIDs(c context.Context, urls []string, out *identityset.Set) error {
 	// URL fetch calls below should be extra fast. If they get stuck, something is
 	// horribly wrong, better to abort soon.
-	c, abort := clock.WithTimeout(c, 5*time.Second)
-	defer abort()
+	c, cancel := clock.WithTimeout(c, 5*time.Second)
+	defer cancel()
 
 	type Result struct {
 		URL string

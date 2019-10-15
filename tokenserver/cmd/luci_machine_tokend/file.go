@@ -32,7 +32,7 @@ var counter int32
 //
 // It will retry a bunch of times on permission errors on Windows, where reader
 // may lock the file.
-func AtomicWriteFile(c context.Context, path string, body []byte, perm os.FileMode) error {
+func AtomicWriteFile(ctx context.Context, path string, body []byte, perm os.FileMode) error {
 	// Write the body to some temp file in the same directory.
 	tmp := fmt.Sprintf(
 		"%s.%d_%d_%d.tmp", path, os.Getpid(),
@@ -44,7 +44,8 @@ func AtomicWriteFile(c context.Context, path string, body []byte, perm os.FileMo
 	// Try to replace the target file a bunch of times, retrying "Access denied"
 	// errors. They happen on Windows if file is locked by some other process.
 	// We assume other processes do not lock token file for too long.
-	c, _ = context.WithTimeout(c, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	var err error
 
 loop:
@@ -55,8 +56,8 @@ loop:
 		case !os.IsPermission(err):
 			break loop // some unretriable fatal error
 		default: // permission error
-			logging.Warningf(c, "Failed to replace %q - %s", path, err)
-			if tr := clock.Sleep(c, 500*time.Millisecond); tr.Incomplete() {
+			logging.Warningf(ctx, "Failed to replace %q - %s", path, err)
+			if tr := clock.Sleep(ctx, 500*time.Millisecond); tr.Incomplete() {
 				break loop // timeout, giving up
 			}
 		}

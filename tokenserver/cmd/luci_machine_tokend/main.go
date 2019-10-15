@@ -159,6 +159,7 @@ func realMain() int {
 	}
 
 	ctx, cancel := context.WithTimeout(root, opts.Timeout)
+	defer cancel()
 	signals.HandleInterrupt(cancel)
 
 	statusReport := StatusReport{

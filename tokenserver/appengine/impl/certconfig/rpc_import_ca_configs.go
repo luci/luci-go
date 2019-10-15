@@ -188,8 +188,8 @@ func (r *ImportCAConfigsRPC) SetupConfigValidation(rules *validation.RuleSet) {
 func fetchConfigFile(c context.Context, path string) (string, *config.Meta, error) {
 	configSet := cfgclient.CurrentServiceConfigSet(c)
 	logging.Infof(c, "Reading %q from config set %q", path, configSet)
-	c, cancelFunc := context.WithTimeout(c, 29*time.Second) // URL fetch deadline
-	defer cancelFunc()
+	c, cancel := context.WithTimeout(c, 29*time.Second) // URL fetch deadline
+	defer cancel()
 
 	var (
 		content string
