@@ -430,15 +430,14 @@ func (g *graphWalker) excludedAttempt(aid *dm.Attempt_ID) bool {
 	return idx < len(nums) && nums[idx] == aid.Id
 }
 
-func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
-	cncl := (func())(nil)
+func doGraphWalk(ctx context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
 	timeoutProto := req.Limit.MaxTime
 	timeout := google.DurationFromProto(timeoutProto)
 	if timeoutProto == nil || timeout > maxTimeout {
 		timeout = maxTimeout
 	}
-	c, cncl = clock.WithTimeout(c, timeout)
-	defer cncl()
+	ctx, cancel := clock.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	// nodeChan recieves attempt nodes to process. If it recieves the
 	// `finishedJob` sentinel node, that indicates that an outstanding worker is
@@ -446,7 +445,7 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 	nodeChan := make(chan *node, numWorkers)
 	defer close(nodeChan)
 
-	g := graphWalker{Context: c, req: req}
+	g := graphWalker{Context: ctx, req: req}
 
 	sendNodeAuthed := func(depth int64) func(*dm.Attempt_ID, bool) error {
 		if req.Limit.MaxDepth != -1 && depth > req.Limit.MaxDepth {
@@ -456,8 +455,8 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 			select {
 			case nodeChan <- &node{aid: aid, depth: depth, canSeeAttemptResult: isAuthed}:
 				return nil
-			case <-c.Done():
-				return c.Err()
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 		}
 	}
@@ -467,8 +466,8 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 			select {
 			case nodeChan <- &node{aid: aid, depth: depth}:
 				return nil
-			case <-c.Done():
-				return c.Err()
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 		}
 	}
@@ -483,7 +482,7 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 	outstandingJobs := 0
 
 	addJob := func(f func() error) {
-		if c.Err() != nil { // we're done adding work, ignore this job
+		if ctx.Err() != nil { // we're done adding work, ignore this job
 			return
 		}
 		outstandingJobs++
@@ -506,7 +505,7 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 	})
 
 	g.lim = &sizeLimit{0, req.Limit.MaxDataSize}
-	g.reg = distributor.GetRegistry(c)
+	g.reg = distributor.GetRegistry(ctx)
 	rsp = &dm.GraphData{Quests: map[string]*dm.Quest{}}
 	// main graph walk processing loop
 	for outstandingJobs > 0 || len(nodeChan) > 0 {
@@ -560,7 +559,7 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 		}
 	}
 
-	if c.Err() != nil {
+	if ctx.Err() != nil {
 		rsp.HadMore = true
 	}
 	return
@@ -599,13 +598,13 @@ func doGraphWalk(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, er
 //         maybeLoadBackDeps // sends to nodeChan if walking direction Back|Both
 //       )
 //     }
-func (d *deps) WalkGraph(c context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
+func (d *deps) WalkGraph(ctx context.Context, req *dm.WalkGraphReq) (rsp *dm.GraphData, err error) {
 	if req.Auth != nil {
-		logging.Fields{"execution": req.Auth.Id}.Debugf(c, "on behalf of")
+		logging.Fields{"execution": req.Auth.Id}.Debugf(ctx, "on behalf of")
 	} else {
-		if err = canRead(c); err != nil {
+		if err = canRead(ctx); err != nil {
 			return
 		}
 	}
-	return doGraphWalk(c, req)
+	return doGraphWalk(ctx, req)
 }
