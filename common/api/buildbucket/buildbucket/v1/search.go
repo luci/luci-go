@@ -108,7 +108,9 @@ outer:
 			func() error {
 				var err error
 				// Set a timeout for this particular RPC.
-				c.ctx_, _ = context.WithTimeout(ctx, time.Minute)
+				var cancel context.CancelFunc
+				c.ctx_, cancel = context.WithTimeout(ctx, time.Minute)
+				defer cancel()
 				res, err = c.Do()
 				c.ctx_ = origCtx // for code clarity only
 

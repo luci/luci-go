@@ -39,7 +39,7 @@ import (
 	"go.chromium.org/luci/luci_notify/notify"
 )
 
-var bulidbucketPubSub = metric.NewCounter(
+var buildbucketPubSub = metric.NewCounter(
 	"luci/notify/buildbucket-pubsub",
 	"Number of received Buildbucket PubSub messages",
 	nil,
@@ -62,8 +62,9 @@ func main() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		c.Context, _ = context.WithTimeout(c.Context, 50*time.Second)
-		ctx := c.Context
+		ctx, cancel := context.WithTimeout(c.Context, 50*time.Second)
+		defer cancel()
+		c.Context = ctx
 
 		status := ""
 		switch err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); {
@@ -81,7 +82,7 @@ func main() {
 			status = "success"
 		}
 
-		bulidbucketPubSub.Add(ctx, 1, status)
+		buildbucketPubSub.Add(ctx, 1, status)
 	})
 
 	http.Handle("/", r)
