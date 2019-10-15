@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34d1b966_26398576",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-15T15:13:33Z",
+      "side": 1,
+      "message": "nit: add one empty line // s.t. it\u0027s easier to read/skim over just the first 2 lines.",
+      "revId": "78acab65c4fd7f18b1fbfcb3ea97074959dcf745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
