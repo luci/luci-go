@@ -27,7 +27,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
 
 // Service to record test results.
 //
-// CreateInvocation response includes a metadata key "update_token".
+// CreateInvocation response includes a metadata key "update-token".
 // It MUST be passed to all other mutation RPCs, such as CreateTestResult.
 // Otherwise the request will fail with UNAUTHENTICATED error code.
 //
@@ -40,7 +40,8 @@ service Recorder {
   // Creates a new invocation.
   // The request specifies the invocation id and its contents.
   //
-  // The response includes Invocation.update_token for future updates.
+  // The response header medata contains "update-token" required for future
+  // updates, including finalization.
   //
   // If invocation with the given ID already exists, returns ALREADY_EXISTS
   // error code.

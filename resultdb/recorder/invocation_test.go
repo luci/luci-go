@@ -45,7 +45,7 @@ func TestMayMutateInvocation(t *testing.T) {
 
 		Convey("no token", func() {
 			err := mayMutate()
-			So(err, ShouldErrLike, `missing "update_token" metadata value`)
+			So(err, ShouldErrLike, `missing "update-token" metadata value`)
 			So(grpcutil.Code(err), ShouldEqual, codes.Unauthenticated)
 		})
 

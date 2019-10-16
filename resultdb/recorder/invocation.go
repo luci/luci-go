@@ -29,11 +29,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-const updateTokenMetadataKey = "update_token"
+const updateTokenMetadataKey = "update-token"
 
 // mayMutateInvocation returns an error if the requester may not mutate the
 // invocation.
-// ctx must contain "update_token" metadata value.
+// ctx must contain "update-token" metadata value.
 func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error {
 	userToken, err := extractUserUpdateToken(ctx)
 	if err != nil {
