@@ -16,8 +16,13 @@ package span
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"cloud.google.com/go/spanner"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // This file implements utility functions that make spanner API slightly easier
@@ -49,5 +54,80 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 		return err
 	}
 
-	return row.Columns(ptrs...)
+	// Generate new pointers slice with substitutions for Spanner-unsupported types.
+	subPtrs := replacePointers(ptrs)
+
+	if err := row.Columns(subPtrs...); err != nil {
+		return err
+	}
+
+	// Assign all the values back into the original pointer map.
+	replaceValues(ptrs, subPtrs)
+	return nil
+}
+
+// replacePointers returns a new slice replacing the pointers to
+// Spanner-unsupported types with pointers to ones Spanner does support.
+//
+// In the case of supported types, ptrs[i] and subPtrs[i] are equivalent.
+// In the case of unsupported types, ptrs[i] is typically a pointer to a
+// variable, which itself is a pointer, whereas subPtrs[i] is just the pointer
+// to the value.
+func replacePointers(ptrs []interface{}) []interface{} {
+	subPtrs := make([]interface{}, len(ptrs))
+
+	for i, ptr := range ptrs {
+		switch ptr.(type) {
+		case **tspb.Timestamp:
+			subPtrs[i] = &time.Time{}
+		case *pb.Invocation_State:
+			var tmp int64
+			subPtrs[i] = &tmp
+		default:
+			subPtrs[i] = ptrs[i]
+		}
+	}
+
+	return subPtrs
+}
+
+// replaceValues looks through all the mapped substitutes and replaces them back
+// into the original pointer slice, with their correct values.
+func replaceValues(ptrs []interface{}, subPtrs []interface{}) {
+	if len(ptrs) != len(subPtrs) {
+		panic(fmt.Sprintf(
+			"original ptr slice length (%d) and replacement ptr slice length (%d) should match",
+			len(ptrs), len(subPtrs)))
+	}
+
+	for i, ptr := range ptrs {
+		if ptr == subPtrs[i] {
+			continue
+		}
+
+		switch pOrig := ptr.(type) {
+		case **tspb.Timestamp:
+			pSub, ok := subPtrs[i].(*time.Time)
+			if !ok {
+				panic(fmt.Sprintf(
+					"expected **timestamp.Timestamp replaced with *time.Time in column %d", i))
+			}
+			*pOrig = &tspb.Timestamp{
+				Seconds: pSub.Unix(),
+				Nanos:   int32(pSub.UnixNano() - 1e9*pSub.Unix()),
+			}
+
+		case *pb.Invocation_State:
+			pSub, ok := subPtrs[i].(*int64)
+			if !ok {
+				panic(fmt.Sprintf(
+					"expected *pb.Invocation_State replaced with *int in column %d", i))
+			}
+			*pOrig = pb.Invocation_State(*pSub)
+
+		default:
+			panic(fmt.Sprintf(
+				"original type should have been unmodified or handled specifically in column %d", i))
+		}
+	}
 }
