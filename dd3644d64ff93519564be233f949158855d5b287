@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1bd9c1e_e2e707a7",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:47:06Z",
+      "side": 1,
+      "message": "pb.go files should have been regenerated",
+      "revId": "dd3644d64ff93519564be233f949158855d5b287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a8bd66e_8c77df66",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:47:06Z",
+      "side": 1,
+      "message": "looks like this was copied from build.proto, which means this can get out of sync. It is better to just refer to that field instead of copying.\n\nalso, this does not explain that this is the default for Build.critical, and it can be overridden by ScheduleBuildRequest.critical",
+      "revId": "dd3644d64ff93519564be233f949158855d5b287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
