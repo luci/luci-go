@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "71e20c5f_b26a2fa2",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T19:26:09Z",
+      "side": 1,
+      "message": "i am not aware of a rule related to this",
+      "parentUuid": "13e6c389_c4ec947b",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "80af9a73_9e84da87",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
