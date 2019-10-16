@@ -15,13 +15,42 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
-	"go.chromium.org/luci/common/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/resultdb"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+const (
+	// accessGroup is a CIA group that can create invocations.
+	// TODO(crbug.com/1013316): remove in favor of realms.
+	accessGroup = "luci-resultdb-access"
+
+	// Delete Invocations row after this duration since invocation creation.
+	invocationExpirationDuration = 365 * 24 * time.Hour // 1y
+
+	// Delete expected test results afte this duration since invocation creation.
+	expectedTestResultsExpirationDuration = 2 * 30 * 24 * time.Hour // 2mo
+
+	// By default, interrupt the invocation 1h after creation if it is still
+	// incomplete.
+	defaultInvocationDeadlineDuration = time.Hour
 )
 
 // validateCreateInvocationRequest returns an error if req is determined to be
@@ -58,4 +87,89 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	return nil
+}
+
+// CreateInvocation implements pb.RecorderServer.
+func (s *RecorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
+	now := clock.Now(ctx)
+	if err := mayCreateInvocation(ctx); err != nil {
+		return nil, errors.Annotate(err, "").Err()
+	}
+	if err := validateCreateInvocationRequest(in, now); err != nil {
+		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Prepare the invocation we will return.
+	inv := &pb.Invocation{
+		Name:               pbutil.InvocationName(in.InvocationId),
+		Deadline:           in.Invocation.GetDeadline(),
+		BaseTestVariantDef: in.Invocation.GetBaseTestVariantDef(),
+		Tags:               in.Invocation.GetTags(),
+	}
+	pbutil.NormalizeInvocation(inv)
+
+	// Return update token to the client.
+	updateToken, err := generateUpdateToken()
+	if err != nil {
+		return nil, err
+	}
+	prpc.SetHeader(ctx, metadata.Pairs(updateTokenMetadataKey, updateToken))
+
+	// Determine the deadline and expiration times.
+	if inv.Deadline == nil {
+		var err error
+		inv.Deadline, err = ptypes.TimestampProto(now.Add(defaultInvocationDeadlineDuration))
+		if err != nil {
+			panic(err)
+		}
+	}
+	deadline, _ := ptypes.Timestamp(inv.Deadline)
+	invExpiration := now.Add(invocationExpirationDuration)
+	resultsExpiration := now.Add(expectedTestResultsExpirationDuration)
+	const week = 7 * 24 * time.Hour
+
+	// Write to Spanner.
+	_, err = span.Client(ctx).Apply(ctx, []*spanner.Mutation{
+		spanner.InsertMap("Invocations", map[string]interface{}{
+			"InvocationId":                      in.InvocationId,
+			"State":                             int64(pb.Invocation_ACTIVE),
+			"Realm":                             "chromium", // TODO(crbug.com/1013316): accept realm in the proto
+			"InvocationExpirationTime":          invExpiration,
+			"InvocationExpirationWeek":          invExpiration.Truncate(week),
+			"ExpectedTestResultsExpirationTime": resultsExpiration,
+			"ExpectedTestResultsExpirationWeek": resultsExpiration.Truncate(week),
+			"UpdateToken":                       updateToken,
+			"CreateTime":                        now,
+			"Deadline":                          deadline,
+			"BaseTestVariantDef":                resultdb.VariantDefMap(inv.BaseTestVariantDef.GetDef()).SortedStrings(),
+			"Tags":                              pbutil.StringPairsToStrings(inv.Tags...),
+		}),
+	})
+	switch {
+	case spanner.ErrCode(err) == codes.AlreadyExists:
+		return nil, errors.Reason("invocation %q already exists", inv.Name).
+			Tag(grpcutil.AlreadyExistsTag).
+			InternalReason("%s", err).
+			Err()
+	default:
+		return inv, err
+	}
+}
+
+func mayCreateInvocation(ctx context.Context) error {
+	// TODO(crbug.com/1013316): use realms.
+	switch allowed, err := auth.IsMember(ctx, accessGroup); {
+	case err != nil:
+		return err
+	case !allowed:
+		return errors.Reason("%s is not a member of %s", auth.CurrentIdentity(ctx), accessGroup).Tag(grpcutil.PermissionDeniedTag).Err()
+	default:
+		return nil
+	}
+}
+
+func generateUpdateToken() (string, error) {
+	buf := make([]byte, 32)
+	_, err := rand.Read(buf)
+	return hex.EncodeToString(buf), err
 }
