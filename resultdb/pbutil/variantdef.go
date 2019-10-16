@@ -30,3 +30,16 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 	}
 	return nil
 }
+
+// VariantDefFromStrings returns a VariantDef proto given the key:val string slice of its contents.
+func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
+	defMap := map[string]string{}
+	for i, p := range pairs {
+		pair, err := StringPairFromString(p)
+		if err != nil {
+			return nil, errors.Annotate(err, "pair %d", i).Err()
+		}
+		defMap[pair.Key] = pair.Value
+	}
+	return &pb.VariantDef{Def: defMap}, nil
+}
