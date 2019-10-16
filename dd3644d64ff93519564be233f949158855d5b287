@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "c056c3c2_3a260536",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T05:15:27Z",
+      "side": 1,
+      "message": "standard `go generate` https://blog.golang.org/generate",
+      "parentUuid": "ad6813e8_92f68175",
+      "revId": "dd3644d64ff93519564be233f949158855d5b287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a8bd66e_8c77df66",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 4
