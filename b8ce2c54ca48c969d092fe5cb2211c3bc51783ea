@@ -25,6 +25,156 @@
     },
     {
       "key": {
+        "uuid": "18b8ce48_97a7b09e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "also a screenshot is more appropriate for a commint/email in CL, not CL description, since CL description will go into the commit message. Besides, this is a public CL and the link is internal.",
+      "parentUuid": "99c8eaca_1d207743",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9666d9e7_f2371b96",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "this logs the same thing twice. let\u0027s log once\n\nsame below.",
+      "range": {
+        "startLine": 434,
+        "startChar": 3,
+        "endLine": 435,
+        "endChar": 10
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a5b4fe3_6e4a17a0",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "this returns HTTP OK with no explanation. I think it should be HTTP 400.\n\nsame below",
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fe9945d_08d85071",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "nit: please split in two lines. Combining these two assignments hurts readability",
+      "range": {
+        "startLine": 438,
+        "startChar": 8,
+        "endLine": 438,
+        "endChar": 9
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b70b99cd_5610de9e",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "it is a string though\ndo you mean non-empty string?\n\nin that case, you might also want to do strings.TrimSpace",
+      "range": {
+        "startLine": 452,
+        "startChar": 75,
+        "endLine": 452,
+        "endChar": 92
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49399d7d_8f662a06",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "everything above is interpretation of input and its validation. consider moving it to a separate func that only return an error and does not log anything. Then this func would be responsible for calling that and log an error, if any",
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120161da_d0992aaf",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "error handling here should depend on error code, use https://godoc.org/google.golang.org/grpc/status#Code to retrieve it from err",
+      "range": {
+        "startLine": 457,
+        "startChar": 61,
+        "endLine": 457,
+        "endChar": 64
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fbcd2ece_11060072",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -59,6 +209,30 @@
       "writtenOn": "2019-10-16T02:30:51Z",
       "side": 1,
       "message": "I know the underlying proto field is called summary_markdown, but can we name this something more descriptive (like \"reason\"?)",
+      "range": {
+        "startLine": 138,
+        "startChar": 29,
+        "endLine": 138,
+        "endChar": 45
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a05ca9f_d0ca243c",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T04:14:00Z",
+      "side": 1,
+      "message": "+1. actually `bb cancel` command accepts it as -reason flag too. field name should entail the purpose",
+      "parentUuid": "31b4e9ee_adcbfd4f",
       "range": {
         "startLine": 138,
         "startChar": 29,
