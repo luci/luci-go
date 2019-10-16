@@ -17,11 +17,13 @@ package main
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -32,13 +34,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMayMutateInvocation(t *testing.T) {
+func TestCheckAndUpdateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		client := span.Client(ctx)
 
 		mayMutate := func() error {
-			_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-				return mayMutateInvocation(ctx, txn, "inv")
+			_, err := client.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+				return checkAndUpdateInvocation(ctx, txn, "inv")
 			})
 			return err
 		}
@@ -71,6 +74,29 @@ func TestMayMutateInvocation(t *testing.T) {
 				err := mayMutate()
 				So(err, ShouldErrLike, `invalid update token`)
 				So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			})
+
+			Convey(`with exceeded deadline`, func() {
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token))
+
+				// Mock time.
+				now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+				ctx, _ = testclock.UseTime(ctx, now)
+
+				err := mayMutate()
+				So(err, ShouldErrLike, `"invocations/inv" has exceeded deadline`)
+				So(grpcutil.Code(err), ShouldEqual, codes.DeadlineExceeded)
+
+				// Confirm the invocation has been finalized.
+				var state int64
+				var ft time.Time
+
+				err = span.ReadRow(ctx, client.Single(), "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+					"State":        &state,
+					"FinalizeTime": &ft,
+				})
+				So(state, ShouldEqual, pb.Invocation_INTERRUPTED)
+				So(ft, ShouldEqual, now)
 			})
 
 			Convey(`with active invocation and same token`, func() {
