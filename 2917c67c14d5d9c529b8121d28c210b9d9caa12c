@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "e7b61819_48be1a10",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-16T18:12:40Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 66,
+        "startChar": 11,
+        "endLine": 66,
+        "endChar": 14
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13e6c389_c4ec947b",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-16T18:12:40Z",
+      "side": 1,
+      "message": "General question: What\u0027s the conversion for function ordering? Should private functions be at the beginning or end of a file?",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "80af9a73_9e84da87",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
