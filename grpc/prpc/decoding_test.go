@@ -177,18 +177,21 @@ func TestDecoding(t *testing.T) {
 			}
 
 			Convey("without metadata in context", func() {
-				test(c, headers, metadata.MD(headers))
+				test(c, headers, metadata.MD{
+					"x": []string{"1"},
+					"y": []string{"1", "2"},
+				})
 			})
 
 			Convey("with metadata in context", func() {
 				c = metadata.NewIncomingContext(c, metadata.MD{
-					"X": []string{"0"},
-					"Z": []string{"1"},
+					"x": []string{"0"},
+					"z": []string{"1"},
 				})
 				test(c, headers, metadata.MD{
-					"X": []string{"0", "1"},
-					"Y": []string{"1", "2"},
-					"Z": []string{"1"},
+					"x": []string{"0", "1"},
+					"y": []string{"1", "2"},
+					"z": []string{"1"},
 				})
 			})
 
@@ -197,7 +200,7 @@ func TestDecoding(t *testing.T) {
 					const name = "Lucy"
 					b64 := base64.StdEncoding.EncodeToString([]byte(name))
 					test(c, header("Name-Bin", b64), metadata.MD{
-						"Name": []string{name},
+						"name": []string{name},
 					})
 				})
 				Convey("Fails", func() {

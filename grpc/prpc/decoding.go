@@ -17,11 +17,9 @@ package prpc
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -33,13 +31,7 @@ import (
 
 // This file implements decoding of HTTP requests to RPC parameters.
 
-const (
-	// headerSuffixBinary is a suffix of an HTTP header that specifies that
-	// the header value is encoded in std base64.
-	// After decoding, a handler must process the header without the suffix.
-	headerSuffixBinary = "-Bin"
-	headerContentType  = "Content-Type"
-)
+const headerContentType = "Content-Type"
 
 // readMessage decodes a protobuf message from an HTTP request.
 // Does not close the request body.
@@ -116,17 +108,12 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 
 		default:
 			addedMeta = true
-			if !strings.HasSuffix(name, headerSuffixBinary) {
-				md[name] = append(md[name], values...)
-				break // switch name
-			}
-			trimmedName := strings.TrimSuffix(name, headerSuffixBinary)
 			for _, v := range values {
-				decoded, err := base64.StdEncoding.DecodeString(v)
+				mdKey, mdValue, err := headerToMeta(name, v)
 				if err != nil {
 					return origC, fmt.Errorf("%s header: %s", name, err)
 				}
-				md[trimmedName] = append(md[trimmedName], string(decoded))
+				md.Append(mdKey, mdValue)
 			}
 		}
 	}
