@@ -348,6 +348,11 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 		scanner := bufio.NewScanner(bytes.NewReader(data))
 		for scanner.Scan() {
 			if line := scanner.Text(); alreadySkippedHeader || !apiGoGenLicenseHdr.MatchString(line) {
+				// Use a vendored copy of "google.golang.org/api/internal/gensupport", since
+				// we can't refer to the internal one. See crbug.com/1003496.
+				line = strings.ReplaceAll(line,
+					`"google.golang.org/api/internal/gensupport"`,
+					`"go.chromium.org/luci/common/api/internal/gensupport"`)
 				filtered.WriteString(line)
 				filtered.WriteRune('\n')
 				continue
