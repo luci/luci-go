@@ -20,11 +20,13 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/internal"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func main() {
 	server.Main(nil, func(srv *server.Server) error {
+		srv.PRPC.UnaryServerInterceptor = internal.CommonRPCInterceptor
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "DEV Hello debug world")
 			logging.Infof(c.Context, "DEV Hello info world")

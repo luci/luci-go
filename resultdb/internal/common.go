@@ -18,6 +18,10 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 var httpClientCtxKey = "context key for a *http.Client"
@@ -34,4 +38,17 @@ func HTTPClient(ctx context.Context) *http.Client {
 		panic("no HTTP client in context")
 	}
 	return client
+}
+
+// CommonRPCInterceptor implements functionality needed in all RPCs.
+func CommonRPCInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	res, err := handler(ctx, req)
+
+	// Extract gRPC code from a tag and convert the error to a gRPC-native error.
+	if code, ok := grpcutil.Tag.In(err); ok {
+		return nil, status.Error(code, err.Error())
+	}
+
+	// TODO(jchinlee): record RPC code in tsmon.
+	return res, err
 }
