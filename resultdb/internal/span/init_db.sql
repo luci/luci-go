@@ -43,7 +43,7 @@ CREATE TABLE Invocations (
 
   -- Secret token that a client must provide to mutate this or any of the
   -- interleaved rows.
-  UpdateToken STRING(64) NOT NULL,
+  UpdateToken STRING(64),
 
   -- When the invocation was created.
   CreateTime TIMESTAMP NOT NULL,
