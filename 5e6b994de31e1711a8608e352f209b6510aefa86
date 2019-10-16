@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ce07450_5842da73",
+        "filename": "auth/internal/gce.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T22:29:31Z",
+      "side": 1,
+      "message": "is this missing `!`?",
+      "range": {
+        "startLine": 60,
+        "startChar": 4,
+        "endLine": 60,
+        "endChar": 6
+      },
+      "revId": "5e6b994de31e1711a8608e352f209b6510aefa86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
