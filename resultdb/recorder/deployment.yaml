@@ -21,14 +21,14 @@ metadata:
   labels:
     app: recorder
 spec:
-  type: LoadBalancer
-  ports:
-  - name: http
-    port: 80
-    targetPort: http-server
-    protocol: TCP
+  type: NodePort
   selector:
     app: recorder
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http-server
+    protocol: TCP
 
 ---
 
