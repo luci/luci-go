@@ -792,7 +792,8 @@ type RecorderClient interface {
 	// Creates a new invocation.
 	// The request specifies the invocation id and its contents.
 	//
-	// The response includes Invocation.update_token for future updates.
+	// The response header medata contains "update-token" required for future
+	// updates, including finalization.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
@@ -1004,7 +1005,8 @@ type RecorderServer interface {
 	// Creates a new invocation.
 	// The request specifies the invocation id and its contents.
 	//
-	// The response includes Invocation.update_token for future updates.
+	// The response header medata contains "update-token" required for future
+	// updates, including finalization.
 	//
 	// If invocation with the given ID already exists, returns ALREADY_EXISTS
 	// error code.
