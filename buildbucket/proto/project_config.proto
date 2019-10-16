@@ -399,13 +399,11 @@ message Builder {
   // If omitted, a global server-defined default percentage is used.
   google.protobuf.UInt32Value task_template_canary_percentage = 22;
 
-  // If NO, then the build status SHOULD NOT be used to assess correctness of
-  // the input gitiles_commit or gerrit_changes.
+  // This field will set the default value of the "critical" field of
+  // all the builds of this builder. Please refer to build.proto for
+  // the meaning of this field.
   //
-  // For example, if a pre-submit build has failed, CQ MAY still land the CL.
-  // For example, if a post-submit build has failed, CLs MAY continue landing.
-  // The critical value of the builder will be carried over as the default
-  // critical value of its builds
+  // This value can be overridden by ScheduleBuildRequest.critical
   buildbucket.v2.Trinary critical = 25;
 }
 
