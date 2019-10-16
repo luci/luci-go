@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33cee1ba_969998bf",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T22:50:13Z",
+      "side": 1,
+      "message": "nit: %q",
+      "range": {
+        "startLine": 45,
+        "startChar": 71,
+        "endLine": 45,
+        "endChar": 75
+      },
+      "revId": "dc15b32feffe5664a42edc66245eb443bb6fe3e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9e41aa_91276eb1",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T22:50:13Z",
+      "side": 1,
+      "message": "other validation function just only specify the field name because presumably the caller knows what it is sending.\nalso https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/variantdef.go;l\u003d28?q\u003dvalidate%20f:resultdb already specifies the invalid pair",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 32
+      },
+      "revId": "dc15b32feffe5664a42edc66245eb443bb6fe3e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
