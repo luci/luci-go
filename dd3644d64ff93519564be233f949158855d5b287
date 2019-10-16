@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ad6813e8_92f68175",
+        "filename": "buildbucket/proto/project_config.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2019-10-16T05:05:11Z",
+      "side": 1,
+      "message": "Do you have the command to regenerate the pb.go file? I can run the command and send another CL for it as this CL has been merged",
+      "parentUuid": "a1bd9c1e_e2e707a7",
+      "revId": "dd3644d64ff93519564be233f949158855d5b287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a8bd66e_8c77df66",
         "filename": "buildbucket/proto/project_config.proto",
         "patchSetId": 4
