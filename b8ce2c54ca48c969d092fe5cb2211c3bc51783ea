@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "99c8eaca_1d207743",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-16T02:30:51Z",
+      "side": 1,
+      "message": "For commit messages, the general format is:\n\n\u003cshort description\u003e\n\u003cblank line\u003e\n\u003clong description\u003e\n\nI\u0027d recommend adding a blank line after your first line here so that the entire description doesn\u0027t get shown as the title of your CL in Gerrit.",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbcd2ece_11060072",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-16T02:30:51Z",
+      "side": 1,
+      "message": "How about a section header called \"Actions\", since we\u0027ll want to add \"Retry\" as well?",
+      "range": {
+        "startLine": 135,
+        "startChar": 10,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31b4e9ee_adcbfd4f",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-16T02:30:51Z",
+      "side": 1,
+      "message": "I know the underlying proto field is called summary_markdown, but can we name this something more descriptive (like \"reason\"?)",
+      "range": {
+        "startLine": 138,
+        "startChar": 29,
+        "endLine": 138,
+        "endChar": 45
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20063b94_dd12428e",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-16T02:30:51Z",
+      "side": 1,
+      "message": "Since this is a destructive action, we should give the user an opportunity to back out, maybe with a confirmation dialog.\n\nMaybe instead of having a form, this could be just a button that pops up a dialog asking for the reason? That would make the page a little neater too.",
+      "range": {
+        "startLine": 139,
+        "startChar": 8,
+        "endLine": 139,
+        "endChar": 50
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
