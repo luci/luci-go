@@ -17,6 +17,7 @@ package buildbucket
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -424,4 +425,56 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
 	}, err
+}
+
+// CancelBuildHandler parses inputs from HTTP form, cancels the build with the given buildbucket build ID
+// then redirect the users back to the original page
+func CancelBuildHandler(ctx *router.Context) {
+	if err := ctx.Request.ParseForm(); err != nil {
+		logging.Errorf(ctx.Context, "unable to parse form")
+		errors.Log(ctx.Context, err)
+		return
+	}
+	idInput, summaryMarkdownInput := ctx.Request.Form["buildbucket-id"], ctx.Request.Form["summary-markdown"]
+	if len(idInput) != 1 || idInput[0] == "" {
+		logging.Errorf(ctx.Context, "invalid or missing buildbucket-id. buildbucket-id should be an integer")
+		errors.Log(ctx.Context, fmt.Errorf("invalid or missing buildbucket-id. expected an integer. actual %v", idInput))
+		return
+	}
+	id, err := strconv.ParseInt(idInput[0], 10, 64)
+	if err != nil {
+		logging.Errorf(ctx.Context, "unable to buildbucket-id")
+		errors.Log(ctx.Context, err)
+		return
+	}
+	if len(summaryMarkdownInput) != 1 || summaryMarkdownInput[0] == "" {
+		logging.Errorf(ctx.Context, "invalid or missing summary-markdown")
+		errors.Log(ctx.Context, fmt.Errorf("invalid or missing summary-markdown. expected a string. actual %v", idInput))
+		return
+	}
+	summarymarkdown := summaryMarkdownInput[0]
+
+	if _, err := cancelBuild(ctx.Context, id, summarymarkdown); err != nil {
+		logging.Errorf(ctx.Context, "error while handling cancel build request")
+		errors.Log(ctx.Context, err)
+		return
+	}
+
+	http.Redirect(ctx.Writer, ctx.Request, ctx.Request.Referer(), http.StatusSeeOther)
+}
+
+func cancelBuild(c context.Context, id int64, summaryMarkdown string) (*buildbucketpb.Build, error) {
+	host, err := getHost(c)
+	if err != nil {
+		return nil, err
+	}
+	client, err := buildbucketClient(c, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CancelBuild(c, &buildbucketpb.CancelBuildRequest{
+		Id:              id,
+		SummaryMarkdown: summaryMarkdown,
+	})
 }
