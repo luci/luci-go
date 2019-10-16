@@ -45,16 +45,24 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (
 		return nil, err
 	}
 
-	// Ensure account has requested scopes.
+	// Ensure the account has requested scopes. Assume 'cloud-platform' scope
+	// covers all possible scopes. This is important when using GKE Workload
+	// Identities: the metadata server always reports only 'cloud-platform' scope
+	// there. Its presence should be enough to cover all scopes used in practice.
+	// The exception is non-cloud scopes (like gerritcodereview or G Suite). To
+	// use such scopes, one will have to use impersonation through Cloud IAM APIs,
+	// which *are* covered by cloud-platform (see ActAsServiceAccount in auth.go).
 	availableScopes, err := metadata.Scopes(account)
 	if err != nil {
 		return nil, err
 	}
 	availableSet := stringset.NewFromSlice(availableScopes...)
-	for _, requested := range scopes {
-		if !availableSet.Has(requested) {
-			logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q", account, requested)
-			return nil, ErrInsufficientAccess
+	if !availableSet.Has("https://www.googleapis.com/auth/cloud-platform") {
+		for _, requested := range scopes {
+			if !availableSet.Has(requested) {
+				logging.Warningf(ctx, "GCE service account %q doesn't have required scope %q (all scopes: %q)", account, requested, availableScopes)
+				return nil, ErrInsufficientAccess
+			}
 		}
 	}
 
