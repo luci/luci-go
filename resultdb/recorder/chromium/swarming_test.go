@@ -103,6 +103,9 @@ func TestSwarming(t *testing.T) {
 		}))
 		defer swarmingFake.Close()
 
+		swarmSvc, err := GetSwarmSvc(internal.HTTPClient(ctx), swarmingFake.URL)
+		So(err, ShouldBeNil)
+
 		// Define base request we'll be using.
 		swarmingHostname := strings.TrimPrefix(swarmingFake.URL, "https://")
 		req := &pb.DeriveInvocationRequest{
@@ -117,49 +120,65 @@ func TestSwarming(t *testing.T) {
 		}
 
 		Convey(`that are not finalized`, func() {
-			req.SwarmingTask.Id = "pending-task"
-			_, err := DeriveInvocation(ctx, req)
+			task, err := swarmSvc.Task.Result("pending-task").Context(ctx).Do()
+			So(err, ShouldBeNil)
+
+			_, _, err = DeriveProtosForWriting(ctx, task, req)
 			So(err, ShouldErrLike, "unexpectedly incomplete")
 		})
 
 		Convey(`that are finalized wih no outputs expected`, func() {
-			req.SwarmingTask.Id = "bot-died-task"
-			inv, err := DeriveInvocation(ctx, req)
+			task, err := swarmSvc.Task.Result("bot-died-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
+
+			inv, _, err := DeriveProtosForWriting(ctx, task, req)
+			So(err, ShouldBeNil)
+			So(inv, ShouldNotBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		})
 
 		Convey(`that are finalized and may or may not contain isolated outputs`, func() {
 			Convey(`and don't`, func() {
-				req.SwarmingTask.Id = "timed-out-task"
-				inv, err := DeriveInvocation(ctx, req)
+				task, err := swarmSvc.Task.Result("timed-out-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
+
+				inv, _, err := DeriveProtosForWriting(ctx, task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 			})
 
 			Convey(`and do`, func() {
-				req.SwarmingTask.Id = "timed-out-outputs-task"
-				_, err := DeriveInvocation(ctx, req)
+				task, err := swarmSvc.Task.Result("timed-out-outputs-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
 			})
 		})
 
 		Convey(`that are finalized and should contain outputs`, func() {
 			Convey(`but don't`, func() {
-				req.SwarmingTask.Id = "completed-no-outputs-task"
-				_, err := DeriveInvocation(ctx, req)
+				task, err := swarmSvc.Task.Result("completed-no-outputs-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "missing expected isolated outputs")
 			})
 
 			Convey(`and does but outputs don't have expected file`, func() {
-				req.SwarmingTask.Id = "completed-no-output-file-task"
-				_, err := DeriveInvocation(ctx, req)
+				task, err := swarmSvc.Task.Result("completed-no-output-file-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "missing expected output output.json in isolated outputs")
 			})
 
 			Convey(`and do`, func() {
-				req.SwarmingTask.Id = "completed-outputs-task"
-				_, err := DeriveInvocation(ctx, req)
+				task, err := swarmSvc.Task.Result("completed-outputs-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
 			})
 		})
@@ -180,22 +199,22 @@ func TestSwarming(t *testing.T) {
 		}))
 		defer swarmingFake.Close()
 
-		swarmSvc, err := getSwarmSvc(http.DefaultClient, swarmingFake.URL)
+		swarmSvc, err := GetSwarmSvc(http.DefaultClient, swarmingFake.URL)
 		So(err, ShouldBeNil)
 
 		Convey(`does not error for 200`, func() {
-			_, err := getSwarmingTask(ctx, "200-task", swarmSvc)
+			_, err := GetSwarmingTask(ctx, "200-task", swarmSvc)
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`tags with gRPC NotFound for 404`, func() {
-			_, err := getSwarmingTask(ctx, "404-task", swarmSvc)
+			_, err := GetSwarmingTask(ctx, "404-task", swarmSvc)
 			So(err, ShouldNotBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 		})
 
 		Convey(`tags with gRPC Internal for 5xx`, func() {
-			_, err := getSwarmingTask(ctx, "5xx-task", swarmSvc)
+			_, err := GetSwarmingTask(ctx, "5xx-task", swarmSvc)
 			So(err, ShouldNotBeNil)
 			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
 		})
@@ -217,14 +236,14 @@ func TestSwarming(t *testing.T) {
 		}))
 		defer swarmingFake.Close()
 
-		swarmSvc, err := getSwarmSvc(http.DefaultClient, swarmingFake.URL)
+		swarmSvc, err := GetSwarmSvc(http.DefaultClient, swarmingFake.URL)
 		So(err, ShouldBeNil)
 
 		Convey(`for non-deduped task`, func() {
 			task, err := swarmSvc.Task.Result("first-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
-			task, err = getOriginTask(ctx, task, swarmSvc)
+			task, err = GetOriginTask(ctx, task, swarmSvc)
 			So(err, ShouldBeNil)
 			So(task.RunId, ShouldEqual, "abcd12")
 			So(task.TaskId, ShouldEqual, "first-task")
@@ -234,7 +253,7 @@ func TestSwarming(t *testing.T) {
 			task, err := swarmSvc.Task.Result("deduped-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
-			task, err = getOriginTask(ctx, task, swarmSvc)
+			task, err = GetOriginTask(ctx, task, swarmSvc)
 			So(err, ShouldBeNil)
 			So(task.RunId, ShouldEqual, "abcd12")
 			So(task.TaskId, ShouldEqual, "first-task")
@@ -273,7 +292,7 @@ func TestSwarming(t *testing.T) {
 					}
 				}`)
 			inv := &pb.Invocation{}
-			_, err := convertOutputJSON(ctx, inv, req, buf)
+			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "json"))
@@ -296,7 +315,7 @@ func TestSwarming(t *testing.T) {
 					}]
 				}`)
 			inv := &pb.Invocation{}
-			_, err := convertOutputJSON(ctx, inv, req, buf)
+			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "gtest"))
@@ -308,7 +327,7 @@ func TestSwarming(t *testing.T) {
 					"all_tests": "not GTest format",
 					"version": "not JSON Test Results format"
 				}`)
-			_, err := convertOutputJSON(ctx, &pb.Invocation{}, req, buf)
+			_, err := ConvertOutputJSON(ctx, &pb.Invocation{}, req, buf)
 			So(err, ShouldErrLike, `(and 1 other error)`)
 		})
 	})
