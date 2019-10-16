@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f90a9ee6_ca28ca46",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7b61819_48be1a10",
+      "range": {
+        "startLine": 66,
+        "startChar": 11,
+        "endLine": 66,
+        "endChar": 14
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13e6c389_c4ec947b",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -60,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "4ea33b52_d5cb6f2e",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "Personally I generally put private ones at the end, so that someone reading can see the public facing functions first",
+      "parentUuid": "71e20c5f_b26a2fa2",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "80af9a73_9e84da87",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -74,6 +116,24 @@
       "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5d106ed_bcdd3cde",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80af9a73_9e84da87",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -100,6 +160,30 @@
     },
     {
       "key": {
+        "uuid": "512fec31_5cf9d8ef",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "Neat, thanks!!",
+      "parentUuid": "4e3ea319_a96b3ceb",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 42
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0628f12d_03493968",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -114,6 +198,24 @@
       "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3c0936a_b618d2f8",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "Was used before for the if [...]; [...], but with the type switch not needed.",
+      "parentUuid": "0628f12d_03493968",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +236,24 @@
     },
     {
       "key": {
+        "uuid": "051f1176_f29b9229",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "OK. I\u0027d been debating between panicking vs just failing with internal error (if it turns out our code has an error with how it\u0027s handling the types).",
+      "parentUuid": "0c2839df_77c3795f",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36e4cd68_f060c87b",
         "filename": "resultdb/pbutil/strpair.go",
         "patchSetId": 3
@@ -151,6 +271,24 @@
     },
     {
       "key": {
+        "uuid": "bba76720_09a5b6e4",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1865848 (WIP)",
+      "parentUuid": "36e4cd68_f060c87b",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "75e7d0c9_cf0538d1",
         "filename": "resultdb/pbutil/strpair_test.go",
         "patchSetId": 3
@@ -162,6 +300,30 @@
       "writtenOn": "2019-10-16T19:32:18Z",
       "side": 1,
       "message": "StringPair(\"key/k\", \"v\")",
+      "range": {
+        "startLine": 45,
+        "startChar": 33,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd18895e_4df393cb",
+        "filename": "resultdb/pbutil/strpair_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T23:49:17Z",
+      "side": 1,
+      "message": "I thought it\u0027d be weird to use that within the StringPair tests themselves, since we\u0027re then layering testing StringPairFromString() and StringPair() --- thoughts?\n\nStringPair() /is/ pretty simple, admittedly (which then reduces to whether we need a test for that too).",
+      "parentUuid": "75e7d0c9_cf0538d1",
       "range": {
         "startLine": 45,
         "startChar": 33,
