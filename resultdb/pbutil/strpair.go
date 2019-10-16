@@ -92,3 +92,13 @@ func ValidateStringPairs(pairs []*pb.StringPair) error {
 	}
 	return nil
 }
+
+// StringPairsToStrings converts pairs to a slice of "{key}:{value}" strings
+// in the same order.
+func StringPairsToStrings(pairs ...*pb.StringPair) []string {
+	ret := make([]string, len(pairs))
+	for i, p := range pairs {
+		ret[i] = fmt.Sprintf("%s:%s", p.Key, p.Value)
+	}
+	return ret
+}
