@@ -131,6 +131,15 @@
       {{ end }}
     </div>
 
+    {{ if not .BuildPage.EndTime }}
+      <h2>Cancel Build</h2>
+      <form action="/cancel_build" method="POST">
+        <input name="buildbucket-id" type="hidden" value="{{.BuildPage.Id}}">
+        Reason: <input name="summary-markdown" type="text" required><br>
+        <input type="submit" value="Cancel Build">
+      </form>
+    {{ end }}
+
     {{ with .BuildPage.Input }}
       <h2>Input</h2>
       <table>
