@@ -17,9 +17,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: recorder-service
+  name: recorder
   labels:
-    app: recorder-service
+    app: recorder
 spec:
   type: LoadBalancer
   ports:
@@ -28,22 +28,22 @@ spec:
     targetPort: http-server
     protocol: TCP
   selector:
-    app: recorder-service
+    app: recorder
 
 ---
 
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: recorder-service
+  name: recorder
   labels:
-    app: recorder-service
+    app: recorder
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: recorder-service
+        app: recorder
     spec:
       volumes:
       - name: main-service-account-key
