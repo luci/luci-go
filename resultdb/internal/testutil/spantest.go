@@ -58,7 +58,7 @@ func SpannerTestContext(t *testing.T) context.Context {
 		t.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
 	}
 
-	ctx := context.Background()
+	ctx := TestingContext()
 	err := cleanupDatabase(ctx, spannerClient)
 	So(err, ShouldBeNil)
 
@@ -196,4 +196,16 @@ func InsertInclusion(includingInvID, includedInvID string, ready bool, overridde
 		values["OverriddenByIncludedInvocationId"] = overriddenBy
 	}
 	return spanner.InsertMap("Inclusions", values)
+}
+
+// ReadEntireRow reads all columns of one row into the struct.
+func ReadEntireRow(ctx context.Context, table string, key spanner.Key, structPtr interface{}) {
+	iter := span.Client(ctx).Single().Query(ctx, spanner.NewStatement("SELECT * FROM "+table))
+	defer iter.Stop()
+
+	row, err := iter.Next()
+	So(err, ShouldBeNil)
+
+	err = row.ToStruct(structPtr)
+	So(err, ShouldBeNil)
 }
