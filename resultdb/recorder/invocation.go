@@ -29,6 +29,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// updateTokenMetadataKey is the metadata.MD key for the secret update token
+// required to mutate an invocation.
+// It is returned by CreateInvocation RPC in response header metadata,
+// and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
 
 // mayMutateInvocation returns an error if the requester may not mutate the
