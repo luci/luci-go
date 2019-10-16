@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80af9a73_9e84da87",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T17:47:48Z",
+      "side": 1,
+      "message": "i find the signature a bit complex. I think it would be simpler if it returned a slice of pointers, where some are same pointers, and some are new. Then replaceValues can skip those where pointers are same (it works https://play.golang.org/p/i-K0uXuxQFF)",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e3ea319_a96b3ceb",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T17:47:48Z",
+      "side": 1,
+      "message": "switch ptr :\u003d ptr.(type) {\n  case **tspb.Timestamp:\n  case **tspb.Invocation_State:\n  etc\n}\n\nsame below",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 42
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0628f12d_03493968",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T17:47:48Z",
+      "side": 1,
+      "message": "not used?",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c2839df_77c3795f",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T17:47:48Z",
+      "side": 1,
+      "message": "in all such case, i think we should panic. This should pretty much never happen in our code.\nand then the signature gets simpler",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36e4cd68_f060c87b",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T17:47:48Z",
+      "side": 1,
+      "message": "this and the rest of files (lexicographically) shouldn\u0027t be a part of this CL",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
