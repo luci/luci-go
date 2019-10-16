@@ -148,6 +148,69 @@
       "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75e7d0c9_cf0538d1",
+        "filename": "resultdb/pbutil/strpair_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T19:32:18Z",
+      "side": 1,
+      "message": "StringPair(\"key/k\", \"v\")",
+      "range": {
+        "startLine": 45,
+        "startChar": 33,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78d5a913_44bc65ae",
+        "filename": "resultdb/pbutil/variantdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T19:32:18Z",
+      "side": 1,
+      "message": "please document that if a key appears multiple times, last value wins\n\nor return an error in this case",
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bf3f918_784aa43d",
+        "filename": "resultdb/pbutil/variantdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-16T19:32:18Z",
+      "side": 1,
+      "message": "make(map[string]string, len(pairs))",
+      "range": {
+        "startLine": 36,
+        "startChar": 11,
+        "endLine": 36,
+        "endChar": 30
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
