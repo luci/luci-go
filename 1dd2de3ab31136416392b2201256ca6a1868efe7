@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c95e6ab8_8d2dc708",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-16T00:36:13Z",
+      "side": 1,
+      "message": "To confirm: we are then generating an unused update token just to populate this field in the case of DeriveInvocation? Or are we doing something else?",
+      "revId": "1dd2de3ab31136416392b2201256ca6a1868efe7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
