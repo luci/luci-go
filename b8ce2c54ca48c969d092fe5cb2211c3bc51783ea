@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "75ba394d_e2130acd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "18b8ce48_97a7b09e",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9666d9e7_f2371b96",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "e3d300e8_7079cc7f",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9666d9e7_f2371b96",
+      "range": {
+        "startLine": 434,
+        "startChar": 3,
+        "endLine": 435,
+        "endChar": 10
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a5b4fe3_6e4a17a0",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -86,6 +134,24 @@
       "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e7b081d_1a1bdb50",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7a5b4fe3_6e4a17a0",
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -112,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "0bc74af6_e7944bad",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7fe9945d_08d85071",
+      "range": {
+        "startLine": 438,
+        "startChar": 8,
+        "endLine": 438,
+        "endChar": 9
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b70b99cd_5610de9e",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -135,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "a0cef07c_c89d948c",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b70b99cd_5610de9e",
+      "range": {
+        "startLine": 452,
+        "startChar": 75,
+        "endLine": 452,
+        "endChar": 92
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49399d7d_8f662a06",
         "filename": "milo/buildsource/buildbucket/build.go",
         "patchSetId": 2
@@ -149,6 +263,24 @@
       "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3f9f7af_6c6198b0",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "49399d7d_8f662a06",
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -175,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "ecd35516_c75bc324",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "120161da_d0992aaf",
+      "range": {
+        "startLine": 457,
+        "startChar": 61,
+        "endLine": 457,
+        "endChar": 64
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbcd2ece_11060072",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -195,6 +351,30 @@
       "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2050fe00_bc63799a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fbcd2ece_11060072",
+      "range": {
+        "startLine": 135,
+        "startChar": 10,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -245,6 +425,30 @@
     },
     {
       "key": {
+        "uuid": "f941700d_3a96f4bd",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8a05ca9f_d0ca243c",
+      "range": {
+        "startLine": 138,
+        "startChar": 29,
+        "endLine": 138,
+        "endChar": 45
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20063b94_dd12428e",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 2
@@ -265,6 +469,30 @@
       "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50d785b8_82d17be7",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-17T07:27:15Z",
+      "side": 1,
+      "message": "Added a popup modal instead of just a button.",
+      "parentUuid": "20063b94_dd12428e",
+      "range": {
+        "startLine": 139,
+        "startChar": 8,
+        "endLine": 139,
+        "endChar": 50
+      },
+      "revId": "b8ce2c54ca48c969d092fe5cb2211c3bc51783ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
