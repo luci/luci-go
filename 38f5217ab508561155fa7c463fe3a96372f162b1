@@ -16,6 +16,24 @@
       "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef0d5be2_5b722372",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T15:33:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52a428a1_9fee66f3",
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
