@@ -22,6 +22,53 @@
       "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fba308ec_d25df5f5",
+        "filename": "resultdb/pbutil/strpair_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T02:31:15Z",
+      "side": 1,
+      "message": "no strong opinion",
+      "parentUuid": "d45c08a4_c7f9dd88",
+      "range": {
+        "startLine": 45,
+        "startChar": 33,
+        "endLine": 45,
+        "endChar": 48
+      },
+      "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ef28a5e_373bf649",
+        "filename": "resultdb/pbutil/variantdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T02:31:15Z",
+      "side": 1,
+      "message": "i think p would be more valuable to the user",
+      "range": {
+        "startLine": 42,
+        "startChar": 42,
+        "endLine": 42,
+        "endChar": 48
+      },
+      "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
