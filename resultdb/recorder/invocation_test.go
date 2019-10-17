@@ -17,11 +17,13 @@ package main
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -32,13 +34,13 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMayMutateInvocation(t *testing.T) {
+func TestCheckAndUpdateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		mayMutate := func() error {
 			_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-				return mayMutateInvocation(ctx, txn, "inv")
+				return checkAndUpdateInvocation(ctx, txn, "inv")
 			})
 			return err
 		}
@@ -73,8 +75,25 @@ func TestMayMutateInvocation(t *testing.T) {
 				So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 			})
 
+			Convey(`with exceeded deadline`, func() {
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token))
+
+				// Mock time.
+				now := testclock.TestRecentTimeUTC.Add(2 * time.Hour)
+				ctx, _ = testclock.UseTime(ctx, now)
+
+				err := mayMutate()
+				So(err, ShouldErrLike, `"invocations/inv" has exceeded deadline`)
+				So(grpcutil.Code(err), ShouldEqual, codes.DeadlineExceeded)
+			})
+
 			Convey(`with active invocation and same token`, func() {
 				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token))
+
+				// Mock time.
+				now := testclock.TestRecentTimeUTC
+				ctx, _ = testclock.UseTime(ctx, now)
+
 				err := mayMutate()
 				So(err, ShouldBeNil)
 			})
