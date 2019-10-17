@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "79e76ea6_ef958f95",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:56:48Z",
+      "side": 1,
+      "message": "I couldn\u0027t get the error to match in ShouldPanicWith if using panic(err), any tips?",
+      "revId": "c535f14400b7f05e0f68dc3ab0ca2a85a1f359be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
