@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -26,79 +27,44 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestPointerSubstitution(t *testing.T) {
+func TestColumnReader(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Works with primitive (int)`, t, func() {
-		var varInt int
-		ptrs := []interface{}{&varInt}
+	read := func(dest interface{}, value interface{}) {
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{value})
+		So(err, ShouldBeNil)
+		err = NewColumnReader(dest).Read(row)
+		So(err, ShouldBeNil)
+	}
 
-		subPtrs := replacePointers(ptrs)
-		val, ok := subPtrs[0].(*int)
-		So(ok, ShouldBeTrue)
-		*val = 42
-
-		replaceValues(ptrs, subPtrs)
-		_, ok = ptrs[0].(*int)
-		So(ok, ShouldBeTrue)
-		So(varInt, ShouldEqual, 42)
+	Convey(`int64`, t, func() {
+		var v int64
+		read(&v, 42)
+		So(v, ShouldEqual, int64(42))
 	})
 
-	Convey(`Works with *timestamp.Timestamp`, t, func() {
-		var varReplace *tspb.Timestamp
-		ptrs := []interface{}{&varReplace}
-
-		subPtrs := replacePointers(ptrs)
-		val, ok := subPtrs[0].(*time.Time)
-		So(ok, ShouldBeTrue)
-		*val = time.Unix(1000, 1234)
-
-		replaceValues(ptrs, subPtrs)
-		_, ok = ptrs[0].(**tspb.Timestamp)
-		So(ok, ShouldBeTrue)
-		So(varReplace, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
-
-		Convey(`panics with bad time`, func() {
-			t := time.Date(-1, 1, 1, 0, 0, 0, 0, time.UTC)
-			So(func() {
-				replaceValues([]interface{}{&varReplace}, []interface{}{&t})
-			}, ShouldPanic)
-		})
+	Convey(`*timestamp.Timestamp`, t, func() {
+		var v *tspb.Timestamp
+		read(&v, time.Unix(1000, 1234))
+		So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
 	})
 
 	Convey(`Works with pb.Invocation_State`, t, func() {
-		var varReplace pb.Invocation_State
-		ptrs := []interface{}{&varReplace}
-
-		subPtrs := replacePointers(ptrs)
-		val, ok := subPtrs[0].(*int64)
-		So(ok, ShouldBeTrue)
-		*val = 2
-
-		replaceValues(ptrs, subPtrs)
-		_, ok = ptrs[0].(*pb.Invocation_State)
-		So(ok, ShouldBeTrue)
-		So(varReplace, ShouldEqual, pb.Invocation_COMPLETED)
+		var v pb.Invocation_State
+		read(&v, 2)
+		So(v, ShouldEqual, pb.Invocation_COMPLETED)
 	})
 
 	Convey(`Works with interspersed types`, t, func() {
-		var varIntA, varIntB int
+		var varIntA, varIntB int64
 		var varState pb.Invocation_State
-		ptrs := []interface{}{&varIntA, &varState, &varIntB}
 
-		subPtrs := replacePointers(ptrs)
-		val, ok := subPtrs[0].(*int)
-		So(ok, ShouldBeTrue)
-		*val = 45
-		val64, ok := subPtrs[1].(*int64)
-		So(ok, ShouldBeTrue)
-		*val64 = 2
-		val, ok = subPtrs[2].(*int)
-		So(ok, ShouldBeTrue)
-		*val = 56
+		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(2)})
+		So(err, ShouldBeNil)
 
-		replaceValues(ptrs, subPtrs)
-		So(varIntA, ShouldEqual, 45)
+		err = NewColumnReader(&varIntA, &varIntB, &varState).Read(row)
+		So(err, ShouldBeNil)
+		So(varIntA, ShouldEqual, 42)
 		So(varIntB, ShouldEqual, 56)
 		So(varState, ShouldEqual, pb.Invocation_COMPLETED)
 	})
