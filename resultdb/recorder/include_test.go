@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -102,6 +103,10 @@ func TestInclude(t *testing.T) {
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+
+		// Mock time.
+		now := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, now)
 
 		insInv := testutil.InsertInvocation
 		insIncl := testutil.InsertInclusion

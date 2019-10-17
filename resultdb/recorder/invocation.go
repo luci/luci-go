@@ -16,11 +16,13 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -31,10 +33,31 @@ import (
 
 const updateTokenMetadataKey = "update-token"
 
+// checkAndUpdateInvocation checks if the invocation can be mutated and also
+// finalize the invocation if it's deadline is exceeded.
+func checkAndUpdateInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string) error {
+	now := clock.Now(ctx)
+	err := mayMutateInvocation(ctx, txn, invID, now)
+	if grpcutil.Code(err) == codes.DeadlineExceeded {
+		// Finalize the invocation since it's deadline is exceeded.
+		muts := []*spanner.Mutation{
+			spanner.UpdateMap("Invocations", map[string]interface{}{
+				"InvocationId": invID,
+				"State":        int64(pb.Invocation_INTERRUPTED),
+				"FinalizeTime": now,
+			}),
+		}
+		if err := txn.BufferWrite(muts); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
 // mayMutateInvocation returns an error if the requester may not mutate the
 // invocation.
 // ctx must contain "update-token" metadata value.
-func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error {
+func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string, now time.Time) error {
 	userToken, err := extractUserUpdateToken(ctx)
 	if err != nil {
 		return err
@@ -42,10 +65,13 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 
 	var updateToken spanner.NullString
 	var state pb.Invocation_State
+	var deadline time.Time
 	err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, map[string]interface{}{
 		"UpdateToken": &updateToken,
 		"State":       &state,
+		"Deadline":    &deadline,
 	})
+
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return errors.Reason("%q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
@@ -61,6 +87,9 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 
 	case userToken != updateToken.StringVal:
 		return errors.Reason("invalid update token").Tag(grpcutil.PermissionDeniedTag).Err()
+
+	case deadline.Before(now):
+		return errors.Reason("%q has exceeded deadline", pbutil.InvocationName(invID)).Tag(grpcutil.DeadlineExceededTag).Err()
 
 	default:
 		return nil
