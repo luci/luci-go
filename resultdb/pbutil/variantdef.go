@@ -30,3 +30,18 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 	}
 	return nil
 }
+
+// VariantDefFromStrings returns a VariantDef proto given the key:val string slice of its contents.
+//
+// If a key appears multiple times, the last pair wins.
+func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
+	defMap := make(map[string]string, len(pairs))
+	for _, p := range pairs {
+		pair, err := StringPairFromString(p)
+		if err != nil {
+			return nil, errors.Annotate(err, "pair %q", p).Err()
+		}
+		defMap[pair.Key] = pair.Value
+	}
+	return &pb.VariantDef{Def: defMap}, nil
+}
