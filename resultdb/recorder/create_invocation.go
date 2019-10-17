@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -144,7 +143,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			"UpdateToken":                       updateToken,
 			"CreateTime":                        now,
 			"Deadline":                          deadline,
-			"BaseTestVariantDef":                resultdb.VariantDefMap(inv.BaseTestVariantDef.GetDef()).SortedStrings(),
+			"BaseTestVariantDef":                pbutil.VariantDefPairs(inv.GetBaseTestVariantDef()),
 			"Tags":                              pbutil.StringPairsToStrings(inv.Tags...),
 		}),
 	})

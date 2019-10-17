@@ -19,7 +19,6 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -199,20 +198,20 @@ func TestGTestConversions(t *testing.T) {
 				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
 				So(basePath, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "MyInstantiation",
 					"param/id":            "1",
-				}))
+				})
 			})
 
 			Convey(`without instantiation`, func() {
 				basePath, params, err := extractGTestParameters("FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
 				So(basePath, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "",
 					"param/id":            "1",
-				}))
+				})
 			})
 		})
 
@@ -221,20 +220,20 @@ func TestGTestConversions(t *testing.T) {
 				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
 				So(basePath, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "MyInstantiation",
 					"param/id":            "1",
-				}))
+				})
 			})
 
 			Convey(`without instantiation`, func() {
 				basePath, params, err := extractGTestParameters("FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
 				So(basePath, ShouldEqual, "FooTest.DoesBar")
-				So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{
+				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "",
 					"param/id":            "1",
-				}))
+				})
 			})
 		})
 
@@ -242,7 +241,7 @@ func TestGTestConversions(t *testing.T) {
 			basePath, params, err := extractGTestParameters("FooTest.DoesBar")
 			So(err, ShouldBeNil)
 			So(basePath, ShouldEqual, "FooTest.DoesBar")
-			So(params, ShouldResemble, resultdb.VariantDefMap(map[string]string{}))
+			So(params, ShouldResemble, map[string]string{})
 		})
 
 		Convey(`with magic prefixes`, func() {
