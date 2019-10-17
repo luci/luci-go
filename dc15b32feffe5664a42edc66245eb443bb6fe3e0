@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "67be4e1a_e3369e93",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:33:17Z",
+      "side": 1,
+      "message": "Ah, sure",
+      "parentUuid": "6056d38c_bece5bcf",
+      "range": {
+        "startLine": 45,
+        "startChar": 71,
+        "endLine": 45,
+        "endChar": 75
+      },
+      "revId": "dc15b32feffe5664a42edc66245eb443bb6fe3e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fe9e41aa_91276eb1",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 3
