@@ -354,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "a86b7afa_56ee6009",
+        "filename": "resultdb/pbutil/strpair_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T02:37:58Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "fd18895e_4df393cb",
+      "range": {
+        "startLine": 45,
+        "startChar": 33,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "2917c67c14d5d9c529b8121d28c210b9d9caa12c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78d5a913_44bc65ae",
         "filename": "resultdb/pbutil/variantdef.go",
         "patchSetId": 3
