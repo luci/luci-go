@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b1c4aa8d_d336de15",
+        "filename": "resultdb/pbutil/strpair_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T02:49:28Z",
+      "side": 1,
+      "message": "OK, thanks. I\u0027ll keep it as is here, but we can change it later",
+      "parentUuid": "fba308ec_d25df5f5",
+      "range": {
+        "startLine": 45,
+        "startChar": 33,
+        "endLine": 45,
+        "endChar": 48
+      },
+      "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ef28a5e_373bf649",
         "filename": "resultdb/pbutil/variantdef.go",
         "patchSetId": 3
@@ -69,6 +93,30 @@
       "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d57f7ff_025318c3",
+        "filename": "resultdb/pbutil/variantdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T02:49:28Z",
+      "side": 1,
+      "message": "Done\n\nSomehow I thought p was already in the doesNotMatch expression",
+      "parentUuid": "5ef28a5e_373bf649",
+      "range": {
+        "startLine": 42,
+        "startChar": 42,
+        "endLine": 42,
+        "endChar": 48
+      },
+      "revId": "72774ebcdd8cee6b4270b0ee98d385191bd00f9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
