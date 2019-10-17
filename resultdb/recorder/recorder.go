@@ -30,11 +30,6 @@ import (
 type RecorderServer struct {
 }
 
-// CreateInvocation implements pb.RecorderServer.
-func (s *RecorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
-	return nil, grpcutil.Unimplemented
-}
-
 // UpdateInvocation implements pb.RecorderServer.
 func (s *RecorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
