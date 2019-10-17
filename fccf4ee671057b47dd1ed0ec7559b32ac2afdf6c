@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebbef5b9_b9a9d521",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T13:35:26Z",
+      "side": 1,
+      "message": "nit: this does not add any new info. Let\u0027s just return err as is",
+      "range": {
+        "startLine": 439,
+        "startChar": 30,
+        "endLine": 439,
+        "endChar": 73
+      },
+      "revId": "fccf4ee671057b47dd1ed0ec7559b32ac2afdf6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03d46924_9a1cf509",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T13:35:26Z",
+      "side": 1,
+      "message": "L435 says same thing, essentially. Let\u0027s either return err as is, or be specific (we\u0027ve failed to parse form). I prefer former because we won\u0027t see this error often",
+      "range": {
+        "startLine": 448,
+        "startChar": 37,
+        "endLine": 448,
+        "endChar": 73
+      },
+      "revId": "fccf4ee671057b47dd1ed0ec7559b32ac2afdf6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
