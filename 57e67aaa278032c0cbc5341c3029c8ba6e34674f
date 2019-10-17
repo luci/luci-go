@@ -22,6 +22,30 @@
       "revId": "57e67aaa278032c0cbc5341c3029c8ba6e34674f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fcc678b_469c8f71",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:28:00Z",
+      "side": 1,
+      "message": "\u003e Would it be useful to include methodName in the error? \n\ni don\u0027t think so. The caller knows what method they are calling\n\n\u003e And what will rsp be used for?\n\nit won\u0027t be used. This func has this signature because it is dictated by \"Postlude\" field in decorated services",
+      "parentUuid": "6c5e26b5_1c078cab",
+      "range": {
+        "startLine": 45,
+        "startChar": 49,
+        "endLine": 45,
+        "endChar": 85
+      },
+      "revId": "57e67aaa278032c0cbc5341c3029c8ba6e34674f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
