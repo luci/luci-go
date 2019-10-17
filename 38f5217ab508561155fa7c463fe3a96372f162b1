@@ -326,6 +326,24 @@
     },
     {
       "key": {
+        "uuid": "54781a6f_bbf1ef44",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T22:04:36Z",
+      "side": 1,
+      "message": "constants are not computed. no runtime is spent on that. compiler inlines all values during code generation, so it does not matter where we put them. This is unlike vars.\n\ni choose to put it here to avoid unnecessarily cluttering package-level namespace",
+      "parentUuid": "18a590eb_100be89a",
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2e64e88_568d2c39",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -394,6 +412,30 @@
       "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ce28268_4d5002f0",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T22:04:36Z",
+      "side": 1,
+      "message": "resolved offline",
+      "parentUuid": "5a53ec62_baf3d09f",
+      "range": {
+        "startLine": 142,
+        "startChar": 54,
+        "endLine": 142,
+        "endChar": 62
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
