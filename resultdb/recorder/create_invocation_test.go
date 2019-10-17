@@ -18,10 +18,21 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -29,10 +40,10 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestvalidateCreateInvocationRequest(t *testing.T) {
+func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
-	Convey(`TestvalidateCreateInvocationRequest`, t, func() {
+	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
@@ -128,6 +139,151 @@ func TestvalidateCreateInvocationRequest(t *testing.T) {
 				},
 			}, now)
 			So(err, ShouldBeNil)
+		})
+	})
+}
+
+func TestCreateInvocation(t *testing.T) {
+	Convey(`TestCreateInvocation`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		// Init auth state.
+		ctx = authtest.MockAuthConfig(ctx)
+		authState := &authtest.FakeState{
+			Identity: identity.AnonymousIdentity,
+		}
+		ctx = auth.WithState(ctx, authState)
+
+		// Mock time.
+		now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
+		ctx, _ = testclock.UseTime(ctx, now)
+
+		// Setup a full HTTP server in order to retrieve response headers.
+		server := &prpctest.Server{}
+		pb.RegisterRecorderServer(server, NewRecorderServer())
+		server.Start(ctx)
+		defer server.Close()
+		client, err := server.NewClient()
+		So(err, ShouldBeNil)
+		recorder := pb.NewRecorderPRPCClient(client)
+
+		Convey(`permission denied`, func() {
+			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "x"})
+			So(err, ShouldErrLike, `anonymous:anonymous is not allowed to create invocations`)
+			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		authState.IdentityGroups = []string{createInvocationGroup}
+
+		Convey(`empty request`, func() {
+			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
+			So(err, ShouldErrLike, `bad request: invocation_id: does not match`)
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+		})
+
+		req := &pb.CreateInvocationRequest{
+			InvocationId: "inv",
+			Invocation:   &pb.Invocation{},
+		}
+
+		Convey(`already exists`, func() {
+			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
+				testutil.InsertInvocation(req.InvocationId, 1, ""),
+			})
+			So(err, ShouldBeNil)
+
+			_, err = recorder.CreateInvocation(ctx, req)
+			So(err, ShouldErrLike, `already exists`)
+			So(grpcutil.Code(err), ShouldEqual, codes.AlreadyExists)
+		})
+
+		Convey(`unsorted tags`, func() {
+			req.Invocation.Tags = pbutil.StringPairs("b", "2", "a", "1")
+			inv, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(inv.Tags, ShouldResemble, pbutil.StringPairs("a", "1", "b", "2"))
+
+		})
+
+		Convey(`no invocation in request`, func() {
+			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "inv"})
+			So(err, ShouldBeNil)
+			So(inv.Name, ShouldEqual, "invocations/inv")
+		})
+
+		Convey(`end to end`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(time.Hour))
+			So(err, ShouldBeNil)
+
+			headers := &metadata.MD{}
+			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "inv",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+					BaseTestVariantDef: &pb.VariantDef{
+						Def: map[string]string{
+							"bucket":  "ci",
+							"builder": "linux-rel",
+						},
+					},
+				},
+			}, prpc.Header(headers))
+			So(err, ShouldBeNil)
+			So(inv, ShouldResembleProto, &pb.Invocation{
+				Name:     "invocations/inv",
+				Deadline: deadline,
+				Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+				BaseTestVariantDef: &pb.VariantDef{
+					Def: map[string]string{
+						"bucket":  "ci",
+						"builder": "linux-rel",
+					},
+				},
+			})
+
+			So(headers.Get(updateTokenMetadataKey), ShouldHaveLength, 1)
+
+			// TODO(nodir, jchinlee): replace with ReadFullInvocation call.
+			var actual struct {
+				State                             int64
+				InvocationExpirationTime          time.Time
+				InvocationExpirationWeek          time.Time
+				ExpectedTestResultsExpirationTime time.Time
+				ExpectedTestResultsExpirationWeek time.Time
+				UpdateToken                       spanner.NullString
+				CreateTime                        time.Time
+				Deadline                          time.Time
+				BaseTestVariantDef                []string
+				Tags                              []string
+				Realm                             string
+				FinalizeTime                      spanner.NullTime
+			}
+			err = span.ReadRow(ctx, span.Client(ctx).Single(), "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+				"State":                             &actual.State,
+				"InvocationExpirationTime":          &actual.InvocationExpirationTime,
+				"InvocationExpirationWeek":          &actual.InvocationExpirationWeek,
+				"ExpectedTestResultsExpirationTime": &actual.ExpectedTestResultsExpirationTime,
+				"ExpectedTestResultsExpirationWeek": &actual.ExpectedTestResultsExpirationWeek,
+				"UpdateToken":                       &actual.UpdateToken,
+				"CreateTime":                        &actual.CreateTime,
+				"Deadline":                          &actual.Deadline,
+				"BaseTestVariantDef":                &actual.BaseTestVariantDef,
+				"Tags":                              &actual.Tags,
+				"Realm":                             &actual.Realm,
+				"FinalizeTime":                      &actual.FinalizeTime,
+			})
+			So(err, ShouldBeNil)
+			So(actual.State, ShouldResemble, int64(pb.Invocation_ACTIVE))
+			So(actual.InvocationExpirationTime, ShouldResemble, time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+			So(actual.InvocationExpirationWeek, ShouldResemble, time.Date(2019, 12, 30, 0, 0, 0, 0, time.UTC))
+			So(actual.ExpectedTestResultsExpirationTime, ShouldResemble, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
+			So(actual.ExpectedTestResultsExpirationWeek, ShouldResemble, time.Date(2019, 2, 25, 0, 0, 0, 0, time.UTC))
+			So(actual.UpdateToken, ShouldResemble, spanner.NullString{Valid: true, StringVal: headers.Get(updateTokenMetadataKey)[0]})
+			So(actual.CreateTime, ShouldResemble, time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC))
+			So(actual.Deadline, ShouldResemble, time.Date(2019, 1, 1, 1, 0, 0, 0, time.UTC))
+			So(actual.BaseTestVariantDef, ShouldResemble, []string{"bucket:ci", "builder:linux-rel"})
+			So(actual.Tags, ShouldResemble, []string{"a:1", "b:2"})
 		})
 	})
 }

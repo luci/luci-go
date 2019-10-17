@@ -58,7 +58,7 @@ func SpannerTestContext(t *testing.T) context.Context {
 		t.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
 	}
 
-	ctx := context.Background()
+	ctx := TestingContext()
 	err := cleanupDatabase(ctx, spannerClient)
 	So(err, ShouldBeNil)
 

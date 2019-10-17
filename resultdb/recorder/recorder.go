@@ -37,11 +37,6 @@ func NewRecorderServer() pb.RecorderServer {
 	}
 }
 
-// CreateInvocation implements pb.RecorderServer.
-func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
-	return nil, grpcutil.Unimplemented
-}
-
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented

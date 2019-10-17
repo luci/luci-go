@@ -19,6 +19,7 @@ package resultdb
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"sort"
 
@@ -64,6 +65,16 @@ func (d VariantDefMap) SortedKeys() []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// SortedStrings returns sorted "{key}:{value}" slice.
+func (d VariantDefMap) SortedStrings() []string {
+	ret := make([]string, 0, len(d))
+	for k, v := range d {
+		ret = append(ret, fmt.Sprintf("%s:%s", k, v))
+	}
+	sort.Strings(ret)
+	return ret
 }
 
 // MergeTestVariantMaps gets the test variant def from merging the input maps.

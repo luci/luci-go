@@ -103,3 +103,13 @@ func StringPairFromString(s string) (*pb.StringPair, error) {
 	}
 	return StringPair(m[1], m[3]), nil
 }
+
+// StringPairsToStrings converts pairs to a slice of "{key}:{value}" strings
+// in the same order.
+func StringPairsToStrings(pairs ...*pb.StringPair) []string {
+	ret := make([]string, len(pairs))
+	for i, p := range pairs {
+		ret[i] = fmt.Sprintf("%s:%s", p.Key, p.Value)
+	}
+	return ret
+}
