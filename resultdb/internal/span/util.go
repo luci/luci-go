@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -84,6 +85,10 @@ func NewColumnReader(ptrs ...interface{}) *ColumnReader {
 			r.spanPtrs[i] = &time.Time{}
 		case *pb.Invocation_State:
 			r.spanPtrs[i] = new(int64)
+		case **pb.VariantDef:
+			r.spanPtrs[i] = &[]string{}
+		case *[]*pb.StringPair:
+			r.spanPtrs[i] = &[]string{}
 		default:
 			r.spanPtrs[i] = goPtr
 		}
@@ -113,6 +118,24 @@ func (r *ColumnReader) Read(row *spanner.Row) error {
 
 		case *pb.Invocation_State:
 			*goPtr = pb.Invocation_State(*spanPtr.(*int64))
+
+		case **pb.VariantDef:
+			var err error
+			if *goPtr, err = pbutil.VariantDefFromStrings(*spanPtr.(*[]string)); err != nil {
+				// If it was written to Spanner, it should have been validated.
+				panic(err)
+			}
+
+		case *[]*pb.StringPair:
+			var err error
+			pairs := *spanPtr.(*[]string)
+			*goPtr = make([]*pb.StringPair, len(pairs))
+			for i, p := range pairs {
+				if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
+					// If it was written to Spanner, it should have been validated.
+					panic(err)
+				}
+			}
 
 		default:
 			panic("impossible")
