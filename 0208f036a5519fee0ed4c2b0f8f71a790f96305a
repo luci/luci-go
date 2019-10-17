@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b1d0bc5_e72dc2df",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-17T22:21:40Z",
+      "side": 1,
+      "message": "nit: sort so that luci imports are in a separate group",
+      "range": {
+        "startLine": 20,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 27
+      },
+      "revId": "0208f036a5519fee0ed4c2b0f8f71a790f96305a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
