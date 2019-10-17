@@ -52,6 +52,24 @@
       "revId": "c535f14400b7f05e0f68dc3ab0ca2a85a1f359be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3c75d43c_d372cd45",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T02:45:42Z",
+      "side": 1,
+      "message": "i meant thoroughly, not thoughtfully :)",
+      "parentUuid": "010230b3_66b6a4c8",
+      "revId": "c535f14400b7f05e0f68dc3ab0ca2a85a1f359be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
