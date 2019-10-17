@@ -22,6 +22,30 @@
       "revId": "5b4bf78e2d7dccde51632316b56e50662c691c01",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9147f922_28a1d3d5",
+        "filename": "grpc/prpc/decoding.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-17T12:26:35Z",
+      "side": 1,
+      "message": "Thanks for catching, I had totally missed that. For now I replaced it with a TODO to not let this CL linger any more.",
+      "parentUuid": "17cc8811_e4b4ef4c",
+      "range": {
+        "startLine": 114,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 17
+      },
+      "revId": "5b4bf78e2d7dccde51632316b56e50662c691c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
