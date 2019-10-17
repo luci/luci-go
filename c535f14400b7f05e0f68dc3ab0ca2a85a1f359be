@@ -16,6 +16,24 @@
       "revId": "c535f14400b7f05e0f68dc3ab0ca2a85a1f359be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba0a809f_4b25c107",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T02:28:37Z",
+      "side": 1,
+      "message": "from chat: its ok not test this thoughtfully since this is impl detail. let\u0027s panic(err) here",
+      "parentUuid": "79e76ea6_ef958f95",
+      "revId": "c535f14400b7f05e0f68dc3ab0ca2a85a1f359be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
