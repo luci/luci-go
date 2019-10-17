@@ -64,7 +64,7 @@ func validateIncludeRequest(req *pb.IncludeRequest) error {
 var errRepeatedRequest = fmt.Errorf("this request was handled before")
 
 // Include implements pb.RecorderServer.
-func (s *RecorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*empty.Empty, error) {
+func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*empty.Empty, error) {
 	if err := validateIncludeRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
