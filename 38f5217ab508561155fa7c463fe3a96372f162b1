@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "68671567_564cd435",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T21:53:28Z",
+      "side": 1,
+      "message": "Ah yes, we crossed, sorry",
+      "parentUuid": "8873ac5d_f2380c6b",
+      "range": {
+        "startLine": 202,
+        "startChar": 5,
+        "endLine": 202,
+        "endChar": 18
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01716bdd_d2b2073e",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -225,6 +249,30 @@
     },
     {
       "key": {
+        "uuid": "93080a59_81c4e566",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T21:53:28Z",
+      "side": 1,
+      "message": "Feel free to land first",
+      "parentUuid": "77f682e3_59441962",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 68
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9cc84756_65992029",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -254,6 +302,24 @@
       "side": 1,
       "message": "i think here. it is specific to computation of expiration which does not happen anywhere else?",
       "parentUuid": "9cc84756_65992029",
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18a590eb_100be89a",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T21:53:28Z",
+      "side": 1,
+      "message": "Oh, I thought constants like this usually get declared outside of functions so we aren\u0027t recomputing them per function call, disregard if that\u0027s not the case",
+      "parentUuid": "f9b4cf5e_7fd29b05",
       "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -295,6 +361,30 @@
       "side": 1,
       "message": "same q for you as above",
       "parentUuid": "e2e64e88_568d2c39",
+      "range": {
+        "startLine": 142,
+        "startChar": 54,
+        "endLine": 142,
+        "endChar": 62
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a53ec62_baf3d09f",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T21:53:28Z",
+      "side": 1,
+      "message": "Same question meaning \"prefer to upload in a separate CL\"? Feel free to land first, I don\u0027t want to block you on my updating my CL for review.\n\nAlso let me know if you prefer truncation to most multiple of week since 1/1/70 or to most recent Sunday (we can also discuss this when I upload)",
+      "parentUuid": "e31bebce_0e1077d0",
       "range": {
         "startLine": 142,
         "startChar": 54,
