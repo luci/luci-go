@@ -20,6 +20,7 @@ import (
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -79,6 +80,44 @@ func TestPointerSubstitution(t *testing.T) {
 		_, ok = ptrs[0].(*pb.Invocation_State)
 		So(ok, ShouldBeTrue)
 		So(varReplace, ShouldEqual, pb.Invocation_COMPLETED)
+	})
+
+	Convey(`Works with *pb.VariantDef`, t, func() {
+		var varReplace *pb.VariantDef
+		ptrs := []interface{}{&varReplace}
+
+		subPtrs := replacePointers(ptrs)
+		val, ok := subPtrs[0].(*[]string)
+		So(ok, ShouldBeTrue)
+		*val = []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"}
+
+		replaceValues(ptrs, subPtrs)
+		_, ok = ptrs[0].(**pb.VariantDef)
+		So(ok, ShouldBeTrue)
+		So(varReplace, ShouldResembleProto, &pb.VariantDef{Def: map[string]string{
+			"k1":               "v1",
+			"key/k2":           "v2",
+			"key/with/part/k3": "v3",
+		}})
+	})
+
+	Convey(`Works with []*pb.StringPair`, t, func() {
+		var varReplace []*pb.StringPair
+		ptrs := []interface{}{&varReplace}
+
+		subPtrs := replacePointers(ptrs)
+		val, ok := subPtrs[0].(*[]string)
+		So(ok, ShouldBeTrue)
+		*val = []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"}
+
+		replaceValues(ptrs, subPtrs)
+		_, ok = ptrs[0].(*[]*pb.StringPair)
+		So(ok, ShouldBeTrue)
+		So(varReplace, ShouldResemble, pbutil.StringPairs(
+			"k1", "v1",
+			"key/k2", "v2",
+			"key/with/part/k3", "v3",
+		))
 	})
 
 	Convey(`Works with interspersed types`, t, func() {

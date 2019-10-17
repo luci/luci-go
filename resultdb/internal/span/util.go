@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -83,6 +84,10 @@ func replacePointers(ptrs []interface{}) []interface{} {
 			subPtrs[i] = &time.Time{}
 		case *pb.Invocation_State:
 			subPtrs[i] = new(int64)
+		case **pb.VariantDef:
+			subPtrs[i] = &[]string{}
+		case *[]*pb.StringPair:
+			subPtrs[i] = &[]string{}
 		default:
 			subPtrs[i] = ptr
 		}
@@ -116,6 +121,24 @@ func replaceValues(ptrs []interface{}, subPtrs []interface{}) {
 
 		case *pb.Invocation_State:
 			*pOrig = pb.Invocation_State(*subPtrs[i].(*int64))
+
+		case **pb.VariantDef:
+			var err error
+			if *pOrig, err = pbutil.VariantDefFromStrings(*subPtrs[i].(*[]string)); err != nil {
+				// If it was written to Spanner, it should have been validated.
+				panic(err)
+			}
+
+		case *[]*pb.StringPair:
+			var err error
+			pairs := *subPtrs[i].(*[]string)
+			*pOrig = make([]*pb.StringPair, len(pairs))
+			for i, p := range pairs {
+				if (*pOrig)[i], err = pbutil.StringPairFromString(p); err != nil {
+					// If it was written to Spanner, it should have been validated.
+					panic(err)
+				}
+			}
 
 		default:
 			panic(fmt.Sprintf(
