@@ -15,6 +15,9 @@
 package pbutil
 
 import (
+	"fmt"
+	"sort"
+
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -22,13 +25,24 @@ import (
 
 // ValidateVariantDef returns an error if def is invalid.
 func ValidateVariantDef(d *pb.VariantDef) error {
-	for k, v := range d.Def {
+	for k, v := range d.GetDef() {
 		p := pb.StringPair{Key: k, Value: v}
 		if err := ValidateStringPair(&p); err != nil {
 			return errors.Annotate(err, "%q:%q", k, v).Err()
 		}
 	}
 	return nil
+}
+
+// VariantDefPairs returns a key:val string slice representation of the VariantDef.
+func VariantDefPairs(d *pb.VariantDef) []string {
+	keys := SortedVariantDefKeys(d)
+	pairs := make([]string, len(keys))
+	defMap := d.GetDef()
+	for i, k := range keys {
+		pairs[i] = fmt.Sprintf("%s:%s", k, defMap[k])
+	}
+	return pairs
 }
 
 // VariantDefFromStrings returns a VariantDef proto given the key:val string slice of its contents.
@@ -44,4 +58,14 @@ func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
 		defMap[pair.Key] = pair.Value
 	}
 	return &pb.VariantDef{Def: defMap}, nil
+}
+
+// SortedVariantDefKeys returns the keys in the variant def as a sorted slice.
+func SortedVariantDefKeys(d *pb.VariantDef) []string {
+	keys := make([]string, 0, len(d.GetDef()))
+	for k := range d.GetDef() {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

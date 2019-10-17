@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/resultdb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -166,7 +165,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 				}
 
 				if len(params) > 0 {
-					rpb.ExtraVariantPairs = params.Proto()
+					rpb.ExtraVariantPairs = &pb.VariantDef{Def: params}
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
@@ -224,9 +223,9 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 }
 
 // extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
-func extractGTestParameters(testPath string) (basePath string, params resultdb.VariantDefMap, err error) {
+func extractGTestParameters(testPath string) (basePath string, params map[string]string, err error) {
 	var suite, name string
-	params = resultdb.VariantDefMap{}
+	params = map[string]string{}
 
 	// Tests can be only one of type- or value-parametrized, if parametrized at all.
 	if match := typeParamRE.FindStringSubmatch(testPath); match != nil {

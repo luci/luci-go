@@ -43,6 +43,19 @@ func TestValidateVariantDef(t *testing.T) {
 }
 
 func TestVariantDefUtils(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Conversion to pair strings works`, t, func() {
+		def := &pb.VariantDef{Def: map[string]string{
+			"key/with/part/k3": "v3",
+			"k1":               "v1",
+			"key/k2":           "v2",
+		}}
+		So(VariantDefPairs(def), ShouldResemble, []string{
+			"k1:v1", "key/k2:v2", "key/with/part/k3:v3",
+		})
+	})
+
 	Convey(`Conversion from pair strings works`, t, func() {
 		Convey(`for valid pairs`, func() {
 			def, err := VariantDefFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
@@ -53,5 +66,15 @@ func TestVariantDefUtils(t *testing.T) {
 				"key/with/part/k3": "v3",
 			}})
 		})
+	})
+
+	Convey(`Key sorting works`, t, func() {
+		def := &pb.VariantDef{Def: map[string]string{
+			"k2": "v2",
+			"k3": "v3",
+			"k1": "v1",
+		}}
+
+		So(SortedVariantDefKeys(def), ShouldResemble, []string{"k1", "k2", "k3"})
 	})
 }
