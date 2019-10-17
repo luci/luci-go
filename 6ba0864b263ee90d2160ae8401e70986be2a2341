@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "681be30a_814d6a87",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T19:59:12Z",
+      "side": 1,
+      "message": "nit: resultdb-specific?\n\nIf you agree I can just change this in a CL I\u0027ll rebase on this that adds VariantDef and StringPair support.",
+      "range": {
+        "startLine": 60,
+        "startChar": 59,
+        "endLine": 60,
+        "endChar": 61
+      },
+      "revId": "6ba0864b263ee90d2160ae8401e70986be2a2341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
