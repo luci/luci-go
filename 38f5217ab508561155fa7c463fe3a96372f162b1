@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "8873ac5d_f2380c6b",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "this func is removed",
+      "parentUuid": "12da5040_823c0ed0",
+      "range": {
+        "startLine": 202,
+        "startChar": 5,
+        "endLine": 202,
+        "endChar": 18
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01716bdd_d2b2073e",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -80,6 +104,30 @@
       "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9702591d_cce35429",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01716bdd_d2b2073e",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 46
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "9863c839_6d8067a1",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc5f3eef_66dae897",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 15
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc17f97a_253c326a",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -117,6 +189,30 @@
       "writtenOn": "2019-10-17T19:52:17Z",
       "side": 1,
       "message": "I have an expirations struct that holds invocation and results expiration times and weeks, and getExpirations that returns these expirations given a current time. Will we want to share that?",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 68
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77f682e3_59441962",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "sure. Do you prefer to upload that in separate CL for me to reuse, or I land this and then you modify it to use your thing?",
+      "parentUuid": "bc17f97a_253c326a",
       "range": {
         "startLine": 133,
         "startChar": 1,
@@ -146,6 +242,24 @@
     },
     {
       "key": {
+        "uuid": "f9b4cf5e_7fd29b05",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "i think here. it is specific to computation of expiration which does not happen anywhere else?",
+      "parentUuid": "9cc84756_65992029",
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e2e64e88_568d2c39",
         "filename": "resultdb/recorder/create_invocation.go",
         "patchSetId": 5
@@ -157,6 +271,30 @@
       "writtenOn": "2019-10-17T19:52:17Z",
       "side": 1,
       "message": "What do we expect this to do? I think this truncates to multiple of week since Jan 1, 1970 (Thursday), which may well be just fine, but if we /expect/ it to truncate to e.g. Sunday we may want to note that discrepancy somewhere.\n\nOtherwise, I have a getExpirations that truncates to the most recent Sunday if you want to use that.",
+      "range": {
+        "startLine": 142,
+        "startChar": 54,
+        "endLine": 142,
+        "endChar": 62
+      },
+      "revId": "38f5217ab508561155fa7c463fe3a96372f162b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e31bebce_0e1077d0",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T21:41:56Z",
+      "side": 1,
+      "message": "same q for you as above",
+      "parentUuid": "e2e64e88_568d2c39",
       "range": {
         "startLine": 142,
         "startChar": 54,
