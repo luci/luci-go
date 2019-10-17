@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ec525ffd_e3c32e45",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e3cc57d0_67cf4ac0",
+      "range": {
+        "startLine": 85,
+        "startChar": 16,
+        "endLine": 85,
+        "endChar": 20
+      },
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1dee1610_55203fd2",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2019-10-16T23:57:13Z",
       "side": 1,
       "message": "this makes sense only if reader read what\u0027s directly above, but if they somehow came from a different place, it would be less obvious. Please refer to replacePointers somehow",
+      "range": {
+        "startLine": 94,
+        "startChar": 76,
+        "endLine": 94,
+        "endChar": 80
+      },
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5c4ff04_1c0c0f16",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "PTAL at new comment",
+      "parentUuid": "1dee1610_55203fd2",
       "range": {
         "startLine": 94,
         "startChar": 76,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2e21d818_51c1dd30",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "OK --- we do lose the index though (maybe we don\u0027t care)",
+      "parentUuid": "b02d5115_c23fbfd5",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 4
+      },
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aaf7051_3ad8ee46",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 7
@@ -91,6 +163,30 @@
       "revId": "6aee73325894a0a664153a03118d901e33563303",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8404ce8_822a6997",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aaf7051_3ad8ee46",
+      "range": {
+        "startLine": 115,
+        "startChar": 12,
+        "endLine": 118,
+        "endChar": 4
+      },
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d230d543_fb5d3ee3",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85f9d5c1_0ed1568a",
+      "range": {
+        "startLine": 126,
+        "startChar": 32,
+        "endLine": 126,
+        "endChar": 37
+      },
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6274d365_b73fa47d",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 7
@@ -131,6 +251,24 @@
       "revId": "6aee73325894a0a664153a03118d901e33563303",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04f5c3a1_0ad9533b",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T00:38:04Z",
+      "side": 1,
+      "message": "Ah yes, thanks",
+      "parentUuid": "6274d365_b73fa47d",
+      "revId": "6aee73325894a0a664153a03118d901e33563303",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
