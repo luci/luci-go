@@ -22,6 +22,30 @@
       "revId": "f59dc3ff221f1e365eb30a0a2c32c7d808e3c1f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1a21dad_e49d44d6",
+        "filename": "resultdb/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-17T23:11:29Z",
+      "side": 1,
+      "message": "no opinion",
+      "parentUuid": "e69257ae_37d49e82",
+      "range": {
+        "startLine": 226,
+        "startChar": 70,
+        "endLine": 226,
+        "endChar": 87
+      },
+      "revId": "f59dc3ff221f1e365eb30a0a2c32c7d808e3c1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
