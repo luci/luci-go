@@ -17,7 +17,10 @@ package internal
 import (
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/status"
 )
 
 var httpClientCtxKey = "context key for a *http.Client"
@@ -34,4 +37,16 @@ func HTTPClient(ctx context.Context) *http.Client {
 		panic("no HTTP client in context")
 	}
 	return client
+}
+
+// UnwrapGrpcCodePostlude extracts an error code from a grpcutil.Tag and returns
+// a gRPC-native error.
+// It can be used as Postlude in a decorated gRPC service implementation.
+func UnwrapGrpcCodePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	// Extract gRPC code from a tag and convert the error to a gRPC-native error.
+	if code, ok := grpcutil.Tag.In(err); ok {
+		return status.Error(code, err.Error())
+	}
+
+	return err
 }

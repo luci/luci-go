@@ -61,7 +61,7 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 //
 // If the task is a dedup of another task, the invocation returned is the underlying one; otherwise,
 // the invocation returned is associated with the swarming task itself.
-func (s *RecorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
+func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
 	if err := validateDeriveInvocationRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
