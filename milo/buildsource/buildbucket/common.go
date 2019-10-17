@@ -29,9 +29,10 @@ import (
 
 const bbRPCTimeout = time.Minute
 
-func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Service, error) {
-	c, _ = context.WithTimeout(c, bbRPCTimeout)
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+func newSwarmbucketClient(ctx context.Context, server string) (*swarmbucket.Service, error) {
+	// TODO(crbug/1006920): Do not leak the cancel context.
+	ctx, _ = context.WithTimeout(ctx, bbRPCTimeout)
+	t, err := auth.GetRPCTransport(ctx, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +44,10 @@ func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Servic
 	return client, nil
 }
 
-func newBuildbucketClient(c context.Context, server string) (*bbv1.Service, error) {
-	c, _ = context.WithTimeout(c, bbRPCTimeout)
-	t, err := auth.GetRPCTransport(c, auth.AsUser)
+func newBuildbucketClient(ctx context.Context, server string) (*bbv1.Service, error) {
+	// TODO(crbug/1006920): Do not leak the cancel context.
+	ctx, _ = context.WithTimeout(ctx, bbRPCTimeout)
+	t, err := auth.GetRPCTransport(ctx, auth.AsUser)
 	if err != nil {
 		return nil, err
 	}

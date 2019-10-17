@@ -101,6 +101,7 @@ func parseHeader(c context.Context, header http.Header) (context.Context, error)
 			if err != nil {
 				return origC, fmt.Errorf("%s header: %s", HeaderTimeout, err)
 			}
+			// TODO(crbug/1006920): Do not leak the cancel context.
 			c, _ = clock.WithTimeout(c, timeout)
 
 		case headerAccept, headerContentType:

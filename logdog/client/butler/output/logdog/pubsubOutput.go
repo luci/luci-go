@@ -207,9 +207,9 @@ func (o *pubSubOutput) publishMessage(message *pubsub.Message) error {
 	err := retry.Retry(o, transient.Only(indefiniteRetry), func() (err error) {
 		ctx := o.Context
 		if o.RPCTimeout > 0 {
-			var cancelFunc context.CancelFunc
-			ctx, cancelFunc = clock.WithTimeout(o, o.RPCTimeout)
-			defer cancelFunc()
+			var cancel context.CancelFunc
+			ctx, cancel = clock.WithTimeout(o, o.RPCTimeout)
+			defer cancel()
 		}
 
 		messageID, err = o.Topic.Publish(ctx, message)

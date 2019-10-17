@@ -53,7 +53,9 @@ func TestingBase(c context.Context) Base {
 // WithContextTimeout returns a middleware that adds a timeout to the context.
 func WithContextTimeout(timeout time.Duration) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
-		c.Context, _ = clock.WithTimeout(c.Context, timeout)
+		var cancel context.CancelFunc
+		c.Context, cancel = clock.WithTimeout(c.Context, timeout)
+		defer cancel()
 		next(c)
 	}
 }

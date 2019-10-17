@@ -130,7 +130,9 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 	dsp := &tq.Dispatcher{}
 	registerTasks(dsp)
 	mw = mw.Extend(func(c *router.Context, next router.Handler) {
-		c.Context, _ = context.WithTimeout(c.Context, 30*time.Second)
+		var cancel context.CancelFunc
+		c.Context, cancel = context.WithTimeout(c.Context, 30*time.Second)
+		defer cancel()
 		c.Context = withDispatcher(c.Context, dsp)
 		c.Context = withConfig(c.Context, &rpc.Config{})
 		c.Context = withCompute(c.Context, newCompute(c.Context))
