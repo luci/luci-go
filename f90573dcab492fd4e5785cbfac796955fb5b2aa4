@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd13a54a_58342ecb",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-17T20:50:49Z",
+      "side": 1,
+      "message": "Thoughts on pulling this out of the loop so we don\u0027t need to redeclare several times?",
+      "revId": "f90573dcab492fd4e5785cbfac796955fb5b2aa4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
