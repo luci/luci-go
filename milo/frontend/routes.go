@@ -128,6 +128,8 @@ func Run(templatePath string) {
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
 
+	r.POST("/cancel_build", htmlMW, handleError(buildbucket.CancelBuildHandler))
+
 	http.DefaultServeMux.Handle("/", r)
 }
 
