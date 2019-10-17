@@ -129,7 +129,9 @@ func TestSearch(t *testing.T) {
 
 			So(<-builds, ShouldResembleProto, &pb.Build{Id: 1})
 			cancel()
-			So(<-errC == context.Canceled, ShouldBeTrue)
+			err := <-errC
+			So(err, ShouldNotBeNil)
+			So(err == context.Canceled, ShouldBeTrue)
 		})
 
 		Convey("Multiple requests", func() {
