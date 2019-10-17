@@ -16,7 +16,6 @@ package pbutil
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -27,7 +26,10 @@ import (
 const maxStringPairKeyLength = 64
 const maxStringPairValueLength = 256
 
-var stringPairKeyRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$`)
+const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
+
+var stringPairKeyRe = regexpf(`^%s$`, stringPairKeyPattern)
+var stringPairRe = regexpf("^(%s):(.*)$", stringPairKeyPattern)
 
 // StringPair creates a pb.StringPair with the given strings as key/value field values.
 func StringPair(k, v string) *pb.StringPair {
@@ -91,4 +93,13 @@ func ValidateStringPairs(pairs []*pb.StringPair) error {
 		}
 	}
 	return nil
+}
+
+// StringPairFromString creates a pb.StringPair from the given key:val string.
+func StringPairFromString(s string) (*pb.StringPair, error) {
+	m := stringPairRe.FindStringSubmatch(s)
+	if m == nil {
+		return nil, doesNotMatch(stringPairRe)
+	}
+	return StringPair(m[1], m[3]), nil
 }

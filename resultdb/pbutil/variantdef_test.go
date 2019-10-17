@@ -41,3 +41,17 @@ func TestValidateVariantDef(t *testing.T) {
 		})
 	})
 }
+
+func TestVariantDefUtils(t *testing.T) {
+	Convey(`Conversion from pair strings works`, t, func() {
+		Convey(`for valid pairs`, func() {
+			def, err := VariantDefFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
+			So(err, ShouldBeNil)
+			So(def, ShouldResembleProto, &pb.VariantDef{Def: map[string]string{
+				"k1":               "v1",
+				"key/k2":           "v2",
+				"key/with/part/k3": "v3",
+			}})
+		})
+	})
+}

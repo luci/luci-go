@@ -38,6 +38,12 @@ func TestStringPairs(t *testing.T) {
 			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
 				fmt.Sprintf("odd number of tokens in %q", tokens))
 		})
+
+		Convey(`when provided key:val string`, func() {
+			pair, err := StringPairFromString("key/k:v")
+			So(err, ShouldBeNil)
+			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
+		})
 	})
 }
 
