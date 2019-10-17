@@ -41,7 +41,7 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 	}
 
 	var updateToken spanner.NullString
-	var state int64
+	var state pb.Invocation_State
 	err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, map[string]interface{}{
 		"UpdateToken": &updateToken,
 		"State":       &state,
@@ -53,7 +53,7 @@ func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error 
 	case err != nil:
 		return err
 
-	case pb.Invocation_State(state) != pb.Invocation_ACTIVE:
+	case state != pb.Invocation_ACTIVE:
 		return errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
 
 	case !updateToken.Valid:
