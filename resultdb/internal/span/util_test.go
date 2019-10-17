@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -49,13 +50,33 @@ func TestColumnReader(t *testing.T) {
 		So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
 	})
 
-	Convey(`Works with pb.Invocation_State`, t, func() {
+	Convey(`pb.Invocation_State`, t, func() {
 		var v pb.Invocation_State
 		read(&v, 2)
 		So(v, ShouldEqual, pb.Invocation_COMPLETED)
 	})
 
-	Convey(`Works with interspersed types`, t, func() {
+	Convey(`*pb.VariantDef`, t, func() {
+		var v *pb.VariantDef
+		read(&v, []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
+		So(v, ShouldResembleProto, &pb.VariantDef{Def: map[string]string{
+			"k1":               "v1",
+			"key/k2":           "v2",
+			"key/with/part/k3": "v3",
+		}})
+	})
+
+	Convey(`[]*pb.StringPair`, t, func() {
+		var v []*pb.StringPair
+		read(&v, []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
+		So(v, ShouldResemble, pbutil.StringPairs(
+			"k1", "v1",
+			"key/k2", "v2",
+			"key/with/part/k3", "v3",
+		))
+	})
+
+	Convey(`interspersed types`, t, func() {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
