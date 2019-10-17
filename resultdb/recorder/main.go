@@ -16,7 +16,6 @@ package main
 
 import (
 	"go.chromium.org/luci/common/logging"
-
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
@@ -31,7 +30,7 @@ func main() {
 			logging.Warningf(c.Context, "DEV Hello warning world")
 			c.Writer.Write([]byte("DEV Hello, world"))
 		})
-		pb.RegisterRecorderServer(srv.PRPC, &RecorderServer{})
+		pb.RegisterRecorderServer(srv.PRPC, NewRecorderServer())
 		return nil
 	})
 }
