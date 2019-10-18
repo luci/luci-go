@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5fdfcaec_2561b98b",
+        "filename": "resultdb/recorder/include.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "916bd504_701f5ac0",
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72380a49_4cacd647",
         "filename": "resultdb/recorder/include_test.go",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbf5bd81_ce3d5a91",
+        "filename": "resultdb/recorder/include_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72380a49_4cacd647",
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "3d514b05_c49c47e5",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50f8a543_bd468a33",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 11
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e201e0d_35f77dbd",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 5
@@ -79,6 +139,30 @@
       "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7f60be5_ac9a6a2a",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e201e0d_35f77dbd",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 11
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "ffeb7df4_653324b0",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "838e9602_d9e7a532",
+      "range": {
+        "startLine": 56,
+        "startChar": 5,
+        "endLine": 56,
+        "endChar": 92
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "feff9876_94a83746",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 5
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "7c216341_c9d0f875",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "feff9876_94a83746",
+      "range": {
+        "startLine": 62,
+        "startChar": 21,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1a13ab9e_5c3bcc9d",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 5
@@ -145,6 +277,24 @@
     },
     {
       "key": {
+        "uuid": "aff2030a_8aaacbea",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a13ab9e_5c3bcc9d",
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d0084e6_a930182a",
         "filename": "resultdb/recorder/invocation_test.go",
         "patchSetId": 5
@@ -156,6 +306,30 @@
       "writtenOn": "2019-10-18T06:26:48Z",
       "side": 1,
       "message": "if the reader doesn\u0027t know that InsertInvocation creates an invocation with TestRecentTimeUTC+1h as the deadline, this test is hard to understand. \n\nshould we add \"now\" parameter to InsertInvocation?",
+      "range": {
+        "startLine": 81,
+        "startChar": 43,
+        "endLine": 81,
+        "endChar": 56
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "699e3935_dcfff36b",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T20:43:30Z",
+      "side": 1,
+      "message": "Made InsertInvocation accept create time. LMK if that\u0027s not what you meant.",
+      "parentUuid": "3d0084e6_a930182a",
       "range": {
         "startLine": 81,
         "startChar": 43,
