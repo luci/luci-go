@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a23f833_9f8b55c2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T16:42:35Z",
+      "side": 1,
+      "message": "Should this be \"including invocation is finalized and included is not\" instead?",
+      "range": {
+        "startLine": 10,
+        "startChar": 10,
+        "endLine": 10,
+        "endChar": 63
+      },
+      "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be20cc9c_aa407ad1",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T16:42:35Z",
+      "side": 1,
+      "message": "I thought ready is deterministic as soon as either of the invocation is finalized?\n\nAlso in include.go, the fact that we can include an invocation means the including invocation is NOT finalized yet.",
+      "range": {
+        "startLine": 103,
+        "startChar": 13,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
