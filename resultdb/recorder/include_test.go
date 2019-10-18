@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -105,6 +106,7 @@ func TestInclude(t *testing.T) {
 
 		insInv := testutil.InsertInvocation
 		insIncl := testutil.InsertInclusion
+		ct := testclock.TestRecentTimeUTC
 
 		readInclusionColumn := func(includedInvID, column string, ptr interface{}) {
 			row, err := span.Client(ctx).Single().ReadRow(ctx, "Inclusions", spanner.Key{"including", includedInvID}, []string{column})
@@ -132,7 +134,7 @@ func TestInclude(t *testing.T) {
 
 			Convey(`no included invocation`, func() {
 				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token),
+					insInv("including", pb.Invocation_ACTIVE, token, ct),
 				)
 				_, err := recorder.Include(ctx, req)
 				So(err, ShouldErrLike, `"invocations/included" not found`)
@@ -141,8 +143,8 @@ func TestInclude(t *testing.T) {
 
 			Convey(`idempotent`, func() {
 				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token),
-					insInv("included", pb.Invocation_COMPLETED, ""),
+					insInv("including", pb.Invocation_ACTIVE, token, ct),
+					insInv("included", pb.Invocation_COMPLETED, "", ct),
 				)
 
 				_, err := recorder.Include(ctx, req)
@@ -154,8 +156,8 @@ func TestInclude(t *testing.T) {
 
 			Convey(`success`, func() {
 				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token),
-					insInv("included", pb.Invocation_COMPLETED, ""),
+					insInv("including", pb.Invocation_ACTIVE, token, ct),
+					insInv("included", pb.Invocation_COMPLETED, "", ct),
 				)
 
 				_, err := recorder.Include(ctx, req)
@@ -168,8 +170,8 @@ func TestInclude(t *testing.T) {
 
 			Convey(`unready`, func() {
 				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token),
-					insInv("included", pb.Invocation_ACTIVE, ""),
+					insInv("including", pb.Invocation_ACTIVE, token, ct),
+					insInv("included", pb.Invocation_ACTIVE, "", ct),
 				)
 
 				_, err := recorder.Include(ctx, req)
@@ -189,8 +191,8 @@ func TestInclude(t *testing.T) {
 			}
 
 			testutil.MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token),
-				insInv("included", pb.Invocation_COMPLETED, ""),
+				insInv("including", pb.Invocation_ACTIVE, token, ct),
+				insInv("included", pb.Invocation_COMPLETED, "", ct),
 			)
 
 			Convey(`invocation being overridden does not exist`, func() {
@@ -201,7 +203,7 @@ func TestInclude(t *testing.T) {
 
 			Convey(`inclusion already overridden by another invocation`, func() {
 				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, ""),
+					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
 					insIncl("including", "overridden", false, "else"),
 				)
 
@@ -212,7 +214,7 @@ func TestInclude(t *testing.T) {
 
 			Convey(`success`, func() {
 				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, ""),
+					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
 					insIncl("including", "overridden", false, ""),
 				)
 
@@ -226,7 +228,7 @@ func TestInclude(t *testing.T) {
 
 			Convey(`idempotent`, func() {
 				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, ""),
+					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
 					insIncl("including", "overridden", false, ""),
 				)
 

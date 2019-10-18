@@ -75,20 +75,8 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 		overriddenInvID = pbutil.MustParseInvocationName(in.OverrideInvocation)
 	}
 
-	// Check permissions before opening a RW txn.
-	client := span.Client(ctx)
-	if err := mayMutateInvocation(ctx, client.Single(), includingInvID); err != nil {
-		return nil, err
-	}
-
-	// Now actually mutate state in a RW txn.
-	_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	err := mutateInvocation(ctx, includingInvID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		eg, ctx := errgroup.WithContext(ctx)
-
-		// Check invocation state again.
-		eg.Go(func() error {
-			return mayMutateInvocation(ctx, txn, includingInvID)
-		})
 
 		// Ensure the included invocation exists and also read its state to
 		// compute inclusion readiness.

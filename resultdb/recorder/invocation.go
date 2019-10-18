@@ -16,11 +16,13 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -35,40 +37,66 @@ import (
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
 
-// mayMutateInvocation returns an error if the requester may not mutate the
-// invocation.
-// ctx must contain "update-token" metadata value.
-func mayMutateInvocation(ctx context.Context, txn span.Txn, invID string) error {
-	userToken, err := extractUserUpdateToken(ctx)
-	if err != nil {
-		return err
-	}
+// mutateInvocation checks if the invocation can be mutated and also
+// finalizes the invocation if it's deadline is exceeded.
+// If the invocation is active, continue with the other mutation(s) in f.
+func mutateInvocation(ctx context.Context, invID string, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
+	var retErr error
 
-	var updateToken spanner.NullString
-	var state pb.Invocation_State
-	err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, map[string]interface{}{
-		"UpdateToken": &updateToken,
-		"State":       &state,
+	_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		userToken, err := extractUserUpdateToken(ctx)
+		if err != nil {
+			return err
+		}
+
+		now := clock.Now(ctx)
+
+		var updateToken spanner.NullString
+		var state pb.Invocation_State
+		var deadline time.Time
+		err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, map[string]interface{}{
+			"UpdateToken": &updateToken,
+			"State":       &state,
+			"Deadline":    &deadline,
+		})
+
+		switch {
+		case spanner.ErrCode(err) == codes.NotFound:
+			return errors.Reason("%q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
+
+		case err != nil:
+			return err
+
+		case state != pb.Invocation_ACTIVE:
+			return errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+
+		case deadline.Before(now):
+			retErr = errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+
+			// The invocation has exceeded deadline, finalize it now.
+			return txn.BufferWrite([]*spanner.Mutation{
+				spanner.UpdateMap("Invocations", map[string]interface{}{
+					"InvocationId": invID,
+					"State":        int64(pb.Invocation_INTERRUPTED),
+					"FinalizeTime": deadline,
+				}),
+			})
+
+		case !updateToken.Valid:
+			return errors.Reason("no update token in active invocation").Tag(grpcutil.InternalTag).Err()
+
+		case userToken != updateToken.StringVal:
+			return errors.Reason("invalid update token").Tag(grpcutil.PermissionDeniedTag).Err()
+
+		default:
+			return f(ctx, txn)
+		}
 	})
-	switch {
-	case spanner.ErrCode(err) == codes.NotFound:
-		return errors.Reason("%q not found", pbutil.InvocationName(invID)).Tag(grpcutil.NotFoundTag).Err()
 
-	case err != nil:
-		return err
-
-	case state != pb.Invocation_ACTIVE:
-		return errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
-
-	case !updateToken.Valid:
-		return errors.Reason("no update token in active invocation").Tag(grpcutil.InternalTag).Err()
-
-	case userToken != updateToken.StringVal:
-		return errors.Reason("invalid update token").Tag(grpcutil.PermissionDeniedTag).Err()
-
-	default:
-		return nil
+	if err != nil {
+		retErr = err
 	}
+	return retErr
 }
 
 func extractUserUpdateToken(ctx context.Context) (string, error) {
