@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3eff2677_40a98272",
+        "filename": "resultdb/internal/testutil/context.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-18T21:09:05Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 4
+      },
+      "revId": "b260d628ab9e4ee1fdbb37253bc53ddfbb0412b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f430127_31af27b7",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-18T21:09:05Z",
+      "side": 1,
+      "message": "let\u0027s put this right after \"not active\u0027 check, so that a user definitely receives \"not active\" error as opposed to an err msg about token",
+      "revId": "b260d628ab9e4ee1fdbb37253bc53ddfbb0412b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d07bff6_6f601c70",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-18T21:09:05Z",
+      "side": 1,
+      "message": "i think it would be simpler to write\n\n  retErr \u003d ....\n  return txn.BufferWrite([]*spanner.Mutation{\n    spanner.UpdateMap(\"Invocations\", map[string]interface{}{\n        \"InvocationId\": invID,\n        \"State\":        int64(pb.Invocation_INTERRUPTED),\n        \"FinalizeTime\": deadline,\n    }),\n  })",
+      "revId": "b260d628ab9e4ee1fdbb37253bc53ddfbb0412b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7213ed29_14f446b2",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-18T21:09:05Z",
+      "side": 1,
+      "message": "here we are installing a new clock. It is better to advance time in the existing one: \n\n  clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)",
+      "revId": "b260d628ab9e4ee1fdbb37253bc53ddfbb0412b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
