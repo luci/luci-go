@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3687a5fc_096da5bc",
+        "filename": "resultdb/recorder/deployment.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-18T17:40:54Z",
+      "side": 1,
+      "message": "Note that this is insufficient, see \u0027-help\u0027 output.\n\nBy default luci/server binaries start in \"development\" mode optimized for local hacking. When running for real they need to start in production mode (enabled by \u0027-prod\u0027) flag. It will *require* few other flags that are necessary for correct work of LUCI stack. See qscheduler for example: https://chrome-internal.googlesource.com/infra/infra_internal/+/refs/heads/master/services/deployments/qscheduler-dev/manifests/deployments.yaml#26\n\nIn particular you\u0027ll need -root-secret-path if you going to use XSRF token or any other tokens generated via go.chromium.org/luci/server/tokens library.",
+      "range": {
+        "startLine": 54,
+        "startChar": 8,
+        "endLine": 54,
+        "endChar": 48
+      },
+      "revId": "ef96aa6481ee2662929511921f7a4bc02c7ec7c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
