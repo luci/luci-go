@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "13c01f0c_9cff1928",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T21:23:27Z",
+      "side": 1,
+      "message": "rebase failure. now it\u0027s done. same below.",
+      "parentUuid": "0587bc98_91c1e901",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 11
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e201e0d_35f77dbd",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 5
@@ -211,6 +235,30 @@
       "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "912932bd_cbe01e93",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T21:23:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d0c5925_fd9c7b63",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 11
+      },
+      "revId": "45fd76d41f73f14895463c8b0c4b30fb12f4dd11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
