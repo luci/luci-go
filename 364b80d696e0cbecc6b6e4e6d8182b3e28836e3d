@@ -93,6 +93,30 @@
       "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e569c0f_2525f966",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-18T17:27:06Z",
+      "side": 1,
+      "message": "I meant that the comment \"NULL: any of the finalization times is NULL.\" can be misleading. \n\nAnd I prefer option (2).",
+      "parentUuid": "33df7040_8bbf2463",
+      "range": {
+        "startLine": 103,
+        "startChar": 13,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
