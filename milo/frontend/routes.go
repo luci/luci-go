@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/buildbucket/deprecated"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -51,6 +52,7 @@ func Run(templatePath string) {
 		withBuildbucketClient,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
+	xsrfMW := htmlMW.Extend(xsrf.WithTokenCheck)
 	projectMW := htmlMW.Extend(projectACLMiddleware)
 	backendMW := baseMW.Extend(
 		middleware.WithContextTimeout(10*time.Minute),
@@ -127,6 +129,8 @@ func Run(templatePath string) {
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
+
+	r.POST("/cancel_build", xsrfMW, handleError(buildbucket.CancelBuildHandler))
 
 	http.DefaultServeMux.Handle("/", r)
 }

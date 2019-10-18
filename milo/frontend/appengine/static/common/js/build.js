@@ -109,4 +109,24 @@ $(document).ready(function() {
       }
     },
   }).show();
+
+  const closeModal = () => {
+    $('#modal-overlay')
+      .removeClass('show')
+      .removeClass('show-cancel-build-modal');
+  };
+
+  $('#cancel-build-button').click(e => {
+    closeModal();
+    $('#modal-overlay')
+      .addClass('show')
+      .addClass('show-cancel-build-modal');
+  });
+  $('#dismiss-cancel-build-button').click(closeModal);
+
+  $('#modal-overlay').click(e => {
+    if ($(e.target).is('#modal-overlay')) {
+      closeModal();
+    }
+  });
 });
