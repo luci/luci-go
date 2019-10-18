@@ -24,7 +24,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/spantest"
 
@@ -169,7 +168,7 @@ func fatalIf(err error) {
 }
 
 // InsertInvocation returns a spanner mutation that inserts an invocation.
-func InsertInvocation(id string, state pb.Invocation_State, updateToken string) *spanner.Mutation {
+func InsertInvocation(id string, state pb.Invocation_State, updateToken string, ct time.Time) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	return spanner.InsertMap("Invocations", map[string]interface{}{
 		"InvocationId":                      id,
@@ -180,8 +179,8 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string) 
 		"InvocationExpirationWeek":          future,
 		"ExpectedTestResultsExpirationTime": future,
 		"ExpectedTestResultsExpirationWeek": future,
-		"CreateTime":                        testclock.TestRecentTimeUTC,
-		"Deadline":                          testclock.TestRecentTimeUTC.Add(time.Hour),
+		"CreateTime":                        ct,
+		"Deadline":                          ct.Add(time.Hour),
 	})
 }
 
