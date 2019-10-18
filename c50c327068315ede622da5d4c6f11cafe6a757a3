@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "0c082ce3_15836474",
+        "filename": "cipd/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-18T22:54:24Z",
+      "side": 1,
+      "message": "It\u0027s because it still defines RPC API.",
+      "parentUuid": "50fe460b_8d34ef95",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 12
+      },
+      "revId": "c50c327068315ede622da5d4c6f11cafe6a757a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d43c6d9_5acc3359",
         "filename": "cipd/appengine/backend/main.go",
         "patchSetId": 2
