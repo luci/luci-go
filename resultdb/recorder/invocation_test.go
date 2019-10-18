@@ -17,11 +17,13 @@ package main
 import (
 	"context"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -32,15 +34,14 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestMayMutateInvocation(t *testing.T) {
+func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		mayMutate := func() error {
-			_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-				return mayMutateInvocation(ctx, txn, "inv")
+			return mutateInvocation(ctx, "inv", func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+				return nil
 			})
-			return err
 		}
 
 		Convey("no token", func() {
@@ -73,8 +74,37 @@ func TestMayMutateInvocation(t *testing.T) {
 				So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 			})
 
+			Convey(`with exceeded deadline`, func() {
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token))
+
+				// Mock time.
+				now := testclock.TestRecentTimeUTC.Add(2 * time.Hour)
+				ctx, _ = testclock.UseTime(ctx, now)
+
+				err := mayMutate()
+				So(err, ShouldErrLike, `"invocations/inv" has exceeded deadline`)
+				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+
+				// Confirm the invocation has been updated.
+				var state int64
+				var ft time.Time
+				txn := span.Client(ctx).Single()
+				err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+					"State":        &state,
+					"FinalizeTime": &ft,
+				})
+				So(err, ShouldBeNil)
+				So(state, ShouldEqual, int64(pb.Invocation_INTERRUPTED))
+				So(ft, ShouldEqual, now)
+			})
+
 			Convey(`with active invocation and same token`, func() {
 				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token))
+
+				// Mock time.
+				now := testclock.TestRecentTimeUTC
+				ctx, _ = testclock.UseTime(ctx, now)
+
 				err := mayMutate()
 				So(err, ShouldBeNil)
 			})
