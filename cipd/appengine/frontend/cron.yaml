@@ -14,3 +14,8 @@ cron:
   url: /internal/cron/bqlog/events-flush
   schedule: every 1 minutes
   target: backend
+
+- description: Imports latest service configuration
+  target: backend
+  url: /internal/cron/import-config
+  schedule: every 10 minutes
