@@ -22,6 +22,30 @@
       "revId": "d62ce312cc398575d2f933b2b80b90e0cf6cde50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72b1567e_ca1abb2c",
+        "filename": "cipd/appengine/backend/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-18T22:56:46Z",
+      "side": 1,
+      "message": "Oh I forgot return.",
+      "parentUuid": "ac6db3ce_df6d41f3",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 38
+      },
+      "revId": "d62ce312cc398575d2f933b2b80b90e0cf6cde50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
