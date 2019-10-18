@@ -21,14 +21,14 @@ metadata:
   labels:
     app: recorder
 spec:
-  type: LoadBalancer
+  type: NodePort
+  selector:
+    app: recorder
   ports:
   - name: http
     port: 80
-    targetPort: http-server
+    targetPort: http
     protocol: TCP
-  selector:
-    app: recorder
 
 ---
 
@@ -70,5 +70,5 @@ spec:
           mountPath: '/secrets/root-luci-secret'
           readOnly: true
         ports:
-        - name: http-server
+        - name: http
           containerPort: 8800

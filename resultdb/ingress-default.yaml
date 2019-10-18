@@ -1,0 +1,8 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: default
+spec:
+  backend:
+    serviceName: recorder
+    servicePort: 80
