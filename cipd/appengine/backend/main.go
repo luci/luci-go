@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
@@ -31,15 +32,26 @@ import (
 func main() {
 	r := router.New()
 	base := standard.Base()
+	cron := base.Extend(gaemiddleware.RequireCron)
 
 	standard.InstallHandlers(r)
 	impl.TQ.InstallRoutes(r, base)
 
-	r.GET("/internal/cron/bqlog/events-flush", base.Extend(gaemiddleware.RequireCron),
+	r.GET("/internal/cron/bqlog/events-flush", cron,
 		func(c *router.Context) {
 			// FlushEventsToBQ logs errors inside. We also do not retry on errors.
 			// It's fine to wait and flush on the next iteration.
 			model.FlushEventsToBQ(c.Context)
+			c.Writer.WriteHeader(http.StatusOK)
+		},
+	)
+	r.GET("/internal/cron/import-config", cron.Extend(interfaceMiddleware),
+		func(c *router.Context) {
+			if err := importConfig(c.Context); err != nil {
+				errors.Log(c.Context, err)
+				c.Writer.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			c.Writer.WriteHeader(http.StatusOK)
 		},
 	)
