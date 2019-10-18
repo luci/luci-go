@@ -75,20 +75,9 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 		overriddenInvID = pbutil.MustParseInvocationName(in.OverrideInvocation)
 	}
 
-	// Check permissions before opening a RW txn.
-	client := span.Client(ctx)
-	if err := mayMutateInvocation(ctx, client.Single(), includingInvID); err != nil {
-		return nil, err
-	}
-
-	// Now actually mutate state in a RW txn.
-	_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	// Mutate state in a RW txn.
+	err := mutateInvocation(ctx, includingInvID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		eg, ctx := errgroup.WithContext(ctx)
-
-		// Check invocation state again.
-		eg.Go(func() error {
-			return mayMutateInvocation(ctx, txn, includingInvID)
-		})
 
 		// Ensure the included invocation exists and also read its state to
 		// compute inclusion readiness.
@@ -101,7 +90,6 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 			ready = pbutil.IsFinalized(state)
 			return nil
 		})
-
 		if overriddenInvID != "" {
 			// Ensure the overridden inclusion exists and not overridden already.
 			// Note that we don't update readiness of the inclusion being
@@ -142,6 +130,7 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 			}))
 		}
 		return txn.BufferWrite(muts)
+
 	})
 
 	if spanner.ErrCode(err) == codes.AlreadyExists {
