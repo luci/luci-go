@@ -40,6 +40,7 @@ deploy:
 test-recorder:
 	$(call test-service,recorder)
 
+
 # Helpers
 .setup-bindir:
 	mkdir -p $(bindir)
