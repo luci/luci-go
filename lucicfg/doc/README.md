@@ -570,7 +570,7 @@ must refer to a path not generated or emitted by anything else.
 
 #### Arguments {#lucicfg.emit-args}
 
-* **dest**: path to the output file, relative to the `config_dir`. Required.
+* **dest**: path to the output file, relative to the `config_dir` (see [lucicfg.config(...)](#lucicfg.config)). Must not start with `../`. Required.
 * **data**: either a string or a proto message to write to `dest`. Proto messages are serialized using text protobuf encoding. Required.
 
 
@@ -809,6 +809,7 @@ luci.project(
     name,
 
     # Optional arguments.
+    config_dir = None,
     buildbucket = None,
     logdog = None,
     milo = None,
@@ -828,6 +829,7 @@ There should be exactly one such definition in the top-level config file.
 #### Arguments {#luci.project-args}
 
 * **name**: full name of the project. Required.
+* **config_dir**: a subdirectory of the config output directory (see `config_dir` in [lucicfg.config(...)](#lucicfg.config)) to place generated LUCI configs under. Default is `.`. A custom value is useful when using `lucicfg` to generate LUCI and non-LUCI configs at the same time.
 * **buildbucket**: appspot hostname of a Buildbucket service to use (if any).
 * **logdog**: appspot hostname of a LogDog service to use (if any).
 * **milo**: appspot hostname of a Milo service to use (if any).
