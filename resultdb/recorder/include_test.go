@@ -161,9 +161,10 @@ func TestInclude(t *testing.T) {
 				_, err := recorder.Include(ctx, req)
 				So(err, ShouldBeNil)
 
-				var ready bool
+				var ready spanner.NullBool
 				readInclusionColumn("included", "Ready", &ready)
-				So(ready, ShouldBeTrue)
+				So(ready.Valid, ShouldBeTrue)
+				So(ready.Bool, ShouldBeTrue)
 			})
 
 			Convey(`unready`, func() {
@@ -175,9 +176,9 @@ func TestInclude(t *testing.T) {
 				_, err := recorder.Include(ctx, req)
 				So(err, ShouldBeNil)
 
-				var ready bool
+				var ready spanner.NullBool
 				readInclusionColumn("included", "Ready", &ready)
-				So(ready, ShouldBeFalse)
+				So(ready.Valid, ShouldBeFalse)
 			})
 		})
 
