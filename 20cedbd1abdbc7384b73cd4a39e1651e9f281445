@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5861f34_ec711d0c",
+        "filename": "cipd/appengine/backend/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-18T16:42:05Z",
+      "side": 1,
+      "message": "This stuff is unnecessary complication. Just make importConfig(...) accept config.Interface directly as an argument, and instantiate the \"production\" interface in r.GET(\"/internal/cron/import-config\") handler, and the test interface in tests.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 0
+      },
+      "revId": "20cedbd1abdbc7384b73cd4a39e1651e9f281445",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
