@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "50fe460b_8d34ef95",
+        "filename": "cipd/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-18T22:36:40Z",
+      "side": 1,
+      "message": "admin/v1/admin.proto has \"package cipd\". But ok.",
+      "parentUuid": "582e1669_64bedc3d",
+      "range": {
+        "startLine": 17,
+        "startChar": 8,
+        "endLine": 17,
+        "endChar": 12
+      },
+      "revId": "c50c327068315ede622da5d4c6f11cafe6a757a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d43c6d9_5acc3359",
         "filename": "cipd/appengine/backend/main.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "c50c327068315ede622da5d4c6f11cafe6a757a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7df37f93_e6af1fac",
+        "filename": "cipd/appengine/backend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-18T22:36:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d43c6d9_5acc3359",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 48,
+        "endChar": 69
+      },
+      "revId": "c50c327068315ede622da5d4c6f11cafe6a757a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
