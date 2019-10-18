@@ -117,6 +117,30 @@
       "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88acb67b_5f8188cc",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-18T17:57:33Z",
+      "side": 1,
+      "message": "ok, please do it as a part of FinalizeInvocation CL then",
+      "parentUuid": "6e569c0f_2525f966",
+      "range": {
+        "startLine": 103,
+        "startChar": 13,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "364b80d696e0cbecc6b6e4e6d8182b3e28836e3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
