@@ -40,18 +40,6 @@ const (
 	// createInvocationGroup is a CIA group that can create invocations.
 	// TODO(crbug.com/1013316): remove in favor of realms.
 	createInvocationGroup = "luci-resultdb-access"
-
-	day = 24 * time.Hour
-
-	// Delete Invocations row after this duration since invocation creation.
-	invocationExpirationDuration = 2 * 365 * day // 2 y
-
-	// Delete expected test results afte this duration since invocation creation.
-	expectedTestResultsExpirationDuration = 60 * day // 2mo
-
-	// By default, interrupt the invocation 1h after creation if it is still
-	// incomplete.
-	defaultInvocationDeadlineDuration = time.Hour
 )
 
 // validateCreateInvocationRequest returns an error if req is determined to be
