@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf929d5d_8bec06ba",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-19T00:43:49Z",
+      "side": 1,
+      "message": "Note that it is updated by https://ci.chromium.org/p/infra/builders/ci/infra-continuous-images as well, so you may have surprises when running commands here concurrently with CI builds :)\n\nConsider using label \u0027dev\u0027 maybe?",
+      "range": {
+        "startLine": 14,
+        "startChar": 57,
+        "endLine": 14,
+        "endChar": 64
+      },
+      "revId": "2d1d8621a9a852a3fe67960f753fc6eb43c1f85b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
