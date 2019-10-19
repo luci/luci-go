@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09b7c2e1_94ea09f9",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-19T01:56:35Z",
+      "side": 1,
+      "message": "v2, otherwise it will keep trying to unmarshal old unmarshallable data",
+      "range": {
+        "startLine": 58,
+        "startChar": 34,
+        "endLine": 58,
+        "endChar": 36
+      },
+      "revId": "d0b886107da74e13709c6a234a0c05a2c84ed9d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56399d4e_a9554a62",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-19T01:56:35Z",
+      "side": 1,
+      "message": "Don\u0027t modify `info` in place, it may be used concurrently (IIRC, layered.Cache uses in-memory cache as the first layer, so gsObjInfo objects are shared by multiple goroutines).",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 30
+      },
+      "revId": "d0b886107da74e13709c6a234a0c05a2c84ed9d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
