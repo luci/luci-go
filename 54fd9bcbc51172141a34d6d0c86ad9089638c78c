@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "78eb197f_4d645959",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 30,
+        "startChar": 34,
+        "endLine": 30,
+        "endChar": 35
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24f7fda3_961fb554",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "optional: consider not recreating a column reader each time:\n\n  var included string\n  attr :\u003d \u0026pb.Invocation_InclusionAttrs{}\n  cr :\u003d NewColumnReader(\u0026included, \u0026attr.OverriddenBy, ....)\n  for { \n    ...\n    ... cr.Read(row)...\n    attrCpy :\u003d *attr\n    inclusions[included] \u003d \u0026attrCpy\n  }",
+      "range": {
+        "startLine": 48,
+        "startChar": 12,
+        "endLine": 48,
+        "endChar": 27
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3e081d8_0754864c",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "we have to set *goPtr to something because otherwise it will remain old value, whatever it might be. However it is unclear what to set it to. This is ambiguous because the callsite cannot distinguish between \"\" and NULL.\n\nIs this feature of ColumnReader actually being used in this CL? OverriddenByIncludedInvocationId is not nullable. I think I\u0027d prefer we do not introduce *stirng-\u003eNullString mapping because of ambiguity",
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99cb2cb7_911a9be0",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "else *goPtr \u003d null\n\nor *goPtr\u003dnull before if",
+      "range": {
+        "startLine": 129,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 4
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e31c63d_73037e0f",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "swap L121 and 122, otherwise we might end up with a panic",
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58ae6062_cc4ddc49",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:05:19Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 145,
+        "startChar": 5,
+        "endLine": 146,
+        "endChar": 10
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
