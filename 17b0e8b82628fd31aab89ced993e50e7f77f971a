@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fdb92ac_9d5ac531",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-19T02:49:47Z",
+      "side": 1,
+      "message": "I\u0027m not convinced of the benefit of this struct, so I\u0027m happy to inline this into derive_invocation.go (a la inclusion.go) if you prefer. Or, if having getExpirations LGTY, I\u0027ll update inclusion.go to use it as well.",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97144418_b8c4661b",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-19T02:49:47Z",
+      "side": 1,
+      "message": "I have another CL in the pipeline for this; separated as the CL is already biggish.",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7e61725_05dcd05e",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-19T02:49:47Z",
+      "side": 1,
+      "message": "Note that an error with a single test result will cause the entire write to fail.",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
