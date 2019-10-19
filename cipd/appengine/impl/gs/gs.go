@@ -52,6 +52,9 @@ type GoogleStorage interface {
 	// Exists checks whether given Google Storage file exists.
 	Exists(ctx context.Context, path string) (exists bool, err error)
 
+	// Size returns the size in bytes of the given Google Storage file.
+	Size(ctx context.Context, path string) (size uint64, exists bool, err error)
+
 	// Copy copies a file at 'src' to 'dst'.
 	//
 	// Applies ifSourceGenerationMatch and ifGenerationMatch preconditions if
@@ -160,23 +163,29 @@ func (gs *impl) init() error {
 	return gs.err
 }
 
-func (gs *impl) Exists(ctx context.Context, path string) (exists bool, err error) {
-	logging.Infof(ctx, "gs: Exists(path=%q)", path)
+func (gs *impl) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
+	logging.Infof(ctx, "gs: Size(path=%q)", path)
 	if err := gs.init(); err != nil {
-		return false, err
+		return 0, false, err
 	}
 
-	// Fetch and discard object metadata, we are interested in HTTP 404 reply.
-	// There's no faster way to check the object presence.
+	var obj *storage.Object
 	call := gs.srv.Objects.Get(SplitPath(path)).Context(ctx)
-	switch err := withRetry(ctx, func() error { _, err = call.Do(); return err }); {
+	switch err := withRetry(ctx, func() error { obj, err = call.Do(); return err }); {
 	case err == nil:
-		return true, nil
+		return obj.Size, true, nil
 	case StatusCode(err) == http.StatusNotFound:
-		return false, nil
+		return 0, false, nil
 	default:
-		return false, err
+		return 0, false, err
 	}
+}
+
+func (gs *impl) Exists(ctx context.Context, path string) (exists bool, err error) {
+	// Fetch and discard object size, we are interested in HTTP 404 reply.
+	// There's no faster way to check the object presence.
+	_, exists, err = gs.Size(ctx, path)
+	return exists, err
 }
 
 func (gs *impl) Copy(ctx context.Context, dst string, dstGen int64, src string, srcGen int64) error {
@@ -241,7 +250,7 @@ func (gs *impl) Publish(ctx context.Context, dst, src string, srcGen int64) erro
 		return errors.Annotate(err, "failed to copy the object").Err()
 	}
 
-	switch exists, dstErr := gs.Exists(ctx, dst); {
+	switch _, exists, dstErr := gs.Size(ctx, dst); {
 	case dstErr != nil:
 		return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
 	case !exists && code == http.StatusNotFound:
