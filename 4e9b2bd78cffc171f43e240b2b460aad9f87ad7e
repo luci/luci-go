@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1678a89a_ed24e9e4",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-19T02:46:20Z",
+      "side": 1,
+      "message": "This doesn\u0027t /quite/ seem the right place to put these tests, but placing into internal/span results in circular import with internal/testutil. Thoughts/suggestions welcome!",
+      "revId": "4e9b2bd78cffc171f43e240b2b460aad9f87ad7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
