@@ -182,9 +182,3 @@ func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransac
 			Err()
 	}
 }
-
-func readInvocationState(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string) (pb.Invocation_State, error) {
-	var state pb.Invocation_State
-	err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"State": &state})
-	return state, err
-}
