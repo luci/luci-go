@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "72b39c13_e1aaa289",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:30:29Z",
+      "side": 1,
+      "message": "i think there is a simpler way to reuse L46-52 is\n\n  function populateExpirations(dest *pb.Invocation, now time.Time)\n\nthen we don\u0027t need a struct that mirrors a subset of Invocation\n\n--\n\nalso please reuse it in create_invocation.go",
+      "parentUuid": "1fdb92ac_9d5ac531",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "97144418_b8c4661b",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 3
@@ -50,6 +68,24 @@
       "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fe5acfa_da8491a8",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-19T16:30:29Z",
+      "side": 1,
+      "message": "i think this is ok. it is better than absence of guarantee that \"if there is an invocation in spanner, we know it is good and complete\"",
+      "parentUuid": "f7e61725_05dcd05e",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
