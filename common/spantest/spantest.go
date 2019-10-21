@@ -161,14 +161,9 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	}
 	dbName := fmt.Sprintf("test%d", random)
 	if u, err := user.Current(); err == nil && u.Username != "" {
-		suffix := strings.ToLower(u.Username)
-		suffix = dbNameAlphabetInversedRe.ReplaceAllLiteralString(suffix, "_")
-		dbName += "_by_" + suffix
-		const maxLen = 30
-		if len(dbName) > maxLen {
-			dbName = dbName[:maxLen]
-		}
+		dbName += "_by_" + u.Username
 	}
+	dbName = SanitizeDBName(dbName)
 
 	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
 		Parent:          instanceName,
@@ -187,4 +182,17 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 		Name: db.Name,
 		ts:   ts,
 	}, nil
+}
+
+// SanitizeDBName tranforms name to a valid one.
+// If name is already valid, returns it without changes.
+func SanitizeDBName(name string) string {
+	name = strings.ToLower(name)
+	name = dbNameAlphabetInversedRe.ReplaceAllLiteralString(name, "_")
+	name = strings.TrimRight(name, "_")
+	const maxLen = 30
+	if len(name) > maxLen {
+		name = name[:maxLen]
+	}
+	return name
 }
