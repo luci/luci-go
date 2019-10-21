@@ -99,6 +99,9 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 //    def default_loader():
 //      """Returns a loader used by default when registering descriptor sets."""
 //
+//    def message_type(msg):
+//      """Returns proto.MessageType of the given message."""
+//
 //    def to_textpb(msg):
 //      """Serializes a protobuf message to text proto.
 //
@@ -160,6 +163,7 @@ func ProtoLib() starlark.StringDict {
 			"new_descriptor_set": starlark.NewBuiltin("new_descriptor_set", newDescriptorSet),
 			"new_loader":         starlark.NewBuiltin("new_loader", newLoader),
 			"default_loader":     starlark.NewBuiltin("default_loader", defaultLoader),
+			"message_type":       starlark.NewBuiltin("message_type", messageType),
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
 			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
 			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
@@ -255,6 +259,15 @@ func defaultLoader(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple
 		return l, nil
 	}
 	return starlark.None, nil
+}
+
+// messageType returns MessageType of the given message.
+func messageType(th *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg *Message
+	if err := starlark.UnpackArgs("message_type", args, kwargs, "msg", &msg); err != nil {
+		return nil, err
+	}
+	return msg.MessageType(), nil
 }
 
 // marshallerBuiltin implements Starlark shim for To*PB() functions.

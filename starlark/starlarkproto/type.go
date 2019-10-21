@@ -33,7 +33,10 @@ import (
 // nested messages and int values of enums. Note that starlark.HasSetField is
 // not implemented, making values of MessageType immutable.
 //
-// Given a MessageDescriptor can be instantiated through Loader as
+// Stringifying an instance of MessageType (e.g. with `str(...)` in Starlark)
+// returns its full proto type name.
+//
+// Given a MessageDescriptor, MessageType can be instantiated through Loader as
 // loader.MessageType(...).
 type MessageType struct {
 	*starlark.Builtin // the callable, initialize in Loader
@@ -111,6 +114,11 @@ func (t *MessageType) Converter() typed.Converter {
 // It is sort of like a meta-type, i.e. like "type" type in Python.
 func (t *MessageType) Type() string {
 	return "proto.MessageType"
+}
+
+// String returns the full proto type name.
+func (t *MessageType) String() string {
+	return string(t.desc.FullName())
 }
 
 // Attr returns either a nested message or an enum value.
