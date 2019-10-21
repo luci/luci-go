@@ -51,6 +51,14 @@ def register():
 ## Utilities to be used from generators.
 
 
+def set_config(ctx, path, cfg):
+  """Adds `cfg` as a LUCI config to the output at the given `path`."""
+  root = get_project().props.config_dir
+  if root != '.':
+    path = root + '/' + path
+  ctx.output[path] = cfg
+
+
 def get_project(required=True):
   """Returns project() node or fails if it wasn't declared."""
   n = graph.node(keys.project())
@@ -135,10 +143,10 @@ def gen_project_cfg(ctx):
   if not proj:
     return
 
-  # If there's a luci.project(...) node defined, then lucicfg is used to
-  # generate LUCI project configs. In this case ALL generated configs belong to
-  # "projects/<name>" config set (so declare that it spans all configs).
-  ctx.declare_config_set('projects/%s' % proj.props.name, '.')
+  # We put generated LUCI configs under proj.props.config_dir (see set_config).
+  # Declare it is a project config set, so it is sent to LUCI config for
+  # validation.
+  ctx.declare_config_set('projects/%s' % proj.props.name, proj.props.config_dir)
 
   # Find all PROJECT_CONFIGS_READER role entries.
   access = []
@@ -152,10 +160,10 @@ def gen_project_cfg(ctx):
     else:
       fail('impossible')
 
-  ctx.output['project.cfg'] = config_pb.ProjectCfg(
+  set_config(ctx, 'project.cfg', config_pb.ProjectCfg(
       name = proj.props.name,
       access = access,
-  )
+  ))
 
 
 ################################################################################
@@ -179,11 +187,11 @@ def gen_logdog_cfg(ctx):
       writers.append(a.group)
 
   logdog = get_service('logdog', 'defining LogDog options')
-  ctx.output[logdog.cfg_file] = logdog_pb.ProjectConfig(
+  set_config(ctx, logdog.cfg_file, logdog_pb.ProjectConfig(
       reader_auth_groups = readers,
       writer_auth_groups = writers,
       archive_gs_bucket = opts.props.gs_bucket,
-  )
+  ))
 
 
 ################################################################################
@@ -208,7 +216,7 @@ def gen_buildbucket_cfg(ctx):
   swarming = get_service('swarming', 'defining builders')
 
   cfg = buildbucket_pb.BuildbucketCfg()
-  ctx.output[buildbucket.cfg_file] = cfg
+  set_config(ctx, buildbucket.cfg_file, cfg)
 
   for bucket in buckets:
     cfg.buckets.append(buildbucket_pb.Bucket(
@@ -381,7 +389,7 @@ def gen_scheduler_cfg(ctx):
   project_name = get_project().props.name
 
   cfg = scheduler_pb.ProjectConfig()
-  ctx.output[scheduler.cfg_file] = cfg
+  set_config(ctx, scheduler.cfg_file, cfg)
 
   # Generate per-bucket ACL sets based on bucket-level permissions. Skip buckets
   # that aren't used to avoid polluting configs with unnecessary entries.
@@ -532,14 +540,14 @@ def gen_milo_cfg(ctx):
   milo = get_service('milo', 'using views or setting Milo config')
   project_name = get_project().props.name
 
-  ctx.output[milo.cfg_file] = milo_pb.Project(
+  set_config(ctx, milo.cfg_file, milo_pb.Project(
       build_bug_template = build_bug_template,
       logo_url = opts.logo,
       consoles = [
           _milo_console_pb(view, opts, project_name)
           for view in views
       ],
-  )
+  ))
 
 
 def _milo_check_connections():
@@ -680,7 +688,7 @@ def gen_cq_cfg(ctx):
       draining_start_time = cq_node.props.draining_start_time if cq_node else None,
       project_scoped_account = _cq_toggle(cq_node.props.project_scoped_account) if cq_node else None,
   )
-  ctx.output['commit-queue.cfg'] = cfg
+  set_config(ctx, 'commit-queue.cfg', cfg)
 
   if cq_node and cq_node.props.submit_max_burst:
     cfg.submit_options = cq_pb.SubmitOptions(
@@ -926,7 +934,7 @@ def gen_notify_cfg(ctx):
   # Write all defined templates.
   for t in templates:
     path = '%s/email-templates/%s.template' % (service.app_id, t.props.name)
-    ctx.output[path] = t.props.body
+    set_config(ctx, path, t.props.body)
 
   # Build the map 'builder node => [notifier node] watching it'.
   per_builder = {}
@@ -964,12 +972,12 @@ def gen_notify_cfg(ctx):
     ))
 
   # Done!
-  ctx.output[service.cfg_file] = notify_pb.ProjectConfig(
+  set_config(ctx, service.cfg_file, notify_pb.ProjectConfig(
       notifiers = sorted(
           notifiers_pb,
           key = lambda n: (n.builders[0].bucket, n.builders[0].name)
       ),
-  )
+  ))
 
 
 def _notify_notification_pb(node):

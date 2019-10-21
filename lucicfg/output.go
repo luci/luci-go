@@ -331,8 +331,14 @@ func newOutputBuilder() *outputBuilder {
 func (o *outputBuilder) Type() string { return "output" }
 
 func (o *outputBuilder) SetKey(k, v starlark.Value) error {
-	if _, ok := k.(starlark.String); !ok {
+	key, ok := k.(starlark.String)
+	if !ok {
 		return fmt.Errorf("output set key should be a string, not %s", k.Type())
+	}
+
+	// Paths must be within the config output directory, "../" is not allowed.
+	if _, err := cleanRelativePath(key.GoString(), false); err != nil {
+		return err
 	}
 
 	_, str := v.(starlark.String)
@@ -341,6 +347,9 @@ func (o *outputBuilder) SetKey(k, v starlark.Value) error {
 		return fmt.Errorf("output set value should be either a string or a proto message, not %s", v.Type())
 	}
 
+	// Use the exact same key (not a version cleaned by cleanRelativePath), so
+	// that Starlark code can read the value back using whatever dirty key it
+	// used. We do the final cleanup of keys in finalize(...).
 	return o.Dict.SetKey(k, v)
 }
 
@@ -356,8 +365,13 @@ func (o *outputBuilder) finalize(includePBHeader bool) (map[string]Datum, error)
 	for _, kv := range o.Items() {
 		k, v := kv[0].(starlark.String), kv[1]
 
+		key, err := cleanRelativePath(k.GoString(), false)
+		if err != nil {
+			panic(err) // already validated in SetKey
+		}
+
 		if s, ok := v.(starlark.String); ok {
-			out[k.GoString()] = BlobDatum(s.GoString())
+			out[key] = BlobDatum(s.GoString())
 			continue
 		}
 
@@ -374,7 +388,7 @@ func (o *outputBuilder) finalize(includePBHeader bool) (map[string]Datum, error)
 			buf.WriteString("\n")
 			md.Header = buf.String()
 		}
-		out[k.GoString()] = md
+		out[key] = md
 	}
 
 	return out, nil

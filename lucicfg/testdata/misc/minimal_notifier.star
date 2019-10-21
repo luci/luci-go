@@ -32,6 +32,8 @@ luci.builder(
     ],
 )
 
+# Expect configs:
+#
 # === cr-buildbucket.cfg
 # buckets: <
 #   name: "bucket"

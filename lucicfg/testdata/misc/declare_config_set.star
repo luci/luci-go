@@ -14,5 +14,18 @@ def test_redeclaration():
       'set "testing" has already been declared')
 
 
+def test_bad_path():
+  ctx = __native__.new_gen_ctx()
+  assert.fails(lambda: ctx.declare_config_set('testing', '/abs'),
+      'is not allowed')
+  assert.fails(lambda: ctx.declare_config_set('testing', '..'),
+      'is not allowed')
+  assert.fails(lambda: ctx.declare_config_set('testing', '../.'),
+      'is not allowed')
+  assert.fails(lambda: ctx.declare_config_set('testing', '../dir'),
+      'is not allowed')
+
+
 test_ok()
 test_redeclaration()
+test_bad_path()

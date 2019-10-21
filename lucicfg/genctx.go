@@ -16,7 +16,6 @@ package lucicfg
 
 import (
 	"fmt"
-	"path"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -53,7 +52,12 @@ func (c *genCtx) declareConfigSetImpl(_ *starlark.Thread, _ *starlark.Builtin, a
 		return nil, err
 	}
 	nameS := name.GoString()
-	rootS := path.Clean(root.GoString())
+
+	// Paths must be within the config output directory, "../" is not allowed.
+	rootS, err := cleanRelativePath(root.GoString(), false)
+	if err != nil {
+		return nil, fmt.Errorf("declare_config_set: root - %s", err)
+	}
 
 	// It is OK to redeclare exact same root. It is not OK to change it.
 	if existing, ok := c.roots[nameS]; ok && existing != rootS {

@@ -25,6 +25,7 @@ def _project(
       ctx,
       *,
       name=None,
+      config_dir=None,
 
       buildbucket=None,
       logdog=None,
@@ -41,6 +42,10 @@ def _project(
 
   Args:
     name: full name of the project. Required.
+    config_dir: a subdirectory of the config output directory (see `config_dir`
+        in lucicfg.config(...)) to place generated LUCI configs under. Default
+        is `.`. A custom value is useful when using `lucicfg` to generate LUCI
+        and non-LUCI configs at the same time.
     buildbucket: appspot hostname of a Buildbucket service to use (if any).
     logdog: appspot hostname of a LogDog service to use (if any).
     milo: appspot hostname of a Milo service to use (if any).
@@ -52,6 +57,7 @@ def _project(
   key = keys.project()
   graph.add_node(key, props = {
       'name': validate.string('name', name),
+      'config_dir': validate.relative_path('config_dir', config_dir, required=False, default='.'),
       'buildbucket': service.from_host('buildbucket', buildbucket),
       'logdog': service.from_host('logdog', logdog),
       'milo': service.from_host('milo', milo),
