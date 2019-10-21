@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e4e09c6_5d3319b5",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-21T18:46:43Z",
+      "side": 1,
+      "message": "Note: I tried to do depth-first search using stack first (i.e. replace PushBack with PushFront). It worked in general, but it doesn\u0027t produce topologically sorted list of nodes in `visited` (which is what I\u0027m after). I need to traverse all children before emitting a node to `visited`. Not sure how to do it non-recursively. So I gave up and added recursive implementation for depth-first traversal.",
+      "range": {
+        "startLine": 439,
+        "startChar": 1,
+        "endLine": 440,
+        "endChar": 21
+      },
+      "revId": "51ba9badb0c0d2ece50631c2de663bb0885a55b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b08064ff_9f4b445e",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 518,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-21T18:46:43Z",
+      "side": 1,
+      "message": "no new code, just extracted from previous location",
+      "range": {
+        "startLine": 493,
+        "startChar": 0,
+        "endLine": 518,
+        "endChar": 1
+      },
+      "revId": "51ba9badb0c0d2ece50631c2de663bb0885a55b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
