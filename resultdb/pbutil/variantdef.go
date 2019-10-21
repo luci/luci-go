@@ -49,6 +49,10 @@ func VariantDefPairs(d *pb.VariantDef) []string {
 //
 // If a key appears multiple times, the last pair wins.
 func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
+	if len(pairs) == 0 {
+		return nil, nil
+	}
+
 	defMap := make(map[string]string, len(pairs))
 	for _, p := range pairs {
 		pair, err := StringPairFromString(p)

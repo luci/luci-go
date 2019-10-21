@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 // ReadInvocation reads one invocation within the transaction.
@@ -45,4 +46,31 @@ func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[strin
 	default:
 		return nil
 	}
+}
+
+// ReadInvocationFull reads one invocation struct within the transaction.
+// If the invocation does not exist, the returned error is annotated with
+// NotFound GRPC code.
+func ReadInvocationFull(ctx context.Context, txn Txn, invID string) (*pb.Invocation, error) {
+	inv := &pb.Invocation{Name: pbutil.InvocationName(invID)}
+
+	// Populate fields from Invocation table.
+	err := ReadInvocation(ctx, txn, invID, map[string]interface{}{
+		"State":              &inv.State,
+		"CreateTime":         &inv.CreateTime,
+		"FinalizeTime":       &inv.FinalizeTime,
+		"Deadline":           &inv.Deadline,
+		"BaseTestVariantDef": &inv.BaseTestVariantDef,
+		"Tags":               &inv.Tags,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate Inclusions.
+	if inv.Inclusions, err = ReadInclusions(ctx, txn, invID); err != nil {
+		return nil, err
+	}
+
+	return inv, nil
 }

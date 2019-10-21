@@ -66,6 +66,12 @@ func TestVariantDefUtils(t *testing.T) {
 				"key/with/part/k3": "v3",
 			}})
 		})
+
+		Convey(`for empty list returns nil`, func() {
+			def, err := VariantDefFromStrings([]string{})
+			So(def, ShouldBeNil)
+			So(err, ShouldBeNil)
+		})
 	})
 
 	Convey(`Key sorting works`, t, func() {
