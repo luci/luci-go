@@ -20,6 +20,9 @@ m = testprotos.Simple()
 # type() works.
 assert.eq(type(m), 'proto.Message<testprotos.Simple>')
 
+# proto.message_type() works.
+assert.eq(proto.message_type(m), testprotos.Simple)
+
 # dir() works.
 assert.eq(dir(m), ['i', 'many_i'])
 
@@ -28,6 +31,9 @@ assert.true(bool(m))
 
 # Stringification works.
 assert.eq(str(testprotos.Simple(i=123)), 'i:123')
+
+# Stringifying the type returns its proto type name.
+assert.eq(str(testprotos.Simple), 'testprotos.Simple')
 
 # Assigning totally unsupported types to fields fails.
 def set_unrelated():
@@ -61,3 +67,6 @@ assert.fails(unknown_inner, 'proto.MessageType has no .Blah field or method')
 def replace_inner():
   testprotos.Complex.InnerMessage = None
 assert.fails(replace_inner, 'can\'t assign to .InnerMessage field of proto.MessageType')
+
+# Using message_type or non-proto fails.
+assert.fails(lambda: proto.message_type(123), 'got int, want proto.Message')
