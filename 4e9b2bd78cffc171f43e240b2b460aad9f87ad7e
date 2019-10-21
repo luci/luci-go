@@ -34,6 +34,24 @@
       "revId": "4e9b2bd78cffc171f43e240b2b460aad9f87ad7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "69347e1a_ca919105",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T21:12:51Z",
+      "side": 1,
+      "message": "Sure, thanks",
+      "parentUuid": "92c33765_738da512",
+      "revId": "4e9b2bd78cffc171f43e240b2b460aad9f87ad7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

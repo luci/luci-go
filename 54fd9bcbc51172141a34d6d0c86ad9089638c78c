@@ -275,6 +275,30 @@
       "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6f32b0a_f2eac868",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T21:12:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "201ca52f_db7e7fba",
+      "range": {
+        "startLine": 145,
+        "startChar": 5,
+        "endLine": 146,
+        "endChar": 10
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
