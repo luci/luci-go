@@ -35,6 +35,9 @@ import (
 type Txn interface {
 	// ReadRow reads a single row from the database.
 	ReadRow(ctx context.Context, table string, key spanner.Key, columns []string) (*spanner.Row, error)
+
+	// Read reads multiple rows from the database.
+	Read(ctx context.Context, table string, key spanner.KeySet, columns []string) *spanner.RowIterator
 }
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
@@ -64,8 +67,11 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 // For example, it can convert Spanner's int64 to pb.InvocationState.
 //
 // Supported types:
-//   - pb.InvocationState
+//   - string
 //   - tspb.Timestamp
+//   - pb.InvocationState
+//   - pb.VariantDef
+//   - pb.StringPair
 type ColumnReader struct {
 	// pointers to Go values, such as *pb.InvocationState
 	goPtrs []interface{}
@@ -83,8 +89,10 @@ func NewColumnReader(ptrs ...interface{}) *ColumnReader {
 
 	for i, goPtr := range r.goPtrs {
 		switch goPtr.(type) {
+		case *string:
+			r.spanPtrs[i] = &spanner.NullString{}
 		case **tspb.Timestamp:
-			r.spanPtrs[i] = &time.Time{}
+			r.spanPtrs[i] = &spanner.NullTime{}
 		case *pb.Invocation_State:
 			r.spanPtrs[i] = new(int64)
 		case **pb.VariantDef:
@@ -114,9 +122,18 @@ func (r *ColumnReader) Read(row *spanner.Row) error {
 		}
 
 		switch goPtr := goPtr.(type) {
+		case *string:
+			*goPtr = ""
+			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
+				*goPtr = maybe.StringVal
+			}
+
 		case **tspb.Timestamp:
-			if *goPtr, err = ptypes.TimestampProto(*spanPtr.(*time.Time)); err != nil {
-				panic(err)
+			*goPtr = nil
+			if maybe := *spanPtr.(*spanner.NullTime); maybe.Valid {
+				if *goPtr, err = ptypes.TimestampProto(maybe.Time); err != nil {
+					panic(err)
+				}
 			}
 
 		case *pb.Invocation_State:
