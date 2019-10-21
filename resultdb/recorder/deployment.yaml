@@ -51,8 +51,7 @@ spec:
           secretName: app-secret
       containers:
       - name: recorder
-        # TODO: revisit image naming once update flow decided
-        image: gcr.io/chops-public-images-dev/recorder:33ec97fa0ebacf20184bc05326088fcef5bc39b3-tainted
+        image: gcr.io/chops-public-images-dev/luci/resultdb/recorder:dev
         imagePullPolicy: Always
         args: ["--service-account-json", "/secrets/main-service-account-key/app-service-account.json"]
         ports:
