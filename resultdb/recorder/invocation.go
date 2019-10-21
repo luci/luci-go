@@ -43,7 +43,7 @@ const updateTokenMetadataKey = "update-token"
 func mutateInvocation(ctx context.Context, invID string, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
 	var retErr error
 
-	_, err := span.Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		userToken, err := extractUserUpdateToken(ctx)
 		if err != nil {
 			return err
