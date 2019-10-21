@@ -316,6 +316,28 @@ def _repo_url(attr, val, required=True):
   return val
 
 
+def _relative_path(attr, val, allow_dots=False, required=True, default=None):
+  """Validates that the value is a string with relative path.
+
+  Args:
+    attr: name of the var for error messages. Required.
+    var: a value to validate. Required.
+    allow_dots: if True, allow `../` as a prefix. Default is False.
+    default: a value to use if 'val' is None, ignored if required is True.
+    required: if False, allow 'val' to be None, return 'default' in this case.
+
+  Returns:
+    Validated and cleaned path.
+  """
+  val = validate.string(attr, val, required=required, default=default)
+  if val == None:
+    return None
+  clean, err = __native__.clean_relative_path(val, allow_dots)
+  if err:
+    fail('bad %r: %s' % (attr, err))
+  return clean
+
+
 def _var_with_validator(attr, validator, **kwargs):
   """Returns a lucicfg.var that validates the value via a validator callback.
 
@@ -356,6 +378,7 @@ validate = struct(
     struct = _struct,
     type = _type,
     repo_url = _repo_url,
+    relative_path = _relative_path,
 
     var_with_validator = _var_with_validator,
     vars_with_validators = _vars_with_validators,

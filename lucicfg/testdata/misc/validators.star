@@ -121,6 +121,16 @@ def test_validate_type():
   assert.fails(lambda: call('a', [], 0), 'bad "a": got list, want int')
 
 
+def test_validate_relative_path():
+  call = validate.relative_path
+  assert.eq(call('a', './abc/def//./zzz/../yyy/.'), 'abc/def/yyy')
+  assert.eq(call('a', '.'), '.')
+  assert.eq(call('a', './../abc', allow_dots=True), '../abc')
+  assert.eq(call('a', None, required=False), None)
+  assert.fails(lambda: call('a', None), 'missing required field "a"')
+  assert.fails(lambda: call('a', './../abc'), 'must not start with "../"')
+
+
 test_validate_string()
 test_validate_int()
 test_validate_float()
@@ -130,3 +140,4 @@ test_validate_list()
 test_validate_str_dict()
 test_validate_struct()
 test_validate_type()
+test_validate_relative_path()
