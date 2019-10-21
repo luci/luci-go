@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 // Cache is a cache of objects.
@@ -81,8 +82,6 @@ type Policies struct {
 	// MinFreeSpace trims if disk free space becomes lower than this value. If 0,
 	// it unconditionally fills the disk. Only makes sense when using disk based
 	// cache.
-	//
-	// BUG: Implement Policies.MinFreeSpace.
 	MinFreeSpace units.Size
 }
 
@@ -398,7 +397,18 @@ func (d *disk) statePath() string {
 }
 
 func (d *disk) respectPolicies() {
-	for d.lru.length() > d.policies.MaxItems || d.lru.sum > d.policies.MaxSize {
+	increaseFreeSpace := func() bool {
+		if d.policies.MinFreeSpace == 0 {
+			return false
+		}
+		size, err := filesystem.GetFreeSpace(d.path)
+		if err != nil {
+			return false
+		}
+		return size < uint64(d.policies.MinFreeSpace)
+	}
+
+	for d.lru.length() > d.policies.MaxItems || d.lru.sum > d.policies.MaxSize || increaseFreeSpace() {
 		k, _ := d.lru.popOldest()
 		_ = os.Remove(d.itemPath(k))
 	}
