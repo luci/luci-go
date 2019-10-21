@@ -32,17 +32,11 @@ import (
 // For ptrMap see ReadRow comment in util.go.
 func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[string]interface{}) error {
 	err := ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, ptrMap)
-	switch {
-	case spanner.ErrCode(err) == codes.NotFound:
+	if spanner.ErrCode(err) == codes.NotFound {
 		return errors.Reason("%q not found", pbutil.InvocationName(invID)).
 			InternalReason("%s", err).
 			Tag(grpcutil.NotFoundTag).
 			Err()
-
-	case err != nil:
-		return errors.Annotate(err, "failed to fetch %q", pbutil.InvocationName((invID))).Err()
-
-	default:
-		return nil
 	}
+	return err
 }
