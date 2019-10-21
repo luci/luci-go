@@ -46,17 +46,29 @@ spec:
         app: recorder
     spec:
       volumes:
-      - name: main-service-account-key
+      - name: root-luci-secret
         secret:
-          secretName: app-secret
+          secretName: root-luci-secret
       containers:
       - name: recorder
         image: gcr.io/chops-public-images-dev/luci/resultdb/recorder:dev
         imagePullPolicy: Always
-        args: ["--service-account-json", "/secrets/main-service-account-key/app-service-account.json"]
+        args: [
+          "-prod",
+          "-cloud-project", "luci-resultdb-dev",
+          "-http-addr", ":8800",
+          "-admin-addr", ":8900",
+          "-auth-service-host", "chrome-infra-auth-dev.appspot.com",
+          "-service-account-json", ":gce",
+          "-root-secret-path", "/secrets/root-luci-secret/secret.json",
+          "-ts-mon-account", "app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com",
+          "-ts-mon-service-name", "luci-resultdb-dev",
+          "-ts-mon-job-name", "luci-resultdb-dev-recorder",
+        ]
+        volumeMounts:
+        - name: root-luci-secret
+          mountPath: '/secrets/root-luci-secret'
+          readOnly: true
         ports:
         - name: http-server
           containerPort: 8800
-        volumeMounts:
-        - name: main-service-account-key
-          mountPath: /secrets/main-service-account-key
