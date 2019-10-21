@@ -93,6 +93,30 @@
       "revId": "6dfa57a9b041d971417224fa831d01656e9c2da0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "694a4922_20b1add0",
+        "filename": "lucicfg/testdata/misc/strutil.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-21T19:51:45Z",
+      "side": 1,
+      "message": "i don\u0027t know much about yaml, so np.",
+      "parentUuid": "a2a2f67f_6e18c913",
+      "range": {
+        "startLine": 17,
+        "startChar": 14,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "6dfa57a9b041d971417224fa831d01656e9c2da0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
