@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f16f6571_9a1c59e4",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T20:36:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78eb197f_4d645959",
+      "range": {
+        "startLine": 30,
+        "startChar": 34,
+        "endLine": 30,
+        "endChar": 35
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24f7fda3_961fb554",
         "filename": "resultdb/internal/span/inclusion.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a788b517_b479bd98",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T20:36:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24f7fda3_961fb554",
+      "range": {
+        "startLine": 48,
+        "startChar": 12,
+        "endLine": 48,
+        "endChar": 27
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3e081d8_0754864c",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -59,6 +107,24 @@
       "writtenOn": "2019-10-19T16:05:19Z",
       "side": 1,
       "message": "we have to set *goPtr to something because otherwise it will remain old value, whatever it might be. However it is unclear what to set it to. This is ambiguous because the callsite cannot distinguish between \"\" and NULL.\n\nIs this feature of ColumnReader actually being used in this CL? OverriddenByIncludedInvocationId is not nullable. I think I\u0027d prefer we do not introduce *stirng-\u003eNullString mapping because of ambiguity",
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a55e235_407f2ed8",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T20:36:41Z",
+      "side": 1,
+      "message": "Is there another CL that makes OverriddenByIncludedInvocationId not nullable? https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/resultdb/internal/span/init_db.sql?l\u003d96\u0026rcl\u003da4721f9c8a6f7328fb9b234f02d7b445723faa9d seems to suggest it is, currently.\n\nSet to \"\" for now; nil is not allowed for strings.",
+      "parentUuid": "d3e081d8_0754864c",
       "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "07be9638_6602a845",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T20:36:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99cb2cb7_911a9be0",
+      "range": {
+        "startLine": 129,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 4
+      },
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e31c63d_73037e0f",
         "filename": "resultdb/recorder/invocation_test.go",
         "patchSetId": 3
@@ -102,6 +192,24 @@
       "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce8c9fb4_2aea7d75",
+        "filename": "resultdb/recorder/invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-21T20:36:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e31c63d_73037e0f",
+      "revId": "54fd9bcbc51172141a34d6d0c86ad9089638c78c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
