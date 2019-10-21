@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c4c8c574_1f0eaf82",
+        "filename": "lucicfg/testdata/misc/strutil.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-21T19:38:41Z",
+      "side": 1,
+      "message": "tbh, surprising, is this WAI?",
+      "range": {
+        "startLine": 13,
+        "startChar": 12,
+        "endLine": 13,
+        "endChar": 16
+      },
+      "revId": "6dfa57a9b041d971417224fa831d01656e9c2da0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bec9c7dd_987d6672",
+        "filename": "lucicfg/testdata/misc/strutil.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-21T19:38:41Z",
+      "side": 1,
+      "message": "also surprising.",
+      "range": {
+        "startLine": 17,
+        "startChar": 14,
+        "endLine": 17,
+        "endChar": 16
+      },
+      "revId": "6dfa57a9b041d971417224fa831d01656e9c2da0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
