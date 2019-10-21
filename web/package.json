@@ -7,7 +7,7 @@
   "private": true,
   "dependencies": {},
   "devDependencies": {
-    "bower": "~1.7.9",
+    "bower": "~1.8.8",
     "browser-sync": "^2.7.7",
     "connect-history-api-fallback": "^1.1.0",
     "del": "^2.0.2",
