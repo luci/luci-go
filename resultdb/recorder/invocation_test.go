@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -104,6 +105,63 @@ func TestMutateInvocation(t *testing.T) {
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestReadInvocation(t *testing.T) {
+	Convey(`ReadInvocationFull`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		ct := testclock.TestRecentTimeUTC
+
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct))
+
+		txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
+		So(err, ShouldBeNil)
+		defer txn.Close()
+
+		createTs, _ := ptypes.TimestampProto(ct)
+		deadlineTs, _ := ptypes.TimestampProto(ct.Add(time.Hour))
+
+		inv, err := span.ReadInvocationFull(ctx, txn, "inv")
+		So(err, ShouldBeNil)
+		So(inv, ShouldResembleProto, &pb.Invocation{
+			Name:       "invocations/inv",
+			State:      pb.Invocation_COMPLETED,
+			CreateTime: createTs,
+			Deadline:   deadlineTs,
+		})
+
+		Convey(`with inclusions`, func() {
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", ct),
+				testutil.InsertInvocation("another", pb.Invocation_ACTIVE, "", ct),
+				testutil.InsertInclusion("including", "inv", true, ""),
+				testutil.InsertInclusion("including", "another", false, "invocations/inv"),
+			)
+
+			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
+			So(err, ShouldBeNil)
+			defer txn.Close()
+
+			inv, err := span.ReadInvocationFull(ctx, txn, "including")
+			So(err, ShouldBeNil)
+			So(inv, ShouldResembleProto, &pb.Invocation{
+				Name:       "invocations/including",
+				State:      pb.Invocation_ACTIVE,
+				CreateTime: createTs,
+				Deadline:   deadlineTs,
+				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
+					"inv": {
+						OverriddenBy: "",
+						Ready:        true,
+					},
+					"another": {
+						OverriddenBy: "invocations/inv",
+						Ready:        false,
+					},
+				},
 			})
 		})
 	})
