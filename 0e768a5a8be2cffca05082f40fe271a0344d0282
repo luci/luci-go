@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "acf3d340_66e3165c",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-10-21T09:27:50Z",
+      "side": 1,
+      "message": "So in the end, what number do you get from this function on which platform?\nThe comment is bit obscure.",
+      "revId": "0e768a5a8be2cffca05082f40fe271a0344d0282",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
