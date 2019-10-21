@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c45b3af_a5f179ee",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-21T20:52:22Z",
+      "side": 1,
+      "message": "please document support for strings in L68",
+      "revId": "b66994bd9e7d7b82891a45cae60451f53fd6e4d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
