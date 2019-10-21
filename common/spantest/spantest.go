@@ -189,10 +189,10 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 func SanitizeDBName(name string) string {
 	name = strings.ToLower(name)
 	name = dbNameAlphabetInversedRe.ReplaceAllLiteralString(name, "_")
-	name = strings.TrimRight(name, "_")
 	const maxLen = 30
 	if len(name) > maxLen {
 		name = name[:maxLen]
 	}
+	name = strings.TrimRight(name, "_")
 	return name
 }
