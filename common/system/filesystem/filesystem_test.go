@@ -424,3 +424,14 @@ func TestIsDir(t *testing.T) {
 		})
 	})
 }
+
+func TestGetFreeSpace(t *testing.T) {
+	t.Parallel()
+
+	Convey("GetFreeSpace", t, func() {
+		size, err := GetFreeSpace(".")
+		So(err, ShouldBeNil)
+		So(size, ShouldBeGreaterThan, 0)
+		t.Fatal(size)
+	})
+}
