@@ -119,3 +119,9 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 		return userToken[0], nil
 	}
 }
+
+func readInvocationState(ctx context.Context, txn span.Txn, invID string) (pb.Invocation_State, error) {
+	var state int64
+	err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"State": &state})
+	return pb.Invocation_State(state), err
+}
