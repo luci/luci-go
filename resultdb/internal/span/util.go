@@ -21,7 +21,9 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -141,4 +143,17 @@ func (r *ColumnReader) Read(row *spanner.Row) error {
 		}
 	}
 	return nil
+}
+
+// ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps
+// a "transaction is aborted" errors such that the spanner client properly
+// retries the function.
+func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (commitTimestamp time.Time, err error) {
+	return Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		err := f(ctx, txn)
+		if unwrapped := errors.Unwrap(err); spanner.ErrCode(err) == codes.Aborted {
+			err = unwrapped
+		}
+		return err
+	})
 }
