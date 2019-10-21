@@ -44,10 +44,40 @@ func TestColumnReader(t *testing.T) {
 		So(v, ShouldEqual, int64(42))
 	})
 
+	Convey(`*string`, t, func() {
+		var v string
+		Convey(`NOT NULL`, func() {
+			read(&v, "sis boom bah")
+			So(v, ShouldEqual, "sis boom bah")
+		})
+
+		Convey(`valid NULLable`, func() {
+			read(&v, spanner.NullString{StringVal: "sis boom bah", Valid: true})
+			So(v, ShouldEqual, "sis boom bah")
+		})
+
+		Convey(`NULL`, func() {
+			read(&v, spanner.NullString{Valid: false})
+			So(v, ShouldEqual, "")
+		})
+	})
+
 	Convey(`*timestamp.Timestamp`, t, func() {
 		var v *tspb.Timestamp
-		read(&v, time.Unix(1000, 1234))
-		So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
+		Convey(`NOT NULL`, func() {
+			read(&v, time.Unix(1000, 1234))
+			So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
+		})
+
+		Convey(`valid NULLable`, func() {
+			read(&v, spanner.NullTime{Time: time.Unix(1000, 1234), Valid: true})
+			So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
+		})
+
+		Convey(`NULL`, func() {
+			read(&v, spanner.NullTime{Valid: false})
+			So(v, ShouldBeNil)
+		})
 	})
 
 	Convey(`pb.Invocation_State`, t, func() {
