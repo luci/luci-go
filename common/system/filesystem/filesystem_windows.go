@@ -17,6 +17,8 @@ package filesystem
 import (
 	"os"
 	"syscall"
+
+	"golang.org/x/sys/windows"
 )
 
 func umask(mask int) int {
@@ -25,4 +27,16 @@ func umask(mask int) int {
 
 func addReadMode(mode os.FileMode) os.FileMode {
 	return mode | syscall.S_IRUSR
+}
+
+func getFreeSpace(path string) (uint64, error) {
+	wpath, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return 0, err
+	}
+	var freeBytes uint64
+	if err := windows.GetDiskFreeSpaceEx(wpath, nil, nil, &freeBytes); err != nil {
+		return 0, err
+	}
+	return freeBytes, nil
 }
