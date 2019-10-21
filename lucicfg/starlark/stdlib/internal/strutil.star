@@ -47,6 +47,19 @@ def _expand_int_set(s):
   return __native__.expand_int_set(s)
 
 
+def _json_to_yaml(json):
+  """Takes a JSON string and returns it as a pretty-printed YAML.
+
+  Args:
+    json: a JSON string to convert to YAML. Required.
+
+  Returns:
+    A pretty YAML string ending with `\n`.
+  """
+  return __native__.json_to_yaml(json)
+
+
 strutil = struct(
     expand_int_set = _expand_int_set,
+    json_to_yaml = _json_to_yaml,
 )
