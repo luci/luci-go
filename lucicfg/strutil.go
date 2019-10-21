@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
+	"gopkg.in/yaml.v2"
 )
 
 // expandIntSet implements expand_int_set from //internal/strutil.star, see the
@@ -284,5 +285,22 @@ func init() {
 			out[i] = starlark.String(r)
 		}
 		return starlark.NewList(out), nil
+	})
+
+	// See //internal/strutil.star.
+	declNative("json_to_yaml", func(call nativeCall) (starlark.Value, error) {
+		var json starlark.String
+		if err := call.unpack(1, &json); err != nil {
+			return nil, err
+		}
+		var buf interface{}
+		if err := yaml.Unmarshal([]byte(json.GoString()), &buf); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON as YAML: %s", err)
+		}
+		out, err := yaml.Marshal(buf)
+		if err != nil {
+			return nil, err
+		}
+		return starlark.String(out), nil
 	})
 }
