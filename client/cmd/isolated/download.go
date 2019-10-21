@@ -26,6 +26,8 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/downloader"
+	"go.chromium.org/luci/common/data/caching/cache"
+	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -46,6 +48,11 @@ Files are referenced by their hash`,
 			c.Flags.StringVar(&c.outputDir, "output-dir", ".", "The directory where files will be downloaded to.")
 			c.Flags.StringVar(&c.outputFiles, "output-files", "", "File into which the full list of downloaded files is written to.")
 			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
+
+			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
+			c.Flags.Int64Var(&c.maxSize, "cache-max-size", 0, "Cache is trimmed if the cache gets larger than this value.")
+			c.Flags.IntVar(&c.maxItems, "cache-max-items", 0, "Maximum number of items to keep in the cache.")
+			c.Flags.Int64Var(&c.minFreeSpace, "cache-min-free-space", 0, "Cache is trimmed if disk free space becomes lower than this value.")
 			return &c
 		},
 	}
@@ -56,6 +63,11 @@ type downloadRun struct {
 	outputDir   string
 	outputFiles string
 	isolated    string
+
+	cacheDir     string
+	maxSize      int64
+	maxItems     int
+	minFreeSpace int64
 }
 
 func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
@@ -67,6 +79,10 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	}
 	if c.isolated == "" {
 		return errors.New("isolated is required")
+	}
+
+	if c.cacheDir == "" && (c.maxSize != 0 || c.maxItems != 0 || c.minFreeSpace != 0) {
+		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified,")
 	}
 	return nil
 }
@@ -82,12 +98,27 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 	var filesMu sync.Mutex
 	var files []string
+
+	var diskCache cache.Cache
+	if c.cacheDir != "" {
+		diskCache, err = cache.NewDisk(cache.Policies{
+			MaxSize:      units.Size(c.maxSize),
+			MaxItems:     c.maxItems,
+			MinFreeSpace: units.Size(c.minFreeSpace),
+		}, c.cacheDir, c.isolatedFlags.Namespace)
+		if err != nil {
+			return err
+		}
+		defer diskCache.Close()
+	}
+
 	dl := downloader.New(ctx, client, isolated.HexDigest(c.isolated), c.outputDir, &downloader.Options{
 		FileCallback: func(name string, _ *isolated.File) {
 			filesMu.Lock()
 			files = append(files, name)
 			filesMu.Unlock()
 		},
+		Cache: diskCache,
 	})
 	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
