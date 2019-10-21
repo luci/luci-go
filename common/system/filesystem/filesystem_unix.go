@@ -19,6 +19,8 @@ package filesystem
 import (
 	"os"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func umask(mask int) int {
@@ -27,4 +29,12 @@ func umask(mask int) int {
 
 func addReadMode(mode os.FileMode) os.FileMode {
 	return mode | syscall.S_IRUSR | syscall.S_IRGRP | syscall.S_IROTH
+}
+
+func getFreeSpace(path string) (uint64, error) {
+	statfs := unix.Statfs_t{}
+	if err := unix.Statfs(path, &statfs); err != nil {
+		return 0, err
+	}
+	return statfs.Bavail * uint64(statfs.Bsize), nil
 }
