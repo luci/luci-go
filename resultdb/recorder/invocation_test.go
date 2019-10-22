@@ -90,12 +90,10 @@ func TestMutateInvocation(t *testing.T) {
 				// Confirm the invocation has been updated.
 				var state int64
 				var ft time.Time
-				txn := span.Client(ctx).Single()
-				err = span.ReadRow(ctx, txn, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+				testutil.MustReadRow(ctx, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
 					"State":        &state,
 					"FinalizeTime": &ft,
 				})
-				So(err, ShouldBeNil)
 				So(state, ShouldEqual, int64(pb.Invocation_INTERRUPTED))
 				So(ft, ShouldEqual, ct.Add(time.Hour))
 			})

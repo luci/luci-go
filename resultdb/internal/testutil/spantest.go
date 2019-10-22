@@ -160,6 +160,13 @@ func MustApply(ctx context.Context, ms ...*spanner.Mutation) {
 	So(err, ShouldBeNil)
 }
 
+// MustReadRow is a shortcut to do a single row read in a single transaction
+// using the current client, and assert success.
+func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
+	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
+	So(err, ShouldBeNil)
+}
+
 func fatalIf(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
