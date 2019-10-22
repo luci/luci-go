@@ -84,6 +84,8 @@ type BotPool struct {
 
 	// Bots is a slice of bots in the pool, along with their statuses.
 	Bots []Bot `gae:",noindex"`
+	// NumBots is the number of bots, in case the list is cut off.
+	NumBots int `gae:",noindex"`
 
 	// LastUpdate is when this entity was last updated.
 	LastUpdate time.Time
@@ -93,10 +95,12 @@ type BotPool struct {
 type Bot struct {
 	// Name is an identifier for the Bot.  This is usually a short hostname.
 	Name string
-	// URL is a link to a bot page, if available.
-	URL string
 	// Status is the current status of the Bot.
 	Status BotStatus
 	// LastSeen denotes when the Bot was last seen.
 	LastSeen time.Time
+}
+
+func (b *Bot) URL(host string) string {
+	return fmt.Sprintf("https://%s/bot?id=%s", host, b.Name)
 }

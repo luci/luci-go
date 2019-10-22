@@ -59,11 +59,11 @@ type Bot struct {
 	Status model.BotStatus
 }
 
-func (b *Bot) Label() *Link {
+func (b *Bot) Label(host string) *Link {
 	if b == nil {
 		return nil
 	}
-	return NewLink(b.Name, b.URL, "bot "+b.Name)
+	return NewLink(b.Name, b.URL(host), "bot "+b.Name)
 }
 
 // MachinePool represents the capacity and availability of a builder.
