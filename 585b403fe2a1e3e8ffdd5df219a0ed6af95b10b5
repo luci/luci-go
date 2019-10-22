@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "119adddd_cc76483d",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 388,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-22T18:23:14Z",
+      "side": 1,
+      "message": "For godoc to format properly, you need an empty line after.",
+      "revId": "585b403fe2a1e3e8ffdd5df219a0ed6af95b10b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d8b3366_925646e8",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-22T18:23:14Z",
+      "side": 1,
+      "message": "I\u0027d recommend to change to be more explicit. (I know I initially wrote this, and I\u0027m sorry):\n\n  The returned value is what is usable, and it can be lower than the\n  actual free disk space. For example on linux there\u0027s by default a 5%\n  that is reserved to the root user.",
+      "range": {
+        "startLine": 390,
+        "startChar": 9,
+        "endLine": 391,
+        "endChar": 54
+      },
+      "revId": "585b403fe2a1e3e8ffdd5df219a0ed6af95b10b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "870ebc76_5b5210d8",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-22T18:23:14Z",
+      "side": 1,
+      "message": "I think it\u0027s fine to test it to be greater than 4096 bytes. :)",
+      "range": {
+        "startLine": 434,
+        "startChar": 32,
+        "endLine": 434,
+        "endChar": 33
+      },
+      "revId": "585b403fe2a1e3e8ffdd5df219a0ed6af95b10b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48dc8d89_979b7d76",
+        "filename": "common/system/filesystem/filesystem_unix.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-22T18:23:14Z",
+      "side": 1,
+      "message": "I don\u0027t think this will account for the reserved region.",
+      "revId": "585b403fe2a1e3e8ffdd5df219a0ed6af95b10b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
