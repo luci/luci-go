@@ -10,6 +10,7 @@
 {{define "head"}}
 <link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <link rel="stylesheet" href="/static/common/css/tabs.css" type="text/css">
+<link rel="stylesheet" href="/static/common/css/build.css" type="text/css">
 <script>
   const timelineData = JSON.parse({{ .BuildPage.Timeline }});
   const useTabs = true;
@@ -81,6 +82,7 @@
 {{ end }}
 
 {{define "body"}}
+  {{ template "overlay" .}}
   <div class="content">
     <h1>
     {{ with .BuildPage.BuilderLink }}
@@ -114,6 +116,24 @@
   </div>
 {{end}}
 
+{{define "overlay"}}
+  <div id="modal-overlay">
+    <div id="cancel-build-modal">
+      <h1>Cancel Build</h1>
+      <form id="cancel-build-form" action="/cancel_build" method="POST" style="overflow: auto;">
+        {{ .XsrfTokenField }}
+        <input name="buildbucket-id" type="hidden" value="{{.BuildPage.Id}}">
+        Reason:<br/>
+        <textarea name="reason" form="cancel-build-form" required style="width: 100%; box-sizing: border-box; resize: none;"></textarea><br>
+        <div style="float: right; margin: 0;">
+          <input id="dismiss-cancel-build-button" type="button" value="Dismiss">
+          <input type="submit" value="Confirm">
+        </div>
+      </form>
+    </div>
+  </div>
+{{end}}
+
 {{define "overview"}}
   <div id="overview" class="column">
     {{ range .BuildPage.Errors }}
@@ -130,6 +150,9 @@
         {{ end }}
       {{ end }}
     </div>
+
+      <h2>Actions</h2>
+      <input id="cancel-build-button" type="button" value="Cancel Build" {{if .BuildPage.EndTime}}disabled title="this build has already ended"{{end}}>
 
     {{ with .BuildPage.Input }}
       <h2>Input</h2>

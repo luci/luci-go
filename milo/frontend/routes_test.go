@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -158,13 +159,16 @@ func buildbucketBuildTestData() []TestBundle {
 		}
 		bundles = append(bundles, TestBundle{
 			Description: fmt.Sprintf("Test page: %s", tc),
-			Data: templates.Args{"BuildPage": &ui.BuildPage{
-				Build: ui.Build{
-					Build: build,
-					Now:   nowTS,
+			Data: templates.Args{
+				"BuildPage": &ui.BuildPage{
+					Build: ui.Build{
+						Build: build,
+						Now:   nowTS,
+					},
+					BuildbucketHost: "example.com",
 				},
-				BuildbucketHost: "example.com",
-			}},
+				"XsrfTokenField": template.HTML(`<input name="[XSRF Token]" type="hidden" value="[XSRF Token]">`),
+			},
 		})
 	}
 	return bundles
