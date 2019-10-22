@@ -36,6 +36,10 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 
 // VariantDefToStrings returns a key:val string slice representation of the VariantDef.
 func VariantDefToStrings(d *pb.VariantDef) []string {
+	if d == nil {
+		return nil
+	}
+
 	keys := SortedVariantDefKeys(d)
 	pairs := make([]string, len(keys))
 	defMap := d.GetDef()

@@ -15,13 +15,18 @@
 package main
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"strings"
 
+	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/recorder/chromium"
@@ -80,26 +85,102 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	if task, err = chromium.GetOriginTask(ctx, task, swarmSvc); err != nil {
 		return nil, err
 	}
-
-	// Check if we even need to write this invocation: is it finalized?
-	// TODO(jchinlee): Get Invocation from Spanner.
-	var inv *pb.Invocation
-	if inv != nil {
-		if !pbutil.IsFinalized(inv.State) {
-			return nil, errors.Reason(
-				"attempting to derive an existing non-finalized invocation").
-				Tag(grpcutil.InternalTag).Err()
-		}
-
-		return inv, nil
-	}
-
-	inv, _, err = chromium.DeriveProtosForWriting(ctx, task, in)
+	invID, err := chromium.GetInvocationID(ctx, task, in)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(jchinlee): Write Invocation and TestResults to Spanner.
+	client := span.Client(ctx)
+
+	// Check if we even need to write this invocation: is it finalized?
+	doWrite, err := shouldWriteInvocation(ctx, client.Single(), invID)
+	switch {
+	case err != nil:
+		return nil, err
+	case !doWrite:
+		readTxn, err := client.BatchReadOnlyTransaction(ctx, spanner.StrongRead())
+		if err != nil {
+			return nil, err
+		}
+		defer readTxn.Close()
+		return span.ReadInvocationFull(ctx, readTxn, invID)
+	}
+
+	// Otherwise, get the protos and write them to Spanner.
+	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
+	if err != nil {
+		return nil, err
+	}
+	inv.Deadline = inv.FinalizeTime
+
+	// TODO(jchinlee): Validate invocation and results.
+
+	_, err = client.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Check invocation state again.
+		switch doWrite, err := shouldWriteInvocation(ctx, txn, invID); {
+		case err != nil:
+			return err
+		case !doWrite:
+			return nil
+		}
+
+		// Get Invocation mutation.
+		if inv.FinalizeTime == nil {
+			panic("missing inv.FinalizeTime")
+		}
+
+		invMap := map[string]interface{}{
+			"InvocationId": invID,
+			"State":        inv.State,
+			"Realm":        chromium.Realm,
+
+			"UpdateToken": "",
+
+			"CreateTime":   inv.CreateTime,
+			"Deadline":     inv.Deadline,
+			"FinalizeTime": inv.FinalizeTime,
+
+			"BaseTestVariantDef": inv.GetBaseTestVariantDef(),
+			"Tags":               inv.Tags,
+		}
+		populateExpirations(invMap, clock.Now(ctx))
+
+		muts := []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))}
+
+		// Create InvocationByTags mutations.
+		muts = append(muts, getInvocationsByTagMutations(invID, inv)...)
+
+		// Get TestResult mutations.
+		for i, tr := range results {
+			mut, err := getTestResultMutation(invID, tr, i)
+			if err != nil {
+				return errors.Annotate(err, "test result #%d %q", i, tr.TestPath).Err()
+			}
+			muts = append(muts, mut)
+		}
+
+		// Write mutations.
+		return txn.BufferWrite(muts)
+	})
 
 	return inv, err
+}
+
+func shouldWriteInvocation(ctx context.Context, txn span.Txn, invID string) (bool, error) {
+	state, err := readInvocationState(ctx, txn, invID)
+	switch {
+	case grpcutil.Code(err) == codes.NotFound:
+		// No such invocation found means we may have to write it, so proceed.
+		return true, nil
+
+	case err != nil:
+		return false, err
+
+	case !pbutil.IsFinalized(state):
+		return false, errors.Reason(
+			"attempting to derive an existing non-finalized invocation").Err()
+	}
+
+	// The invocation exists and is finalized, so no need to write it.
+	return false, nil
 }

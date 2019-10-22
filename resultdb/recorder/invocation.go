@@ -119,3 +119,20 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 		return userToken[0], nil
 	}
 }
+
+func readInvocationState(ctx context.Context, txn span.Txn, invID string) (pb.Invocation_State, error) {
+	var state pb.Invocation_State
+	err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"State": &state})
+	return state, err
+}
+
+func getInvocationsByTagMutations(invID string, inv *pb.Invocation) []*spanner.Mutation {
+	muts := make([]*spanner.Mutation, len(inv.Tags))
+	for i, tag := range inv.Tags {
+		muts[i] = spanner.InsertMap("InvocationsByTag", map[string]interface{}{
+			"TagId":        span.TagID(tag),
+			"InvocationId": invID,
+		})
+	}
+	return muts
+}
