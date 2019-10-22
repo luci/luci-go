@@ -37,6 +37,13 @@ import (
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
 
+// mutateInvocationBlind is like mutateInvocation, but applies mutations blindly.
+func mutateInvocationBlindly(ctx context.Context, invID string, ms ...*spanner.Mutation) error {
+	return mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		return txn.BufferWrite(ms)
+	})
+}
+
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
