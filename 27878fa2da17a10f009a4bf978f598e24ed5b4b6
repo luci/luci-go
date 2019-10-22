@@ -225,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "27231507_3644b65d",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:51:41Z",
+      "side": 1,
+      "message": "*update the field names in the callsites",
+      "parentUuid": "9e0ada29_ff71e205",
+      "range": {
+        "startLine": 39,
+        "startChar": 11,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c21f0c6b_7f00d2d1",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
