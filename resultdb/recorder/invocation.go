@@ -99,6 +99,13 @@ func mutateInvocation(ctx context.Context, invID string, f func(context.Context,
 	return retErr
 }
 
+// mutateInvocationBlindly is like mutateInvocation, but applies mutations blindly.
+func mutateInvocationBlindly(ctx context.Context, invID string, ms ...*spanner.Mutation) error {
+	return mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		return txn.BufferWrite(ms)
+	})
+}
+
 func extractUserUpdateToken(ctx context.Context) (string, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	userToken := md.Get(updateTokenMetadataKey)
