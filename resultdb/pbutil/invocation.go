@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"go.chromium.org/luci/common/errors"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -31,7 +32,16 @@ func ValidateInvocationID(id string) error {
 	return nil
 }
 
-// ParseInvocationName retrieves the invocation id.
+// ValidateInvocationName returns a non-nil error if name is invalid.
+func ValidateInvocationName(name string) error {
+	if name == "" {
+		return errors.Reason("unspecified").Err()
+	}
+	_, err := ParseInvocationName(name)
+	return err
+}
+
+// ParseInvocationName extracts the invocation id.
 func ParseInvocationName(name string) (id string, err error) {
 	m := invocationNameRe.FindStringSubmatch(name)
 	if m == nil {
@@ -51,7 +61,7 @@ func MustParseInvocationName(name string) (id string) {
 	return id
 }
 
-// InvocationName produces an invocation name from an id.
+// InvocationName synthesizes an invocation name from an id.
 // Does not validate id, use ValidateInvocationID.
 func InvocationName(id string) string {
 	return "invocations/" + id
