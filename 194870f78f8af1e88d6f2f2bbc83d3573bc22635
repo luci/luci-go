@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c63c7a7_b10089b8",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T17:52:03Z",
+      "side": 0,
+      "message": "Curious why not panic?",
+      "revId": "194870f78f8af1e88d6f2f2bbc83d3573bc22635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

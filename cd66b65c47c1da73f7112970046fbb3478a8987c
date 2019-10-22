@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7787f6b_f8c1fd98",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T17:52:03Z",
+      "side": 1,
+      "message": "Nit: include supported fields for consistency with FromSpanner?",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d299e1a5_b2f27ed9",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T17:52:03Z",
+      "side": 1,
+      "message": "Does Spanner not already deal with this case automatically? https://godoc.org/cloud.google.com/go/spanner#Row",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79ff0c58_e8d8c904",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T17:52:03Z",
+      "side": 1,
+      "message": "Curious: why is this not caught by []interface{}? (I see that the test for StringPair succeeds, so it\u0027s more of a curiosity question)\n\nAt any rate, optional: move the special cases to /above/ the slice and map cases",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
