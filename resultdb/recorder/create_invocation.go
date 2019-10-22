@@ -127,14 +127,13 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	pbutil.NormalizeInvocation(inv)
 
 	// Write to Spanner.
-	deadline, _ := ptypes.Timestamp(inv.Deadline)
 	invExpiration := now.Add(invocationExpirationDuration)
 	resultsExpiration := now.Add(expectedTestResultsExpirationDuration)
 	const week = 7 * 24 * time.Hour
 	_, err = span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-		spanner.InsertMap("Invocations", map[string]interface{}{
+		spanner.InsertMap("Invocations", span.ToSpannerMap(map[string]interface{}{
 			"InvocationId":                      in.InvocationId,
-			"State":                             int64(pb.Invocation_ACTIVE),
+			"State":                             pb.Invocation_ACTIVE,
 			"Realm":                             "chromium", // TODO(crbug.com/1013316): accept realm in the proto
 			"InvocationExpirationTime":          invExpiration,
 			"InvocationExpirationWeek":          invExpiration.Truncate(week),
@@ -142,10 +141,10 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			"ExpectedTestResultsExpirationWeek": resultsExpiration.Truncate(week),
 			"UpdateToken":                       updateToken,
 			"CreateTime":                        now,
-			"Deadline":                          deadline,
-			"BaseTestVariantDef":                pbutil.VariantDefPairs(inv.GetBaseTestVariantDef()),
-			"Tags":                              pbutil.StringPairsToStrings(inv.Tags...),
-		}),
+			"Deadline":                          inv.Deadline,
+			"BaseTestVariantDef":                inv.GetBaseTestVariantDef(),
+			"Tags":                              inv.Tags,
+		})),
 	})
 	if spanner.ErrCode(err) == codes.AlreadyExists {
 		return nil, errors.Reason("invocation already exists").

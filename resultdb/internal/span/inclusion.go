@@ -32,11 +32,6 @@ func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.
 	})
 	defer it.Stop()
 
-	// Prepare decoder.
-	var included string
-	attr := &pb.Invocation_InclusionAttrs{}
-	reader := NewColumnReader(&included, &attr.OverriddenBy, &attr.Ready)
-
 	inclusions := map[string]*pb.Invocation_InclusionAttrs{}
 	for {
 		row, err := it.Next()
@@ -47,12 +42,12 @@ func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.
 			return nil, err
 		}
 
-		// Decode the inclusion and store result.
-		if err := reader.Read(row); err != nil {
+		var included string
+		attr := &pb.Invocation_InclusionAttrs{}
+		if err := FromSpanner(row, &included, &attr.OverriddenBy, &attr.Ready); err != nil {
 			return nil, err
 		}
-		attrCpy := *attr
-		inclusions[included] = &attrCpy
+		inclusions[included] = attr
 	}
 
 	return inclusions, nil

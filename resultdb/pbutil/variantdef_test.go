@@ -51,7 +51,7 @@ func TestVariantDefUtils(t *testing.T) {
 			"k1":               "v1",
 			"key/k2":           "v2",
 		}}
-		So(VariantDefPairs(def), ShouldResemble, []string{
+		So(VariantDefToStrings(def), ShouldResemble, []string{
 			"k1:v1", "key/k2:v2", "key/with/part/k3:v3",
 		})
 	})

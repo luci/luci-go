@@ -34,8 +34,8 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 	return nil
 }
 
-// VariantDefPairs returns a key:val string slice representation of the VariantDef.
-func VariantDefPairs(d *pb.VariantDef) []string {
+// VariantDefToStrings returns a key:val string slice representation of the VariantDef.
+func VariantDefToStrings(d *pb.VariantDef) []string {
 	keys := SortedVariantDefKeys(d)
 	pairs := make([]string, len(keys))
 	defMap := d.GetDef()
