@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "9a0b3ba2_59c70a03",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-22T00:50:43Z",
+      "side": 1,
+      "message": "nit: add fullstop to the end of comments",
+      "range": {
+        "startLine": 431,
+        "startChar": 48,
+        "endLine": 431,
+        "endChar": 52
+      },
+      "revId": "91f0971a6e459304557749107cef58cc98fcf89e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34fbe743_6afa60a8",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-22T00:50:43Z",
+      "side": 1,
+      "message": "nit: \"redirects the user\"",
+      "range": {
+        "startLine": 431,
+        "startChar": 8,
+        "endLine": 431,
+        "endChar": 26
+      },
+      "revId": "91f0971a6e459304557749107cef58cc98fcf89e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cfe3913_1bf076b8",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-22T00:50:43Z",
+      "side": 1,
+      "message": "nit: empty",
+      "range": {
+        "startLine": 462,
+        "startChar": 70,
+        "endLine": 462,
+        "endChar": 76
+      },
+      "revId": "91f0971a6e459304557749107cef58cc98fcf89e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bcf87bd2_ce5a6a09",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 9
