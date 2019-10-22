@@ -58,3 +58,12 @@ func ArtifactsToByteArrays(artifacts []*pb.Artifact) ([][]byte, error) {
 	}
 	return bytes, nil
 }
+
+// ArtifactFromBytes unmarshals a byte array into a pb.Artifact.
+func ArtifactFromBytes(bytes []byte) (*pb.Artifact, error) {
+	art := &pb.Artifact{}
+	if err := json.Unmarshal(bytes, art); err != nil {
+		return nil, err
+	}
+	return art, nil
+}
