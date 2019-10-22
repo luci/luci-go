@@ -15,7 +15,10 @@
 package pbutil
 
 import (
+	"encoding/json"
 	"sort"
+
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -38,4 +41,20 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 		}
 		return a.Name < b.Name
 	})
+}
+
+// ArtifactsToByteArrays converts a slice of artifacts to a slice of byte arrays.
+func ArtifactsToByteArrays(artifacts []*pb.Artifact) ([][]byte, error) {
+	if len(artifacts) == 0 {
+		return nil, nil
+	}
+
+	bytes := make([][]byte, len(artifacts))
+	for i, art := range artifacts {
+		var err error
+		if bytes[i], err = json.Marshal(art); err != nil {
+			return nil, errors.Annotate(err, "converting artifact #%d %q", i, art.Name).Err()
+		}
+	}
+	return bytes, nil
 }
