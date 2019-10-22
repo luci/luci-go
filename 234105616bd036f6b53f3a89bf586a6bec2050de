@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8dca29d8_00469b8d",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:57:19Z",
+      "side": 1,
+      "message": "removed. We need to read inv back to return it, so this func is not that useful",
+      "parentUuid": "51016a92_ba7369fa",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 83
+      },
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bcc69044_88fa8c73",
         "filename": "resultdb/recorder/update_invocation.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "22163ff6_7da44719",
+        "filename": "resultdb/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:57:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcc69044_88fa8c73",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 4
+      },
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "551d0923_c381fb44",
         "filename": "resultdb/recorder/update_invocation.go",
         "patchSetId": 2
@@ -86,6 +134,24 @@
       "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "785cd213_6c339a5b",
+        "filename": "resultdb/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:57:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "551d0923_c381fb44",
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
