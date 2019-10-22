@@ -16,6 +16,24 @@
       "revId": "c54833098a4940e654dbaf05fc0405c3fea07553",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e65bdbc9_cc04746f",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T23:51:04Z",
+      "side": 1,
+      "message": "Not sure the best place to put this within span, so I\u0027ve given it its own tag.go file for now. I\u0027ll land but am happen to move things around in a followup CL.",
+      "parentUuid": "a55f7880_ac1fd702",
+      "revId": "c54833098a4940e654dbaf05fc0405c3fea07553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
