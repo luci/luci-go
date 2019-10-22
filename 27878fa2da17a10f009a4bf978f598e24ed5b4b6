@@ -197,6 +197,24 @@
     },
     {
       "key": {
+        "uuid": "2f8a7e90_9976f519",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-22T01:00:15Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "6d0c8e40_3232dfb3",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cb3fa717_b7d381d7",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -311,6 +329,23 @@
         "endLine": 230,
         "endChar": 14
       },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f32a187_9b472e71",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-22T01:00:15Z",
+      "side": 1,
+      "message": "Is this a temporary function?\n\nIf not, should this function be somewhere else?\n\nSame for the tagID function",
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
