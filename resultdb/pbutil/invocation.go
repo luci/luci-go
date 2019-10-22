@@ -31,8 +31,18 @@ func ValidateInvocationID(id string) error {
 	return nil
 }
 
-// ParseInvocationName retrieves the invocation id.
+// ValidateInvocationName returns a non-nil error if name is invalid.
+func ValidateInvocationName(name string) error {
+	_, err := ParseInvocationName(name)
+	return err
+}
+
+// ParseInvocationName extracts the invocation id.
 func ParseInvocationName(name string) (id string, err error) {
+	if name == "" {
+		return "", unspecified()
+	}
+
 	m := invocationNameRe.FindStringSubmatch(name)
 	if m == nil {
 		return "", doesNotMatch(invocationNameRe)

@@ -28,3 +28,7 @@ func regexpf(patternFormat string, subpatterns ...interface{}) *regexp.Regexp {
 func doesNotMatch(r *regexp.Regexp) error {
 	return errors.Reason("does not match %s", r).Err()
 }
+
+func unspecified() error {
+	return errors.Reason("unspecified").Err()
+}

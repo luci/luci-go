@@ -116,7 +116,7 @@ func TestInclude(t *testing.T) {
 		Convey(`without overriding`, func() {
 			Convey(`invalid request`, func() {
 				_, err := recorder.Include(ctx, &pb.IncludeRequest{})
-				So(err, ShouldErrLike, `bad request: including_invocation: does not match`)
+				So(err, ShouldErrLike, `bad request: including_invocation: unspecified`)
 				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 			})
 
