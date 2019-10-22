@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
@@ -109,9 +108,9 @@ func TestInclude(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		readInclusionColumn := func(includedInvID, column string, ptr interface{}) {
-			row, err := span.Client(ctx).Single().ReadRow(ctx, "Inclusions", spanner.Key{"including", includedInvID}, []string{column})
-			So(err, ShouldBeNil)
-			So(row.Columns(ptr), ShouldBeNil)
+			testutil.MustReadRow(ctx, "Inclusions", spanner.Key{"including", includedInvID}, map[string]interface{}{
+				column: ptr,
+			})
 		}
 
 		Convey(`without overriding`, func() {

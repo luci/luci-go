@@ -259,7 +259,7 @@ func TestCreateInvocation(t *testing.T) {
 				Realm                             string
 				FinalizeTime                      spanner.NullTime
 			}
-			err = span.ReadRow(ctx, span.Client(ctx).Single(), "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+			testutil.MustReadRow(ctx, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
 				"State":                             &actual.State,
 				"InvocationExpirationTime":          &actual.InvocationExpirationTime,
 				"InvocationExpirationWeek":          &actual.InvocationExpirationWeek,
@@ -273,7 +273,6 @@ func TestCreateInvocation(t *testing.T) {
 				"Realm":                             &actual.Realm,
 				"FinalizeTime":                      &actual.FinalizeTime,
 			})
-			So(err, ShouldBeNil)
 			So(actual.State, ShouldResemble, int64(pb.Invocation_ACTIVE))
 			So(actual.InvocationExpirationTime, ShouldResemble, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
 			So(actual.InvocationExpirationWeek, ShouldResemble, time.Date(2020, 12, 28, 0, 0, 0, 0, time.UTC))
