@@ -16,6 +16,24 @@
       "revId": "6981f3e28f023add32063fba56dfd2118c827a87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6670b470_e68a92a4",
+        "filename": "resultdb/recorder/update_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T23:12:56Z",
+      "side": 1,
+      "message": "I think the expectation is that the client checks for returned error, and if there is a returned error, ignores the returned Invocation. That protects against ambiguity/confusion, and also avoids the situation you pointed out for reading back a potentially changed invocation, which I agree would be confusing (we /could/ read it back in the same ReadWriteTransaction, actually, but that seems a little wasteful as an additional RPC if we already know the fields we want to mutate).",
+      "parentUuid": "3f607e07_be2fe3aa",
+      "revId": "6981f3e28f023add32063fba56dfd2118c827a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
