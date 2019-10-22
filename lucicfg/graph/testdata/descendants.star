@@ -27,7 +27,7 @@ def test_descendants():
 
   # Works without visitor callback: just returns all descendants.
 
-  # In 'key' order (default).
+  # In 'key' order, breadth first (default).
   assert.eq(g.descendants(root), [
       node('root'),
       node('1'),
@@ -37,7 +37,17 @@ def test_descendants():
       node('leaf'),
   ])
 
-  # In 'def' order.
+  # In reverse 'key' order, breadth first.
+  assert.eq(g.descendants(root, order_by='~key'), [
+      node('root'),
+      node('3'),
+      node('2'),
+      node('1'),
+      node('leaf'),
+      node('1_1'),
+  ])
+
+  # In 'def' order, breadth first.
   assert.eq(g.descendants(root, order_by='def'), [
       node('root'),
       node('3'),
@@ -45,6 +55,56 @@ def test_descendants():
       node('1'),
       node('leaf'),
       node('1_1'),
+  ])
+
+  # In reverse 'def' order, breadth first.
+  assert.eq(g.descendants(root, order_by='~def'), [
+      node('root'),
+      node('1'),
+      node('2'),
+      node('3'),
+      node('1_1'),
+      node('leaf'),
+  ])
+
+  # In 'key' order, depth first.
+  assert.eq(g.descendants(root, topology='depth'), [
+      node('leaf'),
+      node('1_1'),
+      node('1'),
+      node('2'),
+      node('3'),
+      node('root'),
+  ])
+
+  # In reverse 'key' order, depth first.
+  assert.eq(g.descendants(root, order_by='~key', topology='depth'), [
+      node('3'),
+      node('leaf'),
+      node('2'),
+      node('1_1'),
+      node('1'),
+      node('root'),
+  ])
+
+  # In 'def' order, depth first.
+  assert.eq(g.descendants(root, order_by='def', topology='depth'), [
+      node('3'),
+      node('leaf'),
+      node('2'),
+      node('1_1'),
+      node('1'),
+      node('root'),
+  ])
+
+  # In reverse 'def' order, depth first.
+  assert.eq(g.descendants(root, order_by='~def', topology='depth'), [
+      node('leaf'),
+      node('1_1'),
+      node('1'),
+      node('2'),
+      node('3'),
+      node('root'),
   ])
 
   # Just visit everything and see what we get in each individual call.
