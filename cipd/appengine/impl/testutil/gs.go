@@ -32,6 +32,14 @@ type NoopGoogleStorage struct {
 
 var _ gs.GoogleStorage = NoopGoogleStorage{}
 
+// Size is part of gs.GoogleStorage interface.
+func (n NoopGoogleStorage) Size(c context.Context, path string) (size uint64, exists bool, err error) {
+	if n.Err == nil {
+		panic("must not be called")
+	}
+	return 0, false, n.Err
+}
+
 // Exists is part of gs.GoogleStorage interface.
 func (n NoopGoogleStorage) Exists(c context.Context, path string) (exists bool, err error) {
 	if n.Err == nil {
