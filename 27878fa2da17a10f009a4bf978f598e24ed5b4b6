@@ -538,6 +538,24 @@
     },
     {
       "key": {
+        "uuid": "c768773b_75964b0c",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T22:01:55Z",
+      "side": 1,
+      "message": "Done\n\nFYI I have a CL ready for rebase that adds it (it\u0027s pretty small) and fixes the test https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1874647",
+      "parentUuid": "a8a63db1_766c7705",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8692e29_dc7a57fe",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -817,6 +835,24 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfc055ae_e12c47de",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T22:01:55Z",
+      "side": 1,
+      "message": "Done\n\nMoved to pbutil, actually, because query RPCs might also want it.",
+      "parentUuid": "485b4819_06037ad6",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
