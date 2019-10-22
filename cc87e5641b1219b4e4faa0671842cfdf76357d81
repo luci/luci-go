@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0688ddd8_1d50f010",
+        "filename": "cipd/client/cipd/internal/retry/waiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-10-22T14:25:53Z",
+      "side": 1,
+      "message": "This change is incorrect. The cancel must not be called until the process is done.",
+      "revId": "cc87e5641b1219b4e4faa0671842cfdf76357d81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
