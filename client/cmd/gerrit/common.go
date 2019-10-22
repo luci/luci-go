@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/common/logging/gologger"
 )
 
 type commonFlags struct {
@@ -51,7 +50,6 @@ func (c *commonFlags) Parse() error {
 	return err
 }
 
-func (c *commonFlags) createAuthClient() (*http.Client, error) {
-	ctx := gologger.StdConfig.Use(context.Background())
+func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
 }

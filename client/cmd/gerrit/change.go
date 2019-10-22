@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 )
 
@@ -106,12 +107,11 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 }
 
 func (c *changeRun) main(a subcommands.Application) error {
-	// Create auth client and context.
-	authCl, err := c.createAuthClient()
+	ctx := cli.GetContext(a, r, env)
+	authCl, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
 	}
-	ctx := c.defaultFlags.MakeLoggingContext(os.Stderr)
 
 	// Create gerrit client and make call.
 	g, err := gerrit.NewClient(authCl, c.host)
