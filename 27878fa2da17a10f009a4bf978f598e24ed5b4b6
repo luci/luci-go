@@ -802,6 +802,24 @@
     },
     {
       "key": {
+        "uuid": "485b4819_06037ad6",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-22T20:30:25Z",
+      "side": 1,
+      "message": "Yes, that\u0027s basically what I meant: if tagID will be shared with other RPCs probably we should move it to somewhere else (like you mentioned,  recorder/common.go).",
+      "parentUuid": "6ad57b78_3b52928b",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "667fb861_885e8bfe",
         "filename": "resultdb/recorder/invocation.go",
         "patchSetId": 4
