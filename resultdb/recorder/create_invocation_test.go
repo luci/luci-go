@@ -244,45 +244,31 @@ func TestCreateInvocation(t *testing.T) {
 
 			So(headers.Get(updateTokenMetadataKey), ShouldHaveLength, 1)
 
-			// TODO(nodir, jchinlee): replace with ReadFullInvocation call.
-			var actual struct {
-				State                             int64
-				InvocationExpirationTime          time.Time
-				InvocationExpirationWeek          time.Time
-				ExpectedTestResultsExpirationTime time.Time
-				ExpectedTestResultsExpirationWeek time.Time
-				UpdateToken                       spanner.NullString
-				CreateTime                        time.Time
-				Deadline                          time.Time
-				BaseTestVariantDef                []string
-				Tags                              []string
-				Realm                             string
-				FinalizeTime                      spanner.NullTime
+			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
+			So(err, ShouldBeNil)
+			defer txn.Close()
+
+			inv, err = span.ReadInvocationFull(ctx, txn, "inv")
+			So(err, ShouldBeNil)
+
+			expected := &pb.Invocation{
+				Name:               "invocations/inv",
+				State:              pb.Invocation_ACTIVE,
+				BaseTestVariantDef: &pb.VariantDef{
+					Def: map[string]string{
+						"bucket":  "ci",
+						"builder": "linux-rel",
+					},
+				},
+				Tags:               pbutil.StringPairs("a", "1", "b", "2"),
 			}
-			testutil.MustReadRow(ctx, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
-				"State":                             &actual.State,
-				"InvocationExpirationTime":          &actual.InvocationExpirationTime,
-				"InvocationExpirationWeek":          &actual.InvocationExpirationWeek,
-				"ExpectedTestResultsExpirationTime": &actual.ExpectedTestResultsExpirationTime,
-				"ExpectedTestResultsExpirationWeek": &actual.ExpectedTestResultsExpirationWeek,
-				"UpdateToken":                       &actual.UpdateToken,
-				"CreateTime":                        &actual.CreateTime,
-				"Deadline":                          &actual.Deadline,
-				"BaseTestVariantDef":                &actual.BaseTestVariantDef,
-				"Tags":                              &actual.Tags,
-				"Realm":                             &actual.Realm,
-				"FinalizeTime":                      &actual.FinalizeTime,
-			})
-			So(actual.State, ShouldResemble, int64(pb.Invocation_ACTIVE))
-			So(actual.InvocationExpirationTime, ShouldResemble, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
-			So(actual.InvocationExpirationWeek, ShouldResemble, time.Date(2020, 12, 28, 0, 0, 0, 0, time.UTC))
-			So(actual.ExpectedTestResultsExpirationTime, ShouldResemble, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
-			So(actual.ExpectedTestResultsExpirationWeek, ShouldResemble, time.Date(2019, 2, 25, 0, 0, 0, 0, time.UTC))
-			So(actual.UpdateToken, ShouldResemble, spanner.NullString{Valid: true, StringVal: headers.Get(updateTokenMetadataKey)[0]})
-			So(actual.CreateTime, ShouldResemble, time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC))
-			So(actual.Deadline, ShouldResemble, time.Date(2019, 1, 1, 1, 0, 0, 0, time.UTC))
-			So(actual.BaseTestVariantDef, ShouldResemble, []string{"bucket:ci", "builder:linux-rel"})
-			So(actual.Tags, ShouldResemble, []string{"a:1", "b:2"})
+			timesRow, err := spanner.NewRow(
+				[]string{"create", "deadline"},  // these column labels don't matter
+				[]interface{}{now, now.Add(time.Hour)},
+			)
+			So(err, ShouldBeNil)
+			err = span.FromSpanner(timesRow, &expected.CreateTime, &expected.Deadline)
+			So(inv, ShouldResembleProto, expected)
 		})
 	})
 }
