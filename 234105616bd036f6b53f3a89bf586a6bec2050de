@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b92b490d_5216152e",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-22T22:42:52Z",
+      "side": 1,
+      "message": "I don\u0027t really understand this: mutateInvocationBlindly has to go through all the checks in mutateInvocation then apply mutations, what do you mean by \"blindly\"?",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 83
+      },
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "551d0923_c381fb44",
+        "filename": "resultdb/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-22T22:42:52Z",
+      "side": 1,
+      "message": "Isn\u0027t ReadInvocationFull for this purpose?",
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
