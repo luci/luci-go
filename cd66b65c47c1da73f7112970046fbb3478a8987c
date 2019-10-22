@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "273980a1_0a5e5f15",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T18:29:21Z",
+      "side": 1,
+      "message": "OK then",
+      "parentUuid": "f06fdccd_82ade9f0",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d299e1a5_b2f27ed9",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
@@ -72,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "4a9f13db_2b990992",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T18:29:21Z",
+      "side": 1,
+      "message": "You\u0027re right, that applies /only/ to reads, sorry!",
+      "parentUuid": "3018b527_5140e1f5",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79ff0c58_e8d8c904",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
@@ -101,6 +137,24 @@
       "side": 1,
       "message": "\u003e Curious: why is this not caught by []interface{}? \n\nno https://play.golang.org/p/eJwuFnCD4qb\n\n\u003e (I see that the test for StringPair succeeds, so it\u0027s more of a curiosity question)\n\u003e \n\u003e At any rate, optional: move the special cases to /above/ the slice and map cases\n\nDone",
       "parentUuid": "79ff0c58_e8d8c904",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0886b7d4_c6fdb918",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T18:29:21Z",
+      "side": 1,
+      "message": "I know it isn\u0027t, hence the question of why is more of a curiosity question.\n\n(For those of us who are curious, it seems to be because in the type conversion, the receiver itself has to be interface type, and []*pb.StringPair is not)",
+      "parentUuid": "457c9d3d_37110688",
       "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
