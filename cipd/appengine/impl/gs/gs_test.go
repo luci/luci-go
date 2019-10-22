@@ -63,7 +63,7 @@ func TestImpl(t *testing.T) {
 				c.Query.Set("alt", "json")
 			}
 			if c.Response == nil {
-				c.Response = map[string]string{} // empty JSON dict
+				c.Response = map[string]string{"size": "123"}
 			}
 			expected = append(expected, c)
 		}
@@ -116,35 +116,38 @@ func TestImpl(t *testing.T) {
 			testingBasePath:  srv.URL,
 		}
 
-		Convey("Exists - yes", func() {
+		Convey("Size - exists", func() {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 			})
-			yes, err := gs.Exists(ctx, "/bucket/a/b/c")
+			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
 			So(err, ShouldBeNil)
+			So(s, ShouldEqual, 123)
 			So(yes, ShouldBeTrue)
 		})
 
-		Convey("Exists - no", func() {
+		Convey("Size - missing", func() {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusNotFound,
 			})
-			yes, err := gs.Exists(ctx, "/bucket/a/b/c")
+			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
 			So(err, ShouldBeNil)
+			So(s, ShouldEqual, 0)
 			So(yes, ShouldBeFalse)
 		})
 
-		Convey("Exists - error", func() {
+		Convey("Size - error", func() {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
 				Code:   http.StatusForbidden,
 			})
-			yes, err := gs.Exists(ctx, "/bucket/a/b/c")
+			s, yes, err := gs.Size(ctx, "/bucket/a/b/c")
 			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
+			So(s, ShouldEqual, 0)
 			So(yes, ShouldBeFalse)
 		})
 

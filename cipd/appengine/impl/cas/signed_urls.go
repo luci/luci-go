@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -38,12 +39,29 @@ const (
 	absenceExpiration      = time.Minute
 )
 
-// GS path (string) => signed URL (string) or "" if the file is missing.
+type gsObjInfo struct {
+	Size uint64 `json:"size,omitempty"`
+	URL string `json:"url,omitempty"`
+}
+
+// Exists returns whether this info refers to a file which exists.
+func (i *gsObjInfo) Exists() bool {
+	if i == nil {
+		return false
+	}
+	return i.URL != ""
+}
+
+// GS path (string) => details about the file at that path (gsObjInfo).
 var signedURLsCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(4096),
-	GlobalNamespace: "signed_gs_urls_v1",
-	Marshal:         func(item interface{}) ([]byte, error) { return []byte(item.(string)), nil },
-	Unmarshal:       func(blob []byte) (interface{}, error) { return string(blob), nil },
+	GlobalNamespace: "signed_gs_urls_v2",
+	Marshal: json.Marshal,
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		out := &gsObjInfo{}
+		err := json.Unmarshal(blob, out)
+		return out, err
+	},
 }
 
 // getSignedURL returns a signed URL that can be used to fetch the given file.
@@ -62,11 +80,14 @@ var signedURLsCache = layered.Cache{
 // file is missing, returns NotFound grpc-annotated error.
 func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
 	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (interface{}, time.Duration, error) {
-		switch yes, err := gs.Exists(ctx, gsPath); {
+		info := &gsObjInfo{}
+		switch size, yes, err := gs.Size(ctx, gsPath); {
 		case err != nil:
 			return nil, 0, errors.Annotate(err, "failed to check GS file presence").Err()
 		case !yes:
-			return "", absenceExpiration, nil
+			return info, absenceExpiration, nil
+		default:
+			info.Size = size
 		}
 
 		sig, err := signer(ctx)
@@ -82,7 +103,8 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 		// 'url' here is valid for maxSignedURLExpiration. By caching it for
 		// 'max-min' seconds, right before the cache expires the URL will have
 		// lifetime of max-(max-min) == min, which is what we want.
-		return url, maxSignedURLExpiration - minSignedURLExpiration, nil
+		info.URL = url
+		return info, maxSignedURLExpiration - minSignedURLExpiration, nil
 	})
 
 	if err != nil {
@@ -90,12 +112,13 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 			Tag(grpcutil.InternalTag).Err()
 	}
 
-	signedURL := cached.(string)
-	if signedURL == "" {
+	info := cached.(*gsObjInfo)
+	if !info.Exists() {
 		return "", errors.Reason("object %q doesn't exist", gsPath).
 			Tag(grpcutil.NotFoundTag).Err()
 	}
 
+	signedURL := info.URL
 	// Oddly, response-content-disposition is not signed and can be slapped onto
 	// existing signed URL. We don't complain though, makes live easier.
 	if filename != "" {

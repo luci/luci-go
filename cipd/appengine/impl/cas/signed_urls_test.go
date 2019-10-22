@@ -130,7 +130,7 @@ type mockedSignerGS struct {
 	calls  int
 }
 
-func (m *mockedSignerGS) Exists(ctx context.Context, path string) (exists bool, err error) {
+func (m *mockedSignerGS) Size(ctx context.Context, path string) (size uint64, exists bool, err error) {
 	m.calls++
-	return m.exists, nil
+	return 123, m.exists, nil
 }
