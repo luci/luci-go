@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "51016a92_ba7369fa",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T22:49:08Z",
+      "side": 1,
+      "message": "+1\n\nMaybe \"directly\"?\n\nThis reads to me (with the \"but\") like mutateInvocationBlindly is supposed to skip the checks that mutationInvocation does, but like Chan says, the actual implementation still does --- and this is also what we want for UpdateInvocation --- it just passes a simple write instead of any more complex callback.",
+      "parentUuid": "b92b490d_5216152e",
+      "range": {
+        "startLine": 102,
+        "startChar": 0,
+        "endLine": 102,
+        "endChar": 83
+      },
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcc69044_88fa8c73",
+        "filename": "resultdb/recorder/update_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T22:49:08Z",
+      "side": 1,
+      "message": "Optional: inline",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 4
+      },
+      "revId": "234105616bd036f6b53f3a89bf586a6bec2050de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "551d0923_c381fb44",
         "filename": "resultdb/recorder/update_invocation.go",
         "patchSetId": 2
