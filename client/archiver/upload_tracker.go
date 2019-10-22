@@ -140,6 +140,10 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 
 	for _, bundle := range bundles {
 		bundle := bundle
+		if len(bundle.items) == 1 {
+			// TODO: Do not create a tarfile when it contains a low number of files
+			// (less than 3?), it should upload the file directly instead.
+		}
 		digest, tarSize, err := bundle.Digest(ut.checker.Hash())
 		if err != nil {
 			return err
