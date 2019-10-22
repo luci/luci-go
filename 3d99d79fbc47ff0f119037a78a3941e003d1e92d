@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7aeea218_fb3748ee",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "this will panic in defer if err is non-nil",
+      "revId": "3d99d79fbc47ff0f119037a78a3941e003d1e92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb88a713_c703b92d",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "nit: consolidate",
+      "range": {
+        "startLine": 125,
+        "startChar": 2,
+        "endLine": 126,
+        "endChar": 10
+      },
+      "revId": "3d99d79fbc47ff0f119037a78a3941e003d1e92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

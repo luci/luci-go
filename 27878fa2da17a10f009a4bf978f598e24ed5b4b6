@@ -390,6 +390,30 @@
     },
     {
       "key": {
+        "uuid": "0a3647f8_1d17f6f0",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "78ff8d02_331a255c",
+      "range": {
+        "startLine": 149,
+        "startChar": 25,
+        "endLine": 149,
+        "endChar": 48
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d0c8e40_3232dfb3",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -443,6 +467,24 @@
     },
     {
       "key": {
+        "uuid": "370eba42_10381f0c",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "this is perfect",
+      "parentUuid": "7c3635ec_5bc7b23f",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cb3fa717_b7d381d7",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -475,6 +517,24 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8a63db1_766c7705",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "could you add a TODO there as well? since we know that we forgot about this",
+      "parentUuid": "8768ca9d_78691d79",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -592,6 +652,24 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7493a6a_8b3c085b",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:29:54Z",
+      "side": 1,
+      "message": "oh, i see, nvm",
+      "parentUuid": "a7c08b99_a0c832de",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
