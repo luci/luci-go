@@ -44,24 +44,24 @@ const upstartSrv = "swarming-start-bot"
 // autostart configures the given Swarming bot code to be executed on startup
 // for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
-func (*UpstartStrategy) autostart(c context.Context, path, user string) error {
+func (*UpstartStrategy) autostart(ctx context.Context, path, user string) error {
 	subs := map[string]string{
 		"BotCode": path,
 		"User":    user,
 	}
-	s, err := substitute(c, string(GetAsset(upstartTmpl)), subs)
+	s, err := substitute(string(GetAsset(upstartTmpl)), subs)
 	if err != nil {
 		return errors.Annotate(err, "failed to prepare template %q", upstartTmpl).Err()
 	}
 
-	logging.Infof(c, "installing: %s", upstartCfg)
+	logging.Infof(ctx, "installing: %s", upstartCfg)
 	// 0644 allows the upstart config to be read by all users.
 	// Useful when SSHing to the instance.
 	if err := ioutil.WriteFile(upstartCfg, []byte(s), 0644); err != nil {
 		return errors.Annotate(err, "failed to write: %s", upstartCfg).Err()
 	}
 
-	logging.Infof(c, "starting %q", upstartSrv)
+	logging.Infof(ctx, "starting %q", upstartSrv)
 	if err := exec.Command("initctl", "start", upstartSrv).Run(); err != nil {
 		return errors.Annotate(err, "failed to start service %q", upstartSrv).Err()
 	}

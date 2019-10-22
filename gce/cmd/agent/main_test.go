@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,7 +24,6 @@ func TestSubstitute(t *testing.T) {
 	t.Parallel()
 
 	Convey("substitute", t, func() {
-		c := context.Background()
 		subs := map[string]string{
 			"Field1": "Value1",
 			"Field2": "Value2",
@@ -33,19 +31,19 @@ func TestSubstitute(t *testing.T) {
 		}
 
 		Convey("err", func() {
-			s, err := substitute(c, "Test {{", subs)
+			s, err := substitute("Test {{", subs)
 			So(err, ShouldNotBeNil)
 			So(s, ShouldEqual, "")
 		})
 
 		Convey("partial", func() {
-			s, err := substitute(c, "Test {{.Field2}}", subs)
+			s, err := substitute("Test {{.Field2}}", subs)
 			So(err, ShouldBeNil)
 			So(s, ShouldEqual, "Test Value2")
 		})
 
 		Convey("full", func() {
-			s, err := substitute(c, "Test {{.Field1}} {{.Field2}} {{.Field3}}", subs)
+			s, err := substitute("Test {{.Field1}} {{.Field2}} {{.Field3}}", subs)
 			So(err, ShouldBeNil)
 			So(s, ShouldEqual, "Test Value1 Value2 Value3")
 		})

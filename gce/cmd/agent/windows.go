@@ -43,7 +43,7 @@ const startupTask = "swarming-start-bot"
 // autostart configures the given Swarming bot code to be executed on startup
 // for the given user, then starts the Swarming bot process.
 // Implements PlatformStrategy.
-func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
+func (*WindowsStrategy) autostart(ctx context.Context, path, user string) error {
 	subs := map[string]string{
 		"BotCode": path,
 		"User":    user,
@@ -75,7 +75,7 @@ func (*WindowsStrategy) autostart(c context.Context, path, user string) error {
 
 // chown modifies the given path to be owned by the given user.
 // Implements PlatformStrategy.
-func (*WindowsStrategy) chown(c context.Context, path, username string) error {
+func (*WindowsStrategy) chown(ctx context.Context, path, username string) error {
 	if err := exec.Command("icacls", path, "/setowner", username).Run(); err != nil {
 		return errors.Annotate(err, "failed to set owner: %s", path).Err()
 	}

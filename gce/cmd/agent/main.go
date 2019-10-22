@@ -37,7 +37,7 @@ import (
 )
 
 // substitute performs substitutions in a template string.
-func substitute(c context.Context, s string, subs interface{}) (string, error) {
+func substitute(s string, subs interface{}) (string, error) {
 	t, err := template.New("tmpl").Parse(s)
 	if err != nil {
 		return "", err
@@ -84,19 +84,19 @@ func (b *cmdRunBase) Initialize() {
 	b.authFlags.Register(b.GetFlags(), opts)
 }
 
-// ModifyContext returns a new context to be used by all commands. Implements
-// cli.ContextModificator.
+// ModifyContext returns a new context with configured logging and a *SwarmingClient installed.
+// Implements cli.ContextModificator.
 func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
 	c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 	opts, err := b.authFlags.Options()
 	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
+		logging.Errorf(ctx, "%s", err.Error())
 		panic("failed to get auth options")
 	}
 	b.serviceAccount = opts.GCEAccountName
 	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
 	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
+		logging.Errorf(ctx, "%s", err.Error())
 		panic("failed to get authenticator")
 	}
 	meta := metadata.NewClient(http)
@@ -112,6 +112,9 @@ func New() *cli.Application {
 	return &cli.Application{
 		Name:  "agent",
 		Title: "GCE agent",
+		Context: func(ctx context.Context) context.Context {
+			return logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 			newConnectCmd(),
