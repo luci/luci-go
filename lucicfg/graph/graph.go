@@ -137,7 +137,7 @@ func (e *DanglingEdgeError) Backtrace() string {
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
 //   * children(parent: graph.key, order_by='key'): []graph.node
-//   * descendants(root: graph.key, callback=None, order_by='key'): []graph.node
+//   * descendants(root: graph.key, callback=None, order_by='key', topology='breadth'): []graph.node
 //   * parents(child: graph.key, order_by='key'): []graph.node
 //   * sorted_nodes(nodes: iterable<graph.node>, order_by='key'): []graph.node
 type Graph struct {
@@ -155,8 +155,17 @@ type Visitor func(n *Node, next []*Node) ([]*Node, error)
 
 // validateOrder returns an error if the edge traversal order is unrecognized.
 func validateOrder(orderBy string) error {
-	if orderBy != "key" && orderBy != "def" {
-		return fmt.Errorf("unknown order %q, expecting either \"key\" or \"def\"", orderBy)
+	switch orderBy {
+	case "key", "~key", "def", "~def":
+		return nil
+	}
+	return fmt.Errorf("unknown order %q, expecting one of \"key\", \"~key\", \"def\", \"~def\"", orderBy)
+}
+
+// validateTopology returns an error if the traversal topology is unrecognized.
+func validateTopology(topology string) error {
+	if topology != "breadth" && topology != "depth" {
+		return fmt.Errorf("unknown topology %q, expecting either \"breadth\" or \"depth\"", topology)
 	}
 	return nil
 }
@@ -364,8 +373,8 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 	return g.orderedRelatives(parent, "parent", orderBy, (*Node).listChildren)
 }
 
-// Descendants recursively visits 'root' and all its children, in breadth
-// first order.
+// Descendants recursively visits 'root' and all its children, in breadth or
+// depth first order.
 //
 // Returns the list of all visited nodes, in order they were visited, including
 // 'root' itself. If 'root' is missing, returns an empty list.
@@ -375,6 +384,8 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 //   'key': nodes are ordered lexicographically by their keys (smaller first).
 //   'def': nodes are ordered by the order edges to them were defined during
 //        the execution (earlier first).
+//
+// '~' in front (i.e. ~key' and '~def') means "reverse order".
 //
 // Any other value of 'orderBy' causes an error.
 //
@@ -387,7 +398,7 @@ func (g *Graph) Children(parent *Key, orderBy string) ([]*Node, error) {
 // will be skipped even if the visitor returns them.
 //
 // Trying to use Descendants before the graph has been finalized is an error.
-func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node, error) {
+func (g *Graph) Descendants(root *Key, orderBy, topology string, visitor Visitor) ([]*Node, error) {
 	if !g.finalized {
 		return nil, ErrNotFinalized
 	}
@@ -397,55 +408,119 @@ func (g *Graph) Descendants(root *Key, orderBy string, visitor Visitor) ([]*Node
 	if err := validateOrder(orderBy); err != nil {
 		return nil, err
 	}
-
-	queue := list.New()
-	if n := g.nodes[root]; n != nil {
-		queue.PushBack(n)
+	if err := validateTopology(topology); err != nil {
+		return nil, err
 	}
 
-	var visited []*Node
-	var visitedSet = map[*Node]struct{}{}
+	rootNode := g.nodes[root]
+	if rootNode == nil {
+		return nil, nil
+	}
+
+	switch topology {
+	case "breadth":
+		return descBreadth(rootNode, orderBy, visitor)
+	case "depth":
+		return descDepth(rootNode, orderBy, visitor)
+	default:
+		panic("impossible")
+	}
+}
+
+// descBreadth implements non-recursive breadth-first traversal.
+func descBreadth(root *Node, orderBy string, visitor Visitor) ([]*Node, error) {
+	queue := list.New()
+	queuedSet := make(map[*Node]struct{}, 1)
+	visited := make([]*Node, 0, 1)
+
+	enqueue := func(n *Node) {
+		if _, yes := queuedSet[n]; !yes {
+			queue.PushBack(n)
+			queuedSet[n] = struct{}{}
+		}
+	}
+	enqueue(root)
 
 	for queue.Len() > 0 {
-		// Been here before?
 		cur := queue.Remove(queue.Front()).(*Node)
-		if _, yes := visitedSet[cur]; yes {
-			continue
-		}
 		visited = append(visited, cur)
-		visitedSet[cur] = struct{}{}
 
-		// Prepare to visit all children by default.
-		children := sortByEdgeOrder(cur.listChildren(), orderBy)
-		next := children
-
-		// Ask the visitor callback to decide where it wants to go next. Verify the
-		// callback didn't sneakily returned some *Node it saved somewhere before.
-		// This may cause infinite recursion and other weird stuff.
-		if visitor != nil {
-			var err error
-			if next, err = visitor(cur, children); err != nil {
-				return nil, err
-			}
-			allowed := make(map[*Node]struct{}, len(children))
-			for _, n := range children {
-				allowed[n] = struct{}{}
-			}
-			for _, n := range next {
-				if _, yes := allowed[n]; !yes {
-					return nil, fmt.Errorf("the callback unexpectedly returned %s which is not a child of %s", n, cur)
-				}
-			}
+		// Ask the visitor callback to decide where it wants to go next.
+		next, err := filteredChildren(cur, orderBy, visitor)
+		if err != nil {
+			return nil, err
 		}
 
-		// Enqueue nodes for the visit.
+		// Go there (eventually).
 		for _, n := range next {
-			if _, yes := visitedSet[n]; !yes {
-				queue.PushBack(n)
-			}
+			enqueue(n)
 		}
 	}
 	return visited, nil
+}
+
+// descDepth implements recursive depth-first traversal.
+func descDepth(root *Node, orderBy string, visitor Visitor) ([]*Node, error) {
+	visited := make([]*Node, 0, 1)
+	visitedSet := make(map[*Node]struct{}, 1)
+
+	var visit func(root *Node) error
+	visit = func(root *Node) error {
+		// Been here before?
+		if _, yes := visitedSet[root]; yes {
+			return nil
+		}
+		visitedSet[root] = struct{}{}
+
+		// Ask the visitor callback to decide where it wants to go next.
+		next, err := filteredChildren(root, orderBy, visitor)
+		if err != nil {
+			return err
+		}
+
+		// Go there, right now.
+		for _, n := range next {
+			if err := visit(n); err != nil {
+				return err
+			}
+		}
+
+		// Now that all children are visited, emit the root itself too.
+		visited = append(visited, root)
+		return nil
+	}
+
+	if err := visit(root); err != nil {
+		return nil, err
+	}
+	return visited, nil
+}
+
+// filteredChildren calls 'visitor' callback to filter the list of children.
+//
+// Used by Descendants implementation.
+func filteredChildren(cur *Node, orderBy string, visitor Visitor) ([]*Node, error) {
+	children := sortByEdgeOrder(cur.listChildren(), orderBy)
+	if visitor == nil {
+		return children, nil
+	}
+	// Ask the visitor callback to decide where it wants to go next. Verify the
+	// callback didn't sneakily return some *Node it saved somewhere before.
+	// This may cause infinite recursion and other weird stuff.
+	next, err := visitor(cur, children)
+	if err != nil {
+		return nil, err
+	}
+	allowed := make(map[*Node]struct{}, len(children))
+	for _, n := range children {
+		allowed[n] = struct{}{}
+	}
+	for _, n := range next {
+		if _, yes := allowed[n]; !yes {
+			return nil, fmt.Errorf("the callback unexpectedly returned %s which is not a child of %s", n, cur)
+		}
+	}
+	return next, nil
 }
 
 // Parents returns direct parents of a node (given by its key).
@@ -525,9 +600,15 @@ func (g *Graph) orderedRelatives(key *Key, attr, orderBy string, cb func(n *Node
 func sortByEdgeOrder(nodes []*Node, orderBy string) []*Node {
 	switch orderBy {
 	case "def":
-		break
+		// default
+	case "~def":
+		for i, j := 0, len(nodes)-1; i < j; i, j = i+1, j-1 {
+			nodes[i], nodes[j] = nodes[j], nodes[i]
+		}
 	case "key":
 		sort.Slice(nodes, func(i, j int) bool { return nodes[i].Key.Less(nodes[j].Key) })
+	case "~key":
+		sort.Slice(nodes, func(i, j int) bool { return nodes[j].Key.Less(nodes[i].Key) })
 	default:
 		// Must not happen, orderBy must already be validated here.
 		panic(fmt.Sprintf("unknown order %q", orderBy))
@@ -709,10 +790,12 @@ var graphAttrs = map[string]*starlark.Builtin{
 		var root *Key
 		var callback starlark.Value
 		var orderBy starlark.String = "key"
+		var topology starlark.String = "breadth"
 		err := starlark.UnpackArgs("descendants", args, kwargs,
 			"root", &root,
 			"callback?", &callback,
-			"order_by?", &orderBy)
+			"order_by?", &orderBy,
+			"topology?", &topology)
 		if err != nil {
 			return nil, err
 		}
@@ -746,7 +829,7 @@ var graphAttrs = map[string]*starlark.Builtin{
 			}
 		}
 
-		nodes, err := b.Receiver().(*Graph).Descendants(root, orderBy.GoString(), visitor)
+		nodes, err := b.Receiver().(*Graph).Descendants(root, orderBy.GoString(), topology.GoString(), visitor)
 		if err != nil {
 			return nil, err
 		}

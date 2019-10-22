@@ -14,7 +14,13 @@
 
 
 _KEY_ORDER = 'key'
+_REVERSE_KEY_ORDER = '~key'
+
 _DEFINITION_ORDER = 'def'
+_REVERSE_DEFINITION_ORDER = '~def'
+
+_BREADTH_FIRST = 'breadth'
+_DEPTH_FIRST = 'depth'
 
 
 # A constructor for graph.keyset structs.
@@ -189,7 +195,7 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   Args:
     parent: a key of the parent node, see graph.key(...).
     kind: a string with a kind of children to return or None for all.
-    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
+    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
   Returns:
     List of graph.node objects.
@@ -200,31 +206,41 @@ def _children(parent, kind=None, order_by=_KEY_ORDER):
   return out
 
 
-def _descendants(root, visitor=None, order_by=_KEY_ORDER):
+def _descendants(
+      root,
+      visitor=None,
+      order_by=_KEY_ORDER,
+      topology=_BREADTH_FIRST,
+  ):
   """Recursively visits 'root' (given by its key) and all its children, in
-  breadth first order, ordering edges by 'order_by'.
+  breadth or depth first order, ordering edges by 'order_by'.
 
-  Returns the list of all visited nodes, in order they were visited. Fails if
-  called not from a generator callback: a graph under construction can't be
-  queried.
+  Returns the list of all visited nodes. When visiting in breadth-first order
+  (i.e. with `topology = BREADTH_FIRST`), nodes are returned exactly in the
+  same order they were passed to `visitor` callback. When visiting in
+  depth-first order, nodes are returned sorted topologically.
+
+  Fails if called not from a generator callback: a graph under construction
+  can't be queried.
 
   Each node is visited only once, even if it is reachable through multiple
   paths. Note that the graph has no cycles (by construction).
 
   The visitor callback (if not None) is called for each visited node. It decides
-  what children to visit next. The callback always sees all children of the
-  node, even if some of them (or all) have already been visited. Visited nodes
-  will be skipped even if the visitor returns them.
+  what subset of children of this node to visit. The callback always sees all
+  children, even if some of them (or all) have already been visited. Visited
+  nodes will be skipped even if the visitor returns them.
 
   Args:
     root: a key of the node to start the traversal from, see graph.key(...).
     visitor: func(node: graph.node, children: []graph.node): []graph.node.
-    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
+    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
+    topology: either BREADTH_FIRST or DEPTH_FIRST, default is BREADTH_FIRST.
 
   Returns:
     List of visited graph.node objects, starting with the root.
   """
-  return __native__.graph().descendants(root, visitor, order_by)
+  return __native__.graph().descendants(root, visitor, order_by, topology)
 
 
 def _parents(child, kind=None, order_by=_KEY_ORDER):
@@ -240,7 +256,7 @@ def _parents(child, kind=None, order_by=_KEY_ORDER):
   Args:
     child: a key of the node to find parents of, see graph.key(...).
     kind: a string with a kind of parents to return or None for all.
-    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
+    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
   Returns:
     List of graph.node objects.
@@ -259,7 +275,7 @@ def _sorted_nodes(nodes, order_by=_KEY_ORDER):
 
   Args:
     nodes: an iterable of graph.node objects.
-    order_by: either KEY_ORDER or DEFINITION_ORDER, default KEY_ORDER.
+    order_by: one of `*_ORDER` constants, default is KEY_ORDER.
 
   Returns:
     List of graph.node objects.
@@ -270,7 +286,13 @@ def _sorted_nodes(nodes, order_by=_KEY_ORDER):
 # Public API of this module.
 graph = struct(
     KEY_ORDER = _KEY_ORDER,
+    REVERSE_KEY_ORDER = _REVERSE_KEY_ORDER,
+
     DEFINITION_ORDER = _DEFINITION_ORDER,
+    REVERSE_DEFINITION_ORDER = _REVERSE_DEFINITION_ORDER,
+
+    BREADTH_FIRST = _BREADTH_FIRST,
+    DEPTH_FIRST = _DEPTH_FIRST,
 
     key = _key,
     keyset = _keyset,
