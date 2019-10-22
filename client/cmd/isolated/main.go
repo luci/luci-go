@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -23,7 +24,9 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -32,10 +35,13 @@ import (
 // supported commands) is done.
 const version = "0.2"
 
-func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
-	return &subcommands.DefaultApplication{
+func getApplication(defaultAuthOpts auth.Options) *cli.Application {
+	return &cli.Application{
 		Name:  "isolated",
 		Title: "isolateserver.py but faster",
+		Context: func(ctx context.Context) context.Context {
+			return gologger.StdConfig.Use(ctx)
+		},
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			cmdArchive(defaultAuthOpts),

@@ -56,29 +56,28 @@ func (b *cmdRunBase) Initialize() {
 // ModifyContext returns a new context.
 // Configures logging and embeds the GCE API service.
 // Implements cli.ContextModificator.
-func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
-	c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
+func (b *cmdRunBase) ModifyContext(ctx context.Context) context.Context {
 	opts, err := b.authFlags.Options()
 	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
+		logging.Errorf(ctx, "%s", err.Error())
 		panic("failed to get auth options")
 	}
-	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
+	http, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, opts).Client()
 	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
+		logging.Errorf(ctx, "%s", err.Error())
 		panic("failed to get authenticator")
 	}
 	srv, err := compute.New(http)
 	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
+		logging.Errorf(ctx, "%s", err.Error())
 		panic("failed to get GCE API service")
 	}
-	return context.WithValue(c, &key, srv)
+	return context.WithValue(ctx, &key, srv)
 }
 
 // createService returns a new Compute Engine API service.
-func createService(c context.Context, opts auth.Options) (*compute.Service, error) {
-	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
+func createService(ctx context.Context, opts auth.Options) (*compute.Service, error) {
+	http, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, opts).Client()
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +93,9 @@ func New() *cli.Application {
 	return &cli.Application{
 		Name:  "snapshot",
 		Title: "Machine Provider disk snapshot tool",
+		Context: func(ctx context.Context) context.Context {
+			return logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
+		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 			getCreateSnapshotCmd(),

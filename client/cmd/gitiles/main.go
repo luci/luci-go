@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/maruel/subcommands"
@@ -23,7 +24,9 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
@@ -32,11 +35,14 @@ import (
 // supported commands) is done.
 const version = "0.1"
 
-func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, gitiles.OAuthScope}
-	return &subcommands.DefaultApplication{
+	return &cli.Application{
 		Name:  "gitiles",
 		Title: "gitiles client",
+		Context: func(ctx context.Context) context.Context {
+			return gologger.StdConfig.Use(ctx)
+		},
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
 			cmdArchive(defaultAuthOpts),

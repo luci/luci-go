@@ -86,10 +86,6 @@ func (c *commandBase) Initialize(params *Parameters) {
 // Configures the context's logging and embeds the Machine Database RPC client.
 // Implements cli.ContextModificator.
 func (c *commandBase) ModifyContext(ctx context.Context) context.Context {
-	cfg := gologger.LoggerConfig{
-		Format: gologger.StdFormatWithColor,
-		Out:    os.Stderr,
-	}
 	opts, err := c.f.authFlags.Options()
 	if err != nil {
 		errors.Log(ctx, err)
@@ -104,6 +100,13 @@ func New(params *Parameters) *cli.Application {
 	return &cli.Application{
 		Name:  "crimson",
 		Title: "Machine Database client",
+		Context: func(ctx context.Context) context.Context {
+			cfg := gologger.LoggerConfig{
+				Format: gologger.StdFormatWithColor,
+				Out:    os.Stderr,
+			}
+			return ctx.Use(ctx)
+		},
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
 			{}, // Create an empty command to separate groups of similar commands.
