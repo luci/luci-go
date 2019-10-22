@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -164,5 +165,43 @@ func TestReadInvocation(t *testing.T) {
 				},
 			})
 		})
+	})
+}
+
+func TestWriteInvocationByTags(t *testing.T) {
+	Convey(`getInvocationsByTagMutations`, t, func() {
+		muts := getInvocationsByTagMutations("inv1", &pb.Invocation{
+			Name:  "invocations/inv1",
+			State: pb.Invocation_ACTIVE,
+			Tags:  pbutil.StringPairs("k1", "v11", "k1", "v12", "k2", "v2"),
+		})
+		muts = append(muts, getInvocationsByTagMutations("inv2", &pb.Invocation{
+			Name:  "invocations/inv2",
+			State: pb.Invocation_ACTIVE,
+			Tags:  pbutil.StringPairs("k1", "v11", "k3", "v3"),
+		})...)
+
+		ctx := testutil.SpannerTestContext(t)
+		testutil.MustApply(ctx, muts...)
+
+		keys := []*spanner.Key{
+			{tagID(pbutil.StringPair("k1", "v11")), "inv1"},
+
+			// duplicated key in same invocation
+			{tagID(pbutil.StringPair("k1", "v12")), "inv1"},
+
+			// duplicated tag in different invocation
+			{tagID(pbutil.StringPair("k1", "v11")), "inv2"},
+
+			{tagID(pbutil.StringPair("k2", "v2")), "inv1"},
+			{tagID(pbutil.StringPair("k3", "v3")), "inv2"},
+		}
+		for _, key := range keys {
+			var throwaway string // we need to read into *something*
+			err := span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationsByTag", *key, map[string]interface{}{
+				"InvocationId": &throwaway,
+			})
+			So(err, ShouldBeNil)
+		}
 	})
 }
