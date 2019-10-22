@@ -15,10 +15,12 @@
 package span
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -28,95 +30,75 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestColumnReader(t *testing.T) {
+func TestTypeConversion(t *testing.T) {
 	t.Parallel()
 
-	read := func(dest interface{}, value interface{}) {
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{value})
+	test := func(goValue, spValue interface{}) {
+		// FromSpanner
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{spValue})
 		So(err, ShouldBeNil)
-		err = NewColumnReader(dest).Read(row)
+		goPtr := reflect.New(reflect.TypeOf(goValue))
+		err = FromSpanner(row, goPtr.Interface())
 		So(err, ShouldBeNil)
+		switch goValue.(type) {
+		case proto.Message:
+			So(goPtr.Elem().Interface(), ShouldResembleProto, goValue)
+		default:
+			So(goPtr.Elem().Interface(), ShouldResemble, goValue)
+		}
+
+		// ToSpanner
+		actual := ToSpanner(goValue)
+		So(actual, ShouldResemble, spValue)
 	}
 
 	Convey(`int64`, t, func() {
-		var v int64
-		read(&v, 42)
-		So(v, ShouldEqual, int64(42))
-	})
-
-	Convey(`*string`, t, func() {
-		var v string
-		Convey(`NOT NULL`, func() {
-			read(&v, "sis boom bah")
-			So(v, ShouldEqual, "sis boom bah")
-		})
-
-		Convey(`valid NULLable`, func() {
-			read(&v, spanner.NullString{StringVal: "sis boom bah", Valid: true})
-			So(v, ShouldEqual, "sis boom bah")
-		})
-
-		Convey(`NULL`, func() {
-			read(&v, spanner.NullString{Valid: false})
-			So(v, ShouldEqual, "")
-		})
+		test(int64(42), int64(42))
 	})
 
 	Convey(`*timestamp.Timestamp`, t, func() {
-		var v *tspb.Timestamp
-		Convey(`NOT NULL`, func() {
-			read(&v, time.Unix(1000, 1234))
-			So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
-		})
-
-		Convey(`valid NULLable`, func() {
-			read(&v, spanner.NullTime{Time: time.Unix(1000, 1234), Valid: true})
-			So(v, ShouldResembleProto, &tspb.Timestamp{Seconds: 1000, Nanos: 1234})
-		})
-
-		Convey(`NULL`, func() {
-			read(&v, spanner.NullTime{Valid: false})
-			So(v, ShouldBeNil)
-		})
+		test(
+			&tspb.Timestamp{Seconds: 1000, Nanos: 1234},
+			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},
+		)
 	})
 
-	Convey(`pb.Invocation_State`, t, func() {
-		var v pb.Invocation_State
-		read(&v, 2)
-		So(v, ShouldEqual, pb.Invocation_COMPLETED)
+	Convey(`*timestamp.Timestamp`, t, func() {
+		test(pb.Invocation_COMPLETED, int64(2))
 	})
 
 	Convey(`*pb.VariantDef`, t, func() {
-		var v *pb.VariantDef
-		read(&v, []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
-		So(v, ShouldResembleProto, &pb.VariantDef{Def: map[string]string{
-			"k1":               "v1",
-			"key/k2":           "v2",
-			"key/with/part/k3": "v3",
-		}})
+		test(
+			&pb.VariantDef{Def: map[string]string{
+				"a": "1",
+				"b": "2",
+			}},
+			[]string{"a:1", "b:2"},
+		)
 	})
 
 	Convey(`[]*pb.StringPair`, t, func() {
-		var v []*pb.StringPair
-		read(&v, []string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
-		So(v, ShouldResemble, pbutil.StringPairs(
-			"k1", "v1",
-			"key/k2", "v2",
-			"key/with/part/k3", "v3",
-		))
+		test(
+			pbutil.StringPairs("a", "1", "b", "2"),
+			[]string{"a:1", "b:2"},
+		)
 	})
 
-	Convey(`interspersed types`, t, func() {
+	Convey(`Slice`, t, func() {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
+		// FromSpanner
 		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(2)})
 		So(err, ShouldBeNil)
-
-		err = NewColumnReader(&varIntA, &varIntB, &varState).Read(row)
+		err = FromSpanner(row, &varIntA, &varIntB, &varState)
 		So(err, ShouldBeNil)
 		So(varIntA, ShouldEqual, 42)
 		So(varIntB, ShouldEqual, 56)
 		So(varState, ShouldEqual, pb.Invocation_COMPLETED)
+
+		// ToSpanner
+		spValues := ToSpannerSlice(varIntA, varIntB, varState)
+		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(2)})
 	})
 }
