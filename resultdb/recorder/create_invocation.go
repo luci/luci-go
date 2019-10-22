@@ -128,10 +128,10 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	}
 	populateExpirations(invMap, now)
 
-	// TODO(jchinlee): populate InvocationsByTag rows.
+	muts := []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))}
+	muts = append(muts, getInvocationsByTagMutations(in.InvocationId, inv)...)
 
-	_, err = span.Client(ctx).Apply(
-		ctx, []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))})
+	_, err = span.Client(ctx).Apply(ctx, muts)
 	if spanner.ErrCode(err) == codes.AlreadyExists {
 		return nil, errors.Reason("invocation already exists").
 			Tag(grpcutil.AlreadyExistsTag).

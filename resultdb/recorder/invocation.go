@@ -130,7 +130,7 @@ func getInvocationsByTagMutations(invID string, inv *pb.Invocation) []*spanner.M
 	muts := make([]*spanner.Mutation, len(inv.Tags))
 	for i, tag := range inv.Tags {
 		muts[i] = spanner.InsertMap("InvocationsByTag", map[string]interface{}{
-			"TagId":        tagID(tag),
+			"TagId":        pbutil.TagID(tag),
 			"InvocationId": invID,
 		})
 	}

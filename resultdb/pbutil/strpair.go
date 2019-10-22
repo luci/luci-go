@@ -15,7 +15,10 @@
 package pbutil
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -117,4 +120,13 @@ func StringPairsToStrings(pairs ...*pb.StringPair) []string {
 		ret[i] = StringPairToString(p)
 	}
 	return ret
+}
+
+// TagID treats the given StringPair as a tag and gets its ID.
+// The ID format is "${sha256_hex(tag)}_${key}:${value}".
+func TagID(tag *pb.StringPair) string {
+	tagStr := StringPairToString(tag)
+	h := sha256.New()
+	io.WriteString(h, tagStr)
+	return fmt.Sprintf("%s_%s", hex.EncodeToString(h.Sum(nil)), tagStr)
 }

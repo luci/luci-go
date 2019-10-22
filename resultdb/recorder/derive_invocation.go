@@ -16,10 +16,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"io"
 	"strings"
 
 	"cloud.google.com/go/spanner"
@@ -58,7 +54,7 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 		return errors.Reason("swarming_task.id missing").Err()
 	}
 
-	if err := pbutil.ValidateVariantDef(req.BaseTestVariant); err != nil {
+	if err := pbutil.ValidateVariantDef(req.GetBaseTestVariant()); err != nil {
 		return errors.Annotate(err, "base_test_variant").Err()
 	}
 
@@ -187,12 +183,4 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, invID string) (boo
 
 	// The invocation exists and is finalized, so no need to write it.
 	return false, nil
-}
-
-// tagID returns the ID of the StringPair tag, with format "${sha256_hex(tag)}_${key}:${value}".
-func tagID(tag *pb.StringPair) string {
-	tagStr := pbutil.StringPairToString(tag)
-	h := sha256.New()
-	io.WriteString(h, tagStr)
-	return fmt.Sprintf("%s_%s", hex.EncodeToString(h.Sum(nil)), tagStr)
 }

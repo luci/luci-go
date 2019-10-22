@@ -183,16 +183,16 @@ func TestWriteInvocationByTags(t *testing.T) {
 		testutil.MustApply(ctx, muts...)
 
 		keys := []*spanner.Key{
-			{tagID(pbutil.StringPair("k1", "v11")), "inv1"},
+			{pbutil.TagID(pbutil.StringPair("k1", "v11")), "inv1"},
 
 			// duplicated key in same invocation
-			{tagID(pbutil.StringPair("k1", "v12")), "inv1"},
+			{pbutil.TagID(pbutil.StringPair("k1", "v12")), "inv1"},
 
 			// duplicated tag in different invocation
-			{tagID(pbutil.StringPair("k1", "v11")), "inv2"},
+			{pbutil.TagID(pbutil.StringPair("k1", "v11")), "inv2"},
 
-			{tagID(pbutil.StringPair("k2", "v2")), "inv1"},
-			{tagID(pbutil.StringPair("k3", "v3")), "inv2"},
+			{pbutil.TagID(pbutil.StringPair("k2", "v2")), "inv1"},
+			{pbutil.TagID(pbutil.StringPair("k3", "v3")), "inv2"},
 		}
 		for _, key := range keys {
 			var throwaway string // we need to read into *something*
