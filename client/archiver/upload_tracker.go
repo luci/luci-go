@@ -140,6 +140,9 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 
 	for _, bundle := range bundles {
 		bundle := bundle
+		if len(bundle.items) == 1 {
+			// TODO: Do not create a tarfile, upload the file directly instead.
+		}
 		digest, tarSize, err := bundle.Digest(ut.checker.Hash())
 		if err != nil {
 			return err
