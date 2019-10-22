@@ -34,24 +34,13 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/resultdb/recorder/chromium"
 )
 
 const (
 	// createInvocationGroup is a CIA group that can create invocations.
 	// TODO(crbug.com/1013316): remove in favor of realms.
 	createInvocationGroup = "luci-resultdb-access"
-
-	day = 24 * time.Hour
-
-	// Delete Invocations row after this duration since invocation creation.
-	invocationExpirationDuration = 2 * 365 * day // 2 y
-
-	// Delete expected test results afte this duration since invocation creation.
-	expectedTestResultsExpirationDuration = 60 * day // 2mo
-
-	// By default, interrupt the invocation 1h after creation if it is still
-	// incomplete.
-	defaultInvocationDeadlineDuration = time.Hour
 )
 
 // validateCreateInvocationRequest returns an error if req is determined to be
@@ -127,25 +116,22 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	pbutil.NormalizeInvocation(inv)
 
 	// Write to Spanner.
-	invExpiration := now.Add(invocationExpirationDuration)
-	resultsExpiration := now.Add(expectedTestResultsExpirationDuration)
-	const week = 7 * 24 * time.Hour
-	_, err = span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-		spanner.InsertMap("Invocations", span.ToSpannerMap(map[string]interface{}{
-			"InvocationId":                      in.InvocationId,
-			"State":                             pb.Invocation_ACTIVE,
-			"Realm":                             "chromium", // TODO(crbug.com/1013316): accept realm in the proto
-			"InvocationExpirationTime":          invExpiration,
-			"InvocationExpirationWeek":          invExpiration.Truncate(week),
-			"ExpectedTestResultsExpirationTime": resultsExpiration,
-			"ExpectedTestResultsExpirationWeek": resultsExpiration.Truncate(week),
-			"UpdateToken":                       updateToken,
-			"CreateTime":                        now,
-			"Deadline":                          inv.Deadline,
-			"BaseTestVariantDef":                inv.GetBaseTestVariantDef(),
-			"Tags":                              inv.Tags,
-		})),
-	})
+	invMap := map[string]interface{}{
+		"InvocationId":       in.InvocationId,
+		"State":              pb.Invocation_ACTIVE,
+		"Realm":              chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+		"UpdateToken":        updateToken,
+		"CreateTime":         now,
+		"Deadline":           inv.Deadline,
+		"BaseTestVariantDef": inv.GetBaseTestVariantDef(),
+		"Tags":               inv.Tags,
+	}
+	populateExpirations(invMap, now)
+
+	// TODO(jchinlee): populate InvocationsByTag rows.
+
+	_, err = span.Client(ctx).Apply(
+		ctx, []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))})
 	if spanner.ErrCode(err) == codes.AlreadyExists {
 		return nil, errors.Reason("invocation already exists").
 			Tag(grpcutil.AlreadyExistsTag).
