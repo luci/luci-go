@@ -22,6 +22,30 @@
       "revId": "721f0df63c552b063e2017eccc8a3341fddcc930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3b96945_375143b8",
+        "filename": "milo/frontend/expectations/buildbucket.build-Test_page-_linux-rel.html",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-22T02:51:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a95a291_d79f56e9",
+      "range": {
+        "startLine": 63,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 45
+      },
+      "revId": "721f0df63c552b063e2017eccc8a3341fddcc930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
