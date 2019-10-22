@@ -576,6 +576,35 @@ must refer to a path not generated or emitted by anything else.
 
 
 
+### lucicfg.current_module {#lucicfg.current_module}
+
+```python
+lucicfg.current_module()
+```
+
+
+
+Returns the location of a module being currently executed.
+
+This is the module being processed by a current load(...) or [exec(...)](#exec)
+statement. It has no relation to the module that holds the top-level stack
+frame. For example, if a currently loading module `A` calls a function in
+a module `B` and this function calls [lucicfg.current_module(...)](#lucicfg.current_module), the result
+would be the module `A`, even though the call goes through code in the
+module `B` (i.e. [lucicfg.current_module(...)](#lucicfg.current_module) invocation itself resided in
+a function in module `B`).
+
+Fails if called from inside a generator callback. Threads executing such
+callbacks are not running any load(...) or [exec(...)](#exec).
+
+
+
+#### Returns  {#lucicfg.current_module-returns}
+
+A `struct(package='...', path='...')` with the location of the module.
+
+
+
 ### lucicfg.var {#lucicfg.var}
 
 ```python
