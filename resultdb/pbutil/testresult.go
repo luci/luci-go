@@ -49,12 +49,25 @@ func ArtifactsToByteArrays(artifacts []*pb.Artifact) ([][]byte, error) {
 		return nil, nil
 	}
 
+	// Reserve first byte for conversion format version.
 	bytes := make([][]byte, len(artifacts))
 	for i, art := range artifacts {
 		var err error
 		if bytes[i], err = json.Marshal(art); err != nil {
 			return nil, errors.Annotate(err, "converting artifact #%d %q", i, art.Name).Err()
 		}
+
+		bytes[i] = append(make([]byte, 1), bytes[i]...)
 	}
 	return bytes, nil
+}
+
+// ArtifactFromBytes unmarshals a byte array into a pb.Artifact.
+func ArtifactFromBytes(bytes []byte) (*pb.Artifact, error) {
+	art := &pb.Artifact{}
+	// First byte is reserved for conversion format version, so take everything following.
+	if err := json.Unmarshal(bytes[1:], art); err != nil {
+		return nil, err
+	}
+	return art, nil
 }
