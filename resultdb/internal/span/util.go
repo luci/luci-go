@@ -60,63 +60,45 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 		return err
 	}
 
-	return NewColumnReader(ptrs...).Read(row)
+	return FromSpanner(row, ptrs...)
 }
 
-// ColumnReader can read column values and convert them to Go types.
-// For example, it can convert Spanner's int64 to pb.InvocationState.
-//
+// FromSpanner reads values from row to ptrs, converting types from Spanner
+// to Go along the way.
 // Supported types:
 //   - string
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.VariantDef
 //   - pb.StringPair
-type ColumnReader struct {
-	// pointers to Go values, such as *pb.InvocationState
-	goPtrs []interface{}
-	// pointers to Spanner values, such as *int64
-	spanPtrs []interface{}
-}
+func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
+	spanPtrs := make([]interface{}, len(ptrs))
 
-// NewColumnReader creates a new column reader.
-// ptrs is a slice of pointers to read values into.
-func NewColumnReader(ptrs ...interface{}) *ColumnReader {
-	r := &ColumnReader{
-		goPtrs:   ptrs,
-		spanPtrs: make([]interface{}, len(ptrs)),
-	}
-
-	for i, goPtr := range r.goPtrs {
+	for i, goPtr := range ptrs {
 		switch goPtr.(type) {
 		case *string:
-			r.spanPtrs[i] = &spanner.NullString{}
+			spanPtrs[i] = &spanner.NullString{}
 		case **tspb.Timestamp:
-			r.spanPtrs[i] = &spanner.NullTime{}
+			spanPtrs[i] = &spanner.NullTime{}
 		case *pb.Invocation_State:
-			r.spanPtrs[i] = new(int64)
+			spanPtrs[i] = new(int64)
 		case **pb.VariantDef:
-			r.spanPtrs[i] = &[]string{}
+			spanPtrs[i] = &[]string{}
 		case *[]*pb.StringPair:
-			r.spanPtrs[i] = &[]string{}
+			spanPtrs[i] = &[]string{}
 		default:
-			r.spanPtrs[i] = goPtr
+			spanPtrs[i] = goPtr
 		}
 	}
 
-	return r
-}
-
-// Read reads columns from row into ptrs specified in NewColumnReader.
-func (r *ColumnReader) Read(row *spanner.Row) error {
-	if err := row.Columns(r.spanPtrs...); err != nil {
+	if err := row.Columns(spanPtrs...); err != nil {
 		return err
 	}
 
 	// Declare err to use in short statements.
 	var err error
-	for i, spanPtr := range r.spanPtrs {
-		goPtr := r.goPtrs[i]
+	for i, spanPtr := range spanPtrs {
+		goPtr := ptrs[i]
 		if spanPtr == goPtr {
 			continue
 		}
@@ -160,6 +142,69 @@ func (r *ColumnReader) Read(row *spanner.Row) error {
 		}
 	}
 	return nil
+}
+
+// ToSpanner converts values from Go types to Spanner types. In addition to
+// supported types in FromSpanner, also supports []interface{} and
+// map[string]interface{}.
+func ToSpanner(v interface{}) interface{} {
+	switch v := v.(type) {
+	case *tspb.Timestamp:
+		if v == nil {
+			return spanner.NullTime{}
+		}
+		ret := spanner.NullTime{Valid: true}
+		ret.Time, _ = ptypes.Timestamp(v)
+		// ptypes.Timestamp always returns a timestamp, even
+		// if the returned err is non-nil, see its documentation.
+		// The error is returned only if the timestamp violates its
+		// own invariants, which will be caught on the attempt to
+		// insert this value into Spanner.
+		// This is consistent with the behavior of spanner.Insert() and
+		// other mutating functions that ignore invalid time.Time
+		// until it is time to apply the mutation.
+		// Not returning an error here significantly simplifies usage
+		// of this function and functions based on this one.
+		return ret
+
+	case pb.Invocation_State:
+		return int64(v)
+
+	case *pb.VariantDef:
+		return pbutil.VariantDefToStrings(v)
+
+	case []*pb.StringPair:
+		return pbutil.StringPairsToStrings(v...)
+
+	case []interface{}:
+		ret := make([]interface{}, len(v))
+		for i, el := range v {
+			ret[i] = ToSpanner(el)
+		}
+		return ret
+
+	case map[string]interface{}:
+		ret := make(map[string]interface{}, len(v))
+		for key, el := range v {
+			ret[key] = ToSpanner(el)
+		}
+		return ret
+
+	default:
+		return v
+	}
+}
+
+// ToSpannerSlice converts a slice of Go values to a slice of Spanner values.
+// See also ToSpanner.
+func ToSpannerSlice(values ...interface{}) []interface{} {
+	return ToSpanner(values).([]interface{})
+}
+
+// ToSpannerMap converts a map of Go values to a map of Spanner values.
+// See also ToSpanner.
+func ToSpannerMap(values map[string]interface{}) map[string]interface{} {
+	return ToSpanner(values).(map[string]interface{})
 }
 
 // ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps
