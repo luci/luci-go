@@ -15,10 +15,24 @@
 package pbutil
 
 import (
+	"regexp"
 	"sort"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+var testPathRe = regexp.MustCompile(`^[[:print:]]+$`)
+
+// ValidateTestPath returns a non-nil error if testPath is invalid.
+func ValidateTestPath(testPath string) error {
+	if testPath == "" {
+		return unspecified()
+	}
+	if !testPathRe.MatchString(testPath) {
+		return doesNotMatch(testPathRe)
+	}
+	return nil
+}
 
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
