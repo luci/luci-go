@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a55f7880_ac1fd702",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:12:44Z",
+      "side": 1,
+      "message": "this function seems to be specific to spanner (why else we\u0027d want to do this kind of prefixing with hash), and is really internal (i.e. I don\u0027t think our users will use this and this is a public package), so i think this func belongs to span package.",
+      "revId": "c54833098a4940e654dbaf05fc0405c3fea07553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
