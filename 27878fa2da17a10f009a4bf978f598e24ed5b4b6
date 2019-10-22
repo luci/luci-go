@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2b01542b_0eb86e58",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c838a88_b9cbc66f",
+      "range": {
+        "startLine": 48,
+        "startChar": 3,
+        "endLine": 48,
+        "endChar": 20
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cab4bb1a_49203646",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6860b3c4_e8356fbe",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cab4bb1a_49203646",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "f62a838a_421992f4",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7e8b325_01f5b121",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 5
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f6d06e6f_c39ede76",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b94dd466_c90193f2",
+      "range": {
+        "startLine": 23,
+        "startChar": 12,
+        "endLine": 23,
+        "endChar": 26
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b607615c_ba7385a5",
         "filename": "resultdb/recorder/common.go",
         "patchSetId": 4
@@ -99,6 +189,30 @@
       "writtenOn": "2019-10-19T16:30:29Z",
       "side": 1,
       "message": "why XXXWeek are fields as opposed to functions? unclear why we store them as opposed to compute them each time, since computing is trivial\n\nbut resolving because of the comment above",
+      "range": {
+        "startLine": 39,
+        "startChar": 11,
+        "endLine": 39,
+        "endChar": 15
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9e0ada29_ff71e205",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Motivation was that if we want to change how expirations are computed, the computation logic is only in one place (with the struct, we would need to update the field names in several places, sure, but that\u0027s not necessarily bad as the compiler would catch the changes we\u0027re making; with the map the compiler would not catch errors but we wouldn\u0027t need to update the field names)",
+      "parentUuid": "b607615c_ba7385a5",
       "range": {
         "startLine": 39,
         "startChar": 11,
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "85352398_3c237334",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c21f0c6b_7f00d2d1",
+      "range": {
+        "startLine": 129,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 4
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70ec1a6f_386249fa",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "b10f8bdf_b387fdb2",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70ec1a6f_386249fa",
+      "range": {
+        "startLine": 140,
+        "startChar": 19,
+        "endLine": 140,
+        "endChar": 29
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "394397f5_dbeed0cc",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -168,6 +330,30 @@
       "writtenOn": "2019-10-19T16:30:29Z",
       "side": 1,
       "message": "please add a TODO(nodir): to move this kind of conversions to span package. I have an idea for this.",
+      "range": {
+        "startLine": 149,
+        "startChar": 25,
+        "endLine": 149,
+        "endChar": 48
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78ff8d02_331a255c",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "IOW something analogous to our read conversions, but for writes?",
+      "parentUuid": "394397f5_dbeed0cc",
       "range": {
         "startLine": 149,
         "startChar": 25,
@@ -215,6 +401,24 @@
     },
     {
       "key": {
+        "uuid": "7c3635ec_5bc7b23f",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Yes, because swarming.go /should/ populate it. OK, made it a panic to fail loudly, let me know if you think that\u0027s too graceless",
+      "parentUuid": "6d0c8e40_3232dfb3",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cb3fa717_b7d381d7",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -232,6 +436,24 @@
     },
     {
       "key": {
+        "uuid": "8768ca9d_78691d79",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done\n\nI tried to update CreateInvocation to use InvocationsByTag too, but there\u0027s something wonky with one of the tests, so I\u0027m leaving that out of this CL while I work on it separately.",
+      "parentUuid": "cb3fa717_b7d381d7",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8692e29_dc7a57fe",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -246,6 +468,24 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6139423a_551d72ad",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8692e29_dc7a57fe",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -272,6 +512,30 @@
     },
     {
       "key": {
+        "uuid": "ca7441d7_0e81e7a3",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Because I misinterpreted https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/resultdb/proto/v1/test_result.proto?l\u003d37\u0026rcl\u003da971e5e63a3bfdce7abfa940fab6b170a5e09f12 !",
+      "parentUuid": "04770212_92a10091",
+      "range": {
+        "startLine": 182,
+        "startChar": 20,
+        "endLine": 182,
+        "endChar": 56
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7327abd_eda55fc3",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -283,6 +547,24 @@
       "writtenOn": "2019-10-19T16:30:29Z",
       "side": 1,
       "message": "we should not have to do this ourselves. Spanner should do it because we have allow_commit_timestamp\u003dtrue in SQL. Let\u0027s either remove or this.",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c08b99_a0c832de",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "https://cloud.google.com/spanner/docs/commit-timestamp seems to suggest we do need to include the column --- could you elaborate on what you mean for how we can avoid this?\n\n```\nIf you are performing inserts or updates with mutations, use the placeholder string spanner.commit_timestamp() (or the client library constant) on insertions or updates to your commit timestamp column.\n```",
+      "parentUuid": "f7327abd_eda55fc3",
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -312,6 +594,30 @@
     },
     {
       "key": {
+        "uuid": "eba01cf0_0e7fb052",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c56760d_9342b166",
+      "range": {
+        "startLine": 190,
+        "startChar": 23,
+        "endLine": 190,
+        "endChar": 87
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f526fd31_c8ba1f4d",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -335,6 +641,30 @@
     },
     {
       "key": {
+        "uuid": "3f8d9292_4e0dfc49",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f526fd31_c8ba1f4d",
+      "range": {
+        "startLine": 230,
+        "startChar": 9,
+        "endLine": 230,
+        "endChar": 14
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f32a187_9b472e71",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 4
@@ -346,6 +676,24 @@
       "writtenOn": "2019-10-22T01:00:15Z",
       "side": 1,
       "message": "Is this a temporary function?\n\nIf not, should this function be somewhere else?\n\nSame for the tagID function",
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad57b78_3b52928b",
+        "filename": "resultdb/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "It\u0027s a removed function :) [as per comment above on using strconv.Itoa instead]\n\nRe. tagID, could you elaborate on \"temporary function\"? I think we\u0027ll need to generate StringPair tag IDs in the long run, but maybe you mean something else --- the functionality may be shared by other RPCs so we could move it to e.g. recorder/common.go?",
+      "parentUuid": "8f32a187_9b472e71",
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -372,6 +720,30 @@
       "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e035c303_db342206",
+        "filename": "resultdb/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "667fb861_885e8bfe",
+      "range": {
+        "startLine": 124,
+        "startChar": 11,
+        "endLine": 124,
+        "endChar": 16
+      },
+      "revId": "27878fa2da17a10f009a4bf978f598e24ed5b4b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

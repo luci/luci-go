@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "7843486a_eb8d9e33",
+        "filename": "resultdb/recorder/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-22T16:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72b39c13_e1aaa289",
+      "revId": "17b0e8b82628fd31aab89ced993e50e7f77f971a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97144418_b8c4661b",
         "filename": "resultdb/recorder/derive_invocation.go",
         "patchSetId": 3
