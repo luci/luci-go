@@ -84,7 +84,6 @@ func summarizeSlavePool(
 	for i, slaveName := range slaves {
 		bot := model.Bot{
 			Name: slaveName,
-			URL:  fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
 		}
 
 		slave, ok := slaveMap[slaveName]

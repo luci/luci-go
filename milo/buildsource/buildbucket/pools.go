@@ -127,7 +127,6 @@ func parseBot(c context.Context, swarmingHost string, botInfo *swarmingAPI.Swarm
 	}
 	result := &model.Bot{
 		Name:     botInfo.BotId,
-		URL:      fmt.Sprintf("https://%s/bot?id=%s", swarmingHost, botInfo.BotId),
 		LastSeen: lastSeen,
 	}
 
@@ -182,8 +181,7 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 	}
 	// If there are too many bots, then it won't fit in datastore.
 	// Only store a subset of the bots.
-	// TODO(hinoka): This is inaccurate, but will only affect few builders.
-	// Instead of chopping this list off, just store the statistics.
+	l := len(bots)
 	if len(bots) > 1000 {
 		bots = bots[:1000]
 	}
@@ -192,6 +190,7 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 		PoolID:     desc.PoolID(),
 		Descriptor: desc,
 		Bots:       bots,
+		NumBots:    l,
 		LastUpdate: clock.Now(c),
 	})
 }
