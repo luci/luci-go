@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 )
@@ -79,7 +80,8 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 	bp.ShowDebugLogsPref = getShowDebugLogsPrefCookie(c)
 
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
-		"BuildPage": bp,
+		"BuildPage":      bp,
+		"XsrfTokenField": xsrf.TokenField(c.Context),
 	})
 	return nil
 }
