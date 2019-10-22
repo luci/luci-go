@@ -213,7 +213,7 @@ func ToSpannerMap(values map[string]interface{}) map[string]interface{} {
 func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.ReadWriteTransaction) error) (commitTimestamp time.Time, err error) {
 	return Client(ctx).ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		err := f(ctx, txn)
-		if unwrapped := errors.Unwrap(err); spanner.ErrCode(err) == codes.Aborted {
+		if unwrapped := errors.Unwrap(err); spanner.ErrCode(unwrapped) == codes.Aborted {
 			err = unwrapped
 		}
 		return err
