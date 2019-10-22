@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e366ed4e_182ce3fe",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:19:30Z",
+      "side": 1,
+      "message": "nit: byteSlices",
+      "range": {
+        "startLine": 150,
+        "startChar": 3,
+        "endLine": 150,
+        "endChar": 13
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5003bbef_2a97354d",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:19:30Z",
+      "side": 1,
+      "message": "ok, this makes more worried than tspb.\nunlike this, tspb function always returns a timestamp, this one may result in not noticing that we are inserting garbage. Let\u0027s panic",
+      "range": {
+        "startLine": 206,
+        "startChar": 7,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e137f1e_f955ccf9",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T22:19:30Z",
+      "side": 1,
+      "message": "i just realized that this locks us into one specific encoding of artifacts and is not extensible to compression. Can we reserve first byte for format version so that we don\u0027t corner ourselves?",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 22
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
