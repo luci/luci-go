@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f06fdccd_82ade9f0",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:20:35Z",
+      "side": 1,
+      "message": "I intentionally avoid mirroring so we don\u0027t have to maintain two copies. That\u0027s why this is using a reference (\"In addition to  supported types in FromSpanner\"), rather than a copy. WDYT?",
+      "parentUuid": "f7787f6b_f8c1fd98",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d299e1a5_b2f27ed9",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2019-10-22T17:52:03Z",
       "side": 1,
       "message": "Does Spanner not already deal with this case automatically? https://godoc.org/cloud.google.com/go/spanner#Row",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3018b527_5140e1f5",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:20:35Z",
+      "side": 1,
+      "message": "i am not sure what you mean. The goal here is to be able to convert a slice of go values into a slice of spanner values. ToSpannerSlice relies on this piece of code. Whatever exists in Spanner package, it does not call our ToSpanner",
+      "parentUuid": "d299e1a5_b2f27ed9",
       "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -50,6 +86,24 @@
       "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "457c9d3d_37110688",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:20:35Z",
+      "side": 1,
+      "message": "\u003e Curious: why is this not caught by []interface{}? \n\nno https://play.golang.org/p/eJwuFnCD4qb\n\n\u003e (I see that the test for StringPair succeeds, so it\u0027s more of a curiosity question)\n\u003e \n\u003e At any rate, optional: move the special cases to /above/ the slice and map cases\n\nDone",
+      "parentUuid": "79ff0c58_e8d8c904",
+      "revId": "cd66b65c47c1da73f7112970046fbb3478a8987c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

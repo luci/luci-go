@@ -16,6 +16,24 @@
       "revId": "194870f78f8af1e88d6f2f2bbc83d3573bc22635",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2640ba96_fefb025a",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-22T18:20:35Z",
+      "side": 0,
+      "message": "no particular reason, except that this function does have \"err\" among return values, so why not return it\n\nbut it does not matter. I\u0027ve restored panic",
+      "parentUuid": "7c63c7a7_b10089b8",
+      "revId": "194870f78f8af1e88d6f2f2bbc83d3573bc22635",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
