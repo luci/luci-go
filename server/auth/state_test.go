@@ -16,6 +16,7 @@ package auth
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -34,6 +35,10 @@ func TestState(t *testing.T) {
 		res, err := IsMember(ctx, "group")
 		So(res, ShouldBeFalse)
 		So(err, ShouldEqual, ErrNotConfigured)
+
+		res, err = IsInWhitelist(ctx, "bots")
+		So(res, ShouldBeFalse)
+		So(err, ShouldEqual, ErrNotConfigured)
 	})
 
 	Convey("Check non-empty ctx", t, func() {
@@ -41,18 +46,23 @@ func TestState(t *testing.T) {
 			db:        &fakeDB{},
 			user:      &User{Identity: "user:abc@example.com"},
 			peerIdent: "user:abc@example.com",
+			peerIP: net.IP{1, 2, 3, 4},
 		}
 		ctx := context.WithValue(context.Background(), stateContextKey(0), &s)
 		So(GetState(ctx), ShouldNotBeNil)
 		So(GetState(ctx).Method(), ShouldBeNil)
 		So(GetState(ctx).PeerIdentity(), ShouldEqual, identity.Identity("user:abc@example.com"))
-		So(GetState(ctx).PeerIP(), ShouldBeNil)
+		So(GetState(ctx).PeerIP().String(), ShouldEqual, "1.2.3.4")
 		So(CurrentUser(ctx).Identity, ShouldEqual, identity.Identity("user:abc@example.com"))
 		So(CurrentIdentity(ctx), ShouldEqual, identity.Identity("user:abc@example.com"))
 
 		res, err := IsMember(ctx, "group")
 		So(err, ShouldBeNil)
 		So(res, ShouldBeTrue) // fakeDB always returns true
+
+		res, err = IsInWhitelist(ctx, "bots")
+		So(err, ShouldBeNil)
+		So(res, ShouldBeTrue) // fakeDB contains the list "bots" with member "1.2.3.4"
 	})
 
 	Convey("Check background ctx", t, func() {

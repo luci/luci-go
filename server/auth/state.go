@@ -126,6 +126,20 @@ func IsMember(c context.Context, groups ...string) (bool, error) {
 	return false, ErrNotConfigured
 }
 
+// IsInWhitelist returns true if the current caller is in the given IP
+// whitelist.
+//
+// Unknown whitelists are considered empty (the function returns false).
+//
+// May return errors if the check can not be performed (e.g. on datastore
+// issues).
+func IsInWhitelist(c context.Context, whitelist string) (bool, error) {
+	if s := GetState(c); s != nil {
+		return s.DB().IsInWhitelist(c, s.PeerIP(), whitelist)
+	}
+	return false, ErrNotConfigured
+}
+
 // LoginURL returns a URL that, when visited, prompts the user to sign in,
 // then redirects the user to the URL specified by dest.
 //
