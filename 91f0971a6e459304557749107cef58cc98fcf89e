@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bcf87bd2_ce5a6a09",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-22T00:48:29Z",
+      "side": 1,
+      "message": "This textarea is resizable, and it has a couple minor bugs:\n* Resizing vertically expands the dialog, but resizing horizontally doesn\u0027t\n* You can resize the textarea vertically off the screen so far that you lose the ability to resize it back\n\nMaybe we should avoid these by making it not resizable?",
+      "range": {
+        "startLine": 127,
+        "startChar": 9,
+        "endLine": 127,
+        "endChar": 17
+      },
+      "revId": "91f0971a6e459304557749107cef58cc98fcf89e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
