@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d295f911_3cff24f4",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-23T22:11:06Z",
+      "side": 1,
+      "message": "This should also be a name, right?",
+      "range": {
+        "startLine": 48,
+        "startChar": 46,
+        "endLine": 48,
+        "endChar": 58
+      },
+      "revId": "e96c19af6b42bbf86d71ad5e803b94f7de6c3eae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
