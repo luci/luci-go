@@ -15,14 +15,16 @@
 package pbutil
 
 import (
-	"encoding/json"
 	"regexp"
 	"sort"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+const artifactConversionVersion = 1
 
 var testPathRe = regexp.MustCompile(`^[[:print:]]+$`)
 
@@ -57,18 +59,48 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 	})
 }
 
-// ArtifactsToByteArrays converts a slice of artifacts to a slice of byte arrays.
-func ArtifactsToByteArrays(artifacts []*pb.Artifact) ([][]byte, error) {
+// ArtifactsToByteSlices converts a slice of artifacts to a slice of byte slices.
+// For each artifact, we reserve some leading bytes to store conversion format version.
+func ArtifactsToByteSlices(artifacts []*pb.Artifact) ([][]byte, error) {
 	if len(artifacts) == 0 {
 		return nil, nil
 	}
 
 	bytes := make([][]byte, len(artifacts))
 	for i, art := range artifacts {
-		var err error
-		if bytes[i], err = json.Marshal(art); err != nil {
+		buf := proto.NewBuffer([]byte{})
+		if err := buf.EncodeVarint(artifactConversionVersion); err != nil {
+			return nil, errors.Annotate(err, "artifact conversion version").Err()
+		}
+		if err := buf.EncodeMessage(art); err != nil {
 			return nil, errors.Annotate(err, "converting artifact #%d %q", i, art.Name).Err()
 		}
+		bytes[i] = buf.Bytes()
 	}
 	return bytes, nil
+}
+
+// ArtifactsFromByteSlices unmarshals byte slices into a slice of pb.Artifacts.
+// We reserve some leading bytes in each slice to store conversion format version.
+func ArtifactsFromByteSlices(byteSlices [][]byte) ([]*pb.Artifact, error) {
+	arts := make([]*pb.Artifact, len(byteSlices))
+	for i, b := range byteSlices {
+		buf := proto.NewBuffer(b)
+
+		// Check version.
+		version, err := buf.DecodeVarint()
+		if err != nil {
+			return nil, errors.Annotate(err, "decoding version").Err()
+		}
+		if version != artifactConversionVersion {
+			return nil, errors.Reason("unrecognized artifact conversion version %d", version).Err()
+		}
+
+		// Convert artifact bytes.
+		arts[i] = &pb.Artifact{}
+		if err := buf.DecodeMessage(arts[i]); err != nil {
+			return nil, errors.Annotate(err, "converting byte slice #%d", i).Err()
+		}
+	}
+	return arts, nil
 }
