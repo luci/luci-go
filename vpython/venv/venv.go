@@ -471,8 +471,14 @@ func (e *Env) createLocked(c context.Context) error {
 	// If our root directory already exists, delete it.
 	if _, err := os.Stat(e.Root); err == nil {
 		logging.Infof(c, "Deleting existing VirtualEnv: %s", e.Root)
-		if err := filesystem.RemoveAll(e.Root); err != nil {
-			return errors.Annotate(err, "failed to remove existing root").Err()
+		if renamedTo, err := filesystem.RenamingRemoveAll(e.Root, ""); err != nil {
+			// Removal might have failed, but if renaming succeeded, ignore the
+			// garbage.
+			if _, err2 := os.Stat(e.Root); err2 == nil {
+				return errors.Annotate(err, "failed to remove existing root").Err()
+			}
+			logging.Warningf(c, "renamed existing root %q to %q, but failed to remove, leaving as is and continuing",
+				e.Root, renamedTo)
 		}
 	}
 
