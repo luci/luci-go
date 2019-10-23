@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "866fa286_7fc3f5eb",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T21:08:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e366ed4e_182ce3fe",
+      "range": {
+        "startLine": 150,
+        "startChar": 3,
+        "endLine": 150,
+        "endChar": 13
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5003bbef_2a97354d",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "faf17c6f_c03a7d1f",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T21:08:48Z",
+      "side": 1,
+      "message": "Done\n\nWe would insert nil, not garbage a la data that has substance but no (or wrong) meaning, right? Still not ideal, of course",
+      "parentUuid": "5003bbef_2a97354d",
+      "range": {
+        "startLine": 206,
+        "startChar": 7,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3e137f1e_f955ccf9",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 3
@@ -59,6 +107,30 @@
       "writtenOn": "2019-10-22T22:19:30Z",
       "side": 1,
       "message": "i just realized that this locks us into one specific encoding of artifacts and is not extensible to compression. Can we reserve first byte for format version so that we don\u0027t corner ourselves?",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 22
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb845a92_8e4d76ce",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T21:08:48Z",
+      "side": 1,
+      "message": "Sounds good, let me know if this is how you mean. I didn\u0027t populate any version information in there so far but we can adapt that internally if needed (or I can just put an explicit \"0\" in there for now).",
+      "parentUuid": "3e137f1e_f955ccf9",
       "range": {
         "startLine": 63,
         "startChar": 5,
