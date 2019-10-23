@@ -21,7 +21,7 @@ import (
 	"io"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 // TagID treats the given StringPair as a tag and gets its ID.
