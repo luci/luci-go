@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -45,23 +44,20 @@ func TestValidateInvocationDeadline(t *testing.T) {
 		now := testclock.TestRecentTimeUTC
 
 		Convey(`deadline in the past`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
-			So(err, ShouldBeNil)
-			err = validateInvocationDeadline(deadline, now)
+			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
+			err := validateInvocationDeadline(deadline, now)
 			So(err, ShouldErrLike, `must be at least 10 seconds in the future`)
 		})
 
 		Convey(`deadline 5s in the future`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(5 * time.Second))
-			So(err, ShouldBeNil)
-			err = validateInvocationDeadline(deadline, now)
+			deadline := pbutil.MustTimestampProto(now.Add(5 * time.Second))
+			err := validateInvocationDeadline(deadline, now)
 			So(err, ShouldErrLike, `must be at least 10 seconds in the future`)
 		})
 
 		Convey(`deadline in the future`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(1e3 * time.Hour))
-			So(err, ShouldBeNil)
-			err = validateInvocationDeadline(deadline, now)
+			deadline := pbutil.MustTimestampProto(now.Add(1e3 * time.Hour))
+			err := validateInvocationDeadline(deadline, now)
 			So(err, ShouldErrLike, `must be before 48h in the future`)
 		})
 	})
@@ -101,9 +97,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`invalid deadline`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
-			So(err, ShouldBeNil)
-			err = validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -125,10 +120,8 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`valid`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(time.Hour))
-			So(err, ShouldBeNil)
-
-			err = validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -215,9 +208,7 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		Convey(`end to end`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(time.Hour))
-			So(err, ShouldBeNil)
-
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			headers := &metadata.MD{}
 			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
 				InvocationId: "inv",

@@ -32,10 +32,10 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 )
 
 const (
@@ -120,10 +120,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	// Determine the deadline and expiration times.
 	if inv.Deadline == nil {
-		var err error
-		if inv.Deadline, err = ptypes.TimestampProto(now.Add(defaultInvocationDeadlineDuration)); err != nil {
-			panic(err)
-		}
+		inv.Deadline = pbutil.MustTimestampProto(now.Add(defaultInvocationDeadlineDuration))
 	}
 
 	pbutil.NormalizeInvocation(inv)
