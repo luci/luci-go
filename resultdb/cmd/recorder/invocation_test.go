@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -120,17 +119,15 @@ func TestReadInvocation(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer txn.Close()
 
-		createTs, _ := ptypes.TimestampProto(ct)
-		deadlineTs, _ := ptypes.TimestampProto(ct.Add(time.Hour))
-
 		inv, err := span.ReadInvocationFull(ctx, txn, "inv")
 		So(err, ShouldBeNil)
-		So(inv, ShouldResembleProto, &pb.Invocation{
+		expected := &pb.Invocation{
 			Name:       "invocations/inv",
 			State:      pb.Invocation_COMPLETED,
-			CreateTime: createTs,
-			Deadline:   deadlineTs,
-		})
+			CreateTime: pbutil.MustTimestampProto(ct),
+			Deadline:   pbutil.MustTimestampProto(ct.Add(time.Hour)),
+		}
+		So(inv, ShouldResembleProto, expected)
 
 		Convey(`with inclusions`, func() {
 			testutil.MustApply(ctx,
@@ -149,8 +146,8 @@ func TestReadInvocation(t *testing.T) {
 			So(inv, ShouldResembleProto, &pb.Invocation{
 				Name:       "invocations/including",
 				State:      pb.Invocation_ACTIVE,
-				CreateTime: createTs,
-				Deadline:   deadlineTs,
+				CreateTime: expected.CreateTime,
+				Deadline:   expected.Deadline,
 				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
 					"inv": {
 						OverriddenBy: "",
