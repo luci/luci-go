@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -29,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -69,9 +69,8 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`invalid deadline`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
-			So(err, ShouldBeNil)
-			err = validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:     "invocations/inv",
 					Deadline: deadline,
@@ -84,10 +83,8 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 		})
 
 		Convey(`valid`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(time.Hour))
-			So(err, ShouldBeNil)
-
-			err = validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:     "invocations/inv",
 					Deadline: deadline,
@@ -108,7 +105,7 @@ func TestUpdateInvocation(t *testing.T) {
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
-		validDeadline, _ := ptypes.TimestampProto(clock.Now(ctx).Add(day))
+		validDeadline := pbutil.MustTimestampProto(clock.Now(ctx).Add(day))
 		updateMask := &field_mask.FieldMask{
 			Paths: []string{"deadline"},
 		}

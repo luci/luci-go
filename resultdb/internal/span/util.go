@@ -113,9 +113,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 		case **tspb.Timestamp:
 			*goPtr = nil
 			if maybe := *spanPtr.(*spanner.NullTime); maybe.Valid {
-				if *goPtr, err = ptypes.TimestampProto(maybe.Time); err != nil {
-					panic(err)
-				}
+				*goPtr = pbutil.MustTimestampProto(maybe.Time)
 			}
 
 		case *pb.Invocation_State:

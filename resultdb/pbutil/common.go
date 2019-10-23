@@ -17,6 +17,10 @@ package pbutil
 import (
 	"fmt"
 	"regexp"
+	"time"
+
+	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -31,4 +35,14 @@ func doesNotMatch(r *regexp.Regexp) error {
 
 func unspecified() error {
 	return errors.Reason("unspecified").Err()
+}
+
+// MustTimestampProto converts a time.Time to a *tspb.Timestamp and panics
+// on failure.
+func MustTimestampProto(t time.Time) *tspb.Timestamp {
+	ts, err := ptypes.TimestampProto(t)
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }
