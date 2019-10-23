@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6da47aef_00a3f73e",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:38:58Z",
+      "side": 1,
+      "message": "nit: would be simpler to swap these two sentences: less code and less copying",
+      "revId": "3198913097c1db00cfffbc04db82602bd7af8748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a692b2a4_b07252fb",
+        "filename": "resultdb/recorder/create_invocation_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:38:58Z",
+      "side": 1,
+      "message": "why not just assign expected values to expected.CreateTime and expected.Deadline directly?",
+      "range": {
+        "startLine": 265,
+        "startChar": 3,
+        "endLine": 270,
+        "endChar": 75
+      },
+      "revId": "3198913097c1db00cfffbc04db82602bd7af8748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
