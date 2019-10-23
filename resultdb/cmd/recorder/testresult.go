@@ -20,7 +20,6 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -34,19 +33,14 @@ func insertTestResult(invID string, tr *pb.TestResult, i int) (*spanner.Mutation
 
 		"CommitTimestamp": spanner.CommitTimestamp,
 
-		"Status":          int(tr.Status),
+		"Status":          tr.Status,
 		"SummaryMarkdown": tr.SummaryMarkdown,
 		"StartTime":       tr.StartTime,
 		"RunDurationUsec": toMicros(tr.Duration),
 		"Tags":            tr.Tags,
-	}
 
-	var err error
-	if trMap["InputArtifacts"], err = pbutil.ArtifactsToByteArrays(tr.InputArtifacts); err != nil {
-		return nil, err
-	}
-	if trMap["OutputArtifacts"], err = pbutil.ArtifactsToByteArrays(tr.OutputArtifacts); err != nil {
-		return nil, err
+		"InputArtifacts":  tr.InputArtifacts,
+		"OutputArtifacts": tr.OutputArtifacts,
 	}
 
 	// Populate IsUnexpected /only/ if true, to keep the index thin.
