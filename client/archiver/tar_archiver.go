@@ -46,32 +46,29 @@ func shardItems(items []*Item, threshold int64) []*itemBundle {
 	// For deterministic isolated hashes, sort the items by path.
 	sort.Sort(itemByPath(items))
 
-	var bundles []*itemBundle
-	for len(items) > 0 {
-		var bundle *itemBundle
-		bundle, items = oneBundle(items, threshold)
-		bundles = append(bundles, bundle)
-	}
-	return bundles
-}
-
-func oneBundle(items []*Item, threshold int64) (*itemBundle, []*Item) {
+	var out []*itemBundle
+	// Two trailing blank 512-byte records.
+	tarSize := int64(1024)
 	bundle := &itemBundle{}
-	bundleTarSize := int64(1024) // two trailing blank 512-byte records.
-
-	for i, item := range items {
+	for _, item := range items {
 		// The in-tar size of the file (512 header + rounded up to nearest 512).
-		tarSize := (item.Size + 1023) & ^511
-
-		if i > 0 && bundleTarSize+tarSize > threshold {
-			return bundle, items[i:]
+		n := (item.Size + 1023) & ^511
+		if tarSize+n > threshold {
+			// The tarfile bundle is large enough, cut it off and start a new one.
+			if len(bundle.items) != 0 {
+				out = append(out, bundle)
+				bundle = &itemBundle{}
+				tarSize = 1024
+			}
 		}
-
-		bundle.items = items[:i+1]
+		tarSize += n
+		bundle.items = append(bundle.items, item)
 		bundle.itemSize += item.Size
-		bundleTarSize += tarSize
 	}
-	return bundle, nil
+	if len(bundle.items) != 0 {
+		out = append(out, bundle)
+	}
+	return out
 }
 
 // Digest returns the hash and total size of the tar constructed from the
