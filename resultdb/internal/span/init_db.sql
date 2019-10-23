@@ -62,7 +62,11 @@ CREATE TABLE Invocations (
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.
   -- For each tag here, there is a row in the InvocationsByTag table.
-  Tags ARRAY<STRING(MAX)>
+  Tags ARRAY<STRING(MAX)>,
+
+  -- Value of CreateInvocationRequest.request_id.
+  -- Used to dedup invocation creation requests.
+  CreateRequestId STRING(MAX),
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration week.
