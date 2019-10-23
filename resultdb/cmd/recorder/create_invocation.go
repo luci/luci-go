@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -43,6 +44,23 @@ const (
 	createInvocationGroup = "luci-resultdb-access"
 )
 
+// validateInvocationDeadline returns a non-nil error if deadline is invalid.
+func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
+	switch deadline, err := ptypes.Timestamp(deadline); {
+	case err != nil:
+		return err
+
+	case deadline.Sub(now) < 10*time.Second:
+		return errors.Reason("must be at least 10 seconds in the future").Err()
+
+	case deadline.Sub(now) > 2*24*time.Hour:
+		return errors.Reason("must be before 48h in the future").Err()
+
+	default:
+		return nil
+	}
+}
+
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
 func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
@@ -60,13 +78,8 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if inv.GetDeadline() != nil {
-		switch deadline, err := ptypes.Timestamp(inv.Deadline); {
-		case err != nil:
-			return err
-		case deadline.Sub(now) < 10*time.Second:
-			return errors.Reason("invocation.deadline must be at least 10 seconds in the future").Err()
-		case deadline.Sub(now) > 2*24*time.Hour:
-			return errors.Reason("invocation.deadline must be before 48h in the future").Err()
+		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
+			return errors.Annotate(err, "invocation: deadline").Err()
 		}
 	}
 
