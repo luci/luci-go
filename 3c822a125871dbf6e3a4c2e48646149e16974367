@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e3dc8d6_0c8f3171",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-23T21:07:44Z",
+      "side": 1,
+      "message": "RemoveAll",
+      "range": {
+        "startLine": 188,
+        "startChar": 52,
+        "endLine": 188,
+        "endChar": 69
+      },
+      "revId": "3c822a125871dbf6e3a4c2e48646149e16974367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67e927d6_eb0d7b66",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-23T21:07:44Z",
+      "side": 1,
+      "message": "RmDir",
+      "range": {
+        "startLine": 214,
+        "startChar": 6,
+        "endLine": 214,
+        "endChar": 15
+      },
+      "revId": "3c822a125871dbf6e3a4c2e48646149e16974367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
