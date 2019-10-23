@@ -164,6 +164,30 @@
       "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1897af73_2883f3c3",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T21:21:18Z",
+      "side": 1,
+      "message": "let\u0027s actually make a const. it would be more less magical (1 is a bit magical in the newest CL)",
+      "parentUuid": "bb845a92_8e4d76ce",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 22
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
