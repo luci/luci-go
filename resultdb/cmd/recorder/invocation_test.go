@@ -134,7 +134,7 @@ func TestReadInvocation(t *testing.T) {
 				testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", ct),
 				testutil.InsertInvocation("another", pb.Invocation_ACTIVE, "", ct),
 				testutil.InsertInclusion("including", "inv", true, ""),
-				testutil.InsertInclusion("including", "another", false, "invocations/inv"),
+				testutil.InsertInclusion("including", "another", false, "inv"),
 			)
 
 			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
@@ -149,11 +149,11 @@ func TestReadInvocation(t *testing.T) {
 				CreateTime: expected.CreateTime,
 				Deadline:   expected.Deadline,
 				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-					"inv": {
+					"invocations/inv": {
 						OverriddenBy: "",
 						Ready:        true,
 					},
-					"another": {
+					"invocations/another": {
 						OverriddenBy: "invocations/inv",
 						Ready:        false,
 					},
