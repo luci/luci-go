@@ -158,7 +158,7 @@ const (
 	threadIntrKey = "interpreter.Interpreter"
 	// Key with TheadKind of the thread.
 	threadKindKey = "interpreter.ThreadKind"
-	// Key with the moduleKey of the currently executing module.
+	// Key with the ModuleKey of the currently executing module.
 	threadModKey = "interpreter.ModuleKey"
 )
 
@@ -192,6 +192,23 @@ func GetThreadKind(th *starlark.Thread) ThreadKind {
 		return k.(ThreadKind)
 	}
 	panic("not an Interpreter thread, no ThreadKind in its locals")
+}
+
+// GetThreadModuleKey returns a ModuleKey with the location of the module being
+// processed by a current load(...) or exec(...) statement.
+//
+// It has no relation to the module that holds the top-level stack frame. For
+// example, if a currently loading module 'A' calls a function in module 'B' and
+// this function calls GetThreadModuleKey, it will see module 'A' as the result,
+// even though the call goes through code in module 'B'.
+//
+// Returns nil if the current thread is not executing any load(...) or
+// exec(...), i.e. it has ThreadUnknown kind.
+func GetThreadModuleKey(th *starlark.Thread) *ModuleKey {
+	if modKey, ok := th.Local(threadModKey).(ModuleKey); ok {
+		return &modKey
+	}
+	return nil
 }
 
 // Loader knows how to load modules of some concrete package.
@@ -240,7 +257,7 @@ type Interpreter struct {
 	// executing a script.
 	//
 	// 'load' calls do not trigger PreExec/PostExec hooks.
-	PreExec func(th *starlark.Thread, pkg, path string)
+	PreExec func(th *starlark.Thread, module ModuleKey)
 
 	// PostExec is called after finishing running code through some 'exec' or
 	// ExecModule.
@@ -250,17 +267,19 @@ type Interpreter struct {
 	// 'exec'-ed script calls 'exec' itself).
 	//
 	// 'load' calls do not trigger PreExec/PostExec hooks.
-	PostExec func(th *starlark.Thread, pkg, path string)
+	PostExec func(th *starlark.Thread, module ModuleKey)
 
-	modules map[moduleKey]*loadedModule // cache of the loaded modules
-	execed  map[moduleKey]struct{}      // a set of modules that were ever exec'ed
+	modules map[ModuleKey]*loadedModule // cache of the loaded modules
+	execed  map[ModuleKey]struct{}      // a set of modules that were ever exec'ed
 	globals starlark.StringDict         // global symbols exposed to all modules
 }
 
-// moduleKey is a key of a module within a cache of loaded modules.
-type moduleKey struct {
-	pkg  string // package name, e.g. "stdlib"
-	path string // path within the package, e.g. "abc/script.star"
+// ModuleKey is a key of a module within a cache of loaded modules.
+//
+// It identifies a package and a file within the package.
+type ModuleKey struct {
+	Package string // a package name, e.g. "stdlib"
+	Path    string // path within the package, e.g. "abc/script.star"
 }
 
 // String returns a fully-qualified module name to use in error messages.
@@ -268,12 +287,12 @@ type moduleKey struct {
 // If is either "@pkg//path" or just "//path" if pkg is "__main__". We omit the
 // name of the top-level package with user-supplied code ("__main__") to avoid
 // confusing users who are oblivious of packages.
-func (key moduleKey) String() string {
+func (key ModuleKey) String() string {
 	pkg := ""
-	if key.pkg != MainPkg {
-		pkg = "@" + key.pkg
+	if key.Package != MainPkg {
+		pkg = "@" + key.Package
 	}
-	return pkg + "//" + key.path
+	return pkg + "//" + key.Path
 }
 
 // makeModuleKey takes '[@pkg]//<path>' or '<path>', parses and normalizes it.
@@ -286,9 +305,9 @@ func (key moduleKey) String() string {
 // 'th' is used to get the name of the currently executing package and a path to
 // the currently executing module within it. It is required if 'ref' is not
 // given as an absolute path (i.e. does NOT look like '@pkg//path').
-func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
+func makeModuleKey(ref string, th *starlark.Thread) (key ModuleKey, err error) {
 	defer func() {
-		if err == nil && (strings.HasPrefix(key.path, "../") || key.path == "..") {
+		if err == nil && (strings.HasPrefix(key.Path, "../") || key.Path == "..") {
 			err = errors.New("outside the package root")
 		}
 	}()
@@ -296,11 +315,9 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 	// 'th' can be nil here if makeModuleKey is called by LoadModule or
 	// ExecModule: they are entry points into Starlark code, there's no thread
 	// yet when they start.
-	var current *moduleKey
+	var current *ModuleKey
 	if th != nil {
-		if modKey, ok := th.Local(threadModKey).(moduleKey); ok {
-			current = &modKey
-		}
+		current = GetThreadModuleKey(th)
 	}
 
 	// Absolute paths start with '//' or '@'. Everything else is a relative path.
@@ -311,9 +328,9 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 		if current == nil {
 			err = errors.New("can't resolve relative module path: no current module information in thread locals")
 		} else {
-			key = moduleKey{
-				pkg:  current.pkg,
-				path: path.Join(path.Dir(current.path), ref),
+			key = ModuleKey{
+				Package: current.Package,
+				Path:    path.Join(path.Dir(current.Path), ref),
 			}
 		}
 		return
@@ -326,19 +343,19 @@ func makeModuleKey(ref string, th *starlark.Thread) (key moduleKey, err error) {
 	}
 
 	if hasPkg {
-		if key.pkg = ref[1:idx]; key.pkg == "" {
+		if key.Package = ref[1:idx]; key.Package == "" {
 			err = errors.New("a package alias can't be empty")
 			return
 		}
 	}
-	key.path = path.Clean(ref[idx+2:])
+	key.Path = path.Clean(ref[idx+2:])
 
 	// Grab the package name from thread locals, if given.
 	if !hasPkg {
 		if current == nil {
 			err = errors.New("no current package name in thread locals")
 		} else {
-			key.pkg = current.pkg
+			key.Package = current.Package
 		}
 	}
 	return
@@ -360,8 +377,8 @@ type loadedModule struct {
 //
 // The context ends up available to builtins through Context(...).
 func (intr *Interpreter) Init(ctx context.Context) error {
-	intr.modules = map[moduleKey]*loadedModule{}
-	intr.execed = map[moduleKey]struct{}{}
+	intr.modules = map[ModuleKey]*loadedModule{}
+	intr.execed = map[ModuleKey]struct{}{}
 
 	intr.globals = make(starlark.StringDict, len(intr.Predeclared)+1)
 	for k, v := range intr.Predeclared {
@@ -546,7 +563,7 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 		if err != nil {
 			return nil, err
 		}
-		dict, err := intr.ExecModule(Context(th), key.pkg, key.path)
+		dict, err := intr.ExecModule(Context(th), key.Package, key.Path)
 		if err != nil {
 			// Starlark stringifies errors using Error(). For EvalError, Error()
 			// string is just a root cause, it does not include the backtrace where
@@ -568,17 +585,17 @@ func (intr *Interpreter) execBuiltin() *starlark.Builtin {
 }
 
 // invokeLoader loads the module via the loader associated with the package.
-func (intr *Interpreter) invokeLoader(key moduleKey) (dict starlark.StringDict, src string, err error) {
-	loader, ok := intr.Packages[key.pkg]
+func (intr *Interpreter) invokeLoader(key ModuleKey) (dict starlark.StringDict, src string, err error) {
+	loader, ok := intr.Packages[key.Package]
 	if !ok {
 		return nil, "", ErrNoPackage
 	}
-	return loader(key.path)
+	return loader(key.Path)
 }
 
 // runModule really loads and executes the module, used by both LoadModule and
 // ExecModule.
-func (intr *Interpreter) runModule(ctx context.Context, key moduleKey, kind ThreadKind) (starlark.StringDict, error) {
+func (intr *Interpreter) runModule(ctx context.Context, key ModuleKey, kind ThreadKind) (starlark.StringDict, error) {
 	// Grab the source code.
 	dict, src, err := intr.invokeLoader(key)
 	switch {
@@ -598,7 +615,7 @@ func (intr *Interpreter) runModule(ctx context.Context, key moduleKey, kind Thre
 		if err != nil {
 			return nil, err
 		}
-		dict, err := intr.LoadModule(ctx, key.pkg, key.path)
+		dict, err := intr.LoadModule(ctx, key.Package, key.Path)
 		// See comment in execBuiltin about why we extract EvalError backtrace into
 		// new error.
 		if evalErr, ok := err.(*starlark.EvalError); ok {
@@ -616,10 +633,10 @@ func (intr *Interpreter) runModule(ctx context.Context, key moduleKey, kind Thre
 
 	if kind == ThreadExecing {
 		if intr.PreExec != nil {
-			intr.PreExec(th, key.pkg, key.path)
+			intr.PreExec(th, key)
 		}
 		if intr.PostExec != nil {
-			defer intr.PostExec(th, key.pkg, key.path)
+			defer intr.PostExec(th, key)
 		}
 	}
 

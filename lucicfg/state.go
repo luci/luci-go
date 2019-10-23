@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"context"
+	"fmt"
 
 	"go.starlark.net/starlark"
 
@@ -117,6 +118,21 @@ func init() {
 			val = "UNKNOWN"
 		}
 		return val, nil
+	})
+
+	// current_module returns a tuple (package, path) with current module info
+	// or fails if unknown (i.e. the thread is running callback done from a native
+	// code).
+	declNative("current_module", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		mod := interpreter.GetThreadModuleKey(call.Thread)
+		if mod == nil {
+			return nil, fmt.Errorf(
+				"current_module: no information about the current module in the thread locals")
+		}
+		return starlark.Tuple{starlark.String(mod.Package), starlark.String(mod.Path)}, nil
 	})
 
 	// clear_state() wipes the state of the generator, for tests.

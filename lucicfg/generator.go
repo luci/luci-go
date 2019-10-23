@@ -107,8 +107,8 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		Predeclared: predeclared,
 		Packages:    pkgs,
 
-		PreExec:  func(th *starlark.Thread, pkg, mod string) { state.vars.OpenScope(th) },
-		PostExec: func(th *starlark.Thread, pkg, mod string) { state.vars.CloseScope(th) },
+		PreExec:  func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.OpenScope(th) },
+		PostExec: func(th *starlark.Thread, _ interpreter.ModuleKey) { state.vars.CloseScope(th) },
 
 		ThreadModifier: func(th *starlark.Thread) {
 			starlarkproto.SetDefaultLoader(th, ploader)

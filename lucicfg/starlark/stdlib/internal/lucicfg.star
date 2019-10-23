@@ -187,6 +187,27 @@ def _emit(*, dest=None, data=None):
   _generator(impl = _emit_data)
 
 
+def _current_module():
+  """Returns the location of a module being currently executed.
+
+  This is the module being processed by a current load(...) or exec(...)
+  statement. It has no relation to the module that holds the top-level stack
+  frame. For example, if a currently loading module `A` calls a function in
+  a module `B` and this function calls lucicfg.current_module(...), the result
+  would be the module `A`, even though the call goes through code in the
+  module `B` (i.e. lucicfg.current_module(...) invocation itself resided in
+  a function in module `B`).
+
+  Fails if called from inside a generator callback. Threads executing such
+  callbacks are not running any load(...) or exec(...).
+
+  Returns:
+    A `struct(package='...', path='...')` with the location of the module.
+  """
+  pkg, path = __native__.current_module()
+  return struct(package=pkg, path=path)
+
+
 # A constructor for lucicfg.var structs.
 _var_ctor = __native__.genstruct('lucicfg.var')
 
@@ -316,6 +337,7 @@ lucicfg = struct(
     config = _config,
     generator = _generator,
     emit = _emit,
+    current_module = _current_module,
     var = _var,
     rule = _rule,
 )

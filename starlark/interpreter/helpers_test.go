@@ -109,8 +109,8 @@ type intrParams struct {
 	custom Loader
 
 	predeclared starlark.StringDict
-	preExec     func(th *starlark.Thread, pkg, path string)
-	postExec    func(th *starlark.Thread, pkg, path string)
+	preExec     func(th *starlark.Thread, module ModuleKey)
+	postExec    func(th *starlark.Thread, module ModuleKey)
 }
 
 // runIntr initializes and runs the interpreter over given scripts, by loading

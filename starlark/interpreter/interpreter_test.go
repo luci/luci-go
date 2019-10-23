@@ -29,33 +29,33 @@ func TestMakeModuleKey(t *testing.T) {
 	t.Parallel()
 
 	th := &starlark.Thread{}
-	th.SetLocal(threadModKey, moduleKey{pkg: "cur_pkg", path: "dir/cur.star"})
+	th.SetLocal(threadModKey, ModuleKey{"cur_pkg", "dir/cur.star"})
 
 	Convey("Works", t, func() {
 		k, err := makeModuleKey("//some/mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"cur_pkg", "some/mod"})
+		So(k, ShouldResemble, ModuleKey{"cur_pkg", "some/mod"})
 
 		k, err = makeModuleKey("//some/mod/../blah", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"cur_pkg", "some/blah"})
+		So(k, ShouldResemble, ModuleKey{"cur_pkg", "some/blah"})
 
 		k, err = makeModuleKey("some/mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"cur_pkg", "dir/some/mod"})
+		So(k, ShouldResemble, ModuleKey{"cur_pkg", "dir/some/mod"})
 
 		k, err = makeModuleKey("./mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"cur_pkg", "dir/mod"})
+		So(k, ShouldResemble, ModuleKey{"cur_pkg", "dir/mod"})
 
 		k, err = makeModuleKey("../mod", th)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"cur_pkg", "mod"})
+		So(k, ShouldResemble, ModuleKey{"cur_pkg", "mod"})
 
 		// For absolute paths the thread is optional.
 		k, err = makeModuleKey("@pkg//some/mod", nil)
 		So(err, ShouldBeNil)
-		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
+		So(k, ShouldResemble, ModuleKey{"pkg", "some/mod"})
 	})
 
 	Convey("Fails", t, func() {
@@ -391,21 +391,21 @@ Error: invalid call of non-function (NoneType)`)
 				"exec1.star": `exec("//exec2.star")`,
 				"exec2.star": `print("hi")`,
 			},
-			preExec: func(th *starlark.Thread, pkg, path string) {
-				hooks = append(hooks, fmt.Sprintf("pre %s/%s", pkg, path))
+			preExec: func(th *starlark.Thread, module ModuleKey) {
+				hooks = append(hooks, fmt.Sprintf("pre %s", module))
 			},
-			postExec: func(th *starlark.Thread, pkg, path string) {
-				hooks = append(hooks, fmt.Sprintf("post %s/%s", pkg, path))
+			postExec: func(th *starlark.Thread, module ModuleKey) {
+				hooks = append(hooks, fmt.Sprintf("post %s", module))
 			},
 		})
 		So(err, ShouldBeNil)
 		So(hooks, ShouldResemble, []string{
-			"pre __main__/main.star",
-			"pre stdlib/exec1.star",
-			"pre stdlib/exec2.star",
-			"post stdlib/exec2.star",
-			"post stdlib/exec1.star",
-			"post __main__/main.star",
+			"pre //main.star",
+			"pre @stdlib//exec1.star",
+			"pre @stdlib//exec2.star",
+			"post @stdlib//exec2.star",
+			"post @stdlib//exec1.star",
+			"post //main.star",
 		})
 	})
 
@@ -419,21 +419,21 @@ Error: invalid call of non-function (NoneType)`)
 				"exec1.star": `exec("//exec2.star")`,
 				"exec2.star": `BOOOM`,
 			},
-			preExec: func(th *starlark.Thread, pkg, path string) {
-				hooks = append(hooks, fmt.Sprintf("pre %s/%s", pkg, path))
+			preExec: func(th *starlark.Thread, module ModuleKey) {
+				hooks = append(hooks, fmt.Sprintf("pre %s", module))
 			},
-			postExec: func(th *starlark.Thread, pkg, path string) {
-				hooks = append(hooks, fmt.Sprintf("post %s/%s", pkg, path))
+			postExec: func(th *starlark.Thread, module ModuleKey) {
+				hooks = append(hooks, fmt.Sprintf("post %s", module))
 			},
 		})
 		So(err, ShouldNotBeNil)
 		So(hooks, ShouldResemble, []string{
-			"pre __main__/main.star",
-			"pre stdlib/exec1.star",
-			"pre stdlib/exec2.star",
-			"post stdlib/exec2.star",
-			"post stdlib/exec1.star",
-			"post __main__/main.star",
+			"pre //main.star",
+			"pre @stdlib//exec1.star",
+			"pre @stdlib//exec2.star",
+			"post @stdlib//exec2.star",
+			"post @stdlib//exec1.star",
+			"post //main.star",
 		})
 	})
 
