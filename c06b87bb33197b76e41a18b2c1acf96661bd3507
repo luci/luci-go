@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3f223fc4_83a5249e",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T17:49:30Z",
+      "side": 1,
+      "message": "Curious: why is \"insert*\" preferred, here and with TestResults? We don\u0027t actually do the insertion here, only get the mutation.\n\nIf keeping insert*, please also update getInvocationsByTagMutations for consistency",
+      "revId": "c06b87bb33197b76e41a18b2c1acf96661bd3507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
