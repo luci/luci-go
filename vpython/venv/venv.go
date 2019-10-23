@@ -475,6 +475,14 @@ func (e *Env) createLocked(c context.Context) error {
 			// Removal might have failed, but if renaming succeeded, ignore the
 			// garbage.
 			if _, err2 := os.Stat(e.Root); err2 == nil {
+				// TODO(crbug/869227): remove this logging once root cause is found and fixed.
+				logging.Warningf(c, "crbug/869227: ==== failed to remove %q, current files/dirs: ====", e.Root)
+				_ = filepath.Walk(e.Root, func(path string, info os.FileInfo, err error) error {
+					logging.Debugf(c, "    %q: %s %s", path, info.Mode().String(), err)
+					return nil
+				})
+				logging.Warningf(c, "crbug/869227: ==== end ====")
+
 				return errors.Annotate(err, "failed to remove existing root").Err()
 			}
 			logging.Warningf(c, "renamed existing root %q to %q, but failed to remove, leaving as is and continuing",
