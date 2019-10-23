@@ -188,6 +188,30 @@
       "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "658752a6_0d4bda71",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T23:39:28Z",
+      "side": 1,
+      "message": "Done, but let me know if this is what you mean.\n\nI\u0027m not sure if you mean to make a const for the version or for the reserved bytes. Given that we are going to be checking that the first byte is what we expect (as per another comment), and also that if we were to change the number of reserved bytes that would be backwards-incompatible anyway, I\u0027ll make the const for version and use that for checking the leading byte.",
+      "parentUuid": "1897af73_2883f3c3",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 22
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
