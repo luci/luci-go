@@ -65,7 +65,7 @@ func (v *Value) String() string {
 func (v *Value) Set(key string) error {
 	key = strings.TrimSpace(key)
 	if len(key) == 0 {
-		return errors.New("cannot specify an empty tag")
+		return errors.New("cannot specify an empty k=v pair")
 	}
 
 	value := ""
@@ -75,20 +75,20 @@ func (v *Value) Set(key string) error {
 		break
 
 	case idx == 0:
-		return errors.New("cannot have tag with empty key")
+		return errors.New("cannot have a k=v pair with empty key")
 
 	case idx > 0:
 		key, value = key[:idx], key[idx+1:]
 	}
 
-	// Add the entry to our tag map.
+	// Add the entry to our map.
 	if len(*v) > 0 {
 		if _, ok := (*v)[key]; ok {
-			return fmt.Errorf("tag '%s' has already been defined", key)
+			return fmt.Errorf("a value for key '%s' has already been defined", key)
 		}
 	}
 
-	// Record this tag; create a new Value, if necessary.
+	// Record this k=v pair; create a new Value, if necessary.
 	if *v == nil {
 		*v = make(Value)
 	}
