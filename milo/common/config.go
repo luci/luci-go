@@ -652,6 +652,10 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 		ctx.Enter("console #%d (%s)", i, console.Id)
 		if console.Id == "" {
 			ctx.Errorf("missing id")
+		} else if strings.ContainsAny(console.Id, "/") {
+			// unfortunately httprouter uses decoded path when performing URL routing
+			// therefore we can't use '/' in the console ID. Other chars are safe as long as we encode them
+			ctx.Errorf("id can not contain '/'")
 		} else if !knownConsoles.Add(console.Id) {
 			ctx.Errorf("duplicate console")
 

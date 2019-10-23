@@ -83,6 +83,7 @@ var funcMap = template.FuncMap{
 	"join":             strings.Join,
 	"trimLong":         trimLongString,
 	"gitilesCommitURL": protoutil.GitilesCommitURL,
+	"urlPathEscape":    url.PathEscape,
 }
 
 // trimLongString returns a potentially shortened string with "…" suffix.

@@ -61,6 +61,15 @@ func TestConfig(t *testing.T) {
 				So(ve.Errors[4].Error(), ShouldContainSubstring, "missing ref")
 				So(ve.Errors[5].Error(), ShouldContainSubstring, "header non-existent not defined")
 			})
+			Convey("Load yet another bad config", func() {
+				content := []byte(badCfg3)
+				validateProjectCfg(ctx, configSet, path, content)
+				err := ctx.Finalize()
+				ve, ok := err.(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 1)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "id can not contain '/'")
+			})
 			Convey("Load bad config due to console builder's definitions", func() {
 				content := []byte(badConsoleCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -240,6 +249,30 @@ consoles {
 	id: "foo"
 }
 logo_url: "badurl"
+`
+
+var badCfg3 = `
+headers: {
+	id: "main_header"
+	tree_status_host: "blarg.example.com"
+}
+consoles: {
+	id: "with/slash"
+	repo_url: "https://chromium.googlesource.com/foo/bar"
+	refs: "regexp:refs/heads/also-ok"
+	manifest_name: "REVISION"
+	builders: {
+		name: "buildbucket/luci.foo.something/bar"
+		category: "main|something"
+		short_name: "s"
+	}
+	builders: {
+		name: "buildbucket/luci.foo.other/baz"
+		category: "main|other"
+		short_name: "o"
+	}
+	header_id: "main_header"
+}
 `
 
 var fooCfg2 = `
