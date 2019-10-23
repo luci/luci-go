@@ -84,3 +84,30 @@ func TestVariantDefUtils(t *testing.T) {
 		So(SortedVariantDefKeys(def), ShouldResemble, []string{"k1", "k2", "k3"})
 	})
 }
+
+func TestValidateTestVariant(t *testing.T) {
+	Convey(`TestValidateTestVariant`, t, func() {
+		Convey(`empty`, func() {
+			tv := &pb.TestVariant{}
+			err := ValidateTestVariant(tv)
+			So(err, ShouldErrLike, "test_path: unspecified")
+		})
+
+		Convey(`NUL in test path`, func() {
+			tv := &pb.TestVariant{TestPath: "\x01"}
+			err := ValidateTestVariant(tv)
+			So(err, ShouldErrLike, "test_path: does not match")
+		})
+
+		Convey(`invalid variant def`, func() {
+			tv := &pb.TestVariant{
+				TestPath: "a",
+				Variant: &pb.VariantDef{
+					Def: map[string]string{"": ""},
+				},
+			}
+			err := ValidateTestVariant(tv)
+			So(err, ShouldErrLike, `variant: "":"": key: does not match`)
+		})
+	})
+}

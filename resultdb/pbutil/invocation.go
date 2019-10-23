@@ -61,7 +61,7 @@ func MustParseInvocationName(name string) (id string) {
 	return id
 }
 
-// InvocationName produces an invocation name from an id.
+// InvocationName synthesizes an invocation name from an id.
 // Does not validate id, use ValidateInvocationID.
 func InvocationName(id string) string {
 	return "invocations/" + id

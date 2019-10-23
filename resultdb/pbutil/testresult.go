@@ -16,12 +16,26 @@ package pbutil
 
 import (
 	"encoding/json"
+	"regexp"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+var testPathRe = regexp.MustCompile(`^[[:print:]]+$`)
+
+// ValidateTestPath returns a non-nil error if testPath is invalid.
+func ValidateTestPath(testPath string) error {
+	if testPath == "" {
+		return unspecified()
+	}
+	if !testPathRe.MatchString(testPath) {
+		return doesNotMatch(testPathRe)
+	}
+	return nil
+}
 
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
