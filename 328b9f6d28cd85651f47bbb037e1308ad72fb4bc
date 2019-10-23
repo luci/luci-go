@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9e502693_2e191c74",
+        "filename": "resultdb/recorder/finalize_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T01:04:06Z",
+      "side": 1,
+      "message": "Nit: does it work to assign to ret.State directly above?",
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82a48fda_6ea59f69",
+        "filename": "resultdb/recorder/finalize_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T01:04:06Z",
+      "side": 1,
+      "message": "I\u0027d personally be fine with just ignoring the error because `now` /should/ be a valid time... Thoughts?",
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
