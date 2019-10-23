@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -210,7 +211,7 @@ func TestCreateInvocation(t *testing.T) {
 		Convey(`end to end`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			headers := &metadata.MD{}
-			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
+			req := &pb.CreateInvocationRequest{
 				InvocationId: "inv",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
@@ -222,19 +223,17 @@ func TestCreateInvocation(t *testing.T) {
 						},
 					},
 				},
-			}, prpc.Header(headers))
+			}
+			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
 			So(err, ShouldBeNil)
-			So(inv, ShouldResembleProto, &pb.Invocation{
-				Name:     "invocations/inv",
-				Deadline: deadline,
-				Tags:     pbutil.StringPairs("a", "1", "b", "2"),
-				BaseTestVariantDef: &pb.VariantDef{
-					Def: map[string]string{
-						"bucket":  "ci",
-						"builder": "linux-rel",
-					},
-				},
+
+			expected := proto.Clone(req.Invocation).(*pb.Invocation)
+			proto.Merge(expected, &pb.Invocation{
+				Name:       "invocations/inv",
+				State:      pb.Invocation_ACTIVE,
+				CreateTime: pbutil.MustTimestampProto(now),
 			})
+			So(inv, ShouldResembleProto, expected)
 
 			So(headers.Get(updateTokenMetadataKey), ShouldHaveLength, 1)
 

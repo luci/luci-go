@@ -21,15 +21,14 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 )
 
 var urlPrefixes = []string{"http://", "https://"}
@@ -111,6 +110,9 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	if err != nil {
 		return nil, err
 	}
+	if inv.FinalizeTime == nil {
+		panic("missing inv.FinalizeTime")
+	}
 	inv.Deadline = inv.FinalizeTime
 
 	// TODO(jchinlee): Validate invocation and results.
@@ -124,35 +126,14 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			return nil
 		}
 
-		// Get Invocation mutation.
-		if inv.FinalizeTime == nil {
-			panic("missing inv.FinalizeTime")
-		}
+		// Index the invocation by tag.
+		muts := insertInvocationsByTag(invID, inv)
+		// Insert the invocation.
+		muts = append(muts, insertInvocation(ctx, inv, ""))
 
-		invMap := map[string]interface{}{
-			"InvocationId": invID,
-			"State":        inv.State,
-			"Realm":        chromium.Realm,
-
-			"UpdateToken": "",
-
-			"CreateTime":   inv.CreateTime,
-			"Deadline":     inv.Deadline,
-			"FinalizeTime": inv.FinalizeTime,
-
-			"BaseTestVariantDef": inv.GetBaseTestVariantDef(),
-			"Tags":               inv.Tags,
-		}
-		populateExpirations(invMap, clock.Now(ctx))
-
-		muts := []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))}
-
-		// Create InvocationByTags mutations.
-		muts = append(muts, getInvocationsByTagMutations(invID, inv)...)
-
-		// Get TestResult mutations.
+		// Insert test results.
 		for i, tr := range results {
-			mut, err := getTestResultMutation(invID, tr, i)
+			mut, err := insertTestResult(invID, tr, i)
 			if err != nil {
 				return errors.Annotate(err, "test result #%d %q", i, tr.TestPath).Err()
 			}

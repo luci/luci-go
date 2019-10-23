@@ -24,7 +24,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-func getTestResultMutation(invID string, tr *pb.TestResult, i int) (*spanner.Mutation, error) {
+func insertTestResult(invID string, tr *pb.TestResult, i int) (*spanner.Mutation, error) {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
 		"TestPath":     tr.TestPath,
