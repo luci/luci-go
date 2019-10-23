@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -47,7 +48,7 @@ func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.
 		if err := FromSpanner(row, &included, &attr.OverriddenBy, &attr.Ready); err != nil {
 			return nil, err
 		}
-		inclusions[included] = attr
+		inclusions[pbutil.InvocationName(included)] = attr
 	}
 
 	return inclusions, nil

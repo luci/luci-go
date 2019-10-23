@@ -149,11 +149,11 @@ func TestReadInvocation(t *testing.T) {
 				CreateTime: expected.CreateTime,
 				Deadline:   expected.Deadline,
 				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-					"inv": {
+					"invocations/inv": {
 						OverriddenBy: "",
 						Ready:        true,
 					},
-					"another": {
+					"invocations/another": {
 						OverriddenBy: "invocations/inv",
 						Ready:        false,
 					},
