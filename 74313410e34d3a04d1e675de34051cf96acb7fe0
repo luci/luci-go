@@ -16,6 +16,24 @@
       "revId": "74313410e34d3a04d1e675de34051cf96acb7fe0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eebe12ce_a7c5be84",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T17:58:17Z",
+      "side": 1,
+      "message": "we have two places where we call this function. This being a function captures the current stack trace, so we can tell which callsite was it. Making it a global variable will not capture a stack trace.",
+      "parentUuid": "8ec890f7_43d63e81",
+      "revId": "74313410e34d3a04d1e675de34051cf96acb7fe0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
