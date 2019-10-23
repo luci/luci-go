@@ -80,11 +80,12 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
-		Convey(`no invocation`, func() {
+		Convey(`invalid request id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "a",
+				RequestId:    "😃",
 			}, now)
-			So(err, ShouldBeNil)
+			So(err, ShouldErrLike, "request_id: does not match")
 		})
 
 		Convey(`invalid tags`, func() {
@@ -206,6 +207,20 @@ func TestCreateInvocation(t *testing.T) {
 			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "inv"})
 			So(err, ShouldBeNil)
 			So(inv.Name, ShouldEqual, "invocations/inv")
+		})
+
+		Convey(`idempotent`, func() {
+			req := &pb.CreateInvocationRequest{
+				InvocationId: "inv",
+				Invocation:   &pb.Invocation{},
+				RequestId:    "request id",
+			}
+			res, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+
+			res2, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(res2, ShouldResembleProto, res)
 		})
 
 		Convey(`end to end`, func() {
