@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "f37e7f95_9170d7f3",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T21:20:15Z",
+      "side": 1,
+      "message": "right, garbage is probably not the best word for this, but this is not what the user asked us to insert, and this might be left unnoticed. This is what worries me the most.\n\nthanks for adding panic",
+      "parentUuid": "faf17c6f_c03a7d1f",
+      "range": {
+        "startLine": 206,
+        "startChar": 7,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "d0160a89660e7bf3eef13b1e80a6fcd7084ad1b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3e137f1e_f955ccf9",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 3
