@@ -16,6 +16,24 @@
       "revId": "c06b87bb33197b76e41a18b2c1acf96661bd3507",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d233fa28_650bd177",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T17:52:27Z",
+      "side": 1,
+      "message": "insert* is consistent with spanner.Insert*, spanner.Update, etc... those also don\u0027t actually insert anything. In other words on broader standards (spanner package is more standard than whatever we come up with).\n\ndone",
+      "parentUuid": "3f223fc4_83a5249e",
+      "revId": "c06b87bb33197b76e41a18b2c1acf96661bd3507",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
