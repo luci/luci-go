@@ -28,7 +28,7 @@ import (
 )
 
 func withTempDir(t *testing.T, fn func(string)) {
-	tdir, err := ioutil.TempDir("", "vpython-filesystem")
+	tdir, err := ioutil.TempDir("", "fs-tests")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
@@ -204,13 +204,6 @@ func TestMakeReadOnly(t *testing.T) {
 func TestRemoveAll(t *testing.T) {
 	t.Parallel()
 
-	isGone := func(path string) bool {
-		if _, err := os.Lstat(path); err != nil {
-			return os.IsNotExist(err)
-		}
-		return false
-	}
-
 	Convey(`Can RemoveAll`, t, func() {
 		withTempDir(t, func(tdir string) {
 
@@ -277,6 +270,50 @@ func TestRemoveAll(t *testing.T) {
 
 			Convey(`Will return nil if the target does not exist`, func() {
 				So(RemoveAll(filepath.Join(tdir, "dne")), ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestRenamingRemoveAll(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Can RenamingRemoveAll`, t, func() {
+		withTempDir(t, func(tdir string) {
+			subDir := filepath.Join(tdir, "sub")
+			fooDir := filepath.Join(subDir, "foo")
+			fooBarFile := filepath.Join(fooDir, "bar")
+			if err := os.MkdirAll(fooDir, 0755); err != nil {
+				t.Fatalf("failed to populate directory [%s]: %s", fooDir, err)
+			}
+			if err := ioutil.WriteFile(fooBarFile, []byte("junk"), 0644); err != nil {
+				t.Fatalf("failed to create file [%s]: %s", fooBarFile, err)
+			}
+
+			Convey(`No dir to rename into specified`, func() {
+				renamedTo, err := RenamingRemoveAll(fooDir, "")
+				So(err, ShouldBeNil)
+				So(isGone(fooDir), ShouldBeTrue)
+				So(renamedTo, ShouldStartWith, filepath.Join(subDir, ".trash-"))
+			})
+
+			Convey(`Renaming to specified dir works`, func() {
+				renamedTo, err := RenamingRemoveAll(fooDir, tdir)
+				So(err, ShouldBeNil)
+				So(isGone(fooDir), ShouldBeTrue)
+				So(renamedTo, ShouldStartWith, filepath.Join(tdir, ".trash-"))
+			})
+
+			Convey(`Renaming to specified dir fails due to not exist error`, func() {
+				renamedTo, err := RenamingRemoveAll(fooDir, filepath.Join(tdir, "not-exists"))
+				So(err, ShouldBeNil)
+				So(isGone(fooDir), ShouldBeTrue)
+				So(renamedTo, ShouldEqual, "")
+			})
+
+			Convey(`Will return nil if the target does not exist`, func() {
+				_, err := RenamingRemoveAll(filepath.Join(tdir, "not-exists"), "")
+				So(err, ShouldBeNil)
 			})
 		})
 	})
@@ -433,4 +470,11 @@ func TestGetFreeSpace(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(size, ShouldBeGreaterThan, 4096)
 	})
+}
+
+func isGone(path string) bool {
+	if _, err := os.Lstat(path); err != nil {
+		return os.IsNotExist(err)
+	}
+	return false
 }
