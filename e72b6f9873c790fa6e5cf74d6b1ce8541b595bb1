@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9385cd9_4fd14f1e",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T23:58:48Z",
+      "side": 1,
+      "message": "the version isn\u0027t specific to conversion. That\u0027s just the version of the artifact format in spanner. Consider \"artifactFormat\" or \"artifactFormatVersion\"",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 21
+      },
+      "revId": "e72b6f9873c790fa6e5cf74d6b1ce8541b595bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c6dbbe4_db833440",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T23:58:48Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 64,
+        "startChar": 59,
+        "endLine": 64,
+        "endChar": 70
+      },
+      "revId": "e72b6f9873c790fa6e5cf74d6b1ce8541b595bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24b8c649_414d6c6d",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T23:58:48Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 72,
+        "startChar": 25,
+        "endLine": 72,
+        "endChar": 33
+      },
+      "revId": "e72b6f9873c790fa6e5cf74d6b1ce8541b595bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faa7ac89_1144c170",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T23:58:48Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 85,
+        "startChar": 54,
+        "endLine": 85,
+        "endChar": 65
+      },
+      "revId": "e72b6f9873c790fa6e5cf74d6b1ce8541b595bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81679b9d_e160f22d",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T23:58:48Z",
+      "side": 1,
+      "message": "nit: format",
+      "range": {
+        "startLine": 98,
+        "startChar": 27,
+        "endLine": 98,
+        "endChar": 37
+      },
+      "revId": "e72b6f9873c790fa6e5cf74d6b1ce8541b595bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
