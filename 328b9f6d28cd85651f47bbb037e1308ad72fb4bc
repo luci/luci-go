@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "b15d54ec_af45500b",
+        "filename": "resultdb/proto/v1/recorder.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:43:38Z",
+      "side": 1,
+      "message": "i think this comment should refer to Invocation.state field:\n1) this way we don\u0027t have to copy all of documentation from there, and don\u0027t have to mirror it\n2) i think we should say that, if interrupted is true, then that field changes to INTERRUPTED",
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23b8647e_de5abaf6",
+        "filename": "resultdb/recorder/finalize_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:43:38Z",
+      "side": 1,
+      "message": "this is currently not idempotent: the second request will be rejected with \"invocation is not active\" error",
+      "range": {
+        "startLine": 51,
+        "startChar": 8,
+        "endLine": 51,
+        "endChar": 24
+      },
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e502693_2e191c74",
         "filename": "resultdb/recorder/finalize_invocation.go",
         "patchSetId": 1
@@ -19,6 +59,24 @@
     },
     {
       "key": {
+        "uuid": "87469d38_0cabbab8",
+        "filename": "resultdb/recorder/finalize_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:43:38Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "9e502693_2e191c74",
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "82a48fda_6ea59f69",
         "filename": "resultdb/recorder/finalize_invocation.go",
         "patchSetId": 1
@@ -30,6 +88,23 @@
       "writtenOn": "2019-10-23T01:04:06Z",
       "side": 1,
       "message": "I\u0027d personally be fine with just ignoring the error because `now` /should/ be a valid time... Thoughts?",
+      "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5601c2d2_7704f2ce",
+        "filename": "resultdb/recorder/finalize_invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:43:38Z",
+      "side": 1,
+      "message": "this test should ensure that invocation was actually finalized.\nit can be done either by reading from the db directly, or, in future, use recorder.GetInvocation",
       "revId": "328b9f6d28cd85651f47bbb037e1308ad72fb4bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
