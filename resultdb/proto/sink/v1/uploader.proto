@@ -18,10 +18,10 @@ package luci.resultdb;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
 
 message Handshake {
   // The auth token is available to the subprocess via
