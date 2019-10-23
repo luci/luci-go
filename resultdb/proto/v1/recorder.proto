@@ -112,6 +112,12 @@ message UpdateInvocationRequest {
 message FinalizeInvocationRequest {
   // Name of the invocation to finalize.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Whether the invocation contains all the results that the
+  // associated computation was expected to compute.
+  // true when the invocation does NOT contains all the results;
+  // false when the invocation contains all the results.
+  bool interrupted = 2;
 }
 
 // A request message for Include RPC.
