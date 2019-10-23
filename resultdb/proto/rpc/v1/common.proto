@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb;
 
-option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 
 // A key-value map describing one variant of a test case.
 //
