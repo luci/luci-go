@@ -18,9 +18,9 @@ package luci.resultdb;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 
 // A conceptual container of results. Immutable once finalized.
 // It represents all results of some computation; examples: swarming task,

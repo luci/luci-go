@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 // ValidateVariantDef returns an error if def is invalid.
