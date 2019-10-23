@@ -40,6 +40,33 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestValidateInvocationDeadline(t *testing.T) {
+	Convey(`ValidateInvocationDeadline`, t, func() {
+		now := testclock.TestRecentTimeUTC
+
+		Convey(`deadline in the past`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
+			So(err, ShouldBeNil)
+			err = validateInvocationDeadline(deadline, now)
+			So(err, ShouldErrLike, `must be at least 10 seconds in the future`)
+		})
+
+		Convey(`deadline 5s in the future`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(5 * time.Second))
+			So(err, ShouldBeNil)
+			err = validateInvocationDeadline(deadline, now)
+			So(err, ShouldErrLike, `must be at least 10 seconds in the future`)
+		})
+
+		Convey(`deadline in the future`, func() {
+			deadline, err := ptypes.TimestampProto(now.Add(1e3 * time.Hour))
+			So(err, ShouldBeNil)
+			err = validateInvocationDeadline(deadline, now)
+			So(err, ShouldErrLike, `must be before 48h in the future`)
+		})
+	})
+}
+
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
@@ -73,7 +100,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
 		})
 
-		Convey(`deadline in the past`, func() {
+		Convey(`invalid deadline`, func() {
 			deadline, err := ptypes.TimestampProto(now.Add(-time.Hour))
 			So(err, ShouldBeNil)
 			err = validateCreateInvocationRequest(&pb.CreateInvocationRequest{
@@ -82,31 +109,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Deadline: deadline,
 				},
 			}, now)
-			So(err, ShouldErrLike, `invocation.deadline must be at least 10 seconds in the future`)
-		})
-
-		Convey(`deadline 5s in the future`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(5 * time.Second))
-			So(err, ShouldBeNil)
-			err = validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
-				Invocation: &pb.Invocation{
-					Deadline: deadline,
-				},
-			}, now)
-			So(err, ShouldErrLike, `invocation.deadline must be at least 10 seconds in the future`)
-		})
-
-		Convey(`deadline in the future`, func() {
-			deadline, err := ptypes.TimestampProto(now.Add(1e3 * time.Hour))
-			So(err, ShouldBeNil)
-			err = validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
-				Invocation: &pb.Invocation{
-					Deadline: deadline,
-				},
-			}, now)
-			So(err, ShouldErrLike, `invocation.deadline must be before 48h in the future`)
+			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
 		Convey(`invalid variant def`, func() {
