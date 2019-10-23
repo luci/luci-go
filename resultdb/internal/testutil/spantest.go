@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/spantest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
