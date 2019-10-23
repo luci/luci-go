@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1e55072_20d87394",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-10-23T00:28:12Z",
+      "side": 1,
+      "message": "Would it work, if only cache dir is specified?\n\nc.cacheDir !\u003d \"\" \u0026\u0026 (c.maxSize \u003d\u003d 0 \u0026\u0026 c.maxItems \u003d\u003d 0 \u0026\u0026 c.minFreeSpace \u003d\u003d 0)",
+      "revId": "1845579d670a2191337f61764ffcc783ee0ff51e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
