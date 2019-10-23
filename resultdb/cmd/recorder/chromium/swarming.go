@@ -41,7 +41,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 )
 
 const (

@@ -18,13 +18,13 @@ test-service = INTEGRATION_TESTS=1 go test -v ${projdir}/$(1)
 
 build: .setup-bindir
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
-		-o $(bindir)/$(service) $(projdir)/$(service)
+		-o $(bindir)/$(service) $(projdir)/cmd/$(service)
 
 image: build
 	chmod a+x $(bindir)/$(service)
 	docker build \
 		-t $(image_tag) \
-		-f $(projdir)/$(service)/Dockerfile \
+		-f $(projdir)/cmd/$(service)/Dockerfile \
 		$(projdir)
 	@echo [INFO] built $(image_tag)
 
@@ -33,7 +33,7 @@ upload: image
 	@echo [INFO] pushed $(image_tag)
 
 deploy:
-	kubectl apply -f $(projdir)/$(service)/deployment.yaml
+	kubectl apply -f $(projdir)/cmd/$(service)/deployment.yaml
 	# Patch the deployment with a new date to trigger an actual deployment update.
 	kubectl patch deployment $(service) -p \
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
