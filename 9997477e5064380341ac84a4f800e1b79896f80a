@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b4fafe5f_4839f7f0",
+        "filename": "resultdb/recorder/create_test_exoneration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:30:44Z",
+      "side": 1,
+      "message": "yes, see also https://aip.dev/155\n\nnote that this code and the guideline assume that if the request id is same, then the rest of the fields is same too. So nothing actually changes in the database",
+      "parentUuid": "699a32c1_fc9896dd",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 63
+      },
+      "revId": "9997477e5064380341ac84a4f800e1b79896f80a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5da41d1c_17e4f17a",
         "filename": "resultdb/recorder/create_test_exoneration.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "9997477e5064380341ac84a4f800e1b79896f80a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25aead63_7b2134ec",
+        "filename": "resultdb/recorder/create_test_exoneration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-23T13:30:44Z",
+      "side": 1,
+      "message": "explained in a comment",
+      "parentUuid": "5da41d1c_17e4f17a",
+      "range": {
+        "startLine": 86,
+        "startChar": 31,
+        "endLine": 86,
+        "endChar": 46
+      },
+      "revId": "9997477e5064380341ac84a4f800e1b79896f80a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
