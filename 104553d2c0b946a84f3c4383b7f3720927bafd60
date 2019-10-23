@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07d8d41b_b3700d6f",
+        "filename": "client/archiver/upload_tracker.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-10-23T00:14:31Z",
+      "side": 1,
+      "message": "You want to have some logic here?",
+      "revId": "104553d2c0b946a84f3c4383b7f3720927bafd60",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
