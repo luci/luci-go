@@ -19,7 +19,7 @@ import (
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
-	pb "go.chromium.org/luci/resultdb/proto/v1"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func main() {
