@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "699a32c1_fc9896dd",
+        "filename": "resultdb/recorder/create_test_exoneration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-23T01:23:54Z",
+      "side": 1,
+      "message": "Why InsertOrUpdate? \n\nSo an idempotent request can override an exoneration?",
+      "range": {
+        "startLine": 53,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 63
+      },
+      "revId": "9997477e5064380341ac84a4f800e1b79896f80a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5da41d1c_17e4f17a",
+        "filename": "resultdb/recorder/create_test_exoneration.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-23T01:23:54Z",
+      "side": 1,
+      "message": "what\u0027s the reason for including this info in ExonerationID? Will we use it somehow?",
+      "range": {
+        "startLine": 86,
+        "startChar": 31,
+        "endLine": 86,
+        "endChar": 46
+      },
+      "revId": "9997477e5064380341ac84a4f800e1b79896f80a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
