@@ -16,6 +16,7 @@ package filesystem
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -178,6 +179,45 @@ func RemoveAll(path string) error {
 		err = err1
 	}
 	return err
+}
+
+// RenamingRemoveAll opportunistically renames a path first, and then removes it.
+//
+// The advantage over RemoveAll is, if renaming succeeds, lower chance of
+// interference from other writers/readers of the filesystem.
+// If renaming fails, removes the original path via RemoveAll.
+//
+// If renameToDir is given, a new temp directory will be created in it.
+// Else, a new temp directory is placed within the path's parent dir.
+// After this, a file/dir represented by the path is moved into the temp dir.
+//
+// In case of any failures during the temp dir creation or the move,
+// default to RemoveAll of path in place.
+//
+// Returned renamedToPath is the renamed path if renaming succeeded and ""
+// otherwise.
+// Returned error is the one from RemoveAll call.
+func RenamingRemoveAll(path, renameToDir string) (renamedToPath string, err error) {
+	pathParentDir, pathFileOrDir := filepath.Split(filepath.Clean(path))
+	if renameToDir == "" {
+		renameToDir = pathParentDir
+	}
+	renameToDir, err = ioutil.TempDir(renameToDir, ".trash-")
+	if err != nil {
+		err = RemoveAll(path)
+		return
+	}
+
+	renamedToPath = filepath.Join(renameToDir, pathFileOrDir)
+	if err = os.Rename(path, renamedToPath); err != nil {
+		// delete temp dir we just created and ignore errors -- there is not much we can do.
+		_ = os.Remove(renameToDir)
+		renamedToPath = ""
+		err = RemoveAll(path)
+		return
+	}
+	err = RemoveAll(renamedToPath)
+	return
 }
 
 // MakeReadOnly recursively iterates through all of the files and directories
