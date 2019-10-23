@@ -35,17 +35,6 @@ const (
 	defaultInvocationDeadlineDuration = time.Hour
 )
 
-// populateExpirations populates the invocation row's expiration fields using the given current time.
-func populateExpirations(invMap map[string]interface{}, now time.Time) {
-	invExp := now.Add(invocationExpirationDuration)
-	invMap["InvocationExpirationTime"] = invExp
-	invMap["InvocationExpirationWeek"] = invExp.Truncate(week)
-
-	resultsExp := now.Add(expectedTestResultsExpirationDuration)
-	invMap["ExpectedTestResultsExpirationTime"] = resultsExp
-	invMap["ExpectedTestResultsExpirationWeek"] = resultsExp.Truncate(week)
-}
-
 func toMicros(d *durpb.Duration) int64 {
 	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
 }
