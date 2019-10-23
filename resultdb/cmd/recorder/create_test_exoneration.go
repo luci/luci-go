@@ -40,6 +40,9 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest) 
 	if err := pbutil.ValidateTestVariant(req.TestExoneration.GetTestVariant()); err != nil {
 		return errors.Annotate(err, "test_exoneration: test_variant").Err()
 	}
+	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
+		return errors.Annotate(err, "request_id").Err()
+	}
 	return nil
 }
 
