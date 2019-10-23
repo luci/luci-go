@@ -208,6 +208,20 @@ func TestCreateInvocation(t *testing.T) {
 			So(inv.Name, ShouldEqual, "invocations/inv")
 		})
 
+		Convey(`idempotent`, func() {
+			req := &pb.CreateInvocationRequest{
+				InvocationId: "inv",
+				Invocation:   &pb.Invocation{},
+				RequestId:    "request id",
+			}
+			res, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+
+			res2, err := recorder.CreateInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(res2, ShouldResembleProto, res)
+		})
+
 		Convey(`end to end`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			headers := &metadata.MD{}

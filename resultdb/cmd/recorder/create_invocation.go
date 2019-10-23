@@ -128,14 +128,47 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	// TODO(jchinlee): populate InvocationsByTag rows.
 
-	_, err = span.Client(ctx).Apply(ctx, []*spanner.Mutation{insertInvocation(ctx, inv, updateToken)})
-	if spanner.ErrCode(err) == codes.AlreadyExists {
-		return nil, errors.Reason("invocation already exists").
-			Tag(grpcutil.AlreadyExistsTag).
-			InternalReason("%s", err).
-			Err()
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Dedup request if needed.
+		if in.RequestId != "" {
+			var curRequestID spanner.NullString
+			err := span.ReadInvocation(ctx, txn, in.InvocationId, map[string]interface{}{
+				"CreateRequestId": &curRequestID,
+			})
+			switch {
+			case grpcutil.Code(err) == codes.NotFound:
+				// Continue to creation.
+
+			case err != nil:
+				return err
+
+			case curRequestID.Valid && curRequestID.StringVal == in.RequestId:
+				// Dedup the request.
+				inv, err = span.ReadInvocationFull(ctx, txn, in.InvocationId)
+				return err
+
+			default:
+				return invocationAlreadyExists()
+			}
+		}
+
+		return txn.BufferWrite([]*spanner.Mutation{
+			insertInvocation(ctx, inv, updateToken, in.RequestId),
+		})
+	})
+
+	switch {
+	case spanner.ErrCode(err) == codes.AlreadyExists:
+		return nil, invocationAlreadyExists()
+	case err != nil:
+		return nil, err
+	default:
+		return inv, nil
 	}
-	return inv, err
+}
+
+func invocationAlreadyExists() error {
+	return errors.Reason("invocation already exists").Tag(grpcutil.AlreadyExistsTag).Err()
 }
 
 func mayCreateInvocation(ctx context.Context) error {
