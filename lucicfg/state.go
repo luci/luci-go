@@ -17,6 +17,7 @@ package lucicfg
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"go.starlark.net/starlark"
 
@@ -50,6 +51,26 @@ type State struct {
 
 	generators generators  // callbacks that generate config files based on state
 	graph      graph.Graph // the graph with config entities defined so far
+}
+
+// checkUncosumedVars returns an error per a provided (via Inputs.Vars), but
+// unused (by lucicfg.var(expose_as=...)) variable.
+//
+// All supplied inputs must be consumed.
+func (s *State) checkUncosumedVars() (errs []error) {
+	keys := make([]string, 0, len(s.Inputs.Vars))
+	for k := range s.Inputs.Vars {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	consumed := s.vars.DeclaredExposeAsAliases()
+	for _, k := range keys {
+		if !consumed.Has(k) {
+			errs = append(errs, fmt.Errorf("value set by \"-var %s=...\" was not used by Starlark code", k))
+		}
+	}
+	return
 }
 
 // clear resets the state.
@@ -144,12 +165,28 @@ func init() {
 		return starlark.None, nil
 	})
 
-	// declare_var() allocates a new variable, returning its identifier.
-	declNative("declare_var", func(call nativeCall) (starlark.Value, error) {
-		if err := call.unpack(0); err != nil {
+	// value_of_var_flag(name) returns a string with a value from
+	// `-var <name>=...` CLI flag (or None if no such flag).
+	declNative("value_of_var_flag", func(call nativeCall) (starlark.Value, error) {
+		var name starlark.String
+		if err := call.unpack(1, &name); err != nil {
 			return nil, err
 		}
-		return call.State.vars.Declare(), nil
+		if val, ok := call.State.Inputs.Vars[name.GoString()]; ok {
+			return starlark.String(val), nil
+		}
+		return starlark.None, nil
+	})
+
+	// declare_var(expose_as, preset_value) allocates a new variable, returning
+	// its identifier.
+	declNative("declare_var", func(call nativeCall) (starlark.Value, error) {
+		var exposeAs starlark.String
+		var presetValue starlark.Value
+		if err := call.unpack(2, &exposeAs, &presetValue); err != nil {
+			return nil, err
+		}
+		return call.State.vars.Declare(call.Thread, exposeAs.GoString(), presetValue)
 	})
 
 	// set_var(var_id, val) sets the value of a variable.
