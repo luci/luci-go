@@ -17,6 +17,7 @@ package generate
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -52,6 +53,8 @@ on disk, so they can be manually examined for reasons they are invalid.
 			gr.Init(params)
 			gr.AddMetaFlags()
 			gr.Flags.BoolVar(&gr.validate, "validate", false, "Validate the generate configs by sending them to LUCI Config")
+			gr.Flags.StringVar(&gr.emitToStdout, "emit-to-stdout", "",
+				"When set to a path, keep generated configs in memory (don't touch disk) and just emit this single config file to stdout")
 			return gr
 		},
 	}
@@ -60,7 +63,8 @@ on disk, so they can be manually examined for reasons they are invalid.
 type generateRun struct {
 	base.Subcommand
 
-	validate bool
+	validate     bool
+	emitToStdout string
 }
 
 type generateResult struct {
@@ -94,9 +98,29 @@ func (gr *generateRun) run(ctx context.Context, inputFile string) (*generateResu
 
 	result := &generateResult{Meta: &meta}
 
-	if meta.ConfigDir == "-" {
+	switch {
+	case gr.emitToStdout != "":
+		// When using -emit-to-stdout, just print the requested file to stdout and
+		// do not touch configs on disk. This also overrides `config_dir = "-"`,
+		// since we don't want to print two different sources to stdout.
+		datum := output.Data[gr.emitToStdout]
+		if datum == nil {
+			return nil, fmt.Errorf("-emit-to-stdout: no such generated file %q", gr.emitToStdout)
+		}
+		blob, err := datum.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		if _, err := os.Stdout.Write(blob); err != nil {
+			return nil, fmt.Errorf("when writing to stdout: %s", err)
+		}
+
+	case meta.ConfigDir == "-":
+		// Note: the result of this output is generally not parsable and should not
+		// be used in any scripting.
 		output.DebugDump()
-	} else {
+
+	default:
 		// Get rid of stale output in ConfigDir by deleting tracked files that are
 		// no longer in the output. Note that if TrackedFiles is empty (default),
 		// nothing is deleted, it is the responsibility of lucicfg users to make
