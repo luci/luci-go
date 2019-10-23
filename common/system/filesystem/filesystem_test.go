@@ -431,6 +431,6 @@ func TestGetFreeSpace(t *testing.T) {
 	Convey("GetFreeSpace", t, func() {
 		size, err := GetFreeSpace(".")
 		So(err, ShouldBeNil)
-		So(size, ShouldBeGreaterThan, 0)
+		So(size, ShouldBeGreaterThan, 4096)
 	})
 }

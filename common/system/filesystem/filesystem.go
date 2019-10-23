@@ -386,9 +386,11 @@ func IsDir(path string) (bool, error) {
 }
 
 // GetFreeSpace returns the number of free bytes.
+//
 // On POSIX platforms, this returns the free space as visible by the current
-// user. On some systems, there's a percentage of the free space on the
-// partition that is only accessible as the root user.
+// user. The returned value is what is usable, and it can be lower than the
+// actual free disk space. For example on linux there's by default a 5% that is
+// reserved to the root user.
 func GetFreeSpace(path string) (uint64, error) {
 	return getFreeSpace(path)
 }
