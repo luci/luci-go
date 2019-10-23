@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -126,7 +127,7 @@ func readInvocationState(ctx context.Context, txn span.Txn, invID string) (pb.In
 	return state, err
 }
 
-func getInvocationsByTagMutations(invID string, inv *pb.Invocation) []*spanner.Mutation {
+func insertInvocationsByTag(invID string, inv *pb.Invocation) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(inv.Tags))
 	for i, tag := range inv.Tags {
 		muts[i] = spanner.InsertMap("InvocationsByTag", map[string]interface{}{
@@ -135,4 +136,41 @@ func getInvocationsByTagMutations(invID string, inv *pb.Invocation) []*spanner.M
 		})
 	}
 	return muts
+}
+
+// insertInvocation returns an spanner mutation that inserts an Invocation row.
+// Uses the value of clock.Now(ctx) to compute expiration times.
+// Assumes inv is complete and valid; may panic otherwise.
+func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken string) *spanner.Mutation {
+	row := map[string]interface{}{
+		"InvocationId": pbutil.MustParseInvocationName(inv.Name),
+		"State":        inv.State,
+		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+
+		"UpdateToken": updateToken,
+
+		"CreateTime": inv.CreateTime,
+		"Deadline":   inv.Deadline,
+
+		"BaseTestVariantDef": inv.BaseTestVariantDef,
+		"Tags":               inv.Tags,
+	}
+	if inv.FinalizeTime != nil {
+		row["FinalizeTime"] = inv.FinalizeTime
+	}
+
+	populateExpirations(row, clock.Now(ctx))
+
+	return spanner.InsertMap("Invocations", span.ToSpannerMap(row))
+}
+
+// populateExpirations populates the invocation row's expiration fields using the given current time.
+func populateExpirations(invRow map[string]interface{}, now time.Time) {
+	invExp := now.Add(invocationExpirationDuration)
+	invRow["InvocationExpirationTime"] = invExp
+	invRow["InvocationExpirationWeek"] = invExp.Truncate(week)
+
+	resultsExp := now.Add(expectedTestResultsExpirationDuration)
+	invRow["ExpectedTestResultsExpirationTime"] = resultsExp
+	invRow["ExpectedTestResultsExpirationWeek"] = resultsExp.Truncate(week)
 }

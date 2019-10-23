@@ -165,12 +165,12 @@ func TestReadInvocation(t *testing.T) {
 
 func TestWriteInvocationByTags(t *testing.T) {
 	Convey(`getInvocationsByTagMutations`, t, func() {
-		muts := getInvocationsByTagMutations("inv1", &pb.Invocation{
+		muts := insertInvocationsByTag("inv1", &pb.Invocation{
 			Name:  "invocations/inv1",
 			State: pb.Invocation_ACTIVE,
 			Tags:  pbutil.StringPairs("k1", "v11", "k1", "v12", "k2", "v2"),
 		})
-		muts = append(muts, getInvocationsByTagMutations("inv2", &pb.Invocation{
+		muts = append(muts, insertInvocationsByTag("inv2", &pb.Invocation{
 			Name:  "invocations/inv2",
 			State: pb.Invocation_ACTIVE,
 			Tags:  pbutil.StringPairs("k1", "v11", "k3", "v3"),

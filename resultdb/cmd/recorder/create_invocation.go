@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -113,6 +112,8 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	// Prepare the invocation we will return.
 	inv := &pb.Invocation{
 		Name:               pbutil.InvocationName(in.InvocationId),
+		State:              pb.Invocation_ACTIVE,
+		CreateTime:         pbutil.MustTimestampProto(now),
 		Deadline:           in.Invocation.GetDeadline(),
 		BaseTestVariantDef: in.Invocation.GetBaseTestVariantDef(),
 		Tags:               in.Invocation.GetTags(),
@@ -125,23 +126,9 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	pbutil.NormalizeInvocation(inv)
 
-	// Write to Spanner.
-	invMap := map[string]interface{}{
-		"InvocationId":       in.InvocationId,
-		"State":              pb.Invocation_ACTIVE,
-		"Realm":              chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
-		"UpdateToken":        updateToken,
-		"CreateTime":         now,
-		"Deadline":           inv.Deadline,
-		"BaseTestVariantDef": inv.GetBaseTestVariantDef(),
-		"Tags":               inv.Tags,
-	}
-	populateExpirations(invMap, now)
-
 	// TODO(jchinlee): populate InvocationsByTag rows.
 
-	_, err = span.Client(ctx).Apply(
-		ctx, []*spanner.Mutation{spanner.InsertMap("Invocations", span.ToSpannerMap(invMap))})
+	_, err = span.Client(ctx).Apply(ctx, []*spanner.Mutation{insertInvocation(ctx, inv, updateToken)})
 	if spanner.ErrCode(err) == codes.AlreadyExists {
 		return nil, errors.Reason("invocation already exists").
 			Tag(grpcutil.AlreadyExistsTag).
