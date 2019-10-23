@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -135,4 +136,41 @@ func getInvocationsByTagMutations(invID string, inv *pb.Invocation) []*spanner.M
 		})
 	}
 	return muts
+}
+
+// populateExpirations populates the invocation row's expiration fields using the given current time.
+func populateExpirations(invMap map[string]interface{}, now time.Time) {
+	invExp := now.Add(invocationExpirationDuration)
+	invMap["InvocationExpirationTime"] = invExp
+	invMap["InvocationExpirationWeek"] = invExp.Truncate(week)
+
+	resultsExp := now.Add(expectedTestResultsExpirationDuration)
+	invMap["ExpectedTestResultsExpirationTime"] = resultsExp
+	invMap["ExpectedTestResultsExpirationWeek"] = resultsExp.Truncate(week)
+}
+
+// insertInvocation returns an spanner mutation that inserts an Invocation row.
+// Uses the value of clock.Now(ctx) to compute expiration times.
+// Assumes inv is complete and valid; may panic otherwise.
+func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken string) *spanner.Mutation {
+	values := map[string]interface{}{
+		"InvocationId": pbutil.MustParseInvocationName(inv.Name),
+		"State":        inv.State,
+		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+
+		"UpdateToken": updateToken,
+
+		"CreateTime": inv.CreateTime,
+		"Deadline":   inv.Deadline,
+
+		"BaseTestVariantDef": inv.BaseTestVariantDef,
+		"Tags":               inv.Tags,
+	}
+	if inv.FinalizeTime != nil {
+		values["FinalizeTime"] = inv.FinalizeTime
+	}
+
+	populateExpirations(values, clock.Now(ctx))
+
+	return spanner.InsertMap("Invocations", span.ToSpannerMap(values))
 }
