@@ -152,6 +152,7 @@ message Artifact {
   // A slash-separated relative path, identifies the artifact.
   // Example: "traces/a.txt".
   string name = 1 [ (google.api.field_behavior) = IMMUTABLE ];
+
   // Machine-readable URL to fetch the contents of the artifact.
   // Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
   string fetch_url = 2 [ (google.api.field_behavior) = IMMUTABLE ];
