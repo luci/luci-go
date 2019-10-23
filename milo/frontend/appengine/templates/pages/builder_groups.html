@@ -15,7 +15,7 @@
       <img src="{{ .Render.FaviconURL }}" />
     {{ end }}
       <a class="console-header-name"
-         href="/p/{{ .ProjectID }}/g/{{ .Def.Id }}/console"
+         href="/p/{{ .ProjectID }}/g/{{ .Def.Id | urlPathEscape }}/console"
          aria-label="console {{ .Def.Name }}">{{ .Def.Name }}</a>
       <a href="{{ .Def.RepoUrl }}">(repo)</a>
       <div class="console-builder-summary-grid">
