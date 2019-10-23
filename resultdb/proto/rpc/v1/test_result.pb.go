@@ -98,6 +98,7 @@ type TestResult struct {
 	// implementation.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test path, a unique identifier of the test in a LUCI project.
+	// Regex: ^[[::print::]]+$.
 	//
 	// If two tests have a common test path prefix that ends with a
 	// non-alphanumeric character, they considered a part of a group. Examples:
