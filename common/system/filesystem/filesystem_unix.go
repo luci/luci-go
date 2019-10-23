@@ -32,7 +32,7 @@ func addReadMode(mode os.FileMode) os.FileMode {
 }
 
 func getFreeSpace(path string) (uint64, error) {
-	statfs := unix.Statfs_t{}
+	var statfs unix.Statfs_t
 	if err := unix.Statfs(path, &statfs); err != nil {
 		return 0, err
 	}
