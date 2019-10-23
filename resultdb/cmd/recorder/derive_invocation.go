@@ -129,7 +129,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		// Index the invocation by tag.
 		muts := insertInvocationsByTag(invID, inv)
 		// Insert the invocation.
-		muts = append(muts, insertInvocation(ctx, inv, ""))
+		muts = append(muts, insertInvocation(ctx, inv, "", ""))
 
 		// Insert test results.
 		for i, tr := range results {

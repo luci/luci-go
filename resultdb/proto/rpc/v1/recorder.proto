@@ -97,6 +97,11 @@ message CreateInvocationRequest {
 
   // Invocation data to insert.
   Invocation invocation = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 3;
 }
 
 // A request message for UpdateInvocation RPC.

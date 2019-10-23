@@ -25,6 +25,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
+
 func regexpf(patternFormat string, subpatterns ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
 }
@@ -45,4 +47,13 @@ func MustTimestampProto(t time.Time) *tspb.Timestamp {
 		panic(err)
 	}
 	return ts
+}
+
+// ValidateRequestID returns a non-nil error if requestID is invalid.
+// Returns nil if requestID is empty.
+func ValidateRequestID(requestID string) error {
+	if !requestIDRe.MatchString(requestID) {
+		return doesNotMatch(requestIDRe)
+	}
+	return nil
 }

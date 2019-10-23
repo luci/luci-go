@@ -141,7 +141,7 @@ func insertInvocationsByTag(invID string, inv *pb.Invocation) []*spanner.Mutatio
 // insertInvocation returns an spanner mutation that inserts an Invocation row.
 // Uses the value of clock.Now(ctx) to compute expiration times.
 // Assumes inv is complete and valid; may panic otherwise.
-func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken string) *spanner.Mutation {
+func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	row := map[string]interface{}{
 		"InvocationId": pbutil.MustParseInvocationName(inv.Name),
 		"State":        inv.State,
@@ -155,8 +155,13 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken strin
 		"BaseTestVariantDef": inv.BaseTestVariantDef,
 		"Tags":               inv.Tags,
 	}
+
 	if inv.FinalizeTime != nil {
 		row["FinalizeTime"] = inv.FinalizeTime
+	}
+
+	if createRequestID != "" {
+		row["CreateRequestId"] = createRequestID
 	}
 
 	populateExpirations(row, clock.Now(ctx))
