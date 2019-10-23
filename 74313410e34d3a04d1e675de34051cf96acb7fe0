@@ -34,6 +34,24 @@
       "revId": "74313410e34d3a04d1e675de34051cf96acb7fe0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8a9bf78_9719a00b",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T18:14:57Z",
+      "side": 1,
+      "message": "Ah, I see, makes sense. Thanks!",
+      "parentUuid": "eebe12ce_a7c5be84",
+      "revId": "74313410e34d3a04d1e675de34051cf96acb7fe0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
