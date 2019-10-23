@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6672dbaf_8300a268",
+        "filename": "resultdb/recorder/create_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T21:07:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6da47aef_00a3f73e",
+      "revId": "3198913097c1db00cfffbc04db82602bd7af8748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a692b2a4_b07252fb",
         "filename": "resultdb/recorder/create_invocation_test.go",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "3198913097c1db00cfffbc04db82602bd7af8748",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1d6bce4_82a4423f",
+        "filename": "resultdb/recorder/create_invocation_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-23T21:07:46Z",
+      "side": 1,
+      "message": "Obsolete by https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1876310",
+      "parentUuid": "a692b2a4_b07252fb",
+      "range": {
+        "startLine": 265,
+        "startChar": 3,
+        "endLine": 270,
+        "endChar": 75
+      },
+      "revId": "3198913097c1db00cfffbc04db82602bd7af8748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
