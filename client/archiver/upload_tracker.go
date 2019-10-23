@@ -139,6 +139,8 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 	log.Printf("\t%d TAR archives to be isolated", len(bundles))
 
 	for _, bundle := range bundles {
+		// TODO(crbug/854610): Do not create a tarfile when it contains a low
+		// number of files, it should upload the file(s) directly instead.
 		bundle := bundle
 		digest, tarSize, err := bundle.Digest(ut.checker.Hash())
 		if err != nil {
