@@ -130,8 +130,6 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	pbutil.NormalizeInvocation(inv)
 
-	// TODO(jchinlee): populate InvocationsByTag rows.
-
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Dedup the request if possible.
 		if in.RequestId != "" {
@@ -156,9 +154,10 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			}
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{
-			insertInvocation(ctx, inv, updateToken, in.RequestId),
-		})
+		muts := insertInvocationsByTag(in.InvocationId, inv)
+		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
+
+		return txn.BufferWrite(muts)
 	})
 
 	switch {
