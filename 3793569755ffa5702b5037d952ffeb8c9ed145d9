@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ce8b2f9_1fdfbf20",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T19:47:10Z",
+      "side": 1,
+      "message": "I\u0027m not sure \"identifier\" is less confusing than \"name\" (since the term \"ID\" itself is /derived/ from the word \"identifier\")... How about instead something like\n\n \"The name (*not* ID) of this invocation. See also https://aip.dev/122.\"\n\n?",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
