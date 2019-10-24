@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "16320a4b_033e9615",
+        "filename": "lucicfg/cli/base/base.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T01:31:03Z",
+      "side": 1,
+      "message": "but with different key names",
+      "range": {
+        "startLine": 91,
+        "startChar": 128,
+        "endLine": 91,
+        "endChar": 129
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "439eb426_ba49cbd4",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T01:31:03Z",
+      "side": 1,
+      "message": "maybe also type(default)?",
+      "range": {
+        "startLine": 313,
+        "startChar": 22,
+        "endLine": 313,
+        "endChar": 38
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0699e9cd_060d5447",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T01:31:03Z",
+      "side": 1,
+      "message": "and the reason you can be confident that this hasn\u0027t been run before on the same `expose_as` is because flagset ensures no  repeated `k` in `k\u003dv`, right?",
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d7b05e14_65feec77",
         "filename": "lucicfg/vars/vars.go",
         "patchSetId": 1
@@ -22,6 +85,52 @@
       "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c2da50a3_293c1f3d",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T01:31:03Z",
+      "side": 1,
+      "message": "has",
+      "range": {
+        "startLine": 148,
+        "startChar": 64,
+        "endLine": 148,
+        "endChar": 68
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7522a3d9_15133d3b",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T01:31:03Z",
+      "side": 1,
+      "message": "they",
+      "range": {
+        "startLine": 253,
+        "startChar": 4,
+        "endLine": 253,
+        "endChar": 9
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
