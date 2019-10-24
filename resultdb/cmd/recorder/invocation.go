@@ -76,11 +76,11 @@ func mutateInvocation(ctx context.Context, invID string, f func(context.Context,
 
 			// The invocation has exceeded deadline, finalize it now.
 			return txn.BufferWrite([]*spanner.Mutation{
-				spanner.UpdateMap("Invocations", map[string]interface{}{
+				spanner.UpdateMap("Invocations", span.ToSpannerMap(map[string]interface{}{
 					"InvocationId": invID,
-					"State":        int64(pb.Invocation_INTERRUPTED),
+					"State":        pb.Invocation_INTERRUPTED,
 					"FinalizeTime": deadline,
-				}),
+				})),
 			})
 
 		case !updateToken.Valid:

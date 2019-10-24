@@ -67,6 +67,10 @@ CREATE TABLE Invocations (
   -- Value of CreateInvocationRequest.request_id.
   -- Used to dedup invocation creation requests.
   CreateRequestId STRING(MAX),
+
+  -- Value of FinalizeInvocationRequest.request_id.
+  -- Used to dedup invocation finalization requests.
+  FinalizeRequestId STRING(MAX),
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration week.
