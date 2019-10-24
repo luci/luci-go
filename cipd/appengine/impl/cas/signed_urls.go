@@ -41,7 +41,7 @@ const (
 
 type gsObjInfo struct {
 	Size uint64 `json:"size,omitempty"`
-	URL string `json:"url,omitempty"`
+	URL  string `json:"url,omitempty"`
 }
 
 // Exists returns whether this info refers to a file which exists.
@@ -56,7 +56,7 @@ func (i *gsObjInfo) Exists() bool {
 var signedURLsCache = layered.Cache{
 	ProcessLRUCache: caching.RegisterLRUCache(4096),
 	GlobalNamespace: "signed_gs_urls_v2",
-	Marshal: json.Marshal,
+	Marshal:         json.Marshal,
 	Unmarshal: func(blob []byte) (interface{}, error) {
 		out := &gsObjInfo{}
 		err := json.Unmarshal(blob, out)
@@ -64,7 +64,8 @@ var signedURLsCache = layered.Cache{
 	},
 }
 
-// getSignedURL returns a signed URL that can be used to fetch the given file.
+// getSignedURL returns a signed URL that can be used to fetch the given file
+// as well as the size of that file in bytes.
 //
 // 'gsPath' should have form '/bucket/path' or the call will panic. 'filename',
 // if given, will be returned in Content-Disposition header when accessing the
@@ -78,7 +79,7 @@ var signedURLsCache = layered.Cache{
 //
 // On failures returns grpc-annotated errors. In particular, if the requested
 // file is missing, returns NotFound grpc-annotated error.
-func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
+func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
 	cached, err := signedURLsCache.GetOrCreate(ctx, gsPath, func() (interface{}, time.Duration, error) {
 		info := &gsObjInfo{}
 		switch size, yes, err := gs.Size(ctx, gsPath); {
@@ -108,13 +109,13 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 	})
 
 	if err != nil {
-		return "", errors.Annotate(err, "failed to sign URL").
+		return "", 0, errors.Annotate(err, "failed to sign URL").
 			Tag(grpcutil.InternalTag).Err()
 	}
 
 	info := cached.(*gsObjInfo)
 	if !info.Exists() {
-		return "", errors.Reason("object %q doesn't exist", gsPath).
+		return "", 0, errors.Reason("object %q doesn't exist", gsPath).
 			Tag(grpcutil.NotFoundTag).Err()
 	}
 
@@ -133,7 +134,7 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 		signedURL += "&" + v.Encode()
 	}
 
-	return signedURL, nil
+	return signedURL, info.Size, nil
 }
 
 // signURL generates a signed GS URL using the signer.

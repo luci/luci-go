@@ -20,8 +20,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/impl/remote"
@@ -31,9 +33,27 @@ import (
 	api "go.chromium.org/luci/cipd/api/config/v1"
 )
 
+const wlID = "ClientMonitoringWhitelist"
+
+// Datastore representation of api.ClientMonitoringConfig.
+type clientMonitoringConfig struct {
+	IPWhitelist string
+	Label       string
+}
+
+// Datastore representation of api.ClientMonitoringWhitelist.
+type clientMonitoringWhitelist struct {
+	_kind    string                   `gae:"$kind,ClientMonitoringWhitelist"`
+	_extra   datastore.PropertyMap    `gae:"-,extra"`
+	ID       string                   `gae:"$id"`
+	Entries  []clientMonitoringConfig `gae:"entries,noindex"`
+	Revision string                   `gae:"revision,noindex"`
+}
+
 const cfgFile = "monitoring.cfg"
 
 func importConfig(ctx context.Context, cli config.Interface) error {
+	rev := ""
 	wl := &api.ClientMonitoringWhitelist{}
 	switch cfg, err := cli.GetConfig(ctx, cfgclient.CurrentServiceConfigSet(ctx), cfgFile, false); {
 	case err == config.ErrNoConfig:
@@ -41,16 +61,32 @@ func importConfig(ctx context.Context, cli config.Interface) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch %q", cfgFile).Err()
 	default:
-		logging.Debugf(ctx, "found %q revision %q", cfgFile, cfg.Revision)
+		rev = cfg.Revision
 		if err := proto.UnmarshalText(cfg.Content, wl); err != nil {
 			return errors.Annotate(err, "failed to parse %q", cfgFile).Err()
 		}
 	}
 
-	for _, m := range wl.GetClientMonitoringConfig() {
-		logging.Debugf(ctx, "ip_whitelist: %q, label: %q", m.IpWhitelist, m.Label)
+	ent := &clientMonitoringWhitelist{
+		ID: wlID,
 	}
-	return nil
+	if err := datastore.Get(ctx, ent); err != nil && err != datastore.ErrNoSuchEntity {
+		return err
+	}
+	if ent.Revision == rev {
+		return nil
+	}
+	logging.Debugf(ctx, "found %q revision %q", cfgFile, rev)
+	ent = &clientMonitoringWhitelist{
+		ID:       wlID,
+		Entries:  make([]clientMonitoringConfig, len(wl.GetClientMonitoringConfig())),
+		Revision: rev,
+	}
+	for i, m := range wl.GetClientMonitoringConfig() {
+		ent.Entries[i].IPWhitelist = m.IpWhitelist
+		ent.Entries[i].Label = m.Label
+	}
+	return datastore.Put(ctx, ent)
 }
 
 func ImportConfig(ctx context.Context) error {
@@ -66,4 +102,27 @@ func ImportConfig(ctx context.Context) error {
 		return &http.Client{Transport: t}, nil
 	})
 	return importConfig(ctx, cli)
+}
+
+// monitoringConfig returns the *clientMonitoringConfig which applies to the
+// current auth.State, or nil if there isn't one.
+func monitoringConfig(ctx context.Context) (*clientMonitoringConfig, error) {
+	ent := &clientMonitoringWhitelist{
+		ID: wlID,
+	}
+	switch err := datastore.Get(ctx, ent); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	}
+	for _, cfg := range ent.Entries {
+		switch ok, err := auth.IsInWhitelist(ctx, cfg.IPWhitelist); {
+		case err != nil:
+			return nil, err
+		case ok:
+			return &cfg, nil
+		}
+	}
+	return nil, nil
 }
