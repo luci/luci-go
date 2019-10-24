@@ -16,6 +16,24 @@
       "revId": "2c474694abd835c361666f9b06c32e92e37b596b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d6acaf9_4b93cde1",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T01:46:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "64b60c21_3e8365c7",
+      "revId": "2c474694abd835c361666f9b06c32e92e37b596b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
