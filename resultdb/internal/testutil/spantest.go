@@ -178,9 +178,9 @@ func fatalIf(err error) {
 // InsertInvocation returns a spanner mutation that inserts an invocation.
 func InsertInvocation(id string, state pb.Invocation_State, updateToken string, ct time.Time) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	return spanner.InsertMap("Invocations", map[string]interface{}{
+	return spanner.InsertMap("Invocations", span.ToSpannerMap(map[string]interface{}{
 		"InvocationId":                      id,
-		"State":                             int64(state),
+		"State":                             state,
 		"Realm":                             "",
 		"UpdateToken":                       updateToken,
 		"InvocationExpirationTime":          future,
@@ -189,7 +189,7 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string, 
 		"ExpectedTestResultsExpirationWeek": future,
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
-	})
+	}))
 }
 
 // InsertInclusion returns a spanner mutation that inserts an inclusion.

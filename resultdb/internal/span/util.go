@@ -69,8 +69,10 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - string
 //   - tspb.Timestamp
 //   - pb.InvocationState
+//   - pb.TestStatus
 //   - pb.VariantDef
 //   - pb.StringPair
+//   - pb.Artifact
 func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	spanPtrs := make([]interface{}, len(ptrs))
 
@@ -80,12 +82,16 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = &spanner.NullString{}
 		case **tspb.Timestamp:
 			spanPtrs[i] = &spanner.NullTime{}
+		case *pb.TestStatus:
+			spanPtrs[i] = new(int64)
 		case *pb.Invocation_State:
 			spanPtrs[i] = new(int64)
 		case **pb.VariantDef:
 			spanPtrs[i] = &[]string{}
 		case *[]*pb.StringPair:
 			spanPtrs[i] = &[]string{}
+		case *[]*pb.Artifact:
+			spanPtrs[i] = &[][]byte{}
 		default:
 			spanPtrs[i] = goPtr
 		}
@@ -119,6 +125,9 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 		case *pb.Invocation_State:
 			*goPtr = pb.Invocation_State(*spanPtr.(*int64))
 
+		case *pb.TestStatus:
+			*goPtr = pb.TestStatus(*spanPtr.(*int64))
+
 		case **pb.VariantDef:
 			if *goPtr, err = pbutil.VariantDefFromStrings(*spanPtr.(*[]string)); err != nil {
 				// If it was written to Spanner, it should have been validated.
@@ -133,6 +142,13 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 					// If it was written to Spanner, it should have been validated.
 					panic(err)
 				}
+			}
+
+		case *[]*pb.Artifact:
+			byteSlices := *spanPtr.(*[][]byte)
+			if *goPtr, err = pbutil.ArtifactsFromByteSlices(byteSlices); err != nil {
+				// If it was written to Spanner, it should have been validated.
+				panic(err)
 			}
 
 		default:
@@ -168,11 +184,21 @@ func ToSpanner(v interface{}) interface{} {
 	case pb.Invocation_State:
 		return int64(v)
 
+	case pb.TestStatus:
+		return int64(v)
+
 	case *pb.VariantDef:
 		return pbutil.VariantDefToStrings(v)
 
 	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
+
+	case []*pb.Artifact:
+		ret, err := pbutil.ArtifactsToByteSlices(v)
+		if err != nil {
+			panic(err)
+		}
+		return ret
 
 	case []interface{}:
 		ret := make([]interface{}, len(v))
