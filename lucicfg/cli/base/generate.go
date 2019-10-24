@@ -37,7 +37,10 @@ import (
 // in-place to contain the final parameters (based on lucicfg.config(...) calls
 // in Starlark and the config populated via CLI flags, passed as 'flags').
 // 'flags' are also mutated in-place to rebase ConfigDir onto cwd.
-func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta) (lucicfg.Output, error) {
+//
+// 'vars' are a collection of k=v pairs passed via CLI flags as `-var k=v`. They
+// are used to pre-set lucicfg.var(..., exposed_as=<k>) variables.
+func GenerateConfigs(ctx context.Context, inputFile string, meta, flags *lucicfg.Meta, vars map[string]string) (lucicfg.Output, error) {
 	abs, err := filepath.Abs(inputFile)
 	if err != nil {
 		return lucicfg.Output{}, err
@@ -92,6 +95,7 @@ You may also optionally set +x flag on it, but this is not required.
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code:  interpreter.FileSystemLoader(root),
 		Entry: main,
+		Vars:  vars,
 	})
 	if err != nil {
 		return lucicfg.Output{}, err

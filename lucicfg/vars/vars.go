@@ -22,6 +22,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 )
@@ -49,8 +50,10 @@ func (v ID) Hash() (uint32, error) { return uint32(v), nil }
 // made to vars state within a scope (i.e. within single exec-ed module) are
 // discarded when the scope is closed.
 type Vars struct {
-	next   ID       // index of the next variable to produce
-	scopes []*scope // stack of scopes, the "active" is last
+	next      ID                  // index of the next variable to produce
+	scopes    []*scope            // stack of scopes, the "active" is last
+	bottom    scope               // fixed bottom of the stack, with preset var values (see Declare)
+	exposedAs map[string]varValue // "exposeAs" value as passed to Declare => corresponding pre-set value
 }
 
 // scope holds values that were set within the currently exec-ing module.
@@ -59,11 +62,34 @@ type scope struct {
 	thread *starlark.Thread // just for asserts
 }
 
+// assign mutates 'values' map, auto-initializing it if necessary.
+//
+// Finish populating 'val' and returns it.
+func (s *scope) assign(th *starlark.Thread, id ID, val varValue) (varValue, error) {
+	// Forbid sneaky cross-scope communication through in-place mutations of the
+	// variable's value.
+	val.value.Freeze()
+
+	// Remember where assignment happened, for the error messages in Set().
+	var err error
+	if val.trace, err = builtins.CaptureStacktrace(th, 1); err != nil {
+		return varValue{}, nil
+	}
+
+	// Remember the value.
+	if s.values == nil {
+		s.values = make(map[ID]varValue, 1)
+	}
+	s.values[id] = val
+	return val, nil
+}
+
 // varValue is a var value plus a stacktrace where it was set, for errors.
 type varValue struct {
-	value starlark.Value
-	trace *builtins.CapturedStacktrace
-	auto  bool // true if the value was auto-initialized in get()
+	value    starlark.Value               // the frozen value set in the scope
+	trace    *builtins.CapturedStacktrace // where it was set
+	exposeAs string                       // exposeAs as passed to Declare(...)
+	auto     bool                         // true if the value was auto-initialized in get()
 }
 
 // OpenScope opens a new scope for variables.
@@ -91,6 +117,17 @@ func (v *Vars) CloseScope(th *starlark.Thread) {
 	}
 }
 
+// DeclaredExposeAsAliases is a set of all `exposeAs` passed to Declare.
+//
+// Used to detect what available var values haven't been "consumed".
+func (v *Vars) DeclaredExposeAsAliases() stringset.Set {
+	s := stringset.New(len(v.exposedAs))
+	for k := range v.exposedAs {
+		s.Add(k)
+	}
+	return s
+}
+
 // ClearValues resets values of all variables, in all scopes.
 //
 // Should be used only from tests that want a clean slate.
@@ -98,12 +135,45 @@ func (v *Vars) ClearValues() {
 	for _, s := range v.scopes {
 		s.values = nil
 	}
+	v.bottom.values = nil
+	v.exposedAs = nil
 }
 
-// Declare allocates a new variable.
-func (v *Vars) Declare() ID {
+// Declare allocates a new variable, setting it right away to 'presetVal' value
+// if 'exposeAs' not empty.
+//
+// Variables that were pre-set during declaration are essentially immutable
+// throughout lifetime of the interpreter.
+//
+// Returns an error if a variable with the same `exposeAs` name has already been
+// exposed.
+func (v *Vars) Declare(th *starlark.Thread, exposeAs string, presetVal starlark.Value) (ID, error) {
+	// Pick a slot for the variable.
+	id := v.next
 	v.next++
-	return v.next - 1
+
+	if exposeAs != "" {
+		// 'exposeAs' alias can't be reused between multiple vars.
+		if val, ok := v.exposedAs[exposeAs]; ok {
+			return 0, fmt.Errorf("lucicfg.var: there's already a var exposed as %q, it was declared at: %s", exposeAs, val.trace)
+		}
+
+		// Put a preset value of the var at the bottom of the scope stack, to
+		// indicate it was set "before" Starlark execution. v.lookup() will find it
+		// there, thus forbidding reassignments.
+		val, err := v.bottom.assign(th, id, varValue{value: presetVal, exposeAs: exposeAs})
+		if err != nil {
+			return 0, err
+		}
+
+		// Remember that we exposed a var under 'exposeAs' alias.
+		if v.exposedAs == nil {
+			v.exposedAs = make(map[string]varValue, 1)
+		}
+		v.exposedAs[exposeAs] = val
+	}
+
+	return id, nil
 }
 
 // Set sets the value of a variable within the current scope iff the variable
@@ -122,10 +192,14 @@ func (v *Vars) Set(th *starlark.Thread, id ID, value starlark.Value) error {
 
 	// Must be unset.
 	if cur := v.lookup(id); cur != nil {
-		if cur.auto {
+		switch {
+		case cur.auto:
 			return fmt.Errorf("variable reassignment is forbidden, the previous value was auto-set to the default as a side effect of 'get' at: %s", cur.trace)
+		case cur.exposeAs != "":
+			return fmt.Errorf("the value of the variable is controlled through CLI flag \"-var %s=...\" and can't be changed from Starlark side", cur.exposeAs)
+		default:
+			return fmt.Errorf("variable reassignment is forbidden, the previous value was set at: %s", cur.trace)
 		}
-		return fmt.Errorf("variable reassignment is forbidden, the previous value was set at: %s", cur.trace)
 	}
 
 	return v.assign(th, id, value, false)
@@ -175,26 +249,17 @@ func (v *Vars) lookup(id ID) *varValue {
 			return &val
 		}
 	}
+	// The stack has a fixed bottom with vars whose values were set right when
+	// they were declared (which may happen outside of EXEC context, so we can't
+	// use regular Set and v.scopes there).
+	if val, ok := v.bottom.values[id]; ok {
+		return &val
+	}
 	return nil
 }
 
 // assign sets the variable's value in the innermost scope.
 func (v *Vars) assign(th *starlark.Thread, id ID, value starlark.Value, auto bool) error {
-	// Forbid sneaky cross-scope communication through in-place mutations of the
-	// variable's value.
-	value.Freeze()
-
-	// Remember where assignment happened, for the error message in Set().
-	trace, err := builtins.CaptureStacktrace(th, 0)
-	if err != nil {
-		return err
-	}
-
-	// Set in the innermost scope.
-	scope := v.scopes[len(v.scopes)-1]
-	if scope.values == nil {
-		scope.values = make(map[ID]varValue, 1)
-	}
-	scope.values[id] = varValue{value, trace, auto}
-	return nil
+	_, err := v.scopes[len(v.scopes)-1].assign(th, id, varValue{value: value, auto: auto})
+	return err
 }
