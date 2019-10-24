@@ -72,7 +72,7 @@ func (Invocation_State) EnumDescriptor() ([]byte, []int) {
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 type Invocation struct {
-	// The resource name of this invocation.
+	// The identifier, see also https://aip.dev/122.
 	// Format: invocations/{INVOCATION_ID}
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Current state of the invocation.

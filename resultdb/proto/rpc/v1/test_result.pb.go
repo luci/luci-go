@@ -89,7 +89,7 @@ func (TestStatus) EnumDescriptor() ([]byte, []int) {
 // This message does not specify the test path.
 // It should be available in the message that embeds this message.
 type TestResult struct {
-	// Resource name.
+	// The identifier, see also https://aip.dev/122.
 	// Format: "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
 	// URL_ESCAPED_TEST_PATH is test_path escaped with https://golang.org/pkg/net/url/#PathEscape
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -417,7 +417,7 @@ func (m *TestVariant) GetVariant() *VariantDef {
 // For example, the test variant fails both with and without CL, so it is not
 // CL's fault.
 type TestExoneration struct {
-	// The resource name of the exoneration.
+	// The identifier, see also https://aip.dev/122.
 	// Format: invocations/{INVOCATION_ID}/testExonerations/{EXONERATION_ID}.
 	// EXONERATION_ID is server-generated.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`

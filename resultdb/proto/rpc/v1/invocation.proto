@@ -27,7 +27,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 message Invocation {
-  // The resource name of this invocation.
+  // The identifier, see also https://aip.dev/122.
   // Format: invocations/{INVOCATION_ID}
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
