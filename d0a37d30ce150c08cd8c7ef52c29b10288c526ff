@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "04eefe58_e11edb6e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70af6f3d_1a2dd050",
+      "range": {
+        "startLine": 83,
+        "startChar": 7,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5987b859_94df2f84",
         "filename": "resultdb/cmd/recorder/finalize_invocation.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf0a967_6c3396ce",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5987b859_94df2f84",
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "ef6729fb_007d95e0",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87197778_9ad8c233",
+      "range": {
+        "startLine": 92,
+        "startChar": 7,
+        "endLine": 92,
+        "endChar": 10
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eac6ce13_d9539e8e",
         "filename": "resultdb/cmd/recorder/finalize_invocation.go",
         "patchSetId": 4
@@ -85,6 +151,30 @@
       "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2aa84e23_dd63f47b",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eac6ce13_d9539e8e",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 8
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "df89a856_763d69bb",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60f7518d_3595e684",
+      "range": {
+        "startLine": 100,
+        "startChar": 21,
+        "endLine": 100,
+        "endChar": 39
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "abcba697_5abc56c7",
         "filename": "resultdb/cmd/recorder/finalize_invocation.go",
         "patchSetId": 4
@@ -122,6 +236,30 @@
       "writtenOn": "2019-10-24T17:30:03Z",
       "side": 1,
       "message": "it seems FinalizeInvocation function either returns a non-nil error, or ret with State equaling requestState. Then, do we really need requestState variable? Can we use ret.State instead?",
+      "range": {
+        "startLine": 104,
+        "startChar": 14,
+        "endLine": 104,
+        "endChar": 26
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3740106f_b213c26b",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "When read the full invocation ret.State will be used to hold the current state, so I\u0027ll keep requestState.",
+      "parentUuid": "abcba697_5abc56c7",
       "range": {
         "startLine": 104,
         "startChar": 14,
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "61e8dae3_17bd1e39",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96c03605_641009a5",
+      "range": {
+        "startLine": 105,
+        "startChar": 47,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f2d5d8b_d5e22ca5",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 4
@@ -168,6 +330,30 @@
       "writtenOn": "2019-10-24T17:30:03Z",
       "side": 1,
       "message": "validateUpdateToken and extractUserUpdateToken are always called together in the same way. Please consolidate them into\n\n  validateUserUpdateToken(ctx context.Context, string updateToken) error",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 67,
+        "endChar": 27
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "026c1c90_a77fa7b7",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "In current code if extractUserUpdateToken failed at the beginning, we don\u0027t need to read from spanner.\n\nLet me know if you prefer the simplicity of the code over this benefit.",
+      "parentUuid": "9f2d5d8b_d5e22ca5",
       "range": {
         "startLine": 67,
         "startChar": 8,
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "83f6c43a_8b9bc3c6",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "I\u0027m not sure what\u0027s the best way to call a function on a branch and also keep the return value to use later.\n\nMoved this check to an if statement after switch. LMK if there\u0027s a better way.",
+      "parentUuid": "05f3c62d_c4814920",
+      "range": {
+        "startLine": 79,
+        "startChar": 7,
+        "endLine": 79,
+        "endChar": 10
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "76cedf7d_e8abc4ed",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 4
@@ -217,6 +427,24 @@
       "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc698523_632a2ea2",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76cedf7d_e8abc4ed",
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -240,6 +468,30 @@
       "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eb7d0c1_423f51cc",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "92e7875b_f407072a",
+      "range": {
+        "startLine": 115,
+        "startChar": 25,
+        "endLine": 115,
+        "endChar": 35
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -286,6 +538,54 @@
       "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0e87c4a_c9348a8d",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9eb86cf_13df53b6",
+      "range": {
+        "startLine": 125,
+        "startChar": 73,
+        "endLine": 125,
+        "endChar": 78
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0170d224_6286d731",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-24T20:42:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24a9130b_d5c9f745",
+      "range": {
+        "startLine": 125,
+        "startChar": 100,
+        "endLine": 125,
+        "endChar": 108
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
