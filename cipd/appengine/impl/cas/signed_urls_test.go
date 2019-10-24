@@ -56,19 +56,20 @@ func TestGetSignedURL(t *testing.T) {
 
 		Convey("Works", func() {
 			signature = "sig1"
-			url1, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
+			url1, size, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldBeNil)
 			So(url1, ShouldEqual, "https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+
 				"Signature=c2lnMQ%3D%3D")
+			So(size, ShouldEqual, 123)
 			So(string(signed), ShouldEqual, "GET\n\n\n1454479506\n/bucket/path")
 
 			// 1h later returns same cached URL.
 			cl.Add(time.Hour)
 
 			signature = "sig2" // must not be picked up
-			url2, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
+			url2, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldBeNil)
 			So(url2, ShouldEqual, url1)
 
@@ -76,7 +77,7 @@ func TestGetSignedURL(t *testing.T) {
 			cl.Add(31 * time.Minute)
 
 			signature = "sig3"
-			url3, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
+			url3, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldBeNil)
 			So(url3, ShouldEqual, "https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454484966&"+
@@ -86,34 +87,34 @@ func TestGetSignedURL(t *testing.T) {
 
 		Convey("Absence is cached", func() {
 			gs := &mockedSignerGS{exists: false}
-			_, err := getSignedURL(ctx, "/bucket/path", "", signer, gs)
+			_, _, err := getSignedURL(ctx, "/bucket/path", "", signer, gs)
 			So(err, ShouldErrLike, "doesn't exist")
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(gs.calls, ShouldEqual, 1)
 
 			// 30 sec later same check is reused.
 			cl.Add(30 * time.Second)
-			_, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
+			_, _, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
 			So(err, ShouldErrLike, "doesn't exist")
 			So(gs.calls, ShouldEqual, 1)
 
 			// 31 sec later the cache expires and new check is made.
 			cl.Add(31 * time.Second)
-			_, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
+			_, _, err = getSignedURL(ctx, "/bucket/path", "", signer, gs)
 			So(err, ShouldErrLike, "doesn't exist")
 			So(gs.calls, ShouldEqual, 2)
 		})
 
 		Convey("Signing error", func() {
 			signErr = fmt.Errorf("boo, error")
-			_, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
+			_, _, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldErrLike, "boo, error")
 			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
 		})
 
 		Convey("Content-Disposition", func() {
 			signature = "sig1"
-			url, _ := getSignedURL(ctx, "/bucket/path", "name.txt", signer, &mockedSignerGS{exists: true})
+			url, _, _ := getSignedURL(ctx, "/bucket/path", "name.txt", signer, &mockedSignerGS{exists: true})
 			So(url, ShouldEqual, "https://storage.googleapis.com"+
 				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+

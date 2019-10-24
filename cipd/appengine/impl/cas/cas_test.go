@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/tq"
@@ -104,7 +105,7 @@ func TestGetReader(t *testing.T) {
 func TestGetObjectURL(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := memory.Use(context.Background())
 
 	var signErr error
 	impl := storageImpl{
@@ -112,8 +113,8 @@ func TestGetObjectURL(t *testing.T) {
 		settings: func(context.Context) (*settings.Settings, error) {
 			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
 		},
-		getSignedURL: func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error) {
-			return "http//signed.example.com" + gsPath + "?f=" + filename, signErr
+		getSignedURL: func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error) {
+			return "http//signed.example.com" + gsPath + "?f=" + filename, 123, signErr
 		},
 	}
 

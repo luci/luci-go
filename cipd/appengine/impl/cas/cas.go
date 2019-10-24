@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -88,7 +89,7 @@ type storageImpl struct {
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(ctx context.Context) gs.GoogleStorage
 	settings     func(ctx context.Context) (*settings.Settings, error)
-	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, error)
+	getSignedURL func(ctx context.Context, gsPath, filename string, signer signerFactory, gs gs.GoogleStorage) (string, uint64, error)
 }
 
 // registerTasks adds tasks to the tq Dispatcher.
@@ -153,10 +154,11 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 		}
 	}
 
-	url, err := s.getSignedURL(ctx, cfg.ObjectPath(r.Object), r.DownloadFilename, sigFactory, s.getGS(ctx))
+	url, size, err := s.getSignedURL(ctx, cfg.ObjectPath(r.Object), r.DownloadFilename, sigFactory, s.getGS(ctx))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get signed URL").Err()
 	}
+	monitoring.FileSize(ctx, size)
 	return &api.ObjectURL{SignedUrl: url}, nil
 }
 
