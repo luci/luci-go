@@ -39,7 +39,7 @@ deploy:
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
 
 test-recorder:
-	$(call test-service,recorder)
+	$(call test-service,cmd/recorder)
 
 # Helpers
 .setup-bindir:
