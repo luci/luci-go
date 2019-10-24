@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
@@ -30,6 +31,22 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/config/v1"
 )
+
+const wlID = "ClientMonitoringWhitelist"
+
+// Datastore representation of api.ClientMonitoring.
+type clientMonitoringConfig struct {
+	IPWhitelist string
+	Label       string
+}
+
+// Datastore representation of api.ClientMonitoringWhitelist.
+type clientMonitoringWhitelist struct {
+	_kind   string                   `gae:"$kind,ClientMonitoringWhitelist"`
+	_extra  datastore.PropertyMap    `gae:"-,extra"`
+	ID      string                   `gae:"$id"`
+	Entries []clientMonitoringConfig `gae:"entries,noindex"`
+}
 
 const cfgFile = "monitoring.cfg"
 
@@ -47,10 +64,15 @@ func importConfig(ctx context.Context, cli config.Interface) error {
 		}
 	}
 
-	for _, m := range wl.GetClientMonitoringConfig() {
-		logging.Debugf(ctx, "ip_whitelist: %q, label: %q", m.IpWhitelist, m.Label)
+	ent := &clientMonitoringWhitelist{
+		ID:      wlID,
+		Entries: make([]clientMonitoringConfig, len(wl.GetClientMonitoringConfig())),
 	}
-	return nil
+	for i, m := range wl.GetClientMonitoringConfig() {
+		ent.Entries[i].IPWhitelist = m.IpWhitelist
+		ent.Entries[i].Label = m.Label
+	}
+	return datastore.Put(ctx, ent)
 }
 
 func ImportConfig(ctx context.Context) error {
@@ -66,4 +88,29 @@ func ImportConfig(ctx context.Context) error {
 		return &http.Client{Transport: t}, nil
 	})
 	return importConfig(ctx, cli)
+}
+
+// selfConfig returns the *clientMonitoringConfig which applies to the current
+// auth.State, or nil if there isn't one.
+func selfConfig(ctx context.Context) (*clientMonitoringConfig, error) {
+	ent := &clientMonitoringWhitelist{
+		ID: wlID,
+	}
+	switch err := datastore.Get(ctx, ent); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		return nil, nil
+	default:
+		return nil, err
+	}
+	for _, cfg := range ent.Entries {
+		ok, err := auth.IsInWhitelist(ctx, cfg.IPWhitelist)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			return &cfg, nil
+		}
+	}
+	return nil, nil
 }

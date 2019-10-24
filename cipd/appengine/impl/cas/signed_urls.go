@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/caching/layered"
 
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 )
 
 const (
@@ -133,6 +134,7 @@ func getSignedURL(ctx context.Context, gsPath, filename string, signer signerFac
 		signedURL += "&" + v.Encode()
 	}
 
+	monitoring.FileSize(ctx, info.Size)
 	return signedURL, nil
 }
 

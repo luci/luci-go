@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -35,7 +36,7 @@ func TestGetSignedURL(t *testing.T) {
 	t.Parallel()
 
 	Convey("with context", t, func() {
-		ctx := caching.WithEmptyProcessCache(context.Background())
+		ctx := caching.WithEmptyProcessCache(memory.Use(context.Background()))
 		// Use TestRecentTimeUTC, not TestRecentTimeLocal, so the
 		// timestamps in the following tests do not depend on the
 		// local timezone.
