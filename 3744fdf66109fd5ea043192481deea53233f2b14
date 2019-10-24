@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e73b8802_4a392a28",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T01:29:51Z",
+      "side": 1,
+      "message": "Is ResultSink server not what ResultDB is running, whereas the users who are uploading results are the ResultSink clients?\n\nI see this change was intentional, so it\u0027s probably just a question of terminology.",
+      "range": {
+        "startLine": 74,
+        "startChar": 9,
+        "endLine": 74,
+        "endChar": 26
+      },
+      "revId": "3744fdf66109fd5ea043192481deea53233f2b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4ff5740_c282d538",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T01:29:51Z",
+      "side": 1,
+      "message": "Curious: why not? (I\u0027d imagine in this case we unmarshal the array, then each of the contained objects to the TestResult struct)",
+      "range": {
+        "startLine": 95,
+        "startChar": 58,
+        "endLine": 95,
+        "endChar": 74
+      },
+      "revId": "3744fdf66109fd5ea043192481deea53233f2b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
