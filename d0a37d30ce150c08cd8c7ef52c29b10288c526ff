@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "70af6f3d_1a2dd050",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "the `state !\u003d pb.Invocation_ACTIVE` part of this condition is redundant. If state equals requestState, then it is definitely not active because requestState is definitely not active. This should be\n\n  case state \u003d\u003d requestState:\n\n--\n\nfurther I think these cases could be more readable:\n\n  case state \u003d\u003d requestState:\n     ..\n  case state !\u003d pb.Invocation_ACTIVE:\n     ...",
+      "range": {
+        "startLine": 83,
+        "startChar": 7,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5987b859_94df2f84",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "this is incorrect for two reasons:\n- inconsistent with L81 error: if the user is trying to mark an expired invocation as completed, we should say that it was already finalized with a different sate\n- inconsistent with L85: if the invocation has expired (i..e it is essentially interrupted) and the user is trying to mark it as interrupted, then the behavior should match L85\n\nthis is the same problem as the one in the comment https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1865955/5/resultdb/recorder/invocation.go#116",
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87197778_9ad8c233",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "same concern here, see a comment in another file",
+      "range": {
+        "startLine": 92,
+        "startChar": 7,
+        "endLine": 92,
+        "endChar": 10
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eac6ce13_d9539e8e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "this is noop. \ndefault case is not required in switch-statements",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 8
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60f7518d_3595e684",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "we read invocation in 3 places in this function: L69, L85 and here. It looks like\n1) we have to read at least something in all cases\n2) in happy cases, we need to read full invocation\n\nwhy not read it full in L69 once? Then we don\u0027t need special getInvocationInfoForValidation",
+      "range": {
+        "startLine": 100,
+        "startChar": 21,
+        "endLine": 100,
+        "endChar": 39
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abcba697_5abc56c7",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "it seems FinalizeInvocation function either returns a non-nil error, or ret with State equaling requestState. Then, do we really need requestState variable? Can we use ret.State instead?",
+      "range": {
+        "startLine": 104,
+        "startChar": 14,
+        "endLine": 104,
+        "endChar": 26
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c03605_641009a5",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "please reuse `now`",
+      "range": {
+        "startLine": 105,
+        "startChar": 47,
+        "endLine": 105,
+        "endChar": 61
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f2d5d8b_d5e22ca5",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "validateUpdateToken and extractUserUpdateToken are always called together in the same way. Please consolidate them into\n\n  validateUserUpdateToken(ctx context.Context, string updateToken) error",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 67,
+        "endChar": 27
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05f3c62d_c4814920",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "i think it would be more readable and less fragile if `err \u003d ...` and `err !\u003d nil` statements where closer to each other. It is easy to accidentally break this code by overwriting err in between. Let\u0027s call validateUpdateToken after we checked deadline and state",
+      "range": {
+        "startLine": 79,
+        "startChar": 7,
+        "endLine": 79,
+        "endChar": 10
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76cedf7d_e8abc4ed",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92e7875b_f407072a",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "i don\u0027t see anything validation-specific in the function body.\nalso how is it different from https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/span/invocation.go;l\u003d34?q\u003dspan%2Finvocation.go%20ReadInvocation\u0026ss\u003dchromium ?",
+      "range": {
+        "startLine": 115,
+        "startChar": 25,
+        "endLine": 115,
+        "endChar": 35
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24a9130b_d5c9f745",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "finalizeTime",
+      "range": {
+        "startLine": 125,
+        "startChar": 100,
+        "endLine": 125,
+        "endChar": 108
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9eb86cf_13df53b6",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T17:30:03Z",
+      "side": 1,
+      "message": "if someone calls this finalizeInvocation with state\u003dACTIVE, this func won\u0027t notice.\nI think the func would be more robust if it accepted `interrupted bool`. The callsite would get simpler too",
+      "range": {
+        "startLine": 125,
+        "startChar": 73,
+        "endLine": 125,
+        "endChar": 78
+      },
+      "revId": "d0a37d30ce150c08cd8c7ef52c29b10288c526ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
