@@ -25,5 +25,28 @@ zzz: []
 """)
 
 
+def test_to_yaml():
+  yaml = strutil.to_yaml({'a': ['b', 'c'], 'd': 'huge\nhuge\nhuge\nhuge'})
+  assert.eq('\n' + yaml, """
+a:
+- b
+- c
+d: |-
+  huge
+  huge
+  huge
+  huge
+""")
+
+
+def test_b64_encoding():
+  assert.eq(strutil.b64_encode('\xff'), '/w==')
+  assert.eq(strutil.b64_decode('/w=='), '\xff')
+  assert.fails(lambda: strutil.b64_decode('/w='), 'illegal base64 data')
+  assert.fails(lambda: strutil.b64_decode('_w=='), 'illegal base64 data')
+
+
 test_expand_int_set()
 test_json_to_yaml()
+test_to_yaml()
+test_b64_encoding()
