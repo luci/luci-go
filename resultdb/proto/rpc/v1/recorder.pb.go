@@ -259,6 +259,10 @@ type CreateTestResultRequest struct {
 	// Name of the parent invocation, see Invocation.name.
 	Invocation string `protobuf:"bytes,1,opt,name=invocation,proto3" json:"invocation,omitempty"`
 	// The test result to create.
+	// Test path and result id are used to dedup requests, i.e.
+	// if a test result with the same test path and result id already exists in
+	// the invocation, then the requests succeeds as opposed to returns with
+	// ALREADY_EXISTS error.
 	TestResult *TestResult `protobuf:"bytes,2,opt,name=test_result,json=testResult,proto3" json:"test_result,omitempty"`
 	// A unique identifier for this request. Restricted to 36 ASCII characters.
 	// A random UUID is recommended.
