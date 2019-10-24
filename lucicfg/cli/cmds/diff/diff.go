@@ -100,7 +100,7 @@ func (dr *diffRun) Run(a subcommands.Application, args []string, env subcommands
 
 func (dr *diffRun) run(ctx context.Context, outputDir, inputFile string, cfgs []string) error {
 	meta := dr.DefaultMeta()
-	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta)
+	output, err := base.GenerateConfigs(ctx, inputFile, &meta, &dr.Meta, dr.Vars)
 	if err != nil {
 		return err
 	}

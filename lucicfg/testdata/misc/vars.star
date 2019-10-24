@@ -1,3 +1,8 @@
+# Prepare CLI vars as:
+#
+# test_var=abc
+# another_var=def
+
 load('//testdata/misc/support/shared_vars.star', 'shared_vars')
 
 
@@ -34,7 +39,40 @@ def test_propagation_down_exec_stack():
   assert.eq(shared_vars.b.get(), None)
 
 
+def test_expose_as_works():
+  # See the top of this file for where 'abc' is set.
+  assert.eq(lucicfg.var(expose_as='test_var').get(), 'abc')
+  # Default works.
+  assert.eq(lucicfg.var(expose_as='some', default='zzz').get(), 'zzz')
+  # 'None' default also works.
+  assert.eq(lucicfg.var(expose_as='third').get(), None)
+
+
+def test_expose_as_set_fails():
+  assert.fails(
+      lambda: lucicfg.var(expose_as='v1').set('123'),
+      'the value of the variable is controlled through CLI flag ' +
+      '\"\-var v1=..." and can\'t be changed from Starlark side')
+
+
+def test_expose_as_bad_default_type():
+  assert.fails(
+      lambda: lucicfg.var(expose_as='v2', default=123),
+      'must have a string or None default, got int 123')
+
+
+def test_expose_as_duplicate():
+  lucicfg.var(expose_as='another_var')
+  assert.fails(
+      lambda: lucicfg.var(expose_as='another_var'),
+      'there\'s already a var exposed as "another_var"')
+
+
 test_vars_basics()
 test_vars_defaults()
 test_vars_validator()
 test_propagation_down_exec_stack()
+test_expose_as_works()
+test_expose_as_set_fails()
+test_expose_as_bad_default_type()
+test_expose_as_duplicate()

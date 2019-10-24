@@ -608,7 +608,7 @@ A `struct(package='...', path='...')` with the location of the module.
 ### lucicfg.var {#lucicfg.var}
 
 ```python
-lucicfg.var(default = None, validator = None)
+lucicfg.var(default = None, validator = None, expose_as = None)
 ```
 
 
@@ -620,7 +620,8 @@ lucicfg.var(default = None, validator = None)
 Declares a variable.
 
 A variable is a slot that can hold some frozen value. Initially this slot is
-empty. [lucicfg.var(...)](#lucicfg.var) returns a struct with methods to manipulate this slot:
+usually empty. [lucicfg.var(...)](#lucicfg.var) returns a struct with methods to manipulate
+it:
 
   * `set(value)`: sets the variable's value if it's unset, fails otherwise.
   * `get()`: returns the current value, auto-setting it to `default` if it was
@@ -672,10 +673,26 @@ functions with wrappers that supply such defaults. These more explicit
 approaches can become pretty convoluted when there are multiple scripts and
 libraries involved.
 
+Another use case is to allow parameterizing configs with values passed via
+CLI flags. A string-typed var can be declared with `expose_as=<name>`
+argument, making it settable via `-var <name>=<value>` CLI flag. This is
+primarily useful in conjunction with `-emit-to-stdout` CLI flag to use lucicfg
+as a "function call" that accepts arguments via CLI flags and returns the
+result via stdout to pipe somewhere else, e.g.
+
+```shell
+lucicfg generate main.star -var environ=dev -emit-to-stdout all.json | ...
+```
+
+**Danger**: Using `-var` without `-emit-to-stdout` is generally wrong, since
+configs generated on disk (and presumably committed into a repository) must
+not depend on undetermined values passed via CLI flags.
+
 #### Arguments {#lucicfg.var-args}
 
 * **default**: a value to auto-set to the variable in `get()` if it was unset.
-* **validator**: a callback called as `validator(value)` from `set(value)`, must return the value to be assigned to the variable (usually just `value` itself).
+* **validator**: a callback called as `validator(value)` from `set(value)` and inside [lucicfg.var(...)](#lucicfg.var) declaration itself (to validate `default` or a value passed via CLI flags). Must be a side-effect free idempotent function that returns the value to be assigned to the variable (usually just `value` itself, but conversions are allowed, including type changes).
+* **expose_as**: an optional string identifier to make this var settable via CLI flags as `-var <expose_as>=<value>`. If there's no such flag, the variable is auto-initialized to its default value (which must be string or None). Variables declared with `expose_as` are not settable via `set()` at all, they appear as "set" already the moment they are declared.
 
 
 #### Returns  {#lucicfg.var-returns}

@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	config "go.chromium.org/luci/common/api/luci_config/config/v1"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/lucicfg"
@@ -68,7 +69,8 @@ type Parameters struct {
 type Subcommand struct {
 	subcommands.CommandRunBase
 
-	Meta lucicfg.Meta // meta config settable via CLI flags
+	Meta lucicfg.Meta        // meta config settable via CLI flags
+	Vars stringmapflag.Value // all `-var k=v` flags
 
 	params     *Parameters    // whatever was passed to Init
 	logConfig  logging.Config // for -log-level, used by ModifyContext
@@ -85,9 +87,13 @@ func (c *Subcommand) ModifyContext(ctx context.Context) context.Context {
 func (c *Subcommand) Init(params Parameters) {
 	c.params = &params
 	c.Meta = c.DefaultMeta()
-	c.logConfig.Level = logging.Info
 
+	c.Flags.Var(&c.Vars, "var",
+		"A `k=v` pair setting a value of some lucicfg.var(expose_as=...) variable, can be used multiple times (to set multiple vars).")
+
+	c.logConfig.Level = logging.Info
 	c.logConfig.AddFlags(&c.Flags)
+
 	c.authFlags.Register(&c.Flags, params.AuthOptions)
 	c.Flags.StringVar(&c.jsonOutput, "json-output", "", "Path to write operation results to.")
 }

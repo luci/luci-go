@@ -59,6 +59,20 @@ func TestAllStarlark(t *testing.T) {
 			}
 			body := string(blob)
 
+			// Read "mocked" `-var name=value` assignments.
+			presetVars := map[string]string{}
+			presetVarsBlock := readCommentBlock(body, "Prepare CLI vars as:")
+			for _, line := range strings.Split(presetVarsBlock, "\n") {
+				if line = strings.TrimSpace(line); line != "" {
+					chunks := strings.SplitN(line, "=", 2)
+					if len(chunks) != 2 {
+						t.Errorf("Bad CLI var declaration %q", line)
+						return nil
+					}
+					presetVars[chunks[0]] = chunks[1]
+				}
+			}
+
 			expectErrExct := readCommentBlock(body, "Expect errors:")
 			expectErrLike := readCommentBlock(body, "Expect errors like:")
 			expectCfg := readCommentBlock(body, "Expect configs:")
@@ -80,6 +94,7 @@ func TestAllStarlark(t *testing.T) {
 				// directories, regardless of what cwd was when 'go test' was called.
 				Code:  interpreter.FileSystemLoader("."),
 				Entry: filepath.ToSlash(path),
+				Vars:  presetVars,
 
 				// Expose 'assert' module, hook up error reporting to 't'.
 				testPredeclared: predeclared,
@@ -173,7 +188,7 @@ func TestAllStarlark(t *testing.T) {
 
 // readCommentBlock reads a comment block that start with "# <hdr>\n".
 //
-// Return empty string if there's no such block.
+// Returns empty string if there's no such block.
 func readCommentBlock(script, hdr string) string {
 	scanner := bufio.NewScanner(strings.NewReader(script))
 	for scanner.Scan() && scanner.Text() != "# "+hdr {
@@ -184,6 +199,8 @@ func readCommentBlock(script, hdr string) string {
 		if line := scanner.Text(); strings.HasPrefix(line, "#") {
 			sb.WriteString(strings.TrimPrefix(line[1:], " "))
 			sb.WriteRune('\n')
+		} else {
+			break // the comment block has ended
 		}
 	}
 	return sb.String()

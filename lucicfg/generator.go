@@ -39,6 +39,7 @@ import (
 type Inputs struct {
 	Code  interpreter.Loader // a package with the user supplied code
 	Entry string             // a name of the entry point script in this package
+	Vars  map[string]string  // var values passed via `-var key=value` flags
 
 	// Used to setup additional facilities for unit tests.
 	testOmitHeader              bool
@@ -131,6 +132,12 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 			err = f // prefer this error, it has custom stack trace
 		}
 		return nil, state.err(err)
+	}
+
+	// Verify all var values provided via Inputs.Vars were actually used by
+	// lucicfg.var(expose_as='...') definitions.
+	if errs := state.checkUncosumedVars(); len(errs) != 0 {
+		return nil, state.err(errs...)
 	}
 
 	// Executing the script (with all its dependencies) populated the graph.

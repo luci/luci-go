@@ -212,11 +212,12 @@ def _current_module():
 _var_ctor = __native__.genstruct('lucicfg.var')
 
 
-def _var(*, default=None, validator=None):
+def _var(*, default=None, validator=None, expose_as=None):
   """Declares a variable.
 
   A variable is a slot that can hold some frozen value. Initially this slot is
-  empty. lucicfg.var(...) returns a struct with methods to manipulate this slot:
+  usually empty. lucicfg.var(...) returns a struct with methods to manipulate
+  it:
 
     * `set(value)`: sets the variable's value if it's unset, fails otherwise.
     * `get()`: returns the current value, auto-setting it to `default` if it was
@@ -268,23 +269,68 @@ def _var(*, default=None, validator=None):
   approaches can become pretty convoluted when there are multiple scripts and
   libraries involved.
 
+  Another use case is to allow parameterizing configs with values passed via
+  CLI flags. A string-typed var can be declared with `expose_as=<name>`
+  argument, making it settable via `-var <name>=<value>` CLI flag. This is
+  primarily useful in conjunction with `-emit-to-stdout` CLI flag to use lucicfg
+  as a "function call" that accepts arguments via CLI flags and returns the
+  result via stdout to pipe somewhere else, e.g.
+
+  ```shell
+  lucicfg generate main.star -var environ=dev -emit-to-stdout all.json | ...
+  ```
+
+  **Danger**: Using `-var` without `-emit-to-stdout` is generally wrong, since
+  configs generated on disk (and presumably committed into a repository) must
+  not depend on undetermined values passed via CLI flags.
+
   DocTags:
     Advanced.
 
   Args:
     default: a value to auto-set to the variable in `get()` if it was unset.
-    validator: a callback called as `validator(value)` from `set(value)`, must
-        return the value to be assigned to the variable (usually just `value`
-        itself).
+    validator: a callback called as `validator(value)` from `set(value)` and
+        inside lucicfg.var(...) declaration itself (to validate `default` or a
+        value passed via CLI flags). Must be a side-effect free idempotent
+        function that returns the value to be assigned to the variable (usually
+        just `value` itself, but conversions are allowed, including type
+        changes).
+    expose_as: an optional string identifier to make this var settable via
+        CLI flags as `-var <expose_as>=<value>`. If there's no such flag, the
+        variable is auto-initialized to its default value (which must be string
+        or None). Variables declared with `expose_as` are not settable via
+        `set()` at all, they appear as "set" already the moment they are
+        declared.
 
   Returns:
     A struct with two methods: `set(value)` and `get(): value`.
   """
-  var_id = __native__.declare_var()
+  # Variables that can be bound to CLI flags are string-value, and thus the
+  # default value must also be a string (or be absent).
+  if expose_as and not (default == None or type(default) == 'string'):
+    fail(
+        'lucicfg.var declared with expose_as must have a string or None ' +
+        'default, got %s %s' % (type(default), default))
 
   # The default value (if any) must pass the validation itself.
   if validator and default != None:
     default = validator(default)
+
+  # Validate the value passed via CLI flag (if any).
+  preset_value = None
+  if expose_as:
+    preset_value = __native__.value_of_var_flag(expose_as)
+    if preset_value == None:
+      preset_value = default
+    elif validator:
+      preset_value = validator(preset_value)
+
+  # This declares the variable and pre-sets it to validated value passed via
+  # CLI flags (if expose_as is not None). This also marks the corresponding
+  # -var flag as "consumed". If it was "consumed" before, this call fails.
+  # At the end of the script execution all -var flags provided on the command
+  # line must be consumed (the run fails otherwise).
+  var_id = __native__.declare_var(expose_as or "", preset_value)
 
   return _var_ctor(
       set = lambda v: __native__.set_var(var_id, validator(v) if validator else v),
