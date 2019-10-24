@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
 	"io"
 
 	"cloud.google.com/go/spanner"
@@ -54,19 +55,21 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	invID := pbutil.MustParseInvocationName(in.Invocation)
 
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
-	var exonerationID string
+	var exonerationIDSuffix string
 	mutFn := spanner.InsertMap
 	if in.RequestId == "" {
 		// Use a random id.
-		exonerationID = "r:" + uuid.New().String()
+		exonerationIDSuffix = "r:" + uuid.New().String()
 	} else {
 		// Use a deterministic id.
-		exonerationID = "d:" + deterministicExonerationID(ctx, in.RequestId)
+		exonerationIDSuffix = "d:" + deterministicExonerationIDSuffix(ctx, in.RequestId)
 		mutFn = spanner.InsertOrUpdateMap
 	}
 
+	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantDefHash(in.TestExoneration.TestVariant.Variant), exonerationIDSuffix)
 	ret := &pb.TestExoneration{
-		Name:                pbutil.TestExonerationName(invID, exonerationID),
+		Name:                pbutil.TestExonerationName(invID, in.TestExoneration.TestVariant.TestPath, exonerationID),
+		ExonerationId:       exonerationID,
 		TestVariant:         in.TestExoneration.TestVariant,
 		ExplanationMarkdown: in.TestExoneration.ExplanationMarkdown,
 	}
@@ -75,8 +78,8 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 		return txn.BufferWrite([]*spanner.Mutation{
 			mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
 				"InvocationId":        invID,
+				"TestPath":            ret.TestVariant.TestPath,
 				"ExonerationId":       exonerationID,
-				"TestPath":            in.TestExoneration.TestVariant.TestPath,
 				"VariantDef":          in.TestExoneration.TestVariant.Variant,
 				"ExplanationMarkdown": in.TestExoneration.ExplanationMarkdown,
 			})),
@@ -84,7 +87,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	})
 }
 
-func deterministicExonerationID(ctx context.Context, requestID string) string {
+func deterministicExonerationIDSuffix(ctx context.Context, requestID string) string {
 	h := sha512.New()
 	// Include current identity, so that two separate clients
 	// do not override each other's test exonerations even if
