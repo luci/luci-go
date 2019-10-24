@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3064612f_49f164d6",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T01:51:31Z",
+      "side": 1,
+      "message": "\u003e Is ResultSink server not what ResultDB is running\n\nit is not \n\n\u003e , whereas the users who are uploading results are the ResultSink clients?\n\nthe users (or rather client) here are GTest harness that talks to the ResultSink (former Uploader) over TCP.\nSee also https://docs.google.com/document/d/19XFUPKRqTJYdIuu81TgJOrX3NW6lu8W0P8wyKMGSRCg/edit#heading\u003dh.xzptrog8pyxf\n\n\u003e \n\u003e I see this change was intentional, so it\u0027s probably just a question of terminology.",
+      "parentUuid": "e73b8802_4a392a28",
+      "range": {
+        "startLine": 74,
+        "startChar": 9,
+        "endLine": 74,
+        "endChar": 26
+      },
+      "revId": "3744fdf66109fd5ea043192481deea53233f2b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c4ff5740_c282d538",
         "filename": "resultdb/proto/sink/v1/test_result.proto",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "3744fdf66109fd5ea043192481deea53233f2b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba4304c8_e235a942",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-24T01:51:31Z",
+      "side": 1,
+      "message": "the rationale for this was in https://docs.google.com/document/d/13irBr2qCc8SLYZN-ATNUr52b0XHb7s8oxUH1Pfpy5jk/edit#heading\u003dh.rjepkdhm81lr\nat some point, but looks like it was removed.\n\nbasically, this way the writer can keep on writing to the file without buffering, as tests are executed. And another process can tail the file. With array, we basically have to buffer everything until the very end.",
+      "parentUuid": "c4ff5740_c282d538",
+      "range": {
+        "startLine": 95,
+        "startChar": 58,
+        "endLine": 95,
+        "endChar": 74
+      },
+      "revId": "3744fdf66109fd5ea043192481deea53233f2b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
