@@ -15,6 +15,7 @@
 package lucicfg
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -269,8 +270,8 @@ func tokenize(s string) (out []token) {
 	return
 }
 
+// See //internal/strutil.star for where these functions are referenced.
 func init() {
-	// See //internal/strutil.star.
 	declNative("expand_int_set", func(call nativeCall) (starlark.Value, error) {
 		var s starlark.String
 		if err := call.unpack(1, &s); err != nil {
@@ -287,7 +288,6 @@ func init() {
 		return starlark.NewList(out), nil
 	})
 
-	// See //internal/strutil.star.
 	declNative("json_to_yaml", func(call nativeCall) (starlark.Value, error) {
 		var json starlark.String
 		if err := call.unpack(1, &json); err != nil {
@@ -302,5 +302,25 @@ func init() {
 			return nil, err
 		}
 		return starlark.String(out), nil
+	})
+
+	declNative("b64_encode", func(call nativeCall) (starlark.Value, error) {
+		var s starlark.String
+		if err := call.unpack(1, &s); err != nil {
+			return nil, err
+		}
+		return starlark.String(base64.StdEncoding.EncodeToString([]byte(s.GoString()))), nil
+	})
+
+	declNative("b64_decode", func(call nativeCall) (starlark.Value, error) {
+		var s starlark.String
+		if err := call.unpack(1, &s); err != nil {
+			return nil, err
+		}
+		raw, err := base64.StdEncoding.DecodeString(s.GoString())
+		if err != nil {
+			return nil, err
+		}
+		return starlark.String(string(raw)), nil
 	})
 }

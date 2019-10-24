@@ -59,7 +59,51 @@ def _json_to_yaml(json):
   return __native__.json_to_yaml(json)
 
 
+def _to_yaml(value):
+  """Serializes a value to a pretty-printed YAML string.
+
+  Doesn't support integers that do not fit int64. Fails if the value has cycles.
+
+  Args:
+    value: a primitive Starlark value: a scalar, or a list/tuple/dict containing
+        only primitive Starlark values. Required.
+
+  Returns:
+    A pretty YAML string ending with `\n`.
+  """
+  return _json_to_yaml(to_json(value))
+
+
+def _b64_encode(s):
+  """Encodes a string using standard padded base64 encoding.
+
+  Args:
+    s: a string to encode. Required.
+
+  Returns:
+    A base64 string.
+  """
+  return __native__.b64_encode(s)
+
+
+def _b64_decode(s):
+  """Decodes a string encoded using standard padded base64 encoding.
+
+  Fails if `s` is not a base64 string.
+
+  Args:
+    s: a string to decode. Required.
+
+  Returns:
+    Decoded string.
+  """
+  return __native__.b64_decode(s)
+
+
 strutil = struct(
     expand_int_set = _expand_int_set,
     json_to_yaml = _json_to_yaml,
+    to_yaml = _to_yaml,
+    b64_encode = _b64_encode,
+    b64_decode = _b64_decode,
 )
