@@ -125,6 +125,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 	}
 
 	var toUnmarshal proto.Message
+	var compressed bool
 	followup := func() {}
 
 	switch state.Desc.ContentType {
@@ -157,6 +158,7 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 	case luciexe.BuildProtoZlibContentType:
 		var build bbpb.Build
 		toUnmarshal = &build
+		compressed = true
 		followup = func() {
 			as.build = &build
 		}
@@ -175,17 +177,20 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 		return errors.New("Datagram stream does not have datagram data")
 	}
 
-	z, err := zlib.NewReader(bytes.NewBuffer(dg.Data))
-	if err != nil {
-		return errors.Annotate(
-			err, "Datagram is marked as compressed, but failed to open zlib stream",
-		).Err()
-	}
-	data, err := ioutil.ReadAll(z)
-	if err != nil {
-		return errors.Annotate(
-			err, "Datagram is marked as compressed, but failed to decompress",
-		).Err()
+	data := dg.Data
+	if compressed {
+		z, err := zlib.NewReader(bytes.NewBuffer(dg.Data))
+		if err != nil {
+			return errors.Annotate(
+				err, "Datagram is marked as compressed, but failed to open zlib stream",
+			).Err()
+		}
+
+		if data, err = ioutil.ReadAll(z); err != nil {
+			return errors.Annotate(
+				err, "Datagram is marked as compressed, but failed to decompress",
+			).Err()
+		}
 	}
 
 	// Attempt to decode the protobuf.
