@@ -14,32 +14,39 @@
 
 package pbutil
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
-var testExonerationNameRe = regexpf(`^invocations/(%s)/testExonerations/(.+)$`, invocationIDPattern)
+var testExonerationNameRe = regexpf(`^invocations/(%s)/tests/([^/]+)/exonerations/(.+)$`, invocationIDPattern)
 
 // TestExonerationName synthesizes a test exoneration name.
 // Assumes invocation and exoneration IDs are valid.
-func TestExonerationName(invocationID, exonerationID string) string {
-	return fmt.Sprintf("invocations/%s/testExonerations/%s", invocationID, exonerationID)
+func TestExonerationName(invocationID, testPath, exonerationID string) string {
+	return fmt.Sprintf("invocations/%s/tests/%s/exonerations/%s", invocationID, url.PathEscape(testPath), exonerationID)
 }
 
 // ParseTestExonerationName extracts invocation and test exoneration IDs from the name.
-func ParseTestExonerationName(name string) (invocationID, exonerationID string, err error) {
+func ParseTestExonerationName(name string) (invocationID, testPath, exonerationID string, err error) {
 	if name == "" {
-		return "", "", unspecified()
+		return "", "", "", unspecified()
 	}
 	m := testExonerationNameRe.FindStringSubmatch(name)
 	if m == nil {
-		return "", "", doesNotMatch(testExonerationNameRe)
+		return "", "", "", doesNotMatch(testExonerationNameRe)
 	}
-	return m[1], m[2], nil
-
+	invocationID = m[1]
+	if testPath, err = url.PathUnescape(m[2]); err != nil {
+		return "", "", "", err
+	}
+	exonerationID = m[3]
+	return
 }
 
 // ValidateTestExonerationName returns a non-nil error if the test exoneration
 // name is invalid.
 func ValidateTestExonerationName(name string) error {
-	_, _, err := ParseTestExonerationName(name)
+	_, _, _, err := ParseTestExonerationName(name)
 	return err
 }
