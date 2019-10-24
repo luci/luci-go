@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "39dd9d79_617f3b4d",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "840cb775_b9969031",
+      "range": {
+        "startLine": 137,
+        "startChar": 1,
+        "endLine": 137,
+        "endChar": 36
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4397ae2d_02fda0dd",
         "filename": "cipd/appengine/impl/monitoring/config.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fca5e043_b9245e04",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4397ae2d_02fda0dd",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 31
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fe75a460_e6c73723",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d9dbb5c_583e13b6",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 15
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0f2e7f7_221d1ffc",
         "filename": "cipd/appengine/impl/monitoring/config.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "017c221d_588bcaf0",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e0f2e7f7_221d1ffc",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "78827998_2fd70142",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ef043bc_f7cc67e3",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 3
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77f06e89_203b0f2a",
         "filename": "cipd/appengine/impl/monitoring/metrics.go",
         "patchSetId": 1
@@ -137,6 +257,30 @@
       "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "979df3ca_bf5b173f",
+        "filename": "cipd/appengine/impl/monitoring/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-10-24T02:10:39Z",
+      "side": 1,
+      "message": "service_name is automatically added, it will say \"chrome-infra-packages\" or \"isolateserver\" accordingly.",
+      "parentUuid": "77f06e89_203b0f2a",
+      "range": {
+        "startLine": 48,
+        "startChar": 86,
+        "endLine": 48,
+        "endChar": 89
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
