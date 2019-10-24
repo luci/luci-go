@@ -131,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "19ebbf7f_f0bc0d25",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-24T21:44:45Z",
+      "side": 1,
+      "message": "oh, yeah, i actually read that code after posting this comment. Forgot to remove this comment.",
+      "parentUuid": "aa5002fc_92876761",
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7b05e14_65feec77",
         "filename": "lucicfg/vars/vars.go",
         "patchSetId": 1
