@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bce58807_6da4ee7e",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T18:36:02Z",
+      "side": 1,
+      "message": "Was thinking about this some more. IIUC this means we would need to construct an SQL statement and use Query(), instead of using a key directly for Read() or ReadRow(), correct?\n\nWhat if we had a key defined as InvocationId, TestPath, VariantDef hash, Id as generated above (randomly or deterministically)? It\u0027s more parts, but I think it would achieve querying row or rows by key instead of SQL, if we care about that.",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9ce7299_3aea0068",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T18:36:02Z",
+      "side": 1,
+      "message": "Optional: move this up to be consistent with index?",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e88a4abc_6f1cad6c",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-24T18:36:02Z",
+      "side": 1,
+      "message": "Two cents: a nice thing about keeping TestVariant separate is that it is a pretty fundamental concept (test ID, at least for Chrome) independent of TestExoneration.",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
