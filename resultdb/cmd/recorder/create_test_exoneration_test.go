@@ -17,7 +17,6 @@ package main
 import (
 	"testing"
 
-	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -28,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -144,30 +144,23 @@ func TestCreateTestExoneration(t *testing.T) {
 			res, err := recorder.CreateTestExoneration(ctx, req)
 			So(err, ShouldBeNil)
 
-			invID, exID, err := pbutil.ParseTestExonerationName(res.Name)
-			So(err, ShouldBeNil)
-			So(invID, ShouldEqual, "inv")
-
+			So(res.ExonerationId, ShouldStartWith, "6408fdc5c36df5df57957e7b230e4b48c55b06ce849303e855d52f1356f2980e:") // hash of the variant
 			if withRequestID {
-				So(exID, ShouldEqual, "d:fcc63e142b2aa8429cde3f4e799f05fa8f179e7c57165658e89305e3f6c647580383f4e48a73ed10a58e1d70246eaad194301f053dd453a7b1a078dc2f2d5ae7")
+				So(res.ExonerationId, ShouldEqual, "6408fdc5c36df5df57957e7b230e4b48c55b06ce849303e855d52f1356f2980e:d:fcc63e142b2aa8429cde3f4e799f05fa8f179e7c57165658e89305e3f6c647580383f4e48a73ed10a58e1d70246eaad194301f053dd453a7b1a078dc2f2d5ae7")
 			}
 
 			expected := proto.Clone(req.TestExoneration).(*pb.TestExoneration)
-			expected.Name = res.Name
+			proto.Merge(expected, &pb.TestExoneration{
+				Name:          pbutil.TestExonerationName("inv", "a", res.ExonerationId),
+				ExonerationId: res.ExonerationId,
+			})
 			So(res, ShouldResembleProto, expected)
 
 			// Now check the database.
-			row := &pb.TestExoneration{
-				TestVariant: &pb.TestVariant{
-					Variant: &pb.VariantDef{},
-				},
-			}
-			testutil.MustReadRow(ctx, "TestExonerations", spanner.Key{invID, exID}, map[string]interface{}{
-				"TestPath":            &row.TestVariant.TestPath,
-				"VariantDef":          &row.TestVariant.Variant,
-				"ExplanationMarkdown": &row.ExplanationMarkdown,
-			})
-			So(row, ShouldResembleProto, row)
+			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), "inv", "a", res.ExonerationId)
+			So(err, ShouldBeNil)
+			So(row.TestVariant.Variant, ShouldResembleProto, expected.TestVariant.Variant)
+			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
 
 			if withRequestID {
 				// Test idempotency.
