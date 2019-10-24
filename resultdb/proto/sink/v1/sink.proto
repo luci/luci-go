@@ -1,0 +1,46 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.sink;
+
+import "go.chromium.org/luci/resultdb/proto/sink/v1/test_result.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
+
+// A container of a message to a ResultSink server.
+// The server accepts a sequence of these messages in JSON format.
+message SinkMessageContainer {
+  oneof msg {
+    // The very first message in a ResultSink TCP connection must be a
+    // handshake.
+    Handshake handshake = 1;
+
+    // Upload one test result.
+    TestResult test_result = 2;
+
+    // Upload all test results from this file.
+    TestResultFile test_result_file = 3;
+  }
+}
+
+// The very first message in a ResultSink TCP connection.
+message Handshake {
+  // The auth token is available to eligible subprocesses via
+  // test_results.uploader.auth_token LUCI_CONTEXT value.
+  // More about LUCI_CONTEXT: https://chromium.googlesource.com/infra/luci/luci-py/+/6b6dad7aef994b96d3bb5b6f13fae8168938560f/client/LUCI_CONTEXT.md
+  // If the value is unexpected, the server will close the connection.
+  string auth_token = 1;
+}
