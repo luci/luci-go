@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a5ee1d83_5c84945f",
+        "filename": "lucicfg/cli/base/base.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T19:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16320a4b_033e9615",
+      "range": {
+        "startLine": 91,
+        "startChar": 128,
+        "endLine": 91,
+        "endChar": 129
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "439eb426_ba49cbd4",
         "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e263cea4_849d8fc7",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T19:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "439eb426_ba49cbd4",
+      "range": {
+        "startLine": 313,
+        "startChar": 22,
+        "endLine": 313,
+        "endChar": 38
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0699e9cd_060d5447",
         "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa5002fc_92876761",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T19:56:54Z",
+      "side": 1,
+      "message": "declare_var implementation keeps track of \"consumed\" expose_as thus far and fails if we try to reuse a key. See var.go, Vars.exposedAs map and the check in Vars.Declare(...). There\u0027s also a test to confirm this. Added comment.",
+      "parentUuid": "0699e9cd_060d5447",
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "fe72e675_3515a7b9",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T19:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c2da50a3_293c1f3d",
+      "range": {
+        "startLine": 148,
+        "startChar": 64,
+        "endLine": 148,
+        "endChar": 68
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7522a3d9_15133d3b",
         "filename": "lucicfg/vars/vars.go",
         "patchSetId": 1
@@ -131,6 +221,30 @@
       "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2399d894_71afefb6",
+        "filename": "lucicfg/vars/vars.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T19:56:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7522a3d9_15133d3b",
+      "range": {
+        "startLine": 253,
+        "startChar": 4,
+        "endLine": 253,
+        "endChar": 9
+      },
+      "revId": "9fb3a54aa421cd61dd44d61eac787de1afde0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
