@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "840cb775_b9969031",
+        "filename": "cipd/appengine/impl/cas/signed_urls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "I very much prefer if this call is pulled up into the RPC handler (GetObjectURL in cas.go). There\u0027s non-zero chance that getSignedURL may be used internally from task queues and what not (perhaps in the future). Just make getSignedURL return the size as well and then report it in GetObjectURL handler.",
+      "range": {
+        "startLine": 137,
+        "startChar": 1,
+        "endLine": 137,
+        "endChar": 36
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4397ae2d_02fda0dd",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "nit: fetch and compare with the existing one before updating. Unconditional \u0027Put\u0027 here will trash the memcache entry periodically for no good reason.",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 75,
+        "endChar": 31
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d9dbb5c_583e13b6",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "nit: matchingConfig or something, \u0027self\u0027 is unclear in this context (I assumed \u0027self\u0027 means the service itself).",
+      "range": {
+        "startLine": 95,
+        "startChar": 5,
+        "endLine": 95,
+        "endChar": 15
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0f2e7f7_221d1ffc",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "nit:\n\ncase datastore.ErrNoSuchEntity:\n  return nil, nil\ncase err !\u003d nil:\n  return nil, transient.Tag.Apply(err)\n\n(and then no need for \u0027default\u0027)",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ef043bc_f7cc67e3",
+        "filename": "cipd/appengine/impl/monitoring/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "nit: make it \u0027switch\u0027",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 3
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77f06e89_203b0f2a",
+        "filename": "cipd/appengine/impl/monitoring/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-24T01:24:49Z",
+      "side": 1,
+      "message": "CIPD maybe? Isolate downloads are also from GCS.",
+      "range": {
+        "startLine": 48,
+        "startChar": 86,
+        "endLine": 48,
+        "endChar": 89
+      },
+      "revId": "822c448413c43a54845cfd30afbd4c2cbdde1078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
