@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "a6f1ea20_8574af13",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T18:16:27Z",
+      "side": 1,
+      "message": "\u003e \u003e Was thinking about this some more. IIUC this means we would need to construct an SQL statement and use Query(), instead of using a key directly for Read() or ReadRow(), correct?\n\u003e \n\u003e no, we can use Read with spanner.Key{InvocationID, TestPath, \"{hash}:\"}.AsPrefix()\n\u003e \n\nAh, right, AsPrefix can work like that too.\n\n\u003e \u003e What if we had a key defined as InvocationId, TestPath, VariantDef hash, Id as generated above (randomly or deterministically)? It\u0027s more parts, but I think it would achieve querying row or rows by key instead of SQL, if we care about that.\n\u003e \n\u003e The querying would be the same: a prefix key range. \n\u003e The upside is this is a bit more explicit at the Spanner level. But not too much, since this doc explicitly says that ExonerationId starts with a hash\n\u003e The downside is it introduces two ids: the spanner level id (just the random-or-deterministic part) and public id (hash + spanner id). \n\u003e \n\u003e WDYT?\n\nOK, sg to keep it the way it is here.",
+      "parentUuid": "6ea0ba21_5a2a8d84",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9ce7299_3aea0068",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 3
