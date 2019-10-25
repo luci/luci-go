@@ -92,6 +92,24 @@
       "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d62bb473_f4ca25e4",
+        "filename": "resultdb/cmd/resultdb/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:32:36Z",
+      "side": 1,
+      "message": "this is the first test in this test binary. Note that this is not cmd/recorder, but cmd/resultdb",
+      "parentUuid": "fb2358a7_76f6f526",
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
