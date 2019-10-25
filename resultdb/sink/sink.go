@@ -17,7 +17,11 @@ package sink
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
+	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	resultspb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	// TODO(crbug.com/1017288) Uncomment when crrev.com/c/1876313 lands.
 	// sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -35,14 +39,37 @@ type ServerConfig struct {
 	TestPathPrefix string // String to prepend to each TestResult's test_path.
 }
 
-type Server struct{}
+type Server struct {
+	cfg ServerConfig
+}
 
 // Create a Server and populate unset optional values with sane defaults.
 //
 // If cfg.AuthToken is "" it will be randomly generated in a secure way.
 // If cfg.Port is 0 it will be chosen arbitrarily.
 func NewServer(cfg ServerConfig) (*Server, error) {
-	return nil, errors.New("Not implemented yet.")
+	ctx := context.Background()
+	if cfg.AuthToken == "" {
+		buf := make([]byte, 32)
+		if _, err := cryptorand.Read(ctx, buf); err != nil {
+			return nil, err
+		}
+		var builder strings.Builder
+		builder.Grow(2 * len(buf))
+		for _, b := range buf {
+			if _, err := fmt.Fprintf(&builder, "%2X", b); err != nil {
+				return nil, err
+			}
+		}
+		cfg.AuthToken = builder.String()
+	}
+
+	if cfg.Port == 0 {
+		cfg.Port = mathrand.Intn(ctx, 65535-49152) + 49152
+	}
+
+	s := &Server{cfg: cfg}
+	return s, nil
 }
 
 // Retrieve the ServerConfig of a previously created Server.
@@ -50,7 +77,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 // Use this to retrieve the resolved values of unset optional fields in the
 // original ServerConfig.
 func (s *Server) Config() ServerConfig {
-	return ServerConfig{}
+	return s.cfg
 }
 
 // Run the Server and block until it stops running.
