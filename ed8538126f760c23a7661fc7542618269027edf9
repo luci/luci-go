@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "698befda_9b0c5b8a",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:11:01Z",
+      "side": 0,
+      "message": "nice. now we don\u0027t have unconventional $(projdir)/bin",
+      "revId": "ed8538126f760c23a7661fc7542618269027edf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
