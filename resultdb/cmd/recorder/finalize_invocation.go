@@ -105,7 +105,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return err
 		}
 
-		return finalizeInvocation(txn, invID, in.Interrupted, ret.FinalizeTime)
+		return finalizeInvocation(ctx, txn, invID, in.Interrupted, ret.FinalizeTime)
 	})
 
 	if err != nil {

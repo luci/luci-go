@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
@@ -42,14 +43,13 @@ const updateTokenMetadataKey = "update-token"
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
 func mutateInvocation(ctx context.Context, invID string, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
+	userToken, err := extractUserUpdateToken(ctx)
+	if err != nil {
+		return err
+	}
+
 	var retErr error
-
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		userToken, err := extractUserUpdateToken(ctx)
-		if err != nil {
-			return err
-		}
-
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		now := clock.Now(ctx)
 
 		var updateToken spanner.NullString
@@ -72,7 +72,7 @@ func mutateInvocation(ctx context.Context, invID string, f func(context.Context,
 			retErr = errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, invID, true, pbutil.MustTimestampProto(deadline))
+			return finalizeInvocation(ctx, txn, invID, true, pbutil.MustTimestampProto(deadline))
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -109,22 +109,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, invID string, interrupted bool, finalizeTime *tspb.Timestamp) error {
-	state := pb.Invocation_COMPLETED
-	if interrupted {
-		state = pb.Invocation_INTERRUPTED
-	}
-
-	// TODO(chanli): Also update all inclusions that include this invocation.
-	return txn.BufferWrite([]*spanner.Mutation{
-		spanner.UpdateMap("Invocations", span.ToSpannerMap(map[string]interface{}{
-			"InvocationId": invID,
-			"State":        state,
-			"FinalizeTime": finalizeTime,
-		})),
-	})
-}
-
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
 	if !updateToken.Valid {
 		return errors.Reason("no update token in active invocation").Tag(grpcutil.InternalTag).Err()
@@ -135,6 +119,105 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 	}
 
 	return nil
+}
+
+func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string, interrupted bool, finalizeTime *tspb.Timestamp) error {
+	state := pb.Invocation_COMPLETED
+	if interrupted {
+		state = pb.Invocation_INTERRUPTED
+	}
+
+	err := txn.BufferWrite([]*spanner.Mutation{
+		spanner.UpdateMap("Invocations", span.ToSpannerMap(map[string]interface{}{
+			"InvocationId": invID,
+			"State":        state,
+			"FinalizeTime": finalizeTime,
+		})),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if err = updateInclusionsReadiness(ctx, txn, invID, finalizeTime); err != nil {
+		return err
+	}
+	return nil
+}
+
+// updateInclusionsReadiness updates the readiness of all inclusions that include the invocation.
+func updateInclusionsReadiness(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string, finalizeTime *tspb.Timestamp) error {
+	var includingInvIDs []string
+	var err error
+	if includingInvIDs, err = queryIncludingInvocations(ctx, txn, invID); err != nil {
+		return err
+	}
+
+	for _, includingInvID := range includingInvIDs {
+		if err := updateInclusionReadiness(ctx, txn, includingInvID, invID, finalizeTime); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// queryIncludingInvocations queries all invocations that include the invocation.
+func queryIncludingInvocations(ctx context.Context, txn *spanner.ReadWriteTransaction, invID string) ([]string, error) {
+	stmt := spanner.NewStatement("SELECT InvocationId FROM Inclusions WHERE IncludedInvocationId = @invID")
+	stmt.Params["invID"] = invID
+
+	iter := txn.Query(ctx, stmt)
+	defer iter.Stop()
+
+	var includingInvIDs []string
+	for {
+		row, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		var includingInvID string
+		if err := span.FromSpanner(row, &includingInvID); err != nil {
+			return nil, err
+		}
+		includingInvIDs = append(includingInvIDs, includingInvID)
+	}
+	return includingInvIDs, nil
+}
+
+// updateInclusionsReadiness updates the readiness of all inclusions that include the invocation.
+func updateInclusionReadiness(ctx context.Context, txn *spanner.ReadWriteTransaction, includingInvID, includedInvID string, finalizeTime *tspb.Timestamp) error {
+	var state pb.Invocation_State
+	var deadline time.Time
+	err := span.ReadInvocation(ctx, txn, includingInvID, map[string]interface{}{
+		"State":    &state,
+		"Deadline": &deadline,
+	})
+
+	switch {
+	case err != nil:
+		return err
+
+	case state != pb.Invocation_ACTIVE:
+		// The including invocation has been finalized, so has the inclusion's readiness.
+		return nil
+
+	case deadline.Before(pbutil.MustTimestamp(finalizeTime)):
+		return finalizeInvocation(ctx, txn, includingInvID, true, pbutil.MustTimestampProto(deadline))
+
+	default:
+		return txn.BufferWrite([]*spanner.Mutation{
+			spanner.UpdateMap("Inclusions", map[string]interface{}{
+				"InvocationId":         includingInvID,
+				"IncludedInvocationId": includedInvID,
+				"Ready":                true,
+			}),
+		})
+	}
 }
 
 func readInvocationState(ctx context.Context, txn span.Txn, invID string) (pb.Invocation_State, error) {

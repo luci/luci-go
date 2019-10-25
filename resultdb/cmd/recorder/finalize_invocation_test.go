@@ -60,6 +60,12 @@ func TestFinalizeInvocation(t *testing.T) {
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
+		readInclusionColumn := func(includingInvID, includedInvID, column string, ptr interface{}) {
+			testutil.MustReadRow(ctx, "Inclusions", spanner.Key{includingInvID, includedInvID}, map[string]interface{}{
+				column: ptr,
+			})
+		}
+
 		Convey(`finalized failed`, func() {
 			testutil.MustApply(ctx,
 				testutil.InsertInvocation("inv", pb.Invocation_INTERRUPTED, token, ct),
@@ -125,6 +131,57 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+		})
+
+		Convey(`finalization updates inclusions readiness`, func() {
+
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("including_1", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation("including_2", pb.Invocation_COMPLETED, token, ct.Add(2*time.Hour)),
+				testutil.InsertInvocation("included", pb.Invocation_ACTIVE, token, ct.Add(2*time.Hour)),
+				testutil.InsertInclusion("including_1", "included", false, ""),
+				testutil.InsertInclusion("including_2", "included", false, ""),
+			)
+
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/included"})
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+
+			var ready bool
+
+			readInclusionColumn("including_1", "included", "Ready", &ready)
+			So(ready, ShouldEqual, true)
+
+			readInclusionColumn("including_2", "included", "Ready", &ready)
+			So(ready, ShouldEqual, false)
+		})
+
+		Convey(`finalization updates inclusions readiness in chain`, func() {
+
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("including_1", pb.Invocation_ACTIVE, token, ct.Add(2*time.Hour)),
+				testutil.InsertInvocation("including_2", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation("included", pb.Invocation_ACTIVE, token, ct.Add(2*time.Hour)),
+				testutil.InsertInclusion("including_1", "including_2", false, ""),
+				testutil.InsertInclusion("including_2", "included", false, ""),
+			)
+
+			// Mock now to make invocation "including_21" expired.
+			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
+
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/included"})
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC.Add(2*time.Hour)))
+
+			var ready bool
+
+			readInclusionColumn("including_2", "included", "Ready", &ready)
+			So(ready, ShouldEqual, false)
+
+			readInclusionColumn("including_1", "including_2", "Ready", &ready)
+			So(ready, ShouldEqual, true)
 		})
 	})
 }

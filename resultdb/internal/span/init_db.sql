@@ -105,6 +105,10 @@ CREATE TABLE Inclusions (
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
+-- Index of inclusions by the included invocation.
+-- Used to find all inclusions containing a particular invocation.
+CREATE INDEX InclusionsWithInvocation ON Inclusions (IncludedInvocationId);
+
 -- Stores test results. Interleaved in Invocations.
 CREATE TABLE TestResults (
   -- ID of the parent Invocations row.
