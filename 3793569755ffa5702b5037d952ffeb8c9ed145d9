@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91d9c70a_41e573db",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:43:19Z",
+      "side": 0,
+      "message": "this test was useless",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

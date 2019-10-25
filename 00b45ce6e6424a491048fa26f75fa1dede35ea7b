@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6ea0ba21_5a2a8d84",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:43:19Z",
+      "side": 1,
+      "message": "\u003e Was thinking about this some more. IIUC this means we would need to construct an SQL statement and use Query(), instead of using a key directly for Read() or ReadRow(), correct?\n\nno, we can use Read with spanner.Key{InvocationID, TestPath, \"{hash}:\"}.AsPrefix()\n\n\u003e What if we had a key defined as InvocationId, TestPath, VariantDef hash, Id as generated above (randomly or deterministically)? It\u0027s more parts, but I think it would achieve querying row or rows by key instead of SQL, if we care about that.\n\nThe querying would be the same: a prefix key range. \nThe upside is this is a bit more explicit at the Spanner level. But not too much, since this doc explicitly says that ExonerationId starts with a hash\nThe downside is it introduces two ids: the spanner level id (just the random-or-deterministic part) and public id (hash + spanner id). \n\nWDYT?",
+      "parentUuid": "bce58807_6da4ee7e",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c9ce7299_3aea0068",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "34b2a0e6_49c51f41",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:43:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9ce7299_3aea0068",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e88a4abc_6f1cad6c",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 3
@@ -50,6 +86,24 @@
       "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4817d7ef_92b1b23c",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:43:19Z",
+      "side": 1,
+      "message": "yes, this was my original thinking too",
+      "parentUuid": "e88a4abc_6f1cad6c",
+      "revId": "00b45ce6e6424a491048fa26f75fa1dede35ea7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
