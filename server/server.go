@@ -167,6 +167,7 @@ type Options struct {
 	TsMonAccount     string             // service account to flush metrics as
 	TsMonServiceName string             // service name of tsmon target
 	TsMonJobName     string             // job name of tsmon target
+	ContainerImageID string             // ID of the container image with this binary, for logs (optional)
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -261,6 +262,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.TsMonJobName,
 		"Job name of tsmon target (disables tsmon if not set)",
 	)
+	f.StringVar(
+		&o.ContainerImageID,
+		"container-image-id",
+		o.ContainerImageID,
+		"ID of the container image with this binary, for logs (optional)",
+	)
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -286,6 +293,9 @@ type Server struct {
 
 	// Options is a copy of options passed to New.
 	Options Options
+
+	startTime time.Time // for calculating uptime for /healthz
+	hostname  string    // obtained from os.Hostname in New
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
@@ -341,17 +351,20 @@ func New(opts Options) (srv *Server, err error) {
 		}
 	}
 
+	ctx := opts.testCtx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	srv = &Server{
-		Context:      context.Background(),
+		Context:      ctx,
 		Options:      opts,
+		startTime:    clock.Now(ctx).UTC(),
 		ready:        make(chan struct{}),
 		done:         make(chan struct{}),
 		rnd:          rand.New(rand.NewSource(seed)),
 		bgrDone:      make(chan struct{}),
 		authPerScope: map[string]scopedAuth{},
-	}
-	if opts.testCtx != nil {
-		srv.Context = opts.testCtx
 	}
 
 	// Cleanup what we can on failures.
@@ -361,9 +374,21 @@ func New(opts Options) (srv *Server, err error) {
 		}
 	}()
 
+	// Logging is needed to report any errors during the early initialization.
+	srv.initLogging()
+
+	// Need the hostname (e.g. pod name on k8s) for logs and metrics.
+	srv.hostname, err = os.Hostname()
+	if err != nil {
+		return srv, errors.Annotate(err, "failed to get own hostname").Err()
+	}
+	logging.Infof(srv.Context, "Running on %s", srv.hostname)
+	if opts.ContainerImageID != "" {
+		logging.Infof(srv.Context, "Container image is %s", opts.ContainerImageID)
+	}
+
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
-	srv.initLogging()
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
 	if err := srv.initSecrets(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize secrets store").Err()
@@ -389,9 +414,9 @@ func New(opts Options) (srv *Server, err error) {
 
 	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
 
-	// Health check/readiness probe endpoint.
+	// Health check/readiness probe endpoint on the main serving port.
 	srv.Routes.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
-		c.Writer.Write([]byte("OK"))
+		c.Writer.Write([]byte(srv.healthResponse(c.Context)))
 	})
 
 	// Expose public pRPC endpoints.
@@ -417,6 +442,11 @@ func New(opts Options) (srv *Server, err error) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
 	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
+
+	// Health check/readiness probe endpoint on the admin port.
+	admin.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
+		c.Writer.Write([]byte(srv.healthResponse(c.Context)))
+	})
 
 	// Install pprof endpoints on the admin port. Note that they must not be
 	// exposed via the main serving port, since they do no authentication and
@@ -619,6 +649,29 @@ func (s *Server) Shutdown() {
 func (s *Server) Fatal(err error) {
 	errors.Log(s.Context, err)
 	os.Exit(3)
+}
+
+// healthResponse prepares text/plan response for the health check endpoints.
+//
+// It additionally contains some easy to obtain information that may help in
+// debugging deployments.
+func (s *Server) healthResponse(c context.Context) string {
+	maybeEmpty := func(s string) string {
+		if s == "" {
+			return "<unknown>"
+		}
+		return s
+	}
+	return strings.Join([]string{
+		"OK",
+		"",
+		"uptime:  " + clock.Now(c).Sub(s.startTime).String(),
+		"image:   " + maybeEmpty(s.Options.ContainerImageID),
+		"",
+		"service: " + maybeEmpty(s.Options.TsMonServiceName),
+		"job:     " + maybeEmpty(s.Options.TsMonJobName),
+		"host:    " + s.hostname,
+	}, "\n")
 }
 
 // serveLoop binds the socket and launches the serving loop.
@@ -1151,11 +1204,6 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 
 // initTSMon initializes time series monitoring state if tsmon is enabled.
 func (s *Server) initTSMon() error {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return errors.Annotate(err, "failed to get own hostname").Err()
-	}
-
 	switch {
 	case s.Options.TsMonAccount == "":
 		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-account is not set")
@@ -1186,7 +1234,7 @@ func (s *Server) initTSMon() error {
 				DataCenter:  "appengine",
 				ServiceName: s.Options.TsMonServiceName,
 				JobName:     s.Options.TsMonJobName,
-				HostName:    hostname,
+				HostName:    s.hostname,
 			}
 		},
 	}
