@@ -18,13 +18,16 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const invocationIDPattern = `[a-z][a-z0-9_\-]*`
+const invocationIDPattern = `[a-z][a-z0-9_\-:]*`
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
+	if id == "" {
+		return unspecified()
+	}
 	if !invocationIDRe.MatchString(id) {
 		return doesNotMatch(invocationIDRe)
 	}
