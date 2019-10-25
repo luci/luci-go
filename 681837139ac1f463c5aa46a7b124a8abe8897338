@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "816e986b_1519fc2e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T20:36:05Z",
+      "side": 1,
+      "message": "name\n\nid is something else. feel free to refer to Invocation.name in invocation.proto for more info",
+      "range": {
+        "startLine": 38,
+        "startChar": 22,
+        "endLine": 38,
+        "endChar": 24
+      },
+      "revId": "681837139ac1f463c5aa46a7b124a8abe8897338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "074d85e5_93c670c5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T20:36:05Z",
+      "side": 1,
+      "message": "nit: each",
+      "range": {
+        "startLine": 43,
+        "startChar": 57,
+        "endLine": 43,
+        "endChar": 62
+      },
+      "revId": "681837139ac1f463c5aa46a7b124a8abe8897338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b779030_02286bbe",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T20:36:05Z",
+      "side": 1,
+      "message": "i think this doc belongs to Config() comment. If I am using Config() to get the port, it might not occur to me to read Serve() documentation to learn this. There is no obvious link from there to here.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 70,
+        "endChar": 66
+      },
+      "revId": "681837139ac1f463c5aa46a7b124a8abe8897338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
