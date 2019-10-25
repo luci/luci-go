@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "789b9ef8_b9033b6a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-10-25T23:22:18Z",
+      "side": 1,
+      "message": "I think this line will probably always be unreachable, so should we have an assertion or something here?",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 11
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
