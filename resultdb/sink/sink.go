@@ -18,7 +18,10 @@ package sink
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	// TODO(crbug.com/1017288) Uncomment when crrev.com/c/1876313 lands.
@@ -49,13 +52,24 @@ type ServerConfig struct {
 // It should always be created by a call to NewServer.
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
-type Server struct{}
+type Server struct {
+	cfg ServerConfig
+}
 
 // NewServer creates a Server value and populates optional values with defaults.
 //
 // If cfg.AuthToken is "" it will be randomly generated in a secure way.
-func NewServer(cfg ServerConfig) (*Server, error) {
-	return nil, errors.New("not implemented yet")
+func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
+	if cfg.AuthToken == "" {
+		buf := make([]byte, 32)
+		if _, err := cryptorand.Read(ctx, buf); err != nil {
+			return nil, err
+		}
+		cfg.AuthToken = hex.EncodeToString(buf)
+	}
+
+	s := &Server{cfg: cfg}
+	return s, nil
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -66,7 +80,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 // If Port was originally 0, the Serve function will choose a port arbitrarily.
 // In that case, Config will only return the chosen Port after a call to Serve.
 func (s *Server) Config() ServerConfig {
-	return ServerConfig{}
+	return s.cfg
 }
 
 // Serve runs the Server and blocks until it stops running.
