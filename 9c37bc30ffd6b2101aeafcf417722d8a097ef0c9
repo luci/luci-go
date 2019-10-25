@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "75ba799a_207f6737",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-25T17:34:08Z",
+      "side": 1,
+      "message": "Added \u0027make test service\u003dresultdb\u0027",
+      "parentUuid": "6e859edc_6b028dd8",
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5ac93c0_4520a393",
         "filename": "resultdb/Makefile",
         "patchSetId": 1
@@ -87,6 +105,24 @@
       "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cbd39a7_08d629fd",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-25T17:34:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5ac93c0_4520a393",
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -110,6 +146,30 @@
       "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1627ef9a_2e3d36b8",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-25T17:34:08Z",
+      "side": 1,
+      "message": "Are you sure? -f accepts a directory, it will collect all *.yaml\u0027s there (non-recursively). I\u0027ve tried, it it works fine for me:\n\n$ make deploy service\u003drecorder\nkubectl apply -f /Users/vadimsh/infra-git/infra/go/src/go.chromium.org/luci/resultdb/cmd/recorder/k8s\nservice/recorder created\ndeployment.extensions/recorder created\n# Patch the deployment with a new date to trigger an actual deployment update.\nkubectl patch deployment recorder -p \\\n\t\t\"{\\\"spec\\\":{\\\"template\\\":{\\\"metadata\\\":{\\\"labels\\\":{\\\"date\\\":\\\"`date +\u0027%s\u0027`\\\"}}}}}\"\ndeployment.extensions/recorder patched",
+      "parentUuid": "c98c0d0d_dde5075a",
+      "range": {
+        "startLine": 40,
+        "startChar": 44,
+        "endLine": 40,
+        "endChar": 47
+      },
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
