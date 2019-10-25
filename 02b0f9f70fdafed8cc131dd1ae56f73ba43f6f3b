@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "a247d08e_e005e84c",
+        "filename": "resultdb/cmd/resultdb/get_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:03:35Z",
+      "side": 1,
+      "message": "nit: \"name\" for consistency and, strictly speaking, a client doesn\u0027t know what is req, it is a local variable",
+      "range": {
+        "startLine": 37,
+        "startChar": 31,
+        "endLine": 37,
+        "endChar": 39
+      },
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e25767f1_dd3343fb",
+        "filename": "resultdb/cmd/resultdb/get_invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:03:35Z",
+      "side": 1,
+      "message": "MustApply accepts multiple mutations, so\n\ntestutil.MustAply(ctx, \n  testutil.InsertInvocaion(...),\n  testutil.InsertInvocaion(...),\n  ...\n)",
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f8e2d141_6af58500",
         "filename": "resultdb/cmd/resultdb/main_test.go",
         "patchSetId": 2
