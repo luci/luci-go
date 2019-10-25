@@ -13,8 +13,6 @@ bindir := $(projdir)/bin
 gcr_project = chops-public-images-dev
 image_id = gcr.io/$(gcr_project)/$(service):$(shell git rev-parse HEAD)-tainted
 
-test-service = INTEGRATION_TESTS=1 go test -v ${projdir}/$(1)
-
 build: .setup-bindir
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
 		-o $(bindir)/$(service) $(projdir)/$(service)
@@ -36,9 +34,6 @@ deploy:
 	# Patch the deployment with a new date to trigger an actual deployment update.
 	kubectl patch deployment $(service)-service -p \
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
-
-test-recorder:
-	$(call test-service,recorder)
 
 # Helpers
 .setup-bindir:
