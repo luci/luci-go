@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f63d9bb_92c0553c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:24:43Z",
+      "side": 1,
+      "message": "blank line between resultdb and non-resultdb imports",
+      "revId": "f0e2fec3764b27e8ee1e02720c45c7fa468e72fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "203c294d_0c61743f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:24:43Z",
+      "side": 1,
+      "message": "very rarely functions, especially generic ones, create their own context. Please accept one as the first parameter",
+      "revId": "f0e2fec3764b27e8ee1e02720c45c7fa468e72fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8abb2241_e9a88274",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:24:43Z",
+      "side": 1,
+      "message": "why not just https://godoc.org/encoding/hex#EncodeToString",
+      "range": {
+        "startLine": 57,
+        "startChar": 2,
+        "endLine": 64,
+        "endChar": 34
+      },
+      "revId": "f0e2fec3764b27e8ee1e02720c45c7fa468e72fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82ae6149_4d4507ef",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:24:43Z",
+      "side": 1,
+      "message": "normally, one just calls https://godoc.org/net#Listen without specifying port, and the OS chooses one for you. This guarantees then we don\u0027t choose something that is already being used, and it is more clear (what is 49152 magic number?).\n\ni think its ok that (*Server).Config() does not return a port until we actually start to listen. It is not like anyone can benefit from the port number until the server is started.",
+      "revId": "f0e2fec3764b27e8ee1e02720c45c7fa468e72fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
