@@ -88,13 +88,13 @@ func TestMutateInvocation(t *testing.T) {
 				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 
 				// Confirm the invocation has been updated.
-				var state int64
+				var state pb.Invocation_State
 				var ft time.Time
 				testutil.MustReadRow(ctx, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
 					"State":        &state,
 					"FinalizeTime": &ft,
 				})
-				So(state, ShouldEqual, int64(pb.Invocation_INTERRUPTED))
+				So(state, ShouldEqual, pb.Invocation_INTERRUPTED)
 				So(ft, ShouldEqual, ct.Add(time.Hour))
 			})
 
