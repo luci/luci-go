@@ -14,8 +14,6 @@ gcr_project = chops-public-images-dev
 
 image_tag = gcr.io/$(gcr_project)/luci/resultdb/$(service):dev
 
-test-service = INTEGRATION_TESTS=1 go test -v ${projdir}/$(1)
-
 build: .setup-bindir
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
 		-o $(bindir)/$(service) $(projdir)/cmd/$(service)
@@ -37,9 +35,6 @@ deploy:
 	# Patch the deployment with a new date to trigger an actual deployment update.
 	kubectl patch deployment $(service) -p \
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
-
-test-recorder:
-	$(call test-service,recorder)
 
 # Helpers
 .setup-bindir:
