@@ -37,10 +37,6 @@ func NewResultDBServer() pb.ResultDBServer {
 	}
 }
 
-func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
-	return nil, grpcutil.Unimplemented
-}
-
 func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
 	return nil, grpcutil.Unimplemented
 }
