@@ -1,0 +1,319 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37552a36_86d60634",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: this does not belong to this CL",
+      "range": {
+        "startLine": 42,
+        "startChar": 21,
+        "endLine": 42,
+        "endChar": 25
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "950628c4_1d87779a",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: move up, this is not a luci import",
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d757ed7_43aada7b",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "this does not require a spanner transaction. Let\u0027s do it before the txn, right after request validation",
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68cbf34f_0a074143",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "span.ReadInvocation already has this check",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 79,
+        "endChar": 45
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38e0e837_61e67520",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: go errors should not end with a punctuation mark. see golint",
+      "range": {
+        "startLine": 96,
+        "startChar": 75,
+        "endLine": 96,
+        "endChar": 77
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af756532_42dda02a",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "let\u0027s add\n\n\n  MustTimestamp(*tspb.Timestamp) time.Time\n\nto pbutil package and use it here\n\n  case pbutil.MustTimestamp(deadline).Before(now):\n\nthen we don\u0027t need deadline variable",
+      "range": {
+        "startLine": 98,
+        "startChar": 7,
+        "endLine": 98,
+        "endChar": 15
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4472af51_93ffd803",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "same here\n\nnit: consider making a function that returns this error. Then we don\u0027t have to dup code in L96 and here and there is no way they will get out of sync",
+      "range": {
+        "startLine": 103,
+        "startChar": 78,
+        "endLine": 103,
+        "endChar": 79
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8719184_8b837b5b",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "this TODO should be inside finalizeInvocation func since that\u0027s the common code to finalize an invocation",
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4482539_122c4daf",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "the regex may change in the future, so it isn\u0027t this test\u0027s intention to assert a particular pattern. Let\u0027s change this to \n\n\n    So(err, ShouldErrLike, `name: does not match`)",
+      "range": {
+        "startLine": 49,
+        "startChar": 47,
+        "endLine": 49,
+        "endChar": 81
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95295efc_f0b123ad",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bee454e_9915212e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: strictly speaking, this test asserts a particular implementation of idempotency. It would be better to insert an active invocation, call FinalizeInvocation twice and assert that both requests are successful",
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72ccd094_f7d4fe7f",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 114,
+        "startChar": 3,
+        "endLine": 114,
+        "endChar": 23
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33a8242b_4074e264",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "let\u0027s use span.ReadInvocation here. It is used in finalize_invocation.go:70. Then L64-67 are not needed",
+      "range": {
+        "startLine": 59,
+        "startChar": 16,
+        "endLine": 59,
+        "endChar": 23
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9a21141_5cef81c8",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "nit: it is bit difficult to read\n\n if err :\u003d \u003cmany lines\u003e; err !\u003d nil  {\n }\n\nlet\u0027s not consolidate the assignment and if statement into one statement if the assignment is multi-line\n\nalso i am not sure why this if statement isn\u0027t a \"case\" in the switch statement below",
+      "range": {
+        "startLine": 63,
+        "startChar": 4,
+        "endLine": 63,
+        "endChar": 5
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51276661_5d1d70b9",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T16:31:55Z",
+      "side": 1,
+      "message": "this can be interpreted as \"the state of the invocation on the server should be interrupted\" but what you mean is \"Invocation.state will change to INTERRUPTED\"",
+      "range": {
+        "startLine": 122,
+        "startChar": 31,
+        "endLine": 122,
+        "endChar": 37
+      },
+      "revId": "a862b7c9a1ce20c267c6fb5375a0317a214063cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
