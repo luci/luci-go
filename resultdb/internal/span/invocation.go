@@ -27,7 +27,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// ReadInvocation reads one invocation within the transaction.
+// ReadInvocation reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in util.go.
@@ -48,7 +48,7 @@ func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[strin
 	}
 }
 
-// ReadInvocationFull reads one invocation struct within the transaction.
+// ReadInvocationFull reads one invocation struct from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func ReadInvocationFull(ctx context.Context, txn Txn, invID string) (*pb.Invocation, error) {
