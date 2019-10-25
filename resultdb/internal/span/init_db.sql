@@ -172,22 +172,22 @@ CREATE TABLE TestExonerations (
   -- ID of the parent Invocations row.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- Server-generated exoneration ID.
-  -- Uniquely identifies a test exoneration within an invocation.
-  ExonerationId STRING(MAX) NOT NULL,
-
   -- The exoneration applies only to test results with this exact test path.
   -- This is a foreign key to TestResults.TestPath column.
   TestPath STRING(MAX) NOT NULL,
+
+  -- Server-generated exoneration ID.
+  -- Uniquely identifies a test exoneration within an invocation.
+  --
+  -- Starts with "{hex(sha256(join(sorted('{p}\n' for p in VariantDef))))}:".
+  -- The prefix can be used to reduce scanning for test exonerations for a
+  -- particular test variant.
+  ExonerationId STRING(MAX) NOT NULL,
 
   -- The exoneration applies only to test results with this exact test variant.
   VariantDef ARRAY<STRING(MAX)> NOT NULL,
 
   -- Explanation of the exoneration for humans, in Markdown.
   ExplanationMarkdown STRING(MAX)
-) PRIMARY KEY (InvocationId, ExonerationId),
+) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
-
--- Index test exonerations by test path in a given invocation.
-CREATE INDEX TestExonerationsByTestPath ON TestExonerations (InvocationId, TestPath),
-  INTERLEAVE in Invocations;
