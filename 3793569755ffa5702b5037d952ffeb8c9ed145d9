@@ -106,6 +106,24 @@
       "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bbceecc_0500bc7a",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T18:55:14Z",
+      "side": 1,
+      "message": "Right, the guidelines give us something consistent so we don\u0027t have to define result ID as invocations/.../tests/.../results/... or something else forced. Name and ID/identifier are so often used interchangeably that it\u0027s hard to use any existing distinction to explain the distinction here. Words, how do they work!\n\nThe rephrasing sounds fine to me, thanks.",
+      "parentUuid": "7001a790_171f4971",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
