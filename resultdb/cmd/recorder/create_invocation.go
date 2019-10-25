@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -65,6 +66,12 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
+	}
+
+	// TODO(nodir): whitelist trusted LUCI service accounts that are allowed to
+	// create invocations with any ids.
+	if !strings.HasPrefix(req.InvocationId, "u:") {
+		return errors.Reason(`invocation_id: an invocation created by a non-LUCI system must have id starting with "u:"; please generate "u:{GUID}"`).Err()
 	}
 
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
