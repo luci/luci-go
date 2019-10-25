@@ -35,12 +35,13 @@ type ServerConfig struct {
 	// Port is the TCP port to listen on. Optional.
 	Port int
 
-	// Invocation is the ID of the invocation that test results should append to.
+	// Invocation is the name of the invocation that test results should append
+	// to.
 	Invocation string
 	// UpdateToken is the token that allows writes to Invocation.
 	UpdateToken string
 
-	// TestPathPrefix will be prepended to the test_path of every TestResult.
+	// TestPathPrefix will be prepended to the test_path of each TestResult.
 	TestPathPrefix string
 }
 
@@ -61,13 +62,14 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 //
 // Use this to retrieve the resolved values of unset optional fields in the
 // original ServerConfig.
+//
+// If Port was originally 0, the Serve function will choose a port arbitrarily.
+// In that case, Config will only return the chosen Port after a call to Serve.
 func (s *Server) Config() ServerConfig {
 	return ServerConfig{}
 }
 
 // Serve runs the Server and blocks until it stops running.
-// If cfg.Port is 0 it will be chosen arbitrarily. Subsequent calls to Config
-// will return a ServerConfig value that includes the chosen Port.
 func (s *Server) Serve() error {
 	return errors.New("not implemented yet")
 }
