@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "33d9ca18_f8beb87a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-10-25T21:04:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "8644e14d_7b53b91d",
+      "revId": "8cde02060e026828b39120bad954c6328b07afd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36ea8261_4e6e75fb",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "8cde02060e026828b39120bad954c6328b07afd8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7b99e69_43a97ed8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-10-25T21:04:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36ea8261_4e6e75fb",
+      "revId": "8cde02060e026828b39120bad954c6328b07afd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
