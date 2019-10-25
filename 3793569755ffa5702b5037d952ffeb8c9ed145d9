@@ -52,6 +52,24 @@
       "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5da268b4_27a2c021",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T18:12:57Z",
+      "side": 1,
+      "message": "it is unclear what is \"resource associated with this invocation\". The invocation *is* the resource here, so applying this to your sentence is \"The name of this invocation, see also https://aip.dev/122\"? \n\nbut still, it does not solve the problem I intend to solve. I\u0027d like this documentation to explain that this string can be used to refer to this invocation. So how about\n\n  // The name of this invocation, see also https://aip.dev/122\n  // Can be used to refer to this invocation, e.g. in GetInvocation.",
+      "parentUuid": "8ac57df0_4f130edc",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
