@@ -37,7 +37,6 @@ func NewRecorderServer() pb.RecorderServer {
 	}
 }
 
-
 // FinalizeInvocation implements pb.RecorderServer.
 func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.FinalizeInvocationRequest) (*pb.Invocation, error) {
 	return nil, grpcutil.Unimplemented
