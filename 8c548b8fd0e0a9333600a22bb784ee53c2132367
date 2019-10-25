@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ffcee76_1d6d0f72",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:27:53Z",
+      "side": 1,
+      "message": "nit: it is a bit hard to read assignment+if statements where assignments spans multiple lines. Let\u0027s not consolidate in such case. Besides, I see no reason why this err check isn\u0027t a part of switch below\n\n  err :\u003d span.readInvocation(....)\n  switch {\n  case err !\u003d nil:\n     ..\n  case ret.State ....\n\ninvocation.go:58 does this",
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f148f189_b9bfe338",
+        "filename": "resultdb/pbutil/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:27:53Z",
+      "side": 1,
+      "message": "*tspb.Timetamp to a time.Time",
+      "range": {
+        "startLine": 52,
+        "startChar": 28,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dc732a9_3f0b368c",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:27:53Z",
+      "side": 1,
+      "message": "please regenerate .pb.go files",
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
