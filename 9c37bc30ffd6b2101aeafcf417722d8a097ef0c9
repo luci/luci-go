@@ -34,6 +34,24 @@
       "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a445a010_f92b18e2",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T00:34:09Z",
+      "side": 1,
+      "message": "I\u0027ll leave that up to Nodir (there was some discussion on this in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1852978/2/resultdb/Makefile#38).\n\nJust wanted to mention it --- everything else sounds good!",
+      "parentUuid": "f2130579_4bb9d513",
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
