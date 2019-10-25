@@ -16,6 +16,24 @@
       "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a95a6ef_67106054",
+        "filename": "resultdb/cmd/resultdb/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T03:43:28Z",
+      "side": 1,
+      "message": "Sure! This runs before tests and is important for setting up the testing context with a Spanner client and setting up the Spanner databases, needed for running the integration tests --- without it, the integration tests, which need to talk to the real Spanner instance, would fail (see also https://golang.org/pkg/testing/#hdr-Main)",
+      "parentUuid": "f8e2d141_6af58500",
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
