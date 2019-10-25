@@ -15,7 +15,10 @@
 package pbutil
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"sort"
 
 	"go.chromium.org/luci/common/errors"
@@ -87,4 +90,16 @@ func ValidateTestVariant(tv *pb.TestVariant) error {
 		return errors.Annotate(err, "variant").Err()
 	}
 	return nil
+}
+
+// VariantDefHash returns a hex SHA256 hash of concatenated "<key>:<val>\n" strings from the variant.
+func VariantDefHash(d *pb.VariantDef) string {
+	h := sha256.New()
+	for _, k := range SortedVariantDefKeys(d) {
+		io.WriteString(h, k)
+		io.WriteString(h, ":")
+		io.WriteString(h, d.Def[k])
+		io.WriteString(h, "\n")
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }

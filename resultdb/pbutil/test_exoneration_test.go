@@ -25,19 +25,20 @@ func TestTestExonerationName(t *testing.T) {
 	t.Parallel()
 	Convey("ParseTestExonerationName", t, func() {
 		Convey("Parse", func() {
-			inv, ex, err := ParseTestExonerationName("invocations/a/testExonerations/1")
+			inv, testPath, ex, err := ParseTestExonerationName("invocations/a/tests/b%2Fc/exonerations/1")
 			So(err, ShouldBeNil)
 			So(inv, ShouldEqual, "a")
+			So(testPath, ShouldEqual, "b/c")
 			So(ex, ShouldEqual, "1")
 		})
 
 		Convey("Invalid", func() {
-			_, _, err := ParseTestExonerationName("invocations/a")
+			_, _, _, err := ParseTestExonerationName("invocations/a/tests/b/c/exonerations/1")
 			So(err, ShouldErrLike, `does not match`)
 		})
 
 		Convey("Format", func() {
-			So(TestExonerationName("a", "b"), ShouldEqual, "invocations/a/testExonerations/b")
+			So(TestExonerationName("a", "b/c", "d"), ShouldEqual, "invocations/a/tests/b%2Fc/exonerations/d")
 		})
 	})
 }
