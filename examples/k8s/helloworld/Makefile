@@ -6,7 +6,7 @@
 # shouldn't really be pushed anywhere.
 
 build-binary:
-	CGO=0 GOOS=linux GOARCH=amd64 go build -o ./docker .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./docker .
 
 build-image: build-binary
 	docker build -t helloworld ./docker
