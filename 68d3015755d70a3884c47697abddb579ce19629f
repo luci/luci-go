@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "643ec94d_20820047",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "please add a comment. It must start with \"Package sink \"",
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f964489_17fac66e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "resultdb codebase consistently uses \"pb\" alias for this package",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 21,
+        "endChar": 10
+      },
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1f58d53_95f3c351",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "all public types and functions must have documentation.\nThe doc must start with the symbol name\n\nit should describe what this thing is doing and how it is used. For example L32 refers to \"the invocation\", but it is unclear (from the absent doc) what invocation it is talking about",
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e79ec1e6_68d25a56",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "in Go, all doc comments start with the symbol name and then goes on with third-person singular verb ending\nhttps://blog.golang.org/godoc-documenting-go-code\n\n// NewServer creates a Server ..........\n\nsame below",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 9
+      },
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff174eee_b9f5dcd1",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "obviously unimportant in this CL, but in general in Go errors \n1) start with lower case letter, because often another error wraps an inner error like \"\u003ccontext\u003e: \u003cinner error\u003e\"\n2) must not end with a punctuation symbols\n\nyou can run golint to see it for yourself",
+      "range": {
+        "startLine": 45,
+        "startChar": 25,
+        "endLine": 45,
+        "endChar": 26
+      },
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b450385_b5709ff3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T03:18:31Z",
+      "side": 1,
+      "message": "it is generally well known that context.Context is immutable, so functions that accept and return a context do not typically say that they creates a context. They say how they modify it, e.g. \"Export exports lucictx.ResultSink derived from the server configuration into the context.\"\n\nhere I am trying to refer to lucictx.ResultSink which does not exist yet, but will contain they details of how we are going to export that",
+      "revId": "68d3015755d70a3884c47697abddb579ce19629f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
