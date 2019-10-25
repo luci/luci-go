@@ -30,9 +30,11 @@ import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 // This message does not specify the test path.
 // It should be available in the message that embeds this message.
 message TestResult {
-  // Resource name.
+  // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
+  // RPC.
   // Format: "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
   // URL_ESCAPED_TEST_PATH is test_path escaped with https://golang.org/pkg/net/url/#PathEscape
+  // See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -195,9 +197,11 @@ message TestVariant {
 // For example, the test variant fails both with and without CL, so it is not
 // CL's fault.
 message TestExoneration {
-  // The resource name of the exoneration.
+  // Can be used to refer to this test exoneration, e.g. in
+  // ResultDB.GetTestExoneration RPC.
   // Format: invocations/{INVOCATION_ID}/testExonerations/{EXONERATION_ID}.
   // EXONERATION_ID is server-generated.
+  // See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE

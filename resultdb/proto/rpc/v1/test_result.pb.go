@@ -89,9 +89,11 @@ func (TestStatus) EnumDescriptor() ([]byte, []int) {
 // This message does not specify the test path.
 // It should be available in the message that embeds this message.
 type TestResult struct {
-	// Resource name.
+	// Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
+	// RPC.
 	// Format: "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
 	// URL_ESCAPED_TEST_PATH is test_path escaped with https://golang.org/pkg/net/url/#PathEscape
+	// See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test path, a unique identifier of the test in a LUCI project.
 	// Regex: ^[[::print::]]+$.
@@ -417,9 +419,11 @@ func (m *TestVariant) GetVariant() *VariantDef {
 // For example, the test variant fails both with and without CL, so it is not
 // CL's fault.
 type TestExoneration struct {
-	// The resource name of the exoneration.
+	// Can be used to refer to this test exoneration, e.g. in
+	// ResultDB.GetTestExoneration RPC.
 	// Format: invocations/{INVOCATION_ID}/testExonerations/{EXONERATION_ID}.
 	// EXONERATION_ID is server-generated.
+	// See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Failure of this test variant is forgiven.
 	TestVariant *TestVariant `protobuf:"bytes,2,opt,name=test_variant,json=testVariant,proto3" json:"test_variant,omitempty"`

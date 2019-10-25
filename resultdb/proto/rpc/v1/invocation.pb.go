@@ -72,8 +72,10 @@ func (Invocation_State) EnumDescriptor() ([]byte, []int) {
 // buildbucket build, CQ attempt.
 // Composable: can include other invocations, see inclusion.proto.
 type Invocation struct {
-	// The resource name of this invocation.
+	// Can be used to refer to this invocation, e.g. in ResultDB.GetInvocation
+	// RPC.
 	// Format: invocations/{INVOCATION_ID}
+	// See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Current state of the invocation.
 	State Invocation_State `protobuf:"varint,2,opt,name=state,proto3,enum=luci.resultdb.Invocation_State" json:"state,omitempty"`
