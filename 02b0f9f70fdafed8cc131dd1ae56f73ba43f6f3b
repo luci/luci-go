@@ -74,6 +74,24 @@
       "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb2358a7_76f6f526",
+        "filename": "resultdb/cmd/resultdb/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-25T16:23:50Z",
+      "side": 1,
+      "message": "Thanks for the info. \n\nI\u0027m wondering why do we add this now? What has changed recently to require this? Probably it\u0027s better to talk offline.",
+      "parentUuid": "9a95a6ef_67106054",
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
