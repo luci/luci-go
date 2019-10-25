@@ -16,9 +16,12 @@ package sink
 
 import (
 	"context"
+	"net"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 )
 
 func TestDefaultServerConfig(t *testing.T) {
@@ -28,5 +31,45 @@ func TestDefaultServerConfig(t *testing.T) {
 
 		cfg := s.Config()
 		So(cfg.AuthToken, ShouldNotBeEmpty)
+	})
+}
+
+func TestHandshake(t *testing.T) {
+	Convey("Successful handshake", t, func() {
+		ctx := context.Background()
+		ctx = memlogger.Use(ctx)
+		var s Server
+		s.cfg.AuthToken = "hello"
+		sc, cc := net.Pipe()
+		done := make(chan bool)
+		go func() {
+			s.handleConnection(ctx, sc)
+			done <- true
+		}()
+		msg := []byte("{\"auth_token\":\"hello\"}")
+		_, err := cc.Write(msg)
+		So(err, ShouldBeNil)
+		<-done
+		log := logging.Get(ctx).(*memlogger.MemLogger)
+		So(log, memlogger.ShouldNotHaveLog, logging.Error)
+	})
+
+	Convey("Failed handshake", t, func() {
+		ctx := context.Background()
+		ctx = memlogger.Use(ctx)
+		var s Server
+		s.cfg.AuthToken = "hello"
+		sc, cc := net.Pipe()
+		done := make(chan bool)
+		go func() {
+			s.handleConnection(ctx, sc)
+			done <- true
+		}()
+		msg := []byte("{\"auth_token\":\"BAD\"}")
+		_, err := cc.Write(msg)
+		So(err, ShouldBeNil)
+		<-done
+		log := logging.Get(ctx).(*memlogger.MemLogger)
+		So(log, memlogger.ShouldHaveLog, logging.Error)
 	})
 }
