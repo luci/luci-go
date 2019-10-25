@@ -163,6 +163,7 @@ type Options struct {
 	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
 	AuthDBSigner     string             // service account that signs AuthDB dumps
 	RedisAddr        string             // Redis server to connect to as "host:port" (optional)
+	RedisDB          int                // index of a logical Redis DB to use by default (optional)
 	CloudProject     string             // name of hosting Google Cloud Project
 	TsMonAccount     string             // service account to flush metrics as
 	TsMonServiceName string             // service name of tsmon target
@@ -237,6 +238,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"redis-addr",
 		o.RedisAddr,
 		"Redis server to connect to as \"host:port\" (optional)",
+	)
+	f.IntVar(
+		&o.RedisDB,
+		"redis-db",
+		o.RedisDB,
+		"Index of a logical Redis DB to use by default (optional)",
 	)
 	f.StringVar(
 		&o.CloudProject,
@@ -1253,7 +1260,7 @@ func (s *Server) initRedis() error {
 		return nil
 	}
 
-	s.redisPool = redisconn.NewPool(s.Options.RedisAddr)
+	s.redisPool = redisconn.NewPool(s.Options.RedisAddr, s.Options.RedisDB)
 	s.Context = redisconn.UsePool(s.Context, s.redisPool)
 
 	// Use Redis as caching.BlobCache provider.

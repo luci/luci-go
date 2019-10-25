@@ -62,8 +62,14 @@ var (
 // "addr" is TCP "host:port" of a Redis server to connect to. No actual
 // connection is established yet (this happens first time the pool is used).
 //
+// "db" is a index of a logical DB to SELECT in the connection by default,
+// see https://redis.io/commands/select. It can be used as a weak form of
+// namespacing. It is easy to bypass though, so please do not depend on it
+// for anything critical (better to setup multiple Redis instances in this
+// case).
+//
 // Doesn't use any authentication or encryption.
-func NewPool(addr string) *redis.Pool {
+func NewPool(addr string, db int) *redis.Pool {
 	// TODO(vadimsh): Tune the parameters or make them configurable. The values
 	// below were picked somewhat arbitrarily.
 	return &redis.Pool{
@@ -75,6 +81,7 @@ func NewPool(addr string) *redis.Pool {
 		DialContext: func(ctx context.Context) (redis.Conn, error) {
 			logging.Debugf(ctx, "Opening new Redis connection to %q...", addr)
 			conn, err := redis.Dial("tcp", addr,
+				redis.DialDatabase(db),
 				redis.DialConnectTimeout(5*time.Second),
 				redis.DialReadTimeout(5*time.Second),
 				redis.DialWriteTimeout(5*time.Second),
