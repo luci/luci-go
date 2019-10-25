@@ -88,6 +88,24 @@
       "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7001a790_171f4971",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T18:47:26Z",
+      "side": 1,
+      "message": "the reason we follow their guidelines is not only because they are passed down to us. Invocation id would work in case of invocation, but with test result, we\u0027d have to use a tuple of (invocation id, test path, result id) \u003d\u003e GetInvocation and GetTestResult (or GetXXX) would be inconsistent. Using resource name bring consistency in APIs. There is one string that can be used to refer to invocation/testResult/exoneration/etc.\n\nIt seems the important part here, and what I am trying to entail, is that this string can be used to refer to this invocation/testResult/etc. I\u0027ve put that front and center, and got rid of the terminology stuff by simply referring to aip.dev. PTAL",
+      "parentUuid": "c66550a2_638a0e02",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
