@@ -184,6 +184,8 @@ message Artifact {
 
 // A pair of test path and a variant definition, identifying a variant of a
 // test.
+// TODO(nodir): decide whether to leave or inline this message. It is currently
+// used only in one place.
 message TestVariant {
   // Test identifier, see TestResult.test_path.
   string test_path = 1;
@@ -199,8 +201,8 @@ message TestVariant {
 message TestExoneration {
   // Can be used to refer to this test exoneration, e.g. in
   // ResultDB.GetTestExoneration RPC.
-  // Format: invocations/{INVOCATION_ID}/testExonerations/{EXONERATION_ID}.
-  // EXONERATION_ID is server-generated.
+  // Format: invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/exonerations/{EXONERATION_ID}.
+  // URL_ESCAPED_TEST_PATH is test_variant.test_path escaped with https://golang.org/pkg/net/url/#PathEscape
   // See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -210,7 +212,14 @@ message TestExoneration {
   // Failure of this test variant is forgiven.
   TestVariant test_variant = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
+  // Identifies an exoneration in a given invocation and test path.
+  // It is server-generated.
+  string exoneration_id = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
   // Reasoning behind the exoneration, in markdown.
   // Markdown spec: https://spec.commonmark.org/0.29/
-  string explanation_markdown = 3 [ (google.api.field_behavior) = IMMUTABLE ];
+  string explanation_markdown = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 }
