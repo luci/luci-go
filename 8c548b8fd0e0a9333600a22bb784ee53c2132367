@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1cd70246_fb4c2874",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:28:51Z",
+      "side": 1,
+      "message": "ah, i see i did mention this in invocation.go of the previous patchset.\nlet\u0027s do this here too",
+      "parentUuid": "1ffcee76_1d6d0f72",
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f148f189_b9bfe338",
         "filename": "resultdb/pbutil/common.go",
         "patchSetId": 6
