@@ -1,0 +1,111 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.sink;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
+
+// A local equivalent of luci.resultdb.TestResult message
+// in ../../rpc/v1/test_result.proto.
+// See its comments for details.
+message TestResult {
+  // Equivalent of luci.resultpb.TestResult.TestPath.
+  string test_path = 1;
+
+  // Equivalent of luci.resultpb.TestResult.result_id.
+  string result_id = 2;
+
+  // Equivalent of luci.resultpb.TestResult.extra_variant_pairs.
+  VariantDef extra_variant_pairs = 3;
+
+  // Equivalent of luci.resultpb.TestResult.expected.
+  bool expected = 4;
+
+  // Equivalent of luci.resultpb.TestResult.status.
+  TestStatus status = 5;
+
+  // Equivalent of luci.resultpb.TestResult.summary_markdown.
+  string summary_markdown = 6;
+
+  // Equivalent of luci.resultpb.TestResult.start_time.
+  google.protobuf.Timestamp start_time = 7;
+
+  // Equivalent of luci.resultpb.TestResult.run_duration.
+  google.protobuf.Duration run_duration = 8;
+
+  // Equivalent of luci.resultpb.TestResult.tags.
+  repeated StringPair tags = 9;
+
+  // Equivalent of luci.resultpb.TestResult.input_artifacts.
+  // The map key is an artifact name.
+  map<string, Artifact> input_artifacts = 10;
+
+  // Equivalent of luci.resultpb.TestResult.output_artifacts.
+  // The map key is an artifact name.
+  map<string, Artifact> output_artifacts = 11;
+}
+
+// A local equivalent of luci.resultdb.Artifact message
+// in ../../rpc/v1/test_result.proto.
+// See its comments for details.
+// Does not have a name because the latter is avialable as a map key in
+// TestResult.input_artifacts and TestResult.output_artifacts.
+message Artifact {
+  oneof body {
+      // Absolute path to the artifact file on the same machine as the
+      // ResultSink server.
+      string file_path = 1;
+
+      // Contents of the artifact. Useful when sending a file from a different
+      // machine.
+      // TODO(nodir, sajjadm): allow sending contents in chunks.
+      bytes contents = 2;
+  }
+
+  // Equivalent of luci.resultpb.Artifact.content_type.
+  string content_type = 3;
+}
+
+// A file with test results.
+message TestResultFile {
+  // Absolute OS-native path to the results file on the same machine as the
+  // ResultSink server.
+  string path = 1;
+
+  // A result file format.
+  enum Format {
+    // The file is a sequence of TestResult JSON objects (not a JSON Array).
+    // The default format.
+    LUCI = 0;
+
+    // Chromium's JSON Test Results format
+    // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
+    CHROMIUM_JSON_TEST_RESULTS = 1;
+
+    // GTest format.
+    // Not well documented.
+    // Implementation: https://cs.chromium.org/chromium/src/base/test/launcher/test_results_tracker.cc
+    GOOGLE_TEST = 2;
+  }
+
+  // Format of the file.
+  Format format = 2;
+}
