@@ -70,7 +70,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
-			So(err, ShouldErrLike, `invocation_id: does not match`)
+			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
@@ -80,9 +80,16 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
+		Convey(`reserved prefix`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "build-1",
+			}, now)
+			So(err, ShouldErrLike, `must have id starting with "u:"`)
+		})
+
 		Convey(`invalid request id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "a",
+				InvocationId: "u:a",
 				RequestId:    "😃",
 			}, now)
 			So(err, ShouldErrLike, "request_id: does not match")
@@ -90,7 +97,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`invalid tags`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
+				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
 					Tags: pbutil.StringPairs("1", "a"),
 				},
@@ -101,7 +108,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`invalid deadline`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
+				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 				},
@@ -111,7 +118,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 		Convey(`invalid variant def`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
+				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
 					BaseTestVariantDef: &pb.VariantDef{
 						Def: map[string]string{"1": "a"},
@@ -124,7 +131,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "abc",
+				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
@@ -175,12 +182,12 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			So(err, ShouldErrLike, `bad request: invocation_id: does not match`)
+			So(err, ShouldErrLike, `bad request: invocation_id: unspecified`)
 			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
 		req := &pb.CreateInvocationRequest{
-			InvocationId: "inv",
+			InvocationId: "u:inv",
 			Invocation:   &pb.Invocation{},
 		}
 
@@ -204,14 +211,14 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		Convey(`no invocation in request`, func() {
-			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "inv"})
+			inv, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "u:inv"})
 			So(err, ShouldBeNil)
-			So(inv.Name, ShouldEqual, "invocations/inv")
+			So(inv.Name, ShouldEqual, "invocations/u:inv")
 		})
 
 		Convey(`idempotent`, func() {
 			req := &pb.CreateInvocationRequest{
-				InvocationId: "inv",
+				InvocationId: "u:inv",
 				Invocation:   &pb.Invocation{},
 				RequestId:    "request id",
 			}
@@ -227,7 +234,7 @@ func TestCreateInvocation(t *testing.T) {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			headers := &metadata.MD{}
 			req := &pb.CreateInvocationRequest{
-				InvocationId: "inv",
+				InvocationId: "u:inv",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
@@ -244,7 +251,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:       "invocations/inv",
+				Name:       "invocations/u:inv",
 				State:      pb.Invocation_ACTIVE,
 				CreateTime: pbutil.MustTimestampProto(now),
 			})
@@ -256,7 +263,7 @@ func TestCreateInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer txn.Close()
 
-			inv, err = span.ReadInvocationFull(ctx, txn, "inv")
+			inv, err = span.ReadInvocationFull(ctx, txn, "u:inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
 		})
