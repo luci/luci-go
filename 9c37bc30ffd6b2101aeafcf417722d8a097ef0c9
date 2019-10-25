@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6485cff9_6bdfcba9",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T00:26:54Z",
+      "side": 1,
+      "message": "Does this mean `make test-recorder` will error without a service parameter value passed?",
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
