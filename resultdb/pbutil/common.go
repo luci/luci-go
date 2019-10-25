@@ -49,6 +49,16 @@ func MustTimestampProto(t time.Time) *tspb.Timestamp {
 	return ts
 }
 
+// MustTimestamp converts a *tspb.Timestamp to a time.Time and panics
+// on failure.
+func MustTimestamp(ts *tspb.Timestamp) time.Time {
+	t, err := ptypes.Timestamp(ts)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 // ValidateRequestID returns a non-nil error if requestID is invalid.
 // Returns nil if requestID is empty.
 func ValidateRequestID(requestID string) error {
