@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8e2d141_6af58500",
+        "filename": "resultdb/cmd/resultdb/main_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-25T01:15:06Z",
+      "side": 1,
+      "message": "Curious, what\u0027s this for?",
+      "revId": "02b0f9f70fdafed8cc131dd1ae56f73ba43f6f3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
