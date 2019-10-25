@@ -70,6 +70,24 @@
       "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c66550a2_638a0e02",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-25T18:20:47Z",
+      "side": 1,
+      "message": "Well, the resource is the invocation, but in the name it\u0027s being treated as a resource (in the general AIP sense) rather than an invocation. Another way to put it is, why /do/ we need this name? Why /aren\u0027t/ we using the invocation ID? The reason for that is because AIP dictates *resources* be named according to this scheme.\n\nI don\u0027t want to bikeshed over this, and I think the last suggestion is a superset of the information we\u0027ve mentioned wanting to include, so the last suggestion sounds fine to me.",
+      "parentUuid": "5da268b4_27a2c021",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
