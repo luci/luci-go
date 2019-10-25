@@ -16,6 +16,24 @@
       "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a107e200_79f7f798",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-25T17:36:12Z",
+      "side": 1,
+      "message": "I am not sure what you expect the reader from learn from this. The field is already called name, \"The name\" part of the sentence does not explain anything. The \"not ID\" part invokes a question \"what\u0027s the difference\"?\n\nMy intention is that this string identifies this resource (invocaiton/testResult/testExonration) and that the client can use this string to refer to this resource. How would you phrase this?",
+      "parentUuid": "6ce8b2f9_1fdfbf20",
+      "revId": "3793569755ffa5702b5037d952ffeb8c9ed145d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
