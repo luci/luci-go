@@ -16,6 +16,24 @@
       "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2130579_4bb9d513",
+        "filename": "resultdb/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-10-25T00:30:36Z",
+      "side": 1,
+      "message": "Err.. Yes. I can remove this check if you like. Or we can change \u0027make test-recorder\u0027 into \u0027make test service\u003drecorder\u0027. I\u0027m not sure how easily add this check only to targets that use $(service). Makefiles frighten and confuse me.",
+      "parentUuid": "6485cff9_6bdfcba9",
+      "revId": "9c37bc30ffd6b2101aeafcf417722d8a097ef0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
