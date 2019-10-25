@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "6ae5d6a1_ec1e0622",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-25T17:41:34Z",
+      "side": 1,
+      "message": "Ah, I forgot this place is quite similar with invocation.go. Done.",
+      "parentUuid": "1cd70246_fb4c2874",
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f148f189_b9bfe338",
         "filename": "resultdb/pbutil/common.go",
         "patchSetId": 6
@@ -60,6 +78,30 @@
     },
     {
       "key": {
+        "uuid": "4f96c7e2_9106dce4",
+        "filename": "resultdb/pbutil/common.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-25T17:41:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f148f189_b9bfe338",
+      "range": {
+        "startLine": 52,
+        "startChar": 28,
+        "endLine": 52,
+        "endChar": 58
+      },
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1dc732a9_3f0b368c",
         "filename": "resultdb/proto/rpc/v1/recorder.proto",
         "patchSetId": 6
@@ -74,6 +116,24 @@
       "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18a93566_7c7a49ad",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-25T17:41:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1dc732a9_3f0b368c",
+      "revId": "8c548b8fd0e0a9333600a22bb784ee53c2132367",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
