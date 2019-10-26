@@ -80,13 +80,16 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 
 		// Ensure the included invocation exists and also read its state to
 		// compute inclusion readiness.
-		var ready bool
+		var ready spanner.NullBool
 		eg.Go(func() error {
 			state, err := readInvocationState(ctx, txn, includedInvID)
 			if err != nil {
 				return err
 			}
-			ready = pbutil.IsFinalized(state)
+			if pbutil.IsFinalized(state) {
+				ready.Valid = true
+				ready.Bool = true
+			}
 			return nil
 		})
 
