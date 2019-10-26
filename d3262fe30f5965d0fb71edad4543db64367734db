@@ -89,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "113fb38f_5a38b47e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:59:59Z",
+      "side": 1,
+      "message": "to be honest, idk why https://ci.chromium.org/p/infra/builders/try/luci-go-try-xenial-64/b8898578642286417104 succeed\n\nlet\u0027s panic for now",
+      "parentUuid": "7a0c6139_626e26d5",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 11
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "df41ab0c_56415a5a",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 3
