@@ -208,7 +208,7 @@ func (m *ServiceLinkTicket) GetTicket() []byte {
 	return nil
 }
 
-// Sent from Replica to Primary via direct serivce <-> service HTTP call,
+// Sent from Replica to Primary via direct service <-> service HTTP call,
 // replicas app_id would be available via X-Appengine-Inbound-Appid header.
 type ServiceLinkRequest struct {
 	// Same ticket that was passed to Replica via ServiceLinkTicket.

@@ -48,7 +48,7 @@ message ServiceLinkTicket {
 }
 
 
-// Sent from Replica to Primary via direct serivce <-> service HTTP call,
+// Sent from Replica to Primary via direct service <-> service HTTP call,
 // replicas app_id would be available via X-Appengine-Inbound-Appid header.
 message ServiceLinkRequest {
   // Same ticket that was passed to Replica via ServiceLinkTicket.
