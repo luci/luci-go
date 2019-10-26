@@ -115,7 +115,6 @@ func finalizeInvocation(txn *spanner.ReadWriteTransaction, invID string, interru
 		state = pb.Invocation_INTERRUPTED
 	}
 
-	// TODO(chanli): Also update all inclusions that include this invocation.
 	return txn.BufferWrite([]*spanner.Mutation{
 		spanner.UpdateMap("Invocations", span.ToSpannerMap(map[string]interface{}{
 			"InvocationId": invID,
