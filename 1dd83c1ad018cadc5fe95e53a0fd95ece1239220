@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c86d3e29_9a557852",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T04:16:45Z",
+      "side": 1,
+      "message": "luci-go uses https://godoc.org/go.chromium.org/luci/common/errors for errors\nplease use errors.Reason here, see its usages in code search\n\nsame below",
+      "range": {
+        "startLine": 154,
+        "startChar": 9,
+        "endLine": 154,
+        "endChar": 19
+      },
+      "revId": "1dd83c1ad018cadc5fe95e53a0fd95ece1239220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e717e794_691454db",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T04:16:45Z",
+      "side": 1,
+      "message": "nit: \n\n  func(msg, token string) error",
+      "range": {
+        "startLine": 37,
+        "startChar": 17,
+        "endLine": 37,
+        "endChar": 41
+      },
+      "revId": "1dd83c1ad018cadc5fe95e53a0fd95ece1239220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abc30595_2cc96e92",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T04:16:45Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 48,
+        "startChar": 10,
+        "endLine": 48,
+        "endChar": 21
+      },
+      "revId": "1dd83c1ad018cadc5fe95e53a0fd95ece1239220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44997408_dc136709",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T04:16:45Z",
+      "side": 1,
+      "message": "use ShouldErrLike\n\nsee examples in code search",
+      "range": {
+        "startLine": 50,
+        "startChar": 11,
+        "endLine": 50,
+        "endChar": 25
+      },
+      "revId": "1dd83c1ad018cadc5fe95e53a0fd95ece1239220",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
