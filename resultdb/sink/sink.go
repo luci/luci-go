@@ -19,13 +19,20 @@ package sink
 import (
 	"context"
 	"encoding/hex"
-	"errors"
+	"encoding/json"
+
+	"fmt"
+	"net"
+	"strconv"
+
+	"github.com/golang/protobuf/jsonpb"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	// TODO(crbug.com/1017288) Uncomment when crrev.com/c/1876313 lands.
-	// sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 // ServerConfig defines the parameters of the server.
@@ -84,8 +91,31 @@ func (s *Server) Config() ServerConfig {
 }
 
 // Serve runs the Server and blocks until it stops running.
-func (s *Server) Serve() error {
-	return errors.New("not implemented yet")
+func (s *Server) Serve(ctx context.Context) error {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
+	if err != nil {
+		return err
+	}
+	defer ln.Close()
+
+	_, port, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		return err
+	}
+	s.cfg.Port, err = strconv.Atoi(port)
+	if err != nil {
+		return err
+	}
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			return err
+		}
+		go s.handleConnection(ctx, conn)
+	}
+
+	panic("unreachable code")
 }
 
 // Close tells the Server to shutdown and blocks until it stops running.
@@ -98,8 +128,7 @@ func (s *Server) Close(ctx context.Context) error {
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
-// TODO(crbug.com/1017288) Uncomment when crrev.com/c/1876313 lands.
-func (s *Server) Process( /*msg *sinkpb.SinkMessageContainer*/ ) error {
+func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
 	return errors.New("not implemented yet")
 }
 
@@ -107,5 +136,26 @@ func (s *Server) Process( /*msg *sinkpb.SinkMessageContainer*/ ) error {
 // the context.
 // TODO(crbug.com/1017288) lucictx.ResultSink does not exist yet.
 func (s *Server) Export(ctx context.Context) context.Context {
+	return nil
+}
+
+func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
+	defer c.Close()
+	dc := json.NewDecoder(c)
+	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
+		logging.Errorf(ctx, "handshake failed: %s", err)
+		return
+	}
+	logging.Debugf(ctx, "Successful handshake")
+}
+
+func processHandshake(dc *json.Decoder, authToken string) error {
+	var hs sinkpb.Handshake
+	if err := jsonpb.UnmarshalNext(dc, &hs); err != nil {
+		return errors.Reason("failed to parse Handshake").Err()
+	}
+	if hs.GetAuthToken() != authToken {
+		return errors.Reason("handshake message had invalid AuthToken").Err()
+	}
 	return nil
 }

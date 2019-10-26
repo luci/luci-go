@@ -16,9 +16,13 @@ package sink
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDefaultServerConfig(t *testing.T) {
@@ -28,5 +32,26 @@ func TestDefaultServerConfig(t *testing.T) {
 
 		cfg := s.Config()
 		So(cfg.AuthToken, ShouldNotBeEmpty)
+	})
+}
+
+func TestHandshake(t *testing.T) {
+	doCheck := func(msg, token string) error {
+		dc := json.NewDecoder(strings.NewReader(msg))
+		return processHandshake(dc, token)
+	}
+
+	Convey("Handshake check", t, func() {
+		authToken := "hello"
+		Convey("Successful handshake", func() {
+			err := doCheck(`{"auth_token":"hello"}`, authToken)
+			So(err, ShouldBeNil)
+		})
+		Convey("Unsuccessful handshake", func() {
+			err := doCheck(`{"auth_token":"BAD"}`, authToken)
+			So(err, ShouldErrLike, "invalid AuthToken")
+			err = doCheck(`garbage`, authToken)
+			So(err, ShouldErrLike, "failed to parse")
+		})
 	})
 }
