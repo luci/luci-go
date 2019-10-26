@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "2f34d40f_67e00ec2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "nit: blank line between non-luci and luci imports",
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb97de75_96d25e6c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 93,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 5
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "789b9ef8_b9033b6a",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 3
@@ -19,6 +59,133 @@
         "endLine": 117,
         "endChar": 11
       },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a0c6139_626e26d5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "if it truly unreachable, the the compiler should catch that.",
+      "parentUuid": "789b9ef8_b9033b6a",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 117,
+        "endChar": 11
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df41ab0c_56415a5a",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "nit: dot periods must go in the very end, the last import block",
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9158c723_e6db1b5c",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "ideally we initialize s the way a client would do, with NewServer\n\nso that we minimize dependencies on the impl details",
+      "range": {
+        "startLine": 41,
+        "startChar": 2,
+        "endLine": 41,
+        "endChar": 14
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18194d9c_b5dc95d2",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "this is copied twice. conveys can be nested\n\nConvey(..., \n   // common code\n\n   Convey( ... \n       // specific code\n   )\n\n   Convey( ... \n       // specific code\n   )\n)",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 5
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7a70097_1be3d1f0",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "use `\n\n`{\"auth_token\":\"hello\"}`",
+      "range": {
+        "startLine": 49,
+        "startChar": 18,
+        "endLine": 49,
+        "endChar": 19
+      },
+      "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02193918_e2348106",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T00:58:18Z",
+      "side": 1,
+      "message": "this is not a very reliable test. I think it would be simpler to extract hand shaking code to a separate function that may return an error (and does not log anything), and test THAT here. \n\nthen, i think, we won\u0027t need to create server object",
       "revId": "d3262fe30f5965d0fb71edad4543db64367734db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
