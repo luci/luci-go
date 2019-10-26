@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7724d89_06d942a8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-26T05:40:08Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "1b5d6ba1c77bd3158d28a62967d41e29917ed6b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
