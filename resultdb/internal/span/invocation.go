@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -54,21 +55,27 @@ func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[strin
 func ReadInvocationFull(ctx context.Context, txn Txn, invID string) (*pb.Invocation, error) {
 	inv := &pb.Invocation{Name: pbutil.InvocationName(invID)}
 
+	eg, ctx := errgroup.WithContext(ctx)
+
 	// Populate fields from Invocation table.
-	err := ReadInvocation(ctx, txn, invID, map[string]interface{}{
-		"State":              &inv.State,
-		"CreateTime":         &inv.CreateTime,
-		"FinalizeTime":       &inv.FinalizeTime,
-		"Deadline":           &inv.Deadline,
-		"BaseTestVariantDef": &inv.BaseTestVariantDef,
-		"Tags":               &inv.Tags,
+	eg.Go(func() error {
+		return ReadInvocation(ctx, txn, invID, map[string]interface{}{
+			"State":              &inv.State,
+			"CreateTime":         &inv.CreateTime,
+			"FinalizeTime":       &inv.FinalizeTime,
+			"Deadline":           &inv.Deadline,
+			"BaseTestVariantDef": &inv.BaseTestVariantDef,
+			"Tags":               &inv.Tags,
+		})
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Populate Inclusions.
-	if inv.Inclusions, err = ReadInclusions(ctx, txn, invID); err != nil {
+	eg.Go(func() (err error) {
+		inv.Inclusions, err = ReadInclusions(ctx, txn, invID)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
