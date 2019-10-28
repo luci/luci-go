@@ -226,6 +226,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		var err error
 
 		// Fetch the result details.
+		logging.Debugf(ctx, "Fetching task result: %s", taskID)
 		result, err = service.GetTaskResult(ctx, taskID, c.perf)
 		if err != nil {
 			return tagTransientGoogleAPIError(err)
@@ -236,6 +237,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 		// If we got the result details, try to fetch stdout if the
 		// user asked for it.
 		if c.taskOutput != taskOutputNone {
+			logging.Debugf(ctx, "Fetching task output: %s", taskID)
 			taskOutput, err := service.GetTaskOutput(ctx, taskID)
 			if err != nil {
 				return tagTransientGoogleAPIError(err)
@@ -245,6 +247,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 
 		// Download the result isolated if available and if we have a place to put it.
 		if c.outputDir != "" {
+			logging.Debugf(ctx, "Fetching task outputs: %s", taskID)
 			outputs, err = service.GetTaskOutputs(ctx, taskID, c.outputDir, result.OutputsRef)
 			if err != nil {
 				return tagTransientGoogleAPIError(err)

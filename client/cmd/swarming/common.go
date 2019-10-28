@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/maruel/subcommands"
 
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -155,6 +157,11 @@ func (s *swarmingServiceImpl) GetTaskOutputs(ctx context.Context, taskID, output
 			filesMu.Lock()
 			files = append(files, name)
 			filesMu.Unlock()
+		},
+		FileStatsCallback: func(fileStats downloader.FileStats, _ time.Duration) {
+			logging.Debugf(ctx, "Downloaded %d of %d bytes in %d of %d files...",
+				fileStats.BytesCompleted, fileStats.BytesScheduled,
+				fileStats.CountCompleted, fileStats.CountScheduled)
 		},
 	}
 	dl := downloader.New(ctx, isolatedClient, isolated.HexDigest(ref.Isolated), dir, opts)
