@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96aef541_c025633c",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-28T23:48:23Z",
+      "side": 1,
+      "message": "If GetTestResult will be the most frequent callsite for this function, I\u0027m thinking probably we should pass in the name and do the parsing within the function.",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "724aef54_30bc7865",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-28T23:48:23Z",
+      "side": 1,
+      "message": "I\u0027m wondering should the base variants be included as well.",
+      "range": {
+        "startLine": 42,
+        "startChar": 24,
+        "endLine": 42,
+        "endChar": 45
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
