@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2f0d36a8_8deddf7e",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:37:10Z",
+      "side": 1,
+      "message": "If there are live cursors at the time of modification/update of the protobuf message, wouldn\u0027t they become invalidated?",
+      "parentUuid": "f50151f2_a30813e4",
+      "range": {
+        "startLine": 28,
+        "startChar": 6,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7fa961b5_9cac43eb",
         "filename": "resultdb/internal/cursor.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e16b6cd0_727b6b78",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:37:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fa961b5_9cac43eb",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 23
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6b2b01b8_641e3bab",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:37:10Z",
+      "side": 1,
+      "message": "Exactly, \"The user is expected to keep all other arguments to the RPC the same; if any arguments are different, the API should send an INVALID_ARGUMENT error.\"\n\nThat said, I\u0027m not sure yet how we\u0027ll be able to do this comparison on actual e.g. ListTestResults calls, i.e. how ResultDB will know whether the cursor was a continuation or a new cursor, unless we annotate the requests themselves with some ID to identify them as part of the same sequence and store that information somewhere.\n\n(Also I can make this a string if you prefer.)",
+      "parentUuid": "01a88c21_8f4dc00a",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "491241b9_ed564430",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 4
@@ -82,6 +154,24 @@
       "writtenOn": "2019-10-29T01:22:29Z",
       "side": 1,
       "message": "why is this needed?",
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe0b6100_19cbd702",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:37:10Z",
+      "side": 1,
+      "message": "The second bullet in https://aip.dev/158 seems to suggest that the cursor knows how big its page is and the user doesn\u0027t need to specify the next page size every time a new page is requested (but if a new page size is requested, the cursor\u0027s stored page size must become that new page size).\n\nIs that different from your interpretation?\n\n\"\"\"\nRequest messages for collections should define a string page_token field, allowing users to advance to the next page in the collection.\n + If the user changes the page_size in a request for subsequent pages, the service must honor the new page size.\n + The user is expected to keep all other arguments to the RPC the same; if any arguments are different, the API should send an INVALID_ARGUMENT error.\n\"\"\"",
+      "parentUuid": "491241b9_ed564430",
       "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
