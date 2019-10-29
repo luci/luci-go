@@ -91,6 +91,24 @@
     },
     {
       "key": {
+        "uuid": "4e894901_b5a27cc1",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Got it, agreed.\n\nChan, any preference?\n\nIf there\u0027s no preference all around I can rename the new files to .*test_result.* here, and we can do the other renames in a followup",
+      "parentUuid": "a96a167d_373098ee",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63c1dc27_c93746ea",
         "filename": "resultdb/cmd/resultdb/get_testresult.go",
         "patchSetId": 5
@@ -111,6 +129,30 @@
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d833a4b_56e819d3",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63c1dc27_c93746ea",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 2
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +251,30 @@
     },
     {
       "key": {
+        "uuid": "bf805ff5_9afaf772",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done\n\nIt gains the responsibility to parse. Again, only a slight difference, and I\u0027ve made the change\n\nI can do the others in a followup CL.",
+      "parentUuid": "2960763a_2c411fa9",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
@@ -220,6 +286,30 @@
       "writtenOn": "2019-10-28T23:48:23Z",
       "side": 1,
       "message": "I\u0027m wondering should the base variants be included as well.",
+      "range": {
+        "startLine": 42,
+        "startChar": 24,
+        "endLine": 42,
+        "endChar": 45
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "558c2fc2_1698aa4c",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "I don\u0027t think so because the proto only has ExtraVariantPairs, which must be disjoint from BaseVariantDef. If we want BaseVariantDef we\u0027d need to query for the Invocation too, and I think the idea is to keep the two query paths separate.",
+      "parentUuid": "724aef54_30bc7865",
       "range": {
         "startLine": 42,
         "startChar": 24,
@@ -285,6 +375,24 @@
     },
     {
       "key": {
+        "uuid": "9d9ee072_945944a9",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "I meant \"the former\", in the second paragraph, sorry --- but you got what I mean",
+      "parentUuid": "db3a8568_839677e8",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2af342b1_4683f58f",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
@@ -308,6 +416,30 @@
     },
     {
       "key": {
+        "uuid": "323470d6_17a4f707",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2af342b1_4683f58f",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31a315d0_2a4d0e37",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
@@ -319,6 +451,30 @@
       "writtenOn": "2019-10-29T00:17:01Z",
       "side": 1,
       "message": "this is the opposite of toMicros in recorder/common.go\nLet\u0027s make this fromMicros and maybe move to a common package, maybe span.",
+      "range": {
+        "startLine": 60,
+        "startChar": 16,
+        "endLine": 60,
+        "endChar": 65
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb73ca1b_a4417367",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "This file is in span, are you fine with keeping it here, since it\u0027s an internal TestResult-specific usage so far? (Only TestResult deals in microseconds)\n\nOr do you mean to create a new span/ package at the level of cmd/ and internal/?",
+      "parentUuid": "31a315d0_2a4d0e37",
       "range": {
         "startLine": 60,
         "startChar": 16,
@@ -354,6 +510,30 @@
     },
     {
       "key": {
+        "uuid": "a954917c_73e48382",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4684cdc4_37ee0efa",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 28
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5d6365e_d7fc655e",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 5
@@ -374,6 +554,30 @@
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d7fec23_69701efc",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5d6365e_d7fc655e",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -400,6 +604,30 @@
     },
     {
       "key": {
+        "uuid": "18f079a4_af5e29d6",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Not sure how you mean instead; I\u0027ve replaced it with the specific failure expected as per godoc, let me know what you think (or maybe remove \"has bad `%%`\" entirely as it\u0027s too specific?)",
+      "parentUuid": "9e83f42d_5f0101a0",
+      "range": {
+        "startLine": 69,
+        "startChar": 43,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6094fc35_27231bc7",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 5
@@ -414,6 +642,24 @@
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6adc4d2_afa1224b",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T02:06:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6094fc35_27231bc7",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
