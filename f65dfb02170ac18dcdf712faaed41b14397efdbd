@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20645761_a3b1a54f",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "Just out of interest, what\u0027s up with this license change? Was this something the linter suggested?",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 3
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcda2d7d_f3ae08de",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "Nit: indent the contents of this switch block?",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 39
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a522c48f_ea210d3a",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "Nit: fullstop at the end of comment.",
+      "range": {
+        "startLine": 130,
+        "startChar": 90,
+        "endLine": 130,
+        "endChar": 94
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44193cde_d184c008",
+        "filename": "milo/frontend/appengine/templates/standalones/related_builds_table.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "Optional nit: I find the dir name \"standalones\" to be not easily understandable (unless this is a standard term in JS/HTML dev?). Maybe something like \"widgets\" would be better?",
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c904d12c_58561331",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "s/what/that/",
+      "range": {
+        "startLine": 31,
+        "startChar": 54,
+        "endLine": 31,
+        "endChar": 58
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "159bfa8a_1a476800",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "nit: standalones\n\n(though if you change the dir name as mentioned above this needs to be updated anyway)",
+      "range": {
+        "startLine": 32,
+        "startChar": 37,
+        "endLine": 32,
+        "endChar": 47
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f59a14a7_038c5001",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "s/what/that/",
+      "range": {
+        "startLine": 82,
+        "startChar": 54,
+        "endLine": 82,
+        "endChar": 58
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9fbee59_571aba50",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-10-29T00:59:51Z",
+      "side": 1,
+      "message": "standalones, but same comment as above",
+      "range": {
+        "startLine": 83,
+        "startChar": 37,
+        "endLine": 83,
+        "endChar": 47
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
