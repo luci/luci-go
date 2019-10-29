@@ -17,11 +17,15 @@ package sink
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -53,5 +57,25 @@ func TestHandshake(t *testing.T) {
 			err = doCheck(`garbage`, authToken)
 			So(err, ShouldErrLike, "failed to parse")
 		})
+	})
+}
+
+func TestClose(t *testing.T) {
+	Convey("Close check", t, func() {
+		ctx := context.Background()
+		ctx = gologger.StdConfig.Use(ctx)
+		ctx = logging.SetLevel(ctx, logging.Debug)
+		server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+		So(err, ShouldBeNil)
+		server.Serve(ctx)
+		addr := fmt.Sprintf(":%d", server.Config().Port)
+		conn, err := net.Dial("tcp", addr)
+		So(err, ShouldBeNil)
+		_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
+		So(err, ShouldBeNil)
+		err = server.Close(ctx)
+		So(err, ShouldBeNil)
+		_, err = net.Dial("tcp", addr)
+		So(err, ShouldErrLike, "connection refused")
 	})
 }

@@ -20,13 +20,15 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-
 	"fmt"
 	"net"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -60,7 +62,11 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg ServerConfig
+	cfg      ServerConfig
+	listener *net.Listener
+	wg       sync.WaitGroup
+	once     sync.Once
+	cancel   context.CancelFunc
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -90,13 +96,17 @@ func (s *Server) Config() ServerConfig {
 	return s.cfg
 }
 
-// Serve runs the Server and blocks until it stops running.
+// Serve runs the Server in a background goroutine.
+//
+// The Server will continue to run until a subsequent call to Close.
 func (s *Server) Serve(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	s.cancel = cancel
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
+	s.listener = &ln
 
 	_, port, err := net.SplitHostPort(ln.Addr().String())
 	if err != nil {
@@ -107,24 +117,61 @@ func (s *Server) Serve(ctx context.Context) error {
 		return err
 	}
 
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			return err
-		}
-		go s.handleConnection(ctx, conn)
-	}
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
 
-	panic("unreachable code")
+			s.wg.Add(1)
+			go s.handleConnection(ctx, conn, &s.wg)
+		}
+	}()
+
+	return nil
 }
 
 // Close tells the Server to shutdown and blocks until it stops running.
 //
-// The Server will attempt to finish handling any messages that have not been
-// processed yet. If ctx is canceled it will immediately abort all operations
-// and return from Close as soon as possible.
+// Close implements a two-phase shutdown. First it stops the server from
+// accepting new connections, and waits for currently existing connections to
+// finish their work. If after a timeout some connections are still open, it
+// explicitly tells them to stop work. If they are still open after a second
+// timeout, Close returns immediately with an error. If at any time ctx is
+// cancelled, Close returns immediately with an error.
 func (s *Server) Close(ctx context.Context) error {
-	return errors.New("not implemented yet")
+	(*s.listener).Close()
+	done := make(chan struct{})
+
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+
+	timer := clock.NewTimer(ctx)
+	d := time.Duration(2) * time.Second
+	timer.Reset(d)
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return errors.Reason("context was cancelled").Err()
+	case <-timer.GetC():
+		s.cancel()
+	}
+
+	timer.Reset(d)
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return errors.Reason("context was cancelled").Err()
+	case <-timer.GetC():
+		return errors.Reason("connection handling goroutines did not stop").Err()
+	}
+
+	return nil
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
@@ -139,7 +186,8 @@ func (s *Server) Export(ctx context.Context) context.Context {
 	return nil
 }
 
-func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
+func (s *Server) handleConnection(ctx context.Context, c net.Conn, wg *sync.WaitGroup) {
+	defer wg.Done()
 	defer c.Close()
 	dc := json.NewDecoder(c)
 	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
@@ -147,6 +195,26 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 		return
 	}
 	logging.Debugf(ctx, "Successful handshake")
+
+	d := time.Duration(500) * time.Millisecond
+	var msg sinkpb.SinkMessageContainer
+	for {
+		select {
+		case <-ctx.Done():
+			logging.Debugf(ctx, "Context cancelled, time to stop")
+			return
+		default:
+		}
+
+		c.SetDeadline(time.Now().Add(d))
+		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
+			if e, ok := err.(net.Error); ok && (e.Temporary() || e.Timeout()) {
+				continue
+			}
+			logging.Errorf(ctx, "reading next message failed: %s", err)
+			return
+		}
+	}
 }
 
 func processHandshake(dc *json.Decoder, authToken string) error {
