@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "412e9eff_789e7985",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T01:11:51Z",
+      "side": 1,
+      "message": "(In particular, in general there might be an `isSupported` function, but here all it would do is check equality with 0 because so far we only support version 0)",
+      "parentUuid": "7a5e2002_47b3cccd",
+      "range": {
+        "startLine": 50,
+        "startChar": 22,
+        "endLine": 50,
+        "endChar": 23
+      },
+      "revId": "b736ef3706aaa271d82184363b3eab8cf7cdbb3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ef8f8bd_36c6e1d6",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 2
@@ -101,6 +125,30 @@
       "side": 1,
       "message": "Thanks for the catch! I\u0027ll remove that :)",
       "parentUuid": "1ceb1ef0_a2c30d18",
+      "range": {
+        "startLine": 26,
+        "startChar": 34,
+        "endLine": 26,
+        "endChar": 41
+      },
+      "revId": "b736ef3706aaa271d82184363b3eab8cf7cdbb3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50b27c7c_14a50efc",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T01:11:51Z",
+      "side": 1,
+      "message": "Actually, I meant \"pagination results\" --- how about \"page entries\", is that clearer?",
+      "parentUuid": "fe3cd363_c0f84817",
       "range": {
         "startLine": 26,
         "startChar": 34,
