@@ -341,6 +341,30 @@
     },
     {
       "key": {
+        "uuid": "ae07b10a_7df62ec5",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-29T05:15:17Z",
+      "side": 1,
+      "message": "(I think this comment is actually for the comment below?)\n\nI agree that we should not duplicate base test variants, my concern is that if users see \"Extra\"VariantPairs, they may ask why extra, and where are the rest of variants.",
+      "parentUuid": "62285c45_59e71cd8",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
