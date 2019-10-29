@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "b85dac5a_8e2ba3cf",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "get_test_result.go for consistency?\nand yeah, maybe testresult.go should have been test_result.go",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63c1dc27_c93746ea",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "ValidateTestResultName already checks this",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 2
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96aef541_c025633c",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
@@ -13,6 +53,30 @@
       "writtenOn": "2019-10-28T23:48:23Z",
       "side": 1,
       "message": "If GetTestResult will be the most frequent callsite for this function, I\u0027m thinking probably we should pass in the name and do the parsing within the function.",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "055a0276_45b18013",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "at some point i had a local CL to update all GetXXX functions to accept names instead of name components, but I wasn\u0027t sure; and now Chan suggests this. Maybe we should do this indeed. WDYT?",
+      "parentUuid": "96aef541_c025633c",
       "range": {
         "startLine": 31,
         "startChar": 49,
@@ -42,6 +106,155 @@
         "endLine": 42,
         "endChar": 45
       },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e48df6b_5d1a22d9",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "we need the same code for ListTestResult. Do you plan to refactor it later?",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2af342b1_4683f58f",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "other Read\u003cMessage\u003e functions check err for NotFound and return a gRPC error. \nThis func should do that too, otherwise GetTestResult will return INTERNAL error on a non-existent test result",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31a315d0_2a4d0e37",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "this is the opposite of toMicros in recorder/common.go\nLet\u0027s make this fromMicros and maybe move to a common package, maybe span.",
+      "range": {
+        "startLine": 60,
+        "startChar": 16,
+        "endLine": 60,
+        "endChar": 65
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4684cdc4_37ee0efa",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "i think this is unnecessary because we must unexpected it and validate again against testPathRe.\nlet\u0027s use [^/]+ below",
+      "range": {
+        "startLine": 32,
+        "startChar": 6,
+        "endLine": 32,
+        "endChar": 28
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5d6365e_d7fc655e",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "nit: that\u0027s a lot of \"\"\nconsider\n\n  err \u003d unspecified()\n  return\n\nsame below",
+      "range": {
+        "startLine": 60,
+        "startChar": 9,
+        "endLine": 60,
+        "endChar": 19
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e83f42d_5f0101a0",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "i am not sure a user would understand this error message",
+      "range": {
+        "startLine": 69,
+        "startChar": 43,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6094fc35_27231bc7",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:17:01Z",
+      "side": 1,
+      "message": "we must ensure unescapedTestPath matches testPathRe\n\nplease add a test for that",
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
