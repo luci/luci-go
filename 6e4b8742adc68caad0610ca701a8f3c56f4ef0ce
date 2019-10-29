@@ -109,6 +109,24 @@
     },
     {
       "key": {
+        "uuid": "a73975b1_36abfc4b",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-29T03:58:50Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "4e894901_b5a27cc1",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63c1dc27_c93746ea",
         "filename": "resultdb/cmd/resultdb/get_testresult.go",
         "patchSetId": 5
@@ -343,6 +361,30 @@
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c3ede1a_80af3eec",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-29T03:58:50Z",
+      "side": 1,
+      "message": "Got it. Thanks.",
+      "parentUuid": "558c2fc2_1698aa4c",
+      "range": {
+        "startLine": 42,
+        "startChar": 24,
+        "endLine": 42,
+        "endChar": 45
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
