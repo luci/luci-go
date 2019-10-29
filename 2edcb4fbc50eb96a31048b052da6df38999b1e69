@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a0fe913_7f3118f2",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T02:20:27Z",
+      "side": 1,
+      "message": "we don\u0027t need to read this. we have it above\n\nperhaps we should parse the name into these fields",
+      "range": {
+        "startLine": 46,
+        "startChar": 2,
+        "endLine": 47,
+        "endChar": 36
+      },
+      "revId": "2edcb4fbc50eb96a31048b052da6df38999b1e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78b92894_f6e96ee2",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T02:20:27Z",
+      "side": 1,
+      "message": "comments\n\nsame below",
+      "revId": "2edcb4fbc50eb96a31048b052da6df38999b1e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9974f18_a4422840",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T02:20:27Z",
+      "side": 1,
+      "message": "i think this is unnecessary. the regexp already says that, essentially",
+      "range": {
+        "startLine": 76,
+        "startChar": 42,
+        "endLine": 76,
+        "endChar": 57
+      },
+      "revId": "2edcb4fbc50eb96a31048b052da6df38999b1e69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
