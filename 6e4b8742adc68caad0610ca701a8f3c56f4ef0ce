@@ -389,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "486378f8_2d35eede",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T22:08:52Z",
+      "side": 1,
+      "message": "yes, it should have been a comment below\n\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto;l\u003d70?q\u003dtest_result.proto\nexplains where is the rest",
+      "parentUuid": "ae07b10a_7df62ec5",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
