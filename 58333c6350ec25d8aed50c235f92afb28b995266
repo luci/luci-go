@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "dcf56ebb_45c1e56b",
+        "filename": "milo/frontend/expectations/standalone-Test_standalone-_MacTests.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T05:42:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3436beb6_8e495d55",
+      "revId": "58333c6350ec25d8aed50c235f92afb28b995266",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86ceb2d8_9e27e893",
         "filename": "milo/frontend/routes_test.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "58333c6350ec25d8aed50c235f92afb28b995266",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97fc1481_30a13dc6",
+        "filename": "milo/frontend/routes_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T05:42:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86ceb2d8_9e27e893",
+      "range": {
+        "startLine": 462,
+        "startChar": 29,
+        "endLine": 462,
+        "endChar": 44
+      },
+      "revId": "58333c6350ec25d8aed50c235f92afb28b995266",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
