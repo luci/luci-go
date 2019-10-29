@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c72ddf35_7b2468b8",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-29T15:35:13Z",
+      "side": 1,
+      "message": "nit: consider adding /internal prefix to discourage external uses of such URLs directly.",
+      "revId": "efda900e22d9fc382de0dec2f53114e9b1c582bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
