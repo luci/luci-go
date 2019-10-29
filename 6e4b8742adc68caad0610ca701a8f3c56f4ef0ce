@@ -461,6 +461,30 @@
     },
     {
       "key": {
+        "uuid": "29f3b4a6_700eeef0",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T23:37:41Z",
+      "side": 1,
+      "message": "i know i never sent a CL with actual QueryTestResultsResponse RPC but I planned to include both, so that there is one RPC",
+      "parentUuid": "6e0ea571_7f4ec208",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
