@@ -365,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "83135812_6efc002a",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T22:07:00Z",
+      "side": 1,
+      "message": "Yeah, in an ideal world we might be able to pass back all the information self-contained in TestResults, but I think that would require some pretty fundamental changes... we can definitely talk about this some more (though I\u0027ll go ahead and land this for now so as not to block the CL on that discussion)",
+      "parentUuid": "ae07b10a_7df62ec5",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
