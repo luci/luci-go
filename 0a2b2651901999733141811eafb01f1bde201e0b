@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "b360a2d2_7929ce33",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T22:18:44Z",
+      "side": 1,
+      "message": "Moved into the protobuf\n\nYes, the original plan was to support both (maybe we\u0027d set an expiration for cursors, beyond which they\u0027re no longer guaranteed valid, and then since once we update curVersion we\u0027d only be generating cursors with the new version, we could just wait for that expiration period before deleting support for the old version).\n\nSure, we could do the same thing with protobuf. To confirm, we\u0027d have to rely on the structure of the protobuf not changing though, yes? (So for instance, right now position is a string slice that represents a Spanner key; if we keep a string slice but no longer have it represent a Spanner key, then unmarshalling would still succeed, and we wouldn\u0027t discover the failure until later).\n\nVersion field removed in PS8-\u003e9",
+      "parentUuid": "cafac469_7fa656ba",
+      "range": {
+        "startLine": 28,
+        "startChar": 6,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7fa961b5_9cac43eb",
         "filename": "resultdb/internal/cursor.go",
         "patchSetId": 4
