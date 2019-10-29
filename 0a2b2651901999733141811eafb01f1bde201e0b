@@ -191,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "0571121c_9b8bc872",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T04:48:23Z",
+      "side": 1,
+      "message": "D\u0027oh, yes, of course --- because the clients can\u0027t generate their own tokens!\n\nSorry, what do you mean re. not actually checking and happening rather rarely?",
+      "parentUuid": "df56fc82_3ea8158d",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "491241b9_ed564430",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 4
@@ -241,6 +265,24 @@
       "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7461ad80_8a7bd9cf",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T04:48:23Z",
+      "side": 1,
+      "message": "OK, that also makes sense; pageSize removed.\n\n(It does seem like weird phrasing in the standard to emphasize \"If the user changes the page_size in a request for subsequent pages, the service must honor the new page size\" then, since if we\u0027re doing [pageSize OR default] with short-circuiting, it\u0027s redundant that we\u0027d honor the new page size...)",
+      "parentUuid": "d92d756e_520de79a",
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
