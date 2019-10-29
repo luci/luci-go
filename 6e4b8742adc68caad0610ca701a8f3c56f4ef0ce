@@ -149,6 +149,30 @@
     },
     {
       "key": {
+        "uuid": "2960763a_2c411fa9",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:58:51Z",
+      "side": 1,
+      "message": "what new responsibility does it gain?\n\nyes, it does tie the func signature to resource name. Note however that the func already deals with resource names anyway: L33, so not a huge change",
+      "parentUuid": "c747f005_9537a6ea",
+      "range": {
+        "startLine": 31,
+        "startChar": 49,
+        "endLine": 31,
+        "endChar": 82
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "724aef54_30bc7865",
         "filename": "resultdb/internal/span/testresult.go",
         "patchSetId": 5
@@ -204,6 +228,24 @@
       "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db3a8568_839677e8",
+        "filename": "resultdb/internal/span/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:58:51Z",
+      "side": 1,
+      "message": "\u003e By \"the same code\" do you mean the fields being read, or the population of tr.Expected and tr.Duration? \n\nboth\n\n\u003e The latter --- yes, I have that refactored in ListTestResults (makes more sense there as otherwise with one use it makes more sense to inline).\n\u003e \n\u003e The latter --- I\u0027m not sure what you mean by \"the same\", could you elaborate? We need to read with a RowIterator, i.e. we specify the columns in the Statement that is passed to the Query, and then we call FromSpanner directly with the fields into which we\u0027re reading the values.\n\u003e \n\u003e Do you mean to store the columns in a package-level var and then generate the map[string]interface{} from []string and []interface{} for the call to ReadRow? Or maybe something else?\n\ni think i see what you mean. nvm",
+      "parentUuid": "03074fd7_9b0fdd68",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
