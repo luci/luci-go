@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "cafac469_7fa656ba",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T03:07:08Z",
+      "side": 1,
+      "message": "it depends on how we write the code interpreting the cursor. What did you plan to do with this version when we transition to the new version? If support both, then that\u0027s what we\u0027d do with protobuf.\n\nat any rate, version can be a part of the protobuf message. i don\u0027t see a need for two encoding schemes here",
+      "parentUuid": "2f0d36a8_8deddf7e",
+      "range": {
+        "startLine": 28,
+        "startChar": 6,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7fa961b5_9cac43eb",
         "filename": "resultdb/internal/cursor.go",
         "patchSetId": 4
@@ -143,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "df56fc82_3ea8158d",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T03:07:08Z",
+      "side": 1,
+      "message": "clone the request, strip page token and size, marshal, compute hash, compare to the hash in the cursor?\n\nit does mean that we\u0027d spend CPU on this... some implementations require other fields to be the same, but do not actually check it. I wouldn\u0027t be terribly opposed to this, because this happens rather rarely.",
+      "parentUuid": "6b2b01b8_641e3bab",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "491241b9_ed564430",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 4
@@ -172,6 +220,24 @@
       "side": 1,
       "message": "The second bullet in https://aip.dev/158 seems to suggest that the cursor knows how big its page is and the user doesn\u0027t need to specify the next page size every time a new page is requested (but if a new page size is requested, the cursor\u0027s stored page size must become that new page size).\n\nIs that different from your interpretation?\n\n\"\"\"\nRequest messages for collections should define a string page_token field, allowing users to advance to the next page in the collection.\n + If the user changes the page_size in a request for subsequent pages, the service must honor the new page size.\n + The user is expected to keep all other arguments to the RPC the same; if any arguments are different, the API should send an INVALID_ARGUMENT error.\n\"\"\"",
       "parentUuid": "491241b9_ed564430",
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d92d756e_520de79a",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T03:07:08Z",
+      "side": 1,
+      "message": "i don\u0027t interpret this as \"page size\u0027s default depends on whether page token is provided\". Comment from aip.dev:\n\n  // If unspecified, at most 50 books will be returned.\n\ni interpret it as, if page token is specified and page size is not, then it defaults to 50, and not page size from the previous request, otherwise this comment would be different and rather complicated, since we\u0027d add coupling. I don\u0027t see a justification to add this complexity.",
+      "parentUuid": "fe0b6100_19cbd702",
       "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
