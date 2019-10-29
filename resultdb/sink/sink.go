@@ -20,13 +20,14 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -60,7 +61,11 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg ServerConfig
+	cfg           ServerConfig
+	ln            net.Listener
+	cancel        context.CancelFunc
+	serverLoopErr error
+	serveLoopDone chan struct{}
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -76,6 +81,7 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 
 	s := &Server{cfg: cfg}
+
 	return s, nil
 }
 
@@ -90,15 +96,21 @@ func (s *Server) Config() ServerConfig {
 	return s.cfg
 }
 
-// Serve runs the Server and blocks until it stops running.
+// Serve runs the Server in a background goroutine.
+//
+// The Server will continue to run until a subsequent call to Close.
+// If ctx is cancelled the background goroutine will stop accepting connections
+// and terminate.
 func (s *Server) Serve(ctx context.Context) error {
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
+	var err error
+	ctx, s.cancel = context.WithCancel(ctx)
+	lc := net.ListenConfig{}
+	s.ln, err = lc.Listen(ctx, "tcp", fmt.Sprintf(":%d", s.cfg.Port))
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
 
-	_, port, err := net.SplitHostPort(ln.Addr().String())
+	_, port, err := net.SplitHostPort(s.ln.Addr().String())
 	if err != nil {
 		return err
 	}
@@ -107,24 +119,46 @@ func (s *Server) Serve(ctx context.Context) error {
 		return err
 	}
 
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			return err
-		}
-		go s.handleConnection(ctx, conn)
-	}
+	s.serveLoopDone = make(chan struct{})
+	go func() {
+		defer close(s.serveLoopDone)
+		s.serveLoop(ctx)
+	}()
 
-	panic("unreachable code")
+	return nil
 }
 
-// Close tells the Server to shutdown and blocks until it stops running.
+func (s *Server) serveLoop(ctx context.Context) {
+	tcpln := s.ln.(*net.TCPListener)
+	for {
+		select {
+		case <-ctx.Done():
+			s.serverLoopErr = errors.Annotate(ctx.Err(), "context cancelled").Err()
+			return
+		default:
+		}
+
+		tcpln.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
+		conn, err := tcpln.Accept()
+		if err != nil {
+			if shouldKeepTrying(err) {
+				continue
+			}
+			s.serverLoopErr = err
+			return
+		}
+
+		go s.handleConnection(ctx, conn)
+	}
+}
+
+// Close immediately closes the net.Listener and cancels all connection handlers.
 //
-// The Server will attempt to finish handling any messages that have not been
-// processed yet. If ctx is canceled it will immediately abort all operations
-// and return from Close as soon as possible.
+// Close returns the error returned from closing the Listener.
 func (s *Server) Close(ctx context.Context) error {
-	return errors.New("not implemented yet")
+	err := s.ln.Close()
+	s.cancel()
+	return err
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
@@ -147,6 +181,25 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 		return
 	}
 	logging.Debugf(ctx, "Successful handshake")
+
+	var msg sinkpb.SinkMessageContainer
+	for {
+		select {
+		case <-ctx.Done():
+			logging.Debugf(ctx, "Context cancelled, time to stop")
+			return
+		default:
+		}
+
+		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
+		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
+			if shouldKeepTrying(err) {
+				continue
+			}
+			logging.Errorf(ctx, "reading next message failed: %s", err)
+			return
+		}
+	}
 }
 
 func processHandshake(dc *json.Decoder, authToken string) error {
@@ -158,4 +211,9 @@ func processHandshake(dc *json.Decoder, authToken string) error {
 		return errors.Reason("handshake message had invalid AuthToken").Err()
 	}
 	return nil
+}
+
+func shouldKeepTrying(err error) bool {
+	e, ok := err.(net.Error)
+	return ok && (e.Temporary() || e.Timeout())
 }
