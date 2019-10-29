@@ -36,7 +36,7 @@ func insertTestResult(invID string, tr *pb.TestResult, i int) (*spanner.Mutation
 		"Status":          tr.Status,
 		"SummaryMarkdown": tr.SummaryMarkdown,
 		"StartTime":       tr.StartTime,
-		"RunDurationUsec": toMicros(tr.Duration),
+		"RunDurationUsec": span.ToMicros(tr.Duration),
 		"Tags":            tr.Tags,
 
 		"InputArtifacts":  tr.InputArtifacts,

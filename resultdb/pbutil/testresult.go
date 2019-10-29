@@ -15,6 +15,8 @@
 package pbutil
 
 import (
+	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 
@@ -27,6 +29,10 @@ import (
 // artifactFormatVersion identifies the version of artifact encoding format we're using.
 const artifactFormatVersion = 1
 
+const resultIDPattern = `[[:ascii:]]{1,32}`
+
+var testResultNameRe = regexpf("^invocations/(%s)/tests/([^/]+)/results/(%s)$",
+	invocationIDPattern, resultIDPattern)
 var testPathRe = regexp.MustCompile(`^[[:print:]]+$`)
 
 // ValidateTestPath returns a non-nil error if testPath is invalid.
@@ -38,6 +44,58 @@ func ValidateTestPath(testPath string) error {
 		return doesNotMatch(testPathRe)
 	}
 	return nil
+}
+
+// ValidateTestResultName returns a non-nil error if name is invalid.
+func ValidateTestResultName(name string) error {
+	_, _, _, err := ParseTestResultName(name)
+	return err
+}
+
+// ParseTestResultName extracts the invocation ID, unescaped test path, and
+// result ID.
+func ParseTestResultName(name string) (invID, testPath, resultID string, err error) {
+	if name == "" {
+		err = unspecified()
+		return
+	}
+
+	m := testResultNameRe.FindStringSubmatch(name)
+	if m == nil {
+		err = doesNotMatch(testResultNameRe)
+		return
+	}
+	unescapedTestPath, err := url.PathUnescape(m[2])
+	if err != nil {
+		err = errors.Annotate(err, "test path %q", m[2]).Err()
+		return
+	}
+
+	if !testPathRe.MatchString(unescapedTestPath) {
+		err = errors.Annotate(
+			doesNotMatch(testPathRe), "test path %q", unescapedTestPath).Err()
+		return
+	}
+	return m[1], unescapedTestPath, m[3], nil
+}
+
+// MustParseTestResultName retrieves the invocation ID, unescaped test path, and
+// result ID.
+// Panics if the name is invalid. Useful for situations when name was already
+// validated.
+func MustParseTestResultName(name string) (invID, testPath, resultID string) {
+	invID, testPath, resultID, err := ParseTestResultName(name)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+// TestResultName synthesizes a test result name from its parts.
+// Does not validate parts; use ValidateTestResultName.
+func TestResultName(invID, testPath, resultID string) string {
+	return fmt.Sprintf("invocations/%s/tests/%s/results/%s",
+		invID, url.PathEscape(testPath), resultID)
 }
 
 // NormalizeTestResult converts inv to the canonical form.

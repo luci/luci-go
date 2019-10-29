@@ -16,8 +16,6 @@ package main
 
 import (
 	"time"
-
-	durpb "github.com/golang/protobuf/ptypes/duration"
 )
 
 const (
@@ -34,7 +32,3 @@ const (
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
 )
-
-func toMicros(d *durpb.Duration) int64 {
-	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
-}
