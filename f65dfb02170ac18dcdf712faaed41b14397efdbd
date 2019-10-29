@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "aa13df02_d258f4c5",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "yes. the linter complains every time so I think it\u0027s probably better to fix it.",
+      "parentUuid": "20645761_a3b1a54f",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 3
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fcda2d7d_f3ae08de",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "cf9e21a3_e64ec257",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcda2d7d_f3ae08de",
+      "range": {
+        "startLine": 109,
+        "startChar": 6,
+        "endLine": 109,
+        "endChar": 39
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a522c48f_ea210d3a",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b159cb5e_722bc3d5",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a522c48f_ea210d3a",
+      "range": {
+        "startLine": 130,
+        "startChar": 90,
+        "endLine": 130,
+        "endChar": 94
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +183,30 @@
     },
     {
       "key": {
+        "uuid": "e26efa1e_a58ce9bf",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c904d12c_58561331",
+      "range": {
+        "startLine": 31,
+        "startChar": 54,
+        "endLine": 31,
+        "endChar": 58
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "159bfa8a_1a476800",
         "filename": "server/templates/loaders.go",
         "patchSetId": 1
@@ -131,6 +227,30 @@
       "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb7d94d0_33701df4",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "159bfa8a_1a476800",
+      "range": {
+        "startLine": 32,
+        "startChar": 37,
+        "endLine": 32,
+        "endChar": 47
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +277,30 @@
     },
     {
       "key": {
+        "uuid": "94a6d5fa_4dc5175f",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f59a14a7_038c5001",
+      "range": {
+        "startLine": 82,
+        "startChar": 54,
+        "endLine": 82,
+        "endChar": 58
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9fbee59_571aba50",
         "filename": "server/templates/loaders.go",
         "patchSetId": 1
@@ -177,6 +321,30 @@
       "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea12a3d9_8d577064",
+        "filename": "server/templates/loaders.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-29T02:31:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9fbee59_571aba50",
+      "range": {
+        "startLine": 83,
+        "startChar": 37,
+        "endLine": 83,
+        "endChar": 47
+      },
+      "revId": "f65dfb02170ac18dcdf712faaed41b14397efdbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
