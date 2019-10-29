@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "a96a167d_373098ee",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T01:15:17Z",
+      "side": 1,
+      "message": "right\n\nto be absolutely clear, by consistency I meant using_underscore_to_separate_words_in_go_files, but yes, we do not actually follow that everywhere, e.g. variantdef.\n\ni don\u0027t have a strong opinion",
+      "parentUuid": "ae2562d9_93d6541b",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63c1dc27_c93746ea",
         "filename": "resultdb/cmd/resultdb/get_testresult.go",
         "patchSetId": 5
