@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "ae2562d9_93d6541b",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T01:08:59Z",
+      "side": 1,
+      "message": "Sure, I\u0027m not arguing against consistency; the comment was w.r.t. using test_result everywhere, or testresult everywhere",
+      "parentUuid": "74c78f82_ea3d445f",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "63c1dc27_c93746ea",
         "filename": "resultdb/cmd/resultdb/get_testresult.go",
         "patchSetId": 5
