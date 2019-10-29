@@ -766,6 +766,30 @@
     },
     {
       "key": {
+        "uuid": "854fde64_60e3e104",
+        "filename": "resultdb/pbutil/testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T04:55:19Z",
+      "side": 1,
+      "message": "Sure thing! Done",
+      "parentUuid": "1a3347d6_ca475461",
+      "range": {
+        "startLine": 69,
+        "startChar": 43,
+        "endLine": 69,
+        "endChar": 63
+      },
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6094fc35_27231bc7",
         "filename": "resultdb/pbutil/testresult.go",
         "patchSetId": 5
