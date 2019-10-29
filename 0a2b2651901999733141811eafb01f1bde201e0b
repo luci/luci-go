@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f50151f2_a30813e4",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T01:22:29Z",
+      "side": 1,
+      "message": "why do we have both version and protobuf? i\u0027d expect either a version with custom encoding (e.g. varint of offset) or just the protobuf message. if need to modify the protobuf message, we can",
+      "range": {
+        "startLine": 28,
+        "startChar": 6,
+        "endLine": 28,
+        "endChar": 16
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fa961b5_9cac43eb",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T01:22:29Z",
+      "side": 1,
+      "message": "this name is abstract. ValidateCursor",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 23
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01a88c21_8f4dc00a",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T01:22:29Z",
+      "side": 1,
+      "message": "this will blow up the length of the cursor. why is this needed? if the intention is only to check that other parameters were same, let\u0027s store only a hash",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "491241b9_ed564430",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T01:22:29Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
