@@ -22,6 +22,30 @@
       "revId": "071e374365156bf0cfad0bf0f1d5eafdfd047139",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c51370e9_f9417e9e",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1001168
+      },
+      "writtenOn": "2019-10-29T18:08:30Z",
+      "side": 1,
+      "message": "So I looked into this. This duration isn\u0027t very helpful right now, because it\u0027s actually the duration elapsed since the *last* callback.\n\nIn addition, the first callback always reports with the wrong duration, since time.Time is initialized to the Unix epoch (thanks martiniss for finding this out)\n```\n--git a/client/downloader/downloader.go b/client/downloader/downloader.go\nindex 44c0e720b..478a639d8 100644\n--- a/client/downloader/downloader.go\n+++ b/client/downloader/downloader.go\n@@ -303,9 +303,11 @@ func (d *Downloader) updateFileStats(lockedCb func(*FileStats) bool) {\n                if d.options.FileStatsCallback !\u003d nil {\n                        doCall \u003d maybeCall\n                        now :\u003d clock.Now(d.ctx)\n-                       span \u003d now.Sub(d.lastFileStatsCb)\n+                       if !d.lastFileStatsCb.IsZero() {\n+                               span \u003d now.Sub(d.lastFileStatsCb)\n+                       }\n \n-                       if span \u003e\u003d d.interval {\n+                       if d.lastFileStatsCb.IsZero() || span \u003e\u003d d.interval {\n                                if d.interval \u003c d.options.MaxFileStatsInterval {\n                                        d.interval *\u003d 2\n                                        if d.interval \u003e d.options.MaxFileStatsInterval {\n```\n\nBut even like this, the duration isn\u0027t super helpful. Maybe we should change it to elapsed... but I\u0027ll look into making that (or documenting time.Duration in the callback) change in a followup.",
+      "parentUuid": "6bd95367_3389cc7f",
+      "range": {
+        "startLine": 161,
+        "startChar": 58,
+        "endLine": 161,
+        "endChar": 59
+      },
+      "revId": "071e374365156bf0cfad0bf0f1d5eafdfd047139",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
