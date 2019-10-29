@@ -1,0 +1,233 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd30aa6e_125eff58",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "interfaces in Go are references. Interface pointers are used very rarely.",
+      "range": {
+        "startLine": 66,
+        "startChar": 10,
+        "endLine": 66,
+        "endChar": 23
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a38ee329_1167e276",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "the comment should explain what would happen if ctx is cancelled.\nit looks like server stops doing useful work when this happens. It accepts new connections, but pretty much immediately rejects them. That\u0027s not useful. it does not make sense to run the for loop if this happens",
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b38cff2_3322a9cb",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "\"stop working\" or \"stop the work\"",
+      "range": {
+        "startLine": 139,
+        "startChar": 28,
+        "endLine": 139,
+        "endChar": 37
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8da3c612_6050ea56",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "i think this is rather complicated. I looked at https://godoc.org/net/http#Server.Close and it seems we could start with that, and add Shutdown like https://godoc.org/net/http#Server.Shutdown if really need one",
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32053a95_9421fd2c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "we must not ignore the returned error",
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed3bd6a1_9b787f92",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "in general, use errors.Annotate to wrap an error, in this case ctx.Err()",
+      "range": {
+        "startLine": 158,
+        "startChar": 9,
+        "endLine": 158,
+        "endChar": 53
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53971944_cf2f9f8a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "in general, \u003c-time.After(2 * time.Second)",
+      "range": {
+        "startLine": 159,
+        "startChar": 6,
+        "endLine": 159,
+        "endChar": 20
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "131771e3_f38ba51b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "this assumes the caller behavior. it is more robust to do\n\n  go func() {\n    defer wg.Done()\n    handleConnection(ctx_\n  }()\n\nso it is as close to \"go\" keyword",
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f52714d5_7abafe54",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "500 * time.Millsecond",
+      "range": {
+        "startLine": 198,
+        "startChar": 6,
+        "endLine": 198,
+        "endChar": 43
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df5bffde_7955a72f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "clock.Now(ctx)",
+      "range": {
+        "startLine": 208,
+        "startChar": 16,
+        "endLine": 208,
+        "endChar": 26
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2209609b_51097419",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T20:37:37Z",
+      "side": 1,
+      "message": "we have two error cases so far in this func, this and L193. Both log an error and return. We might gain more later. I think it would be simpler if returned an error in this func (without logging), and have logging logic in the caller",
+      "range": {
+        "startLine": 213,
+        "startChar": 3,
+        "endLine": 214,
+        "endChar": 9
+      },
+      "revId": "adb1a35528cf86e8538c18bac5fd6c04060c1411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
