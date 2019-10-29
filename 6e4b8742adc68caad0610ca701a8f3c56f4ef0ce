@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "74c78f82_ea3d445f",
+        "filename": "resultdb/cmd/resultdb/get_testresult.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T00:49:27Z",
+      "side": 1,
+      "message": "your point makes sense, but imo consistency is more importnat",
+      "parentUuid": "66401bb9_692e7c06",
+      "revId": "6e4b8742adc68caad0610ca701a8f3c56f4ef0ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "63c1dc27_c93746ea",
         "filename": "resultdb/cmd/resultdb/get_testresult.go",
         "patchSetId": 5
