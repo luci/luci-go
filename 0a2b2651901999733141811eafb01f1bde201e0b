@@ -215,6 +215,30 @@
     },
     {
       "key": {
+        "uuid": "c86c39bd_b54840a8",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-29T07:25:27Z",
+      "side": 1,
+      "message": "i mean, i think its ok to literally skip the check that the other fields are same.\ni believe datastore query API does not complain if the filter does not match the page token. it does not do the check. the page token is a position in index and does not include information about the original query\n\nthis way we\u0027d have less code and we won\u0027t spend CPU cycles on cloning, marshaling and hashing the request",
+      "parentUuid": "0571121c_9b8bc872",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 0
+      },
+      "revId": "0a2b2651901999733141811eafb01f1bde201e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "491241b9_ed564430",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 4
