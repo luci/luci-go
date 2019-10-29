@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7a5e2002_47b3cccd",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T00:42:00Z",
+      "side": 1,
+      "message": "The intention here is actually to check \"do we know how to handle this version\", and all we know how to handle here is version 0. Currently, that\u0027s \"curVersion\", but if we update the version to e.g. 1, then the check is no longer checking what we actually mean to check.",
+      "parentUuid": "3a698760_5397a3d5",
+      "range": {
+        "startLine": 50,
+        "startChar": 22,
+        "endLine": 50,
+        "endChar": 23
+      },
+      "revId": "b736ef3706aaa271d82184363b3eab8cf7cdbb3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ef8f8bd_36c6e1d6",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 2
@@ -53,6 +77,30 @@
       "writtenOn": "2019-10-29T00:31:43Z",
       "side": 1,
       "message": "Not sure if we need to mention results in this comment.",
+      "range": {
+        "startLine": 26,
+        "startChar": 34,
+        "endLine": 26,
+        "endChar": 41
+      },
+      "revId": "b736ef3706aaa271d82184363b3eab8cf7cdbb3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe3cd363_c0f84817",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-29T00:42:00Z",
+      "side": 1,
+      "message": "Thanks for the catch! I\u0027ll remove that :)",
+      "parentUuid": "1ceb1ef0_a2c30d18",
       "range": {
         "startLine": 26,
         "startChar": 34,
