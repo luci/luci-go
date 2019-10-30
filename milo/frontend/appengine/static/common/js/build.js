@@ -1,6 +1,18 @@
-// Copyright 2018 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+/* Copyright 2018 The LUCI Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 // Code used for managing how nested steps are rendered in build view. In
 // particular, it implement collapsing/nesting functionality and various modes
@@ -88,24 +100,43 @@ $(document).ready(function() {
   }
 
   let timeline = null;
+  let relatedBuilds = null;
 
   // By hiding the tab div until the tabs are constructed a flicker
   // of the tab contents not within the tabs is avoided.
   $('#tabs').tabs({
     activate: function(event, ui) {
-      // By lazily creating the timeline only when its tab is first activated an
-      // ugly multi-step rendering (and console warning of infinite redraw loop)
-      // of the timeline is avoided. This could also be avoided by making the
-      // timeline tab the initially visible tab and creating the timeline just
-      // after the tabs are initialized (that is, wouldn't have to use this
-      // activate event hack).
-      if (ui.newPanel.attr('id') === 'timeline-tab' && timeline === null) {
-        timeline = createTimeline();
-      }
-      if (ui.newPanel.attr('id') === 'blamelist-tab' && !blamelistLoaded) {
-        const params = (new URL(window.location)).searchParams;
-        params.set('blamelist', '1');
-        document.location = `?${params.toString()}#blamelist-tab`;
+      switch (ui.newPanel.attr('id')) {
+        // By lazily creating the timeline only when its tab is first activated an
+        // ugly multi-step rendering (and console warning of infinite redraw loop)
+        // of the timeline is avoided. This could also be avoided by making the
+        // timeline tab the initially visible tab and creating the timeline just
+        // after the tabs are initialized (that is, wouldn't have to use this
+        // activate event hack).
+        case 'timeline-tab':
+          if (timeline === null) {
+            timeline = createTimeline();
+          }
+          break;
+
+        case 'blamelist-tab':
+          if (!blamelistLoaded) {
+            const params = (new URL(window.location)).searchParams;
+            params.set('blamelist', '1');
+            document.location = `?${params.toString()}#blamelist-tab`;
+          }
+          break;
+
+        // Load related builds asynchronously so it doesn't block rendering the rest of the page.
+        case 'related-tab':
+          const tableContainerRef = $('#related-builds-table-container')
+          if (!relatedBuilds && tableContainerRef) {
+            relatedBuilds = fetch(`/internal_widgets/related_builds/${buildbucketId}`)
+              .then((res) => res.text())
+              .then((tablehtml) => tableContainerRef.html(tablehtml))
+              .catch((_) => tableContainerRef.html('<p style="color: red;">Something went wrong</p>'))
+          }
+          break;
       }
     },
   }).show();
