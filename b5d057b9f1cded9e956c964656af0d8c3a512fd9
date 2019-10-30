@@ -16,6 +16,24 @@
       "revId": "b5d057b9f1cded9e956c964656af0d8c3a512fd9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fbf33f0_c767e20a",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T23:09:05Z",
+      "side": 1,
+      "message": "Yeah, that change didn\u0027t make it into the upload for some reason",
+      "parentUuid": "ae9f8820_3cc6e492",
+      "revId": "b5d057b9f1cded9e956c964656af0d8c3a512fd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
