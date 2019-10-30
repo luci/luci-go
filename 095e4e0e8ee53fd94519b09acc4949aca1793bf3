@@ -202,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "6a1e1005_fc252e69",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-10-30T22:38:08Z",
+      "side": 1,
+      "message": "I like this idea, and it better matches how http.Server works",
+      "parentUuid": "66246d47_959d5810",
+      "range": {
+        "startLine": 142,
+        "startChar": 3,
+        "endLine": 142,
+        "endChar": 9
+      },
+      "revId": "095e4e0e8ee53fd94519b09acc4949aca1793bf3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dde3c6e6_339e96bb",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
