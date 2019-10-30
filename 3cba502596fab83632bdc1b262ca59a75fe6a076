@@ -346,6 +346,30 @@
     },
     {
       "key": {
+        "uuid": "6e6aa931_f044bee9",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T02:49:36Z",
+      "side": 1,
+      "message": "Ah, OK, I see, thanks. So --- to tie back to the cursor question on position being inclusive vs. exclusive, we don\u0027t have a problem with inserting a new element in either case, right?\n\nSince we need to omit NextPageToken if there are no more elements in the collection, we need to know that there are no many. How would we do that without explicitly querying for one more?",
+      "parentUuid": "8e9e4672_e6dc289c",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8459576d_9ad4dbf9",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
