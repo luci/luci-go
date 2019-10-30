@@ -259,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "0d3c9ea4_b1e4de43",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:40:44Z",
+      "side": 1,
+      "message": "yes, and i don\u0027t see anything we can do, or what use case would make us go out of our way to implement something differently. Practically, some system will make a few List calls one after another in a row. In UI case, between page1 is returned and a human clicks on page2 link, many things may change and users won\u0027t be very surprise that new items appeared. I think the strong guarantees we provide take place only after invocation is finalized. Until that happens, new test results may appear here and there, and a single List call returns one snapshot, but a later identical call may return something different",
+      "parentUuid": "9fa51d1f_d0a2d54c",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
