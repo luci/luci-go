@@ -163,6 +163,30 @@
     },
     {
       "key": {
+        "uuid": "bb3b9741_08f703ba",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T02:58:11Z",
+      "side": 1,
+      "message": "I agree, the extra fetch is ugly and incurs more cost. How do we avoid it while still making sure we know when we\u0027ve exhausted the collection in cases where the last page holds all the remaining results?\n\nhttps://aip.dev/158\n\"\"\"\nIf the end of the collection has been reached, the next_page_token field must be empty. This is the only way to communicate “end-of-collection” to users.\n\"\"\"",
+      "parentUuid": "20d5bcdf_402cd9a7",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
