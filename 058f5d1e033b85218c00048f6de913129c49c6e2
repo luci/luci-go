@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f07eb35_71d8b598",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "...string\n\nfor convenience.\n\nin general, in many cases where the last param is a slice, it makes senses to use ...",
+      "range": {
+        "startLine": 28,
+        "startChar": 19,
+        "endLine": 28,
+        "endChar": 21
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "609f6af2_a4a0a05b",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "nit: when looking from the outside of the package, the diff between Cursor() and NewCursor() is not immediately by looking at func names. I think I\u0027d make the diff more clear by renaming this func to ParseCursorToken, CursorFromToken or something along those lines.\n\nAlso ideally, if one looks at this func and the one that produces a token, they are obviously represent a pair. We already have a pattern in pbutil: XXXName and ParseXXXName, so how about \"CursorToken\" and \"ParseCursorToken\"?",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 11
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95eac9e8_6dafc54a",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "let\u0027s return nil instead and make other functions tolerate nil cursor (L53 does that already)\nthis is consistent with the general Golang principle that zero values are useful",
+      "range": {
+        "startLine": 35,
+        "startChar": 9,
+        "endLine": 35,
+        "endChar": 23
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74280632_c51bb9ff",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "proto.Unmarshal\nno need for buffer",
+      "range": {
+        "startLine": 45,
+        "startChar": 11,
+        "endLine": 45,
+        "endChar": 36
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e145c18_c302c2c4",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "this err includes the contents and the error above doesn\u0027t. This is inconsistent. It would be better if both didn\u0027t and the caller included it if they feel doing so. Also note that these bytes can be restored from the base64 token pretty easily",
+      "range": {
+        "startLine": 46,
+        "startChar": 13,
+        "endLine": 46,
+        "endChar": 75
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ce23c49_1710286a",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "from the outside of the package, this looks like `internal.Token` which does not look like something related to cursor. E.g. it can be interpreted as an access token. Consider: \"CursorToken\"",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 10
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d1b6903_8a283557",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "proto.Marshal",
+      "range": {
+        "startLine": 58,
+        "startChar": 11,
+        "endLine": 58,
+        "endChar": 31
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f08f653a_fc24b3fd",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "this is highly unlikely, so i think it would be OK if we panic here. Then we can simplify the func signature by excluding error from the return value.",
+      "range": {
+        "startLine": 59,
+        "startChar": 13,
+        "endLine": 59,
+        "endChar": 16
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eeaa8b94_b7576f30",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "imagine:\n\n1) db contains items a, b, c\n2) first page was requested with page size 2. token \"c\" is returned\n3) item bb is inserted., so the items are a, b, bb, c\n4) second page is requested. the client never sees bb\n\nfrom this perspective, it is better to make it exclusive. also it is simpler to implement, since we don\u0027t have to fetch pageSize+1 items.\n\nthis would be consistent with buildbucket",
+      "range": {
+        "startLine": 23,
+        "startChar": 40,
+        "endLine": 23,
+        "endChar": 49
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "230b680d_b9169007",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:12:41Z",
+      "side": 1,
+      "message": "mix of tabs and spaces",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 1
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
