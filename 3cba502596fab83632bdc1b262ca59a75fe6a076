@@ -634,6 +634,30 @@
     },
     {
       "key": {
+        "uuid": "b48b8d9e_bc8ed9b8",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T19:08:20Z",
+      "side": 1,
+      "message": "i meant\n\n----\nwhat problems does \"ORDER BY TestPath, ResultID, CommitTimestamp\" solve that aren\u0027t solved by \"ORDER BY TestPath, ResultID\"? it does not make the query results more stable\n---\n\n\n\"ORDER BY TestPath, ResultID, CommitTimestamp\" is a noop, because there can be at most one row with a given test path and result id",
+      "parentUuid": "a73a9764_d2aab237",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
