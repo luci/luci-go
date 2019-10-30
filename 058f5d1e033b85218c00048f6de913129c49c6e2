@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e0919cf7_e76d7a60",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T19:00:47Z",
+      "side": 1,
+      "message": "That somewhat breaks the black box of the cursor abstraction, doesn\u0027t it? That is, by doing this we are binding tokens to []string positions (and only []string positions); at that point, it seems we might as well remove the Cursor proto entirely.",
+      "parentUuid": "e75805ca_4a617235",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 11
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "95eac9e8_6dafc54a",
         "filename": "resultdb/internal/cursor.go",
         "patchSetId": 9
@@ -83,6 +107,30 @@
       "writtenOn": "2019-10-30T02:12:41Z",
       "side": 1,
       "message": "let\u0027s return nil instead and make other functions tolerate nil cursor (L53 does that already)\nthis is consistent with the general Golang principle that zero values are useful",
+      "range": {
+        "startLine": 35,
+        "startChar": 9,
+        "endLine": 35,
+        "endChar": 23
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71a284cc_8befa621",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T19:00:47Z",
+      "side": 1,
+      "message": "Yeah, I considered that too... the thing is, we have to be able to handle a nil position too, and that pretty naturally means \"start at the beginning\". If we make nil cursor mean the same as a cursor with a nil position, that seems to introduce ambiguity and more room for errors (so in that sense, I might even prefer to change L53 to be simply c.Position)... WDYT?",
+      "parentUuid": "95eac9e8_6dafc54a",
       "range": {
         "startLine": 35,
         "startChar": 9,
