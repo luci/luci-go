@@ -52,6 +52,24 @@
       "revId": "efda900e22d9fc382de0dec2f53114e9b1c582bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cbce328d_475dd5ec",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-10-30T01:20:49Z",
+      "side": 1,
+      "message": "ah, see app.yaml, internal is reserved for admins to configure app settings at runtime.",
+      "parentUuid": "06eac78d_051588e2",
+      "revId": "efda900e22d9fc382de0dec2f53114e9b1c582bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
