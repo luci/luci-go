@@ -68,9 +68,9 @@ func TestGetInvocation(t *testing.T) {
 		)
 
 		// Fetch back the top-level Invocation.
-		recorder := NewResultDBServer()
+		srv := NewResultDBServer()
 		req := &pb.GetInvocationRequest{Name: "invocations/including"}
-		inv, err := recorder.GetInvocation(ctx, req)
+		inv, err := srv.GetInvocation(ctx, req)
 		So(err, ShouldBeNil)
 		So(inv, ShouldResembleProto, &pb.Invocation{
 			Name:       "invocations/including",
