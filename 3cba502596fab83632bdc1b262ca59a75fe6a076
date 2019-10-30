@@ -514,6 +514,30 @@
     },
     {
       "key": {
+        "uuid": "24725474_9f74cbdc",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-10-30T17:46:02Z",
+      "side": 1,
+      "message": "It seems to me that ordering by CommitTimestamp (as the first order by field) is justified. And we should be able to generate a cursor by {CommitTimestamp, TestPath, ResultId} right?\n\nThis can guarantee all the new rows are retrievable. The disadvantage is that the returned results are not strictly sorted by {TestPath, ResultId}.",
+      "parentUuid": "80dfeb1f_c86514c7",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
