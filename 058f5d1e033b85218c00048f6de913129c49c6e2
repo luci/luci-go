@@ -209,6 +209,30 @@
     },
     {
       "key": {
+        "uuid": "da7f4932_0352ae3a",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T02:29:33Z",
+      "side": 1,
+      "message": "Don\u0027t we have this same problem regardless of inclusive or exclusive though?\n\nThat is, suppose we have a, b, c, and a page size of 2 is requested, so token for \"b\" is returned. If item aa is inserted, the client will never see aa either.\n\nThis is also related to the discussion on the ListTestResults CL.",
+      "parentUuid": "eeaa8b94_b7576f30",
+      "range": {
+        "startLine": 23,
+        "startChar": 40,
+        "endLine": 23,
+        "endChar": 49
+      },
+      "revId": "058f5d1e033b85218c00048f6de913129c49c6e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "230b680d_b9169007",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 9
