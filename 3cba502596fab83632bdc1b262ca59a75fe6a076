@@ -187,6 +187,30 @@
     },
     {
       "key": {
+        "uuid": "97d11493_fce45184",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T03:19:51Z",
+      "side": 1,
+      "message": "the way i interpret this is \"if you really know that you reached the end, then you return empty string\".\nif we asked for N and received N, we do not know if we reached the end.\n\nsay [a, b] were returned at the time where only [a, b] existed, but then c is added. if the response did not have page token, the user will never see c\n\ni am not sure it is a violation of the guideline if we don\u0027t know if we reached the end\n\nwdyt?",
+      "parentUuid": "bb3b9741_08f703ba",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -382,6 +406,30 @@
       "side": 1,
       "message": "Ah, OK, I see, thanks. So --- to tie back to the cursor question on position being inclusive vs. exclusive, we don\u0027t have a problem with inserting a new element in either case, right?\n\nSince we need to omit NextPageToken if there are no more elements in the collection, we need to know that there are no many. How would we do that without explicitly querying for one more?",
       "parentUuid": "8e9e4672_e6dc289c",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80dfeb1f_c86514c7",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T03:19:51Z",
+      "side": 1,
+      "message": "hm, looks like we can read staleness can be up to only 1h https://cloud.google.com/spanner/docs/timestamp-bounds#maximum_timestamp_staleness\nwhich means our page tokens would expired in an hour\n\nit is not a lot if are a user of some UI built on top of this.\n\nif we don\u0027t do stale reads and only stick with exclusive tokens, we\u0027d have similar behavior from the user perspective (except page tokens do not expire): next page may include NEW results\n\nso i take it back, let\u0027s not use same snapshot, but just use exclusive page tokens",
+      "parentUuid": "6e6aa931_f044bee9",
       "range": {
         "startLine": 123,
         "startChar": 11,
