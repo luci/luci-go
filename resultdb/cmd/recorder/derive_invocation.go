@@ -117,7 +117,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// TODO(jchinlee): Validate invocation and results.
 
-	_, err = client.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
 		switch doWrite, err := shouldWriteInvocation(ctx, txn, invID); {
 		case err != nil:
