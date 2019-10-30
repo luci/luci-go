@@ -2,6 +2,167 @@
   "comments": [
     {
       "key": {
+        "uuid": "cbb071bb_026baee3",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "same as before, ValidateInvocationName already does this check",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 2
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b1ba885_5be11574",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "please extract this to pbutil.ValidatePageSize",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a55871a_bfdf5931",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "remove\n\nwe don\u0027t do that in other similar places",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 40
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "befec822_f8252101",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "this might leak information about the internal structure of the page token, which is not recommended. Let\u0027s use error.Reason and use .InternalReason to preserve err",
+      "range": {
+        "startLine": 60,
+        "startChar": 30,
+        "endLine": 60,
+        "endChar": 33
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "705f4011_b1703530",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "nit: not sure why this func accepts cursor *protobuf*. The func requires the caller to do the work of decomposing the page token / cursor , but still bears the responsibility of further decomposing \"position\" into testPath+resultID. I think it would be cleaner if it either did not make the callsite to do this work at all, or take the FULL responsibility (accept and return pageToken string).",
+      "range": {
+        "startLine": 72,
+        "startChar": 34,
+        "endLine": 72,
+        "endChar": 40
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e588736e_a20a257d",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "i think `pageSize \u003e pageSizeMax` would entail the intention more clearly\n\nstepping back, it seems we can reduce repetition by putting specific case first\n\n  case pageSize \u003e pageSizeMax:\n    ...\n  case pageSize \u003c 0:\n    ...\n  default:",
+      "range": {
+        "startLine": 91,
+        "startChar": 6,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20d5bcdf_402cd9a7",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "the benefit of this is in rare cases where actual number of items is dividable by pageSize, we don\u0027t return page token. The cost is that we fetch one more each time.\n\ni think it is cheaper to fetch exactly pageSize and return no pageToken only if we fetched less",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -43,6 +204,47 @@
         "endLine": 90,
         "endChar": 90
       },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3eba42a_a9b8407a",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "we shouldn\u0027t return an INTERNAL error if a user sent an invalid token. it should be INVALID_ARGUMENT\n\nwe can use .InternalError for the internal part of the message",
+      "parentUuid": "35a9e4cb_e0f62800",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 90
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4367abd1_0147d0d1",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "we should also use a hint to enforce usage of the index",
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -114,6 +316,47 @@
         "endLine": 123,
         "endChar": 46
       },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e9e4672_e6dc289c",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "i don\u0027t see how this query will work with CommitTimestamp. The keys in the page token must match the order keys.\n\nlet\u0027s try enforcing using the same snapshot of the db, see https://stackoverflow.com/a/42262606",
+      "parentUuid": "c23e9c8c_33aeb117",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8459576d_9ad4dbf9",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T02:43:20Z",
+      "side": 1,
+      "message": "nit: now this func assumes that tr.Expected is false. We didn\u0027t have this assumption because this case was a part of the func that initializes TestResult. Now one may accidentally call this func on an existing test result.\n\nso i think tr.Expected must be set unconditionally:\n\n  tr.Expected \u003d !maybeUnexpected.Valid || !maybeUnexpected.Bool\n\nsame in populateDurationField",
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
