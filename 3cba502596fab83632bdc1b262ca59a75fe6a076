@@ -658,6 +658,30 @@
     },
     {
       "key": {
+        "uuid": "26a34e3e_96bcafc2",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T19:18:15Z",
+      "side": 1,
+      "message": "Ah, I see, thanks for the clarification.\n\nI meant that we add CommitTimestamp to the PK as the third part, so that we can index on it, and add it to the Cursor position --- not that we change the order in the query.",
+      "parentUuid": "b48b8d9e_bc8ed9b8",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
