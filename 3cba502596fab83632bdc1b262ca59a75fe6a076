@@ -538,6 +538,30 @@
     },
     {
       "key": {
+        "uuid": "da5ca5c0_092d896a",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T17:51:29Z",
+      "side": 1,
+      "message": "at the physical storage level, the rows are sorted by (TestPath, ResultID), so this ORDER BY TestPath, ResultID does not add any work. The query is O(pageSize).\n\nUsing ORDER BY CommitTimestamp requires spanner to read all (thousands of) test results in the invocation, sort them and then take a page out of it. This is O(test_results_in_invocation)",
+      "parentUuid": "24725474_9f74cbdc",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
