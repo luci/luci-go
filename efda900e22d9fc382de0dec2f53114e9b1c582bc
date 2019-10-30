@@ -34,6 +34,24 @@
       "revId": "efda900e22d9fc382de0dec2f53114e9b1c582bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06eac78d_051588e2",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-10-30T01:19:57Z",
+      "side": 1,
+      "message": "for some reason `/internal` prefix causes redirect to an auth page and therefore blocks the request due to CORS. so I used `/internal_widgets`.",
+      "parentUuid": "75d65eb0_0baa8c01",
+      "revId": "efda900e22d9fc382de0dec2f53114e9b1c582bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
