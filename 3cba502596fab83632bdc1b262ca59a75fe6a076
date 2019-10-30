@@ -93,6 +93,30 @@
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c23e9c8c_33aeb117",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T01:54:09Z",
+      "side": 1,
+      "message": "Suppose we add CommitTimestamp as the third part of the key, i.e. after TestPath? Then we\u0027re only monotonically increasing at the level of TestPath, and we can add it to the query.",
+      "parentUuid": "279644b1_f6026ba4",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
