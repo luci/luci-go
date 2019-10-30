@@ -107,12 +107,6 @@ type BuildPage struct {
 	// Build is the underlying build proto for the build page.
 	Build
 
-	// RelatedBuilds are build summaries with the same buildset.
-	RelatedBuilds []*Build
-
-	// Related is a flag for turning on the related builds tab.
-	Related bool
-
 	// Blame is a list of people and commits that likely caused the build result.
 	// It is usually used as the list of commits between the previous run of the
 	// build on the same builder, and this run.
@@ -147,6 +141,15 @@ type BuildPage struct {
 
 	// ForcedBlamelist indicates that the user forced a blamelist load.
 	ForcedBlamelist bool
+}
+
+// RelatedBuildsTable represents a related builds table on Milo.
+type RelatedBuildsTable struct {
+	// Build is the underlying build proto for the build page.
+	Build
+
+	// RelatedBuilds are build summaries with the same buildset.
+	RelatedBuilds []*Build
 }
 
 func NewBuildPage(c context.Context, b *buildbucketpb.Build) *BuildPage {
@@ -204,12 +207,12 @@ func (bp *BuildPage) BuildbucketLink() *Link {
 		"Buildbucket RPC explorer for build")
 }
 
-func (bp *BuildPage) BuildSets() []string {
-	return protoutil.BuildSets(bp.Build.Build)
+func (b *Build) BuildSets() []string {
+	return protoutil.BuildSets(b.Build)
 }
 
-func (bp *BuildPage) BuildSetLinks() []template.HTML {
-	buildSets := bp.BuildSets()
+func (b *Build) BuildSetLinks() []template.HTML {
+	buildSets := b.BuildSets()
 	links := make([]template.HTML, 0, len(buildSets))
 	for _, buildSet := range buildSets {
 		result := crosMasterRE.FindStringSubmatch(buildSet)

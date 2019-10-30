@@ -17,6 +17,7 @@
   // If true, the blamelist tab contains the blamelist.
   // If false, the blamelist tab should reload the page to force the blamelist to load.
   const blamelistLoaded = {{ if .BuildPage.BlamelistError }}false{{ else }}true{{ end }};
+  const buildbucketId = '{{ .BuildPage.Id }}';
 </script>
 <script src="/static/common/js/build.js"></script>
 {{end}}
@@ -266,34 +267,7 @@
     {{ range .BuildSetLinks }}
       <li>{{ . }}</li>
     {{ end }}
-
-    <table class="info">
-      <tr>
-        <th>Project</th>
-        <th>Bucket</th>
-        <th>Builder</th>
-        <th>Build</th>
-        <th>Status</th>
-        <th>Create Time</th>
-        <th>Pending</th>
-        <th>Duration</th>
-        <th>Summary</th>
-      </tr>
-
-      {{ range .RelatedBuilds }}
-        <tr>
-          <td>{{ .Builder.Project }}</td>
-          <td>{{ .Builder.Bucket }}</td>
-          <td>{{ .BuilderLink.HTML }}</td>
-          <td>{{ .Link.HTML }}</td>
-          <td class="status {{ .Status }}">{{ .HumanStatus }}</td>
-          <td>{{ .CreateTime | toTime | localTime "N/A" }}</td>
-          <td>{{ duration .CreateTime .StartTime $now }}</td>
-          <td>{{ duration .StartTime .EndTime $now }}</td>
-          <td>{{ .SummaryMarkdown | renderMarkdown }}</td>
-        </tr>
-      {{ end }}
-    </table>
+    <div id="related-builds-table-container">Rendering...</div>
   {{ else }}
     <h3>No buildsets found</h3>
   {{ end }}

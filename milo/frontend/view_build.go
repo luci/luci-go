@@ -109,6 +109,24 @@ func redirectLUCIBuild(c *router.Context) error {
 	return nil
 }
 
+func handleGetRelatedBuildsTable(c *router.Context) error {
+	idInput := c.Params.ByName("id")
+
+	id, err := strconv.ParseInt(idInput, 10, 64)
+	if err != nil {
+		return errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	rbt, err := buildbucket.GetRelatedBuildsTable(c, id)
+	if err != nil {
+		return errors.Annotate(err, "error when getting related builds table").Err()
+	}
+
+	templates.MustRender(c.Context, c.Writer, "widgets/related_builds_table.html", templates.Args{
+		"RelatedBuildsTable": rbt,
+	})
+	return nil
+}
+
 func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	switch cookie, err := c.Request.Cookie("stepDisplayPref"); err {
 	case nil:

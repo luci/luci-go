@@ -70,11 +70,12 @@ type testPackage struct {
 
 var (
 	allPackages = []testPackage{
-		{buildbucketBuildTestData, "buildbucket.build", "build.html"},
-		{consoleTestData, "console", "console.html"},
-		{Frontpage, "frontpage", "frontpage.html"},
-		{Search, "search", "search.html"},
-		{builderPageData, "builder", "builder.html"},
+		{buildbucketBuildTestData, "buildbucket.build", "pages/build.html"},
+		{consoleTestData, "console", "pages/console.html"},
+		{Frontpage, "frontpage", "pages/frontpage.html"},
+		{Search, "search", "pages/search.html"},
+		{builderPageData, "builder", "pages/builder.html"},
+		{relatedBuildsTableTestData, "widget", "widgets/related_builds_table.html"},
 	}
 )
 
@@ -130,7 +131,7 @@ func TestPages(t *testing.T) {
 					Convey(fmt.Sprintf("Testing: %q", b.Description), func() {
 						args := b.Data
 						// This is not a path, but a file key, should always be "/".
-						tmplName := "pages/" + p.TemplateName
+						tmplName := p.TemplateName
 						buf, err := templates.Render(c, tmplName, args)
 						So(err, ShouldBeNil)
 						fname := fmt.Sprintf(
@@ -448,6 +449,32 @@ func builderPageData() []TestBundle {
 			},
 		},
 	}
+}
+
+func relatedBuildsTableTestData() []TestBundle {
+	bundles := []TestBundle{}
+	for _, tc := range []string{"MacTests", "scheduled"} {
+		build, err := GetTestBuild("../buildsource/buildbucket", tc)
+		if err != nil {
+			panic(fmt.Errorf("Encountered error while fetching %s.\n%s", tc, err))
+		}
+		bundles = append(bundles, TestBundle{
+			Description: fmt.Sprintf("Test related builds table: %s", tc),
+			Data: templates.Args{
+				"RelatedBuildsTable": &ui.RelatedBuildsTable{
+					Build: ui.Build{
+						Build: build,
+						Now:   nowTS,
+					},
+					RelatedBuilds: []*ui.Build{&ui.Build{
+						Build: build,
+						Now:   nowTS,
+					}},
+				},
+			},
+		})
+	}
+	return bundles
 }
 
 // GetTestBuild returns a debug build from testdata.

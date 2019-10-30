@@ -1,0 +1,30 @@
+{{ define "base" }}
+  {{ $now := .RelatedBuildsTable.Now }}
+  <table class="info">
+    <tr>
+      <th>Project</th>
+      <th>Bucket</th>
+      <th>Builder</th>
+      <th>Build</th>
+      <th>Status</th>
+      <th>Create Time</th>
+      <th>Pending</th>
+      <th>Duration</th>
+      <th>Summary</th>
+    </tr>
+
+    {{ range .RelatedBuildsTable.RelatedBuilds }}
+    <tr>
+      <td>{{ .Builder.Project }}</td>
+      <td>{{ .Builder.Bucket }}</td>
+      <td>{{ .BuilderLink.HTML }}</td>
+      <td>{{ .Link.HTML }}</td>
+      <td class="status {{ .Status }}">{{ .HumanStatus }}</td>
+      <td>{{ .CreateTime | toTime | localTime "N/A" }}</td>
+      <td>{{ duration .CreateTime .StartTime $now }}</td>
+      <td>{{ duration .StartTime .EndTime $now }}</td>
+      <td>{{ .SummaryMarkdown | renderMarkdown }}</td>
+    </tr>
+    {{ end }}
+  </table>
+{{end}}

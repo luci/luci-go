@@ -374,7 +374,6 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 	}
 
 	var b *buildbucketpb.Build
-	var relatedBuilds []*ui.Build
 	var blame []*ui.Commit
 	var blameErr error
 	if err = parallel.FanOutIn(func(ch chan<- func() error) {
@@ -392,10 +391,6 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		smallbr.Fields = tagsAndGitilesMask
 		sb, err := client.GetBuild(c, &smallbr)
 		if err != nil {
-			return
-		}
-		ch <- func() (err error) {
-			relatedBuilds, err = getRelatedBuilds(c, now, client, sb)
 			return
 		}
 		ch <- func() error {
@@ -419,12 +414,46 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 			Now:   now,
 		},
 		Blame:           blame,
-		RelatedBuilds:   relatedBuilds,
 		BuildBugLink:    link,
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
 	}, err
+}
+
+// GetBuildPage fetches all the related builds of the given build from Buildbucket.
+func GetRelatedBuildsTable(ctx *router.Context, buildbucketId int64) (*ui.RelatedBuildsTable, error) {
+	now, _ := ptypes.TimestampProto(clock.Now(ctx.Context))
+
+	host, err := getHost(ctx.Context)
+	if err != nil {
+		return nil, err
+	}
+	client, err := buildbucketClient(ctx.Context, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+
+	build, err := client.GetBuild(ctx.Context, &buildbucketpb.GetBuildRequest{
+		Id:     buildbucketId,
+		Fields: tagsAndGitilesMask,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	relatedBuilds, err := getRelatedBuilds(ctx.Context, now, client, build)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ui.RelatedBuildsTable{
+		Build: ui.Build{
+			Build: build,
+			Now:   now,
+		},
+		RelatedBuilds: relatedBuilds,
+	}, nil
 }
 
 // CancelBuildHandler parses inputs from HTTP form, cancels the build with the given buildbucket build ID

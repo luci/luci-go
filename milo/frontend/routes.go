@@ -132,6 +132,8 @@ func Run(templatePath string) {
 
 	r.POST("/cancel_build", xsrfMW, handleError(buildbucket.CancelBuildHandler))
 
+	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
+
 	http.DefaultServeMux.Handle("/", r)
 }
 

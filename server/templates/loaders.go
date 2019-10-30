@@ -25,11 +25,11 @@ import (
 
 // AssetsLoader returns Loader that loads templates from the given assets map.
 //
-// The map is expected to have special structure: 'pages/' contain all top-level
-// templates that will be loaded, 'includes/' contain templates that will be
-// associated with every top-level template from 'pages/'.
-//
-// Only templates from 'pages/' are included in the output map.
+// The directory with templates is expected to have special structure:
+//  * 'pages/' contain all top-level templates that will be loaded
+//  * 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
+//  * 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+// Only templates from 'pages/' and 'widgets/' are included in the output map.
 func AssetsLoader(assets map[string]string) Loader {
 	return func(c context.Context, funcMap template.FuncMap) (map[string]*template.Template, error) {
 		// Pick all includes.
@@ -60,18 +60,27 @@ func AssetsLoader(assets map[string]string) Loader {
 			}
 		}
 
+		for name, body := range assets {
+			if strings.HasPrefix(name, "widgets/") {
+				t := template.New(name).Funcs(funcMap)
+				if _, err := t.Parse(body); err != nil {
+					return nil, err
+				}
+				toplevel[name] = t
+			}
+		}
+
 		return toplevel, nil
 	}
 }
 
 // FileSystemLoader returns Loader that loads templates from file system.
 //
-// The directory with templates is expected to have special structure: 'pages/'
-// contain all top-level templates that will be loaded, 'includes/' contain
-// templates that will be associated with every top-level template from
-// 'pages/'.
-//
-// Only templates from 'pages/' are included in the output map.
+// The directory with templates is expected to have special structure:
+//  * 'pages/' contain all top-level templates that will be loaded
+//  * 'includes/' contain templates that will be associated with every top-level template from 'pages/'.
+//  * 'widgets/' contain all standalone templates that will be loaded without templates from 'includes/'
+// Only templates from 'pages/' and 'widgets/' are included in the output map.
 func FileSystemLoader(path string) Loader {
 	return func(c context.Context, funcMap template.FuncMap) (map[string]*template.Template, error) {
 		abs, err := filepath.Abs(path)
@@ -85,6 +94,9 @@ func FileSystemLoader(path string) Loader {
 			return nil, err
 		}
 		if err = readFilesInDir(filepath.Join(abs, "pages"), files); err != nil {
+			return nil, err
+		}
+		if err = readFilesInDir(filepath.Join(abs, "widgets"), files); err != nil {
 			return nil, err
 		}
 
