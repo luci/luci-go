@@ -562,6 +562,30 @@
     },
     {
       "key": {
+        "uuid": "d868bfb0_5d8228fe",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T18:02:39Z",
+      "side": 1,
+      "message": "I\u0027m currently working on implementing the exclusive page token that doesn\u0027t take into account commit timestamp, nor read snapshot, so that we can see what it looks like. (I actually think this can be done without a Query now)\n\nIn the meantime, why would it not work to add CommitTimestamp as the third part of the key, so that the key would look like InvocationId, TestPath, CommitTimestamp, ResultId? Our query would then have something like\n\n WHERE\n  (TestPath \u003c cursor.TestPath AND CommitTimestamp \u003e cursor.Timestamp)\n  OR (TestPath \u003d cursor.TestPath AND CommitTimestamp \u003e\u003d cursor.Timestamp)\n  OR (TestPath \u003e cursor.TestPath AND CommitTimestamp \u003e\u003d cursor.Timestamp)\n\nIt wouldn\u0027t be as performant as an actual keyrange-based query, but also wouldn\u0027t be as bad as needing to page all the prior results, right?",
+      "parentUuid": "da5ca5c0_092d896a",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
