@@ -466,6 +466,23 @@
     },
     {
       "key": {
+        "uuid": "3ff90742_19ee753d",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T03:41:23Z",
+      "side": 1,
+      "message": "since we have to have this if statement anyway, let\u0027s skip reading columns of a row that we will discard: in the loop:\n\n  if len(trs) \u003d\u003d pageSize {\n    cursor \u003d ...\n    break\n  }",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8459576d_9ad4dbf9",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
