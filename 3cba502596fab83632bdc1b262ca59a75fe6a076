@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "35a9e4cb_e0f62800",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T01:28:19Z",
+      "side": 1,
+      "message": "Agreed, I think users shouldn\u0027t see this, but rather we should have it logged as an internal error --- I think this does return as an internal error?",
+      "parentUuid": "1e57868b_0b49e758",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 90
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c096188c_6302bae5",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2019-10-30T01:16:11Z",
       "side": 1,
       "message": "So the order by fields and cursor don\u0027t need to match?",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "279644b1_f6026ba4",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T01:28:19Z",
+      "side": 1,
+      "message": "You\u0027re right, I think this is not quite right.\n\nThe trickiness is that we want it ordered by CommitTimestamp so that we won\u0027t skip over any results for the same TestPath added later, but we can\u0027t actually use CommitTimestamp as a key, and I think there are implicit assumptions about ordering in this query... let me think about this.",
+      "parentUuid": "c096188c_6302bae5",
       "range": {
         "startLine": 123,
         "startChar": 11,
