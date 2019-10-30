@@ -179,6 +179,29 @@
     },
     {
       "key": {
+        "uuid": "66246d47_959d5810",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:34:46Z",
+      "side": 1,
+      "message": "here we lost the info about the error. we neither returned it nor logged it.\n\nstepping back, as a user of Server type, I cannot tell if the server crashed after starting serving.\nproposal: avoid the problem of returning Port in Config() by fixing a default port (please pick some number) rather than choosing randomly. Practically, we won\u0027t do it randomly. Then we can make Serve() blocking and solve these problem. WDYT?",
+      "range": {
+        "startLine": 142,
+        "startChar": 3,
+        "endLine": 142,
+        "endChar": 9
+      },
+      "revId": "095e4e0e8ee53fd94519b09acc4949aca1793bf3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dde3c6e6_339e96bb",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 6
