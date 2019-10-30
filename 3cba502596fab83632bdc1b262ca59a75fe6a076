@@ -235,6 +235,30 @@
     },
     {
       "key": {
+        "uuid": "9fa51d1f_d0a2d54c",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-30T04:56:27Z",
+      "side": 1,
+      "message": "OK, I can see that. So, to clarify: we have an *exclusive* cursor derived from the last item returned by the cursor previously, and we don\u0027t have to do any ugly +1 querying---sounds good to me!\n\nBut we\u0027re not reading from the same snapshot, is that right? I\u0027m still unclear on how that won\u0027t cause problems for us. Isn\u0027t it conceivable that we stream some tests with path ending DoFoo, and then (in a subsequent commit) some tests with path ending DoBar, and then we\u0027d miss the DoBar because they\u0027re lexicographically already skipped by the cursor, even if the cursor is exclusive?",
+      "parentUuid": "9675cbb2_5ee207da",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
