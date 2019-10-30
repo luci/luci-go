@@ -1,0 +1,267 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "441ee266_975ee715",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "nit: all examples in godoc.org/flag do not end the help message with a period",
+      "range": {
+        "startLine": 45,
+        "startChar": 58,
+        "endLine": 45,
+        "endChar": 59
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddd10984_9b81bad9",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "it is more standard to have TODOs in comments, with your name, so let\u0027s use \"\" here but add a comment // TODO(sajjadm): ....",
+      "range": {
+        "startLine": 46,
+        "startChar": 45,
+        "endLine": 46,
+        "endChar": 49
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47dc3a58_1d294279",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "let\u0027s use https://godoc.org/go.chromium.org/luci/common/flag#StringSlice here since we may have to read multiple files. Please expand the help message to indicate that the flag can be specified multiple times\n\nsame for invocationTags and testBaseVariant",
+      "range": {
+        "startLine": 51,
+        "startChar": 22,
+        "endLine": 51,
+        "endChar": 32
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff0efdab_e4299be5",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "from this, the format is unclear. is it multiple tags? how are they separated, with space, colon? is it multiple flag values?\n\nwhat is the format of a tag? maybe add an example implying format, e.g \"a:b\" or something",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcb4e1c3_61485ef4",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 58,
+        "endChar": 10
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cacf77c8_d0ecc8bd",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "same here, what is the separator?",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "327d24be_3355112a",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "this if statement is unnecessary. we can do L83 unconditionally",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbe632b5_17bd81fd",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "what do you plan to do with the rest of the fields? if you plan to parse them here, then that sounds good to me. Perhaps we\u0027d want to parse them from raw flag strings to a structure we will use down the road. speaking of which, it seems instead of having raw `port int` it would be have ServerConfig in the wrapper",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c993b280_7abf0285",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "os.Exit(\u003cnon-zero\u003e)\n\nsame problem below",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1564f5e9_0222ec00",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "must check err",
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "860b6cd1_13f0be8c",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "why is this variable needed? i.e. why not use baseCtx in CommandContext until there is some code here that takes advantage of having two separate variables",
+      "range": {
+        "startLine": 126,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 9
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2fcba8f_14fe9067",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "a non-nil error returned by Wait does not necessarily mean that something went wrong on our side, e.g. if exitcode package successfully retrieves the exit code, then everything went well on our part\n\nalso i think we must exit with the subcommand\u0027s exit code",
+      "range": {
+        "startLine": 136,
+        "startChar": 26,
+        "endLine": 136,
+        "endChar": 40
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02845102_caf1a9c1",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T05:29:39Z",
+      "side": 1,
+      "message": "this pattern is repeated 4 times. Consider\n\n  func (w *wrapper) run() error\n\ncalled here. then the caller of run() can do the logging and exiting",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 8
+      },
+      "revId": "aea2370799f8a9c813418086008012584a4106d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
