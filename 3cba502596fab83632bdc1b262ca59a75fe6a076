@@ -682,6 +682,30 @@
     },
     {
       "key": {
+        "uuid": "c16ab46f_c3c9d80d",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-30T20:00:36Z",
+      "side": 1,
+      "message": "sure, but what problem would it solve?\nalso, the tuple (InvocationID, TestPath, ResultId) already makes the row unique, so adding CommitTimestamp to PK seems to be a noop to me.",
+      "parentUuid": "26a34e3e_96bcafc2",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
