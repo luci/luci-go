@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "04c3138c_62137c9b",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T21:35:53Z",
+      "side": 1,
+      "message": "On the other hand, so far indeed we plan to accept only *test* results via this sink thing, so I\u0027d be OK to rename this to \"testResultSink\". Note that coverage is also a test result. Sajjad, WDYT?",
+      "parentUuid": "b2b72666_a1c81d8b",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
