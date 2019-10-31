@@ -17,6 +17,8 @@ package sink
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"strings"
 	"testing"
 
@@ -53,5 +55,33 @@ func TestHandshake(t *testing.T) {
 			err = doCheck(`garbage`, authToken)
 			So(err, ShouldErrLike, "failed to parse")
 		})
+	})
+}
+
+func TestClose(t *testing.T) {
+	Convey("Close check", t, func() {
+		ctx := context.Background()
+		server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+		So(err, ShouldBeNil)
+
+		done := make(chan error)
+		go func() { done <- server.Serve(ctx) }()
+		<-server.Ready()
+
+		addr := fmt.Sprintf(":%d", server.Config().Port)
+		conn, err := net.Dial("tcp", addr)
+		So(err, ShouldBeNil)
+
+		_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
+		So(err, ShouldBeNil)
+
+		err = server.Close(ctx)
+		So(err, ShouldBeNil)
+
+		err = <-done
+		So(err, ShouldErrLike, "closed")
+
+		_, err = net.Dial("tcp", addr)
+		So(err, ShouldErrLike, "connection refused")
 	})
 }
