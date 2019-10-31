@@ -171,7 +171,10 @@ CREATE TABLE TestResults (
 -- for most queries.
 -- It includes TestPath to be able to find all unexpected test result with a
 -- given test path or a test path prefix.
-CREATE NULL_FILTERED INDEX UnexpectedTestResults ON TestResults (InvocationId, TestPath, IsUnexpected),
+CREATE NULL_FILTERED INDEX UnexpectedTestResults ON TestResults (InvocationId, IsUnexpected, TestPath, ResultId)
+  STORING (
+    ExtraVariantPairs, Status, SummaryMarkdown, StartTime, RunDurationUsec,
+    Tags, InputArtifacts, OutputArtifacts),
   INTERLEAVE IN Invocations;
 
 
