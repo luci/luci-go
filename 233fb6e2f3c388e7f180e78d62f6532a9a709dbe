@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "86052668_0a397551",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-31T21:20:46Z",
+      "side": 1,
+      "message": "My point is that, unqualified, \u0027result\u0027 is extremely generic. It might as well be \u0027thing\u0027 or \u0027output\u0027.\n\nBuildArtifact would be inclusive of both test outputs and build outputs, and less generic than \u0027result\u0027",
+      "parentUuid": "f08948a2_6087d68c",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
