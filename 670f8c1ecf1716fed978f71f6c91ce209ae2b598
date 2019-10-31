@@ -145,6 +145,29 @@
     },
     {
       "key": {
+        "uuid": "bf87dfe1_dfcc8262",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:16:02Z",
+      "side": 1,
+      "message": "do we really need this check if check ctx.Err? if shutdown is started, then the context is canceled",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 41
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf803b9f_999e2f73",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 10
@@ -176,6 +199,24 @@
       "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5519e085_cd9e653a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:16:02Z",
+      "side": 1,
+      "message": "i see it is being addressed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1892123",
+      "parentUuid": "d7dfeefd_0412c23b",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
