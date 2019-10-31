@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69b95928_fdf0998b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T17:10:54Z",
+      "side": 1,
+      "message": "this does not override err above, but it is very close to doing so. let\u0027s rename this err, or call ctx.Err() twice",
+      "range": {
+        "startLine": 198,
+        "startChar": 9,
+        "endLine": 198,
+        "endChar": 11
+      },
+      "revId": "c83ef227a6ce03b0003a8ab8e86db98532100bc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ace0c79_34b4005a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T17:10:54Z",
+      "side": 1,
+      "message": "how do you plan to test these erroneous code paths? it would be easier if handleConnection return an error (and we can test it) and the caller does the logging of it",
+      "revId": "c83ef227a6ce03b0003a8ab8e86db98532100bc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
