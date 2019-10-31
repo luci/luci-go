@@ -38,6 +38,9 @@ type Txn interface {
 
 	// Read reads multiple rows from the database.
 	Read(ctx context.Context, table string, key spanner.KeySet, columns []string) *spanner.RowIterator
+
+	// Query executes a query against the database.
+	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
 }
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {

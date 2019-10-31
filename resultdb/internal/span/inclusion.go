@@ -26,11 +26,18 @@ import (
 
 // ReadInclusions reads all inclusions, if any, of an invocation within the transaction.
 func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.Invocation_InclusionAttrs, error) {
-	it := txn.Read(ctx, "Inclusions", spanner.Key{invID}.AsPrefix(), []string{
-		"IncludedInvocationId",
-		"OverriddenByIncludedInvocationId",
-		"Ready",
-	})
+	st := spanner.NewStatement(`
+		SELECT
+			incl.IncludedInvocationId,
+			incl.OverriddenByIncludedInvocationId,
+			IFNULL(included.FinalizeTime < including.FinalizeTime, included.FinalizeTime IS NOT NULL) as ready
+		FROM Invocations including
+		JOIN Inclusions incl ON including.InvocationId = incl.InvocationId
+		JOIN Invocations included ON incl.IncludedInvocationId = included.InvocationId
+		WHERE including.InvocationId = @invID
+	`)
+	st.Params["invID"] = invID
+	it := txn.Query(ctx, st)
 	defer it.Stop()
 
 	inclusions := map[string]*pb.Invocation_InclusionAttrs{}
