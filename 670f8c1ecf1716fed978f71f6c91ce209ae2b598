@@ -1,0 +1,181 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b45d5da_edfc7061",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "all public symbols must have a comment",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59c9e60e_1cb6dbb8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "ServerConfig fields comments seem to be a better place for these field-specific comments\n\nsimilarly \"Optional\" in L51 begs the question \"ok, but what\u0027s the default?\"",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 50
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cef76231_87baefb7",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "s :\u003d \u0026Server{\n  cfg: cfg,\n  ready: make(chan struct{}),\n}",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81361485_a4a13df9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "this part isn\u0027t helping (what is \"ready channel\"?). see how https://godoc.org/context#Context.Done is documented. The next paragraph is the most valueble knowledge, so let\u0027s shorten this comment to\n\n// Ready returns a channel that\u0027s closed once .....",
+      "range": {
+        "startLine": 106,
+        "startChar": 9,
+        "endLine": 106,
+        "endChar": 46
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76186fe2_80ca25e4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "i didn\u0027t understand what do you mean by this",
+      "range": {
+        "startLine": 108,
+        "startChar": 54,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4387bc93_6717d02f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "\u003c- chan struct{}\n\notherwise anyone can close it. see also context.Done()",
+      "range": {
+        "startLine": 110,
+        "startChar": 25,
+        "endLine": 110,
+        "endChar": 38
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6e7f3a6_f216d939",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "what if someone already called Serve before? i think the first this func does is checking s.ln !\u003d nil",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf803b9f_999e2f73",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "nit: we have 5 cases here. this is a perfect place to use a switch statement. Golang is different in this regard from other languages\n\n\tswitch conn, err :\u003d s.ln.Accept(); {\n\tcase err \u003d\u003d nil:\n\t\tgo s.handleConnection(ctx, conn)\n\n\tcase atomic.LoadInt32(\u0026s.shutdownStarted) \u003d\u003d 1:\n\t\treturn nil\n\n\tcase ctx.Err() !\u003d nil:\n\t\treturn ctx.Err()\n\n\tcase shouldKeepTrying(err):\n\t\tcontinue\n\n\tdefault:\n\t\treturn errors.Annotate(err, \"unrecoverable listener error\").Err()\n\t}",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7dfeefd_0412c23b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T04:58:22Z",
+      "side": 1,
+      "message": "looks like we close the listener only here, and it is not closed if someone cancels the context. we should watch the context. then s.cancel() is sufficient here\n\nthis kind of also means Close will return nil unconditionally?.. not sure what\u0027s the best thing to do here",
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
