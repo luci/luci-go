@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fc02bf68_1c7c5f40",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T20:39:52Z",
+      "side": 1,
+      "message": "the service is called resultdb as opposed to testResultDb or testResults because ChromeOS already requested to be able to fetch build artifacts, another result of a CI system. The Invocations/Inclusions/etc infra is reusable for that goal. Hence ResultSink.\n\nI didn\u0027t find a better word than \"result\" for various user-level results from a CI system. We didn\u0027t launch yet, but otherwise renaming it again would be disruptive.\n\nlarge amount of data is what we target. there is a lot of test results. What is the concern?",
+      "parentUuid": "e25f86ba_0014adea",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
