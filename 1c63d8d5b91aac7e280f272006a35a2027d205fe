@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ebc8c10e_27027093",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "this can be interpreted as \"should be finalized\" as opposed to \"marked as completed, as opposed to interrupted\"",
+      "range": {
+        "startLine": 75,
+        "startChar": 83,
+        "endLine": 75,
+        "endChar": 102
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5509df55_a56b4303",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "nit: colon after TODO(sajjadm)\n\nsame above",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 17
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b21cb425_22a1b96a",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "should we use some other exit code so that it is less likely to be confused with subprocesses\u0027s 1\nmaybe something unusual like 2xx?\n\nand then we might want a constant, since it is also used below",
+      "range": {
+        "startLine": 145,
+        "startChar": 10,
+        "endLine": 145,
+        "endChar": 11
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba9c411f_73c0b6b2",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "nit: consolidated\n\n  if err :\u003d s.Close(ctx); err !\u003d nil {",
+      "range": {
+        "startLine": 150,
+        "startChar": 1,
+        "endLine": 151,
+        "endChar": 16
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b1b0983_d807f713",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "this pattern is repeated multiple times. consider a func that logs a fatal error and os-exits",
+      "range": {
+        "startLine": 171,
+        "startChar": 2,
+        "endLine": 172,
+        "endChar": 12
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c6c535d_a4355f3a",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "this never runs? this func never returns because it os-exits.\nthis can be solved by consolidating all os.Exit in main() while extracting the rest of this code into a separate func, like wrapper.main?",
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c361ea00_51981b9a",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T05:10:08Z",
+      "side": 1,
+      "message": "this is a secret. it is shared via a file that has certain permissions. here we leak the secret to a file that does not necessarily have permissions\n\nin general, it is bad practice to log secrets",
+      "range": {
+        "startLine": 180,
+        "startChar": 52,
+        "endLine": 180,
+        "endChar": 54
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
