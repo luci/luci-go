@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "b2b72666_a1c81d8b",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T21:31:49Z",
+      "side": 1,
+      "message": "does this imply resultdb should be renamed to artifactdb? i am not sure \"artifacts\" is how our users think of test results. Artifacts seems to be associated with blobs that builds and tests produce.",
+      "parentUuid": "6c3bf1e1_9dba529c",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
