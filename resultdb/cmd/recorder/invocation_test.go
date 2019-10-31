@@ -131,10 +131,10 @@ func TestReadInvocation(t *testing.T) {
 
 		Convey(`with inclusions`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", ct),
+				testutil.InsertInvocation("including", pb.Invocation_COMPLETED, "", ct),
 				testutil.InsertInvocation("another", pb.Invocation_ACTIVE, "", ct),
-				testutil.InsertInclusion("including", "inv", true, ""),
-				testutil.InsertInclusion("including", "another", false, "inv"),
+				testutil.InsertInclusion("including", "inv", ""),
+				testutil.InsertInclusion("including", "another", "inv"),
 			)
 
 			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())

@@ -20,7 +20,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -76,39 +75,18 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	}
 
 	err := mutateInvocation(ctx, includingInvID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		eg, ctx := errgroup.WithContext(ctx)
-
-		// Ensure the included invocation exists and also read its state to
-		// compute inclusion readiness.
-		var ready spanner.NullBool
-		eg.Go(func() error {
-			state, err := readInvocationState(ctx, txn, includedInvID)
-			if err != nil {
-				return err
-			}
-			if pbutil.IsFinalized(state) {
-				ready.Valid = true
-				ready.Bool = true
-			}
-			return nil
-		})
-
 		if overriddenInvID != "" {
 			// Ensure the overridden inclusion exists and not overridden already.
 			// Note that we don't update readiness of the inclusion being
 			// overridden.
-			eg.Go(func() error {
-				return checkOverridingInclusion(ctx, txn, includingInvID, includedInvID, overriddenInvID)
-			})
-		}
+			switch err := checkOverridingInclusion(ctx, txn, includingInvID, includedInvID, overriddenInvID); {
+			case err == errRepeatedRequest:
+				// No need to mutate anything.
+				return nil
 
-		switch err := eg.Wait(); {
-		case err == errRepeatedRequest:
-			// No need to mutate anything.
-			return nil
-
-		case err != nil:
-			return err
+			case err != nil:
+				return err
+			}
 		}
 
 		// Insert a new inclusion.
@@ -118,7 +96,6 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 			spanner.InsertMap("Inclusions", map[string]interface{}{
 				"InvocationId":         includingInvID,
 				"IncludedInvocationId": includedInvID,
-				"Ready":                ready,
 			}),
 		}
 
