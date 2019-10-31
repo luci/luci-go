@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/resultdb/pbutil"
+
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
@@ -178,7 +180,7 @@ func fatalIf(err error) {
 // InsertInvocation returns a spanner mutation that inserts an invocation.
 func InsertInvocation(id string, state pb.Invocation_State, updateToken string, ct time.Time) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	return spanner.InsertMap("Invocations", span.ToSpannerMap(map[string]interface{}{
+	values := span.ToSpannerMap(map[string]interface{}{
 		"InvocationId":                      id,
 		"State":                             state,
 		"Realm":                             "",
@@ -189,15 +191,18 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string, 
 		"ExpectedTestResultsExpirationWeek": future,
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
-	}))
+	})
+	if pbutil.IsFinalized(state) {
+		values["FinalizeTime"] = ct.Add(time.Hour)
+	}
+	return spanner.InsertMap("Invocations", values)
 }
 
 // InsertInclusion returns a spanner mutation that inserts an inclusion.
-func InsertInclusion(includingInvID, includedInvID string, ready bool, overriddenBy string) *spanner.Mutation {
+func InsertInclusion(includingInvID, includedInvID, overriddenBy string) *spanner.Mutation {
 	values := map[string]interface{}{
 		"InvocationId":         includingInvID,
 		"IncludedInvocationId": includedInvID,
-		"Ready":                ready,
 	}
 	if overriddenBy != "" {
 		values["OverriddenByIncludedInvocationId"] = overriddenBy
