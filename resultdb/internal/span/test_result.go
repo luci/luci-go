@@ -21,11 +21,13 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -65,14 +67,125 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	}
 
-	if maybeUnexpected.Valid {
-		tr.Expected = !maybeUnexpected.Bool
-	}
-	if micros > 0 {
-		tr.Duration = FromMicros(micros)
+	populateExpectedField(tr, maybeUnexpected)
+	populateDurationField(tr, micros)
+	return tr, nil
+}
+
+// ReadTestResults reads the specified test results, if any, of an invocation within the transaction.
+func ReadTestResults(ctx context.Context, txn Txn, name string, excludeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
+	invID := pbutil.MustParseInvocationName(name)
+
+	readOpts := &spanner.ReadOptions{Limit: pageSize}
+	keyRange := spanner.KeyRange{
+		Start: spanner.Key{invID},
+		Kind:  spanner.ClosedClosed,
 	}
 
-	return tr, nil
+	// Filter out expected results if requested.
+	if excludeExpected {
+		readOpts.Index = "UnexpectedTestResults"
+		keyRange.Start = append(keyRange.Start, spanner.NullBool{Valid: true, Bool: true})
+	}
+
+	// Set start position if requested.
+	var pos []string
+	switch pos, err = internal.ParsePageToken(cursorTok); {
+	case err != nil:
+		err = errors.Reason("page_token").InternalReason(err.Error()).
+			Tag(grpcutil.InvalidArgumentTag).Err()
+		return
+
+	case pos == nil:
+		break
+
+	case len(pos) == 2:
+		keyRange.Kind = spanner.OpenClosed
+		keyRange.Start = append(keyRange.Start, pos[0], pos[1])
+
+	default:
+		err = errors.Reason("page_token").
+			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
+			Tag(grpcutil.InvalidArgumentTag).Err()
+		return
+	}
+
+	// Read and convert results.
+	it := txn.ReadWithOptions(ctx, "TestResults", keyRange, []string{
+		"TestPath",
+		"ResultId",
+		"ExtraVariantPairs",
+		"IsUnexpected",
+		"Status",
+		"SummaryMarkdown",
+		"StartTime",
+		"RunDurationUsec",
+		"Tags",
+		"InputArtifacts",
+		"OutputArtifacts",
+	}, readOpts)
+	defer it.Stop()
+
+	trs = make([]*pb.TestResult, 0, pageSize)
+	for {
+		var row *spanner.Row
+		row, err = it.Next()
+		if err == iterator.Done {
+			err = nil
+			break
+		}
+		if err != nil {
+			trs = nil
+			return
+		}
+
+		var maybeUnexpected spanner.NullBool
+		var micros int64
+
+		tr := &pb.TestResult{}
+		err = FromSpanner(row,
+			&tr.TestPath,
+			&tr.ResultId,
+			&tr.ExtraVariantPairs,
+			&maybeUnexpected,
+			&tr.Status,
+			&tr.SummaryMarkdown,
+			&tr.StartTime,
+			&micros,
+			&tr.Tags,
+			&tr.InputArtifacts,
+			&tr.OutputArtifacts,
+		)
+		if err != nil {
+			trs = nil
+			return
+		}
+
+		tr.Name = pbutil.TestResultName(invID, tr.TestPath, tr.ResultId)
+		populateExpectedField(tr, maybeUnexpected)
+		populateDurationField(tr, micros)
+
+		trs = append(trs, tr)
+	}
+
+	// If we got fewer than pageSize, then we've exhausted the collection, so return everything,
+	// with a nil-positioned cursor.
+	if len(trs) < pageSize {
+		return
+	}
+
+	// Otherwise, construct the next cursor.
+	trLast := trs[pageSize-1]
+	nextCursorTok = internal.PageToken(trLast.TestPath, trLast.ResultId)
+	return
+}
+
+func populateDurationField(tr *pb.TestResult, micros int64) {
+	tr.Duration = FromMicros(micros)
+}
+
+func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
+	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
 }
 
 // ToMicros converts a duration.Duration proto to microseconds.
