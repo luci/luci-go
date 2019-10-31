@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f08948a2_6087d68c",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T20:41:10Z",
+      "side": 1,
+      "message": "i don\u0027t think recipe result should go there because it is a not a user-level result, not something a CI user cares about much",
+      "parentUuid": "fc02bf68_1c7c5f40",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
