@@ -78,19 +78,10 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	err := mutateInvocation(ctx, includingInvID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		eg, ctx := errgroup.WithContext(ctx)
 
-		// Ensure the included invocation exists and also read its state to
-		// compute inclusion readiness.
-		var ready spanner.NullBool
-		eg.Go(func() error {
-			state, err := readInvocationState(ctx, txn, includedInvID)
-			if err != nil {
-				return err
-			}
-			if pbutil.IsFinalized(state) {
-				ready.Valid = true
-				ready.Bool = true
-			}
-			return nil
+		// Ensure the included invocation exists.
+		eg.Go(func() (err error) {
+			_, err = readInvocationState(ctx, txn, includedInvID)
+			return
 		})
 
 		if overriddenInvID != "" {
@@ -118,7 +109,6 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 			spanner.InsertMap("Inclusions", map[string]interface{}{
 				"InvocationId":         includingInvID,
 				"IncludedInvocationId": includedInvID,
-				"Ready":                ready,
 			}),
 		}
 
