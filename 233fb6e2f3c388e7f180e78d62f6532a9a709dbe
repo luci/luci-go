@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "e25f86ba_0014adea",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-31T19:10:59Z",
+      "side": 1,
+      "message": "is this going to be used for more than test results? If no, I would consider:\n\n   type TestResultsService struct {...}\n   LUCI_CONTEXT[\"test_results\"] \u003d {...}\n\n\"Sink\" took me a minute to parse, and \"resultsink\" seems pretty generic; Should the result of the recipe go there? What if the result of some process is a large amount of data?",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "573d554d_77e92c7e",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-10-31T19:10:59Z",
+      "side": 1,
+      "message": "make sure to update the python side of LUCI_CONTEXT too: https://cs.chromium.org/chromium/infra/luci/client/LUCI_CONTEXT.md?q\u003dLUCI_CONTEXT\u0026sq\u003dpackage:chromium\u0026dr\u003dC\u0026l\u003d1 (and the related code in that package)",
+      "range": {
+        "startLine": 29,
+        "startChar": 53,
+        "endLine": 29,
+        "endChar": 65
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7cdd5f60_2cb4c2de",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
