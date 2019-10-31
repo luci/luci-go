@@ -168,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "c08597ec_70b4b7ac",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-10-31T20:09:43Z",
+      "side": 1,
+      "message": "It\u0027s possible for the context to be cancelled for reasons other than a proper shutdown. The code that calls Serve could cancel the context.",
+      "parentUuid": "bf87dfe1_dfcc8262",
+      "range": {
+        "startLine": 143,
+        "startChar": 26,
+        "endLine": 143,
+        "endChar": 41
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cf803b9f_999e2f73",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 10
