@@ -999,6 +999,24 @@
     },
     {
       "key": {
+        "uuid": "78d1fe3a_830d0714",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-10-31T17:48:16Z",
+      "side": 1,
+      "message": "ah right, we no longer need this",
+      "parentUuid": "b7db9a5e_0a0056cc",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8459576d_9ad4dbf9",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
