@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e266944d_a1834647",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbb071bb_026baee3",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 2
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b1ba885_5be11574",
         "filename": "resultdb/cmd/resultdb/list_test_results.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89e77983_d7af76c5",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b1ba885_5be11574",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 47,
+        "endChar": 2
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "f40cb1da_0db4e0c6",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Obsolete",
+      "parentUuid": "0a55871a_bfdf5931",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 40
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "674a337e_06ebfdff",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "befec822_f8252101",
+      "range": {
+        "startLine": 60,
+        "startChar": 30,
+        "endLine": 60,
+        "endChar": 33
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "705f4011_b1703530",
         "filename": "resultdb/cmd/resultdb/list_test_results.go",
         "patchSetId": 6
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "c06ac4dd_7763b229",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "705f4011_b1703530",
+      "range": {
+        "startLine": 72,
+        "startChar": 34,
+        "endLine": 72,
+        "endChar": 40
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e588736e_a20a257d",
         "filename": "resultdb/cmd/resultdb/list_test_results.go",
         "patchSetId": 6
@@ -128,6 +248,30 @@
       "writtenOn": "2019-10-30T02:43:20Z",
       "side": 1,
       "message": "i think `pageSize \u003e pageSizeMax` would entail the intention more clearly\n\nstepping back, it seems we can reduce repetition by putting specific case first\n\n  case pageSize \u003e pageSizeMax:\n    ...\n  case pageSize \u003c 0:\n    ...\n  default:",
+      "range": {
+        "startLine": 91,
+        "startChar": 6,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6664b362_3b271a95",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "This is \"pageSize \u003e 0\", right? Or do you mean to put validation here too, instead of in pbutil?",
+      "parentUuid": "e588736e_a20a257d",
       "range": {
         "startLine": 91,
         "startChar": 6,
@@ -283,6 +427,30 @@
     },
     {
       "key": {
+        "uuid": "c6505bad_13a7b649",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "It turns out that having an exclusive cursor means we have two cases for KeyRange.Kind...",
+      "parentUuid": "0d3c9ea4_b1e4de43",
+      "range": {
+        "startLine": 83,
+        "startChar": 19,
+        "endLine": 83,
+        "endChar": 89
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e57868b_0b49e758",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -354,6 +522,30 @@
     },
     {
       "key": {
+        "uuid": "45fd126d_eadf2bbb",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3eba42a_a9b8407a",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 90
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4367abd1_0147d0d1",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -368,6 +560,24 @@
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77b514de_abcea2c7",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4367abd1_0147d0d1",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -706,6 +916,30 @@
     },
     {
       "key": {
+        "uuid": "e00bb5fb_b296dfaa",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Discussed offline --- this RPC should not be used for any streaming purposes or with any expectation of completeness guarantees (*unless* the invocation has already been finalized)",
+      "parentUuid": "c16ab46f_c3c9d80d",
+      "range": {
+        "startLine": 123,
+        "startChar": 11,
+        "endLine": 123,
+        "endChar": 46
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ff90742_19ee753d",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -717,6 +951,24 @@
       "writtenOn": "2019-10-30T03:41:23Z",
       "side": 1,
       "message": "since we have to have this if statement anyway, let\u0027s skip reading columns of a row that we will discard: in the loop:\n\n  if len(trs) \u003d\u003d pageSize {\n    cursor \u003d ...\n    break\n  }",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7db9a5e_0a0056cc",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Not sure I follow (maybe this was before we talked about the next_page_token interpretation): as per above we\u0027re no longer doing the pageSize+1 query, so there\u0027s no row that might be discarded --- or do you mean to keep the pageSize+1 query and return empty next_page_token if the last element of the page coincides with the last element of the collection?",
+      "parentUuid": "3ff90742_19ee753d",
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -737,6 +989,24 @@
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f9fe12b_1f3b4785",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-10-31T07:19:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8459576d_9ad4dbf9",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
