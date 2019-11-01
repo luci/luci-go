@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ae9ae585_180440a0",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T16:52:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb1bb180_a1f5a9a8",
+      "range": {
+        "startLine": 90,
+        "startChar": 24,
+        "endLine": 90,
+        "endChar": 38
+      },
+      "revId": "5f2bcf028c72db81b6290f6a1960bc2ef55d2b0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b64bdad4_b863708b",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 15
@@ -45,6 +69,30 @@
       "revId": "5f2bcf028c72db81b6290f6a1960bc2ef55d2b0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3309f93_7a1ee8e8",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T16:52:10Z",
+      "side": 1,
+      "message": "Done\n\nOmitted for table because table only gains at most one additional part",
+      "parentUuid": "b64bdad4_b863708b",
+      "range": {
+        "startLine": 115,
+        "startChar": 13,
+        "endLine": 115,
+        "endChar": 15
+      },
+      "revId": "5f2bcf028c72db81b6290f6a1960bc2ef55d2b0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

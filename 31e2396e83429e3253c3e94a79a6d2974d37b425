@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "a477913f_84d2df48",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T16:52:10Z",
+      "side": 1,
+      "message": "i meant pos was declared above so I could use \u003d instead of :\u003d to avoid shadowing err",
+      "parentUuid": "b69d64ef_e4c40bb7",
+      "range": {
+        "startLine": 87,
+        "startChar": 8,
+        "endLine": 87,
+        "endChar": 28
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9919db7_48c8a7db",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 13
@@ -434,6 +458,30 @@
       "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5217de29_bd75068f",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 13
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T16:52:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97339bf2_76ff78c2",
+      "range": {
+        "startLine": 36,
+        "startChar": 51,
+        "endLine": 36,
+        "endChar": 57
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
