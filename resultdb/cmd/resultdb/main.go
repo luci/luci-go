@@ -30,6 +30,16 @@ func main() {
 			io.WriteString(c.Writer, "OK")
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
+
+		// Register an empty Recorder server only to make the discovery service
+		// list it.
+		// The actual traffic will be directed to another deployment, i.e. this
+		// binary will never see Recorder RPCs.
+		// TODO(nodir): replace this hack with a separate discovery Deployment that
+		// dynamically fetches discovery documents from other deployments and
+		// returns their union.
+		pb.RegisterRecorderServer(srv.PRPC, nil)
+
 		return nil
 	})
 }
