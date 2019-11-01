@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package pagetoken
 
 import (
 	"encoding/base64"
 
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/resultdb/internal/proto"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 )
 
-// ParsePageToken extracts a string slice position from the given cursor token.
-func ParsePageToken(token string) ([]string, error) {
+// Parse extracts a string slice position from the given cursor token.
+func Parse(token string) ([]string, error) {
 	if token == "" {
 		return nil, nil
 	}
@@ -40,8 +40,8 @@ func ParsePageToken(token string) ([]string, error) {
 	return cursor.Position, nil
 }
 
-// PageToken converts an string slice representing cursor position to an opaque token string.
-func PageToken(pos ...string) string {
+// Format converts an string slice representing cursor position to an opaque token string.
+func Format(pos ...string) string {
 	if pos == nil {
 		return ""
 	}

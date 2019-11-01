@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/pagetoken"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -85,7 +85,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invName string, includeExpect
 	)
 
 	// Set start position if requested.
-	switch pos, tokErr := internal.ParsePageToken(cursorTok); {
+	switch pos, tokErr := pagetoken.Parse(cursorTok); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).
@@ -188,7 +188,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invName string, includeExpect
 
 	// Otherwise, construct the next cursor.
 	trLast := trs[pageSize-1]
-	nextCursorTok = internal.PageToken(trLast.TestPath, trLast.ResultId)
+	nextCursorTok = pagetoken.Format(trLast.TestPath, trLast.ResultId)
 	return
 }
 

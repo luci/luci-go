@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package pagetoken
 
 import (
 	"testing"
@@ -24,16 +24,16 @@ func TestCursor(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Token works`, t, func() {
-		So(PageToken("v1", "v2"), ShouldResemble, "CgJ2MQoCdjI=")
+		So(Format("v1", "v2"), ShouldResemble, "CgJ2MQoCdjI=")
 
-		pos, err := ParsePageToken("CgJ2MQoCdjI=")
+		pos, err := Parse("CgJ2MQoCdjI=")
 		So(err, ShouldBeNil)
 		So(pos, ShouldResemble, []string{"v1", "v2"})
 
 		Convey(`for fresh cursor`, func() {
-			So(PageToken(), ShouldResemble, "")
+			So(Format(), ShouldResemble, "")
 
-			pos, err := ParsePageToken("")
+			pos, err := Parse("")
 			So(err, ShouldBeNil)
 			So(pos, ShouldBeNil)
 		})
