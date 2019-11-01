@@ -292,8 +292,8 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 			default:
 				panic(
 					"the transport is shared between different auth contexts, this is not allowed: " +
-						"requests passed to a transported created via GetRPCTransport(ctx, ...) " +
-						"should either don't have any context at all, or have a context that carries the same " +
+						"requests passed to a transport created via GetRPCTransport(ctx, ...) " +
+						"should either not have any context at all, or have a context that carries the same " +
 						"authentication state as `ctx` (i.e. be derived from `ctx` itself or be derived from " +
 						"an appropriate parent of `ctx`, like the root context associated with the incoming request)")
 			}
