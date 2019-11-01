@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6e89e94_61633e6d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-01T00:40:07Z",
+      "side": 1,
+      "message": "duplicates?",
+      "range": {
+        "startLine": 9,
+        "startChar": 46,
+        "endLine": 10,
+        "endChar": 13
+      },
+      "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "811cd177_66734dad",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-01T00:40:07Z",
+      "side": 1,
+      "message": "I\u0027m assuming this query means when execute the query, the WHERE clause is executed before the joins, right?\n\nI\u0027m just thinking will it be better if we read the including invocation first and pass in its id and finalized time to the query.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 3
+      },
+      "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
