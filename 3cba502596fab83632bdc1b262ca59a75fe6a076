@@ -308,6 +308,30 @@
     },
     {
       "key": {
+        "uuid": "3fb9edbc_e262ce4d",
+        "filename": "resultdb/cmd/resultdb/list_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T00:17:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ff13a4b_33aedbbf",
+      "range": {
+        "startLine": 91,
+        "startChar": 6,
+        "endLine": 91,
+        "endChar": 18
+      },
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20d5bcdf_402cd9a7",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
@@ -1014,6 +1038,24 @@
       "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b0ffdc2_caa3f211",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T00:17:23Z",
+      "side": 1,
+      "message": "Ack\n\nNote that the behavior is now that if if there are 20 results and a client requests 2 pages of 10 each, they /will/ get a non-empty next_page_token on their second call (but, if nothing has been added in the meantime, they\u0027ll get an empty list of results with empty next_page_token on their next call).",
+      "parentUuid": "78d1fe3a_830d0714",
+      "revId": "3cba502596fab83632bdc1b262ca59a75fe6a076",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
