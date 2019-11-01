@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: default
+spec:
+  backend:
+    serviceName: resultdb
+    servicePort: 80
+  rules:
+    - http:
+        paths:
+          - path: /prpc/luci.resultdb.Recorder/*
+            backend:
+              serviceName: recorder
+              servicePort: 80
