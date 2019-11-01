@@ -31,6 +31,13 @@ func main() {
 			c.Writer.Write([]byte("DEV Hello, world"))
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
+
+		// Register an empty Recorder server only to make the discovery service
+		// list it.
+		// The actual traffic will be directed to another deployment, i.e. this
+		// binary will never see Recorder RPCs.
+		pb.RegisterRecorderServer(srv.PRPC, nil)
+
 		return nil
 	})
 }
