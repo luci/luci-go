@@ -191,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "889344fa_231dbf9f",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T17:03:46Z",
+      "side": 1,
+      "message": "Ah, I see. Yes, that\u0027s not necessary --- I think I like the new way better anyway though, what do you think?",
+      "parentUuid": "d6c06707_a1cb5c03",
+      "range": {
+        "startLine": 87,
+        "startChar": 8,
+        "endLine": 87,
+        "endChar": 28
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9919db7_48c8a7db",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 13
