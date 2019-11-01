@@ -15,20 +15,19 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/logging"
+	"io"
+
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
+	"go.chromium.org/luci/resultdb/internal"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func main() {
-	server.Main(nil, func(srv *server.Server) error {
+	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			logging.Debugf(c.Context, "DEV Hello debug world")
-			logging.Infof(c.Context, "DEV Hello info world")
-			logging.Warningf(c.Context, "DEV Hello warning world")
-			c.Writer.Write([]byte("DEV Hello, world"))
+			io.WriteString(c.Writer, "OK")
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
 		return nil
