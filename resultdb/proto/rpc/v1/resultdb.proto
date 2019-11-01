@@ -75,6 +75,9 @@ message ListTestResultsRequest {
   // The maximum number of test results to return.
   //
   // The service may return fewer than this value.
+  // Does NOT guarantee returning all test results from chained reads until
+  // cursor exhaustion unless the invocation was finalized at the time of first
+  // ListTestResults request.
   // If unspecified, at most 100 test results will be returned.
   // The maximum value is 1000; values above 1000 will be coerced to 1000.
   int32 page_size = 2;
