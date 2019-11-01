@@ -194,24 +194,22 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 		chunkSize = len(cells)
 	}
 
-	var failedSends int
+	var nSent int
 	var lastErr error
-
-	for len(cells) > 0 {
-		count := minInt(chunkSize, len(cells))
-		if err := mon.Send(ctx, cells[:count]); err != nil {
-			logging.Errorf(ctx, "Failed to send %d cells: %v", count, err)
-			failedSends += count
-			lastErr = err
-			// Continue anyway.
+	for s := 0; s < len(cells); s += chunkSize {
+		e := s + chunkSize
+		if e > len(cells) {
+			e = len(cells)
 		}
-		cells = cells[count:]
+
+		if lastErr = mon.Send(ctx, cells[s:e]); lastErr != nil {
+			logging.Errorf(ctx, "Failed to send %d cells: %v", e-s, lastErr)
+			continue
+		}
+		nSent += e - s
 	}
-
-	logging.Debugf(ctx, "Sent %d/%d cells", len(cells)-failedSends, len(cells))
-
+	logging.Debugf(ctx, "Sent %d/%d cells", nSent, len(cells))
 	s.resetGlobalCallbackMetrics(ctx)
-
 	return lastErr
 }
 
@@ -234,11 +232,4 @@ func (s *State) runCallbacks(ctx context.Context) {
 	for _, cb := range s.Callbacks() {
 		cb(ctx)
 	}
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
