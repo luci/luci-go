@@ -113,50 +113,69 @@ func TestReadInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct))
-
-		txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-		So(err, ShouldBeNil)
-		defer txn.Close()
-
-		inv, err := span.ReadInvocationFull(ctx, txn, "inv")
-		So(err, ShouldBeNil)
-		expected := &pb.Invocation{
-			Name:       "invocations/inv",
-			State:      pb.Invocation_COMPLETED,
-			CreateTime: pbutil.MustTimestampProto(ct),
-			Deadline:   pbutil.MustTimestampProto(ct.Add(time.Hour)),
-		}
-		So(inv, ShouldResembleProto, expected)
-
-		Convey(`with inclusions`, func() {
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", ct),
-				testutil.InsertInvocation("another", pb.Invocation_ACTIVE, "", ct),
-				testutil.InsertInclusion("including", "inv", true, ""),
-				testutil.InsertInclusion("including", "another", false, "inv"),
-			)
-
+		readInv := func() *pb.Invocation {
 			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
 			So(err, ShouldBeNil)
 			defer txn.Close()
 
-			inv, err := span.ReadInvocationFull(ctx, txn, "including")
+			inv, err := span.ReadInvocationFull(ctx, txn, "inv")
 			So(err, ShouldBeNil)
-			So(inv, ShouldResembleProto, &pb.Invocation{
-				Name:       "invocations/including",
-				State:      pb.Invocation_ACTIVE,
-				CreateTime: expected.CreateTime,
-				Deadline:   expected.Deadline,
+			return inv
+		}
+
+		Convey(`completed`, func() {
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct))
+
+			inv := readInv()
+			expected := &pb.Invocation{
+				Name:         "invocations/inv",
+				State:        pb.Invocation_COMPLETED,
+				CreateTime:   pbutil.MustTimestampProto(ct),
+				Deadline:     pbutil.MustTimestampProto(ct.Add(time.Hour)),
+				FinalizeTime: pbutil.MustTimestampProto(ct.Add(time.Hour)),
+			}
+			So(inv, ShouldResembleProto, expected)
+
+			Convey(`with inclusions`, func() {
+				testutil.MustApply(ctx,
+					testutil.InsertInvocation("completed", pb.Invocation_COMPLETED, "", ct.Add(-time.Hour)),
+					testutil.InsertInvocation("active", pb.Invocation_ACTIVE, "", ct),
+					testutil.InsertInclusion("inv", "completed", "active"),
+					testutil.InsertInclusion("inv", "active", ""),
+				)
+
+				inv := readInv()
+				actual := &pb.Invocation{Inclusions: inv.Inclusions}
+				So(actual, ShouldResembleProto, &pb.Invocation{
+					Inclusions: map[string]*pb.Invocation_InclusionAttrs{
+						"invocations/completed": {
+							Ready:        true,
+							OverriddenBy: "invocations/active",
+						},
+						"invocations/active": {},
+					},
+				})
+			})
+		})
+
+		Convey(`active with inclusions`, func() {
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", ct),
+				testutil.InsertInvocation("completed", pb.Invocation_COMPLETED, "", ct.Add(-time.Hour)),
+				testutil.InsertInvocation("active", pb.Invocation_ACTIVE, "", ct),
+				testutil.InsertInclusion("inv", "completed", "active"),
+				testutil.InsertInclusion("inv", "active", ""),
+			)
+
+			inv := readInv()
+			actual := &pb.Invocation{Inclusions: inv.Inclusions}
+			So(actual, ShouldResembleProto, &pb.Invocation{
 				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-					"invocations/inv": {
-						OverriddenBy: "",
+					"invocations/completed": {
 						Ready:        true,
+						OverriddenBy: "invocations/active",
 					},
-					"invocations/another": {
-						OverriddenBy: "invocations/inv",
-						Ready:        false,
-					},
+					"invocations/active": {},
 				},
 			})
 		})

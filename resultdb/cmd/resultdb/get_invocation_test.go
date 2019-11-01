@@ -63,8 +63,8 @@ func TestGetInvocation(t *testing.T) {
 			testutil.InsertInvocation("included_0", pb.Invocation_ACTIVE, "", ct.Add(time.Hour)),
 			testutil.InsertInvocation("included_1", pb.Invocation_COMPLETED, "", ct.Add(2*time.Hour)),
 
-			testutil.InsertInclusion("including", "included_0", false, "included_1"),
-			testutil.InsertInclusion("including", "included_1", true, ""),
+			testutil.InsertInclusion("including", "included_0", "included_1"),
+			testutil.InsertInclusion("including", "included_1", ""),
 		)
 
 		// Fetch back the top-level Invocation.

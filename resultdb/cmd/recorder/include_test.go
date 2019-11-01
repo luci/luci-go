@@ -107,10 +107,16 @@ func TestInclude(t *testing.T) {
 		insIncl := testutil.InsertInclusion
 		ct := testclock.TestRecentTimeUTC
 
-		readInclusionColumn := func(includedInvID, column string, ptr interface{}) {
+		readOverriddenBy := func(includedInvID string) string {
+			var ret spanner.NullString
 			testutil.MustReadRow(ctx, "Inclusions", spanner.Key{"including", includedInvID}, map[string]interface{}{
-				column: ptr,
+				"OverriddenByIncludedInvocationId": &ret,
 			})
+			return ret.StringVal
+		}
+
+		assertIncluded := func(includedInvID string) {
+			readOverriddenBy(includedInvID)
 		}
 
 		Convey(`without overriding`, func() {
@@ -161,25 +167,7 @@ func TestInclude(t *testing.T) {
 
 				_, err := recorder.Include(ctx, req)
 				So(err, ShouldBeNil)
-
-				var ready spanner.NullBool
-				readInclusionColumn("included", "Ready", &ready)
-				So(ready.Valid, ShouldBeTrue)
-				So(ready.Bool, ShouldBeTrue)
-			})
-
-			Convey(`unready`, func() {
-				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token, ct),
-					insInv("included", pb.Invocation_ACTIVE, "", ct),
-				)
-
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-
-				var ready spanner.NullBool
-				readInclusionColumn("included", "Ready", &ready)
-				So(ready.Valid, ShouldBeFalse)
+				assertIncluded("included")
 			})
 		})
 
@@ -204,7 +192,7 @@ func TestInclude(t *testing.T) {
 			Convey(`inclusion already overridden by another invocation`, func() {
 				testutil.MustApply(ctx,
 					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", false, "else"),
+					insIncl("including", "overridden", "else"),
 				)
 
 				_, err := recorder.Include(ctx, req)
@@ -215,21 +203,19 @@ func TestInclude(t *testing.T) {
 			Convey(`success`, func() {
 				testutil.MustApply(ctx,
 					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", false, ""),
+					insIncl("including", "overridden", ""),
 				)
 
 				_, err := recorder.Include(ctx, req)
 				So(err, ShouldBeNil)
 
-				var actualOverriddenByID spanner.NullString
-				readInclusionColumn("overridden", "OverriddenByIncludedInvocationId", &actualOverriddenByID)
-				So(actualOverriddenByID.StringVal, ShouldEqual, "included")
+				So(readOverriddenBy("overridden"), ShouldEqual, "included")
 			})
 
 			Convey(`idempotent`, func() {
 				testutil.MustApply(ctx,
 					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", false, ""),
+					insIncl("including", "overridden", ""),
 				)
 
 				_, err := recorder.Include(ctx, req)

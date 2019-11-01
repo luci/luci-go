@@ -97,19 +97,7 @@ CREATE TABLE Inclusions (
 
   -- If not NULL, this inclusion is overridden by inclusion
   -- (InvocationId, OverriddenByIncludedInvocationId).
-  OverriddenByIncludedInvocationId STRING (MAX),
-
-  -- Whether the included invocation is finalized before the including one.
-  -- This value must equal
-  -- IncludedInvocation.FinalizeTime < Invocation.FinalizeTime.
-  -- See also Inclusion.ready in invocation.proto for semantics.
-  -- This column may take one of three values:
-  -- * NULL: any of the finalization times is NULL. For a client, this means
-  --   the inclusion is not ready yet (false), but the value may change in the
-  --   future. NULL indicates that we may have to refresh it.
-  -- * TRUE: included invocation was finalized before the including one
-  -- * FALSE: including invocation was finalized before the included one
-  Ready BOOL,
+  OverriddenByIncludedInvocationId STRING (MAX)
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
