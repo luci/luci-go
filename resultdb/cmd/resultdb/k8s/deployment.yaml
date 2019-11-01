@@ -61,7 +61,7 @@ spec:
           "-auth-service-host", "chrome-infra-auth-dev.appspot.com",
           "-service-account-json", ":gce",
           "-root-secret-path", "/secrets/root-luci-secret/secret.json",
-          "-ts-mon-account", "app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com",
+          "-ts-mon-account", "gke-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com",
           "-ts-mon-service-name", "luci-resultdb-dev",
           "-ts-mon-job-name", "luci-resultdb-dev-resultdb",
           "-spanner-database", "projects/chops-spanner-testing/instances/testing/databases/luci-resultdb-dev"
