@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "d6c06707_a1cb5c03",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T16:55:22Z",
+      "side": 1,
+      "message": "i understand the benefit of declaring it above. I don\u0027t understand why do we have to initialize it with a slice that immediately throw away. The alternative is\n\n  var pos []string\n  switch pos, err \u003d ...",
+      "parentUuid": "a477913f_84d2df48",
+      "range": {
+        "startLine": 87,
+        "startChar": 8,
+        "endLine": 87,
+        "endChar": 28
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9919db7_48c8a7db",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 13
