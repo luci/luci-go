@@ -1,0 +1,28 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package internal.proto;
+
+option go_package = "internalpb";
+
+// A message for storing all the information attached to a cursor through query results.
+message Cursor {
+  // Position marks the cursor's start (exclusive). Its interpretation is implementation-specific.
+  // For instance, for a Spanner cursor, this is a string slice representation of the Spanner key
+  // corresponding to the entry prior to the one at which to start reading, or
+  // empty if the cursor is to start at the beginning.
+  repeated string position = 1;
+}
