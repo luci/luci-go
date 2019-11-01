@@ -33,6 +33,9 @@ service ResultDB {
   rpc GetTestResult(GetTestResultRequest) returns (TestResult) {};
 
   // Retrieves test results for a parent invocation.
+  // Does NOT guarantee returning all test results from chained reads until
+  // cursor exhaustion unless the invocation was finalized at the time of first
+  // ListTestResults request.
   //
   // Note: response does not contain test results of included invocations.
   // Use QueryTestResults instead.
