@@ -45,6 +45,30 @@
       "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "123492d6_c80038d7",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T01:01:59Z",
+      "side": 1,
+      "message": "I thought the WHERE is executed after the JOINs, but I could be wrong. If the WHERE is indeed executed after, could we construct the `including` table incorporating the invocation ID first, and then join with the inclusions table?",
+      "parentUuid": "811cd177_66734dad",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 3
+      },
+      "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
