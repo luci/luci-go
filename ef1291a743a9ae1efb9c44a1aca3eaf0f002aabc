@@ -22,6 +22,30 @@
       "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2852e058_8b715037",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T00:27:19Z",
+      "side": 1,
+      "message": "I started making the change, but then I noticed the kinds of changes that the proto documentation needed --- for instance, \"A message for storing all the information attached to a cursor\" becomes \"A message for storing identifiers for the page represented by the page token,\" and \"Position marks the cursor\u0027s start (exclusive)\" becomes \"Position marks the start of the cursor represented by the page token (exclusive)\"; IOW they\u0027re all indirections of the page token concept.\n\nThoughts/suggestions on phrasing?",
+      "parentUuid": "3efed71d_451e6cb6",
+      "range": {
+        "startLine": 36,
+        "startChar": 23,
+        "endLine": 36,
+        "endChar": 29
+      },
+      "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
