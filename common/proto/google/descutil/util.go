@@ -279,26 +279,23 @@ func At(descProto proto.Message, path []int32) (interface{}, error) {
 				return nil, fmt.Errorf("element #%d of path %s is an index and it is out of bounds", i, pathStr())
 			}
 			cur = cur.Index(int(path[i]))
-		} else if _, ok := cur.Interface().(proto.Message); ok {
-			tag := int(path[i])
-			if tag == 999 || tag == 73700 {
-				// 999 is an "UnintepretedOption" field.
-				//
-				// 73700 is a FileOption from common/proto/options.proto
-				// "luci.file_metadata".
-				//
-				// We do not support file options currently.
-				return nil, nil
-			}
+		} else if msg, ok := cur.Interface().(proto.Message); ok {
+			tag := path[i]
 			// The tag->field index mapping could be precomputed.
 			var prop *proto.Properties
 			for _, p := range proto.GetProperties(cur.Type().Elem()).Prop {
-				if p.Tag == tag {
+				if p.Tag == int(tag) {
 					prop = p
 					break
 				}
 			}
 			if prop == nil {
+				// Is this an extension?
+				if _, err := proto.GetExtension(msg, &proto.ExtensionDesc{Field: tag}); err == nil {
+					// Yes. Skip it.
+					return nil, nil
+				}
+
 				return nil, fmt.Errorf("%T has no tag %d", cur.Interface(), tag)
 			}
 			cur = cur.Elem().FieldByName(prop.Name)

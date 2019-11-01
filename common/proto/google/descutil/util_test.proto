@@ -2,9 +2,15 @@ syntax = "proto3";
 
 package descutil;
 
+import "google/protobuf/descriptor.proto";
+
 // Comment for go_package option.
 option go_package = "descutil";
 
+
+extend google.protobuf.FieldOptions {
+  string ext = 50001;
+}
 
 // Enum comment.
 // next line.
@@ -22,7 +28,10 @@ enum E1 {
 message M1 {
 	// f1
 	// next line.
-	string f1 = 1;
+	string f1 = 1 [
+		// exension comment
+		(ext) = ""
+	];
 }
 
 // M2

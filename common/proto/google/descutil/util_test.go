@@ -35,8 +35,9 @@ func TestUtil(t *testing.T) {
 		err = proto.Unmarshal(descFileBytes, &desc)
 		So(err, ShouldBeNil)
 
-		So(desc.File, ShouldHaveLength, 1)
-		file := desc.File[0]
+		So(desc.File, ShouldHaveLength, 2)
+		So(desc.File[0].GetName(), ShouldEqual, "google/protobuf/descriptor.proto")
+		file := desc.File[1]
 		So(file.GetName(), ShouldEqual, "go.chromium.org/luci/common/proto/google/descutil/util_test.proto")
 
 		Convey("Resolve works", func() {
