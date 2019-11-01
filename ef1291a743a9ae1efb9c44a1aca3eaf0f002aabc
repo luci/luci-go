@@ -70,6 +70,30 @@
       "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2a54dc3a_d2996700",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-01T00:30:53Z",
+      "side": 1,
+      "message": "OK, thanks --- we can also rename later of course!",
+      "parentUuid": "f9fb6f91_5820b3e2",
+      "range": {
+        "startLine": 36,
+        "startChar": 23,
+        "endLine": 36,
+        "endChar": 29
+      },
+      "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
