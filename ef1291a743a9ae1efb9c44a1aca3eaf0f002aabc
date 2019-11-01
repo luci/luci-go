@@ -46,6 +46,30 @@
       "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9fb6f91_5820b3e2",
+        "filename": "resultdb/internal/cursor.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T00:29:13Z",
+      "side": 1,
+      "message": "ok, let\u0027s keep a cursor",
+      "parentUuid": "2852e058_8b715037",
+      "range": {
+        "startLine": 36,
+        "startChar": 23,
+        "endLine": 36,
+        "endChar": 29
+      },
+      "revId": "ef1291a743a9ae1efb9c44a1aca3eaf0f002aabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
