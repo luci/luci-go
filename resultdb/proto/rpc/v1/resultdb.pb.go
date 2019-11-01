@@ -524,6 +524,8 @@ type ResultDBClient interface {
 	// Retrieves a test result.
 	GetTestResult(ctx context.Context, in *GetTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
 	// Retrieves test results for a parent invocation.
+	// Does NOT guarantee returning all test results unless the invocation was
+	// finalized at the time of first ListTestResults request.
 	//
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestResults instead.
@@ -669,6 +671,8 @@ type ResultDBServer interface {
 	// Retrieves a test result.
 	GetTestResult(context.Context, *GetTestResultRequest) (*TestResult, error)
 	// Retrieves test results for a parent invocation.
+	// Does NOT guarantee returning all test results unless the invocation was
+	// finalized at the time of first ListTestResults request.
 	//
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestResults instead.
