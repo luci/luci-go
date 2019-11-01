@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8ad142a7_37326cb1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T05:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6e89e94_61633e6d",
+      "range": {
+        "startLine": 9,
+        "startChar": 46,
+        "endLine": 10,
+        "endChar": 13
+      },
+      "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "811cd177_66734dad",
         "filename": "resultdb/internal/span/inclusion.go",
         "patchSetId": 3
@@ -69,6 +93,30 @@
       "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f39d1db5_02a425a0",
+        "filename": "resultdb/internal/span/inclusion.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T05:52:12Z",
+      "side": 1,
+      "message": "in most relational databases, WHERE clauses are pushed as far towards data sources as possible, and Spanner is no exception to this rule, so WHERE is executed before JOINs. BigQuery is different, it executes WHERE after JOINS for some reason. You can see Explanation by running the query in one of the databases that we failed to delete in https://pantheon.corp.google.com/spanner/instances/testing/databases/test2928752439_by_nodir/query?project\u003dchops-spanner-testing\u0026organizationId\u003d433637338589",
+      "parentUuid": "123492d6_c80038d7",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 3
+      },
+      "revId": "e5faf8f776970e235fdf2f94ef58e9ce00f89de5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
