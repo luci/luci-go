@@ -137,7 +137,7 @@ CREATE TABLE TestResults (
   CommitTimestamp TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- Whether the test status was unexpected
-  -- MUST be either NULL or False, to keep null-filtered index below thin.
+  -- MUST be either NULL or True, to keep null-filtered index below thin.
   IsUnexpected BOOL,
 
   -- Test status, see TestStatus in test_result.proto.
