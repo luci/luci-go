@@ -64,6 +64,7 @@ spec:
           "-ts-mon-account", "app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com",
           "-ts-mon-service-name", "luci-resultdb-dev",
           "-ts-mon-job-name", "luci-resultdb-dev-recorder",
+          "-spanner-database", "projects/chops-spanner-testing/instances/testing/databases/luci-resultdb-dev"
         ]
         volumeMounts:
         - name: root-luci-secret
