@@ -60,8 +60,9 @@ func (e *exitCode) Error() string { return e.err.Error() }
 // It defines some common flags, such as logging and auth, and useful methods.
 type cmdRun struct {
 	subcommands.CommandRunBase
-	verbose bool
-	auth    authcli.Flags
+	verbose       bool
+	forceInsecure bool
+	auth          authcli.Flags
 }
 
 // ModifyContext implements cli.ContextModificator.
@@ -75,6 +76,7 @@ func (r *cmdRun) ModifyContext(ctx context.Context) context.Context {
 // registerBaseFlags registers common flags used by all subcommands.
 func (r *cmdRun) registerBaseFlags(defaultAuthOpts auth.Options) {
 	r.Flags.BoolVar(&r.verbose, "verbose", false, "Enable more logging.")
+	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, "Force HTTP instead of HTTPS")
 	r.auth.Register(&r.Flags, defaultAuthOpts)
 }
 
@@ -94,7 +96,7 @@ func (r *cmdRun) authenticatedClient(ctx context.Context, host string) (*prpc.Cl
 		Host:    host,
 		Options: prpc.DefaultOptions(),
 	}
-	client.Options.Insecure = lhttp.IsLocalHost(host)
+	client.Options.Insecure = r.forceInsecure || lhttp.IsLocalHost(host)
 	return &client, nil
 }
 
