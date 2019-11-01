@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb1bb180_a1f5a9a8",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T16:25:13Z",
+      "side": 1,
+      "message": "nit: just `tokErr` is sufficient",
+      "range": {
+        "startLine": 90,
+        "startChar": 24,
+        "endLine": 90,
+        "endChar": 38
+      },
+      "revId": "5f2bcf028c72db81b6290f6a1960bc2ef55d2b0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b64bdad4_b863708b",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T16:25:13Z",
+      "side": 1,
+      "message": "nit: a bit more elegant and efficient ways of doing this:\n\n- a string slice that is later joined with strings.Join(conditions, \" AND \")\n- strings.Builder",
+      "range": {
+        "startLine": 115,
+        "startChar": 13,
+        "endLine": 115,
+        "endChar": 15
+      },
+      "revId": "5f2bcf028c72db81b6290f6a1960bc2ef55d2b0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b69d64ef_e4c40bb7",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T16:25:13Z",
+      "side": 1,
+      "message": "confused. how is this related to err? my point is that the slice created here is not used (comment selection is make(..)) because we immediately overwrite pos in L88",
+      "parentUuid": "a20271c9_f4a57992",
+      "range": {
+        "startLine": 87,
+        "startChar": 8,
+        "endLine": 87,
+        "endChar": 28
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9919db7_48c8a7db",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 13
@@ -377,6 +401,30 @@
       "side": 1,
       "message": "PTAL phrasing now?",
       "parentUuid": "954b123d_ebeb378a",
+      "range": {
+        "startLine": 36,
+        "startChar": 51,
+        "endLine": 36,
+        "endChar": 57
+      },
+      "revId": "31e2396e83429e3253c3e94a79a6d2974d37b425",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97339bf2_76ff78c2",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 13
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-01T16:25:13Z",
+      "side": 1,
+      "message": "yeah, i think this is more correct.\n\nthis piece of doc seems to be very specific to paging, so I think GetListTestResultsRequest.page_token would be a better place for it.",
+      "parentUuid": "451f53df_0ef257c7",
       "range": {
         "startLine": 36,
         "startChar": 51,
