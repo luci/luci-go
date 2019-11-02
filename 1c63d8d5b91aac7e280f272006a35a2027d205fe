@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "152e7a0d_518ac600",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "127d221b_5ba3f7ce",
+      "range": {
+        "startLine": 171,
+        "startChar": 2,
+        "endLine": 172,
+        "endChar": 12
+      },
+      "revId": "1c63d8d5b91aac7e280f272006a35a2027d205fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c6c535d_a4355f3a",
         "filename": "resultdb/cmd/result_sink_wrapper/main.go",
         "patchSetId": 5

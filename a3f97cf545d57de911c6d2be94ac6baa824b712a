@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eacae974_dfc72ec3",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 40,
+        "endChar": 1
+      },
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bac2c8d9_bad1b544",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "i think it would be cleaner if this was []int\n\nand in parseArgs() we had a []string variable which we bind to the flag, and then convert from []string to []int",
+      "range": {
+        "startLine": 51,
+        "startChar": 29,
+        "endLine": 51,
+        "endChar": 37
+      },
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6412dc9d_bed37fb3",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "args \u003d wrapperArgs {\n  invocationTags: make(strpair.Map),\n  testBaseVariant: make(strpair.Map),\n}\n\ninstead of scattered initialization below",
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2db1e2ae_31b4d553",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "nit: include the default in the help",
+      "range": {
+        "startLine": 57,
+        "startChar": 56,
+        "endLine": 57,
+        "endChar": 58
+      },
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f5ae783_ac777cd3",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "the flag should also specify the format of the file, since there are multiple file formats.\n\nhow about flag format \"\u003cformat\u003e:\u003cpath\u003e\", e.g. \"chromium_json_test_results:output.json\"",
+      "range": {
+        "startLine": 68,
+        "startChar": 79,
+        "endLine": 68,
+        "endChar": 83
+      },
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e24a8911_22dc0d50",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "base-test-variant",
+      "range": {
+        "startLine": 78,
+        "startChar": 55,
+        "endLine": 78,
+        "endChar": 67
+      },
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2db13248_7c1eddad",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "please add a TODO to verify that keys in testbaseVariant are unique.\nstrpair.Map allows repeated keys\n\nalso that completeInvocationExitCodes are numbers",
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "696c2ba6_cc66fee8",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:52:11Z",
+      "side": 1,
+      "message": "please add\n\n  ctx, cancel :\u003d context.WithCancel(ctx)\n  defer cancel()\n\nto guarantee that everything created by main() and respecting context cancelation (subprocess) will die before main returns.\n\nrelated to that, please add TODO to use https://godoc.org/go.chromium.org/luci/common/system/signals to handle interrupt \n\nexamples: https://cs.chromium.org/search?q\u003dHandleInterrupt%20lang%3Ago",
+      "revId": "a3f97cf545d57de911c6d2be94ac6baa824b712a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
