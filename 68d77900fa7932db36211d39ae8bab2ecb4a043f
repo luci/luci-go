@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39f91bc8_f794563e",
+        "filename": "grpc/cmd/prpc/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-02T06:19:36Z",
+      "side": 1,
+      "message": "nit: I think it should be just \"insecure\" to match how this property is called throughout gRPC/pRPC ecosystem.\n\nAlso \"prpc call -insecure 123.123.123.232 ...\" looks about right.",
+      "range": {
+        "startLine": 79,
+        "startChar": 36,
+        "endLine": 79,
+        "endChar": 50
+      },
+      "revId": "68d77900fa7932db36211d39ae8bab2ecb4a043f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
