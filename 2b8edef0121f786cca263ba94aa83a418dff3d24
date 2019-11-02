@@ -45,6 +45,30 @@
       "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c702a0b_3de87040",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T07:09:38Z",
+      "side": 1,
+      "message": "\u003e tl;dr AsSelf is most likely wrong here.\n\u003e \n\u003e We shouldn\u0027t use this in new services. It is susceptible to the confused deputy problem: while working in project A, I can abuse ResultDB to do something to resources of project B (for example, read otherwise hidden from me results). \n\nI understand. That\u0027s why this CL also includes global restriction.\n\n\u003e \n\u003e This should be either AsUser or AsProject. \n\nI tried both:\n\nAsUser: the client is used in DeriveInvocation RPC. It fetches from swarming/isolate once, inserts into spanner, and next reads from spanner without talking to swarming/isolate. So using AsUser here won\u0027t really solve the confused deputy problem. Also using AsUser limits our ability to test luci-resultdb-dev only with chromium-swarm-dev, i.e. we cannot fetch test results from chromium-swarming.appspot.com. Maybe that\u0027s OK. \n\nAsProject does not work with swarming, or maybe I didn\u0027t find a way to use it. Swarming rejects with 404 and CIA does not allow to add project:* to \"Members\" field of a group.\n\n\u003e What this client is used for exactly (what incoming RPCs)? Are they happening in a context of some LUCI project? (If not, they probably should).\n\nThis client is used to fetch swarming tasks and isolated files.\n\nThe \"context\" is in the state of flux because realms do not exist. Also, the client is used only in the RPC \"DerveInvocation\" that is inherently temporary. It fetches output.json from isolate. Our long-term strategy is that bots upload test results and ResultDB itself does not talk to anyone.\n\n---\n\nWe will still need to fetch stuff from isolate long-term and isolate does not have a concept of a LUCI project, so AsProject cannot be used there. I think we should use AsUser in this case.\n\n--\n\nThus I think AsSelf is the best option we have in the current circumstances.",
+      "parentUuid": "8593f9c5_b6896511",
+      "range": {
+        "startLine": 76,
+        "startChar": 38,
+        "endLine": 76,
+        "endChar": 49
+      },
+      "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
