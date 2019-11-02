@@ -22,6 +22,30 @@
       "revId": "68d77900fa7932db36211d39ae8bab2ecb4a043f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3399c3a2_d66eb68c",
+        "filename": "grpc/cmd/prpc/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T17:12:48Z",
+      "side": 1,
+      "message": "my problem is that one may pass `-insecure\u003dfalse` and it is still can be secure",
+      "parentUuid": "39f91bc8_f794563e",
+      "range": {
+        "startLine": 79,
+        "startChar": 36,
+        "endLine": 79,
+        "endChar": 50
+      },
+      "revId": "68d77900fa7932db36211d39ae8bab2ecb4a043f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
