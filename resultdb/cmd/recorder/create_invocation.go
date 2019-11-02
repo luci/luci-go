@@ -31,17 +31,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-)
-
-const (
-	// createInvocationGroup is a CIA group that can create invocations.
-	// TODO(crbug.com/1013316): remove in favor of realms.
-	createInvocationGroup = "luci-resultdb-access"
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -106,9 +99,6 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx)
 
-	if err := mayCreateInvocation(ctx); err != nil {
-		return nil, errors.Annotate(err, "").Err()
-	}
 	if err := validateCreateInvocationRequest(in, now); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
@@ -179,21 +169,6 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 func invocationAlreadyExists() error {
 	return errors.Reason("invocation already exists").Tag(grpcutil.AlreadyExistsTag).Err()
-}
-
-func mayCreateInvocation(ctx context.Context) error {
-	// TODO(crbug.com/1013316): use realms.
-	switch allowed, err := auth.IsMember(ctx, createInvocationGroup); {
-	case err != nil:
-		return err
-	case !allowed:
-		return errors.
-			Reason("%s is not allowed to create invocations", auth.CurrentIdentity(ctx)).
-			Tag(grpcutil.PermissionDeniedTag).
-			Err()
-	default:
-		return nil
-	}
 }
 
 func generateUpdateToken() (string, error) {
