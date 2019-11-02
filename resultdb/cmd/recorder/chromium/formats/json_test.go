@@ -186,7 +186,7 @@ func TestJSONConversions(t *testing.T) {
 			"json_format_tag", "desktop",
 			"json_format_tag", "linux",
 			"json_format_tag", "ubuntu",
-			"test_framework", "json",
+			origFormatTagKey, formatJTR,
 		))
 
 		So(testResults, ShouldResembleProto, []*pb.TestResult{

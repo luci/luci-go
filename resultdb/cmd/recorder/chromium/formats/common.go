@@ -21,6 +21,12 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
+const (
+	origFormatTagKey = "orig_format"
+	formatJTR        = "chromium_json_test_results"
+	formatGTest      = "chromium_gtest"
+)
+
 // secondsToTimestamp converts a UTC float64 timestamp to a ptypes Timestamp.
 func secondsToTimestamp(t float64) *timestamp.Timestamp {
 	if t < 0 {

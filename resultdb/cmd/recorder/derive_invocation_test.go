@@ -206,7 +206,7 @@ func TestDeriveInvocation(t *testing.T) {
 			So(inv, ShouldResembleProto, &pb.Invocation{
 				State:        pb.Invocation_COMPLETED,
 				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:         pbutil.StringPairs("test_framework", "json"),
+				Tags:         pbutil.StringPairs(origFormatTagKey, formatJTR),
 				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				BaseTestVariantDef: &pb.VariantDef{
