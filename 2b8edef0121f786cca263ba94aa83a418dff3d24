@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "77b9a6f1_df893112",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-02T06:34:38Z",
+      "side": 1,
+      "message": "This removes tsmon interceptors. I see people keep making this mistake. I hope this would help: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1896463 (after is lands this line should be fine).",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 53
+      },
+      "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8593f9c5_b6896511",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-02T06:34:38Z",
+      "side": 1,
+      "message": "tl;dr AsSelf is most likely wrong here.\n\nWe shouldn\u0027t use this in new services. It is susceptible to the confused deputy problem: while working in project A, I can abuse ResultDB to do something to resources of project B (for example, read otherwise hidden from me results). \n\nThis should be either AsUser or AsProject. What this client is used for exactly (what incoming RPCs)? Are they happening in a context of some LUCI project? (If not, they probably should).\n\nNote that this is mostly unrelated to \"realms\" or \"buckets\" or whatever: even if we have fancier authorization  model for incoming requests, we still must not use AsSelf for outgoing requests happening in a context of a concrete project (or realm or bucket or whatever, but currently projects are the boundary).",
+      "range": {
+        "startLine": 76,
+        "startChar": 38,
+        "endLine": 76,
+        "endChar": 49
+      },
+      "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
