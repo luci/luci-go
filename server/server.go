@@ -426,7 +426,8 @@ func New(opts Options) (srv *Server, err error) {
 		c.Writer.Write([]byte(srv.healthResponse(c.Context)))
 	})
 
-	// Expose public pRPC endpoints.
+	// Expose public pRPC endpoints (see also ListenAndServe where we put the
+	// final interceptors).
 	srv.PRPC = &prpc.Server{
 		Authenticator: &auth.Authenticator{
 			Methods: []auth.Method{
@@ -435,7 +436,6 @@ func New(opts Options) (srv *Server, err error) {
 				},
 			},
 		},
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(grpcutil.NewUnaryServerPanicCatcher(nil)),
 	}
 	discovery.Enable(srv.PRPC)
 	srv.PRPC.InstallHandlers(srv.Routes, router.MiddlewareChain{})
@@ -572,6 +572,14 @@ func (s *Server) ListenAndServe() error {
 	if wasRunning {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
+
+	// Put monitoring interceptor on top of whatever interceptors were installed
+	// by the user of Server via public s.PRPC.UnaryServerInterceptor.
+	s.PRPC.UnaryServerInterceptor = grpcmon.NewUnaryServerInterceptor(
+		grpcutil.NewUnaryServerPanicCatcher(
+			s.PRPC.UnaryServerInterceptor,
+		),
+	)
 
 	defer s.runCleanup()
 
