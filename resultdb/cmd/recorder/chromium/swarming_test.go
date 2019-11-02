@@ -295,7 +295,7 @@ func TestSwarming(t *testing.T) {
 			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "json"))
+			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("orig_format", "chromium_json_test_results"))
 		})
 
 		Convey(`chooses GTest format correctly`, func() {
@@ -318,7 +318,7 @@ func TestSwarming(t *testing.T) {
 			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "gtest"))
+			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("orig_format", "chromium_gtest"))
 		})
 
 		Convey(`errors on neither`, func() {
