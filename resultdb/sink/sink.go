@@ -24,11 +24,9 @@ import (
 	"net"
 	"strconv"
 	"sync/atomic"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -169,6 +167,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	ctx, s.cancel = context.WithCancel(ctx)
+
 	go s.serveLoop(ctx)
 	return nil
 }
@@ -214,6 +213,11 @@ func (s *Server) Export(ctx context.Context) context.Context {
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 	defer c.Close()
+	go func() {
+		<-ctx.Done()
+		c.Close()
+	}()
+
 	dc := json.NewDecoder(c)
 	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
 		logging.Errorf(ctx, "handshake failed: %s", err)
@@ -221,21 +225,26 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	// TODO(crbug.com/1017288) Actually use msg later.
 	var msg sinkpb.SinkMessageContainer
 	for {
-		if ctx.Err() != nil {
+		err := jsonpb.UnmarshalNext(dc, &msg)
+		if err := ctx.Err(); err != nil {
+			// Always check if our context is cancelled before doing anything else.
+			logging.Errorf(ctx, "context cancelled: %s", err)
 			return
 		}
 
-		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
-		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
+		if err != nil {
+			// Handle potential error from UnmarshalNext
 			if shouldKeepTrying(err) {
 				continue
 			}
-			logging.Errorf(ctx, "reading next message failed: %s", err)
+
+			logging.Errorf(ctx, "failed to parse message: %s", err)
 			return
 		}
+
+		// TODO(crbug.com/1017288) msg was valid, push it somewhere now
 	}
 }
 
