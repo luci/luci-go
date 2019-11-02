@@ -21,6 +21,18 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
+const (
+	// OriginalFormatTagKey is a key of the tag indicating the format of the
+	// source data. Possible values: FormatJTR, FormatGTest.
+	OriginalFormatTagKey = "orig_format"
+
+	// FormatJTR is Chromium's JSON Test Results format.
+	FormatJTR = "chromium_json_test_results"
+
+	// FormatGTest is Chromium's GTest format.
+	FormatGTest = "chromium_gtest"
+)
+
 // secondsToTimestamp converts a UTC float64 timestamp to a ptypes Timestamp.
 func secondsToTimestamp(t float64) *timestamp.Timestamp {
 	if t < 0 {
