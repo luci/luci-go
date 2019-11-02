@@ -297,7 +297,7 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 		_, err = io.Copy(dest, decompressor)
 		return err
 	}
-	_, err := lhttp.NewRequest(c, i.authClient, i.retryFactory, rgen, handler, nil)()
+	_, err := lhttp.NewRequest(c, i.anonClient, i.retryFactory, rgen, handler, nil)()
 	return err
 }
 
