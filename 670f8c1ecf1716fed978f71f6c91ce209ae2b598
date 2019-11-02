@@ -213,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b26dcd7d_08d2cb74",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "85258e68_01c0bee8",
+      "range": {
+        "startLine": 108,
+        "startChar": 54,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "670f8c1ecf1716fed978f71f6c91ce209ae2b598",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4387bc93_6717d02f",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 10

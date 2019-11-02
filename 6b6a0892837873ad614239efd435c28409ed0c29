@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fffc405c_addc04c8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "in luci-go, we often use \"\u003cnoun\u003eC\" names, C stands for channel, e.g. errC is a channel of errors\nhttps://osscs.corp.google.com/search?q\u003derrC%20f:go.chromium.org\u0026sq\u003d\n\nanother reason is, FWIU, there will be only one error, so using a plural name might be misleading",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 7
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8aacb23_d78c47d3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "plural? i expected a server to exit on first error\n\nif so, the doc should explain it",
+      "range": {
+        "startLine": 108,
+        "startChar": 50,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70a3753d_be5c9318",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "nit: an error",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 13
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eadcf26c_76873b47",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "defer cancel()\n\nas a guarantee that ctx will be canceled and resources will be reclaimed. I think golint would complain if one context.WithCancel is not followed by defer cancel()",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf8148d9_e2d264d4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "i think we should wait for done, so that Run() does not return until the callback finished executing. The callback should return soon since because we canceled the context. WDYT?",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b11281d7_cfbe831d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "this logging is OK during development, but otherwise it should not be here. Normally an app initializes context with logging and all logs go into one place. These logs would make little sense in the global log. It is like an HTTP library logged something about TCP and your server logs were full of those details. What generic libs do instead is return errors annotation with additional information, e.g. errors.Annotate. \n\nThe biggest offender is L134. It violates \"only handle error once\" rule, see https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully\nit assumes that the caller won\u0027t log the error. if it does, then we log the same message twice, potentially with different severity level",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcba49a5_8b2936db",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 150,
+        "startChar": 53,
+        "endLine": 150,
+        "endChar": 59
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e112b889_5ce106fb",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-02T06:33:47Z",
+      "side": 1,
+      "message": "this will block forever if nobody listens to s.errors\nplease make c.errors buffered",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
