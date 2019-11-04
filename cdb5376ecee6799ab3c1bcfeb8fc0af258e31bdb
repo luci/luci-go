@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "211dc8f2_085a10b5",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-04T21:16:26Z",
+      "side": 1,
+      "message": "req.InvocationId is not allowed here as is because it is not a span.InvocationId. We either do a literal \"u:inv\" or span.InvocationId(span.InvocationId). The latter is mouthful",
+      "parentUuid": "3017bd22_6af16683",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9e21795_eb392200",
         "filename": "resultdb/cmd/recorder/include.go",
         "patchSetId": 3
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "c7f725c7_0fdefe46",
+        "filename": "resultdb/cmd/recorder/include.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-04T21:16:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9e21795_eb392200",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c8ecc67_1190a52c",
         "filename": "resultdb/cmd/recorder/include.go",
         "patchSetId": 3
@@ -50,6 +86,24 @@
       "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0427920d_e2339c39",
+        "filename": "resultdb/cmd/recorder/include.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-04T21:16:26Z",
+      "side": 1,
+      "message": "Done\n\nalso dropped \"Inv\" suffix since it is obvious from the type",
+      "parentUuid": "6c8ecc67_1190a52c",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
