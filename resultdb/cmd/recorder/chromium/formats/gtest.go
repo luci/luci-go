@@ -191,7 +191,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 	for _, tag := range r.GlobalTags {
 		inv.Tags = append(inv.Tags, pbutil.StringPair("gtest_global_tag", tag))
 	}
-	inv.Tags = append(inv.Tags, pbutil.StringPair("test_framework", "gtest"))
+	inv.Tags = append(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest))
 
 	pbutil.NormalizeInvocation(inv)
 	return ret, nil

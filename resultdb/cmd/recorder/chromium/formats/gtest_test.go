@@ -316,7 +316,7 @@ func TestGTestConversions(t *testing.T) {
 
 			testResults, err := results.ToProtos(ctx, req, inv)
 			So(err, ShouldBeNil)
-			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("test_framework", "gtest")), ShouldBeTrue)
+			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest)), ShouldBeTrue)
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{

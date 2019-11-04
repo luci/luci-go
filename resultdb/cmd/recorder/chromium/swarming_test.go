@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -295,7 +296,7 @@ func TestSwarming(t *testing.T) {
 			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "json"))
+			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR))
 		})
 
 		Convey(`chooses GTest format correctly`, func() {
@@ -318,7 +319,7 @@ func TestSwarming(t *testing.T) {
 			_, err := ConvertOutputJSON(ctx, inv, req, buf)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs("test_framework", "gtest"))
+			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest))
 		})
 
 		Convey(`errors on neither`, func() {

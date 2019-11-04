@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -206,7 +207,7 @@ func TestDeriveInvocation(t *testing.T) {
 			So(inv, ShouldResembleProto, &pb.Invocation{
 				State:        pb.Invocation_COMPLETED,
 				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:         pbutil.StringPairs("test_framework", "json"),
+				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
 				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				BaseTestVariantDef: &pb.VariantDef{

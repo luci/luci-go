@@ -126,7 +126,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 		inv.State = pb.Invocation_INTERRUPTED
 	}
 
-	inv.Tags = append(inv.Tags, pbutil.StringPair("test_framework", "json"))
+	inv.Tags = append(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatJTR))
 	for _, tag := range tags {
 		inv.Tags = append(inv.Tags, pbutil.StringPair("json_format_tag", tag))
 	}
