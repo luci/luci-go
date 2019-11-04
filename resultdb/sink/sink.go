@@ -20,13 +20,15 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-
 	"fmt"
 	"net"
 	"strconv"
+	"sync/atomic"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -35,14 +37,20 @@ import (
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
+const (
+	// DefaultPort is the TCP port that the Server listens on by default.
+	DefaultPort = 52634
+)
+
 // ServerConfig defines the parameters of the server.
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
 	Recorder *pb.RecorderClient
 
-	// AuthToken is a secret token to expect from clients. Optional.
+	// AuthToken is a secret token to expect from clients. If it is "" then it
+	// will be randomly generated in a secure way.
 	AuthToken string
-	// Port is the TCP port to listen on. Optional.
+	// Port is the TCP port to listen on. If 0, the server will use DefaultPort.
 	Port int
 
 	// Invocation is the name of the invocation that test results should append
@@ -60,12 +68,14 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg ServerConfig
+	cfg             ServerConfig
+	shutdownStarted int32 // Only access with atomic functions
+	cancel          context.CancelFunc
+	errC            chan error
+	ln              net.Listener
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
-//
-// If cfg.AuthToken is "" it will be randomly generated in a secure way.
 func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	if cfg.AuthToken == "" {
 		buf := make([]byte, 32)
@@ -75,7 +85,15 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		cfg.AuthToken = hex.EncodeToString(buf)
 	}
 
-	s := &Server{cfg: cfg}
+	if cfg.Port == 0 {
+		cfg.Port = DefaultPort
+	}
+
+	s := &Server{
+		cfg:  cfg,
+		errC: make(chan error, 1),
+	}
+
 	return s, nil
 }
 
@@ -83,22 +101,65 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 //
 // Use this to retrieve the resolved values of unset optional fields in the
 // original ServerConfig.
-//
-// If Port was originally 0, the Serve function will choose a port arbitrarily.
-// In that case, Config will only return the chosen Port after a call to Serve.
 func (s *Server) Config() ServerConfig {
 	return s.cfg
 }
 
-// Serve runs the Server and blocks until it stops running.
-func (s *Server) Serve(ctx context.Context) error {
+// Errors returns a channel that transmits server errors.
+func (s *Server) Errors() <-chan error {
+	return s.errC
+}
+
+// Run invokes callback in a context where the server is running.
+//
+// The context passed to callback will be cancelled if the server encounters
+// any errors. The context also has the server's information exported into it.
+// If callback finishes running, Run will return the error it returned.
+func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
+	ctx, cancel := context.WithCancel(ctx)
+	// TODO(sajjadm): Add Export here when implemented.
+	if err := s.Start(ctx); err != nil {
+		return err
+	}
+	defer s.Close()
+
+	done := make(chan error)
+	go func() {
+		done <- callback(ctx)
+	}()
+
+	select {
+	case <-ctx.Done():
+		// Someone else cancelled the context
+		logging.Debugf(ctx, "context cancelled outside of Run: %s", ctx.Err())
+		return ctx.Err()
+	case err := <-s.errC:
+		logging.Errorf(ctx, "internal server error: %s", err)
+		cancel()
+		return err
+	case err := <-done:
+		logging.Debugf(ctx, "successfully ran callback")
+		return err
+	}
+
+	panic("unreachable")
+}
+
+// Start runs the server.
+//
+// On success, Start will return nil, and subsequent errors will be sent on
+// the server's Errors channel.
+func (s *Server) Start(ctx context.Context) error {
+	if s.ln != nil {
+		return errors.Reason("cannot call Serve twice").Err()
+	}
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
+	s.ln = ln
 	if err != nil {
 		return err
 	}
-	defer ln.Close()
 
-	_, port, err := net.SplitHostPort(ln.Addr().String())
+	_, port, err := net.SplitHostPort(s.ln.Addr().String())
 	if err != nil {
 		return err
 	}
@@ -107,24 +168,36 @@ func (s *Server) Serve(ctx context.Context) error {
 		return err
 	}
 
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			return err
-		}
-		go s.handleConnection(ctx, conn)
-	}
-
-	panic("unreachable code")
+	ctx, s.cancel = context.WithCancel(ctx)
+	go s.serveLoop(ctx)
+	return nil
 }
 
-// Close tells the Server to shutdown and blocks until it stops running.
-//
-// The Server will attempt to finish handling any messages that have not been
-// processed yet. If ctx is canceled it will immediately abort all operations
-// and return from Close as soon as possible.
-func (s *Server) Close(ctx context.Context) error {
-	return errors.New("not implemented yet")
+func (s *Server) serveLoop(ctx context.Context) {
+	for {
+		switch conn, err := s.ln.Accept(); {
+		case err == nil:
+			go s.handleConnection(ctx, conn)
+		case atomic.LoadInt32(&s.shutdownStarted) == 1:
+			return
+		case ctx.Err() != nil:
+			s.errC <- ctx.Err()
+			return
+		case shouldKeepTrying(err):
+			continue
+		default:
+			s.errC <- errors.Annotate(err, "unrecoverable listener error").Err()
+			return
+		}
+	}
+}
+
+// Close immediately stops the server from accepting new connections and cancels existing ones.
+func (s *Server) Close() error {
+	atomic.StoreInt32(&s.shutdownStarted, 1)
+	err := s.ln.Close()
+	s.cancel()
+	return err
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
@@ -147,6 +220,23 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 		return
 	}
 	logging.Debugf(ctx, "Successful handshake")
+
+	// TODO(crbug.com/1017288) Actually use msg later.
+	var msg sinkpb.SinkMessageContainer
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+
+		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
+		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
+			if shouldKeepTrying(err) {
+				continue
+			}
+			logging.Errorf(ctx, "reading next message failed: %s", err)
+			return
+		}
+	}
 }
 
 func processHandshake(dc *json.Decoder, authToken string) error {
@@ -158,4 +248,9 @@ func processHandshake(dc *json.Decoder, authToken string) error {
 		return errors.Reason("handshake message had invalid AuthToken").Err()
 	}
 	return nil
+}
+
+func shouldKeepTrying(err error) bool {
+	e, ok := err.(net.Error)
+	return ok && (e.Temporary() || e.Timeout())
 }
