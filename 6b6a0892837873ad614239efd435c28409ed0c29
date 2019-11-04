@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "e74cb3c8_fb940977",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T22:04:50Z",
+      "side": 1,
+      "message": "Is the best practice that any sort of recoverable error should be handled by the server and not reported at all? Then it would make sense to shut down on first error.\n\nIn particular, I was thinking that connection handlers could report their errors on this channel too, and that we might want to allow the server to keep running in that case. But maybe it makes more sense to just fail completely and allow Swarming / some other infrastructure to do a full retry?",
+      "parentUuid": "f8aacb23_d78c47d3",
+      "range": {
+        "startLine": 108,
+        "startChar": 50,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "70a3753d_be5c9318",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -99,6 +123,24 @@
       "writtenOn": "2019-11-02T06:33:47Z",
       "side": 1,
       "message": "i think we should wait for done, so that Run() does not return until the callback finished executing. The callback should return soon since because we canceled the context. WDYT?",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a47115c3_ac6590dd",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T22:04:50Z",
+      "side": 1,
+      "message": "Good idea, I\u0027ll implement that",
+      "parentUuid": "cf8148d9_e2d264d4",
       "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
