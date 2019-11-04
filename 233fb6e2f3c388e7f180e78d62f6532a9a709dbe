@@ -193,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "9601f51d_57034753",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T21:23:32Z",
+      "side": 1,
+      "message": "@nodir I believe other ResultDB products will also use LUCI_CONTEXT in the future, is that correct?\n\n@iannucci the original design doc called for a nested hierarchy, so that you we\u0027d have a top-level struct called \"resultdb\" and then each of its fields would be another struct, in this case \"resultdb.sink\". Is it possible to do something like this with LUCI_CONTEXT?\n\nIf that\u0027s not possible then I vote we consolidate all LUCI_CONTEXT values from ResultDB under one top-level struct, so that what is currently \"Port\" would be named \"SinkPort\" and referred to as \"resultdb.SinkPort\".",
+      "parentUuid": "efacb0a3_982ae96e",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
