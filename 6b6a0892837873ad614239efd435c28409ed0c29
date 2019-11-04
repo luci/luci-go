@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "8203cc1f_4558c02e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T23:15:33Z",
+      "side": 1,
+      "message": "\"Done()\" should probably be reserved for signaling that the server has come to a graceful shutdown. When we have a real backend to talk to the wrapper will need to wait for all the open connections to flush their data.\n\nRe: recoverable errors, I am thinking of connection level errors. If a client sends an invalid message, what should we do? Do we stop the whole server?\n\nFor now I will assume everything on errC is fatal and if we need a non-fatal channel we can add it later.",
+      "parentUuid": "d7f5481a_0f42041a",
+      "range": {
+        "startLine": 108,
+        "startChar": 50,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "70a3753d_be5c9318",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
