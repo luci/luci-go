@@ -52,5 +52,5 @@ func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocation
 	}
 	defer txn.Close()
 
-	return span.ReadInvocationFull(ctx, txn, pbutil.MustParseInvocationName(in.Name))
+	return span.ReadInvocationFull(ctx, txn, span.MustParseInvocationName(in.Name))
 }

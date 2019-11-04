@@ -38,8 +38,8 @@ func validateFinalizeInvocationRequest(req *pb.FinalizeInvocationRequest) error 
 	return nil
 }
 
-func getUnmatchedStateError(invID string) error {
-	return errors.Reason("%q has already been finalized with different state", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+func getUnmatchedStateError(invID span.InvocationID) error {
+	return errors.Reason("%q has already been finalized with different state", invID.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 }
 
 // FinalizeInvocation implements pb.RecorderServer.
@@ -53,13 +53,13 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		return nil, err
 	}
 
-	invID := pbutil.MustParseInvocationName(in.Name)
+	invID := span.MustParseInvocationName(in.Name)
 	requestState := pb.Invocation_COMPLETED
 	if in.Interrupted {
 		requestState = pb.Invocation_INTERRUPTED
 	}
 
-	ret := &pb.Invocation{Name: pbutil.InvocationName(invID)}
+	ret := &pb.Invocation{Name: in.Name}
 	var retErr error
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {

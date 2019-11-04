@@ -15,11 +15,25 @@
 package span
 
 import (
-	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 )
 
-// TagRowID returns a value for the TagId column in InvocationsByTag table.
-func TagRowID(tag *pb.StringPair) string {
-	return prefixWithHash(pbutil.StringPairToString(tag))
+// hashPrefixBytes is the number of bytes of sha256 to prepend to a PK
+// to achieve even distribution.
+const hashPrefixBytes = 8
+
+func prefixWithHash(s string) string {
+	h := sha256.Sum256([]byte(s))
+	prefix := hex.EncodeToString(h[:hashPrefixBytes])
+	return fmt.Sprintf("%s:%s", prefix, s)
+}
+
+func stripHashPrefix(s string) string {
+	expectedPrefixLen := hex.EncodedLen(hashPrefixBytes) + 1 // +1 for separator
+	if len(s) < expectedPrefixLen {
+		panic(fmt.Sprintf("%q is too short", s))
+	}
+	return s[expectedPrefixLen:]
 }
