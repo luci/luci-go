@@ -23,7 +23,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-func insertTestResult(invID string, tr *pb.TestResult, i int) (*spanner.Mutation, error) {
+func insertTestResult(invID span.InvocationID, tr *pb.TestResult, i int) (*spanner.Mutation, error) {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
 		"TestPath":     tr.TestPath,
@@ -48,5 +48,5 @@ func insertTestResult(invID string, tr *pb.TestResult, i int) (*spanner.Mutation
 		trMap["IsUnexpected"] = true
 	}
 
-	return spanner.InsertMap("TestResults", span.ToSpannerMap(trMap)), nil
+	return span.InsertMap("TestResults", trMap), nil
 }

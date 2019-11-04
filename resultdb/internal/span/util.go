@@ -83,6 +83,8 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 		switch goPtr.(type) {
 		case *string:
 			spanPtrs[i] = &spanner.NullString{}
+		case *InvocationID:
+			spanPtrs[i] = &spanner.NullString{}
 		case **tspb.Timestamp:
 			spanPtrs[i] = &spanner.NullTime{}
 		case *pb.TestStatus:
@@ -117,6 +119,12 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			*goPtr = ""
 			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
 				*goPtr = maybe.StringVal
+			}
+
+		case *InvocationID:
+			*goPtr = ""
+			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
+				*goPtr = InvocationIDFromRowID(maybe.StringVal)
 			}
 
 		case **tspb.Timestamp:
@@ -166,6 +174,9 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 // map[string]interface{}.
 func ToSpanner(v interface{}) interface{} {
 	switch v := v.(type) {
+	case InvocationID:
+		return v.RowID()
+
 	case *tspb.Timestamp:
 		if v == nil {
 			return spanner.NullTime{}
@@ -232,6 +243,18 @@ func ToSpannerSlice(values ...interface{}) []interface{} {
 // See also ToSpanner.
 func ToSpannerMap(values map[string]interface{}) map[string]interface{} {
 	return ToSpanner(values).(map[string]interface{})
+}
+
+// UpdateMap is a shortcut for spanner.UpdateMap with ToSpannerMap applied to
+// in.
+func UpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
+	return spanner.UpdateMap(table, ToSpannerMap(in))
+}
+
+// InsertMap is a shortcut for spanner.InsertMap with ToSpannerMap applied to
+// in.
+func InsertMap(table string, in map[string]interface{}) *spanner.Mutation {
+	return spanner.InsertMap(table, ToSpannerMap(in))
 }
 
 // ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps

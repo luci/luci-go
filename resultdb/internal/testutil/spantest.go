@@ -177,9 +177,9 @@ func fatalIf(err error) {
 }
 
 // InsertInvocation returns a spanner mutation that inserts an invocation.
-func InsertInvocation(id string, state pb.Invocation_State, updateToken string, ct time.Time) *spanner.Mutation {
+func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateToken string, ct time.Time) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
-	values := span.ToSpannerMap(map[string]interface{}{
+	values := map[string]interface{}{
 		"InvocationId":                      id,
 		"State":                             state,
 		"Realm":                             "",
@@ -190,21 +190,21 @@ func InsertInvocation(id string, state pb.Invocation_State, updateToken string, 
 		"ExpectedTestResultsExpirationWeek": future,
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
-	})
+	}
 	if pbutil.IsFinalized(state) {
 		values["FinalizeTime"] = ct.Add(time.Hour)
 	}
-	return spanner.InsertMap("Invocations", values)
+	return span.InsertMap("Invocations", values)
 }
 
 // InsertInclusion returns a spanner mutation that inserts an inclusion.
-func InsertInclusion(includingInvID, includedInvID, overriddenBy string) *spanner.Mutation {
+func InsertInclusion(including, included, overriddenBy span.InvocationID) *spanner.Mutation {
 	values := map[string]interface{}{
-		"InvocationId":         includingInvID,
-		"IncludedInvocationId": includedInvID,
+		"InvocationId":         including,
+		"IncludedInvocationId": included,
 	}
 	if overriddenBy != "" {
 		values["OverriddenByIncludedInvocationId"] = overriddenBy
 	}
-	return spanner.InsertMap("Inclusions", values)
+	return span.InsertMap("Inclusions", values)
 }

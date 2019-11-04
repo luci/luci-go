@@ -17,13 +17,13 @@ package main
 import (
 	"testing"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -107,15 +107,15 @@ func TestInclude(t *testing.T) {
 		insIncl := testutil.InsertInclusion
 		ct := testclock.TestRecentTimeUTC
 
-		readOverriddenBy := func(includedInvID string) string {
-			var ret spanner.NullString
-			testutil.MustReadRow(ctx, "Inclusions", spanner.Key{"including", includedInvID}, map[string]interface{}{
+		readOverriddenBy := func(included span.InvocationID) span.InvocationID {
+			var ret span.InvocationID
+			testutil.MustReadRow(ctx, "Inclusions", span.InclusionKey("including", included), map[string]interface{}{
 				"OverriddenByIncludedInvocationId": &ret,
 			})
-			return ret.StringVal
+			return ret
 		}
 
-		assertIncluded := func(includedInvID string) {
+		assertIncluded := func(includedInvID span.InvocationID) {
 			readOverriddenBy(includedInvID)
 		}
 

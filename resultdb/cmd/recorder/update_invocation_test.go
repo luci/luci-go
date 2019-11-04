@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -27,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -152,7 +152,8 @@ func TestUpdateInvocation(t *testing.T) {
 			actual := &pb.Invocation{
 				Name: expected.Name,
 			}
-			testutil.MustReadRow(ctx, "Invocations", spanner.Key{"inv"}, map[string]interface{}{
+			invID := span.InvocationID("inv")
+			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline": &actual.Deadline,
 			})
 			So(actual, ShouldResembleProto, expected)
