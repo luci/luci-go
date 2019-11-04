@@ -115,8 +115,7 @@ func TestReadInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		readInv := func() *pb.Invocation {
-			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-			So(err, ShouldBeNil)
+			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			inv, err := span.ReadInvocationFull(ctx, txn, "inv")

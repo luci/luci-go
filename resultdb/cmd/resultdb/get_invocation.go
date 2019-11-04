@@ -17,8 +17,6 @@ package main
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -46,11 +44,7 @@ func (s *resultDBServer) GetInvocation(ctx context.Context, in *pb.GetInvocation
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-	if err != nil {
-		return nil, err
-	}
+	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-
 	return span.ReadInvocationFull(ctx, txn, span.MustParseInvocationName(in.Name))
 }

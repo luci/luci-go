@@ -17,8 +17,6 @@ package main
 import (
 	"context"
 
-	"cloud.google.com/go/spanner"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -51,10 +49,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	}
 	invID := span.MustParseInvocationName(in.Invocation)
 
-	txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-	if err != nil {
-		return nil, err
-	}
+	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	trs, tok, err := span.ReadTestResults(ctx, txn, invID, true, in.GetPageToken(), adjustPageSize(in.GetPageSize()))
