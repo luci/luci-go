@@ -71,7 +71,7 @@ type Server struct {
 	cfg             ServerConfig
 	shutdownStarted int32 // Only access with atomic functions
 	cancel          context.CancelFunc
-	errors          chan error
+	errC            chan error
 	ln              net.Listener
 }
 
@@ -90,8 +90,8 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	}
 
 	s := &Server{
-		cfg:    cfg,
-		errors: make(chan error),
+		cfg:  cfg,
+		errC: make(chan error, 1),
 	}
 
 	return s, nil
@@ -107,7 +107,7 @@ func (s *Server) Config() ServerConfig {
 
 // Errors returns a channel that transmits server errors.
 func (s *Server) Errors() <-chan error {
-	return s.errors
+	return s.errC
 }
 
 // Run invokes callback in a context where the server is running.
@@ -117,6 +117,7 @@ func (s *Server) Errors() <-chan error {
 // If callback finishes running, Run will return the error it returned.
 func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	// TODO(sajjadm): Add Export here when implemented.
 	if err := s.Start(ctx); err != nil {
 		return err
@@ -128,18 +129,15 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 		done <- callback(ctx)
 	}()
 
-	select {
-	case <-ctx.Done():
-		// Someone else cancelled the context
-		logging.Debugf(ctx, "context cancelled outside of Run: %s", ctx.Err())
-		return ctx.Err()
-	case err := <-s.errors:
-		logging.Errorf(ctx, "internal server error: %s", err)
-		cancel()
-		return err
-	case err := <-done:
-		logging.Debugf(ctx, "successfully ran callback")
-		return err
+	var serverErr error
+	for {
+		select {
+		case err := <-s.errC:
+			serverErr = errors.Annotate(err, "internal server error").Err()
+			cancel()
+		case err := <-done:
+			return errors.NewMultiError(err, serverErr)
+		}
 	}
 
 	panic("unreachable")
@@ -181,12 +179,12 @@ func (s *Server) serveLoop(ctx context.Context) {
 		case atomic.LoadInt32(&s.shutdownStarted) == 1:
 			return
 		case ctx.Err() != nil:
-			s.errors <- ctx.Err()
+			s.errC <- ctx.Err()
 			return
 		case shouldKeepTrying(err):
 			continue
 		default:
-			s.errors <- errors.Annotate(err, "unrecoverable listener error").Err()
+			s.errC <- errors.Annotate(err, "unrecoverable listener error").Err()
 			return
 		}
 	}
