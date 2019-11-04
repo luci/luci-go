@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f079db98_8e44310b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T23:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fffc405c_addc04c8",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 7
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8aacb23_d78c47d3",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -160,6 +184,24 @@
     },
     {
       "key": {
+        "uuid": "c246cf9f_32eee07d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T23:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eadcf26c_76873b47",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf8148d9_e2d264d4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -192,6 +234,24 @@
       "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad6e8bc6_87e160b2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-04T23:16:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a47115c3_ac6590dd",
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
