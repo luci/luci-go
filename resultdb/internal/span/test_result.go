@@ -34,11 +34,24 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// MustParseTestResultName retrieves the invocation ID, unescaped test path, and
+// result ID.
+// Panics if the name is invalid. Useful for situations when name was already
+// validated.
+func MustParseTestResultName(name string) (invID InvocationID, testPath, resultID string) {
+	invIDStr, testPath, resultID, err := pbutil.ParseTestResultName(name)
+	if err != nil {
+		panic(err)
+	}
+	invID = InvocationID(invIDStr)
+	return
+}
+
 // ReadTestResult reads specified TestResult within the transaction.
 // If the TestResult does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, error) {
-	invID, testPath, resultID := pbutil.MustParseTestResultName(name)
+	invID, testPath, resultID := MustParseTestResultName(name)
 	tr := &pb.TestResult{
 		Name:     name,
 		TestPath: testPath,
@@ -48,7 +61,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
-	err := ReadRow(ctx, txn, "TestResults", spanner.Key{invID, testPath, resultID}, map[string]interface{}{
+	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"ExtraVariantPairs": &tr.ExtraVariantPairs,
 		"IsUnexpected":      &maybeUnexpected,
 		"Status":            &tr.Status,
@@ -75,9 +88,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 }
 
 // ReadTestResults reads the specified test results, if any, of an invocation within the transaction.
-func ReadTestResults(ctx context.Context, txn Txn, invName string, includeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
-	invID := pbutil.MustParseInvocationName(invName)
-
+func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
 	var (
 		table       = "TestResults"
 		conditions  = []string{"(InvocationId = @invID)"}
@@ -134,7 +145,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invName string, includeExpect
 		ORDER BY TestPath, ResultId
 		LIMIT @limit
 	`, table, strings.Join(conditions, " AND ")))
-	query.Params = queryParams
+	query.Params = ToSpannerMap(queryParams)
 
 	it := txn.Query(ctx, query)
 	defer it.Stop()
@@ -173,7 +184,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invName string, includeExpect
 			return
 		}
 
-		tr.Name = pbutil.TestResultName(invID, tr.TestPath, tr.ResultId)
+		tr.Name = pbutil.TestResultName(string(invID), tr.TestPath, tr.ResultId)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 

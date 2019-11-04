@@ -41,7 +41,7 @@ const updateTokenMetadataKey = "update-token"
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
-func mutateInvocation(ctx context.Context, invID string, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
+func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.Context, *spanner.ReadWriteTransaction) error) error {
 	var retErr error
 
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -55,7 +55,7 @@ func mutateInvocation(ctx context.Context, invID string, f func(context.Context,
 		var updateToken spanner.NullString
 		var state pb.Invocation_State
 		var deadline time.Time
-		err = span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
+		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
 			"UpdateToken": &updateToken,
 			"State":       &state,
 			"Deadline":    &deadline,
@@ -66,13 +66,13 @@ func mutateInvocation(ctx context.Context, invID string, f func(context.Context,
 			return err
 
 		case state != pb.Invocation_ACTIVE:
-			return errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+			return errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 
 		case deadline.Before(now):
-			retErr = errors.Reason("%q is not active", pbutil.InvocationName(invID)).Tag(grpcutil.FailedPreconditionTag).Err()
+			retErr = errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, invID, true, pbutil.MustTimestampProto(deadline))
+			return finalizeInvocation(txn, id, true, pbutil.MustTimestampProto(deadline))
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -109,18 +109,18 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, invID string, interrupted bool, finalizeTime *tspb.Timestamp) error {
+func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime *tspb.Timestamp) error {
 	state := pb.Invocation_COMPLETED
 	if interrupted {
 		state = pb.Invocation_INTERRUPTED
 	}
 
 	return txn.BufferWrite([]*spanner.Mutation{
-		spanner.UpdateMap("Invocations", span.ToSpannerMap(map[string]interface{}{
-			"InvocationId": invID,
+		span.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId": id,
 			"State":        state,
 			"FinalizeTime": finalizeTime,
-		})),
+		}),
 	})
 }
 
@@ -136,17 +136,17 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 	return nil
 }
 
-func readInvocationState(ctx context.Context, txn span.Txn, invID string) (pb.Invocation_State, error) {
+func readInvocationState(ctx context.Context, txn span.Txn, id span.InvocationID) (pb.Invocation_State, error) {
 	var state pb.Invocation_State
-	err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"State": &state})
+	err := span.ReadInvocation(ctx, txn, id, map[string]interface{}{"State": &state})
 	return state, err
 }
 
-func insertInvocationsByTag(invID string, inv *pb.Invocation) []*spanner.Mutation {
-	muts := make([]*spanner.Mutation, len(inv.Tags))
-	for i, tag := range inv.Tags {
-		muts[i] = spanner.InsertMap("InvocationsByTag", map[string]interface{}{
-			"TagId":        span.TagID(tag),
+func insertInvocationsByTag(invID span.InvocationID, tags []*pb.StringPair) []*spanner.Mutation {
+	muts := make([]*spanner.Mutation, len(tags))
+	for i, tag := range tags {
+		muts[i] = span.InsertMap("InvocationsByTag", map[string]interface{}{
+			"TagId":        span.TagRowID(tag),
 			"InvocationId": invID,
 		})
 	}
@@ -158,7 +158,7 @@ func insertInvocationsByTag(invID string, inv *pb.Invocation) []*spanner.Mutatio
 // Assumes inv is complete and valid; may panic otherwise.
 func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	row := map[string]interface{}{
-		"InvocationId": pbutil.MustParseInvocationName(inv.Name),
+		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"State":        inv.State,
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
 
@@ -181,7 +181,7 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 
 	populateExpirations(row, clock.Now(ctx))
 
-	return spanner.InsertMap("Invocations", span.ToSpannerMap(row))
+	return span.InsertMap("Invocations", row)
 }
 
 // populateExpirations populates the invocation row's expiration fields using the given current time.
