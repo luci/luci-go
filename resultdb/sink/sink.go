@@ -117,6 +117,7 @@ func (s *Server) Errors() <-chan error {
 // If callback finishes running, Run will return the error it returned.
 func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	// TODO(sajjadm): Add Export here when implemented.
 	if err := s.Start(ctx); err != nil {
 		return err
@@ -128,18 +129,15 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 		done <- callback(ctx)
 	}()
 
-	select {
-	case <-ctx.Done():
-		// Someone else cancelled the context
-		logging.Debugf(ctx, "context cancelled outside of Run: %s", ctx.Err())
-		return ctx.Err()
-	case err := <-s.errC:
-		logging.Errorf(ctx, "internal server error: %s", err)
-		cancel()
-		return err
-	case err := <-done:
-		logging.Debugf(ctx, "successfully ran callback")
-		return err
+	var serverErr error
+	for {
+		select {
+		case err := <-s.errC:
+			serverErr = errors.Annotate(err, "internal server error").Err()
+			cancel()
+		case err := <-done:
+			return errors.NewMultiError(err, serverErr)
+		}
 	}
 
 	panic("unreachable")
