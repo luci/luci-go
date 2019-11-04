@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "d7f5481a_0f42041a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-04T22:44:51Z",
+      "side": 1,
+      "message": "examples of recoverable errors?\n\nearlier we wanted to use the error package as an indication that the server is down. With the possibility of recoverable errors, we no longer can do that. Maybe to make it more explicit, errC should be renamed to Done()?",
+      "parentUuid": "e74cb3c8_fb940977",
+      "range": {
+        "startLine": 108,
+        "startChar": 50,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "70a3753d_be5c9318",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
