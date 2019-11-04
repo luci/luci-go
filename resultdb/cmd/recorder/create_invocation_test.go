@@ -251,8 +251,7 @@ func TestCreateInvocation(t *testing.T) {
 
 			So(headers.Get(updateTokenMetadataKey), ShouldHaveLength, 1)
 
-			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-			So(err, ShouldBeNil)
+			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			inv, err = span.ReadInvocationFull(ctx, txn, "u:inv")

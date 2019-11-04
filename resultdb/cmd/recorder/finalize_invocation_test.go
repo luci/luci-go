@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
@@ -117,8 +116,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
 
 			// Read the invocation from spanner to confirm it's really finalized.
-			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-			So(err, ShouldBeNil)
+			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			inv, err = span.ReadInvocationFull(ctx, txn, "inv")

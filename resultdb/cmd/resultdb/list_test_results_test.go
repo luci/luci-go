@@ -170,17 +170,16 @@ func TestReadTestResults(t *testing.T) {
 		})
 
 		Convey(`errors with bad token`, func() {
-			txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-			So(err, ShouldBeNil)
+			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
 			Convey(`from bad position`, func() {
-				_, _, err = span.ReadTestResults(ctx, txn, "invocations/inv", true, "CgVoZWxsbw==", 5)
+				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "CgVoZWxsbw==", 5)
 				So(err, ShouldErrLike, "invalid page_token")
 			})
 
 			Convey(`from decoding`, func() {
-				_, _, err = span.ReadTestResults(ctx, txn, "invocations/inv", true, "%%%", 5)
+				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "%%%", 5)
 				So(err, ShouldErrLike, "invalid page_token")
 			})
 		})
@@ -188,8 +187,7 @@ func TestReadTestResults(t *testing.T) {
 }
 
 func testRead(ctx context.Context, invID span.InvocationID, excludeExpected bool, token string, pageSize int, expected []*pb.TestResult) string {
-	txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-	So(err, ShouldBeNil)
+	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	trs, token, err := span.ReadTestResults(ctx, txn, invID, excludeExpected, token, pageSize)

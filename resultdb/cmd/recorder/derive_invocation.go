@@ -97,10 +97,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	case err != nil:
 		return nil, err
 	case !doWrite:
-		readTxn, err := client.BatchReadOnlyTransaction(ctx, spanner.StrongRead())
-		if err != nil {
-			return nil, err
-		}
+		readTxn := client.ReadOnlyTransaction()
 		defer readTxn.Close()
 		return span.ReadInvocationFull(ctx, readTxn, invID)
 	}
