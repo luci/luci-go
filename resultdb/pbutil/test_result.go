@@ -79,18 +79,6 @@ func ParseTestResultName(name string) (invID, testPath, resultID string, err err
 	return m[1], unescapedTestPath, m[3], nil
 }
 
-// MustParseTestResultName retrieves the invocation ID, unescaped test path, and
-// result ID.
-// Panics if the name is invalid. Useful for situations when name was already
-// validated.
-func MustParseTestResultName(name string) (invID, testPath, resultID string) {
-	invID, testPath, resultID, err := ParseTestResultName(name)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
 // TestResultName synthesizes a test result name from its parts.
 // Does not validate parts; use ValidateTestResultName.
 func TestResultName(invID, testPath, resultID string) string {

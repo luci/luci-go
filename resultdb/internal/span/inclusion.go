@@ -20,12 +20,16 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
 
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// InclusionKey returns a spanner key for an Inclusion row.
+func InclusionKey(including, included InvocationID) spanner.Key {
+	return spanner.Key{including.RowID(), included.RowID()}
+}
+
 // ReadInclusions reads all inclusions, if any, of an invocation within the transaction.
-func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.Invocation_InclusionAttrs, error) {
+func ReadInclusions(ctx context.Context, txn Txn, id InvocationID) (map[string]*pb.Invocation_InclusionAttrs, error) {
 	st := spanner.NewStatement(`
 		SELECT
 			incl.IncludedInvocationId,
@@ -36,7 +40,7 @@ func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.
 		JOIN Invocations included ON incl.IncludedInvocationId = included.InvocationId
 		WHERE including.InvocationId = @invID
 	`)
-	st.Params["invID"] = invID
+	st.Params["invID"] = id.RowID()
 	it := txn.Query(ctx, st)
 	defer it.Stop()
 
@@ -50,15 +54,15 @@ func ReadInclusions(ctx context.Context, txn Txn, invID string) (map[string]*pb.
 			return nil, err
 		}
 
-		var included, overriddenByID string
+		var included, overriddenByID InvocationID
 		attr := &pb.Invocation_InclusionAttrs{}
 		if err := FromSpanner(row, &included, &overriddenByID, &attr.Ready); err != nil {
 			return nil, err
 		}
 		if overriddenByID != "" {
-			attr.OverriddenBy = pbutil.InvocationName(overriddenByID)
+			attr.OverriddenBy = overriddenByID.Name()
 		}
-		inclusions[pbutil.InvocationName(included)] = attr
+		inclusions[included.Name()] = attr
 	}
 
 	return inclusions, nil

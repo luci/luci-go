@@ -130,32 +130,32 @@ func TestReadTestResults(t *testing.T) {
 			})
 
 		Convey(`all results`, func() {
-			token := testRead(ctx, "invocations/inv", true, "", 10, trs)
+			token := testRead(ctx, "inv", true, "", 10, trs)
 			So(token, ShouldEqual, "")
 
 			Convey(`with pagination`, func() {
-				token := testRead(ctx, "invocations/inv", true, "", 1, trs[:1])
+				token := testRead(ctx, "inv", true, "", 1, trs[:1])
 				So(token, ShouldNotEqual, "")
 
-				token = testRead(ctx, "invocations/inv", true, token, 4, trs[1:])
+				token = testRead(ctx, "inv", true, token, 4, trs[1:])
 				So(token, ShouldNotEqual, "")
 
-				token = testRead(ctx, "invocations/inv", true, token, 5, nil)
+				token = testRead(ctx, "inv", true, token, 5, nil)
 				So(token, ShouldEqual, "")
 			})
 		})
 
 		Convey(`unexpected results`, func() {
-			testRead(ctx, "invocations/inv", false, "", 10, append(trs[1:3], trs[4]))
+			testRead(ctx, "inv", false, "", 10, append(trs[1:3], trs[4]))
 
 			Convey(`with pagination`, func() {
-				token := testRead(ctx, "invocations/inv", false, "", 1, trs[1:2])
+				token := testRead(ctx, "inv", false, "", 1, trs[1:2])
 				So(token, ShouldNotEqual, "")
 
-				token = testRead(ctx, "invocations/inv", false, token, 1, trs[2:3])
+				token = testRead(ctx, "inv", false, token, 1, trs[2:3])
 				So(token, ShouldNotEqual, "")
 
-				token = testRead(ctx, "invocations/inv", false, token, 10, trs[4:])
+				token = testRead(ctx, "inv", false, token, 10, trs[4:])
 				So(token, ShouldEqual, "")
 			})
 		})
@@ -163,10 +163,10 @@ func TestReadTestResults(t *testing.T) {
 		Convey(`span test path boundaries`, func() {
 			trs = append(trs, insertTestResults(ctx, "inv", "DoQux", 0,
 				[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})...)
-			token := testRead(ctx, "invocations/inv", true, "", 6, trs[:6])
+			token := testRead(ctx, "inv", true, "", 6, trs[:6])
 			So(token, ShouldNotEqual, "")
 
-			testRead(ctx, "invocations/inv", true, token, 2, trs[6:])
+			testRead(ctx, "inv", true, token, 2, trs[6:])
 		})
 
 		Convey(`errors with bad token`, func() {
@@ -187,12 +187,12 @@ func TestReadTestResults(t *testing.T) {
 	})
 }
 
-func testRead(ctx context.Context, invName string, excludeExpected bool, token string, pageSize int, expected []*pb.TestResult) string {
+func testRead(ctx context.Context, invID span.InvocationID, excludeExpected bool, token string, pageSize int, expected []*pb.TestResult) string {
 	txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
 	So(err, ShouldBeNil)
 	defer txn.Close()
 
-	trs, token, err := span.ReadTestResults(ctx, txn, invName, excludeExpected, token, pageSize)
+	trs, token, err := span.ReadTestResults(ctx, txn, invID, excludeExpected, token, pageSize)
 	So(err, ShouldBeNil)
 	So(trs, ShouldResembleProto, expected)
 
@@ -201,7 +201,7 @@ func testRead(ctx context.Context, invName string, excludeExpected bool, token s
 
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
-func insertTestResults(ctx context.Context, invID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
+func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	muts := make([]*spanner.Mutation, len(statuses))
 
@@ -210,7 +210,7 @@ func insertTestResults(ctx context.Context, invID, testName string, startID int,
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(invID, testPath, resultID),
+			Name:     pbutil.TestResultName(string(invID), testPath, resultID),
 			TestPath: testPath,
 			ResultId: resultID,
 			ExtraVariantPairs: &pb.VariantDef{Def: map[string]string{
@@ -235,7 +235,7 @@ func insertTestResults(ctx context.Context, invID, testName string, startID int,
 			mutMap["IsUnexpected"] = true
 		}
 
-		muts[i] = spanner.InsertMap("TestResults", span.ToSpannerMap(mutMap))
+		muts[i] = span.InsertMap("TestResults", mutMap)
 	}
 
 	testutil.MustApply(ctx, muts...)

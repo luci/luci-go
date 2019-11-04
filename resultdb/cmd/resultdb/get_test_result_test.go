@@ -68,11 +68,12 @@ func TestGetTestResult(t *testing.T) {
 			So(tr, ShouldResembleProto, expected)
 		}
 
+		invID := span.InvocationID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", ct),
-			spanner.InsertMap("TestResults", span.ToSpannerMap(map[string]interface{}{
-				"InvocationId": "inv_0",
+			span.InsertMap("TestResults", map[string]interface{}{
+				"InvocationId": invID,
 				"TestPath":     "gn://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":     "result_id_within_inv_0",
 				"ExtraVariantPairs": &pb.VariantDef{Def: map[string]string{
@@ -83,8 +84,7 @@ func TestGetTestResult(t *testing.T) {
 				"IsUnexpected":    true,
 				"Status":          pb.TestStatus_FAIL,
 				"RunDurationUsec": 1234567,
-			},
-			)))
+			}))
 
 		// Fetch back the TestResult.
 		test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
@@ -103,8 +103,8 @@ func TestGetTestResult(t *testing.T) {
 		)
 
 		Convey(`works with expected result`, func() {
-			testutil.MustApply(ctx, spanner.InsertMap("TestResults", span.ToSpannerMap(map[string]interface{}{
-				"InvocationId": "inv_0",
+			testutil.MustApply(ctx, span.InsertMap("TestResults", map[string]interface{}{
+				"InvocationId": invID,
 				"TestPath":     "gn://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":     "result_id_within_inv_1",
 				"ExtraVariantPairs": &pb.VariantDef{Def: map[string]string{
@@ -114,7 +114,7 @@ func TestGetTestResult(t *testing.T) {
 				"CommitTimestamp": spanner.CommitTimestamp,
 				"Status":          pb.TestStatus_PASS,
 				"RunDurationUsec": 1534567,
-			})))
+			}))
 
 			// Fetch back the TestResult.
 			test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",

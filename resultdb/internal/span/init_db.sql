@@ -19,8 +19,8 @@
 -- This is the root table for much of the other data and tables, which define the
 -- hierarchy (dependency graph, subsets of interest) for invocations.
 CREATE TABLE Invocations (
-  -- Users provide their own IDs, which are hashed and concatenated with the
-  -- origin ID to improve sharding.
+  -- Identifies an invocation.
+  -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
   InvocationId STRING(MAX) NOT NULL,
 
   -- Invocation state, see InvocationState in invocation.proto

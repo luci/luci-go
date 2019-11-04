@@ -28,21 +28,58 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// InvocationID can convert an invocation id to various formats.
+type InvocationID string
+
+// MustParseInvocationName converts an invocation name to an InvocationID.
+// Panics if the name is invalid. Useful for situations when name was already
+// validated.
+func MustParseInvocationName(name string) InvocationID {
+	id, err := pbutil.ParseInvocationName(name)
+	if err != nil {
+		panic(err)
+	}
+	return InvocationID(id)
+}
+
+// InvocationIDFromRowID converts a Spanner-level row ID to an InvocationID.
+func InvocationIDFromRowID(rowID string) InvocationID {
+	return InvocationID(stripHashPrefix(rowID))
+}
+
+// Name returns an invocation name.
+func (id InvocationID) Name() string {
+	return pbutil.InvocationName(string(id))
+}
+
+// RowID returns an invocation ID used in spanner rows.
+func (id InvocationID) RowID() string {
+	return prefixWithHash(string(id))
+}
+
+// Key returns a invocation spanner key.
+func (id InvocationID) Key(suffix ...interface{}) spanner.Key {
+	ret := make(spanner.Key, 1+len(suffix))
+	ret[0] = id.RowID()
+	copy(ret[1:], suffix)
+	return ret
+}
+
 // ReadInvocation reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in util.go.
-func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[string]interface{}) error {
-	err := ReadRow(ctx, txn, "Invocations", spanner.Key{invID}, ptrMap)
+func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[string]interface{}) error {
+	err := ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return errors.Reason("%q not found", pbutil.InvocationName(invID)).
+		return errors.Reason("%q not found", id.Name()).
 			InternalReason("%s", err).
 			Tag(grpcutil.NotFoundTag).
 			Err()
 
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch %q", pbutil.InvocationName((invID))).Err()
+		return errors.Annotate(err, "failed to fetch %q", id.Name()).Err()
 
 	default:
 		return nil
@@ -52,14 +89,14 @@ func ReadInvocation(ctx context.Context, txn Txn, invID string, ptrMap map[strin
 // ReadInvocationFull reads one invocation struct from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
-func ReadInvocationFull(ctx context.Context, txn Txn, invID string) (*pb.Invocation, error) {
-	inv := &pb.Invocation{Name: pbutil.InvocationName(invID)}
+func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, error) {
+	inv := &pb.Invocation{Name: id.Name()}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// Populate fields from Invocation table.
 	eg.Go(func() error {
-		return ReadInvocation(ctx, txn, invID, map[string]interface{}{
+		return ReadInvocation(ctx, txn, id, map[string]interface{}{
 			"State":              &inv.State,
 			"CreateTime":         &inv.CreateTime,
 			"FinalizeTime":       &inv.FinalizeTime,
@@ -71,7 +108,7 @@ func ReadInvocationFull(ctx context.Context, txn Txn, invID string) (*pb.Invocat
 
 	// Populate Inclusions.
 	eg.Go(func() (err error) {
-		inv.Inclusions, err = ReadInclusions(ctx, txn, invID)
+		inv.Inclusions, err = ReadInclusions(ctx, txn, id)
 		return
 	})
 

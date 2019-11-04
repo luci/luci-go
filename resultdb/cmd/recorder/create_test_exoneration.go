@@ -52,7 +52,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 	if err := validateCreateTestExonerationRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	invID := pbutil.MustParseInvocationName(in.Invocation)
+	invID := span.MustParseInvocationName(in.Invocation)
 
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
 	var exonerationIDSuffix string
@@ -68,7 +68,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 
 	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantDefHash(in.TestExoneration.TestVariant.Variant), exonerationIDSuffix)
 	ret := &pb.TestExoneration{
-		Name:                pbutil.TestExonerationName(invID, in.TestExoneration.TestVariant.TestPath, exonerationID),
+		Name:                pbutil.TestExonerationName(string(invID), in.TestExoneration.TestVariant.TestPath, exonerationID),
 		ExonerationId:       exonerationID,
 		TestVariant:         in.TestExoneration.TestVariant,
 		ExplanationMarkdown: in.TestExoneration.ExplanationMarkdown,

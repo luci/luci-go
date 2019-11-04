@@ -40,7 +40,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -60,7 +60,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 
 	inv := &pb.Invocation{
-		Name:               pbutil.InvocationName(invID),
+		Name:               invID.Name(),
 		BaseTestVariantDef: req.BaseTestVariant,
 	}
 
@@ -168,7 +168,7 @@ func GetOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult
 }
 
 // GetInvocationID gets the ID of the invocation associated with a task and swarming service.
-func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (string, error) {
+func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (span.InvocationID, error) {
 	// Get request information to include in ID.
 	canonicalReq, _ := proto.Clone(req).(*pb.DeriveInvocationRequest)
 	canonicalReq.SwarmingTask.Id = task.RunId
@@ -177,7 +177,7 @@ func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 	if err := json.NewEncoder(h).Encode(canonicalReq); err != nil {
 		return "", errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
 	}
-	return "swarming_" + hex.EncodeToString(h.Sum(nil)), nil
+	return span.InvocationID("swarming_" + hex.EncodeToString(h.Sum(nil))), nil
 }
 
 // FetchOutputJSON fetches the output.json from the given task with the given ref.
