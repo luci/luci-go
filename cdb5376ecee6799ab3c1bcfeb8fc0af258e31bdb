@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3017bd22_6af16683",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-04T21:12:08Z",
+      "side": 1,
+      "message": "Curious why this change?",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9e21795_eb392200",
+        "filename": "resultdb/cmd/recorder/include.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-04T21:12:08Z",
+      "side": 1,
+      "message": "Nit: I find \"overriddenInvID\" clearer because ID refers to the overridden invocation, but I suppose the motivation was that it\u0027s inconsistent with \"OverrideInvocation\", which as the field would read more clumsily as \"OverriddenInvocation\"",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c8ecc67_1190a52c",
+        "filename": "resultdb/cmd/recorder/include.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-04T21:12:08Z",
+      "side": 1,
+      "message": "Nit: currentOverridingInvID seems inconsistent with dropping the \u0027ID\u0027 in includingInvID etc.?",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
