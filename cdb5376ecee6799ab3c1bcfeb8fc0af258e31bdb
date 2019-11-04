@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "4d7627f8_33738302",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-04T21:19:55Z",
+      "side": 1,
+      "message": "Oh, I meant to passing in the req.InvocationId to make the span.InvocationID to assure that we\u0027re using the same underlying ID, but maybe passing the ID directly was preferred as it\u0027s shorter. I\u0027m fine with it either way, was just curious if there was any other particular reason",
+      "parentUuid": "211dc8f2_085a10b5",
+      "revId": "cdb5376ecee6799ab3c1bcfeb8fc0af258e31bdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9e21795_eb392200",
         "filename": "resultdb/cmd/recorder/include.go",
         "patchSetId": 3
