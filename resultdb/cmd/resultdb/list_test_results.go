@@ -49,6 +49,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	if err := validateListTestResultsRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
+	invID := span.MustParseInvocationName(in.Invocation)
 
 	txn, err := span.Client(ctx).BatchReadOnlyTransaction(ctx, spanner.StrongRead())
 	if err != nil {
@@ -56,8 +57,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	}
 	defer txn.Close()
 
-	trs, tok, err := span.ReadTestResults(
-		ctx, txn, in.Invocation, true, in.GetPageToken(), adjustPageSize(in.GetPageSize()))
+	trs, tok, err := span.ReadTestResults(ctx, txn, invID, true, in.GetPageToken(), adjustPageSize(in.GetPageSize()))
 	if err != nil {
 		return nil, err
 	}

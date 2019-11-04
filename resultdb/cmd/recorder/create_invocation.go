@@ -113,6 +113,8 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	invID := span.InvocationID(in.InvocationId)
+
 	// Return update token to the client.
 	updateToken, err := generateUpdateToken()
 	if err != nil {
@@ -122,7 +124,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	// Prepare the invocation we will return.
 	inv := &pb.Invocation{
-		Name:               pbutil.InvocationName(in.InvocationId),
+		Name:               invID.Name(),
 		State:              pb.Invocation_ACTIVE,
 		CreateTime:         pbutil.MustTimestampProto(now),
 		Deadline:           in.Invocation.GetDeadline(),
@@ -141,7 +143,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		// Dedup the request if possible.
 		if in.RequestId != "" {
 			var curRequestID spanner.NullString
-			err := span.ReadInvocation(ctx, txn, in.InvocationId, map[string]interface{}{
+			err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
 				"CreateRequestId": &curRequestID,
 			})
 			switch {
@@ -153,7 +155,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 			case curRequestID.Valid && curRequestID.StringVal == in.RequestId:
 				// Dedup the request.
-				inv, err = span.ReadInvocationFull(ctx, txn, in.InvocationId)
+				inv, err = span.ReadInvocationFull(ctx, txn, invID)
 				return err
 
 			default:
@@ -161,7 +163,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			}
 		}
 
-		muts := insertInvocationsByTag(in.InvocationId, inv)
+		muts := insertInvocationsByTag(invID, inv.Tags)
 		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
 
 		return txn.BufferWrite(muts)

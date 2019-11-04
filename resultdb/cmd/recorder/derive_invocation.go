@@ -127,7 +127,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		}
 
 		// Index the invocation by tag.
-		muts := insertInvocationsByTag(invID, inv)
+		muts := insertInvocationsByTag(invID, inv.Tags)
 		// Insert the invocation.
 		muts = append(muts, insertInvocation(ctx, inv, "", ""))
 
@@ -147,8 +147,8 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	return inv, err
 }
 
-func shouldWriteInvocation(ctx context.Context, txn span.Txn, invID string) (bool, error) {
-	state, err := readInvocationState(ctx, txn, invID)
+func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
+	state, err := readInvocationState(ctx, txn, id)
 	switch {
 	case grpcutil.Code(err) == codes.NotFound:
 		// No such invocation found means we may have to write it, so proceed.

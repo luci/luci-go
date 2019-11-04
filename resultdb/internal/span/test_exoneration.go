@@ -30,9 +30,9 @@ import (
 // ReadTestExonerationFull reads a test exoneration from Spanner.
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
-func ReadTestExonerationFull(ctx context.Context, txn Txn, invID, testPath, exonerationID string) (*pb.TestExoneration, error) {
+func ReadTestExonerationFull(ctx context.Context, txn Txn, invID InvocationID, testPath, exonerationID string) (*pb.TestExoneration, error) {
 	ret := &pb.TestExoneration{
-		Name: pbutil.TestExonerationName(invID, testPath, exonerationID),
+		Name: pbutil.TestExonerationName(string(invID), testPath, exonerationID),
 		TestVariant: &pb.TestVariant{
 			TestPath: testPath,
 		},
@@ -40,8 +40,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, invID, testPath, exon
 	}
 
 	// Populate fields from TestExonerations table.
-	key := spanner.Key{invID, testPath, exonerationID}
-	err := ReadRow(ctx, txn, "TestExonerations", key, map[string]interface{}{
+	err := ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
 		"VariantDef":          &ret.TestVariant.Variant,
 		"ExplanationMarkdown": &ret.ExplanationMarkdown,
 	})

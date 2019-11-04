@@ -63,7 +63,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	invID := pbutil.MustParseInvocationName(in.Invocation.Name)
+	invID := span.MustParseInvocationName(in.Invocation.Name)
 
 	var ret *pb.Invocation
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -90,7 +90,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 			}
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{spanner.UpdateMap("Invocations", span.ToSpannerMap(values))})
+		return txn.BufferWrite([]*spanner.Mutation{span.UpdateMap("Invocations", values)})
 	})
 	if err != nil {
 		return nil, err

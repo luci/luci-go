@@ -68,11 +68,12 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	if err := validateIncludeRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	includingInvID := pbutil.MustParseInvocationName(in.IncludingInvocation)
-	includedInvID := pbutil.MustParseInvocationName(in.IncludedInvocation)
-	overriddenInvID := ""
+
+	includingInvID := span.MustParseInvocationName(in.IncludingInvocation)
+	includedInvID := span.MustParseInvocationName(in.IncludedInvocation)
+	var overrideInvID span.InvocationID
 	if in.OverrideInvocation != "" {
-		overriddenInvID = pbutil.MustParseInvocationName(in.OverrideInvocation)
+		overrideInvID = span.MustParseInvocationName(in.OverrideInvocation)
 	}
 
 	err := mutateInvocation(ctx, includingInvID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -84,12 +85,12 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 			return
 		})
 
-		if overriddenInvID != "" {
+		if overrideInvID != "" {
 			// Ensure the overridden inclusion exists and not overridden already.
 			// Note that we don't update readiness of the inclusion being
 			// overridden.
 			eg.Go(func() error {
-				return checkOverridingInclusion(ctx, txn, includingInvID, includedInvID, overriddenInvID)
+				return checkOverridingInclusion(ctx, txn, includingInvID, includedInvID, overrideInvID)
 			})
 		}
 
@@ -106,19 +107,19 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 		// Note that this might cause an AlreadyExists error which is handled
 		// below.
 		muts := []*spanner.Mutation{
-			spanner.InsertMap("Inclusions", map[string]interface{}{
+			span.InsertMap("Inclusions", map[string]interface{}{
 				"InvocationId":         includingInvID,
 				"IncludedInvocationId": includedInvID,
 			}),
 		}
 
-		if overriddenInvID != "" {
+		if overrideInvID != "" {
 			// Mark the existing inclusion as overridden.
 			// Note that it must NOT cause an AlreadyExists error since
 			// checkOverridingInclusion already ensured that it exists.
-			muts = append(muts, spanner.UpdateMap("Inclusions", map[string]interface{}{
+			muts = append(muts, span.UpdateMap("Inclusions", map[string]interface{}{
 				"InvocationId":                     includingInvID,
-				"IncludedInvocationId":             overriddenInvID,
+				"IncludedInvocationId":             overrideInvID,
 				"OverriddenByIncludedInvocationId": includedInvID,
 			}))
 		}
@@ -135,20 +136,16 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 // checkOverridingInclusion checks whether the inclusion being overridden already exists
 // and it is not overridden by any other inclusion.
 // If it is already overridden by overridingInvID, returns errRepeatedRequest.
-func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransaction, includingInvID, includedInvID, overriddenInvID string) error {
-	var currentOverridingInvID spanner.NullString
-	err := span.ReadRow(ctx, txn, "Inclusions", spanner.Key{includingInvID, overriddenInvID}, map[string]interface{}{
+func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransaction, includingInv, includedInv, overriddenInv span.InvocationID) error {
+	var currentOverridingInvID span.InvocationID
+	err := span.ReadRow(ctx, txn, "Inclusions", span.InclusionKey(includingInv, overriddenInv), map[string]interface{}{
 		"OverriddenByIncludedInvocationId": &currentOverridingInvID,
 	})
 	switch {
 
 	case spanner.ErrCode(err) == codes.NotFound:
 		return errors.
-			Reason(
-				"%q does not exist or is not included in %q",
-				pbutil.InvocationName(overriddenInvID),
-				pbutil.InvocationName(includingInvID),
-			).
+			Reason("%q does not exist or is not included in %q", overriddenInv.Name(), includingInv.Name()).
 			InternalReason("%s", err).
 			Tag(grpcutil.NotFoundTag).
 			Err()
@@ -156,11 +153,11 @@ func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransac
 	case err != nil:
 		return err
 
-	case !currentOverridingInvID.Valid:
+	case currentOverridingInvID == "":
 		// The inclusion is not overridden.
 		return nil
 
-	case currentOverridingInvID.StringVal == includedInvID:
+	case currentOverridingInvID == includedInv:
 		// This makes this request idempotent.
 		return errRepeatedRequest
 
@@ -168,8 +165,8 @@ func checkOverridingInclusion(ctx context.Context, txn *spanner.ReadWriteTransac
 		return errors.
 			Reason(
 				"inclusion of %q is already overridden by %q",
-				pbutil.InvocationName(overriddenInvID),
-				pbutil.InvocationName(currentOverridingInvID.StringVal),
+				overriddenInv.Name(),
+				currentOverridingInvID.Name(),
 			).
 			Tag(grpcutil.FailedPreconditionTag).
 			Err()
