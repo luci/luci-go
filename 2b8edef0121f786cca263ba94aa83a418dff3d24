@@ -69,6 +69,30 @@
       "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e32220d2_022c1418",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-04T18:22:07Z",
+      "side": 1,
+      "message": "monday ping",
+      "parentUuid": "4c702a0b_3de87040",
+      "range": {
+        "startLine": 76,
+        "startChar": 38,
+        "endLine": 76,
+        "endChar": 49
+      },
+      "revId": "2b8edef0121f786cca263ba94aa83a418dff3d24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
