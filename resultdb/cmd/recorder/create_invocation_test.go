@@ -172,14 +172,6 @@ func TestCreateInvocation(t *testing.T) {
 		So(err, ShouldBeNil)
 		recorder := pb.NewRecorderPRPCClient(client)
 
-		Convey(`permission denied`, func() {
-			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{InvocationId: "x"})
-			So(err, ShouldErrLike, `anonymous:anonymous is not allowed to create invocations`)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
-		})
-
-		authState.IdentityGroups = []string{createInvocationGroup}
-
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
 			So(err, ShouldErrLike, `bad request: invocation_id: unspecified`)
