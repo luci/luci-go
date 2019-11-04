@@ -43,6 +43,8 @@ deploy:
 	kubectl patch deployment $(service) -p \
 		"{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}"
 
+upload-deploy: upload deploy
+
 # Helpers
 .setup-bindir:
 	mkdir -p $(bindir)
