@@ -154,8 +154,8 @@ func TestOutput(t *testing.T) {
 			// Write the initial version.
 			out := Output{
 				Data: map[string]Datum{
-					"m1": &MessageDatum{Header: "", Message: testMessage(111)},
-					"m2": &MessageDatum{Header: "# Header\n", Message: testMessage(222)},
+					"m1": &MessageDatum{Header: "", Message: testMessage(111, 0)},
+					"m2": &MessageDatum{Header: "# Header\n", Message: testMessage(222, 0)},
 				},
 			}
 			changed, unchanged, err := out.Write(tmp)
@@ -213,6 +213,26 @@ func TestOutput(t *testing.T) {
 				So(unchanged, ShouldResemble, []string{"m1"})
 				So(err, ShouldBeNil)
 			})
+		})
+
+		Convey("Handles semantically different, but byte-identical protos", func() {
+			// Write the initial version.
+			out := Output{
+				Data: map[string]Datum{
+					"m": &MessageDatum{Message: testMessage(0, 1.7)},
+				},
+			}
+			out.Write(tmp)
+
+			So(read("m"), ShouldResemble, "f: 1.7\n")
+
+			// We didn't touch the file. It should be detected as "unchanged", even
+			// though 1.7 deserializes into "semantically different" float (floats are
+			// weird like that).
+			changed, unchanged, err := out.Compare(tmp, true)
+			So(changed, ShouldHaveLength, 0)
+			So(unchanged, ShouldResemble, []string{"m"})
+			So(err, ShouldBeNil)
 		})
 	})
 

@@ -86,5 +86,11 @@ assert.true(msg(1) == msg(1))
 assert.true(msg(1) != msg(2))
 
 
+# Floats are weird: https://play.golang.org/p/UeQgkdxnnyv. At least this
+# peculiarity is documented here now.
+assert.true(testprotos.SimpleFields(f32=1.7) == testprotos.SimpleFields(f32=1.7))
+assert.true(testprotos.SimpleFields(f32=1.7) != proto.from_textpb(testprotos.SimpleFields, 'f32: 1.7'))
+
+
 # Other comparison operators are not supported.
 assert.fails(lambda: msg(0) < msg(0), '"<" is not implemented for proto.Message<testprotos.Complex>')

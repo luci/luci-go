@@ -150,10 +150,15 @@ func (o Output) ConfigSets() ([]ConfigSet, error) {
 // Returns names of files that are different ('changed') and same ('unchanged').
 //
 // If 'semantic' is true, for output files based on proto messages uses semantic
-// comparison, i.e. loads the file on disk as a proto message and compares it to
-// the output message.
+// comparison first (i.e. loads the file on disk as a proto message and compares
+// it to the output message). If semantic comparisons says the files are same,
+// we are done. Otherwise we still compare files as byte blobs: it is possible
+// for two semantically different protos to serialize into exact same byte blobs
+// (for one, this can happen when using float64 fields). We should treat such
+// protos as equal, since in the end of the day we care only about how generated
+// files look on the disk.
 //
-// If 'semantic' is false, compares files as byte blobs.
+// If 'semantic' is false, just compares files as byte blobs.
 //
 // Files on disk that are not in the output set are totally ignored. Missing
 // files that are listed in the output set are considered changed.
@@ -163,7 +168,11 @@ func (o Output) ConfigSets() ([]ConfigSet, error) {
 func (o Output) Compare(dir string, semantic bool) (changed, unchanged []string, err error) {
 	checkSame := func(d Datum, b []byte) (bool, error) {
 		if semantic {
-			return d.SemanticallySame(b), nil
+			if d.SemanticallySame(b) {
+				return true, nil
+			}
+			// Fallback to check protos as byte blobs, see the explanation in the
+			// function comment above.
 		}
 		a, err := d.Bytes()
 		return bytes.Equal(a, b), err

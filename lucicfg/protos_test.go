@@ -54,7 +54,7 @@ func init() {
 
 // testMessage returns new testproto.Msg as a Starlark value to be used from
 // tests (grabs it via testProtoLoader).
-func testMessage(i int) *starlarkproto.Message {
+func testMessage(i int, f float64) *starlarkproto.Message {
 	testproto, err := testProtoLoader.Module("misc/support/test.proto")
 	if err != nil {
 		panic(err)
@@ -67,6 +67,9 @@ func testMessage(i int) *starlarkproto.Message {
 	if err := msg.SetField("i", starlark.MakeInt(i)); err != nil {
 		panic(err)
 	}
+	if err := msg.SetField("f", starlark.Float(f)); err != nil {
+		panic(err)
+	}
 	return msg
 }
 
@@ -76,7 +79,7 @@ func TestProtos(t *testing.T) {
 	// Note: testMessage() is used by other tests. This test verifies it works
 	// at all.
 	Convey("testMessage works", t, func() {
-		i, err := testMessage(123).Attr("i")
+		i, err := testMessage(123, 0).Attr("i")
 		So(err, ShouldBeNil)
 		asInt, err := starlark.AsInt32(i)
 		So(err, ShouldBeNil)
@@ -84,7 +87,7 @@ func TestProtos(t *testing.T) {
 	})
 
 	Convey("Doc URL works", t, func() {
-		name, doc := protoMessageDoc(testMessage(123))
+		name, doc := protoMessageDoc(testMessage(123, 0))
 		So(name, ShouldEqual, "Msg")
 		So(doc, ShouldEqual, "https://example.com/proto-doc") // see misc/support/test.proto
 	})
