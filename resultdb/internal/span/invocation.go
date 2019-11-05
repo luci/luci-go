@@ -70,6 +70,9 @@ func (id InvocationID) Key(suffix ...interface{}) spanner.Key {
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in util.go.
 func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[string]interface{}) error {
+	if id == "" {
+		return errors.Reason("id is unspecified").Err()
+	}
 	err := ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -97,12 +100,12 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	// Populate fields from Invocation table.
 	eg.Go(func() error {
 		return ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"State":              &inv.State,
-			"CreateTime":         &inv.CreateTime,
-			"FinalizeTime":       &inv.FinalizeTime,
-			"Deadline":           &inv.Deadline,
+			"State":           &inv.State,
+			"CreateTime":      &inv.CreateTime,
+			"FinalizeTime":    &inv.FinalizeTime,
+			"Deadline":        &inv.Deadline,
 			"BaseTestVariant": &inv.BaseTestVariant,
-			"Tags":               &inv.Tags,
+			"Tags":            &inv.Tags,
 		})
 	})
 
