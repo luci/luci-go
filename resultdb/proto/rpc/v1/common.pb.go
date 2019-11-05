@@ -47,7 +47,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // - builder: the LUCI builder, e.g. "linux-rel"
 // - test_suite: a name from
 //   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
-type VariantDef struct {
+type Variant struct {
 	// The definition of the variant.
 	// Key and values must be valid StringPair keys and values, see their
 	// constraints.
@@ -57,32 +57,32 @@ type VariantDef struct {
 	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *VariantDef) Reset()         { *m = VariantDef{} }
-func (m *VariantDef) String() string { return proto.CompactTextString(m) }
-func (*VariantDef) ProtoMessage()    {}
-func (*VariantDef) Descriptor() ([]byte, []int) {
+func (m *Variant) Reset()         { *m = Variant{} }
+func (m *Variant) String() string { return proto.CompactTextString(m) }
+func (*Variant) ProtoMessage()    {}
+func (*Variant) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fcb6bcfd8c5770f6, []int{0}
 }
 
-func (m *VariantDef) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_VariantDef.Unmarshal(m, b)
+func (m *Variant) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Variant.Unmarshal(m, b)
 }
-func (m *VariantDef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_VariantDef.Marshal(b, m, deterministic)
+func (m *Variant) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Variant.Marshal(b, m, deterministic)
 }
-func (m *VariantDef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VariantDef.Merge(m, src)
+func (m *Variant) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Variant.Merge(m, src)
 }
-func (m *VariantDef) XXX_Size() int {
-	return xxx_messageInfo_VariantDef.Size(m)
+func (m *Variant) XXX_Size() int {
+	return xxx_messageInfo_Variant.Size(m)
 }
-func (m *VariantDef) XXX_DiscardUnknown() {
-	xxx_messageInfo_VariantDef.DiscardUnknown(m)
+func (m *Variant) XXX_DiscardUnknown() {
+	xxx_messageInfo_Variant.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VariantDef proto.InternalMessageInfo
+var xxx_messageInfo_Variant proto.InternalMessageInfo
 
-func (m *VariantDef) GetDef() map[string]string {
+func (m *Variant) GetDef() map[string]string {
 	if m != nil {
 		return m.Def
 	}
@@ -141,8 +141,8 @@ func (m *StringPair) GetValue() string {
 }
 
 func init() {
-	proto.RegisterType((*VariantDef)(nil), "luci.resultdb.VariantDef")
-	proto.RegisterMapType((map[string]string)(nil), "luci.resultdb.VariantDef.DefEntry")
+	proto.RegisterType((*Variant)(nil), "luci.resultdb.Variant")
+	proto.RegisterMapType((map[string]string)(nil), "luci.resultdb.Variant.DefEntry")
 	proto.RegisterType((*StringPair)(nil), "luci.resultdb.StringPair")
 }
 

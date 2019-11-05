@@ -26,8 +26,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// ValidateVariantDef returns an error if def is invalid.
-func ValidateVariantDef(d *pb.VariantDef) error {
+// ValidateVariant returns an error if def is invalid.
+func ValidateVariant(d *pb.Variant) error {
 	for k, v := range d.GetDef() {
 		p := pb.StringPair{Key: k, Value: v}
 		if err := ValidateStringPair(&p); err != nil {
@@ -37,13 +37,30 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 	return nil
 }
 
-// VariantDefToStrings returns a key:val string slice representation of the VariantDef.
-func VariantDefToStrings(d *pb.VariantDef) []string {
+// Variant creates a pb.VariantDef from a list of strings alternating
+// key/value. Does not validate pairs.
+// See also VariantFromStrings.
+//
+// Panics if an odd number of tokens is passed.
+func Variant(pairs ...string) *pb.Variant {
+	if len(pairs)%2 != 0 {
+		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
+	}
+
+	ret := &pb.Variant{Def: make(map[string]string, len(pairs)/2)}
+	for i := 0; i < len(pairs); i += 2 {
+		ret.Def[pairs[i]] = pairs[i+1]
+	}
+	return ret
+}
+
+// VariantToStrings returns a key:val string slice representation of the Variant.
+func VariantToStrings(d *pb.Variant) []string {
 	if d == nil {
 		return nil
 	}
 
-	keys := SortedVariantDefKeys(d)
+	keys := SortedVariantKeys(d)
 	pairs := make([]string, len(keys))
 	defMap := d.GetDef()
 	for i, k := range keys {
@@ -52,10 +69,10 @@ func VariantDefToStrings(d *pb.VariantDef) []string {
 	return pairs
 }
 
-// VariantDefFromStrings returns a VariantDef proto given the key:val string slice of its contents.
+// VariantFromStrings returns a Variant proto given the key:val string slice of its contents.
 //
 // If a key appears multiple times, the last pair wins.
-func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
+func VariantFromStrings(pairs []string) (*pb.Variant, error) {
 	if len(pairs) == 0 {
 		return nil, nil
 	}
@@ -68,11 +85,11 @@ func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {
 		}
 		defMap[pair.Key] = pair.Value
 	}
-	return &pb.VariantDef{Def: defMap}, nil
+	return &pb.Variant{Def: defMap}, nil
 }
 
-// SortedVariantDefKeys returns the keys in the variant def as a sorted slice.
-func SortedVariantDefKeys(d *pb.VariantDef) []string {
+// SortedVariantKeys returns the keys in the variant def as a sorted slice.
+func SortedVariantKeys(d *pb.Variant) []string {
 	keys := make([]string, 0, len(d.GetDef()))
 	for k := range d.GetDef() {
 		keys = append(keys, k)
@@ -86,16 +103,16 @@ func ValidateTestVariant(tv *pb.TestVariant) error {
 	if err := ValidateTestPath(tv.GetTestPath()); err != nil {
 		return errors.Annotate(err, "test_path").Err()
 	}
-	if err := ValidateVariantDef(tv.GetVariant()); err != nil {
+	if err := ValidateVariant(tv.GetVariant()); err != nil {
 		return errors.Annotate(err, "variant").Err()
 	}
 	return nil
 }
 
-// VariantDefHash returns a hex SHA256 hash of concatenated "<key>:<val>\n" strings from the variant.
-func VariantDefHash(d *pb.VariantDef) string {
+// VariantHash returns a hex SHA256 hash of concatenated "<key>:<val>\n" strings from the variant.
+func VariantHash(d *pb.Variant) string {
 	h := sha256.New()
-	for _, k := range SortedVariantDefKeys(d) {
+	for _, k := range SortedVariantKeys(d) {
 		io.WriteString(h, k)
 		io.WriteString(h, ":")
 		io.WriteString(h, d.Def[k])

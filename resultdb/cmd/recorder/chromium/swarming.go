@@ -61,7 +61,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	inv := &pb.Invocation{
 		Name:               invID.Name(),
-		BaseTestVariantDef: req.BaseTestVariant,
+		BaseTestVariant: req.BaseTestVariant,
 	}
 
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {

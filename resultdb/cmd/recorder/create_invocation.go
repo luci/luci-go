@@ -86,8 +86,8 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
-	if inv.GetBaseTestVariantDef() != nil {
-		if err := pbutil.ValidateVariantDef(inv.BaseTestVariantDef); err != nil {
+	if inv.GetBaseTestVariant() != nil {
+		if err := pbutil.ValidateVariant(inv.BaseTestVariant); err != nil {
 			return errors.Annotate(err, "invocation.base_test_variant_def").Err()
 		}
 	}
@@ -118,7 +118,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		State:              pb.Invocation_ACTIVE,
 		CreateTime:         pbutil.MustTimestampProto(now),
 		Deadline:           in.Invocation.GetDeadline(),
-		BaseTestVariantDef: in.Invocation.GetBaseTestVariantDef(),
+		BaseTestVariant: in.Invocation.GetBaseTestVariant(),
 		Tags:               in.Invocation.GetTags(),
 	}
 

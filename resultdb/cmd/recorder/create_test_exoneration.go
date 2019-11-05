@@ -66,7 +66,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 		mutFn = spanner.InsertOrUpdateMap
 	}
 
-	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantDefHash(in.TestExoneration.TestVariant.Variant), exonerationIDSuffix)
+	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(in.TestExoneration.TestVariant.Variant), exonerationIDSuffix)
 	ret := &pb.TestExoneration{
 		Name:                pbutil.TestExonerationName(string(invID), in.TestExoneration.TestVariant.TestPath, exonerationID),
 		ExonerationId:       exonerationID,
@@ -80,7 +80,7 @@ func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.Creat
 				"InvocationId":        invID,
 				"TestPath":            ret.TestVariant.TestPath,
 				"ExonerationId":       exonerationID,
-				"VariantDef":          in.TestExoneration.TestVariant.Variant,
+				"Variant":             in.TestExoneration.TestVariant.Variant,
 				"ExplanationMarkdown": in.TestExoneration.ExplanationMarkdown,
 			})),
 		})

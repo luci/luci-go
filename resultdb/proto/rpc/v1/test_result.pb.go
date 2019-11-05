@@ -123,7 +123,7 @@ type TestResult struct {
 	//
 	// MUST NOT have keys present in Invocation.test_variant_def, or MUST
 	// have the same value.
-	ExtraVariantPairs *VariantDef `protobuf:"bytes,4,opt,name=extra_variant_pairs,json=extraVariantPairs,proto3" json:"extra_variant_pairs,omitempty"`
+	ExtraVariantPairs *Variant `protobuf:"bytes,4,opt,name=extra_variant_pairs,json=extraVariantPairs,proto3" json:"extra_variant_pairs,omitempty"`
 	// Whether the result of test case execution is expected.
 	// In a typical Chromium CL, 99%+ of test results are expected.
 	// Users are typically interested only in the unexpected results.
@@ -204,7 +204,7 @@ func (m *TestResult) GetResultId() string {
 	return ""
 }
 
-func (m *TestResult) GetExtraVariantPairs() *VariantDef {
+func (m *TestResult) GetExtraVariantPairs() *Variant {
 	if m != nil {
 		return m.ExtraVariantPairs
 	}
@@ -370,8 +370,8 @@ func (m *Artifact) GetContents() []byte {
 type TestVariant struct {
 	// Test identifier, see TestResult.test_path.
 	TestPath string `protobuf:"bytes,1,opt,name=test_path,json=testPath,proto3" json:"test_path,omitempty"`
-	// Description of the variant of the test, see VariantDef.
-	Variant              *VariantDef `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
+	// Description of the variant of the test, see Variant.
+	Variant              *Variant `protobuf:"bytes,2,opt,name=variant,proto3" json:"variant,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -409,7 +409,7 @@ func (m *TestVariant) GetTestPath() string {
 	return ""
 }
 
-func (m *TestVariant) GetVariant() *VariantDef {
+func (m *TestVariant) GetVariant() *Variant {
 	if m != nil {
 		return m.Variant
 	}
