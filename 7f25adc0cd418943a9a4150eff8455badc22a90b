@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0b91610c_46c9548c",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-05T02:45:26Z",
+      "side": 1,
+      "message": "Nit: exhausted",
+      "range": {
+        "startLine": 183,
+        "startChar": 47,
+        "endLine": 183,
+        "endChar": 48
+      },
+      "revId": "7f25adc0cd418943a9a4150eff8455badc22a90b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
