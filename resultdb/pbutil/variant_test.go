@@ -23,65 +23,60 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateVariantDef(t *testing.T) {
+func TestValidateVariant(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateVariantDef`, t, func() {
+	Convey(`TestValidateVariant`, t, func() {
 		Convey(`empty`, func() {
-			err := ValidateVariantDef(&pb.VariantDef{})
+			err := ValidateVariant(Variant())
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`invalid`, func() {
-			err := ValidateVariantDef(&pb.VariantDef{
-				Def: map[string]string{
-					"1": "b",
-				},
-			})
+			err := ValidateVariant(Variant("1", "b"))
 			So(err, ShouldErrLike, `key: does not match`)
 		})
 	})
 }
 
-func TestVariantDefUtils(t *testing.T) {
+func TestVariantUtils(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Conversion to pair strings works`, t, func() {
-		def := &pb.VariantDef{Def: map[string]string{
-			"key/with/part/k3": "v3",
-			"k1":               "v1",
-			"key/k2":           "v2",
-		}}
-		So(VariantDefToStrings(def), ShouldResemble, []string{
+		v := Variant(
+			"key/with/part/k3", "v3",
+			"k1", "v1",
+			"key/k2", "v2",
+		)
+		So(VariantToStrings(v), ShouldResemble, []string{
 			"k1:v1", "key/k2:v2", "key/with/part/k3:v3",
 		})
 	})
 
 	Convey(`Conversion from pair strings works`, t, func() {
 		Convey(`for valid pairs`, func() {
-			def, err := VariantDefFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
+			vr, err := VariantFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
 			So(err, ShouldBeNil)
-			So(def, ShouldResembleProto, &pb.VariantDef{Def: map[string]string{
-				"k1":               "v1",
-				"key/k2":           "v2",
-				"key/with/part/k3": "v3",
-			}})
+			So(vr, ShouldResembleProto, Variant(
+				"k1", "v1",
+				"key/k2", "v2",
+				"key/with/part/k3", "v3",
+			))
 		})
 
 		Convey(`for empty list returns nil`, func() {
-			def, err := VariantDefFromStrings([]string{})
-			So(def, ShouldBeNil)
+			vr, err := VariantFromStrings([]string{})
+			So(vr, ShouldBeNil)
 			So(err, ShouldBeNil)
 		})
 	})
 
 	Convey(`Key sorting works`, t, func() {
-		def := &pb.VariantDef{Def: map[string]string{
-			"k2": "v2",
-			"k3": "v3",
-			"k1": "v1",
-		}}
-
-		So(SortedVariantDefKeys(def), ShouldResemble, []string{"k1", "k2", "k3"})
+		vr := Variant(
+			"k2", "v2",
+			"k3", "v3",
+			"k1", "v1",
+		)
+		So(SortedVariantKeys(vr), ShouldResemble, []string{"k1", "k2", "k3"})
 	})
 }
 
@@ -99,12 +94,10 @@ func TestValidateTestVariant(t *testing.T) {
 			So(err, ShouldErrLike, "test_path: does not match")
 		})
 
-		Convey(`invalid variant def`, func() {
+		Convey(`invalid variant`, func() {
 			tv := &pb.TestVariant{
 				TestPath: "a",
-				Variant: &pb.VariantDef{
-					Def: map[string]string{"": ""},
-				},
+				Variant:  Variant("", ""),
 			}
 			err := ValidateTestVariant(tv)
 			So(err, ShouldErrLike, `variant: "":"": key: does not match`)

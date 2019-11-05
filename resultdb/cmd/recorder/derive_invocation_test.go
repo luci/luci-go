@@ -53,11 +53,11 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 			So(validateDeriveInvocationRequest(req), ShouldBeNil)
 
 			Convey(`with base_test_variant populated`, func() {
-				req.BaseTestVariant = &pb.VariantDef{Def: map[string]string{
-					"k1":               "v1",
-					"key/k2":           "v2",
-					"key/with/part/k3": "v3",
-				}}
+				req.BaseTestVariant = pbutil.Variant(
+					"k1", "v1",
+					"key/k2", "v2",
+					"key/with/part/k3", "v3",
+				)
 				So(validateDeriveInvocationRequest(req), ShouldBeNil)
 			})
 		})
@@ -104,7 +104,7 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 					Hostname: "swarming-host.appspot.com",
 					Id:       "beeff00d",
 				},
-				BaseTestVariant: &pb.VariantDef{Def: map[string]string{"1": "b"}},
+				BaseTestVariant: pbutil.Variant("1", "b"),
 			}
 			So(validateDeriveInvocationRequest(req), ShouldErrLike, "key: does not match")
 		})
@@ -188,11 +188,11 @@ func TestDeriveInvocation(t *testing.T) {
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: &pb.VariantDef{Def: map[string]string{
-				"bucket":     "bkt",
-				"builder":    "blder",
-				"test_suite": "foo_unittests",
-			}},
+			BaseTestVariant: pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+			),
 		}
 
 		recorder := NewRecorderServer()
@@ -210,13 +210,11 @@ func TestDeriveInvocation(t *testing.T) {
 				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
 				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				BaseTestVariantDef: &pb.VariantDef{
-					Def: map[string]string{
-						"bucket":     "bkt",
-						"builder":    "blder",
-						"test_suite": "foo_unittests",
-					},
-				},
+				BaseTestVariant: pbutil.Variant(
+					"bucket", "bkt",
+					"builder", "blder",
+					"test_suite", "foo_unittests",
+				),
 			})
 		})
 	})
