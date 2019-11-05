@@ -24,4 +24,5 @@ option (luci.file_metadata) = {
 
 message Msg {
   int64 i = 1;
+  float f = 2;
 }
