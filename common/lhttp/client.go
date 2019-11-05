@@ -105,6 +105,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 
 			resp, err := c.Do(req)
 			if err != nil {
+				logging.Debugf(ctx, "failed to call c.Do: %v", err)
 				// Retry every error. This is sad when you specify an invalid hostname but
 				// it's better than failing when DNS resolution is flaky.
 				return errorHandler(nil, transient.Tag.Apply(err))
