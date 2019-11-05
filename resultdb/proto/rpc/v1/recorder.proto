@@ -268,5 +268,5 @@ message DeriveInvocationRequest {
   //
   // For Chromium, expected keys in the def map are "bucket", "builder", and
   // "test_suite".
-  VariantDef base_test_variant = 3;
+  Variant base_test_variant = 3;
 }

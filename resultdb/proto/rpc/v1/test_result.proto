@@ -73,7 +73,7 @@ message TestResult {
   //
   // MUST NOT have keys present in Invocation.test_variant_def, or MUST
   // have the same value.
-  VariantDef extra_variant_pairs = 4
+  Variant extra_variant_pairs = 4
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Whether the result of test case execution is expected.
@@ -190,8 +190,8 @@ message TestVariant {
   // Test identifier, see TestResult.test_path.
   string test_path = 1;
 
-  // Description of the variant of the test, see VariantDef.
-  VariantDef variant = 2;
+  // Description of the variant of the test, see Variant.
+  Variant variant = 2;
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame

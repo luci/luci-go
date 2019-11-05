@@ -101,7 +101,7 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 			"CreateTime":         &inv.CreateTime,
 			"FinalizeTime":       &inv.FinalizeTime,
 			"Deadline":           &inv.Deadline,
-			"BaseTestVariantDef": &inv.BaseTestVariantDef,
+			"BaseTestVariant": &inv.BaseTestVariant,
 			"Tags":               &inv.Tags,
 		})
 	})
