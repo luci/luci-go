@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2843f59_19cfdb47",
+        "filename": "resultdb/proto/rpc/v1/resultdb.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-05T21:47:05Z",
+      "side": 1,
+      "message": "I think this comment should be remaining asa comment for ListTestResults RPC .",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 28
+      },
+      "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
