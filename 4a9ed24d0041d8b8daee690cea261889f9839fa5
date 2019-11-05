@@ -22,6 +22,30 @@
       "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19ec935e_010b7ecf",
+        "filename": "resultdb/proto/rpc/v1/resultdb.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T21:53:13Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1900315/",
+      "parentUuid": "f2843f59_19cfdb47",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 28
+      },
+      "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
