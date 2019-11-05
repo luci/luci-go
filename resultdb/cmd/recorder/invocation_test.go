@@ -149,7 +149,7 @@ func TestReadInvocation(t *testing.T) {
 				So(actual, ShouldResembleProto, &pb.Invocation{
 					Inclusions: map[string]*pb.Invocation_InclusionAttrs{
 						"invocations/completed": {
-							Ready:        true,
+							Stable:       true,
 							OverriddenBy: "invocations/active",
 						},
 						"invocations/active": {},
@@ -172,7 +172,7 @@ func TestReadInvocation(t *testing.T) {
 			So(actual, ShouldResembleProto, &pb.Invocation{
 				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
 					"invocations/completed": {
-						Ready:        true,
+						Stable:       true,
 						OverriddenBy: "invocations/active",
 					},
 					"invocations/active": {},
