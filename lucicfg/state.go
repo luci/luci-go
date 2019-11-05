@@ -49,8 +49,9 @@ type State struct {
 	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
 	failOnErrs bool              // if true, 'emit_error' aborts the execution
 
-	generators generators  // callbacks that generate config files based on state
-	graph      graph.Graph // the graph with config entities defined so far
+	generators generators    // callbacks that generate config files based on state
+	graph      graph.Graph   // the graph with config entities defined so far
+	templates  templateCache // cached parsed text templates, see templates.go
 }
 
 // checkUncosumedVars returns an error per a provided (via Inputs.Vars), but
