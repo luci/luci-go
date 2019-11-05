@@ -46,6 +46,30 @@
       "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e906e7b6_9830c9ab",
+        "filename": "resultdb/proto/rpc/v1/resultdb.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-05T22:36:02Z",
+      "side": 1,
+      "message": "I don\u0027t understand, in the new change the comment is also moved from ListTestResults to ListTestResultsRequest.pageSize.\n\nThough this is not directly related to the change, so it should not block.",
+      "parentUuid": "19ec935e_010b7ecf",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 28
+      },
+      "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
