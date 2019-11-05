@@ -23,7 +23,6 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
-	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -147,22 +146,8 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	`, table, strings.Join(conditions, " AND ")))
 	query.Params = ToSpannerMap(queryParams)
 
-	it := txn.Query(ctx, query)
-	defer it.Stop()
-
 	trs = make([]*pb.TestResult, 0, pageSize)
-	for {
-		var row *spanner.Row
-		row, err = it.Next()
-		if err == iterator.Done {
-			err = nil
-			break
-		}
-		if err != nil {
-			trs = nil
-			return
-		}
-
+	err = txn.Query(ctx, query).Do(func(row *spanner.Row) error {
 		var maybeUnexpected spanner.NullBool
 		var micros int64
 		tr := &pb.TestResult{}
@@ -180,8 +165,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 			&tr.OutputArtifacts,
 		)
 		if err != nil {
-			trs = nil
-			return
+			return err
 		}
 
 		tr.Name = pbutil.TestResultName(string(invID), tr.TestPath, tr.ResultId)
@@ -189,6 +173,11 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 		populateDurationField(tr, micros)
 
 		trs = append(trs, tr)
+		return nil
+	})
+	if err != nil {
+		trs = nil
+		return
 	}
 
 	// If we got fewer than pageSize, then we've exhausted the collection, so return everything,
