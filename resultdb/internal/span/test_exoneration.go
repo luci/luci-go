@@ -41,7 +41,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, invID InvocationID, t
 
 	// Populate fields from TestExonerations table.
 	err := ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
-		"VariantDef":          &ret.TestVariant.Variant,
+		"Variant":             &ret.TestVariant.Variant,
 		"ExplanationMarkdown": &ret.ExplanationMarkdown,
 	})
 	switch {
