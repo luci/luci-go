@@ -144,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "763efb86_574a9605",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "\u003e \"Done()\" should probably be reserved for signaling that the server has come to a graceful shutdown. When we have a real backend to talk to the wrapper will need to wait for all the open connections to flush their data.\n\u003e \n\u003e Re: recoverable errors, I am thinking of connection level errors. If a client sends an invalid message, what should we do? Do we stop the whole server?\n\nI think this can be configurable, whether it should shutdown itself. Otherwise, I don\u0027t know what client would do with recoverable errors other than logging them, but that we can do ourselves.\n\n\u003e For now I will assume everything on errC is fatal and if we need a non-fatal channel we can add it later.\n\nsgtm",
+      "parentUuid": "8203cc1f_4558c02e",
+      "range": {
+        "startLine": 108,
+        "startChar": 50,
+        "endLine": 108,
+        "endChar": 56
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70a3753d_be5c9318",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -301,6 +325,30 @@
       "writtenOn": "2019-11-02T06:33:47Z",
       "side": 1,
       "message": "same here",
+      "range": {
+        "startLine": 150,
+        "startChar": 53,
+        "endLine": 150,
+        "endChar": 59
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be41404e_90ec5c91",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "ping",
+      "parentUuid": "dcba49a5_8b2936db",
       "range": {
         "startLine": 150,
         "startChar": 53,

@@ -1,0 +1,227 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "933f93c1_1327d5ab",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "FWIU receiving an error from this channel means the server is down. Let\u0027s clarify that in the doc",
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aed5346_403317d2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "ErrC",
+      "range": {
+        "startLine": 107,
+        "startChar": 17,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9d36407_48f5e42e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "please expand the TODO below to elaborate this. It is unclear HOW it is exported.\nwe will refer to lucictx.TestResultSink when it is ready",
+      "range": {
+        "startLine": 114,
+        "startChar": 67,
+        "endLine": 114,
+        "endChar": 76
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f1d3b7_bc381092",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "we don\u0027t really know that here. for example, we may decide to shutdown the server if a receive garbage over TCP from a subprocess and that is not an internal server error.\n\nalso, this means errors in errC and returned by Run() are inconsistent. I think we should just return the err as is",
+      "range": {
+        "startLine": 134,
+        "startChar": 37,
+        "endLine": 134,
+        "endChar": 58
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a17e158_e735c4fd",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "doc says \"If callback finishes running, Run will return the error it returned.\", but this returns a multi-error.\n\ni don\u0027t see the value of returning a multi error if serverErr is not nil. In this case, it seems `done` would return a context.Canceled error. i think we should return serverErr if it is not nil. Otherwise return the error from done.\n\nstepping back, it would be simpler to do\n  \n  case err :\u003d \u003c-s.errC:\n\tcancel()\n\t\u003c-done\n\treturn err\n\nthen we don\u0027t need the loop.\nAnd then, we also don\u0027t need the panic",
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00dd241b_243fdef8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "ErrC",
+      "range": {
+        "startLine": 147,
+        "startChar": 16,
+        "endLine": 147,
+        "endChar": 22
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3c9cf2e_bdd68a5d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "Start",
+      "range": {
+        "startLine": 150,
+        "startChar": 36,
+        "endLine": 150,
+        "endChar": 41
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe2c1f3d_95587031",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "nit: move after the if statement",
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3853112_da9cd363",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "return s.ln.Close()",
+      "range": {
+        "startLine": 192,
+        "startChar": 1,
+        "endLine": 193,
+        "endChar": 11
+      },
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f6bc983_97c00d8c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "please add a TODO to properly handle, in another CL. I think we will want shutdown in this case",
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3e9aad9_c65d367d",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-05T22:48:59Z",
+      "side": 1,
+      "message": "please add\n\n  defer server.Close()\n\nin case a test fails and we don\u0027t reach L77",
+      "revId": "dea82ff63cade326c2f1e6ac1a35792a643ac20c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
