@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/api/iterator"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -41,29 +40,22 @@ func ReadInclusions(ctx context.Context, txn Txn, id InvocationID) (map[string]*
 		WHERE including.InvocationId = @invID
 	`)
 	st.Params["invID"] = id.RowID()
-	it := txn.Query(ctx, st)
-	defer it.Stop()
 
 	inclusions := map[string]*pb.Invocation_InclusionAttrs{}
-	for {
-		row, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
+	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		var included, overriddenByID InvocationID
 		attr := &pb.Invocation_InclusionAttrs{}
 		if err := FromSpanner(row, &included, &overriddenByID, &attr.Ready); err != nil {
-			return nil, err
+			return err
 		}
 		if overriddenByID != "" {
 			attr.OverriddenBy = overriddenByID.Name()
 		}
 		inclusions[included.Name()] = attr
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-
 	return inclusions, nil
 }
