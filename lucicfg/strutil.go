@@ -15,11 +15,16 @@
 package lucicfg
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"hash/fnv"
 	"strconv"
 	"strings"
+	"text/template"
 
+	"go.chromium.org/luci/starlark/builtins"
 	"go.starlark.net/starlark"
 	"gopkg.in/yaml.v2"
 )
@@ -270,7 +275,115 @@ func tokenize(s string) (out []token) {
 	return
 }
 
-// See //internal/strutil.star for where these functions are referenced.
+////////////////////////////////////////////////////////////////////////////////
+// Text templates support.
+
+type templateValue struct {
+	tmpl *template.Template
+	hash uint32
+}
+
+// String returns the string representation of the value.
+func (t *templateValue) String() string { return "template(...)" }
+
+// Type returns a short string describing the value's type.
+func (t *templateValue) Type() string { return "template" }
+
+// Freeze does nothing since templateValue is already immutable.
+func (t *templateValue) Freeze() {}
+
+// Truth returns the truth value of an object.
+func (t *templateValue) Truth() starlark.Bool { return starlark.True }
+
+// Hash returns a function of x such that Equals(x, y) => Hash(x) == Hash(y).
+func (t *templateValue) Hash() (uint32, error) { return t.hash, nil }
+
+// AttrNames returns all .<attr> of this object.
+func (t *templateValue) AttrNames() []string {
+	return []string{"render"}
+}
+
+// Attr returns a .<name> attribute of this object or nil.
+func (t *templateValue) Attr(name string) (starlark.Value, error) {
+	switch name {
+	case "render":
+		return templateRenderBuiltin.BindReceiver(t), nil
+	default:
+		return nil, nil
+	}
+}
+
+// render implements template rendering using given value as input.
+func (t *templateValue) render(data interface{}) (string, error) {
+	buf := bytes.Buffer{}
+	if err := t.tmpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// Implementation of template.render(**dict) builtin.
+var templateRenderBuiltin = starlark.NewBuiltin("render", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("render: expecting only keyword arguments, got %d positional", len(args))
+	}
+
+	// Convert kwargs to a real dict and then to a go nested map reusing to_json
+	// machinery.
+	data := starlark.NewDict(len(kwargs))
+	for _, tup := range kwargs {
+		if len(tup) != 2 {
+			panic(fmt.Sprintf("impossible kwarg with len %d", len(tup)))
+		}
+		if err := data.SetKey(tup[0], tup[1]); err != nil {
+			panic(fmt.Sprintf("impossible bad kwarg %s %s", tup[0], tup[1]))
+		}
+	}
+	obj, err := builtins.ToGoNative(data)
+	if err != nil {
+		return nil, fmt.Errorf("render: %s", err)
+	}
+
+	out, err := fn.Receiver().(*templateValue).render(obj)
+	if err != nil {
+		return nil, fmt.Errorf("render: %s", err)
+	}
+	return starlark.String(out), nil
+})
+
+///
+
+type templateCache struct {
+	cache map[string]*templateValue // SHA256 of body => parsed template
+}
+
+func (tc *templateCache) get(body string) (starlark.Value, error) {
+	hash := sha256.Sum256([]byte(body))
+	cacheKey := string(hash[:])
+	if t, ok := tc.cache[cacheKey]; ok {
+		return t, nil
+	}
+
+	tmpl, err := template.New("<str>").Parse(body)
+	if err != nil {
+		return nil, err // note: the error is already prefixed by "template: ..."
+	}
+	val := &templateValue{tmpl: tmpl}
+
+	fh := fnv.New32a()
+	fh.Write([]byte(body))
+	val.hash = fh.Sum32()
+
+	if tc.cache == nil {
+		tc.cache = make(map[string]*templateValue, 1)
+	}
+	tc.cache[cacheKey] = val
+	return val, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Register all native calls, see //internal/strutil.star for usage.
+
 func init() {
 	declNative("expand_int_set", func(call nativeCall) (starlark.Value, error) {
 		var s starlark.String
@@ -322,5 +435,13 @@ func init() {
 			return nil, err
 		}
 		return starlark.String(string(raw)), nil
+	})
+
+	declNative("template", func(call nativeCall) (starlark.Value, error) {
+		var body starlark.String
+		if err := call.unpack(1, &body); err != nil {
+			return nil, err
+		}
+		return call.State.templates.get(body.GoString())
 	})
 }
