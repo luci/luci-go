@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -29,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/grpc/prpc"
 )
 
@@ -51,12 +53,15 @@ func cmdCall(defaultAuthOpts auth.Options) *subcommands.Command {
 The input message is read from stdin (defaulting to JSONPB)`,
 		CommandRun: func() subcommands.CommandRun {
 			c := &callRun{
-				format: formatFlagJSONPB,
+				format:   formatFlagJSONPB,
+				metadata: metadata.MD{},
 			}
 			c.registerBaseFlags(defaultAuthOpts)
 			c.Flags.Var(&c.format, "format", fmt.Sprintf(
 				`Message format. Valid values: %s. Indicates both input and output format. The default is json.`,
 				formatFlagMap.Choices()))
+
+			c.Flags.Var(flag.GRPCMetadata(c.metadata), "metadata", "a key:value pair of request header metadata; may be specified multiple times")
 			return c
 		},
 	}
@@ -65,8 +70,9 @@ The input message is read from stdin (defaulting to JSONPB)`,
 // callRun implements "call" subcommand.
 type callRun struct {
 	cmdRun
-	format  formatFlag
-	message string
+	format   formatFlag
+	message  string
+	metadata metadata.MD
 }
 
 func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -93,7 +99,20 @@ func (r *callRun) Run(a subcommands.Application, args []string, env subcommands.
 	if err != nil {
 		return ecAuthenticatedClientError
 	}
-	return r.done(call(ctx, client, &req, os.Stdout))
+
+	// Insert outoging metadata.
+	ctx = metadata.NewOutgoingContext(ctx, r.metadata)
+
+	hmd, err := call(ctx, client, &req, os.Stdout)
+	if err != nil {
+		return r.done(err)
+	}
+
+	if r.verbose {
+		printMetadata(os.Stderr, "> ", hmd)
+	}
+
+	return 0
 }
 
 func splitServiceAndMethod(fullName string) (service string, method string, err error) {
@@ -116,7 +135,7 @@ type request struct {
 }
 
 // call makes an RPC and writes response to out.
-func call(c context.Context, client *prpc.Client, req *request, out io.Writer) error {
+func call(c context.Context, client *prpc.Client, req *request, out io.Writer) (hmd metadata.MD, err error) {
 	var inf, outf prpc.Format
 	var message []byte
 	switch req.format {
@@ -124,7 +143,7 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) e
 	default:
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(req.message); err != nil {
-			return err
+			return nil, err
 		}
 		message = buf.Bytes()
 		inf = req.format.Format()
@@ -132,15 +151,28 @@ func call(c context.Context, client *prpc.Client, req *request, out io.Writer) e
 	}
 
 	// Send the request.
-	var hmd, tmd metadata.MD
-	res, err := client.CallRaw(c, req.service, req.method, message, inf, outf, prpc.Header(&hmd), prpc.Trailer(&tmd))
+	res, err := client.CallRaw(c, req.service, req.method, message, inf, outf, prpc.Header(&hmd))
 	if err != nil {
-		return &exitCode{err, int(grpc.Code(err))}
+		return nil, &exitCode{err, int(grpc.Code(err))}
 	}
 
 	// Read response.
 	if _, err := out.Write(res); err != nil {
-		return fmt.Errorf("failed to write response: %s", err)
+		return nil, fmt.Errorf("failed to write response: %s", err)
 	}
-	return err
+
+	return hmd, nil
+}
+
+func printMetadata(w io.Writer, prefix string, md metadata.MD) {
+	keys := make([]string, 0, len(md))
+	for k := range md {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		for _, v := range md[k] {
+			fmt.Fprintf(w, "%s%s: %s\n", prefix, k, v)
+		}
+	}
 }
