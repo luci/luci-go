@@ -100,7 +100,7 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 			attempts++
 			req, err := rgen()
 			if err != nil {
-				return err
+				return errors.Annotate(err, "failed to call rgen").Err()
 			}
 
 			resp, err := c.Do(req)
@@ -159,7 +159,7 @@ func NewRequestJSON(ctx context.Context, c *http.Client, rFn retry.Factory, url,
 
 		req, err := http.NewRequest(method, url, body)
 		if err != nil {
-			return nil, err
+			return nil, errors.Annotate(err, "failed to call http.NewRequest(%s, %s, ...)", method, url).Err()
 		}
 		if encoded != nil {
 			req.Header.Set("Content-Type", jsonContentTypeForPOST)
