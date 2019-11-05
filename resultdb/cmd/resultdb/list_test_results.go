@@ -52,6 +52,8 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
+	// TODO(nodir): support the in.predicate.
+
 	trs, tok, err := span.ReadTestResults(ctx, txn, invID, true, in.GetPageToken(), adjustPageSize(in.GetPageSize()))
 	if err != nil {
 		return nil, err

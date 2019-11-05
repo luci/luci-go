@@ -1,0 +1,132 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb;
+
+import "google/api/field_behavior.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
+
+// Represents a function TestResult -> bool.
+// Empty message matches all test results.
+//
+// Most clients would get invocation name from another service, e.g.
+// Buildbucket, use it in TestResultPredicate.invocation.name.
+// Also most clients would want to set expected_results to
+// VARIANTS_WITHOUT_EXPECTED_RESULTS.
+message TestResultPredicate {
+  // A test result must belong to an invocation satisfying this predicate.
+  InvocationPredicate invocation = 1;
+
+  // A test result must have a path satisfying this predicate.
+  TestPathPredicate test_path = 2;
+
+  // A test results must have a variant satisfying this predicate.
+  VariantPredicate variant = 3;
+
+  // Filters test results based on TestResult.expected field.
+  enum ExpectancyFilter {
+    // All test results satisfiy this.
+    // WARNING: using this signifcantly increases response size and latency.
+    ALL = 0;
+
+    // A test result must belong to a test variant that has one or more
+    // unexpected results and has no expected results.
+    // For example, a test variant expecting PASS and having results
+    // [FAIL, FAIL, PASS] does not satisfy this predicate.
+    VARIANTS_WITHOUT_EXPECTED_RESULTS = 1;
+
+    // A test result must be unexpected.
+    // Note: using this means the client will not be able to tell if the
+    // same test variant had expected results.
+    // See VARIANTS_WITHOUT_EXPECTED_RESULTS.
+    UNEXPECTED_RESULTS = 2;
+  }
+
+  // A test result must match this predicate based on TestResult.expected field.
+  // Most clients would want to override this field because the default
+  // typically causes a large response size.
+  ExpectancyFilter expected_results = 4;
+
+  // If false (default), ignore test exonerations.
+  // If true, a test result must not be exonerated.
+  // See also TestExoneration in test_result.proto.
+  bool honor_exonerations = 5;
+}
+
+// Represents a function Invocation -> bool.
+//
+// Consists of two parts, connected with logical OR:
+// - the "root_predicate" oneof, which selects "root" invocations.
+// - "inclusions" predicate, defined relative to the roots.
+// At least one of them must be satisfied.
+message InvocationPredicate {
+
+  // Invocations matching this predicate are called "roots".
+  oneof root_predicate {
+    // An invocation must have this name.
+    string name = 1;
+
+    // An invocation must have this tag.
+    StringPair tag = 2;
+  }
+
+  // All members of this enum are defined relative to "roots", i.e.
+  // invocations that satisfy the root_predicate.
+  enum Inclusions {
+    // Equivalent to STABLE.
+    INCLUSIONS_UNSPECIFIED = 0;
+
+    // An invocation must be reachable from any of the roots via path of
+    // inclusion edges, where each edge is stable.
+    // See also Invocation.InclusionAttrs.stable.
+    STABLE = 1;
+
+    // An invocation must be reachable from any of the roots via path of
+    // inclusion edges.
+    ALL = 2;
+
+    // Do not follow inclusion edges.
+    NONE = 3;
+  }
+
+  // Allows invocations reachable from invocations that satisfy root_predicate.
+  Inclusions inclusions = 3;
+}
+
+// Represents a function (test path) -> bool.
+message TestPathPredicate {
+  oneof predicate {
+    // A test path must be this value exactly.
+    string exact = 1;
+
+    // A test path must start with this prefix.
+    // Note: most of the time, the prefix must end with a delimiter, e.g. "/".
+    string prefix = 2;
+  }
+}
+
+// Represents a function Variant -> bool.
+message VariantPredicate {
+  oneof predicate {
+    // A variant must be equal this definition exactly.
+    Variant exact = 1;
+
+    // A variant must be a superset of the this one.
+    Variant superset_of = 2;
+  }
+}
