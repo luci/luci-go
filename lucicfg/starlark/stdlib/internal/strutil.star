@@ -100,10 +100,27 @@ def _b64_decode(s):
   return __native__.b64_decode(s)
 
 
+def _template(s):
+  """Parses the given string as a Go text template and returns template object.
+
+  See https://golang.org/pkg/text/template to syntax of Go text templates.
+
+  Args:
+    s: a string to parse as a template. Required.
+
+  Returns:
+    An object with `render(**kwargs)` method. It takes some kwargs with
+    elementary types (strings, numbers, list and dicts) and uses them as inputs
+    to the template, returning rendered template as a string.
+  """
+  return __native__.template(s)
+
+
 strutil = struct(
     expand_int_set = _expand_int_set,
     json_to_yaml = _json_to_yaml,
     to_yaml = _to_yaml,
     b64_encode = _b64_encode,
     b64_decode = _b64_decode,
+    template = _template,
 )

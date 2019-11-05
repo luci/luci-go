@@ -41,7 +41,7 @@ var ToJSON = starlark.NewBuiltin("to_json", func(_ *starlark.Thread, fn *starlar
 	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 1, &v); err != nil {
 		return nil, err
 	}
-	obj, err := toGoNative(v, visitingSet{})
+	obj, err := ToGoNative(v)
 	if err != nil {
 		return nil, err
 	}
@@ -71,10 +71,15 @@ func (v visitingSet) remove(container interface{}) {
 	delete(v, container)
 }
 
-// toGoNative takes a starlark value and returns native go value for it.
+// ToGoNative takes a Starlark value and returns native Go value for it.
 //
 // E.g. it takes *starlark.Dict and returns map[string]interface{}. Works
 // recursively.
+func ToGoNative(v starlark.Value) (interface{}, error) {
+	return toGoNative(v, visitingSet{})
+}
+
+// toGoNative implements ToGoNative.
 //
 // Uses given 'visiting' set to detect cycles in the value being converted, to
 // avoid stack overflows due to unbounded recursion.
@@ -98,8 +103,12 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 	switch val := v.(type) {
 	case starlark.NoneType:
 		return nil, nil
-	case starlark.Bool, starlark.Float, starlark.String:
-		return val, nil // already native value, starlark types are just aliases
+	case starlark.Bool:
+		return bool(val), nil
+	case starlark.Float:
+		return float64(val), nil
+	case starlark.String:
+		return string(val), nil
 	case starlark.Int:
 		i, ok := val.Int64()
 		if !ok {
