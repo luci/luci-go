@@ -68,7 +68,7 @@ type TestResult struct {
 	// Equivalent of luci.resultpb.TestResult.result_id.
 	ResultId string `protobuf:"bytes,2,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Equivalent of luci.resultpb.TestResult.extra_variant_pairs.
-	ExtraVariantPairs *v1.VariantDef `protobuf:"bytes,3,opt,name=extra_variant_pairs,json=extraVariantPairs,proto3" json:"extra_variant_pairs,omitempty"`
+	ExtraVariantPairs *v1.Variant `protobuf:"bytes,3,opt,name=extra_variant_pairs,json=extraVariantPairs,proto3" json:"extra_variant_pairs,omitempty"`
 	// Equivalent of luci.resultpb.TestResult.expected.
 	Expected bool `protobuf:"varint,4,opt,name=expected,proto3" json:"expected,omitempty"`
 	// Equivalent of luci.resultpb.TestResult.status.
@@ -131,7 +131,7 @@ func (m *TestResult) GetResultId() string {
 	return ""
 }
 
-func (m *TestResult) GetExtraVariantPairs() *v1.VariantDef {
+func (m *TestResult) GetExtraVariantPairs() *v1.Variant {
 	if m != nil {
 		return m.ExtraVariantPairs
 	}

@@ -622,7 +622,7 @@ type DeriveInvocationRequest struct {
 	//
 	// For Chromium, expected keys in the def map are "bucket", "builder", and
 	// "test_suite".
-	BaseTestVariant      *VariantDef `protobuf:"bytes,3,opt,name=base_test_variant,json=baseTestVariant,proto3" json:"base_test_variant,omitempty"`
+	BaseTestVariant      *Variant `protobuf:"bytes,3,opt,name=base_test_variant,json=baseTestVariant,proto3" json:"base_test_variant,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -667,7 +667,7 @@ func (m *DeriveInvocationRequest) GetTestPathPrefix() string {
 	return ""
 }
 
-func (m *DeriveInvocationRequest) GetBaseTestVariant() *VariantDef {
+func (m *DeriveInvocationRequest) GetBaseTestVariant() *Variant {
 	if m != nil {
 		return m.BaseTestVariant
 	}

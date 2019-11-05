@@ -211,10 +211,7 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 			Name:     pbutil.TestResultName(string(invID), testPath, resultID),
 			TestPath: testPath,
 			ResultId: resultID,
-			ExtraVariantPairs: &pb.VariantDef{Def: map[string]string{
-				"k1": "v1",
-				"k2": "v2",
-			}},
+			ExtraVariantPairs: pbutil.Variant("k1", "v1", "k2", "v2"),
 			Expected: status == pb.TestStatus_PASS,
 			Status:   status,
 			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},

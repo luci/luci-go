@@ -71,12 +71,9 @@ func TestTypeConversion(t *testing.T) {
 		test(pb.TestStatus_PASS, int64(1))
 	})
 
-	Convey(`*pb.VariantDef`, t, func() {
+	Convey(`*pb.Variant`, t, func() {
 		test(
-			&pb.VariantDef{Def: map[string]string{
-				"a": "1",
-				"b": "2",
-			}},
+			pbutil.Variant("a", "1", "b", "2"),
 			[]string{"a:1", "b:2"},
 		)
 	})

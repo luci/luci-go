@@ -93,7 +93,7 @@ type Invocation struct {
 	Deadline *timestamp.Timestamp `protobuf:"bytes,6,opt,name=deadline,proto3" json:"deadline,omitempty"`
 	// Variant definition pairs common for all test results in this invocation.
 	// A particular test result can have additional key-value pairs.
-	BaseTestVariantDef *VariantDef `protobuf:"bytes,7,opt,name=base_test_variant_def,json=baseTestVariantDef,proto3" json:"base_test_variant_def,omitempty"`
+	BaseTestVariant *Variant `protobuf:"bytes,7,opt,name=base_test_variant_def,json=baseTestVariant,proto3" json:"base_test_variant_def,omitempty"`
 	// Set of invocations included into this one, as well as attributes
 	// of the inclusion edges. Map key is an invocation name.
 	//
@@ -184,9 +184,9 @@ func (m *Invocation) GetDeadline() *timestamp.Timestamp {
 	return nil
 }
 
-func (m *Invocation) GetBaseTestVariantDef() *VariantDef {
+func (m *Invocation) GetBaseTestVariant() *Variant {
 	if m != nil {
-		return m.BaseTestVariantDef
+		return m.BaseTestVariant
 	}
 	return nil
 }
