@@ -17,7 +17,9 @@ syntax = "proto3";
 package luci.resultdb;
 
 import "google/api/field_behavior.proto";
+
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/query.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
@@ -142,10 +144,28 @@ message ListTestExonerationsResponse {
 
 // A request message for QueryTestResults RPC.
 message QueryTestResultsRequest {
-  // TODO(nodir): design it.
+  // The query definition.
+  TestResultQuery query = 1;
 }
 
 // A response message for QueryTestResults RPC.
 message QueryTestResultsResponse {
-  // TODO(nodir): design it.
+
+  // InvocationEntry combines invocation information with its test results.
+  message InvocationEntry {
+    // Use invocation.base_test_variant_def and invocation.tags for the bits
+    // common to all test results in this invocation.
+    Invocation invocation = 1;
+
+    // The test results included directly in the invocation.
+    //
+    // The test results included *indirectly* can be found among
+    // QueryTestResultsResponse.invocations, assuming
+    // QueryTestResultsRequest.query.predicate.ignore_invocation_inclusions was
+    // false.
+    repeated TestResult test_result = 2;
+  }
+
+  // List of invocations and their test results matching the query predicate.
+  repeated InvocationEntry invocations = 1;
 }

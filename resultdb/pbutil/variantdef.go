@@ -37,6 +37,23 @@ func ValidateVariantDef(d *pb.VariantDef) error {
 	return nil
 }
 
+// VariantDef creates a pb.VariantDef from a list of strings alternating
+// key/value. Does not validate pairs.
+// See also VariantDefFromStrings.
+//
+// Panics if an odd number of tokens is passed.
+func VariantDef(pairs ...string) *pb.VariantDef {
+	if len(pairs)%2 != 0 {
+		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
+	}
+
+	ret := &pb.VariantDef{Def: make(map[string]string, len(pairs)/2)}
+	for i := 0; i < len(pairs); i += 2 {
+		ret.Def[pairs[i]] = pairs[i+1]
+	}
+	return ret
+}
+
 // VariantDefToStrings returns a key:val string slice representation of the VariantDef.
 func VariantDefToStrings(d *pb.VariantDef) []string {
 	if d == nil {
@@ -53,6 +70,7 @@ func VariantDefToStrings(d *pb.VariantDef) []string {
 }
 
 // VariantDefFromStrings returns a VariantDef proto given the key:val string slice of its contents.
+// See also VariantDef.
 //
 // If a key appears multiple times, the last pair wins.
 func VariantDefFromStrings(pairs []string) (*pb.VariantDef, error) {

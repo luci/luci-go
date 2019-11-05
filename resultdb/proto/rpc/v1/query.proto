@@ -1,0 +1,116 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/duration.proto";
+
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
+
+// Definition of a query to fetch test results.
+message TestResultQuery {
+  // The test results must satisfy this predicate.
+  TestResultPredicate predicate = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The returned test results are allowed to be stale up to this value.
+  // Choosing a larger duration may reduce request latency.
+  // Must be <=30m. Default is 0, i.e. strong read.
+  google.protobuf.Duration max_staleness = 2;
+}
+
+// Selects test results.
+message TestResultPredicate {
+  // The test results must be contained in invocations satisfying this
+  // predicate.
+  InvocationPredicate invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // The path of test results must satisfy this predicate.
+  TestPathPredicate test_path = 2;
+
+  // The variant of test results must satisfy this predicate.
+  VariantPredicate test_variant = 3;
+
+  // Predicate based on the TestResult.expected field.
+  enum ExpectancyPredicate {
+    // Equivalent to ALL.
+    // WARNING: using this signifcantly increases response size and latency.
+    EXPECTED_RESULT_PREDICATE_UNSPECIFIED = 0;
+
+    // The test result must belong to a test variant that has unexpected results
+    // and does not have expected results.
+    // A typical example: FAIL, FAIL, PASS.
+    VARIANTS_WITHOUT_EXPECTED_RESULTS = 1;
+
+    // The test result must be unexpected.
+    // Note: using this option means the client will not be able to tell if the
+    // same test variant had expected results.
+    // See VARIANTS_WITHOUT_EXPECTED_RESULTS.
+    UNEXPECTED_RESULTS = 2;
+
+    // Matches all test results regardless of the "expected" field.
+    // WARNING: using this signifcantly increases response size and latency.
+    ALL = 3;
+  }
+
+  // Test results must match this predicate which is based on
+  // TestResult.expected field.
+  ExpectancyPredicate expected_results = 4;
+
+  // Whether to include exonerated results.
+  // See also TestExoneration in test_result.proto.
+  bool exonerated_results = 5;
+
+  // Whether to include test results included in the selected invocations
+  // indirectly, i.e. via Invocation.inclusions. The default is to include them.
+  bool ignore_invocation_inclusions = 6;
+}
+
+// Selects invocations.
+message InvocationPredicate {
+  oneof predicate {
+    // Select at most one invocation with this name.
+    string name = 1;
+
+    // Invocations must have this tag.
+    StringPair tag = 2;
+  }
+}
+
+// Selects test paths.
+message TestPathPredicate {
+  oneof predicate {
+    // Selects at most one test path matching this value exactly.
+    string exact = 1;
+
+    // Selects all test paths having this preifx.
+    // Note: most of the time, this value must end with a delimited, e.g. "/".
+    string prefix = 2;
+  }
+}
+
+// Selects variants.
+message VariantPredicate {
+  oneof predicate {
+    // The variant must match this definition exactly.
+    VariantDef exact = 1;
+
+    // The variant must be a superset of the this one.
+    VariantDef superset_of = 2;
+  }
+}

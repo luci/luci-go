@@ -20,12 +20,17 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	durationpb "github.com/golang/protobuf/ptypes/duration"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
 )
 
 var requestIDRe = regexp.MustCompile(`^[[:ascii:]]{0,36}$`)
+
+// DefaultMaxStaleness is the default value for "max staleness" fields in
+// requests.
+const DefaultMaxStaleness = time.Minute
 
 func regexpf(patternFormat string, subpatterns ...interface{}) *regexp.Regexp {
 	return regexp.MustCompile(fmt.Sprintf(patternFormat, subpatterns...))
@@ -75,4 +80,20 @@ func ValidatePageSize(pageSize int32) error {
 		return errors.Reason("negative").Err()
 	}
 	return nil
+}
+
+// ValidateMaxStaleness returns a non-nil error if maxStaleness is invalid.
+func ValidateMaxStaleness(maxStaleness *durationpb.Duration) error {
+	if maxStaleness == nil {
+		return unspecified()
+	}
+
+	switch d, err := ptypes.Duration(maxStaleness); {
+	case err != nil:
+		return err
+	case d < 0, d > 30*time.Minute:
+		return errors.Reason("must between 0 and 30m, inclusive").Err()
+	default:
+		return nil
+	}
 }
