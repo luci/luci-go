@@ -22,6 +22,30 @@
       "revId": "96c69eeeb81040591c802507a93ad77f1123d090",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be9345e7_5546a19d",
+        "filename": "lucicfg/output.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-05T20:20:23Z",
+      "side": 1,
+      "message": "No, it\u0027s unfixable noise for end users.",
+      "parentUuid": "ca86fe19_f8c46396",
+      "range": {
+        "startLine": 174,
+        "startChar": 6,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "96c69eeeb81040591c802507a93ad77f1123d090",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
