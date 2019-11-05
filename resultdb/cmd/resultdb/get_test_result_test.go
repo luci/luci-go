@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -73,62 +74,50 @@ func TestGetTestResult(t *testing.T) {
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", ct),
 			span.InsertMap("TestResults", map[string]interface{}{
-				"InvocationId": invID,
-				"TestPath":     "gn://chrome/test:foo_tests/BarTest.DoBaz",
-				"ResultId":     "result_id_within_inv_0",
-				"ExtraVariantPairs": &pb.VariantDef{Def: map[string]string{
-					"k1": "v1",
-					"k2": "v2",
-				}},
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"IsUnexpected":    true,
-				"Status":          pb.TestStatus_FAIL,
-				"RunDurationUsec": 1234567,
+				"InvocationId":      invID,
+				"TestPath":          "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				"ResultId":          "result_id_within_inv_0",
+				"ExtraVariantPairs": pbutil.Variant("k1", "v1", "k2", "v2"),
+				"CommitTimestamp":   spanner.CommitTimestamp,
+				"IsUnexpected":      true,
+				"Status":            pb.TestStatus_FAIL,
+				"RunDurationUsec":   1234567,
 			}))
 
 		// Fetch back the TestResult.
 		test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
 			&pb.TestResult{
-				Name:     "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
-				TestPath: "gn://chrome/test:foo_tests/BarTest.DoBaz",
-				ResultId: "result_id_within_inv_0",
-				ExtraVariantPairs: &pb.VariantDef{Def: map[string]string{
-					"k1": "v1",
-					"k2": "v2",
-				}},
-				Expected: false,
-				Status:   pb.TestStatus_FAIL,
-				Duration: &durpb.Duration{Seconds: 1, Nanos: 234567000},
+				Name:              "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
+				TestPath:          "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				ResultId:          "result_id_within_inv_0",
+				ExtraVariantPairs: pbutil.Variant("k1", "v1", "k2", "v2"),
+				Expected:          false,
+				Status:            pb.TestStatus_FAIL,
+				Duration:          &durpb.Duration{Seconds: 1, Nanos: 234567000},
 			},
 		)
 
 		Convey(`works with expected result`, func() {
 			testutil.MustApply(ctx, span.InsertMap("TestResults", map[string]interface{}{
-				"InvocationId": invID,
-				"TestPath":     "gn://chrome/test:foo_tests/BarTest.DoBaz",
-				"ResultId":     "result_id_within_inv_1",
-				"ExtraVariantPairs": &pb.VariantDef{Def: map[string]string{
-					"k1": "v1",
-					"k2": "v2",
-				}},
-				"CommitTimestamp": spanner.CommitTimestamp,
-				"Status":          pb.TestStatus_PASS,
-				"RunDurationUsec": 1534567,
+				"InvocationId":      invID,
+				"TestPath":          "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				"ResultId":          "result_id_within_inv_1",
+				"ExtraVariantPairs": pbutil.Variant("k1", "v1", "k2", "v2"),
+				"CommitTimestamp":   spanner.CommitTimestamp,
+				"Status":            pb.TestStatus_PASS,
+				"RunDurationUsec":   1534567,
 			}))
 
 			// Fetch back the TestResult.
 			test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
 				&pb.TestResult{
-					Name:     "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
-					TestPath: "gn://chrome/test:foo_tests/BarTest.DoBaz",
-					ResultId: "result_id_within_inv_1",
-					ExtraVariantPairs: &pb.VariantDef{Def: map[string]string{
-						"k1": "v1",
-						"k2": "v2",
-					}},
-					Expected: true,
-					Status:   pb.TestStatus_PASS,
-					Duration: &durpb.Duration{Seconds: 1, Nanos: 534567000},
+					Name:              "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
+					TestPath:          "gn://chrome/test:foo_tests/BarTest.DoBaz",
+					ResultId:          "result_id_within_inv_1",
+					ExtraVariantPairs: pbutil.Variant("k1", "v1", "k2", "v2"),
+					Expected:          true,
+					Status:            pb.TestStatus_PASS,
+					Duration:          &durpb.Duration{Seconds: 1, Nanos: 534567000},
 				},
 			)
 		})

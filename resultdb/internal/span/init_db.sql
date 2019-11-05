@@ -57,7 +57,7 @@ CREATE TABLE Invocations (
   -- Variant definition pairs common for all test results in this invocation.
   -- Each string is a colon-separated key-value pair.
   -- A particular test result can have additional key-value pairs.
-  BaseTestVariantDef ARRAY<STRING(MAX)>,
+  BaseTestVariant ARRAY<STRING(MAX)>,
 
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.
@@ -115,7 +115,7 @@ CREATE TABLE TestResults (
   -- Generated on the server.
   ResultId STRING(MAX) NOT NULL,
 
-  -- Extra variant pairs, in addition to parent Invocation.BaseTestVariantDef.
+  -- Extra variant pairs, in addition to parent Invocation.BaseTestVariant.
   -- See also TestResult.extra_variant_pairs in test_result.proto.
   ExtraVariantPairs ARRAY<STRING(MAX)>,
 
@@ -175,13 +175,13 @@ CREATE TABLE TestExonerations (
   -- Server-generated exoneration ID.
   -- Uniquely identifies a test exoneration within an invocation.
   --
-  -- Starts with "{hex(sha256(join(sorted('{p}\n' for p in VariantDef))))}:".
+  -- Starts with "{hex(sha256(join(sorted('{p}\n' for p in Variant))))}:".
   -- The prefix can be used to reduce scanning for test exonerations for a
   -- particular test variant.
   ExonerationId STRING(MAX) NOT NULL,
 
   -- The exoneration applies only to test results with this exact test variant.
-  VariantDef ARRAY<STRING(MAX)> NOT NULL,
+  Variant ARRAY<STRING(MAX)> NOT NULL,
 
   -- Explanation of the exoneration for humans, in Markdown.
   ExplanationMarkdown STRING(MAX)

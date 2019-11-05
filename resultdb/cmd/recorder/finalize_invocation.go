@@ -73,7 +73,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"CreateTime":         &ret.CreateTime,
 			"FinalizeTime":       &ret.FinalizeTime,
 			"Deadline":           &ret.Deadline,
-			"BaseTestVariantDef": &ret.BaseTestVariantDef,
+			"BaseTestVariant": &ret.BaseTestVariant,
 			"Tags":               &ret.Tags,
 		})
 

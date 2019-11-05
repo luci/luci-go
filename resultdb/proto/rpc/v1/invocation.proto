@@ -89,7 +89,7 @@ message Invocation {
 
   // Variant definition pairs common for all test results in this invocation.
   // A particular test result can have additional key-value pairs.
-  VariantDef base_test_variant_def = 7;
+  Variant base_test_variant = 7;
 
   // Attributes of a directed "includes" edge between two invocations.
   message InclusionAttrs {

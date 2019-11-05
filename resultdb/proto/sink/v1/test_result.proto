@@ -34,7 +34,7 @@ message TestResult {
   string result_id = 2;
 
   // Equivalent of luci.resultpb.TestResult.extra_variant_pairs.
-  VariantDef extra_variant_pairs = 3;
+  Variant extra_variant_pairs = 3;
 
   // Equivalent of luci.resultpb.TestResult.expected.
   bool expected = 4;
