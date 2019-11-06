@@ -22,6 +22,30 @@
       "revId": "c278a697300ca4198af18b95d55e187a3179eb98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ce37603_dd604235",
+        "filename": "resultdb/cli/app.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-06T18:53:51Z",
+      "side": 1,
+      "message": "i am surprised this is not documented in https://godoc.org/github.com/maruel/subcommands\nadded comments",
+      "parentUuid": "37d50849_3ef1fb14",
+      "range": {
+        "startLine": 53,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 6
+      },
+      "revId": "c278a697300ca4198af18b95d55e187a3179eb98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
