@@ -33,7 +33,7 @@ func ReadInclusions(ctx context.Context, txn Txn, id InvocationID) (map[string]*
 		SELECT
 			incl.IncludedInvocationId,
 			incl.OverriddenByIncludedInvocationId,
-			IFNULL(included.FinalizeTime < including.FinalizeTime, included.FinalizeTime IS NOT NULL) as ready
+			IFNULL(included.FinalizeTime < including.FinalizeTime, included.FinalizeTime IS NOT NULL) as stable
 		FROM Invocations including
 		JOIN Inclusions incl ON including.InvocationId = incl.InvocationId
 		JOIN Invocations included ON incl.IncludedInvocationId = included.InvocationId
@@ -45,7 +45,7 @@ func ReadInclusions(ctx context.Context, txn Txn, id InvocationID) (map[string]*
 	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		var included, overriddenByID InvocationID
 		attr := &pb.Invocation_InclusionAttrs{}
-		if err := FromSpanner(row, &included, &overriddenByID, &attr.Ready); err != nil {
+		if err := FromSpanner(row, &included, &overriddenByID, &attr.Stable); err != nil {
 			return err
 		}
 		if overriddenByID != "" {

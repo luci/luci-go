@@ -103,21 +103,26 @@ message Invocation {
     string overridden_by = 1;
 
     // Whether the included invocation is finalized before the including one.
+    //
+    // If an active invocation A includes a finalized invocation B, such
+    // inclusion is stable. In contrast, if B is active, then even if A is
+    // finalized its contents may further change because B is not finalized yet.
+    // Such inclusion is unstable. By default, QueryTestResult ignores unstable
+    // inclusions.
+    //
     // The formula for the field is
     //   included_inv.finalize_time < including_inv.finalize_time
     // If the included invocation is finalized, but the including invocation is
-    // not yet, the edge is ready. If both are not finalized yet, the edge is not
-    // ready *yet*, but its value may change over time, until the including
+    // not yet, the edge is stable. If both are not finalized yet, the edge is
+    // not stable *yet*, but its value may change over time, until the including
     // invocation is finalized.
     //
     // In practice, either
-    // - an edge is ready because the including is expected to wait for its
+    // - an edge is stable because the including is expected to wait for its
     //   children to conclude its own result, OR
     // - it does not matter e.g. if the including was canceled and finalized
     //   prematurely.
-    //
-    // By default, QueryTestResults ignores un-ready inclusions.
-    bool ready = 2;
+    bool stable = 2;
   }
 
   // Set of invocations included into this one, as well as attributes
@@ -137,5 +142,6 @@ message Invocation {
   // invocations.
   //
   // Use Recorder.Include RPC to modify this field.
-  map<string, InclusionAttrs> inclusions = 8 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  map<string, InclusionAttrs> inclusions = 8
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }

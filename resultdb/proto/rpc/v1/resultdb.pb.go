@@ -116,6 +116,9 @@ type ListTestResultsRequest struct {
 	// The maximum number of test results to return.
 	//
 	// The service may return fewer than this value.
+	// Does NOT guarantee returning all test results from chained reads until
+	// cursor exhaustion unless the invocation was finalized at the time of first
+	// ListTestResults request.
 	// If unspecified, at most 100 test results will be returned.
 	// The maximum value is 1000; values above 1000 will be coerced to 1000.
 	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -524,9 +527,6 @@ type ResultDBClient interface {
 	// Retrieves a test result.
 	GetTestResult(ctx context.Context, in *GetTestResultRequest, opts ...grpc.CallOption) (*TestResult, error)
 	// Retrieves test results for a parent invocation.
-	// Does NOT guarantee returning all test results from chained reads until
-	// cursor exhaustion unless the invocation was finalized at the time of first
-	// ListTestResults request.
 	//
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestResults instead.
@@ -672,9 +672,6 @@ type ResultDBServer interface {
 	// Retrieves a test result.
 	GetTestResult(context.Context, *GetTestResultRequest) (*TestResult, error)
 	// Retrieves test results for a parent invocation.
-	// Does NOT guarantee returning all test results from chained reads until
-	// cursor exhaustion unless the invocation was finalized at the time of first
-	// ListTestResults request.
 	//
 	// Note: response does not contain test results of included invocations.
 	// Use QueryTestResults instead.
