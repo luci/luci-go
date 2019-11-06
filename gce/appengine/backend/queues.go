@@ -164,15 +164,16 @@ func createVM(c context.Context, payload proto.Message) error {
 		return errors.Reason("config is required").Err()
 	}
 	vm := &model.VM{
-		ID:       task.Id,
-		Config:   task.Config,
-		Hostname: fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c)),
-		Index:    task.Index,
-		Lifetime: task.Lifetime,
-		Prefix:   task.Prefix,
-		Revision: task.Revision,
-		Swarming: task.Swarming,
-		Timeout:  task.Timeout,
+		ID:         task.Id,
+		Config:     task.Config,
+		Configured: clock.Now(c).Unix(),
+		Hostname:   fmt.Sprintf("%s-%d-%s", task.Prefix, task.Index, getSuffix(c)),
+		Index:      task.Index,
+		Lifetime:   task.Lifetime,
+		Prefix:     task.Prefix,
+		Revision:   task.Revision,
+		Swarming:   task.Swarming,
+		Timeout:    task.Timeout,
 	}
 	if task.Attributes != nil {
 		vm.Attributes = *task.Attributes
