@@ -20,6 +20,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 )
 
@@ -44,4 +46,15 @@ func HTTPClient(ctx context.Context) *http.Client {
 // It can be used as Postlude in a decorated gRPC service implementation.
 func UnwrapGrpcCodePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	return grpcutil.GRPCifyAndLogErr(ctx, err)
+}
+
+// TimeIt records current time and returns a function that logs the duration
+// since TimeIt was called.
+// Example usage: defer TimeIt(ctx, "doing something")()
+func TimeIt(ctx context.Context, titleFormat string, args ...interface{}) func() {
+	// TODO(nodir): use tracing API.
+	start := clock.Now(ctx)
+	return func() {
+		logging.Infof(ctx, titleFormat+" took %d", append(args, clock.Since(ctx, start)))
+	}
 }
