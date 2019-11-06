@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4128c4b_7827fed2",
+        "filename": "lucicfg/normalize/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-06T15:32:34Z",
+      "side": 1,
+      "message": "nit: please remove, it\u0027s not necessary and in our codebase we never explicitly initialize \u0027var\u0027 with nils.",
+      "range": {
+        "startLine": 26,
+        "startChar": 29,
+        "endLine": 26,
+        "endChar": 35
+      },
+      "revId": "8837a9036692753ccb3b67d75354f1de1ad09f35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77809d0e_a6aef5f9",
+        "filename": "lucicfg/normalize/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-06T15:32:34Z",
+      "side": 1,
+      "message": "Go uses camelCase, so newNotifier. Also in this case it would be better just to write:\n\nnotifiers \u003d append(notifiers, \u0026pb.Notifier{\n  Notifications: []*pb.Notification{notification},\n  Builders: []*pb.Builder{builder},\n})",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 16
+      },
+      "revId": "8837a9036692753ccb3b67d75354f1de1ad09f35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1430c6d_139d49ea",
+        "filename": "lucicfg/normalize/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-06T15:32:34Z",
+      "side": 1,
+      "message": "please join it into one sort, e.g. \n\nswitch {\n  case notifiers[i].Builders[0].Bucket \u003c notifiers[j].Builders[0].Bucket:\n    return true\n  case notifiers[i].Builders[0].Bucket \u003e notifiers[i].Builders[0].Bucket:\n    return false\n  default:\n    return notifiers[i].Builders[0].Name \u003c notifiers[j].Builders[0].Name\n}",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 42,
+        "endChar": 3
+      },
+      "revId": "8837a9036692753ccb3b67d75354f1de1ad09f35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
