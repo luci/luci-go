@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "586e2a23_08210a99",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-06T02:35:59Z",
+      "side": 1,
+      "message": "Since vm.Configured was introduced in this CL it\u0027s theoretically possible the new app version gets uploaded after a VM entity is created (meaning it has no vm.Configured time) but before the instance is created (a short window, but possible). In that case the time would be reported as vm.Created - 0, or seconds since epoch. But at most this would be a one-time problem only, so I don\u0027t really care.",
+      "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
