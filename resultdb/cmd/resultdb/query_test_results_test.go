@@ -17,6 +17,10 @@ package main
 import (
 	"testing"
 
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
+
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -49,5 +53,42 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 			},
 		})
 		So(err, ShouldErrLike, `predicate: invocation: name: does not match`)
+	})
+}
+
+func TestReadInvocationIDsByTag(t *testing.T) {
+	Convey(`TestReadInvocationIDsByTag`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		testutil.MustApply(ctx,
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(pbutil.StringPair("a", "b")),
+				"InvocationId": span.InvocationID("inv0"),
+			}),
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(pbutil.StringPair("a", "b")),
+				"InvocationId": span.InvocationID("inv1"),
+			}),
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(pbutil.StringPair("a", "c")),
+				"InvocationId": span.InvocationID("inv3"),
+			}),
+		)
+
+		tagAB := pbutil.StringPair("a", "b")
+
+		txn := span.Client(ctx).ReadOnlyTransaction()
+		defer txn.Close()
+
+		Convey(`works`, func() {
+			invIDs, err := span.ReadInvocationIDsByTag(ctx, txn, tagAB, 0)
+			So(err, ShouldBeNil)
+			So(invIDs, ShouldResemble, []span.InvocationID{"inv0", "inv1"})
+		})
+
+		Convey(`limit`, func() {
+			_, err := span.ReadInvocationIDsByTag(ctx, txn, tagAB, 1)
+			So(err, ShouldErrLike, `more than 1 invocations have tag "a:b"`)
+			So(span.TooManyInvocationsTag.In(err), ShouldBeTrue)
+		})
 	})
 }

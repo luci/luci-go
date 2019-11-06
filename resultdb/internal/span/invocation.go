@@ -18,6 +18,8 @@ import (
 	"context"
 	"sort"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
+
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -128,4 +130,38 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	}
 
 	return inv, nil
+}
+
+// TooManyInvocationsTag set in an error indicates that too many invocations
+// matched a condition.
+var TooManyInvocationsTag = errors.BoolTag{
+	Key: errors.NewTagKey("too many matching invocations"),
+}
+
+// ReadInvocationIDsByTag fetches IDs of the invocations that have the tag.
+// If limit > 0 and there is more than limit matching invocations, returns an
+// error with
+func ReadInvocationIDsByTag(ctx context.Context, txn Txn, tag *pb.StringPair, limit int) ([]InvocationID, error) {
+	tagStr := pbutil.StringPairToString(tag)
+	defer metrics.Trace(ctx, "invocation search by tag %q", tagStr)()
+
+	var ret []InvocationID
+	keyRange := spanner.Key{TagRowID(tag)}.AsPrefix()
+	err := txn.Read(ctx, "InvocationsByTag", keyRange, []string{"InvocationId"}).Do(func(row *spanner.Row) error {
+		if limit > 0 && len(ret) == limit {
+			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
+		}
+		var id InvocationID
+		if err := FromSpanner(row, &id); err != nil {
+			return err
+		}
+		ret = append(ret, id)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	SortInvocationIDs(ret)
+	return ret, nil
 }

@@ -91,7 +91,10 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	var (
 		table       = "TestResults"
 		conditions  = []string{"(InvocationId = @invID)"}
-		queryParams = map[string]interface{}{"invID": invID, "limit": pageSize}
+		queryParams = map[string]interface{}{
+			"invID": invID,
+			"limit": pageSize,
+		}
 	)
 
 	// Set start position if requested.
