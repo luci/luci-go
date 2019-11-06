@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package luci.resultdb;
+package luci.resultdb.v1;
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 
