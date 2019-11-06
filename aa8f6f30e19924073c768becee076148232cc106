@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8af82f7_c2e89585",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T08:35:58Z",
+      "side": 1,
+      "message": "Meaning we will not default to unexpected? Why is that? (I thought we previously intended to default to unexpected as that was typical use case for the RPC, and that also seems consistent with L29-30)",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 71
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a4e6c2a_c8d4bcfa",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T08:35:58Z",
+      "side": 1,
+      "message": "Optional: \"exonerated test results must be excluded\"",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 51
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b9fb8fb_d44377c2",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T08:35:58Z",
+      "side": 1,
+      "message": "Could you elaborate on this please?",
+      "range": {
+        "startLine": 129,
+        "startChar": 27,
+        "endLine": 129,
+        "endChar": 35
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21b87fb6_ff70c9af",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T08:35:58Z",
+      "side": 1,
+      "message": "Do we want to ignore or fail?",
+      "range": {
+        "startLine": 78,
+        "startChar": 35,
+        "endLine": 78,
+        "endChar": 42
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "090614ae_d975cc63",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T08:35:58Z",
+      "side": 1,
+      "message": "Does this mean if we want to query test results from a CQ run that took \u003e1h where some of the tests completed in the first 30m, we won\u0027t receive those?",
+      "range": {
+        "startLine": 157,
+        "startChar": 13,
+        "endLine": 157,
+        "endChar": 18
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
