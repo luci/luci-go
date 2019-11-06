@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "911713bb_53dcfe32",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-06T18:47:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14e0adf5_ea16377b",
+      "range": {
+        "startLine": 112,
+        "startChar": 7,
+        "endLine": 112,
+        "endChar": 17
+      },
+      "revId": "1849f79df1005f49bbeaba8ca7491fbd87add39b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a16e4bf_705379ea",
         "filename": "resultdb/proto/rpc/v1/invocation.proto",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "1849f79df1005f49bbeaba8ca7491fbd87add39b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29a97254_39cd4139",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-06T18:47:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a16e4bf_705379ea",
+      "range": {
+        "startLine": 116,
+        "startChar": 44,
+        "endLine": 116,
+        "endChar": 47
+      },
+      "revId": "1849f79df1005f49bbeaba8ca7491fbd87add39b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
