@@ -50,17 +50,19 @@ var spannerClient *spanner.Client
 // Skips the test if integration tests are not enabled.
 //
 // Tests that use Spanner must not call t.Parallel().
-func SpannerTestContext(t *testing.T) context.Context {
+func SpannerTestContext(tb testing.TB) context.Context {
 	switch {
 	case !RunIntegrationTests():
-		t.Skipf("env var %s=1 is missing", IntegrationTestEnvVar)
+		tb.Skipf("env var %s=1 is missing", IntegrationTestEnvVar)
 	case spannerClient == nil:
-		t.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
+		tb.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
 	}
 
 	ctx := TestingContext()
 	err := cleanupDatabase(ctx, spannerClient)
-	So(err, ShouldBeNil)
+	if err != nil {
+		tb.Fatal(err)
+	}
 
 	return span.WithClient(ctx, spannerClient)
 }

@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"sort"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
@@ -30,6 +31,13 @@ import (
 
 // InvocationID can convert an invocation id to various formats.
 type InvocationID string
+
+// SortInvocationIDs sorts ids lexicographically.
+func SortInvocationIDs(ids []InvocationID) {
+	sort.Slice(ids, func(i, j int) bool {
+		return ids[i] < ids[j]
+	})
+}
 
 // MustParseInvocationName converts an invocation name to an InvocationID.
 // Panics if the name is invalid. Useful for situations when name was already
@@ -70,6 +78,9 @@ func (id InvocationID) Key(suffix ...interface{}) spanner.Key {
 // NotFound GRPC code.
 // For ptrMap see ReadRow comment in util.go.
 func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[string]interface{}) error {
+	if id == "" {
+		return errors.Reason("id is unspecified").Err()
+	}
 	err := ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:

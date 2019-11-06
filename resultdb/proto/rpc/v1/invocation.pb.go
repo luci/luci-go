@@ -215,10 +215,11 @@ type Invocation_InclusionAttrs struct {
 	// frozen, but B is still active, then A may indirectly change.
 	// Such inclusion is not stabilized and by default QueryTestResult ignores
 	// it. Also it will never stabilize because A is finalized.
-	// If both A and B are active, the inclusion is yet to be stabilized.
+	// inclusions. If both A and B are active, the inclusion is yet to be
+	// stabilized.
 	//
 	// In practice, either
-	// - an inclusion is stabilized because A is expected to wait for its
+	// - an inclusion is stabilized because the A is expected to wait for its
 	//   children to conclude its own result, OR
 	// - it does not matter e.g. if A was canceled and finalized prematurely.
 	Stabilized           bool     `protobuf:"varint,2,opt,name=stabilized,proto3" json:"stabilized,omitempty"`
