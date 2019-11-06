@@ -118,6 +118,30 @@
       "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "05b2da72_3bf05f84",
+        "filename": "resultdb/proto/rpc/v1/resultdb.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T06:50:34Z",
+      "side": 1,
+      "message": "Yes, sorry about that",
+      "parentUuid": "f816216b_f0c75301",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 28
+      },
+      "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
