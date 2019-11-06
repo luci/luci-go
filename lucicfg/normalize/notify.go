@@ -16,12 +16,34 @@ package normalize
 
 import (
 	"context"
+	"sort"
 
 	pb "go.chromium.org/luci/luci_notify/api/config"
 )
 
 // Notify normalizes luci-notify.cfg config.
 func Notify(c context.Context, cfg *pb.ProjectConfig) error {
-	// TODO(vadimsh): Implement.
+	var notifiers []*pb.Notifier
+	for _, notifier := range cfg.Notifiers {
+		for _, notification := range notifier.Notifications {
+			for _, builder := range notifier.Builders {
+				notifiers = append(notifiers, &pb.Notifier{
+					Notifications: []*pb.Notification{notification},
+					Builders:      []*pb.Builder{builder},
+				})
+			}
+		}
+	}
+	sort.SliceStable(notifiers, func(i, j int) bool {
+		switch {
+		case notifiers[i].Builders[0].Bucket < notifiers[j].Builders[0].Bucket:
+			return true
+		case notifiers[i].Builders[0].Bucket > notifiers[j].Builders[0].Bucket:
+			return false
+		default:
+			return notifiers[i].Builders[0].Name < notifiers[j].Builders[0].Name
+		}
+	})
+	cfg.Notifiers = notifiers
 	return nil
 }
