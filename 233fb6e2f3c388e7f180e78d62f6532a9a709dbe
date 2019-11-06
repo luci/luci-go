@@ -241,6 +241,30 @@
     },
     {
       "key": {
+        "uuid": "d6af3e19_a2ae0516",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-06T02:30:23Z",
+      "side": 1,
+      "message": "\u003e I believe other ResultDB products will also use LUCI_CONTEXT in the future, is that correct?\n\nif they exist, yeah, but currently i cannot imagine anything that is not test-specific. Do you have examples? The only non-test results that we are considering is build artifacts. Those don\u0027t necessarily require such a sink. They can be uploaded by recipes by making ResultDB RPCs directly.",
+      "parentUuid": "034331a9_788e4b75",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
