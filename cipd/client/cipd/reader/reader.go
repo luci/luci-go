@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -219,15 +220,35 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 		return err
 	}
 
-	fileQueue := make(chan fileToExtract, len(files))
+	if maxThreads <= 0 {
+		maxThreads = runtime.NumCPU()
+	}
+	workerCount := len(files)
+	if workerCount > maxThreads {
+		workerCount = maxThreads
+	}
 
+	filesToExtract := make([]fileToExtract, len(files))
+	for i, f := range files {
+		filesToExtract[i] = fileToExtract{File: f, index: i}
+	}
+	if workerCount > 1 {
+		// If using multiple threads, sort the files by size (descending) so
+		// that large files are processed first. This helps distribute
+		// processing more evenly between worker threads.
+		sort.Slice(filesToExtract, func(i, j int) bool {
+			return filesToExtract[i].Size() > filesToExtract[j].Size()
+		})
+	}
+
+	fileQueue := make(chan fileToExtract, len(files))
 	// Extract everything except files under .cipdpkg dir (they are special CIPD
 	// guts that are interpreted by CIPD itself and thus don't need to be blindly
 	// extracted with everything else). Grab the manifest from them though. It
 	// will be extended with []pkg.FileInfo of extracted files and dropped to disk
 	// too, to represent the now unpacked package.
 	var manifestFile fs.File
-	for i, f := range files {
+	for _, f := range filesToExtract {
 		if err = ctx.Err(); err != nil {
 			break
 		}
@@ -245,21 +266,11 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, max
 			progress.advance(f)
 		default:
 			// Send file to a worker thread for extraction.
-			fileQueue <- fileToExtract{
-				File:  f,
-				index: i,
-			}
+			fileQueue <- f
 		}
 	}
 	close(fileQueue)
 
-	if maxThreads <= 0 {
-		maxThreads = runtime.NumCPU()
-	}
-	workerCount := len(files)
-	if workerCount > maxThreads {
-		workerCount = maxThreads
-	}
 	// Spawn worker threads to do the CPU-intensive extraction in parallel.
 	err = parallel.WorkPool(workerCount, func(tasks chan<- func() error) {
 		for {
