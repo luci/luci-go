@@ -80,11 +80,11 @@ func TestGetInvocation(t *testing.T) {
 			Inclusions: map[string]*pb.Invocation_InclusionAttrs{
 				"invocations/included_0": {
 					OverriddenBy: "invocations/included_1",
-					Stable:       false,
+					Stabilized:   false,
 				},
 				"invocations/included_1": {
 					OverriddenBy: "",
-					Stable:       true,
+					Stabilized:   true,
 				},
 			},
 		})
