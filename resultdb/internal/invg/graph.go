@@ -23,6 +23,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -61,6 +62,7 @@ type Edge struct {
 //
 // If the returned error is non-nil, it is annotated with a gRPC code.
 func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stableOnly bool, roots ...span.InvocationID) (*Graph, error) {
+	defer metrics.Trace(ctx, "graph fetching")()
 	g := &Graph{
 		Nodes: make(map[span.InvocationID]*Node, len(roots)),
 	}

@@ -17,12 +17,20 @@ package main
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/ptypes"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/invg"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+const maxInvocationGraphSize = 1000
 
 // validateQueryTestResultsRequest returns a non-nil error if req is determined
 // to be invalid.
@@ -46,5 +54,49 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	// Prepare a transaction.
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+	if in.MaxStaleness != nil {
+		st, _ := ptypes.Duration(in.MaxStaleness)
+		txn.WithTimestampBound(spanner.MaxStaleness(st))
+	}
+
+	// Resolve IDs of the root invocations.
+	invIDs, err := resolveRootInvocationIDs(ctx, txn, in.Predicate.Invocation)
+	if err != nil {
+		return nil, err
+	}
+	logging.Infof(ctx, "resolved %d root invocation IDs: %q", len(invIDs), invIDs)
+
+	// Fetch the invocation graph if needed.
+	if incl := in.GetPredicate().GetInvocation().GetInclusions(); incl != pb.InvocationPredicate_NONE {
+		stableOnly := incl != pb.InvocationPredicate_ALL
+		g, err := invg.FetchGraph(ctx, txn, stableOnly, invIDs...)
+		if err != nil {
+			return nil, err
+		}
+		invIDs = invIDs[:0]
+		for id := range g.Nodes {
+			invIDs = append(invIDs, id)
+		}
+		logging.Infof(ctx, "resolved %d invocation IDs in the graph: %q", len(invIDs), invIDs)
+	}
+
+	// TODO(nodir): fetch the test results.
 	return nil, grpcutil.Unimplemented
+}
+
+// resolveRootInvocationIDs returns IDs of invocations that satisfy the
+// pred.root_predicate.
+func resolveRootInvocationIDs(ctx context.Context, txn *spanner.ReadOnlyTransaction, pred *pb.InvocationPredicate) ([]span.InvocationID, error) {
+	if name := pred.GetName(); name != "" {
+		return []span.InvocationID{span.MustParseInvocationName(name)}, nil
+	}
+
+	invIDs, err := span.ReadInvocationIDsByTag(ctx, txn, pred.GetTag(), maxInvocationGraphSize)
+	if span.TooManyInvocationsTag.In(err) {
+		return nil, errors.Annotate(err, "").Tag(grpcutil.FailedPreconditionTag).Err()
+	}
+	return invIDs, err
 }
