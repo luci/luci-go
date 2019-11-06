@@ -70,6 +70,30 @@
       "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "871dd3d7_4b7be4ff",
+        "filename": "resultdb/proto/rpc/v1/resultdb.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-06T06:18:49Z",
+      "side": 1,
+      "message": "Nodir, did you maybe interpret Chan\u0027s first comment as meaning the change should be in a separate CL?\n\nChan, this was moved as a comment from ListTestResults to ListTestResultsRequest.pageSize in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1888447/13/resultdb/proto/rpc/v1/resultdb.proto#36",
+      "parentUuid": "e906e7b6_9830c9ab",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 28
+      },
+      "revId": "4a9ed24d0041d8b8daee690cea261889f9839fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
