@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d253ecc4_abdf6196",
+        "filename": "hardcoded/chromeinfra/chromeinfra.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-07T18:43:47Z",
+      "side": 1,
+      "message": "FYI: this hasn\u0027t been approved (nor widely discussed) yet, so it may change",
+      "range": {
+        "startLine": 66,
+        "startChar": 17,
+        "endLine": 66,
+        "endChar": 42
+      },
+      "revId": "386b67b6b16fc9ab0b1502e459da4edb0ad73183",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
