@@ -19,7 +19,7 @@ package luci.resultdb;
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
@@ -268,5 +268,5 @@ message DeriveInvocationRequest {
   //
   // For Chromium, expected keys in the def map are "bucket", "builder", and
   // "test_suite".
-  Variant base_test_variant = 3;
+  luci.resultdb.type.Variant base_test_variant = 3;
 }

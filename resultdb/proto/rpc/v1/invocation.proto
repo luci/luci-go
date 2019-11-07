@@ -18,7 +18,7 @@ package luci.resultdb;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 
@@ -71,7 +71,7 @@ message Invocation {
 
   // Invocation-level string key-value pairs.
   // A key can be repeated.
-  repeated StringPair tags = 4;
+  repeated luci.resultdb.type.StringPair tags = 4;
 
   // == Finalization ===========================================================
 
@@ -89,7 +89,7 @@ message Invocation {
 
   // Variant definition pairs common for all test results in this invocation.
   // A particular test result can have additional key-value pairs.
-  Variant base_test_variant = 7;
+  luci.resultdb.type.Variant base_test_variant = 7;
 
   // Attributes of a directed "includes" edge between two invocations.
   message InclusionAttrs {

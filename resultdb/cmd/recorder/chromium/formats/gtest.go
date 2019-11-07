@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -165,7 +166,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 				}
 
 				if len(params) > 0 {
-					rpb.ExtraVariantPairs = &pb.Variant{Def: params}
+					rpb.ExtraVariantPairs = &typepb.Variant{Def: params}
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final
