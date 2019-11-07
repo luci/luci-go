@@ -60,7 +60,7 @@ type Edge struct {
 // This optimization would require changing the function signature.
 //
 // If the returned error is non-nil, it is annotated with a gRPC code.
-func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stabilizedOnly bool, roots ...span.InvocationID) (*Graph, error) {
+func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, roots ...span.InvocationID) (*Graph, error) {
 	g := &Graph{
 		Nodes: make(map[span.InvocationID]*Node, len(roots)),
 	}
@@ -80,9 +80,6 @@ func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stabilize
 			OutgoingEdges: make(map[span.InvocationID]*Edge, len(inv.Inclusions)),
 		}
 		for name, attrs := range inv.Inclusions {
-			if stabilizedOnly && !attrs.Stabilized {
-				continue
-			}
 			included := getNode(span.MustParseInvocationName(name))
 			ret.OutgoingEdges[included.ID] = &Edge{
 				Included: included,
