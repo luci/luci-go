@@ -57,6 +57,9 @@ job {
 
 job {
   id: "a"
+  triggering_policy {
+    max_concurrent_invocations: 1
+  }
 }
 
 trigger {
@@ -66,6 +69,7 @@ trigger {
 trigger {
   id: "a"
   gitiles: {
+    repo: "some-repo.git"
     refs: "regexp:z"
     refs: "refs/heads/master"
     refs: "y\\z"
@@ -75,9 +79,15 @@ trigger {
 
 const schedulerOut = `job: <
   id: "a"
+  schedule: "triggered"
+  triggering_policy: <
+    kind: GREEDY_BATCHING
+    max_concurrent_invocations: 1
+  >
 >
 job: <
   id: "z"
+  schedule: "triggered"
   acls: <
     granted_to: "group:all"
   >
@@ -92,6 +102,7 @@ job: <
 trigger: <
   id: "a"
   gitiles: <
+    repo: "some-repo"
     refs: "regexp:refs/heads/master"
     refs: "regexp:y\\\\z"
     refs: "regexp:z"

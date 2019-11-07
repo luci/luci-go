@@ -53,10 +53,23 @@ func Scheduler(c context.Context, cfg *pb.ProjectConfig) error {
 	}
 	cfg.AclSets = nil
 
+	// Normalize jobs
+	for _, x := range cfg.Job {
+		if x.Schedule == "" {
+			x.Schedule = "triggered"
+		}
+		if x.TriggeringPolicy != nil {
+			if x.TriggeringPolicy.Kind == pb.TriggeringPolicy_UNDEFINED {
+				x.TriggeringPolicy.Kind = pb.TriggeringPolicy_GREEDY_BATCHING
+			}
+		}
+	}
+
 	// Normalize triggers.
 	for _, x := range cfg.Trigger {
 		sort.Strings(x.Triggers)
 		if gt := x.Gitiles; gt != nil {
+			gt.Repo = strings.TrimSuffix(gt.Repo, ".git")
 			for i, r := range gt.Refs {
 				if !strings.HasPrefix(r, "regexp:") {
 					gt.Refs[i] = "regexp:" + regexp.QuoteMeta(r)
