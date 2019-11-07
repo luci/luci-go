@@ -265,6 +265,30 @@
     },
     {
       "key": {
+        "uuid": "3ee5b462_60954b21",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-07T00:47:46Z",
+      "side": 1,
+      "message": "Per offline discussion, we\u0027re going with a structure that looks like \"resultsdb.testresults.Port\" in LUCI_CONTEXT.",
+      "parentUuid": "d6af3e19_a2ae0516",
+      "range": {
+        "startLine": 22,
+        "startChar": 3,
+        "endLine": 22,
+        "endChar": 13
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "573d554d_77e92c7e",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
