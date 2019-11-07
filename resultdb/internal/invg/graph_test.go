@@ -80,7 +80,7 @@ func insertInv(id span.InvocationID, finalizeTime time.Time, included ...span.In
 		"FinalizeTime":                      finalizeTime,
 	})}
 	for _, incl := range included {
-		ms = append(ms, testutil.InsertInclusion(id, incl, ""))
+		ms = append(ms, testutil.InsertInclusion(id, incl))
 	}
 	return ms
 }
@@ -88,14 +88,14 @@ func TestFetchGraph(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		fetch := func(stabilizedOnly bool, roots ...span.InvocationID) (*Graph, error) {
+		fetch := func(roots ...span.InvocationID) (*Graph, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
-			return FetchGraph(ctx, txn, stabilizedOnly, roots...)
+			return FetchGraph(ctx, txn, roots...)
 		}
 
-		mustFetch := func(stabilizedOnly bool, roots ...span.InvocationID) *Graph {
-			g, err := fetch(stabilizedOnly, roots...)
+		mustFetch := func(roots ...span.InvocationID) *Graph {
+			g, err := fetch(roots...)
 			So(err, ShouldBeNil)
 			return g
 		}
@@ -114,26 +114,26 @@ func TestFetchGraph(t *testing.T) {
 		}
 
 		Convey(`fetch nothing`, func() {
-			assertGraph(mustFetch(false), ``)
+			assertGraph(mustFetch(), ``)
 		})
 
 		Convey(`not found`, func() {
-			_, err := fetch(false, "inv")
+			_, err := fetch("inv")
 			So(err, ShouldErrLike, `"invocations/inv" not found`)
 		})
 
 		Convey(`a -> []`, func() {
 			testutil.MustApply(ctx, insertInv("a", t1)...)
-			assertGraph(mustFetch(false, "a"), `
+			assertGraph(mustFetch("a"), `
 				a ->
 			`)
 		})
 
 		Convey(`a -> [b, c]`, func() {
-			testutil.MustApply(ctx, insertInv("b", t1)...) // stabilized
-			testutil.MustApply(ctx, insertInv("c", t2)...) // not stabilized
+			testutil.MustApply(ctx, insertInv("b", t1)...)
+			testutil.MustApply(ctx, insertInv("c", t2)...)
 			testutil.MustApply(ctx, insertInv("a", t2, "b", "c")...)
-			assertGraph(mustFetch(false, "a"), `
+			assertGraph(mustFetch("a"), `
 				a -> b c
 				b ->
 				c ->
@@ -144,20 +144,10 @@ func TestFetchGraph(t *testing.T) {
 			testutil.MustApply(ctx, insertInv("c", t2)...)
 			testutil.MustApply(ctx, insertInv("b", t1, "c")...)
 			testutil.MustApply(ctx, insertInv("a", t0, "b")...)
-			assertGraph(mustFetch(false, "a"), `
+			assertGraph(mustFetch("a"), `
 				a -> b
 				b -> c
 				c ->
-			`)
-		})
-
-		Convey(`only stabilized`, func() {
-			testutil.MustApply(ctx, insertInv("c", t2)...)
-			testutil.MustApply(ctx, insertInv("b", t0)...)
-			testutil.MustApply(ctx, insertInv("a", t1, "b", "c")...)
-			assertGraph(mustFetch(true, "a"), `
-				a -> b
-				b ->
 			`)
 		})
 	})
@@ -188,7 +178,7 @@ func BenchmarkChainFetch(b *testing.B) {
 	fetch := func() {
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
-		_, err := FetchGraph(ctx, txn, false, prev)
+		_, err := FetchGraph(ctx, txn, prev)
 		if err != nil {
 			b.Fatal(err)
 		}
