@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // This file implements utility functions that make spanner API slightly easier
@@ -73,9 +74,9 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
-//   - pb.Variant
-//   - pb.StringPair
 //   - pb.Artifact
+//   - typepb.Variant
+//   - typepb.StringPair
 func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	spanPtrs := make([]interface{}, len(ptrs))
 
@@ -91,9 +92,9 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = new(int64)
 		case *pb.Invocation_State:
 			spanPtrs[i] = new(int64)
-		case **pb.Variant:
+		case **typepb.Variant:
 			spanPtrs[i] = &[]string{}
-		case *[]*pb.StringPair:
+		case *[]*typepb.StringPair:
 			spanPtrs[i] = &[]string{}
 		case *[]*pb.Artifact:
 			spanPtrs[i] = &[][]byte{}
@@ -139,15 +140,15 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 		case *pb.TestStatus:
 			*goPtr = pb.TestStatus(*spanPtr.(*int64))
 
-		case **pb.Variant:
+		case **typepb.Variant:
 			if *goPtr, err = pbutil.VariantFromStrings(*spanPtr.(*[]string)); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
 			}
 
-		case *[]*pb.StringPair:
+		case *[]*typepb.StringPair:
 			pairs := *spanPtr.(*[]string)
-			*goPtr = make([]*pb.StringPair, len(pairs))
+			*goPtr = make([]*typepb.StringPair, len(pairs))
 			for i, p := range pairs {
 				if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
 					// If it was written to Spanner, it should have been validated.
@@ -201,10 +202,10 @@ func ToSpanner(v interface{}) interface{} {
 	case pb.TestStatus:
 		return int64(v)
 
-	case *pb.Variant:
+	case *typepb.Variant:
 		return pbutil.VariantToStrings(v)
 
-	case []*pb.StringPair:
+	case []*typepb.StringPair:
 		return pbutil.StringPairsToStrings(v...)
 
 	case []*pb.Artifact:

@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package span
+package typepb
 
-import (
-	"go.chromium.org/luci/resultdb/pbutil"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
-)
-
-// TagRowID returns a value for the TagId column in InvocationsByTag table.
-func TagRowID(tag *typepb.StringPair) string {
-	return prefixWithHash(pbutil.StringPairToString(tag))
-}
+//go:generate cproto

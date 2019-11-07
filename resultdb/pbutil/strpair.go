@@ -20,7 +20,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const maxStringPairKeyLength = 64
@@ -31,20 +31,20 @@ const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 var stringPairKeyRe = regexpf(`^%s$`, stringPairKeyPattern)
 var stringPairRe = regexpf("^(%s):(.*)$", stringPairKeyPattern)
 
-// StringPair creates a pb.StringPair with the given strings as key/value field values.
-func StringPair(k, v string) *pb.StringPair {
-	return &pb.StringPair{Key: k, Value: v}
+// StringPair creates a typepb.StringPair with the given strings as key/value field values.
+func StringPair(k, v string) *typepb.StringPair {
+	return &typepb.StringPair{Key: k, Value: v}
 }
 
-// StringPairs creates a slice of pb.StringPair from a list of strings alternating key/value.
+// StringPairs creates a slice of typepb.StringPair from a list of strings alternating key/value.
 //
 // Panics if an odd number of tokens is passed.
-func StringPairs(pairs ...string) []*pb.StringPair {
+func StringPairs(pairs ...string) []*typepb.StringPair {
 	if len(pairs)%2 != 0 {
 		panic(fmt.Sprintf("odd number of tokens in %q", pairs))
 	}
 
-	strpairs := make([]*pb.StringPair, len(pairs)/2)
+	strpairs := make([]*typepb.StringPair, len(pairs)/2)
 	for i := range strpairs {
 		strpairs[i] = StringPair(pairs[2*i], pairs[2*i+1])
 	}
@@ -52,7 +52,7 @@ func StringPairs(pairs ...string) []*pb.StringPair {
 }
 
 // StringPairsContain checks if item is present in pairs.
-func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
+func StringPairsContain(pairs []*typepb.StringPair, item *typepb.StringPair) bool {
 	for _, p := range pairs {
 		if p.Key == item.Key && p.Value == item.Value {
 			return true
@@ -62,7 +62,7 @@ func StringPairsContain(pairs []*pb.StringPair, item *pb.StringPair) bool {
 }
 
 // sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
-func sortStringPairs(tags []*pb.StringPair) {
+func sortStringPairs(tags []*typepb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
 			return tags[i].Key < tags[j].Key
@@ -72,7 +72,7 @@ func sortStringPairs(tags []*pb.StringPair) {
 }
 
 // ValidateStringPair returns an error if p is invalid.
-func ValidateStringPair(p *pb.StringPair) error {
+func ValidateStringPair(p *typepb.StringPair) error {
 	if !stringPairKeyRe.MatchString(p.Key) {
 		return errors.Annotate(doesNotMatch(stringPairKeyRe), "key").Err()
 	}
@@ -86,7 +86,7 @@ func ValidateStringPair(p *pb.StringPair) error {
 }
 
 // ValidateStringPairs returns an error if any of the pairs is invalid.
-func ValidateStringPairs(pairs []*pb.StringPair) error {
+func ValidateStringPairs(pairs []*typepb.StringPair) error {
 	for _, p := range pairs {
 		if err := ValidateStringPair(p); err != nil {
 			return errors.Annotate(err, "%q:%q", p.Key, p.Value).Err()
@@ -95,8 +95,8 @@ func ValidateStringPairs(pairs []*pb.StringPair) error {
 	return nil
 }
 
-// StringPairFromString creates a pb.StringPair from the given key:val string.
-func StringPairFromString(s string) (*pb.StringPair, error) {
+// StringPairFromString creates a typepb.StringPair from the given key:val string.
+func StringPairFromString(s string) (*typepb.StringPair, error) {
 	m := stringPairRe.FindStringSubmatch(s)
 	if m == nil {
 		return nil, doesNotMatch(stringPairRe)
@@ -105,13 +105,13 @@ func StringPairFromString(s string) (*pb.StringPair, error) {
 }
 
 // StringPairToString converts a StringPair to a key:val string.
-func StringPairToString(pair *pb.StringPair) string {
+func StringPairToString(pair *typepb.StringPair) string {
 	return fmt.Sprintf("%s:%s", pair.Key, pair.Value)
 }
 
 // StringPairsToStrings converts pairs to a slice of "{key}:{value}" strings
 // in the same order.
-func StringPairsToStrings(pairs ...*pb.StringPair) []string {
+func StringPairsToStrings(pairs ...*typepb.StringPair) []string {
 	ret := make([]string, len(pairs))
 	for i, p := range pairs {
 		ret[i] = StringPairToString(p)
