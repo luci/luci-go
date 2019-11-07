@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package luci.resultdb;
+package luci.resultdb.v1;
 
 import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
