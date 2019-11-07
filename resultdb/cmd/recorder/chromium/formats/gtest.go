@@ -165,7 +165,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 				}
 
 				if len(params) > 0 {
-					rpb.ExtraVariantPairs = &pb.VariantDef{Def: params}
+					rpb.ExtraVariantPairs = &pb.Variant{Def: params}
 				}
 
 				// TODO(jchinlee): Verify that it's indeed the case that getting NOTRUN results in the final

@@ -108,12 +108,12 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	// Populate fields from Invocation table.
 	eg.Go(func() error {
 		return ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"State":              &inv.State,
-			"CreateTime":         &inv.CreateTime,
-			"FinalizeTime":       &inv.FinalizeTime,
-			"Deadline":           &inv.Deadline,
-			"BaseTestVariantDef": &inv.BaseTestVariantDef,
-			"Tags":               &inv.Tags,
+			"State":           &inv.State,
+			"CreateTime":      &inv.CreateTime,
+			"FinalizeTime":    &inv.FinalizeTime,
+			"Deadline":        &inv.Deadline,
+			"BaseTestVariant": &inv.BaseTestVariant,
+			"Tags":            &inv.Tags,
 		})
 	})
 

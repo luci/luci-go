@@ -60,12 +60,10 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestVariant: &pb.TestVariant{
 						TestPath: "gn://ab/cd.ef",
-						Variant: &pb.VariantDef{
-							Def: map[string]string{
-								"a/b": "1",
-								"c":   "2",
-							},
-						},
+						Variant: pbutil.Variant(
+							"a/b", "1",
+							"c", "2",
+						),
 					},
 				},
 			})
@@ -127,12 +125,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestVariant: &pb.TestVariant{
 						TestPath: "a",
-						Variant: &pb.VariantDef{
-							Def: map[string]string{
-								"a": "1",
-								"b": "2",
-							},
-						},
+						Variant:  pbutil.Variant("a", "1", "b", "2"),
 					},
 				},
 			}

@@ -53,7 +53,7 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 		return errors.Reason("swarming_task.id missing").Err()
 	}
 
-	if err := pbutil.ValidateVariantDef(req.GetBaseTestVariant()); err != nil {
+	if err := pbutil.ValidateVariant(req.GetBaseTestVariant()); err != nil {
 		return errors.Annotate(err, "base_test_variant").Err()
 	}
 

@@ -263,11 +263,11 @@ func TestGTestConversions(t *testing.T) {
 				Id:       "123",
 			},
 			TestPathPrefix: "prefix/",
-			BaseTestVariant: &pb.VariantDef{Def: map[string]string{
-				"bucket":     "bkt",
-				"builder":    "blder",
-				"test_suite": "foo_unittests",
-			}},
+			BaseTestVariant: pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+			),
 		}
 
 		inv := &pb.Invocation{}

@@ -73,7 +73,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
-//   - pb.VariantDef
+//   - pb.Variant
 //   - pb.StringPair
 //   - pb.Artifact
 func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
@@ -91,7 +91,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = new(int64)
 		case *pb.Invocation_State:
 			spanPtrs[i] = new(int64)
-		case **pb.VariantDef:
+		case **pb.Variant:
 			spanPtrs[i] = &[]string{}
 		case *[]*pb.StringPair:
 			spanPtrs[i] = &[]string{}
@@ -139,8 +139,8 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 		case *pb.TestStatus:
 			*goPtr = pb.TestStatus(*spanPtr.(*int64))
 
-		case **pb.VariantDef:
-			if *goPtr, err = pbutil.VariantDefFromStrings(*spanPtr.(*[]string)); err != nil {
+		case **pb.Variant:
+			if *goPtr, err = pbutil.VariantFromStrings(*spanPtr.(*[]string)); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
 			}
@@ -201,8 +201,8 @@ func ToSpanner(v interface{}) interface{} {
 	case pb.TestStatus:
 		return int64(v)
 
-	case *pb.VariantDef:
-		return pbutil.VariantDefToStrings(v)
+	case *pb.Variant:
+		return pbutil.VariantToStrings(v)
 
 	case []*pb.StringPair:
 		return pbutil.StringPairsToStrings(v...)

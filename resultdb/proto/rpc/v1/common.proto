@@ -45,7 +45,7 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
 // - builder: the LUCI builder, e.g. "linux-rel"
 // - test_suite: a name from
 //   https://cs.chromium.org/chromium/src/testing/buildbot/test_suites.pyl
-message VariantDef {
+message Variant {
   // The definition of the variant.
   // Key and values must be valid StringPair keys and values, see their
   // constraints.
