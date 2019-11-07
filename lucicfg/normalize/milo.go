@@ -31,6 +31,25 @@ func Milo(c context.Context, cfg *pb.Project) error {
 		return cfg.Consoles[i].Id < cfg.Consoles[j].Id
 	})
 
+	// Remove manifest field
+	for _, c := range cfg.Consoles {
+		c.ManifestName = ""
+	}
+
+	// Remove ignored fields for build-only views
+	for _, c := range cfg.Consoles {
+		if c.BuilderViewOnly {
+			c.Header = nil
+			c.HeaderId = ""
+			c.RepoUrl = ""
+			c.Refs = nil
+			for _, b := range c.Builders {
+				b.Category = ""
+				b.ShortName = ""
+			}
+		}
+	}
+
 	// Inline headers.
 	headers := make(map[string]*pb.Header)
 	for _, h := range cfg.Headers {

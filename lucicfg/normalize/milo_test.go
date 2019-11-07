@@ -40,6 +40,7 @@ consoles {
   header {
     tree_status_host: "t2"
   }
+  manifest_name: "REVISION"
   refs: "regexp:z"
   refs: "refs/heads/master"
   refs: "y\\z"
@@ -50,6 +51,24 @@ consoles {
   }
   builders {
     name: "a"
+  }
+}
+
+consoles {
+  id: "b"
+  builder_view_only: true
+  header_id: "h"
+  repo_url: "repo"
+  refs: "refs/heads/master"
+  builders {
+    name: "a"
+    category: "cat-a",
+    short_name: "sna"
+  }
+  builders {
+    name: "b"
+    category: "cat-b",
+    short_name: "snb"
   }
 }
 `
@@ -69,6 +88,16 @@ const miloOut = `consoles: <
   header: <
     tree_status_host: "t2"
   >
+>
+consoles: <
+  id: "b"
+  builders: <
+    name: "a"
+  >
+  builders: <
+    name: "b"
+  >
+  builder_view_only: true
 >
 consoles: <
   id: "z"
