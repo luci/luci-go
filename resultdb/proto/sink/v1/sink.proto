@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package luci.resultdb.sink;
+package luci.resultdb.sink.v1;
 
 import "go.chromium.org/luci/resultdb/proto/sink/v1/test_result.proto";
 
