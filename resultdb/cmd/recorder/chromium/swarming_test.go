@@ -113,11 +113,11 @@ func TestSwarming(t *testing.T) {
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: &pb.VariantDef{Def: map[string]string{
-				"bucket":     "bkt",
-				"builder":    "blder",
-				"test_suite": "foo_unittests",
-			}},
+			BaseTestVariant: pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+			),
 		}
 
 		Convey(`that are not finalized`, func() {
@@ -268,11 +268,11 @@ func TestSwarming(t *testing.T) {
 				Id:       "123",
 			},
 			TestPathPrefix: "prefix/",
-			BaseTestVariant: &pb.VariantDef{Def: map[string]string{
-				"bucket":     "bkt",
-				"builder":    "blder",
-				"test_suite": "foo_unittests",
-			}},
+			BaseTestVariant: pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+			),
 		}
 
 		Convey(`chooses JSON Test Results Format correctly`, func() {
