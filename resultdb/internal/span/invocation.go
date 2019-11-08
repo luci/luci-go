@@ -117,10 +117,17 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 		})
 	})
 
-	// Populate Inclusions.
-	eg.Go(func() (err error) {
-		inv.Inclusions, err = ReadInclusions(ctx, txn, id)
-		return
+	// Populate included_invocations.
+	eg.Go(func() error {
+		included, err := ReadIncludedInvocations(ctx, txn, id)
+		if err != nil {
+			return err
+		}
+		inv.IncludedInvocations = make([]string, len(included))
+		for i, id := range included {
+			inv.IncludedInvocations[i] = id.Name()
+		}
+		return nil
 	})
 
 	if err := eg.Wait(); err != nil {
