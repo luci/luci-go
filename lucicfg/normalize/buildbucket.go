@@ -36,6 +36,17 @@ const (
 
 // Buildbucket normalizes cr-buildbucket.cfg config.
 func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
+	for _, b := range cfg.Buckets {
+		// Convert long bucket names (luci.<project>.<bucket>) to short bucket names
+		// DO NOT SUBMIT: Is there any checking that should/can be done for the <project> portion?
+		if strings.HasPrefix(b.Name, "luci.") {
+			if pieces := strings.SplitN(b.Name, ".", 3); len(pieces) == 3 {
+				b.Name = pieces[2]
+			}
+		}
+		b.Swarming.UrlFormat = ""
+	}
+
 	// Install or update 'flatten_buildbucket_cfg' tool.
 	bin, err := installFlattenBuildbucketCfg(c)
 	if err != nil {
@@ -72,6 +83,14 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 	if err := proto.UnmarshalText(buf.String(), cfg); err != nil {
 		return err
 	}
+
+	// Remove the category field from builders
+	for _, b := range cfg.Buckets {
+		for _, x := range b.Swarming.Builders {
+			x.Category = ""
+		}
+	}
+
 	return nil
 }
 
