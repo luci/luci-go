@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "14a0860e_390bdfad",
+        "filename": "lucicfg/normalize/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-08T17:47:57Z",
+      "side": 1,
+      "message": "Yeah, configs in project \u003cX\u003e that specify buckets \"luci.\u003cY\u003e.*\" (where \u003cX\u003e !\u003d \u003cY\u003e) are rejected by Buildbucket already, so there\u0027s no need to verify the project here (also there\u0027s no mechanism to even get this project name).",
+      "parentUuid": "142e1a92_e4a5b15f",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 92
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e3d6b10_9b65d5f4",
         "filename": "lucicfg/normalize/buildbucket.go",
         "patchSetId": 3
