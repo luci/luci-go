@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba407dd9_51b6da82",
+        "filename": "lucicfg/normalize/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-08T16:01:21Z",
+      "side": 1,
+      "message": "Like what for example?",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 92
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e3d6b10_9b65d5f4",
+        "filename": "lucicfg/normalize/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-08T16:01:21Z",
+      "side": 1,
+      "message": "can this be done after the flattening? It is weird that we do some change here, then flatten, then do some more changes (remove category).",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 2
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1ca587d_80b38a92",
+        "filename": "lucicfg/normalize/buildbucket_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-08T16:01:21Z",
+      "side": 1,
+      "message": "I\u0027m sorry, this test shouldn\u0027t be here because Buildbucket(...) is implemented via installing CIPD package with python code and running it. It\u0027s not something we want to do in unit tests (it is slow and flaky). The flattening tool has its own tests already.\n\nEither remove the test or refactor your change into a separate function (i.e. called after the flatenning) and write a test specifically for it.",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 1
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
