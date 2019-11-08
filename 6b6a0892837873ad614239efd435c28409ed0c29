@@ -191,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "ccde902a_5fc40342",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-08T20:24:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70a3753d_be5c9318",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 116,
+        "endChar": 13
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eadcf26c_76873b47",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 14
@@ -358,6 +382,30 @@
       "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8786411f_de930327",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-08T20:24:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be41404e_90ec5c91",
+      "range": {
+        "startLine": 150,
+        "startChar": 53,
+        "endLine": 150,
+        "endChar": 59
+      },
+      "revId": "6b6a0892837873ad614239efd435c28409ed0c29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
