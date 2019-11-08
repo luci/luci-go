@@ -40,7 +40,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateCreateTestExonerationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{})
+			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{}, true)
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
@@ -50,7 +50,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestVariant: &pb.TestVariant{TestPath: "\x01"},
 				},
-			})
+			}, true)
 			So(err, ShouldErrLike, `test_exoneration: test_variant: test_path: does not match`)
 		})
 
@@ -66,7 +66,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 						),
 					},
 				},
-			})
+			}, true)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -150,7 +150,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// Now check the database.
-			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), "inv", "a", res.ExonerationId)
+			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
 			So(row.TestVariant.Variant, ShouldResembleProto, expected.TestVariant.Variant)
 			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)

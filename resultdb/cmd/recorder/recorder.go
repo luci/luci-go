@@ -46,8 +46,3 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
-
-// BatchCreateTestExonerations implements pb.RecorderServer.
-func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error) {
-	return nil, grpcutil.Unimplemented
-}
