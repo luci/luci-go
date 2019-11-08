@@ -27,12 +27,30 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// MustParseTestExonerationName extracts invocation, test path and exoneration
+// IDs from the name.
+// Panics on failure.
+func MustParseTestExonerationName(name string) (invID InvocationID, testPath, exonerationID string) {
+	invIDStr, testPath, exonerationID, err := pbutil.ParseTestExonerationName(name)
+	if err != nil {
+		panic(err)
+	}
+	invID = InvocationID(invIDStr)
+	return
+}
+
 // ReadTestExonerationFull reads a test exoneration from Spanner.
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
-func ReadTestExonerationFull(ctx context.Context, txn Txn, invID InvocationID, testPath, exonerationID string) (*pb.TestExoneration, error) {
+func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.TestExoneration, error) {
+	invIDStr, testPath, exonerationID, err := pbutil.ParseTestExonerationName(name)
+	if err != nil {
+		return nil, err
+	}
+	invID := InvocationID(invIDStr)
+
 	ret := &pb.TestExoneration{
-		Name: pbutil.TestExonerationName(string(invID), testPath, exonerationID),
+		Name: name,
 		TestVariant: &pb.TestVariant{
 			TestPath: testPath,
 		},
@@ -40,7 +58,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, invID InvocationID, t
 	}
 
 	// Populate fields from TestExonerations table.
-	err := ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
+	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
 		"Variant":             &ret.TestVariant.Variant,
 		"ExplanationMarkdown": &ret.ExplanationMarkdown,
 	})
