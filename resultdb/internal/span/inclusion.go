@@ -18,8 +18,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 // InclusionKey returns a spanner key for an Inclusion row.
@@ -27,35 +25,20 @@ func InclusionKey(including, included InvocationID) spanner.Key {
 	return spanner.Key{including.RowID(), included.RowID()}
 }
 
-// ReadInclusions reads all inclusions, if any, of an invocation within the transaction.
-func ReadInclusions(ctx context.Context, txn Txn, id InvocationID) (map[string]*pb.Invocation_InclusionAttrs, error) {
-	st := spanner.NewStatement(`
-		SELECT
-			incl.IncludedInvocationId,
-			incl.OverriddenByIncludedInvocationId,
-			IFNULL(included.FinalizeTime < including.FinalizeTime, included.FinalizeTime IS NOT NULL) as stabilized
-		FROM Invocations including
-		JOIN Inclusions incl ON including.InvocationId = incl.InvocationId
-		JOIN Invocations included ON incl.IncludedInvocationId = included.InvocationId
-		WHERE including.InvocationId = @invID
-	`)
-	st.Params["invID"] = id.RowID()
-
-	inclusions := map[string]*pb.Invocation_InclusionAttrs{}
-	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
-		var included, overriddenByID InvocationID
-		attr := &pb.Invocation_InclusionAttrs{}
-		if err := FromSpanner(row, &included, &overriddenByID, &attr.Stabilized); err != nil {
+// ReadIncludedInvocations reads ids of included invocations.
+func ReadIncludedInvocations(ctx context.Context, txn Txn, id InvocationID) ([]InvocationID, error) {
+	var ret []InvocationID
+	err := txn.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
+		var included InvocationID
+		if err := FromSpanner(row, &included); err != nil {
 			return err
 		}
-		if overriddenByID != "" {
-			attr.OverriddenBy = overriddenByID.Name()
-		}
-		inclusions[included.Name()] = attr
+		ret = append(ret, included)
 		return nil
 	})
+	SortInvocationIDs(ret)
 	if err != nil {
 		return nil, err
 	}
-	return inclusions, nil
+	return ret, nil
 }
