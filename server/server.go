@@ -686,6 +686,7 @@ func (s *Server) healthResponse(c context.Context) string {
 		"service: " + maybeEmpty(s.Options.TsMonServiceName),
 		"job:     " + maybeEmpty(s.Options.TsMonJobName),
 		"host:    " + s.hostname,
+		"",
 	}, "\n")
 }
 
