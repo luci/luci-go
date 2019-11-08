@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/config/validation"
@@ -63,20 +64,50 @@ func TestDisk(t *testing.T) {
 		Convey("Validate", func() {
 			c := &validation.Context{Context: context.Background()}
 
-			Convey("invalid", func() {
-				d := &Disk{}
-				d.Validate(c)
-				err := c.Finalize().(*validation.Error).Errors
-				So(err, ShouldContainErr, "image must match")
-			})
+			invalidTestCases := []struct {
+				name          string
+				diskType string
+				diskInterface DiskInterface
+				image         string
+				expected      string
+			}{
+				{"Persistent + NVMe", "pd-fake", DiskInterface_NVME, "", "persistent disk must use SCSI"},
+				{"Persistent + No Image", "pd-fake", DiskInterface_SCSI, "", "image must match"},
+				{"Scratch + Image", "local-ssd", DiskInterface_NVME, "global/images/image", "local ssd cannot use an image"},
+			}
+			for _, testCase := range invalidTestCases {
+				Convey(fmt.Sprintf("invalid - %s", testCase.name), func() {
+					d := &Disk{
+						Type:  testCase.diskType,
+						Interface: testCase.diskInterface,
+						Image:     testCase.image,
+					}
+					d.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, testCase.expected)
+				})
+			}
 
-			Convey("valid", func() {
-				d := &Disk{
-					Image: "global/images/image",
-				}
-				d.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
-			})
+			validTestCases := []struct {
+				name          string
+				diskType      string
+				diskInterface DiskInterface
+				image         string
+			}{
+				{"Persistent + SCSI + Image", "pd-fake", DiskInterface_SCSI, "global/images/image"},
+				{"Scratch + No Image", "local-ssd", DiskInterface_NVME, ""},
+			}
+			for _, testCase := range validTestCases {
+				Convey(fmt.Sprintf("valid - %s", testCase.name), func() {
+					d := &Disk{
+						Type:  testCase.diskType,
+						Interface: testCase.diskInterface,
+						Image:     testCase.image,
+					}
+					d.Validate(c)
+					So(c.Finalize(), ShouldBeNil)
+				})
+			}
 		})
 	})
 }
