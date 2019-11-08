@@ -153,6 +153,8 @@ func (vm *VM) getDisks() []*compute.AttachedDisk {
 				DiskType:    disk.Type,
 				SourceImage: disk.Image,
 			},
+			Interface: disk.GetInterface().String(),
+			Type:      disk.GetDiskType().String(),
 		}
 	}
 	// GCE requires the first disk to be the boot disk.
