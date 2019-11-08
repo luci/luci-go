@@ -22,6 +22,30 @@
       "revId": "2232d597d33c6627b9728626f96820517ba71894",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19b74a09_d0c1e3ac",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 689,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T19:29:18Z",
+      "side": 1,
+      "message": "doh. done",
+      "parentUuid": "47fcefee_f06642dd",
+      "range": {
+        "startLine": 689,
+        "startChar": 2,
+        "endLine": 689,
+        "endChar": 6
+      },
+      "revId": "2232d597d33c6627b9728626f96820517ba71894",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
