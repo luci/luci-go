@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6ecb183_3f6af8b6",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-08T15:21:49Z",
+      "side": 1,
+      "message": "It\u0027s interesting that this is a string instead of an enum. I personally prefer Nathan\u0027s approach and use an enum, since it\u0027s more typed. The drawback is to use any new disk type in the future will require a server push but I\u0027m fine with that, as the config values should be validated anyway.\n\nIn the meantime it could be nice to comment since it\u0027s not clear otherwise:\n\n  the current valid values are \"pd-standard\", \"pd-ssd\" and \"local-ssd\".",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 8
+      },
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5610fe42_2b1a81ad",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-08T15:21:49Z",
+      "side": 1,
+      "message": "Technically the URL should be a the type definition above, not at usage. Semantically you want to define what it is when you declare something, not when it\u0027s being used. Here I agree it\u0027s borderline because it\u0027s \"one use\" but I still think I\u0027d prefer to move (or copy) the URL above.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "798d1646_58dde191",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-08T15:21:49Z",
+      "side": 1,
+      "message": "It\u0027s kind of confusing wording, since you mix valid and invalid combinations. I\u0027d recommend to list at the top all valid combinations and then anything else is invalid?\n\nIn particular you use X instead of *, which makes it even more confusing IMHO.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
