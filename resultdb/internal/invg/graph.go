@@ -38,15 +38,9 @@ type Graph struct {
 
 // Node stores invocation identity, data and outgoing edges.
 type Node struct {
-	ID            span.InvocationID
-	Invocation    *pb.Invocation
-	OutgoingEdges map[span.InvocationID]*Edge
-}
-
-// Edge stores target invocation node and inclusion attributes.
-type Edge struct {
-	Included *Node
-	Attrs    *pb.Invocation_InclusionAttrs
+	ID         span.InvocationID
+	Invocation *pb.Invocation
+	Included   []span.InvocationID
 }
 
 // FetchGraph fetches invocations identified by roots and all invocations
@@ -60,13 +54,13 @@ type Edge struct {
 // This optimization would require changing the function signature.
 //
 // If the returned error is non-nil, it is annotated with a gRPC code.
-func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stabilizedOnly bool, roots ...span.InvocationID) (*Graph, error) {
+func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, roots ...span.InvocationID) (*Graph, error) {
 	g := &Graph{
 		Nodes: make(map[span.InvocationID]*Node, len(roots)),
 	}
 	var mu sync.Mutex
 
-	var getNode func(id span.InvocationID) *Node
+	var ensureNode func(id span.InvocationID)
 
 	fetch := func(id span.InvocationID) (*Node, error) {
 		inv, err := span.ReadInvocationFull(ctx, txn, id)
@@ -75,30 +69,25 @@ func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stabilize
 		}
 
 		ret := &Node{
-			ID:            id,
-			Invocation:    inv,
-			OutgoingEdges: make(map[span.InvocationID]*Edge, len(inv.Inclusions)),
+			ID:         id,
+			Invocation: inv,
+			Included:   make([]span.InvocationID, len(inv.IncludedInvocations)),
 		}
-		for name, attrs := range inv.Inclusions {
-			if stabilizedOnly && !attrs.Stabilized {
-				continue
-			}
-			included := getNode(span.MustParseInvocationName(name))
-			ret.OutgoingEdges[included.ID] = &Edge{
-				Included: included,
-				Attrs:    attrs,
-			}
+		for i, name := range inv.IncludedInvocations {
+			id := span.MustParseInvocationName(name)
+			ret.Included[i] = id
+			ensureNode(id)
 		}
 		return ret, nil
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	getNode = func(id span.InvocationID) *Node {
+	ensureNode = func(id span.InvocationID) {
 		mu.Lock()
 		n := g.Nodes[id]
 		if n != nil {
 			mu.Unlock()
-			return n
+			return
 		}
 
 		n = &Node{ID: id}
@@ -117,16 +106,14 @@ func FetchGraph(ctx context.Context, txn *spanner.ReadOnlyTransaction, stabilize
 			defer mu.Unlock()
 
 			n.Invocation = data.Invocation
-			n.OutgoingEdges = data.OutgoingEdges
+			n.Included = data.Included
 			return nil
 		})
-
-		return n
 	}
 
 	// Trigger fetching by requesting all roots.
 	for _, id := range roots {
-		getNode(id)
+		ensureNode(id)
 	}
 
 	// Wait for the entire graph to be fetched.
