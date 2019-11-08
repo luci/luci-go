@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8552ee65_108ca9b0",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T21:03:46Z",
+      "side": 1,
+      "message": "ErrC",
+      "range": {
+        "startLine": 146,
+        "startChar": 16,
+        "endLine": 146,
+        "endChar": 22
+      },
+      "revId": "841aeca72dd01a6498324ab044d58e8e07e334d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cac106f7_7a3d5b36",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T21:03:46Z",
+      "side": 1,
+      "message": "he we don\u0027t close the listener or other connections. we should\n\nsame in L182",
+      "revId": "841aeca72dd01a6498324ab044d58e8e07e334d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5c74f79_d13a0ac1",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T21:03:46Z",
+      "side": 1,
+      "message": "use goconvey library to see coverage information. These tests do not cover all the edge cases currently being handled by the code",
+      "revId": "841aeca72dd01a6498324ab044d58e8e07e334d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
