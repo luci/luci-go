@@ -225,6 +225,29 @@ func TestVM(t *testing.T) {
 				So(d[0].Boot, ShouldBeTrue)
 				So(d[1].Boot, ShouldBeFalse)
 			})
+
+			Convey("scratch", func() {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{
+								Type: "pd-ssd",
+							},
+							{
+								Type: "local-ssd",
+							},
+							{
+								Type: "pd-standard",
+							},
+						},
+					},
+				}
+				d := v.getDisks()
+				So(d, ShouldHaveLength, 3)
+				So(d[0].Type, ShouldEqual, "")
+				So(d[1].Type, ShouldEqual, "SCRATCH")
+				So(d[2].Type, ShouldEqual, "")
+			})
 		})
 	})
 
