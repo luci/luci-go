@@ -57,14 +57,13 @@ func TestGetInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, ct)
 
-		// Insert some Invocations and Inclusions.
+		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", ct),
-			testutil.InsertInvocation("included_0", pb.Invocation_ACTIVE, "", ct.Add(time.Hour)),
-			testutil.InsertInvocation("included_1", pb.Invocation_COMPLETED, "", ct.Add(2*time.Hour)),
-
-			testutil.InsertInclusion("including", "included_0", "included_1"),
-			testutil.InsertInclusion("including", "included_1", ""),
+			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct),
+			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct),
+			testutil.InsertInclusion("including", "included0"),
+			testutil.InsertInclusion("including", "included1"),
 		)
 
 		// Fetch back the top-level Invocation.
@@ -73,20 +72,11 @@ func TestGetInvocation(t *testing.T) {
 		inv, err := srv.GetInvocation(ctx, req)
 		So(err, ShouldBeNil)
 		So(inv, ShouldResembleProto, &pb.Invocation{
-			Name:       "invocations/including",
-			State:      pb.Invocation_ACTIVE,
-			CreateTime: pbutil.MustTimestampProto(ct),
-			Deadline:   pbutil.MustTimestampProto(ct.Add(time.Hour)),
-			Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-				"invocations/included_0": {
-					OverriddenBy: "invocations/included_1",
-					Stabilized:   false,
-				},
-				"invocations/included_1": {
-					OverriddenBy: "",
-					Stabilized:   true,
-				},
-			},
+			Name:                "invocations/including",
+			State:               pb.Invocation_ACTIVE,
+			CreateTime:          pbutil.MustTimestampProto(ct),
+			Deadline:            pbutil.MustTimestampProto(ct.Add(time.Hour)),
+			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})
 	})
 }
