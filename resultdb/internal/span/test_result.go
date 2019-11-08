@@ -87,7 +87,11 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 }
 
 // ReadTestResults reads the specified test results, if any, of an invocation within the transaction.
+// pageSize must be positive.
 func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
+	if pageSize <= 0 {
+		panic("pageSize is not positive")
+	}
 	var (
 		table       = "TestResults"
 		conditions  = []string{"(InvocationId = @invID)"}
@@ -183,8 +187,8 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	// If we got pageSize results, then we haven't exhausted the collection and
 	// need to return a cursor.
 	if len(trs) == pageSize {
-		trLast := trs[pageSize-1]
-		nextCursorTok = pagetoken.Format(trLast.TestPath, trLast.ResultId)
+		last := trs[pageSize-1]
+		nextCursorTok = pagetoken.Format(last.TestPath, last.ResultId)
 	}
 	return
 }

@@ -41,20 +41,13 @@ func TestValidateListTestResultsRequest(t *testing.T) {
 	})
 
 	Convey(`Invalid invocation`, t, func() {
-		Convey(`, missing`, func() {
-			req := &pb.ListTestResultsRequest{PageSize: 50}
-			So(validateListTestResultsRequest(req), ShouldErrLike, "unspecified")
-		})
-
-		Convey(`, invalid format`, func() {
-			req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
-			So(validateListTestResultsRequest(req), ShouldErrLike, "does not match")
-		})
+		req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
+		So(validateListTestResultsRequest(req), ShouldErrLike, "invocation: does not match")
 	})
 
 	Convey(`Invalid page size`, t, func() {
 		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: -50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "negative")
+		So(validateListTestResultsRequest(req), ShouldErrLike, "page_size: negative")
 	})
 }
 
@@ -74,14 +67,14 @@ func TestListTestResults(t *testing.T) {
 
 		Convey(`works`, func() {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}
-			resp, err := srv.ListTestResults(ctx, req)
+			res, err := srv.ListTestResults(ctx, req)
 			So(err, ShouldBeNil)
-			So(resp, ShouldNotBeNil)
-			So(resp.TestResults, ShouldResembleProto, trs[:1])
-			So(resp.NextPageToken, ShouldNotEqual, "")
+			So(res, ShouldNotBeNil)
+			So(res.TestResults, ShouldResembleProto, trs[:1])
+			So(res.NextPageToken, ShouldNotEqual, "")
 
 			Convey(`with pagination`, func() {
-				req.PageToken = resp.NextPageToken
+				req.PageToken = res.NextPageToken
 				req.PageSize = 2
 				resp, err := srv.ListTestResults(ctx, req)
 				So(err, ShouldBeNil)
@@ -92,11 +85,11 @@ func TestListTestResults(t *testing.T) {
 
 			Convey(`with default page size`, func() {
 				req := &pb.ListTestResultsRequest{Invocation: "invocations/req"}
-				resp, err := srv.ListTestResults(ctx, req)
+				res, err := srv.ListTestResults(ctx, req)
 				So(err, ShouldBeNil)
-				So(resp, ShouldNotBeNil)
-				So(resp.TestResults, ShouldResembleProto, trs)
-				So(resp.NextPageToken, ShouldEqual, "")
+				So(res, ShouldNotBeNil)
+				So(res.TestResults, ShouldResembleProto, trs)
+				So(res.NextPageToken, ShouldEqual, "")
 			})
 		})
 	})
