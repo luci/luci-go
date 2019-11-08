@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // updateTokenMetadataKey is the metadata.MD key for the secret update token
@@ -142,7 +143,7 @@ func readInvocationState(ctx context.Context, txn span.Txn, id span.InvocationID
 	return state, err
 }
 
-func insertInvocationsByTag(invID span.InvocationID, tags []*pb.StringPair) []*spanner.Mutation {
+func insertInvocationsByTag(invID span.InvocationID, tags []*typepb.StringPair) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(tags))
 	for i, tag := range tags {
 		muts[i] = span.InsertMap("InvocationsByTag", map[string]interface{}{

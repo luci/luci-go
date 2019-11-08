@@ -19,7 +19,7 @@ package luci.resultdb;
 import "google/api/field_behavior.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 // A result of a functional test case.
 // Often a single test case is executed multiple times and has multiple results,
@@ -32,9 +32,10 @@ import "go.chromium.org/luci/resultdb/proto/rpc/v1/common.proto";
 message TestResult {
   // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
   // RPC.
-  // Format: "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
-  // URL_ESCAPED_TEST_PATH is test_path escaped with https://golang.org/pkg/net/url/#PathEscape
-  // See also https://aip.dev/122.
+  // Format:
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
+  // URL_ESCAPED_TEST_PATH is test_path escaped with
+  // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
@@ -73,7 +74,7 @@ message TestResult {
   //
   // MUST NOT have keys present in Invocation.test_variant_def, or MUST
   // have the same value.
-  Variant extra_variant_pairs = 4
+  luci.resultdb.type.Variant extra_variant_pairs = 4
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Whether the result of test case execution is expected.
@@ -103,7 +104,8 @@ message TestResult {
 
   // Metadata for this test result.
   // It might describe this particular execution or the test case.
-  repeated StringPair tags = 10 [ (google.api.field_behavior) = IMMUTABLE ];
+  repeated luci.resultdb.type.StringPair tags = 10
+      [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Artifacts consumed by this test result.
   //
@@ -191,7 +193,7 @@ message TestVariant {
   string test_path = 1;
 
   // Description of the variant of the test, see Variant.
-  Variant variant = 2;
+  luci.resultdb.type.Variant variant = 2;
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
@@ -201,9 +203,10 @@ message TestVariant {
 message TestExoneration {
   // Can be used to refer to this test exoneration, e.g. in
   // ResultDB.GetTestExoneration RPC.
-  // Format: invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/exonerations/{EXONERATION_ID}.
-  // URL_ESCAPED_TEST_PATH is test_variant.test_path escaped with https://golang.org/pkg/net/url/#PathEscape
-  // See also https://aip.dev/122.
+  // Format:
+  // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/exonerations/{EXONERATION_ID}.
+  // URL_ESCAPED_TEST_PATH is test_variant.test_path escaped with
+  // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
