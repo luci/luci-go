@@ -36,6 +36,8 @@ const (
 
 // Buildbucket normalizes cr-buildbucket.cfg config.
 func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
+	normalizeUnflattenedBuildbucketCfg(cfg)
+
 	// Install or update 'flatten_buildbucket_cfg' tool.
 	bin, err := installFlattenBuildbucketCfg(c)
 	if err != nil {
@@ -72,10 +74,39 @@ func Buildbucket(c context.Context, cfg *pb.BuildbucketCfg) error {
 	if err := proto.UnmarshalText(buf.String(), cfg); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+func getBuilders(cfg *pb.BuildbucketCfg) (builders []*pb.Builder) {
+	builders = append(builders, cfg.BuilderMixins...)
+	for _, b := range cfg.Buckets {
+		if b.Swarming.BuilderDefaults != nil {
+			builders = append(builders, b.Swarming.BuilderDefaults)
+		}
+		builders = append(builders, b.Swarming.Builders...)
+	}
+	return builders
+}
+
+func normalizeUnflattenedBuildbucketCfg(cfg *pb.BuildbucketCfg) {
+	for _, b := range cfg.Buckets {
+		// Convert long bucket names (luci.<project>.<bucket>) to short bucket names
+		if strings.HasPrefix(b.Name, "luci.") {
+			if pieces := strings.SplitN(b.Name, ".", 3); len(pieces) == 3 {
+				b.Name = pieces[2]
+			}
+		}
+		b.Swarming.UrlFormat = ""
+	}
+
+	// Remove the category field from builders
+	for _, b := range getBuilders(cfg) {
+		b.Category = ""
+	}
+}
 
 var flattenerPath = ""
 
