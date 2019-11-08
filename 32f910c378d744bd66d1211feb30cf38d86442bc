@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "142e1a92_e4a5b15f",
+        "filename": "lucicfg/normalize/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2019-11-08T17:21:35Z",
+      "side": 1,
+      "message": "Is there any concern that the project portion might not match the project or would that already be rejected?",
+      "parentUuid": "ba407dd9_51b6da82",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 92
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e3d6b10_9b65d5f4",
         "filename": "lucicfg/normalize/buildbucket.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "1a8bf03b_76aef348",
+        "filename": "lucicfg/normalize/buildbucket.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2019-11-08T17:21:35Z",
+      "side": 1,
+      "message": "I switched it to do it all before flattening because doing the bucket name transformation after would also require updating the pool dimensions added by the flattening.",
+      "parentUuid": "1e3d6b10_9b65d5f4",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 48,
+        "endChar": 2
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1ca587d_80b38a92",
         "filename": "lucicfg/normalize/buildbucket_test.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74d7ba2d_ca0d23a0",
+        "filename": "lucicfg/normalize/buildbucket_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1289180
+      },
+      "writtenOn": "2019-11-08T17:21:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1ca587d_80b38a92",
+      "range": {
+        "startLine": 55,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 1
+      },
+      "revId": "32f910c378d744bd66d1211feb30cf38d86442bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
