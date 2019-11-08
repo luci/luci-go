@@ -17,6 +17,7 @@ package span
 import (
 	"context"
 	"sort"
+	"sync"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
@@ -117,10 +118,17 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 		})
 	})
 
-	// Populate Inclusions.
-	eg.Go(func() (err error) {
-		inv.Inclusions, err = ReadInclusions(ctx, txn, id)
-		return
+	// Populate included_invocations.
+	eg.Go(func() error {
+		included, err := ReadIncludedInvocations(ctx, txn, id)
+		if err != nil {
+			return err
+		}
+		inv.IncludedInvocations = make([]string, len(included))
+		for i, id := range included {
+			inv.IncludedInvocations[i] = id.Name()
+		}
+		return nil
 	})
 
 	if err := eg.Wait(); err != nil {
@@ -128,4 +136,74 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	}
 
 	return inv, nil
+}
+
+// ReadReachableInvocations fetches invocations reachable from the roots.
+//
+// Current implementation is not optimized for long inclusion chains. In the
+// worst case, RPCs are made sequentially.
+// This can be optimized by caching a subset of the graph in Redis and populaing
+// the rest from Spanner. This would increase parallelism and avoid fetching
+// edges of a finalized invocations again.
+// This optimization would require changing the function signature.
+//
+// If the returned error is non-nil, it is annotated with a gRPC code.
+func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, roots ...InvocationID) ([]*pb.Invocation, error) {
+	var ret []*pb.Invocation
+	visited := map[InvocationID]struct{}{}
+	var mu sync.Mutex
+
+	var visit func(id InvocationID)
+
+	read := func(id InvocationID) (*pb.Invocation, error) {
+		inv, err := ReadInvocationFull(ctx, txn, id)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, name := range inv.IncludedInvocations {
+			visit(MustParseInvocationName(name))
+		}
+		return inv, nil
+	}
+
+	eg, ctx := errgroup.WithContext(ctx)
+	visit = func(id InvocationID) {
+		mu.Lock()
+		if _, ok := visited[id]; ok {
+			mu.Unlock()
+			return
+		}
+
+		index := len(ret)
+		ret = append(ret, nil)
+		mu.Unlock()
+
+		// Concurrently fetch the node data without a lock.
+		// Once we have it, lock and copy the data into n.
+		eg.Go(func() error {
+			inv, err := read(id)
+			if err != nil {
+				return err
+			}
+
+			ret[index] = inv
+			return nil
+		})
+	}
+
+	// Trigger fetching by requesting all roots.
+	for _, id := range roots {
+		visit(id)
+	}
+
+	// Wait for the entire graph to be fetched.
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].Name < ret[j].Name
+	})
+	return ret, nil
 }
