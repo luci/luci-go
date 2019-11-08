@@ -40,7 +40,22 @@ func (d *Disk) GetImageBase() string {
 
 // Validate validates this disk.
 func (d *Disk) Validate(c *validation.Context) {
-	if !isValidImage(d.GetImage()) {
-		c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+	// This table represents the options that create a valid GCE disk which is
+	// validated here.
+	// +------------+-----------+-------+-------+
+	// |  DiskType  | Interface | Image | Valid |
+	// +------------+-----------+-------+-------+
+	// | Persistent | NVMe      | X     | False |
+	// | Persistent | SCSI      | True  | True  |
+	// | Persistent | X         | False | False |
+	// | Scratch    | X         | True  | False |
+	// | Scratch    | X         | False | True  |
+	// +------------+-----------+-------+-------+
+	if d.DiskType == DiskTypeType_PERSISTENT && d.Interface == DiskInterfaceType_SCSI {
+		if !isValidImage(d.GetImage()) {
+			c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+		}
+	} else if d.DiskType != DiskTypeType_SCRATCH || d.GetImage() != "" {
+		c.Errorf("invalid disk configuration %v", d)
 	}
 }
