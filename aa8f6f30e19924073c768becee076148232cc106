@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9cf67ce6_ae1a3374",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T01:04:29Z",
+      "side": 1,
+      "message": "discussed offline. Based on jclinton@ and martiniss@ responses, users prefer to set the set full set of test results by default, and narrow it down explicitly.",
+      "parentUuid": "a8af82f7_c2e89585",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 71
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a4e6c2a_c8d4bcfa",
         "filename": "resultdb/proto/rpc/v1/query.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "aa8f6f30e19924073c768becee076148232cc106",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c5c1d4e_325a48dd",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T01:04:29Z",
+      "side": 1,
+      "message": "I\u0027ve deleted this field. It appears that customers want to see these tests and want to see an indication that these tests are failing at HEAD, so instead of filtering them out, we need to include both test results and their exonerations",
+      "parentUuid": "7a4e6c2a_c8d4bcfa",
+      "range": {
+        "startLine": 66,
+        "startChar": 14,
+        "endLine": 66,
+        "endChar": 51
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "def6e75b_7d0262f0",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T01:04:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b9fb8fb_d44377c2",
+      "range": {
+        "startLine": 129,
+        "startChar": 27,
+        "endLine": 129,
+        "endChar": 35
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21b87fb6_ff70c9af",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "5f92970f_f3f4c08a",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T01:04:29Z",
+      "side": 1,
+      "message": "you are right. we should. done",
+      "parentUuid": "21b87fb6_ff70c9af",
+      "range": {
+        "startLine": 78,
+        "startChar": 35,
+        "endLine": 78,
+        "endChar": 42
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "090614ae_d975cc63",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "aa8f6f30e19924073c768becee076148232cc106",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "280da0cd_8f5b1d63",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-08T01:04:29Z",
+      "side": 1,
+      "message": "no. This has nothing to do with test result timing. Elaborated",
+      "parentUuid": "090614ae_d975cc63",
+      "range": {
+        "startLine": 157,
+        "startChar": 13,
+        "endLine": 157,
+        "endChar": 18
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
