@@ -22,9 +22,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"os/user"
 	"regexp"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	spandb "cloud.google.com/go/spanner/admin/database/apiv1"
@@ -159,10 +159,7 @@ func NewTempDB(ctx context.Context, cfg TempDBConfig) (*TempDB, error) {
 	if err := binary.Read(rand.Reader, binary.LittleEndian, &random); err != nil {
 		panic(err)
 	}
-	dbName := fmt.Sprintf("test%d", random)
-	if u, err := user.Current(); err == nil && u.Username != "" {
-		dbName += "_by_" + u.Username
-	}
+	dbName := fmt.Sprintf("tmp%s-%d", time.Now().Format("20060102-"), random)
 	dbName = SanitizeDBName(dbName)
 
 	dbOp, err := client.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
