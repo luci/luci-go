@@ -23,10 +23,10 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Equvalent to luci.resultdb.v1.TestStatus in ../../rpc/v1/test_result.proto.
-// See its documentation.
-// The reason it is copied here is https://aip.dev/215
 // Machine-readable status of a test result.
+//
+// This is a copy of luci.resultdb.rpc.v1.TestStatus in
+// ../../rpc/v1/test_result.proto, because of https://aip.dev/215.
 type TestStatus int32
 
 const (

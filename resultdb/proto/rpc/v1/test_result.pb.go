@@ -93,7 +93,7 @@ type TestResult struct {
 	// Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
 	// RPC.
 	// Format:
-	// "invocations/{INVOCATrpc/v1ION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
+	// "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
 	// URL_ESCAPED_TEST_PATH is test_path escaped with
 	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
