@@ -33,7 +33,8 @@ type resultDBServer struct {
 func NewResultDBServer() pb.ResultDBServer {
 	return &pb.DecoratedResultDB{
 		Service:  &resultDBServer{},
-		Postlude: internal.UnwrapGrpcCodePostlude,
+		Prelude:  internal.CommonPrelude,
+		Postlude: internal.CommonPostlude,
 	}
 }
 
