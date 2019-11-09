@@ -116,9 +116,6 @@ type ListTestResultsRequest struct {
 	// The maximum number of test results to return.
 	//
 	// The service may return fewer than this value.
-	// Does NOT guarantee returning all test results from chained reads until
-	// cursor exhaustion unless the invocation was finalized at the time of first
-	// ListTestResults request.
 	// If unspecified, at most 100 test results will be returned.
 	// The maximum value is 1000; values above 1000 will be coerced to 1000.
 	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -127,6 +124,10 @@ type ListTestResultsRequest struct {
 	//
 	// When paginating, all other parameters provided to `ListTestResults` MUST
 	// match the call that provided the page token.
+	//
+	// Does NOT guarantee returning all test results from chained reads until
+	// cursor exhaustion unless the invocation was finalized at the time of first
+	// ListTestResults request.
 	PageToken            string   `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
