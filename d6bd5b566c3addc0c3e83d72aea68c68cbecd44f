@@ -2,6 +2,57 @@
   "comments": [
     {
       "key": {
+        "uuid": "4f8143c0_0dfbe139",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "Why DiskTypeType instead of DiskType?",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5bcdf32_38a22925",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "DiskInterface.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "002cce65_a0b36c85",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "I\u0027d remove this, it doesn\u0027t really matter. Not all names are 1:1. The comments below explain what \"type\" and \"diskType\" are anyway.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6ecb183_3f6af8b6",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -13,6 +64,30 @@
       "writtenOn": "2019-11-08T15:21:49Z",
       "side": 1,
       "message": "It\u0027s interesting that this is a string instead of an enum. I personally prefer Nathan\u0027s approach and use an enum, since it\u0027s more typed. The drawback is to use any new disk type in the future will require a server push but I\u0027m fine with that, as the config values should be validated anyway.\n\nIn the meantime it could be nice to comment since it\u0027s not clear otherwise:\n\n  the current valid values are \"pd-standard\", \"pd-ssd\" and \"local-ssd\".",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 8
+      },
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "54c0e9e7_29e98e12",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "It\u0027s not an enum on GCE, it\u0027s free-form string. The link in this comment can be used to list valid values.",
+      "parentUuid": "b6ecb183_3f6af8b6",
       "range": {
         "startLine": 78,
         "startChar": 2,
@@ -42,6 +117,58 @@
     },
     {
       "key": {
+        "uuid": "f4cd973e_c1d9d75a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "IMO you don\u0027t need the URL at all (same below). URLs elsewhere are to get valid values, the enum lists all the valid values.",
+      "parentUuid": "5610fe42_2b1a81ad",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6265826c_c9a2bb40",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "Having type and disk_type seems weird, is there anything else we can call this? It doesn\u0027t have to be related to GCE names, it just has to convey to end users. What are the rules for this? Do pd-standard and pd-hdd require PERSISTENT? I think pd is intended to mean \"persistent disk\". If pd requires PERSISTENT and local-ssd requires SCRATCH then we don\u0027t need this.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc5397bc_927d7331",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "Same question. Can you have pd-standard or pd-ssd with nvme? If pd requires scsi and local-ssd requires nvme then we don\u0027t need this.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "798d1646_58dde191",
         "filename": "gce/api/config/v1/disk.go",
         "patchSetId": 2
@@ -53,6 +180,23 @@
       "writtenOn": "2019-11-08T15:21:49Z",
       "side": 1,
       "message": "It\u0027s kind of confusing wording, since you mix valid and invalid combinations. I\u0027d recommend to list at the top all valid combinations and then anything else is invalid?\n\nIn particular you use X instead of *, which makes it even more confusing IMHO.",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03d31daf_a1b8ef43",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-09T01:33:47Z",
+      "side": 1,
+      "message": "From this table it\u0027s sounding like these are the only valid combinations:\npd-standard, PERSISTENT, SCSI, image\npd-ssd, PERSISTENT, SCSI, image\nlocal-ssd, SCRATCH, NVMe, no image\n\nIs anything else valid? If not, then we can use \"type\" to derive everything and don\u0027t need any new fields.\n\nIf you specify local-ssd but omit value for interface does GCE reject the request and require you to specify NVMe explicitly, or does it know to default to NVMe? Same question for SCRATCH.",
       "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
