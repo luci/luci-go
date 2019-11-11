@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9ee794b6_e70e20d1",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-11T19:26:47Z",
+      "side": 1,
+      "message": "I think it should be \"if a test variant has any unexpected results\", so that  this filter will be helpful for getting both failed and flaky results.\n\nActually, I would prefer having ExpectancyFilter as:\n\n- ALL\n\n// TV with only unexpected failures, this is useful to present failed results.\n- VARIANTS_WITH_ONLY_UNEXPECTED_FAILURES \n\n// TV with only unexpected results (including unexpected successes). I don\u0027t know if there\u0027s a valid use case for it so far. So probably we don\u0027t need it.\n- VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS\n\n// TV with any unexpected failures. This will helpful to present potentially flaky results.\n- VARIANTS_WITH_ANY_UNEXPECTED_FAILURES\n\nI don\u0027t know if there\u0027s a valid use case for UNEXPECTED_RESULTS, so I don\u0027t include it in the above list.",
+      "range": {
+        "startLine": 54,
+        "startChar": 36,
+        "endLine": 55,
+        "endChar": 29
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3eb957ed_d4cedc79",
         "filename": "resultdb/proto/rpc/v1/query.proto",
         "patchSetId": 6
@@ -41,6 +64,29 @@
         "startChar": 19,
         "endLine": 63,
         "endChar": 35
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21dcf27d_15eeed27",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-11T19:26:47Z",
+      "side": 1,
+      "message": "3?",
+      "range": {
+        "startLine": 85,
+        "startChar": 27,
+        "endLine": 85,
+        "endChar": 28
       },
       "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -104,6 +150,29 @@
         "startChar": 31,
         "endLine": 108,
         "endChar": 42
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7fbf0c2_6d81e520",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-11T19:26:47Z",
+      "side": 1,
+      "message": "How does this value work with paging?\n\nFor example, a user sends a request at 11:00, with max_staleness as 5 min, and then they send a subsequent request using the page_token from the first response at 11:05, with unchanged max_staleness. Will the results uploaded between 11:00 and 11:05 be included?",
+      "range": {
+        "startLine": 157,
+        "startChar": 27,
+        "endLine": 157,
+        "endChar": 40
       },
       "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
