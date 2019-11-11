@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f96896af_020c857a",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:40:57Z",
+      "side": 1,
+      "message": "will do in a separate CL. This is a large change in an already-LGTMed CL.",
+      "parentUuid": "ceadb5e5_9d45b390",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a625367_12080c6c",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 9
@@ -33,6 +51,24 @@
       "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd223d4b_30f2949e",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:40:57Z",
+      "side": 1,
+      "message": "explained in a comment",
+      "parentUuid": "0a625367_12080c6c",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
