@@ -52,6 +52,13 @@ luci.recipe(
     cipd_package = 'recipe/bundles/main',
 )
 
+# Executables.
+
+luci.executable(
+    name = 'main/executable',
+    cipd_package = 'executable/bundles/main',
+)
+
 
 # CI bucket.
 
@@ -173,6 +180,12 @@ luci.builder(
     executable = 'main/recipe',
 )
 
+luci.builder(
+    name = 'builder with executable',
+    bucket = 'try',
+    executable = 'main/executable',
+)
+
 
 # Inline definitions.
 
@@ -219,6 +232,18 @@ luci.builder(
     executable = luci.recipe(
         name = 'inline/recipe',
         cipd_package = 'recipe/bundles/inline',
+    ),
+    service_account = 'builder@example.com',
+    triggered_by = [inline_poller()],
+)
+
+
+luci.builder(
+    name = 'another executable builder',
+    bucket = 'inline',
+    executable = luci.executable(
+        name = 'inline/executable',
+        cipd_package = 'executable/bundles/inline',
     ),
     service_account = 'builder@example.com',
     triggered_by = [inline_poller()],
@@ -569,6 +594,15 @@ lucicfg.emit(
 #       service_account: "builder@example.com"
 #     >
 #     builders: <
+#       name: "another executable builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe: <
+#         cipd_package: "executable/bundles/inline"
+#         cipd_version: "refs/heads/master"
+#       >
+#       service_account: "builder@example.com"
+#     >
+#     builders: <
 #       name: "triggered builder"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
@@ -603,6 +637,14 @@ lucicfg.emit(
 #     group: "devs"
 #   >
 #   swarming: <
+#     builders: <
+#       name: "builder with executable"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       exe: <
+#         cipd_package: "executable/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
 #     builders: <
 #       name: "equivalent cq builder"
 #       swarming_host: "chromium-swarm.appspot.com"
@@ -788,6 +830,15 @@ lucicfg.emit(
 #   >
 # >
 # job: <
+#   id: "another executable builder"
+#   acl_sets: "inline"
+#   buildbucket: <
+#     server: "cr-buildbucket.appspot.com"
+#     bucket: "luci.infra.inline"
+#     builder: "another executable builder"
+#   >
+# >
+# job: <
 #   id: "cron builder"
 #   schedule: "0 6 * * *"
 #   acl_sets: "ci"
@@ -851,6 +902,7 @@ lucicfg.emit(
 #   schedule: "with 10s interval"
 #   acl_sets: "inline"
 #   triggers: "another builder"
+#   triggers: "another executable builder"
 #   triggers: "triggerer builder"
 #   gitiles: <
 #     repo: "https://noop.com"
