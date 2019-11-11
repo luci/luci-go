@@ -256,6 +256,7 @@ def _buildbucket_builders(bucket, swarming_host):
     out.append(buildbucket_pb.Builder(
         name = node.props.name,
         swarming_host = swarming_host,
+        executable = _buildbucket_executable(node),
         recipe = _buildbucket_recipe(node),
         service_account = node.props.service_account,
         caches = _buildbucket_caches(node.props.caches),
@@ -270,6 +271,22 @@ def _buildbucket_builders(bucket, swarming_host):
             node.props.task_template_canary_percentage),
     ))
   return out
+
+
+def _buildbucket_executable(node):
+  """Builder node => buildbucket_pb.Builder.Exe."""
+  executables = graph.children(node.key, kinds.EXECUTABLE)
+  if len(executables) != 1:
+    fail('impossible: the builder should have a reference to an executable')
+  executable = executables[0]
+  return buildbucket_pb.Builder.Exe(
+      name = executable.props.executable,
+      cipd_package = executable.props.cipd_package,
+      cipd_version = executable.props.cipd_version,
+      properties_j = sorted([
+          '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
+      ]),
+  )
 
 
 def _buildbucket_recipe(node):
