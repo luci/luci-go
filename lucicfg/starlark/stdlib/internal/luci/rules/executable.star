@@ -19,6 +19,83 @@ load('@stdlib//internal/validate.star', 'validate')
 load('@stdlib//internal/luci/common.star', 'keys')
 
 
+def _executable_props(
+      ctx,
+      cipd_package=None,
+      cipd_version=None,
+      recipe=None
+  ):
+  """Defines an executable's properties. See luci.executable(...).
+
+  Args:
+    cipd_package: a cipd package name with the executable. Supports the
+        module-scoped default.
+    cipd_version: a version of the executable package to fetch, default
+        is `refs/heads/master`. Supports the module-scoped default.
+    recipe: name of a recipe. Required if the executable is a recipe bundle.
+  """
+  return {
+      'cipd_package': validate.string(
+          'cipd_package',
+          cipd_package,
+          default = ctx.defaults.cipd_package.get(),
+          required = ctx.defaults.cipd_package.get() == None,
+      ),
+      'cipd_version': validate.string(
+          'cipd_version',
+          cipd_version,
+          default = ctx.defaults.cipd_version.get() or 'refs/heads/master',
+          required = False,
+      ),
+      'recipe': validate.string(
+          'recipe',
+          recipe,
+          required = False,
+      ),
+  }
+
+
+def _executable(
+      ctx,
+      name=None,
+      cipd_package=None,
+      cipd_version=None
+  ):
+  """Defines an executable.
+
+  Builders refer to such executables in their `executable` field, see
+  luci.builder(...). Multiple builders can execute the same executable (perhaps
+  passing different properties to it).
+
+  Executables must be available as cipd packages.
+
+  The cipd version to fetch is usually a lower-cased git ref (like
+  `refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+
+  A luci.executable(...) with some particular name can be redeclared many times
+  as long as all fields in all declaration are identical. This is helpful when
+  luci.executable(...) is used inside a helper function that at once declares
+  a builder and an executable needed for this builder.
+
+  Args:
+    name: name of this executable entity, to refer to it from builders.
+        Required.
+    cipd_package: a cipd package name with the executable. Supports the
+        module-scoped default.
+    cipd_version: a version of the executable package to fetch, default
+        is `refs/heads/master`. Supports the module-scoped default.
+  """
+  name = validate.string('name', name)
+  key = keys.executable(name)
+  props = _executable_props(
+      ctx,
+      cipd_package = cipd_package,
+      cipd_version = cipd_version,
+  )
+  graph.add_node(key, idempotent = True, props = props)
+  return graph.keyset(key)
+
+
 def _recipe(
       ctx,
       *,
@@ -69,28 +146,24 @@ def _recipe(
         `recipe` can provide the actual recipe name. Defaults to `name`.
   """
   name = validate.string('name', name)
-  key = keys.recipe(name)
-  graph.add_node(key, idempotent = True, props = {
-      'cipd_package': validate.string(
-          'cipd_package',
-          cipd_package,
-          default = ctx.defaults.cipd_package.get(),
-          required = ctx.defaults.cipd_package.get() == None,
-      ),
-      'cipd_version': validate.string(
-          'cipd_version',
-          cipd_version,
-          default = ctx.defaults.cipd_version.get() or 'refs/heads/master',
-          required = False,
-      ),
-      'recipe': validate.string(
-          'recipe',
-          recipe,
-          default = name,
-          required = False,
-      ),
-  })
+  key = keys.executable(name)
+  props = _executable_props(
+      ctx,
+      cipd_package = cipd_package,
+      cipd_version = cipd_version,
+      recipe = recipe or name,
+  )
+  graph.add_node(key, idempotent = True, props = props)
   return graph.keyset(key)
+
+
+executable = lucicfg.rule(
+    impl = _executable,
+    defaults = validate.vars_with_validators({
+        'cipd_package': validate.string,
+        'cipd_version': validate.string,
+    }),
+)
 
 
 recipe = lucicfg.rule(
