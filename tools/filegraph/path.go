@@ -33,3 +33,18 @@ func (p Path) String() string {
 func ParsePath(slashSeparated string) Path {
 	return Path(strings.Split(slashSeparated, "/"))
 }
+
+// Split returns path to the parent and the base name.
+// If p has only one component, returns nil and the component.
+// If p is empty, panics.
+func (p Path) Split() (parent Path, base string) {
+	switch len(p) {
+	case 0:
+		panic("p is empty")
+	case 1:
+		return nil, p[0]
+	default:
+		last := len(p) - 1
+		return Path(p[:last]), p[last]
+	}
+}
