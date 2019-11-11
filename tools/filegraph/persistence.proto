@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package luci.filegraph;
+
+option go_package = "main";
+
+message Header {
+    int64 edges = 1;
+    string commit = 2;
+}
+
+message Node {
+    string name = 1;
+    float weight = 2;
+    int64 children = 3;
+}
