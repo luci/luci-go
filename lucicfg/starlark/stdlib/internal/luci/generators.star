@@ -256,7 +256,7 @@ def _buildbucket_builders(bucket, swarming_host):
     out.append(buildbucket_pb.Builder(
         name = node.props.name,
         swarming_host = swarming_host,
-        recipe = _buildbucket_recipe(node),
+        executable = _buildbucket_executable(node),
         service_account = node.props.service_account,
         caches = _buildbucket_caches(node.props.caches),
         execution_timeout_secs = optional_sec(node.props.execution_timeout),
@@ -272,16 +272,16 @@ def _buildbucket_builders(bucket, swarming_host):
   return out
 
 
-def _buildbucket_recipe(node):
-  """Builder node => buildbucket_pb.Builder.Recipe."""
-  recipes = graph.children(node.key, kinds.RECIPE)
-  if len(recipes) != 1:
-    fail('impossible: the builder should have a reference to a recipe')
-  recipe = recipes[0]
-  return buildbucket_pb.Builder.Recipe(
-      name = recipe.props.recipe,
-      cipd_package = recipe.props.cipd_package,
-      cipd_version = recipe.props.cipd_version,
+def _buildbucket_executable(node):
+  """Builder node => buildbucket_pb.Builder.Exe."""
+  executables = graph.children(node.key, kinds.EXECUTABLE)
+  if len(executables) != 1:
+    fail('impossible: the builder should have a reference to an executable')
+  executable = executables[0]
+  return buildbucket_pb.Builder.Exe(
+      name = executable.props.executable,
+      cipd_package = executable.props.cipd_package,
+      cipd_version = executable.props.cipd_version,
       properties_j = sorted([
           '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
       ]),
