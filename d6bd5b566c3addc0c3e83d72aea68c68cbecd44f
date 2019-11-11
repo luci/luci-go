@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "aa206fcf_d2530cba",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f8143c0_0dfbe139",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5bcdf32_38a22925",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "3f43d86c_33a0dde0",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5bcdf32_38a22925",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "002cce65_a0b36c85",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -50,6 +86,24 @@
       "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee9a7362_19525f4f",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "002cce65_a0b36c85",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -100,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "5e2ec345_19046460",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "I actually used the enum to get the default values for ~free without doing a transition in the configs, the pitfall is that an unknown value will deserialize into the zero-value.",
+      "parentUuid": "b6ecb183_3f6af8b6",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 8
+      },
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5610fe42_2b1a81ad",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -135,6 +213,24 @@
     },
     {
       "key": {
+        "uuid": "262f089d_808a9791",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4cd973e_c1d9d75a",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6265826c_c9a2bb40",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -149,6 +245,24 @@
       "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5eda39d7_c6420d18",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "I\u0027m not sure if you can attach a pd-standard disk as scratch, the literature is a little sparse but I\u0027ll assume the lack of an explicit mention means no.",
+      "parentUuid": "6265826c_c9a2bb40",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -169,6 +283,24 @@
     },
     {
       "key": {
+        "uuid": "b08fd6f7_77d849bd",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "local-ssd can be SCSI or NVME, pd-standard/ssd is always SCSI.",
+      "parentUuid": "fc5397bc_927d7331",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "798d1646_58dde191",
         "filename": "gce/api/config/v1/disk.go",
         "patchSetId": 2
@@ -186,6 +318,24 @@
     },
     {
       "key": {
+        "uuid": "dec88d37_63a1125a",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "798d1646_58dde191",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03d31daf_a1b8ef43",
         "filename": "gce/api/config/v1/disk.go",
         "patchSetId": 2
@@ -200,6 +350,24 @@
       "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc5c0ec9_8eb10210",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-11T19:49:44Z",
+      "side": 1,
+      "message": "You have to specify SCRATCH explicitly for local-ssd, SCSI or NVME are both valid for local-ssd.",
+      "parentUuid": "03d31daf_a1b8ef43",
+      "revId": "d6bd5b566c3addc0c3e83d72aea68c68cbecd44f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
