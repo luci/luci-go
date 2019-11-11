@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2221ebe5_60e5e0bc",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T19:19:12Z",
+      "side": 1,
+      "message": "Does the proto-unmarshalling process not check the enums, e.g. already via proto.UnmarshalJSONEnum? Or, when would we be working with \"raw\" protos constructed with the fields populated manually, instead of unmarshalled ones? If we want to include this in order to check our own use of TestResultPredicate field, maybe such an error is panic-worthy.",
+      "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
