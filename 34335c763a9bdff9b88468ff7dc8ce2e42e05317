@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f75eea2_0fd508e1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "typo: toin -\u003e tion",
+      "range": {
+        "startLine": 9,
+        "startChar": 15,
+        "endLine": 9,
+        "endChar": 28
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dac8fb5a_22378dab",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "It seems that it\u0027s valid for page size to be 0, what\u0027s the use case? And I\u0027m concerned about the side effect, if someone writes a loop to query test exonerations and accidentally put page size as 0, then it seems that the loop will run forever.",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 34
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d10bc026_53fccc58",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "Test names in this file are inconsistent: Starting with upper case or lower case letter.",
+      "range": {
+        "startLine": 115,
+        "startChar": 10,
+        "endLine": 115,
+        "endChar": 14
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e98c0eb2_b7a97d1d",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "Is this necessary? I thought we already validated the request in |ListTestExonerations|.",
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "991a8597_b4b39f37",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "There is a |ValidatePageSize| in common.go, should we reuse it instead? And I\u0027m a little bit confused about how we deal with pageSize\u003d0, please see my other comment.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "999c6cca_137c09a7",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T17:35:30Z",
+      "side": 1,
+      "message": "I think this comment needs update.",
+      "range": {
+        "startLine": 42,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 47
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
