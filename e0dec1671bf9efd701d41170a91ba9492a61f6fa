@@ -71,6 +71,46 @@
     },
     {
       "key": {
+        "uuid": "2a52b785_1ce6950a",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:54:47Z",
+      "side": 1,
+      "message": "Optional: \"A variant\u0027s key-value pairs must contain those in this one.\"",
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d57ae34_e3f2904b",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:54:47Z",
+      "side": 1,
+      "message": "Optional: contains, or subset (but I don\u0027t feel strongly)",
+      "range": {
+        "startLine": 108,
+        "startChar": 31,
+        "endLine": 108,
+        "endChar": 42
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b0fa99f_3c451f4b",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 6

@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "122e0e1c_50e5b5f1",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:54:47Z",
+      "side": 1,
+      "message": "Great, thanks, that makes more sense (contravariance of variant sets vs. test results associated with them makes it a little funny).",
+      "parentUuid": "def6e75b_7d0262f0",
+      "range": {
+        "startLine": 129,
+        "startChar": 27,
+        "endLine": 129,
+        "endChar": 35
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21b87fb6_ff70c9af",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 3
@@ -190,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "780f81ea_da79ebc8",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:54:47Z",
+      "side": 1,
+      "message": "I didn\u0027t actually mean to remove predicate entirely, though I\u0027m not opposed to that --- this means that we can *only* use ListTestResults to page all the test results of an invocation, and as soon as we add the condition of filtering out expected results, that becomes a Query request?",
+      "parentUuid": "5f92970f_f3f4c08a",
+      "range": {
+        "startLine": 78,
+        "startChar": 35,
+        "endLine": 78,
+        "endChar": 42
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "090614ae_d975cc63",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 3
@@ -225,6 +273,30 @@
       "side": 1,
       "message": "no. This has nothing to do with test result timing. Elaborated",
       "parentUuid": "090614ae_d975cc63",
+      "range": {
+        "startLine": 157,
+        "startChar": 13,
+        "endLine": 157,
+        "endChar": 18
+      },
+      "revId": "aa8f6f30e19924073c768becee076148232cc106",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "351c6d27_497ccce0",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:54:47Z",
+      "side": 1,
+      "message": "Yes, thanks, this makes sense.",
+      "parentUuid": "280da0cd_8f5b1d63",
       "range": {
         "startLine": 157,
         "startChar": 13,
