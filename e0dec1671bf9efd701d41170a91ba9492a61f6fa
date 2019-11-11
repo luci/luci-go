@@ -180,6 +180,30 @@
     },
     {
       "key": {
+        "uuid": "08e517aa_e2026b20",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T19:34:11Z",
+      "side": 1,
+      "message": "One way we could do it is store the time of first request in the page_token and use that for all subsequent pages requested. This would miss the results uploaded between 11:00 and 11:05, but would be consistent with how paging works in other places, namely, with no guarantees as long as the containing invocation is not finalized. I agree it\u0027s a little weird to think about and probably helpful to document explicitly in any case...",
+      "parentUuid": "c7fbf0c2_6d81e520",
+      "range": {
+        "startLine": 157,
+        "startChar": 27,
+        "endLine": 157,
+        "endChar": 40
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b0fa99f_3c451f4b",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 6
