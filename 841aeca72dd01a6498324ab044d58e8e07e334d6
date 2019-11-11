@@ -116,6 +116,24 @@
       "revId": "841aeca72dd01a6498324ab044d58e8e07e334d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7e47e5f_81ab80e0",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:34:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b082c4f_535df18c",
+      "revId": "841aeca72dd01a6498324ab044d58e8e07e334d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

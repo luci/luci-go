@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cf52217_0052020c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:34:03Z",
+      "side": 1,
+      "message": "this does not close connections https://godoc.org/net#TCPListener.Close",
+      "revId": "e8b3fc78bb4ed8d626b5bfad0675a20cd52165cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42b84a1e_add5879a",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:34:03Z",
+      "side": 1,
+      "message": "nit:\n\n\t\"go.chromium.org/luci/common/errors\"\n\n\t. \"github.com/smartystreets/goconvey/convey\"\n\t. \"go.chromium.org/luci/common/testing/assertions\"\n)\n\ndot-imports should be in one block, after all other import blocks",
+      "range": {
+        "startLine": 24,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 1
+      },
+      "revId": "e8b3fc78bb4ed8d626b5bfad0675a20cd52165cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c285ce_8f2a4cde",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-11T23:34:03Z",
+      "side": 1,
+      "message": "this is repeated 2 times\n\nConvey(\"Run check\", t, func() {\n  // common init code\n\t\n  Convey(\"subtest\", func() {\n     // reuse initialized stuff\n  })\n  Convey(\"subtest2\", func() {\n     // reuse initialized stuff\n  })\n})\n\n\noverall consider combining these separate `func TestXXX` functions into one, with a global convey, and reuse init code when appropriate",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 109,
+        "endChar": 23
+      },
+      "revId": "e8b3fc78bb4ed8d626b5bfad0675a20cd52165cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
