@@ -37,7 +37,6 @@ func TestValidateIncludeRequest(t *testing.T) {
 			err := validateIncludeRequest(&pb.IncludeRequest{
 				IncludingInvocation: "invocations/a",
 				IncludedInvocation:  "invocations/b",
-				OverrideInvocation:  "invocations/c",
 			})
 			So(err, ShouldBeNil)
 		})
@@ -65,33 +64,6 @@ func TestValidateIncludeRequest(t *testing.T) {
 			})
 			So(err, ShouldErrLike, `cannot include itself`)
 		})
-
-		Convey(`Invalid override_invocation`, func() {
-			err := validateIncludeRequest(&pb.IncludeRequest{
-				IncludingInvocation: "invocations/a",
-				IncludedInvocation:  "invocations/b",
-				OverrideInvocation:  "x",
-			})
-			So(err, ShouldErrLike, `override_invocation: does not match`)
-		})
-
-		Convey(`override itself`, func() {
-			err := validateIncludeRequest(&pb.IncludeRequest{
-				IncludingInvocation: "invocations/a",
-				IncludedInvocation:  "invocations/b",
-				OverrideInvocation:  "invocations/b",
-			})
-			So(err, ShouldErrLike, `cannot override itself`)
-		})
-
-		Convey(`include itself via override`, func() {
-			err := validateIncludeRequest(&pb.IncludeRequest{
-				IncludingInvocation: "invocations/a",
-				IncludedInvocation:  "invocations/b",
-				OverrideInvocation:  "invocations/a",
-			})
-			So(err, ShouldErrLike, `cannot include itself`)
-		})
 	})
 }
 
@@ -104,126 +76,73 @@ func TestInclude(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
 		insInv := testutil.InsertInvocation
-		insIncl := testutil.InsertInclusion
 		ct := testclock.TestRecentTimeUTC
 
-		readOverriddenBy := func(included span.InvocationID) span.InvocationID {
-			var ret span.InvocationID
-			testutil.MustReadRow(ctx, "Inclusions", span.InclusionKey("including", included), map[string]interface{}{
-				"OverriddenByIncludedInvocationId": &ret,
-			})
-			return ret
-		}
-
 		assertIncluded := func(includedInvID span.InvocationID) {
-			readOverriddenBy(includedInvID)
+			var throwAway span.InvocationID
+			testutil.MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+				"IncludedInvocationID": &throwAway,
+			})
 		}
 
-		Convey(`without overriding`, func() {
-			Convey(`invalid request`, func() {
-				_, err := recorder.Include(ctx, &pb.IncludeRequest{})
-				So(err, ShouldErrLike, `bad request: including_invocation: unspecified`)
-				So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
-			})
-
-			req := &pb.IncludeRequest{
-				IncludingInvocation: "invocations/including",
-				IncludedInvocation:  "invocations/included",
-			}
-
-			Convey(`no including invocation`, func() {
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldErrLike, `"invocations/including" not found`)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			})
-
-			Convey(`no included invocation`, func() {
-				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token, ct),
-				)
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldErrLike, `"invocations/included" not found`)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			})
-
-			Convey(`idempotent`, func() {
-				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token, ct),
-					insInv("included", pb.Invocation_COMPLETED, "", ct),
-				)
-
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-
-				_, err = recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-			})
-
-			Convey(`success`, func() {
-				testutil.MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, token, ct),
-					insInv("included", pb.Invocation_COMPLETED, "", ct),
-				)
-
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-				assertIncluded("included")
-			})
+		Convey(`invalid request`, func() {
+			_, err := recorder.Include(ctx, &pb.IncludeRequest{})
+			So(err, ShouldErrLike, `bad request: including_invocation: unspecified`)
+			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
-		Convey(`with overriding`, func() {
-			req := &pb.IncludeRequest{
-				IncludingInvocation: "invocations/including",
-				IncludedInvocation:  "invocations/included",
-				OverrideInvocation:  "invocations/overridden",
-			}
+		req := &pb.IncludeRequest{
+			IncludingInvocation: "invocations/including",
+			IncludedInvocation:  "invocations/included",
+		}
 
+		Convey(`no including invocation`, func() {
+			_, err := recorder.Include(ctx, req)
+			So(err, ShouldErrLike, `"invocations/including" not found`)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey(`no included invocation`, func() {
+			testutil.MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, token, ct),
+			)
+			_, err := recorder.Include(ctx, req)
+			So(err, ShouldErrLike, `"invocations/included" not found`)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey(`included invocation is active`, func() {
+			testutil.MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, token, ct),
+				insInv("included", pb.Invocation_ACTIVE, "", ct),
+			)
+			_, err := recorder.Include(ctx, req)
+			So(err, ShouldErrLike, `"invocations/included" is not finalized`)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+		})
+
+		Convey(`idempotent`, func() {
 			testutil.MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct),
 				insInv("included", pb.Invocation_COMPLETED, "", ct),
 			)
 
-			Convey(`invocation being overridden does not exist`, func() {
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldErrLike, `"invocations/overridden" does not exist or is not included in "invocations/including"`)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-			})
+			_, err := recorder.Include(ctx, req)
+			So(err, ShouldBeNil)
 
-			Convey(`inclusion already overridden by another invocation`, func() {
-				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", "else"),
-				)
+			_, err = recorder.Include(ctx, req)
+			So(err, ShouldBeNil)
+		})
 
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldErrLike, `inclusion of "invocations/overridden" is already overridden by "invocations/else"`)
-				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			})
+		Convey(`success`, func() {
+			testutil.MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, token, ct),
+				insInv("included", pb.Invocation_COMPLETED, "", ct),
+			)
 
-			Convey(`success`, func() {
-				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", ""),
-				)
-
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-
-				So(readOverriddenBy("overridden"), ShouldEqual, "included")
-			})
-
-			Convey(`idempotent`, func() {
-				testutil.MustApply(ctx,
-					insInv("overridden", pb.Invocation_COMPLETED, "", ct),
-					insIncl("including", "overridden", ""),
-				)
-
-				_, err := recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-
-				_, err = recorder.Include(ctx, req)
-				So(err, ShouldBeNil)
-			})
+			_, err := recorder.Include(ctx, req)
+			So(err, ShouldBeNil)
+			assertIncluded("included")
 		})
 	})
 }
