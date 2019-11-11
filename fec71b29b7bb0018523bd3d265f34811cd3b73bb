@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a625367_12080c6c",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T18:51:49Z",
+      "side": 1,
+      "message": "If !ok, wouldn\u0027t ret[id] already be nil?",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
