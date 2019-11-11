@@ -69,6 +69,24 @@
       "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "732e33c7_c9186650",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-11T23:51:08Z",
+      "side": 1,
+      "message": "Oh, right, setting ret[id] \u003d nil will make the /next/ check of id in ret be ok --- that was the part I was missing, thanks.",
+      "parentUuid": "fd223d4b_30f2949e",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
