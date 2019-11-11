@@ -25,6 +25,7 @@ load('@stdlib//internal/luci/rules/console_view_entry.star', _console_view_entry
 load('@stdlib//internal/luci/rules/cq.star', _cq='cq')
 load('@stdlib//internal/luci/rules/cq_group.star', _cq_group='cq_group')
 load('@stdlib//internal/luci/rules/cq_tryjob_verifier.star', _cq_tryjob_verifier='cq_tryjob_verifier')
+load('@stdlib//internal/luci/rules/executable.star', _executable='executable', _recipe='recipe')
 load('@stdlib//internal/luci/rules/gitiles_poller.star', _gitiles_poller='gitiles_poller')
 load('@stdlib//internal/luci/rules/list_view.star', _list_view='list_view')
 load('@stdlib//internal/luci/rules/list_view_entry.star', _list_view_entry='list_view_entry')
@@ -33,7 +34,6 @@ load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
 load('@stdlib//internal/luci/rules/notifier.star', _notifier='notifier')
 load('@stdlib//internal/luci/rules/notifier_template.star', _notifier_template='notifier_template')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
-load('@stdlib//internal/luci/rules/recipe.star', _recipe='recipe')
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
@@ -58,6 +58,7 @@ luci = struct(
     project = _project,
     logdog =  _logdog,
     bucket = _bucket,
+    executable = _executable,
     recipe = _recipe,
     builder = _builder,
     gitiles_poller = _gitiles_poller,

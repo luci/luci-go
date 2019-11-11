@@ -23,6 +23,7 @@ load('@stdlib//internal/luci/descpb.star', 'lucitypes_descpb')
 lucitypes_descpb.register()
 
 load('@proto//go.chromium.org/luci/buildbucket/proto/project_config.proto', _buildbucket_pb='buildbucket')
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', _common_pb='buildbucket.v2')
 load('@proto//go.chromium.org/luci/common/proto/config/project_config.proto', _config_pb='config')
 load('@proto//go.chromium.org/luci/cq/api/config/v2/cq.proto', _cq_pb='cq.config')
 load('@proto//go.chromium.org/luci/logdog/api/config/svcconfig/project.proto', _logdog_pb='svcconfig')
@@ -31,6 +32,7 @@ load('@proto//go.chromium.org/luci/luci_notify/api/config/notify.proto', _notify
 load('@proto//go.chromium.org/luci/scheduler/appengine/messages/config.proto', _scheduler_pb='scheduler.config')
 
 buildbucket_pb = _buildbucket_pb
+common_pb = _common_pb
 config_pb = _config_pb
 cq_pb = _cq_pb
 logdog_pb = _logdog_pb
