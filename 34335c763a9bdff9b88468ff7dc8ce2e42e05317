@@ -111,6 +111,30 @@
     },
     {
       "key": {
+        "uuid": "85eb28d5_359f271d",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-11T22:57:15Z",
+      "side": 1,
+      "message": "since pageSize\u003d0 triggers panicing, I\u0027d say it\u0027s not acceptable.",
+      "parentUuid": "991a8597_b4b39f37",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "999c6cca_137c09a7",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
