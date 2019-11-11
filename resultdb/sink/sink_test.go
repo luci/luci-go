@@ -17,11 +17,14 @@ package sink
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -52,6 +55,79 @@ func TestHandshake(t *testing.T) {
 			So(err, ShouldErrLike, "invalid AuthToken")
 			err = doCheck(`garbage`, authToken)
 			So(err, ShouldErrLike, "failed to parse")
+		})
+	})
+}
+
+func TestStart(t *testing.T) {
+	Convey("Start check", t, func() {
+		Convey("Call Start twice", func() {
+			ctx := context.Background()
+			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+			So(err, ShouldBeNil)
+			defer server.Close()
+
+			err = server.Start(ctx)
+			So(err, ShouldBeNil)
+			err = server.Start(ctx)
+			So(err, ShouldErrLike, "cannot call Start twice")
+		})
+	})
+}
+
+func TestClose(t *testing.T) {
+	Convey("Close check", t, func() {
+		ctx := context.Background()
+		server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+		So(err, ShouldBeNil)
+		defer server.Close()
+
+		err = server.Start(ctx)
+		So(err, ShouldBeNil)
+
+		addr := fmt.Sprintf(":%d", server.Config().Port)
+		conn, err := net.Dial("tcp", addr)
+		So(err, ShouldBeNil)
+
+		_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
+		So(err, ShouldBeNil)
+
+		err = server.Close()
+		So(err, ShouldBeNil)
+
+		_, err = net.Dial("tcp", addr)
+		So(err, ShouldErrLike, "connection refused")
+	})
+}
+
+func TestRun(t *testing.T) {
+	Convey("Run check", t, func() {
+		Convey("Server error", func() {
+			ctx := context.Background()
+			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+			So(err, ShouldBeNil)
+			defer server.Close()
+
+			fakeError := errors.New("test error")
+			server.errC <- fakeError
+
+			err = server.Run(ctx, func(ctx context.Context) error {
+				<-ctx.Done()
+				return ctx.Err()
+			})
+			So(err, ShouldErrLike, fakeError)
+		})
+
+		Convey("Callback finished", func() {
+			ctx := context.Background()
+			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+			So(err, ShouldBeNil)
+			defer server.Close()
+
+			err = server.Run(ctx, func(ctx context.Context) error {
+				return nil
+			})
+			So(err, ShouldBeNil)
 		})
 	})
 }
