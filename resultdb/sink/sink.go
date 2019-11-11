@@ -23,11 +23,9 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -164,6 +162,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	ctx, s.cancel = context.WithCancel(ctx)
+
 	go s.serveLoop(ctx)
 	return nil
 }
@@ -206,30 +205,59 @@ func (s *Server) Export(ctx context.Context) context.Context {
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
 	defer c.Close()
+
 	dc := json.NewDecoder(c)
 	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
-		logging.Errorf(ctx, "handshake failed: %s", err)
+		s.errC <- errors.Annotate(err, "handshake failed").Err()
 		return
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	// TODO(crbug.com/1017288) Actually use msg later.
-	var msg sinkpb.SinkMessageContainer
-	for {
-		if ctx.Err() != nil {
-			return
-		}
+	msgC := make(chan *sinkpb.SinkMessageContainer)
+	errC := make(chan error)
 
-		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
-		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
-			if shouldKeepTrying(err) {
-				continue
-			}
-			// TODO(sajjadm): handle connection-level errors properly,
-			// possibly with full server shutdown
-			logging.Errorf(ctx, "reading next message failed: %s", err)
+	defer close(msgC)
+	defer close(errC)
+
+	go readMessageLoop(dc, msgC, errC)
+
+	msgp := &sinkpb.SinkMessageContainer{}
+	msgC <- msgp
+
+	for {
+		select {
+		case <-ctx.Done():
 			return
+		case err := <-errC:
+			s.errC <- errors.Annotate(err, "connection").Err()
+			return
+		case msgp = <-msgC:
+			// TODO(crbug.com/1017288): msg was valid, do something with it now
+			// Send msg back to signal we're ready for the next one
+			msgC <- msgp
 		}
+	}
+}
+
+func readMessageLoop(dc *json.Decoder, msgC chan *sinkpb.SinkMessageContainer, errC chan<- error) {
+	for {
+		msgp := <-msgC
+		if err := readMessage(dc, msgp); err != nil {
+			errC <- err
+			return
+		} else {
+			msgC <- msgp
+		}
+	}
+}
+
+func readMessage(dc *json.Decoder, msgp *sinkpb.SinkMessageContainer) error {
+	for {
+		err := jsonpb.UnmarshalNext(dc, msgp)
+		if shouldKeepTrying(err) {
+			continue
+		}
+		return err
 	}
 }
 
