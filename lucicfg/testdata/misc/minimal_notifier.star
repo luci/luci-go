@@ -31,7 +31,20 @@ luci.builder(
         ),
     ],
 )
-
+luci.builder(
+    name = 'builder 3',
+    bucket = 'bucket',
+    executable = 'noop',
+    repo = 'https://repo.example.com',
+    notifies = [
+        luci.notifier(
+            name = 'blamelist notifier with infra failures',
+            on_failure = True,
+            on_infra_failure = True,
+            notify_blamelist = True,
+        ),
+    ],
+)
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -49,6 +62,15 @@ luci.builder(
 #     >
 #     builders: <
 #       name: "builder 2"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "noop"
+#         cipd_package: "noop"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "builder 3"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
 #         name: "noop"
@@ -81,6 +103,18 @@ luci.builder(
 #   builders: <
 #     bucket: "bucket"
 #     name: "builder 2"
+#     repository: "https://repo.example.com"
+#   >
+# >
+# notifiers: <
+#   notifications: <
+#     on_failure: true
+#     on_infra_failure: true
+#     notify_blamelist: <>
+#   >
+#   builders: <
+#     bucket: "bucket"
+#     name: "builder 3"
 #     repository: "https://repo.example.com"
 #   >
 # >
