@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package luci.resultdb;
+package luci.resultdb.rpc.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
@@ -23,7 +23,7 @@ import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
-option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;resultspb";
+option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 
 // Service to record test results.
 //
