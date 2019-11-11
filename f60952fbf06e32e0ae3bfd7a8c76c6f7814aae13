@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffe4020e_be100409",
+        "filename": "resultdb/cmd/resultdb/get_test_exoneration_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-11T16:50:53Z",
+      "side": 1,
+      "message": "It\u0027s probably unrelated to this CL, but I don\u0027t fully understand why |TestPath| is a variant here instead of an explicit field, which is inconsistent with TestResult proto.",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 57
+      },
+      "revId": "f60952fbf06e32e0ae3bfd7a8c76c6f7814aae13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
