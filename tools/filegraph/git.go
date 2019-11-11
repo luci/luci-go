@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -120,4 +121,25 @@ func readCommits(ctx context.Context, dir, exclude string, fn func(c commit) err
 	}()
 
 	return newLogReader(stdout).ReadCommits(fn)
+}
+
+// gitRepoRoot returns an absolute path to the repository directory.
+func gitRepoRoot(path string) (string, error) {
+	return git(path, "rev-parse", "--show-toplevel")
+}
+
+// gitDirPath returns an absolute path to the git directory.
+func gitDirPath(path string) (string, error) {
+	return git(path, "rev-parse", "--absolute-git-dir")
+}
+
+// git runs a git subcommand at the specified path.
+func git(dir string, args ...string) (output string, err error) {
+	args = append([]string{"-C", dir}, args...)
+	cmd := exec.Command("git", args...)
+	stdoutBytes, err := cmd.Output()
+	if err != nil {
+		return "", errors.Annotate(err, "git %q failed", args).Err()
+	}
+	return strings.TrimSuffix(string(stdoutBytes), "\n"), nil
 }
