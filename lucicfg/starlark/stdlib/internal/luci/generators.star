@@ -24,6 +24,7 @@ load('@stdlib//internal/luci/lib/acl.star', 'acl', 'aclimpl')
 
 load('@stdlib//internal/luci/proto.star',
     'buildbucket_pb',
+    'common_pb',
     'config_pb',
     'cq_pb',
     'logdog_pb',
@@ -253,10 +254,13 @@ def _buildbucket_builders(bucket, swarming_host):
   """luci.bucket(...) node => [buildbucket_pb.Builder]."""
   out = []
   for node in graph.children(bucket.key, kinds.BUILDER):
+    exe, recipe, properties = _handle_executable(node)
     out.append(buildbucket_pb.Builder(
         name = node.props.name,
         swarming_host = swarming_host,
-        recipe = _buildbucket_recipe(node),
+        exe = exe,
+        recipe = recipe,
+        properties = properties,
         service_account = node.props.service_account,
         caches = _buildbucket_caches(node.props.caches),
         execution_timeout_secs = optional_sec(node.props.execution_timeout),
@@ -272,20 +276,47 @@ def _buildbucket_builders(bucket, swarming_host):
   return out
 
 
-def _buildbucket_recipe(node):
-  """Builder node => buildbucket_pb.Builder.Recipe."""
-  recipes = graph.children(node.key, kinds.RECIPE)
-  if len(recipes) != 1:
-    fail('impossible: the builder should have a reference to a recipe')
-  recipe = recipes[0]
-  return buildbucket_pb.Builder.Recipe(
-      name = recipe.props.recipe,
-      cipd_package = recipe.props.cipd_package,
-      cipd_version = recipe.props.cipd_version,
-      properties_j = sorted([
-          '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
-      ]),
-  )
+def _handle_executable(node):
+  """Handle a builder node's executable node.
+
+  Builder node =>
+    buildbucket_pb.Builder.Recipe | common_pb.Executable,
+    buildbucket_pb.Builder.Properties
+
+  This function produces either a Recipe or Executable definition depending on
+  whether executable.props.recipe was set. luci.recipe(...) will always set
+  executable.props.recipe.
+
+  If we're handling a recipe, set properties_j in the Recipe definition.
+  If we're handling a normal executable, return Properties to be assigned to
+  Builder.Properties.
+
+  When we are ready to move config output entirely from recipes to their
+  exe equivalents, we can stop producing Recipe definitions here.
+  """
+  executables = graph.children(node.key, kinds.EXECUTABLE)
+  if len(executables) != 1:
+    fail('impossible: the builder should have a reference to an executable')
+  executable = executables[0]
+  if executable.props.recipe:
+    recipe_def = buildbucket_pb.Builder.Recipe(
+        name = executable.props.recipe,
+        cipd_package = executable.props.cipd_package,
+        cipd_version = executable.props.cipd_version,
+        properties_j = sorted([
+            '%s:%s' % (k, to_json(v)) for k, v in node.props.properties.items()
+        ])
+    )
+    executable_def = None
+    properties = None
+  else:
+    executable_def = common_pb.Executable(
+        cipd_package = executable.props.cipd_package,
+        cipd_version = executable.props.cipd_version,
+    )
+    recipe_def = None
+    properties = to_json(node.props.properties)
+  return executable_def, recipe_def, properties
 
 
 def _buildbucket_caches(caches):
