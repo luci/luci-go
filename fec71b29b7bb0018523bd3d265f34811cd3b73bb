@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "ceadb5e5_9d45b390",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-11T18:57:10Z",
+      "side": 1,
+      "message": "Can we add a new field IncludedInvocationIds in Invocations and remove this table?",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a625367_12080c6c",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 9
