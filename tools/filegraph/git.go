@@ -18,7 +18,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -120,4 +123,44 @@ func readCommits(ctx context.Context, dir, exclude string, fn func(c commit) err
 	}()
 
 	return newLogReader(stdout).ReadCommits(fn)
+}
+
+// gitRepoRoot returns an absolute path to the repository directory.
+func gitRepoRoot(path string) (string, error) {
+	return git(path, "rev-parse", "--show-toplevel")
+}
+
+// gitDirPath returns an absolute path to the git directory.
+func gitDirPath(path string) (string, error) {
+	return git(path, "rev-parse", "--absolute-git-dir")
+}
+
+// git runs a git subcommand at the specified path.
+// The path may be a file or a directory.
+func git(path string, args ...string) (output string, err error) {
+	dir, err := dirFromPath(path)
+	if err != nil {
+		return "", err
+	}
+
+	args = append([]string{"-C", dir}, args...)
+	cmd := exec.Command("git", args...)
+	stdoutBytes, err := cmd.Output()
+	if err != nil {
+		return "", errors.Annotate(err, "git %q failed", args).Err()
+	}
+	return strings.TrimSuffix(string(stdoutBytes), "\n"), nil
+}
+
+// dirFromPath returns path without changes if it is a dir, otherwise it returns
+// the dir containing the file at path.
+func dirFromPath(path string) (dir string, err error) {
+	switch stat, err := os.Stat(path); {
+	case err != nil:
+		return "", err
+	case stat.IsDir():
+		return path, nil
+	default:
+		return filepath.Dir(path), nil
+	}
 }

@@ -37,7 +37,9 @@ func main() {
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{
-			// TODO(nodir): add subcommands.
+			cmdStats,
+			// TODO(nodir): add path subcommand.
+			// TODO(nodir): add query subcommand.
 
 			{},
 			subcommands.CmdHelp,
