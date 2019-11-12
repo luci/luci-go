@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "376a2d3d_513a74fb",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:32:40Z",
+      "side": 1,
+      "message": "see ValidatePageSize. It checks for negative numbers, in which case we return an error.\n\npbutil is a public package with utility functions that can be useful for clients of resultdb. From this perspective, adjustPageSize shouldn\u0027t be there.\n\nI\u0027ve renamed pagetoken package to \"pagination\" and moved all common pagination code there. Also moved ValidatePageToken there since it is unlikely that others will benefit from it.",
+      "parentUuid": "dd1cce0a_dd4ba754",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 34
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d10bc026_53fccc58",
         "filename": "resultdb/cmd/resultdb/list_test_exonerations_test.go",
         "patchSetId": 2
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "58ecd60c_a47566fa",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:32:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d10bc026_53fccc58",
+      "range": {
+        "startLine": 115,
+        "startChar": 10,
+        "endLine": 115,
+        "endChar": 14
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e98c0eb2_b7a97d1d",
         "filename": "resultdb/internal/span/test_exoneration.go",
         "patchSetId": 2
@@ -106,6 +154,24 @@
       "writtenOn": "2019-11-11T17:35:30Z",
       "side": 1,
       "message": "Is this necessary? I thought we already validated the request in |ListTestExonerations|.",
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0815e4d4_d792771f",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:32:40Z",
+      "side": 1,
+      "message": "we did, but not doing it here would mean we assume it was validated. If someone else calls this func without doing this check, we may end up with some undefined behavior, e.g. sometimes L131 will panic, but only when len(tes) \u003d\u003d 0. It might be hard to debug. WDYT?",
+      "parentUuid": "e98c0eb2_b7a97d1d",
       "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -159,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "00ea4408_ae38ab54",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:32:40Z",
+      "side": 1,
+      "message": "here we assume that pageSize is correct. The code that calls this func must already validate the request. If we call ValidatePageSize here, i think we\u0027d mask the bug in the calling code.\n\nin general, each RPC must do request validate as the very first thing. Only then call functions like this",
+      "parentUuid": "85eb28d5_359f271d",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "999c6cca_137c09a7",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
@@ -179,6 +269,30 @@
       "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "224ba340_56466f1b",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:32:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "999c6cca_137c09a7",
+      "range": {
+        "startLine": 42,
+        "startChar": 4,
+        "endLine": 42,
+        "endChar": 47
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
