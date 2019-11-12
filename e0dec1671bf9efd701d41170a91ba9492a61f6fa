@@ -390,6 +390,30 @@
     },
     {
       "key": {
+        "uuid": "72f754b8_690dde76",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T00:33:38Z",
+      "side": 1,
+      "message": "Right, we\u0027re not using/storing commit timestamp for ListTestResults, because it would add a lot of complexity without much added benefit, since we\u0027re relaxing guarantees for not-yet-finalized Invocations.\n\nI think \"max_staleness\" is somehow a weird way of putting it, since if something is \"stale\", I expect it to be too far in the past, rather than too recent, and it seems like what max_staleness does is say that \"if it\u0027s too recent we might not have those results yet\". Is that an accurate summary?",
+      "parentUuid": "d3ef8bfb_c65d159b",
+      "range": {
+        "startLine": 157,
+        "startChar": 27,
+        "endLine": 157,
+        "endChar": 40
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b0fa99f_3c451f4b",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 6
