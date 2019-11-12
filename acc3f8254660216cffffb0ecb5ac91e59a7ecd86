@@ -188,6 +188,24 @@
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31bae186_79cfc16f",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T22:20:39Z",
+      "side": 1,
+      "message": "i see what you mean. https://aip.dev/233#request-message does not have this recommendation, but I am not opposed to making the API stricter than that (it is a superser of strictness implied by the guidelines). if we really want to prevent weird behavior, we should probably prohibit setting subrequest.invocation entirely (why would one send a request with invocation set at two levels?). Would you prefer that?",
+      "parentUuid": "06aea2ab_cb0c129d",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
