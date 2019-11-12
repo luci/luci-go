@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "0695b6a0_66819065",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-12T17:55:17Z",
+      "side": 1,
+      "message": "sgtm. Thanks for the explanation.",
+      "parentUuid": "376a2d3d_513a74fb",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 34
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d10bc026_53fccc58",
         "filename": "resultdb/cmd/resultdb/list_test_exonerations_test.go",
         "patchSetId": 2
@@ -178,6 +202,24 @@
     },
     {
       "key": {
+        "uuid": "71187c70_bc0b3368",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-12T17:55:17Z",
+      "side": 1,
+      "message": "sg.",
+      "parentUuid": "0815e4d4_d792771f",
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "991a8597_b4b39f37",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 2
@@ -246,6 +288,30 @@
       "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a412f3f5_75645501",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-12T17:55:17Z",
+      "side": 1,
+      "message": "sgtm, thanks for explaining!",
+      "parentUuid": "00ea4408_ae38ab54",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 94,
+        "endChar": 2
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
