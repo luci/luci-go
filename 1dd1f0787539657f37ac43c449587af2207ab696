@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "eff2fcba_81a1f2df",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-12T05:35:58Z",
+      "side": 1,
+      "message": "reaching this line means only that Put() was accepted by datastore library, not that it was actually committed.",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 12
+      },
+      "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17aba6af_59dded1a",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-12T05:35:58Z",
+      "side": 1,
+      "message": "if err !\u003d nil {\n\nis the best you can do.",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 9
+      },
+      "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "586e2a23_08210a99",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -16,6 +62,24 @@
       "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d87bd430_690caad6",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-12T05:35:58Z",
+      "side": 1,
+      "message": "sgtm. btw, tbh, I didn\u0027t realize this while reviewing this CL, shame on me :P",
+      "parentUuid": "586e2a23_08210a99",
+      "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
