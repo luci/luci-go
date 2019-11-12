@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "6dc8a39a_cef6c476",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-12T22:21:13Z",
+      "side": 1,
+      "message": "if err !\u003d nil is worse because err !\u003d nil in the case when the transaction discovers that vm.Connected is already set.",
+      "parentUuid": "17aba6af_59dded1a",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 9
+      },
+      "revId": "1dd1f0787539657f37ac43c449587af2207ab696",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "586e2a23_08210a99",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
