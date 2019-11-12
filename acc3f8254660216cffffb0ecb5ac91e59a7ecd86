@@ -206,6 +206,24 @@
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa47a051_5bfd24db",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T22:33:29Z",
+      "side": 1,
+      "message": "Might a user generate CreateTestExonerationRequests and then depending on some condition decide whether to batch them or not, which would lead to two separate requirements of needing the invocation set or not?\n\nAlso this is definitely non-blocking for this CL!",
+      "parentUuid": "31bae186_79cfc16f",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
