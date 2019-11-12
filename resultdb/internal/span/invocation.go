@@ -146,7 +146,6 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 
 	var visit func(id InvocationID)
 
-	// read reads an invocation and calls visit for all invocations it includes.
 	read := func(id InvocationID) (*pb.Invocation, error) {
 		inv, err := ReadInvocationFull(ctx, txn, id)
 		if err != nil {
@@ -162,13 +161,11 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 	eg, ctx := errgroup.WithContext(ctx)
 	visit = func(id InvocationID) {
 		mu.Lock()
-		// Check if we already started/finished fetching this invocation.
 		if _, ok := ret[id]; ok {
 			mu.Unlock()
 			return
 		}
 
-		// Mark the invocation as being fetched.
 		ret[id] = nil
 		mu.Unlock()
 
