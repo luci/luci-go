@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75c5e3ed_4d255033",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-12T02:52:27Z",
+      "side": 1,
+      "message": "4",
+      "revId": "190b5bf9c69a27ade9dce3b2afdc59f926ba4c76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3d19443_97dccc1f",
+        "filename": "gce/api/config/v1/disk_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-12T02:52:27Z",
+      "side": 1,
+      "message": "I\u0027d prefer to copy/paste test cases, I don\u0027t really like reading logic when reading tests. Normally not a big deal but I believe every other test case here is copy/pasted instead of looped so it\u0027d be more consistent as well.",
+      "revId": "190b5bf9c69a27ade9dce3b2afdc59f926ba4c76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
