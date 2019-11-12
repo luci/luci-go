@@ -170,6 +170,24 @@
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06aea2ab_cb0c129d",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T22:03:26Z",
+      "side": 1,
+      "message": "No, I meant, isn\u0027t that behavior valid /now/: validateBatchCreateTestExonerationsRequest errors if for each individual CreateTestExonerationRequest, it has invocation populated and doesn\u0027t match, which means that if we have some individual CreateTestExonerationRequests with invocation /not/ populated, and others that /are/ populated and match, validation will pass.\n\nIt seems that if a user passes inconsistent requests[i].invocation (or request_id), that would be unintentional and we could arguably error on it. We don\u0027t currently, and it would be more complexity to check, so the (non-blocking) question is if we want to.",
+      "parentUuid": "0e43ea0a_f7c66cf9",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
