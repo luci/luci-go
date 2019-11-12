@@ -112,7 +112,11 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 					return fmt.Errorf("EvalSymlinks(%s): %s", dir, err)
 				}
 				if strings.HasPrefix(l, realDir) {
-					c <- &walkItem{fullPath: l[len(realDir)+1:], relPath: relPath, info: info, inTreeSymlink: true}
+					// Readlink preserves relative paths of links; necessary to not break in tree symlinks.
+					if l, err = os.Readlink(path); err != nil {
+						return fmt.Errorf("Readlink(%s): %s", path, err)
+					}
+					c <- &walkItem{fullPath: l, relPath: relPath, info: info, inTreeSymlink: true}
 					return nil
 				}
 				// Found a symlink that pointed out of tree.
