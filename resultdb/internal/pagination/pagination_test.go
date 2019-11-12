@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pagetoken
+package pagination
 
 import (
 	"testing"
@@ -24,18 +24,31 @@ func TestCursor(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Token works`, t, func() {
-		So(Format("v1", "v2"), ShouldResemble, "CgJ2MQoCdjI=")
+		So(Token("v1", "v2"), ShouldResemble, "CgJ2MQoCdjI=")
 
-		pos, err := Parse("CgJ2MQoCdjI=")
+		pos, err := ParseToken("CgJ2MQoCdjI=")
 		So(err, ShouldBeNil)
 		So(pos, ShouldResemble, []string{"v1", "v2"})
 
 		Convey(`for fresh cursor`, func() {
-			So(Format(), ShouldResemble, "")
+			So(Token(), ShouldResemble, "")
 
-			pos, err := Parse("")
+			pos, err := ParseToken("")
 			So(err, ShouldBeNil)
 			So(pos, ShouldBeNil)
 		})
+	})
+}
+
+func TestAdjustPageSize(t *testing.T) {
+	t.Parallel()
+	Convey(`OK`, t, func() {
+		So(AdjustPageSize(50), ShouldEqual, 50)
+	})
+	Convey(`too big`, t, func() {
+		So(AdjustPageSize(1e6), ShouldEqual, pageSizeMax)
+	})
+	Convey(`missing or 0`, t, func() {
+		So(AdjustPageSize(0), ShouldEqual, pageSizeDefault)
 	})
 }
