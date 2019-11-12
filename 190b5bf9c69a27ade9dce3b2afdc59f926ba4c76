@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "21bc49c3_7e4fda21",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-12T16:00:36Z",
+      "side": 1,
+      "message": "Small nit: when you indent the comment with 1 additional character, godoc will present much nicer output. You can confirm with:\n\n  $ godoc -http\u003d:6060\n\nthen visiting http://localhost:6060/pkg/go.chromium.org/luci/gce/api/config/v1/#Disk.Validate\nHere\u0027s how it looks with the current CL: http://screen/Xoo3TdVJh1U\n\nIt is lightly hinted at https://blog.golang.org/godoc-documenting-go-code.\n\nSimilarly:\n\n  $ go doc go.chromium.org/luci/gce/api/config/v1 Disk.Validate\n  package config // import \"go.chromium.org/luci/gce/api/config/v1\"\n  \n  func (d *Disk) Validate(c *validation.Context)\n      Validate validates this disk. The set of valid configurations is:\n      +-------------+-------+-----------+ | Type | Image | Interface |\n      +-------------+-------+-----------+ | local-ssd | No | * | | pd-ssd | Yes |\n      SCSI | | pd-standard | Yes | SCSI | +-------------+-------+-----------+",
+      "revId": "190b5bf9c69a27ade9dce3b2afdc59f926ba4c76",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a3d19443_97dccc1f",
         "filename": "gce/api/config/v1/disk_test.go",
         "patchSetId": 3
