@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "42c9dcc0_d7f6c54a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T04:38:39Z",
+      "side": 1,
+      "message": "nit: i think it would be cleaner (fewer assumptions) if this was\n\n  ctx, cancel :\u003d context.WithCancel(ctx)\n  defer cancel()",
+      "parentUuid": "888f633c_8663f3ca",
+      "revId": "e8b3fc78bb4ed8d626b5bfad0675a20cd52165cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "42b84a1e_add5879a",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 21
@@ -119,6 +137,30 @@
       "side": 1,
       "message": "unfortunately we can\u0027t generally reuse Server objects so putting NewServer etc. at the top of the function won\u0027t work. however I extracted it to a separate function and put context creation at the top since that can be safely shared.\n\nin the future if there\u0027s more shared init code I\u0027ll combine the functions together",
       "parentUuid": "c5c285ce_8f2a4cde",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 109,
+        "endChar": 23
+      },
+      "revId": "e8b3fc78bb4ed8d626b5bfad0675a20cd52165cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a31a5bc_16fcacad",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T04:38:39Z",
+      "side": 1,
+      "message": "Convey wouldn\u0027t use same state fo different tests. Tests would share only the code, not state. The init code would run for each \"convey leaf\" separately (and that\u0027s the beauty of goconvey)",
+      "parentUuid": "9e8f61cf_c86d20f3",
       "range": {
         "startLine": 106,
         "startChar": 0,
