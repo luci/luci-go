@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3749e9d7_564ddca0",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T20:32:43Z",
+      "side": 1,
+      "message": "this signals that client the server is down, but it is not\n\nin general we must guarantee that we send to errC only once. This CL lost this guarantee because any handleConnection can do this.\n\nnote: we should not shutdown the server just because some client tried to connect without proper credentials\n\nsame below",
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a231b8b_163485a8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T20:32:43Z",
+      "side": 1,
+      "message": "why do we need a separate goroutine for this? this seems to add complexity without a necessity. Why not have L224 loop right here without extra goroutines and channels?",
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71ec3baa_187f775f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T20:32:43Z",
+      "side": 1,
+      "message": "nit: dest interface{}\n\nthis func doesn\u0027t care whether it is SinkMessageContainer or any other type",
+      "range": {
+        "startLine": 255,
+        "startChar": 35,
+        "endLine": 255,
+        "endChar": 68
+      },
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
