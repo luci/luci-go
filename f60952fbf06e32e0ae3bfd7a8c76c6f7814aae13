@@ -22,6 +22,30 @@
       "revId": "f60952fbf06e32e0ae3bfd7a8c76c6f7814aae13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdedf1ea_9bea58e7",
+        "filename": "resultdb/cmd/resultdb/get_test_exoneration_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T00:34:35Z",
+      "side": 1,
+      "message": "do you mean that we have TestVariant field as opposed to having TestPath and Variant directly in TestExoneration? yeah, I have a TODO to consider removing TestVariant https://osscs.corp.google.com/chromium/_/chromium/infra/luci/luci-go/+/ddd572681bd1e0fa5dd242a55d109c60b997c253:resultdb/proto/rpc/v1/test_result.proto;drc\u003dddd572681bd1e0fa5dd242a55d109c60b997c253;bpv\u003d0;bpt\u003d0;l\u003d189\n\nsince this confuses you, i think we should go ahead and remove it",
+      "parentUuid": "ffe4020e_be100409",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 57
+      },
+      "revId": "f60952fbf06e32e0ae3bfd7a8c76c6f7814aae13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
