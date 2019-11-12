@@ -152,6 +152,24 @@
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0e43ea0a_f7c66cf9",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T21:59:09Z",
+      "side": 1,
+      "message": "we can certainly make it possible by adding complexity, but I don\u0027t understand why would we allow that. This is more complex and the value is unclear to me. What am I missing?",
+      "parentUuid": "ccb8e8a2_bb77c23d",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
