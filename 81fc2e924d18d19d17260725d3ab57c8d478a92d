@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f1d2875c_74716ab8",
+        "filename": "resultdb/cmd/recorder/batch_create_test_exonerations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T19:56:03Z",
+      "side": 1,
+      "message": "yes, when handling this request, all test exoneraitons are inserted in one batch (one RPC) in L69.",
+      "parentUuid": "51fa5a3f_775b0934",
+      "range": {
+        "startLine": 66,
+        "startChar": 35,
+        "endLine": 66,
+        "endChar": 56
+      },
+      "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cd42678_558a0aad",
         "filename": "resultdb/cmd/recorder/batch_create_test_exonerations_test.go",
         "patchSetId": 4
@@ -68,6 +92,30 @@
       "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c488d08_58d4c7ee",
+        "filename": "resultdb/cmd/recorder/batch_create_test_exonerations_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T19:56:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cd42678_558a0aad",
+      "range": {
+        "startLine": 42,
+        "startChar": 10,
+        "endLine": 42,
+        "endChar": 11
+      },
+      "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "82f3f7e4_39003706",
+        "filename": "resultdb/cmd/recorder/batch_create_test_exonerations_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T19:56:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7af01e8_a16306c2",
+      "range": {
+        "startLine": 47,
+        "startChar": 10,
+        "endLine": 47,
+        "endChar": 11
+      },
+      "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "566975a6_47eb402b",
         "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
         "patchSetId": 4
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "c3dcdd2a_2fe7f6f3",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T19:56:03Z",
+      "side": 1,
+      "message": "insertTestExoneration only creates an insertion mutation but does not actually communicate with database. I understand that this is confusing, but this is also consistent with spanner API, e.g. https://godoc.org/cloud.google.com/go/spanner#Insert does not actually insert anything yet",
+      "parentUuid": "566975a6_47eb402b",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 3
+      },
+      "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1ef1cdf4_e751a77e",
         "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
         "patchSetId": 4
@@ -128,6 +224,30 @@
       "writtenOn": "2019-11-12T19:42:10Z",
       "side": 1,
       "message": "It seems that the following logic is not specific to Exoneration, and I assume it applies at least to invocation, is it worth considering extracting the logic to some common layer?",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 63
+      },
+      "revId": "81fc2e924d18d19d17260725d3ab57c8d478a92d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1ea616d_9e01edd5",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T19:56:03Z",
+      "side": 1,
+      "message": "this logic is rather specific to test exoneration: for all other entities, the client must provide the id. It is only in test exoneration, the server generates the id.\n\nThis is because we don\u0027t expect users to retrieve exonerations. They are typically \"write and forget\". But I can see an argument to make things consistent and require the client to provide an exoneration id and request id in exoneration creation request.\n\nWDYT?",
+      "parentUuid": "1ef1cdf4_e751a77e",
       "range": {
         "startLine": 71,
         "startChar": 4,
