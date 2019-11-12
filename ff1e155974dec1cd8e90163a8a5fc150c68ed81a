@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "8e6f9a03_2f116949",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T22:47:10Z",
+      "side": 1,
+      "message": "ValidatePageSize?",
+      "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2221ebe5_60e5e0bc",
         "filename": "resultdb/pbutil/query.go",
         "patchSetId": 6
@@ -34,6 +51,24 @@
       "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77a3ecdf_562da14e",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T22:47:10Z",
+      "side": 1,
+      "message": "I see, thanks for the clarification.\n\n(It does seem a little unfortunate since this means we need to implement what is essentially type-checking for any enums we add... fortunately with ValidateEnum that\u0027s relatively painless)",
+      "parentUuid": "cb9b563d_67371c97",
+      "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
