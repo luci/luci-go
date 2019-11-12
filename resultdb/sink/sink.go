@@ -21,13 +21,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -206,32 +206,51 @@ func (s *Server) Export(ctx context.Context) context.Context {
 	return nil
 }
 
-func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
+func ctxOrErr(ctx context.Context, err error, note string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	return errors.Annotate(err, note).Err()
+}
+
+func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
 	defer c.Close()
+	go func() {
+		<-ctx.Done()
+		c.Close()
+	}()
 	dc := json.NewDecoder(c)
 	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
-		logging.Errorf(ctx, "handshake failed: %s", err)
-		return
+		return ctxOrErr(ctx, err, "handshake failed")
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	// TODO(crbug.com/1017288) Actually use msg later.
-	var msg sinkpb.SinkMessageContainer
+	if err := processMessages(dc); err != nil && err != io.EOF {
+		return ctxOrErr(ctx, err, "connection")
+	}
+
+	return nil
+}
+
+func processMessages(dc *json.Decoder) error {
 	for {
-		if ctx.Err() != nil {
-			return
+		msgp := &sinkpb.SinkMessageContainer{}
+		if err := readMessage(dc, msgp); err != nil {
+			return err
 		}
 
-		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
-		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
-			if shouldKeepTrying(err) {
-				continue
-			}
-			// TODO(sajjadm): handle connection-level errors properly,
-			// possibly with full server shutdown
-			logging.Errorf(ctx, "reading next message failed: %s", err)
-			return
+		// TODO(sajjadm): msgp is valid, do something with it
+	}
+}
+
+func readMessage(dc *json.Decoder, dest proto.Message) error {
+	for {
+		err := jsonpb.UnmarshalNext(dc, dest)
+		if shouldKeepTrying(err) {
+			continue
 		}
+		return err
 	}
 }
 

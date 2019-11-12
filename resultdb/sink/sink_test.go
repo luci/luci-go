@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"testing"
@@ -87,6 +88,33 @@ func Test(t *testing.T) {
 
 			})
 
+			Convey("Connection handling tests", func() {
+				cr, cw := net.Pipe()
+				errC := make(chan error)
+				ctx, cancel := context.WithCancel(ctx)
+				go func() { errC <- server.handleConnection(ctx, cr) }()
+
+				Convey("Bad handshake", func() {
+					_, err := cw.Write([]byte(`{"auth_token":"BAD"}`))
+					So(err, ShouldBeNil)
+					So(<-errC, ShouldErrLike, "handshake failed")
+				})
+
+				Convey("Bad test result", func() {
+					_, err := cw.Write([]byte(`{"auth_token":"hello"}`))
+					So(err, ShouldBeNil)
+
+					_, err = cw.Write([]byte("kjhdsghg"))
+					So(err, ShouldBeNil)
+					So(<-errC, ShouldErrLike, "invalid")
+				})
+
+				Convey("Context cancellation", func() {
+					cancel()
+					So(<-errC, ShouldErrLike, ctx.Err())
+				})
+			})
+
 			Convey("Tests with Run", func() {
 				Convey("Run aborts after server error", func() {
 					fakeError := errors.New("test error")
@@ -105,5 +133,64 @@ func Test(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("Message processing tests", func() {
+			badInput := `blah`
+			goodInput := `{"testResult":{"testPath":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryMarkdown":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testPath":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryMarkdown":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
+
+			Convey("Garbage data", func() {
+				dc := json.NewDecoder(strings.NewReader(badInput))
+				err := processMessages(dc)
+				So(err, ShouldErrLike, "invalid")
+			})
+
+			Convey("Two populated messages", func() {
+				dc := json.NewDecoder(strings.NewReader(goodInput))
+				err := processMessages(dc)
+				So(err, ShouldErrLike, io.EOF)
+			})
+
+		})
 	})
 }
+
+/*
+func TestConnection(t *testing.T) {
+	ctx := context.Background()
+	Convey("Connection-handling check", t, func() {
+		Convey("Bad handshake", func(c C) {
+			server := makeServer(ctx, c)
+			err := server.Start(ctx)
+			defer server.Close()
+			So(err, ShouldBeNil)
+
+			addr := fmt.Sprintf(":%d", server.Config().Port)
+			conn, err := net.Dial("tcp", addr)
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte(`{"auth_token":"BAD"}`))
+			So(err, ShouldBeNil)
+			So(<-server.ErrC(), ShouldErrLike, "handshake failed")
+
+		})
+
+		Convey("Bad test result", func(c C) {
+			server := makeServer(ctx, c)
+			err := server.Start(ctx)
+			defer server.Close()
+			So(err, ShouldBeNil)
+
+			addr := fmt.Sprintf(":%d", server.Config().Port)
+			conn, err := net.Dial("tcp", addr)
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte("kjhdsghg"))
+			So(err, ShouldBeNil)
+			So(<-server.ErrC(), ShouldErrLike, "invalid")
+		})
+	})
+}
+*/
