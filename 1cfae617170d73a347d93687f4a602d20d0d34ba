@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1c1eb27c_49e2fb82",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-12T20:35:27Z",
+      "side": 1,
+      "message": "expectancy",
+      "range": {
+        "startLine": 71,
+        "startChar": 13,
+        "endLine": 71,
+        "endChar": 22
+      },
+      "revId": "1cfae617170d73a347d93687f4a602d20d0d34ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
