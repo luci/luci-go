@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34dcb869_7d7c13fe",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-12T20:46:10Z",
+      "side": 1,
+      "message": "Nit: ReadWithOptions",
+      "range": {
+        "startLine": 43,
+        "startChar": 4,
+        "endLine": 43,
+        "endChar": 8
+      },
+      "revId": "46d73a76fd99f694bd1a2a423cb6e6db0cc50746",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
