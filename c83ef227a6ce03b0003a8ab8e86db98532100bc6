@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3e2208a7_394774c2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-12T02:40:15Z",
+      "side": 1,
+      "message": "no longer relevant",
+      "parentUuid": "69b95928_fdf0998b",
+      "range": {
+        "startLine": 198,
+        "startChar": 9,
+        "endLine": 198,
+        "endChar": 11
+      },
+      "revId": "c83ef227a6ce03b0003a8ab8e86db98532100bc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ace0c79_34b4005a",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "c83ef227a6ce03b0003a8ab8e86db98532100bc6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3eaf707_b9ba9c99",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-12T02:40:15Z",
+      "side": 1,
+      "message": "extracted that logic and added tests",
+      "parentUuid": "7ace0c79_34b4005a",
+      "revId": "c83ef227a6ce03b0003a8ab8e86db98532100bc6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
