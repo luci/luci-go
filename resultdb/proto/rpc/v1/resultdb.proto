@@ -44,6 +44,7 @@ service ResultDB {
   };
 
   // Retrieves test exonerations for a parent invocation.
+  // Note: response does not contain test results of included invocations.
   rpc ListTestExonerations(ListTestExonerationsRequest)
       returns (ListTestExonerationsResponse) {};
 
