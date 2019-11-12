@@ -134,16 +134,8 @@ message IncludeRequest {
   // Name of the invocation to include, see Invocation.name.
   // For example, name of the swarming task invocation to include into a
   // buildbucket build invocation.
+  // This invocation MUST be finalized.
   string included_invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
-
-  // Names of another invocation included in |including_invocation| that this
-  // inclusion overrides.
-  // For example, invocation of a died swarming task that we intend to retry
-  // and replace with another swarming task.
-  // This invocation must be already included in |including_invocation|.
-  // The corresponding Invocation.InclusionAttrs.overidden_by is set to
-  // |included_invocation|.
-  string override_invocation = 3;
 }
 
 // A request message for CreateTestResult RPC.

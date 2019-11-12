@@ -200,13 +200,9 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 }
 
 // InsertInclusion returns a spanner mutation that inserts an inclusion.
-func InsertInclusion(including, included, overriddenBy span.InvocationID) *spanner.Mutation {
-	values := map[string]interface{}{
+func InsertInclusion(including, included span.InvocationID) *spanner.Mutation {
+	return span.InsertMap("IncludedInvocations", map[string]interface{}{
 		"InvocationId":         including,
 		"IncludedInvocationId": included,
-	}
-	if overriddenBy != "" {
-		values["OverriddenByIncludedInvocationId"] = overriddenBy
-	}
-	return span.InsertMap("Inclusions", values)
+	})
 }

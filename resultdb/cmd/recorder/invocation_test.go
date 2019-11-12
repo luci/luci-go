@@ -136,47 +136,16 @@ func TestReadInvocation(t *testing.T) {
 			}
 			So(inv, ShouldResembleProto, expected)
 
-			Convey(`with inclusions`, func() {
+			Convey(`with included invocations`, func() {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation("completed", pb.Invocation_COMPLETED, "", ct.Add(-time.Hour)),
-					testutil.InsertInvocation("active", pb.Invocation_ACTIVE, "", ct),
-					testutil.InsertInclusion("inv", "completed", "active"),
-					testutil.InsertInclusion("inv", "active", ""),
+					testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct),
+					testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct),
+					testutil.InsertInclusion("inv", "included0"),
+					testutil.InsertInclusion("inv", "included1"),
 				)
 
 				inv := readInv()
-				actual := &pb.Invocation{Inclusions: inv.Inclusions}
-				So(actual, ShouldResembleProto, &pb.Invocation{
-					Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-						"invocations/completed": {
-							Stabilized:   true,
-							OverriddenBy: "invocations/active",
-						},
-						"invocations/active": {},
-					},
-				})
-			})
-		})
-
-		Convey(`active with inclusions`, func() {
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", ct),
-				testutil.InsertInvocation("completed", pb.Invocation_COMPLETED, "", ct.Add(-time.Hour)),
-				testutil.InsertInvocation("active", pb.Invocation_ACTIVE, "", ct),
-				testutil.InsertInclusion("inv", "completed", "active"),
-				testutil.InsertInclusion("inv", "active", ""),
-			)
-
-			inv := readInv()
-			actual := &pb.Invocation{Inclusions: inv.Inclusions}
-			So(actual, ShouldResembleProto, &pb.Invocation{
-				Inclusions: map[string]*pb.Invocation_InclusionAttrs{
-					"invocations/completed": {
-						Stabilized:   true,
-						OverriddenBy: "invocations/active",
-					},
-					"invocations/active": {},
-				},
+				So(inv.IncludedInvocations, ShouldResemble, []string{"invocations/included0", "invocations/included1"})
 			})
 		})
 	})

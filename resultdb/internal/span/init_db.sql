@@ -86,18 +86,14 @@ CREATE TABLE InvocationsByTag (
   InvocationId STRING(MAX) NOT NULL
 ) PRIMARY KEY (TagId, InvocationId);
 
--- Stores "inclusion" edges between invocations.
+-- Stores ids of invocations included in another invocation.
 -- Interleaved in Invocations table.
-CREATE TABLE Inclusions (
+CREATE TABLE IncludedInvocations (
   -- ID of the including invocation, the "source" node of the edge.
   InvocationId STRING(MAX) NOT NULL,
 
   -- ID of the included invocation, the "target" node of the edge.
-  IncludedInvocationId STRING(MAX) NOT NULL,
-
-  -- If not NULL, this inclusion is overridden by inclusion
-  -- (InvocationId, OverriddenByIncludedInvocationId).
-  OverriddenByIncludedInvocationId STRING (MAX)
+  IncludedInvocationId STRING(MAX) NOT NULL
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
