@@ -534,6 +534,30 @@
     },
     {
       "key": {
+        "uuid": "4fcdec5c_6905caf4",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T20:39:59Z",
+      "side": 1,
+      "message": "rephrased. ptal",
+      "parentUuid": "6fe3bdfb_a9381419",
+      "range": {
+        "startLine": 157,
+        "startChar": 27,
+        "endLine": 157,
+        "endChar": 40
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b0fa99f_3c451f4b",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 6
