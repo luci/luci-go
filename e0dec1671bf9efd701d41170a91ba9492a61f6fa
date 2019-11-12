@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "cb7a7d41_cf4e61b4",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-12T18:16:07Z",
+      "side": 1,
+      "message": "Thanks! I\u0027m now able to understand with the examples, though the naming is still confusing.\n\nTaking a step back, why do we need UNEXPECTED_RESULTS? I believe whoever needs UNEXPECTED_RESULTS can accomplish their task using VARIANTS_WITH_UNEXPECTED_RESULTS, and if we can get rid of UNEXPECTED_RESULTS, it simplifies the concepts.",
+      "parentUuid": "64e52a83_648d390e",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0626691b_b7b57f43",
         "filename": "resultdb/proto/rpc/v1/query.proto",
         "patchSetId": 6
@@ -140,6 +164,30 @@
       "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b82f6de6_1fbf2527",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-12T18:16:07Z",
+      "side": 1,
+      "message": "expectacy sgtm. Thanks!",
+      "parentUuid": "e04ff240_7f89dbfa",
+      "range": {
+        "startLine": 63,
+        "startChar": 19,
+        "endLine": 63,
+        "endChar": 35
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
