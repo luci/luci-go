@@ -91,51 +91,22 @@ message Invocation {
   // A particular test result can have additional key-value pairs.
   luci.resultdb.type.Variant base_test_variant = 7;
 
-  // Attributes of a directed "includes" edge between two invocations.
-  message InclusionAttrs {
-    // Name of another included invocation that overrides this one.
-    //
-    // If set, this inclusion edge no longer influences the final outcome of the
-    // including invocation.
-    // A typical example is a retry: the new attempt overrides the previous one.
-    //
-    // Use IncludeRequest.override_invocation to set this field.
-    string overridden_by = 1;
-
-    // Whether the included invocation is finalized before the including one.
-    //
-    // If an active invocation A includes a finalized invocation B, such
-    // inclusion is stabilized. In contrast, if A is finalized and should appear
-    // frozen, but B is still active, then A may indirectly change.
-    // Such inclusion is not stabilized and by default QueryTestResult ignores
-    // it. Also it will never stabilize because A is finalized.
-    // inclusions. If both A and B are active, the inclusion is yet to be
-    // stabilized.
-    //
-    // In practice, either
-    // - an inclusion is stabilized because the A is expected to wait for its
-    //   children to conclude its own result, OR
-    // - it does not matter e.g. if A was canceled and finalized prematurely.
-    bool stabilized = 2;
-  }
-
-  // Set of invocations included into this one, as well as attributes
-  // of the inclusion edges. Map key is an invocation name.
-  //
-  // Invocations are composable: one invocation can include zero or more other
-  // invocations, representing a cumulative result. For example, a Buildbucket
-  // build invocation can include invocations of all child swarming tasks and
-  // represent overall result of the build, encapsulating the internal structure
-  // of the build from the client that just needs to load test results scoped
-  // to the build.
+  // Names of invocations included into this one. Overall results of this
+  // invocation is a UNION of results directly included into this invocation
+  // and results from the included invocations, recursively.
+  // For example, a Buildbucket build invocation may include invocations of its
+  // child swarming tasks and represent overall result of the build,
+  // encapsulating the internal structure of the build.
   //
   // The graph is directed.
   // There can be at most one edge between a given pair of invocations.
+  // The shape of the graph does not matter. What matters is only the set of
+  // reachable invocations. Thus cycles are allowed and are noop.
   //
   // QueryTestResults returns test results from the transitive closure of
   // invocations.
   //
   // Use Recorder.Include RPC to modify this field.
-  map<string, InclusionAttrs> inclusions = 8
+  repeated string included_invocations = 8
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }
