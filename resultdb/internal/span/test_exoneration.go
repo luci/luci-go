@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -75,4 +76,60 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	default:
 		return ret, nil
 	}
+}
+
+// ReadTestExonerations reads all test exonerations from the invocation.
+func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, cursorTok string, pageSize int) (tes []*pb.TestExoneration, nextCursorTok string, err error) {
+	if pageSize <= 0 {
+		panic("pageSize must be positive")
+	}
+
+	// Set start position if requested.
+	keyRange := invID.Key().AsPrefix()
+	switch pos, tokErr := pagination.ParseToken(cursorTok); {
+	case tokErr != nil:
+		err = errors.Reason("invalid page_token").
+			InternalReason("%s", tokErr).
+			Tag(grpcutil.InvalidArgumentTag).Err()
+		return
+
+	case pos == nil:
+		break
+
+	case len(pos) == 2:
+		// Start after the cursor position.
+		keyRange.Kind = spanner.OpenClosed
+		keyRange.Start = invID.Key(pos[0], pos[1])
+
+	default:
+		err = errors.Reason("invalid page_token").
+			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
+			Tag(grpcutil.InvalidArgumentTag).Err()
+		return
+	}
+
+	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
+	opts := &spanner.ReadOptions{Limit: pageSize}
+	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
+		ex := &pb.TestExoneration{
+			TestVariant: &pb.TestVariant{},
+		}
+		err := FromSpanner(row, &ex.TestVariant.TestPath, &ex.ExonerationId, &ex.TestVariant.Variant, &ex.ExplanationMarkdown)
+		if err != nil {
+			return err
+		}
+		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestVariant.TestPath, ex.ExonerationId)
+		tes = append(tes, ex)
+		return nil
+	})
+	if err != nil {
+		tes = nil
+		return
+	}
+
+	if len(tes) == pageSize {
+		last := tes[pageSize-1]
+		nextCursorTok = pagination.Token(last.TestVariant.TestPath, last.ExonerationId)
+	}
+	return
 }
