@@ -16,6 +16,24 @@
       "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb9b563d_67371c97",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T17:19:51Z",
+      "side": 1,
+      "message": "JSON decoder does, binary decoder does not. See also https://stackoverflow.com/a/56485591\n\ni think this should be an error (not panic) because a user may send any enum value (it is an int32, they can send anything).",
+      "parentUuid": "2221ebe5_60e5e0bc",
+      "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
