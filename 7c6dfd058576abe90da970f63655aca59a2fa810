@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b16a5ffd_ca70e1c2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-12T23:02:25Z",
+      "side": 1,
+      "message": "In this case \u0027builder.properties\u0027 should be populated instead of \u0027builder.recipe.properties_j\u0027. builder.properties is a single json object (no more properties_j). See https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/buildbucket/proto/project_config.proto?g\u003d0\u0026l\u003d328",
+      "range": {
+        "startLine": 305,
+        "startChar": 4,
+        "endLine": 305,
+        "endChar": 18
+      },
+      "revId": "7c6dfd058576abe90da970f63655aca59a2fa810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
