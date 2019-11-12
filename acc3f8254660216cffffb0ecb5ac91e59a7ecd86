@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5bc43a2b_a9b6ad5e",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T21:42:42Z",
+      "side": 1,
+      "message": "we generate a new exoneration ID for each test exoneration\nwe never generate requestID",
+      "parentUuid": "5c4093ea_2eaef287",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a7a8f81d_ffe80ff0",
         "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
         "patchSetId": 6
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "c98196ed_056c87bf",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T21:42:42Z",
+      "side": 1,
+      "message": "removed. this is a result of a bad merge",
+      "parentUuid": "a7a8f81d_ffe80ff0",
+      "range": {
+        "startLine": 110,
+        "startChar": 0,
+        "endLine": 110,
+        "endChar": 29
+      },
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8023b1b1_997facd0",
         "filename": "resultdb/proto/rpc/v1/recorder.proto",
         "patchSetId": 6
@@ -53,6 +95,24 @@
       "writtenOn": "2019-11-12T21:23:11Z",
       "side": 1,
       "message": "Would we want to check if they don\u0027t match each /other/, which would be probably unintended and an error? That would be more complexity for us, though",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a392c98_4ec25d8d",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T21:42:42Z",
+      "side": 1,
+      "message": "do you mean in addition to this or instead? that would be redundant in addition to this.",
+      "parentUuid": "8023b1b1_997facd0",
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
