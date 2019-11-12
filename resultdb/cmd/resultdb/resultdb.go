@@ -37,10 +37,6 @@ func NewResultDBServer() pb.ResultDBServer {
 	}
 }
 
-func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
-	return nil, grpcutil.Unimplemented
-}
-
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
 	return nil, grpcutil.Unimplemented
 }
