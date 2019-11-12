@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "760814a8_4daa5f0b",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T20:25:19Z",
+      "side": 1,
+      "message": "it does simplify things. removed",
+      "parentUuid": "cb7a7d41_cf4e61b4",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0626691b_b7b57f43",
         "filename": "resultdb/proto/rpc/v1/query.proto",
         "patchSetId": 6
