@@ -414,6 +414,30 @@
     },
     {
       "key": {
+        "uuid": "c3fad2e2_e8144b84",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T17:14:42Z",
+      "side": 1,
+      "message": "this is an accurate summary and max_staleness is a rather standard term. I see 21K occurrences of \"max_staleness\" inside the google codebase. Here is usage of the term outside of google, in MongoDB: https://github.com/mongodb/specifications/blob/master/source/max-staleness/max-staleness.rst\nIt seems that many know what max_staleness means, and those who do might find a different term confusing (\"do you mean max staleness?\").\n\nI am happy to expand the comment to make things absolutely clear. Any specific suggestions for wording?",
+      "parentUuid": "72f754b8_690dde76",
+      "range": {
+        "startLine": 157,
+        "startChar": 27,
+        "endLine": 157,
+        "endChar": 40
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b0fa99f_3c451f4b",
         "filename": "resultdb/proto/rpc/v1/resultdb.proto",
         "patchSetId": 6
