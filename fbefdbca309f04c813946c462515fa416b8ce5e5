@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fd5b2d89_ae3ba0ed",
+        "filename": "resultdb/proto/rpc/v1/resultdb.proto",
+        "patchSetId": 13
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-12T00:54:26Z",
+      "side": 1,
+      "message": "As discussed offline, it\u0027ll be helpful to add a comment here mentioning if really need TVs from included invocations, use QueryTestResults.",
+      "revId": "fbefdbca309f04c813946c462515fa416b8ce5e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
