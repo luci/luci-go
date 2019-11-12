@@ -535,7 +535,9 @@ type ResultDBClient interface {
 	// Retrieves a test exoneration.
 	GetTestExoneration(ctx context.Context, in *GetTestExonerationRequest, opts ...grpc.CallOption) (*TestExoneration, error)
 	// Retrieves test exonerations for a parent invocation.
+	//
 	// Note: response does not contain test results of included invocations.
+	// Use QueryTestResults instead.
 	ListTestExonerations(ctx context.Context, in *ListTestExonerationsRequest, opts ...grpc.CallOption) (*ListTestExonerationsResponse, error)
 	// Retrieves test results from an invocation.
 	// Supports invocation inclusions.
@@ -681,7 +683,9 @@ type ResultDBServer interface {
 	// Retrieves a test exoneration.
 	GetTestExoneration(context.Context, *GetTestExonerationRequest) (*TestExoneration, error)
 	// Retrieves test exonerations for a parent invocation.
+	//
 	// Note: response does not contain test results of included invocations.
+	// Use QueryTestResults instead.
 	ListTestExonerations(context.Context, *ListTestExonerationsRequest) (*ListTestExonerationsResponse, error)
 	// Retrieves test results from an invocation.
 	// Supports invocation inclusions.
