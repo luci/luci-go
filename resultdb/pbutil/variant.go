@@ -110,7 +110,7 @@ func ValidateTestVariant(tv *pb.TestVariant) error {
 	return nil
 }
 
-// VariantHash returns a hex SHA256 hash of concatenated "<key>:<val>\n" strings from the variant.
+// VariantHash returns a short hash of the variant.
 func VariantHash(vr *typepb.Variant) string {
 	h := sha256.New()
 	for _, k := range SortedVariantKeys(vr) {
@@ -119,5 +119,5 @@ func VariantHash(vr *typepb.Variant) string {
 		io.WriteString(h, vr.Def[k])
 		io.WriteString(h, "\n")
 	}
-	return hex.EncodeToString(h.Sum(nil))
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
