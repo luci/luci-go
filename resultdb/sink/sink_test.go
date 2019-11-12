@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"testing"
@@ -129,6 +130,70 @@ func TestRun(t *testing.T) {
 				return nil
 			})
 			So(err, ShouldBeNil)
+		})
+	})
+}
+
+func TestMessageProcessing(t *testing.T) {
+	Convey("Message-processing check", t, func() {
+		Convey("Garbage data", func() {
+			ctx := context.Background()
+			input := `blah`
+			dc := json.NewDecoder(strings.NewReader(input))
+			err := processMessages(ctx, dc)
+			So(err, ShouldErrLike, "invalid")
+		})
+
+		Convey("Two populated messages", func() {
+			input := `{"testResult":{"testPath":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryMarkdown":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testPath":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryMarkdown":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
+			ctx := context.Background()
+			dc := json.NewDecoder(strings.NewReader(input))
+			err := processMessages(ctx, dc)
+			So(err, ShouldErrLike, io.EOF)
+		})
+	})
+}
+
+func TestConnection(t *testing.T) {
+	Convey("Connection-handling check", t, func() {
+		Convey("Bad handshake", func() {
+			ctx := context.Background()
+			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+			So(err, ShouldBeNil)
+
+			err = server.Start(ctx)
+			defer server.Close()
+			So(err, ShouldBeNil)
+
+			addr := fmt.Sprintf(":%d", server.Config().Port)
+			conn, err := net.Dial("tcp", addr)
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte(`{"auth_token":"BAD"}`))
+			So(err, ShouldBeNil)
+			So(<-server.ErrC(), ShouldErrLike, "handshake failed")
+
+		})
+
+		Convey("Bad test result", func() {
+			ctx := context.Background()
+			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+			So(err, ShouldBeNil)
+
+			err = server.Start(ctx)
+			defer server.Close()
+			So(err, ShouldBeNil)
+
+			addr := fmt.Sprintf(":%d", server.Config().Port)
+			conn, err := net.Dial("tcp", addr)
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
+			So(err, ShouldBeNil)
+
+			_, err = conn.Write([]byte("kjhdsghg"))
+			So(err, ShouldBeNil)
+			So(<-server.ErrC(), ShouldErrLike, "invalid")
 		})
 	})
 }
