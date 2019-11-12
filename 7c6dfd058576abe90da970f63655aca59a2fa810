@@ -46,6 +46,30 @@
       "revId": "7c6dfd058576abe90da970f63655aca59a2fa810",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27a3961a_534bb7a9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 10
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1340253
+      },
+      "writtenOn": "2019-11-12T23:24:26Z",
+      "side": 1,
+      "message": "Updated, lmk how this looks.",
+      "parentUuid": "5a890bfa_941e32ae",
+      "range": {
+        "startLine": 305,
+        "startChar": 4,
+        "endLine": 305,
+        "endChar": 18
+      },
+      "revId": "7c6dfd058576abe90da970f63655aca59a2fa810",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
