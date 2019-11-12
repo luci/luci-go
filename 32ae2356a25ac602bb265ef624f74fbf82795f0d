@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12582c2a_a1f9ebfc",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-12T05:25:55Z",
+      "side": 1,
+      "message": "just So(...) works, so you don\u0027t have to propagate C in tests",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 23
+      },
+      "revId": "32ae2356a25ac602bb265ef624f74fbf82795f0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
