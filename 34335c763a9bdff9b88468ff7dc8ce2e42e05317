@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "dd1cce0a_dd4ba754",
+        "filename": "resultdb/cmd/resultdb/list_test_exonerations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-12T00:03:07Z",
+      "side": 1,
+      "message": "page size will be 0 if not specified. And in that case the default page size should be used, see https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/resultdb/list_test_results.go;l\u003d67?q\u003dadjustPageSize\u0026ss\u003dchromium%2Finfra%2Finfra.\n\nThough I would suggest to move adjustPageSize somewhere else (to pbutil/ ?).",
+      "parentUuid": "dac8fb5a_22378dab",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 34
+      },
+      "revId": "34335c763a9bdff9b88468ff7dc8ce2e42e05317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d10bc026_53fccc58",
         "filename": "resultdb/cmd/resultdb/list_test_exonerations_test.go",
         "patchSetId": 2
