@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "67491435_35203abc",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-12T23:24:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3749e9d7_564ddca0",
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a231b8b_163485a8",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 11
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "e27a9cfa_4ecf1a4f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-12T23:24:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a231b8b_163485a8",
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "71ec3baa_187f775f",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 11
@@ -47,6 +83,30 @@
       "writtenOn": "2019-11-12T20:32:43Z",
       "side": 1,
       "message": "nit: dest interface{}\n\nthis func doesn\u0027t care whether it is SinkMessageContainer or any other type",
+      "range": {
+        "startLine": 255,
+        "startChar": 35,
+        "endLine": 255,
+        "endChar": 68
+      },
+      "revId": "5fc7f92ce2c8dac8fce91538ad80546c9b6b2e1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d27e2220_be55429e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-12T23:24:41Z",
+      "side": 1,
+      "message": "Can\u0027t be interface{} but I made it as general as UnmarshalNext accepts.",
+      "parentUuid": "71ec3baa_187f775f",
       "range": {
         "startLine": 255,
         "startChar": 35,
