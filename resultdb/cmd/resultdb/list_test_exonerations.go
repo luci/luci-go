@@ -26,7 +26,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
+func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) error {
 	if err := pbutil.ValidateInvocationName(req.GetInvocation()); err != nil {
 		return errors.Annotate(err, "invocation").Err()
 	}
@@ -38,9 +38,9 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 	return nil
 }
 
-// ListTestResults implements pb.ResultDBServer.
-func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
-	if err := validateListTestResultsRequest(in); err != nil {
+// ListTestExonerations implements pb.ResultDBServer.
+func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
+	if err := validateListTestExonerationsRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 	invID := span.MustParseInvocationName(in.Invocation)
@@ -48,13 +48,13 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
-	trs, tok, err := span.ReadTestResults(ctx, txn, invID, true, in.GetPageToken(), pagination.AdjustPageSize(in.GetPageSize()))
+	tes, tok, err := span.ReadTestExonerations(ctx, txn, invID, in.GetPageToken(), pagination.AdjustPageSize(in.GetPageSize()))
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.ListTestResultsResponse{
-		TestResults:   trs,
-		NextPageToken: tok,
+	return &pb.ListTestExonerationsResponse{
+		TestExonerations: tes,
+		NextPageToken:    tok,
 	}, nil
 }

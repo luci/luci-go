@@ -41,20 +41,13 @@ func TestValidateListTestResultsRequest(t *testing.T) {
 	})
 
 	Convey(`Invalid invocation`, t, func() {
-		Convey(`, missing`, func() {
-			req := &pb.ListTestResultsRequest{PageSize: 50}
-			So(validateListTestResultsRequest(req), ShouldErrLike, "unspecified")
-		})
-
-		Convey(`, invalid format`, func() {
-			req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
-			So(validateListTestResultsRequest(req), ShouldErrLike, "does not match")
-		})
+		req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
+		So(validateListTestResultsRequest(req), ShouldErrLike, "invocation: does not match")
 	})
 
 	Convey(`Invalid page size`, t, func() {
 		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: -50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "negative")
+		So(validateListTestResultsRequest(req), ShouldErrLike, "page_size: negative")
 	})
 }
 
@@ -72,16 +65,16 @@ func TestListTestResults(t *testing.T) {
 
 		srv := NewResultDBServer()
 
-		Convey(`works`, func() {
+		Convey(`Works`, func() {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}
-			resp, err := srv.ListTestResults(ctx, req)
+			res, err := srv.ListTestResults(ctx, req)
 			So(err, ShouldBeNil)
-			So(resp, ShouldNotBeNil)
-			So(resp.TestResults, ShouldResembleProto, trs[:1])
-			So(resp.NextPageToken, ShouldNotEqual, "")
+			So(res, ShouldNotBeNil)
+			So(res.TestResults, ShouldResembleProto, trs[:1])
+			So(res.NextPageToken, ShouldNotEqual, "")
 
-			Convey(`with pagination`, func() {
-				req.PageToken = resp.NextPageToken
+			Convey(`With pagination`, func() {
+				req.PageToken = res.NextPageToken
 				req.PageSize = 2
 				resp, err := srv.ListTestResults(ctx, req)
 				So(err, ShouldBeNil)
@@ -90,28 +83,15 @@ func TestListTestResults(t *testing.T) {
 				So(resp.NextPageToken, ShouldEqual, "")
 			})
 
-			Convey(`with default page size`, func() {
+			Convey(`With default page size`, func() {
 				req := &pb.ListTestResultsRequest{Invocation: "invocations/req"}
-				resp, err := srv.ListTestResults(ctx, req)
+				res, err := srv.ListTestResults(ctx, req)
 				So(err, ShouldBeNil)
-				So(resp, ShouldNotBeNil)
-				So(resp.TestResults, ShouldResembleProto, trs)
-				So(resp.NextPageToken, ShouldEqual, "")
+				So(res, ShouldNotBeNil)
+				So(res.TestResults, ShouldResembleProto, trs)
+				So(res.NextPageToken, ShouldEqual, "")
 			})
 		})
-	})
-}
-
-func TestAdjustPageSize(t *testing.T) {
-	t.Parallel()
-	Convey(`OK`, t, func() {
-		So(adjustPageSize(50), ShouldEqual, 50)
-	})
-	Convey(`too big`, t, func() {
-		So(adjustPageSize(1e6), ShouldEqual, pageSizeMax)
-	})
-	Convey(`missing or 0`, t, func() {
-		So(adjustPageSize(0), ShouldEqual, pageSizeDefault)
 	})
 }
 
@@ -129,11 +109,11 @@ func TestReadTestResults(t *testing.T) {
 				pb.TestStatus_FAIL, pb.TestStatus_PASS, pb.TestStatus_FAIL,
 			})
 
-		Convey(`all results`, func() {
+		Convey(`All results`, func() {
 			token := testRead(ctx, "inv", true, "", 10, trs)
 			So(token, ShouldEqual, "")
 
-			Convey(`with pagination`, func() {
+			Convey(`With pagination`, func() {
 				token := testRead(ctx, "inv", true, "", 1, trs[:1])
 				So(token, ShouldNotEqual, "")
 
@@ -145,10 +125,10 @@ func TestReadTestResults(t *testing.T) {
 			})
 		})
 
-		Convey(`unexpected results`, func() {
+		Convey(`Unexpected results`, func() {
 			testRead(ctx, "inv", false, "", 10, append(trs[1:3], trs[4]))
 
-			Convey(`with pagination`, func() {
+			Convey(`With pagination`, func() {
 				token := testRead(ctx, "inv", false, "", 1, trs[1:2])
 				So(token, ShouldNotEqual, "")
 
@@ -160,7 +140,7 @@ func TestReadTestResults(t *testing.T) {
 			})
 		})
 
-		Convey(`span test path boundaries`, func() {
+		Convey(`Span test path boundaries`, func() {
 			trs = append(trs, insertTestResults(ctx, "inv", "DoQux", 0,
 				[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})...)
 			token := testRead(ctx, "inv", true, "", 6, trs[:6])
@@ -169,16 +149,16 @@ func TestReadTestResults(t *testing.T) {
 			testRead(ctx, "inv", true, token, 2, trs[6:])
 		})
 
-		Convey(`errors with bad token`, func() {
+		Convey(`Errors with bad token`, func() {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 
-			Convey(`from bad position`, func() {
+			Convey(`From bad position`, func() {
 				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "CgVoZWxsbw==", 5)
 				So(err, ShouldErrLike, "invalid page_token")
 			})
 
-			Convey(`from decoding`, func() {
+			Convey(`From decoding`, func() {
 				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "%%%", 5)
 				So(err, ShouldErrLike, "invalid page_token")
 			})

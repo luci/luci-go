@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pagetoken
+package pagination
 
 import (
 	"encoding/base64"
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 )
 
-// Parse extracts a string slice position from the given cursor token.
-func Parse(token string) ([]string, error) {
+const (
+	pageSizeMax     = 1000
+	pageSizeDefault = 100
+)
+
+// ParseToken extracts a string slice position from the given cursor token.
+func ParseToken(token string) ([]string, error) {
 	if token == "" {
 		return nil, nil
 	}
@@ -40,8 +46,8 @@ func Parse(token string) ([]string, error) {
 	return cursor.Position, nil
 }
 
-// Format converts an string slice representing cursor position to an opaque token string.
-func Format(pos ...string) string {
+// Token converts an string slice representing cursor position to an opaque token string.
+func Token(pos ...string) string {
 	if pos == nil {
 		return ""
 	}
@@ -51,4 +57,25 @@ func Format(pos ...string) string {
 		panic(err)
 	}
 	return base64.StdEncoding.EncodeToString(msgBytes)
+}
+
+// AdjustPageSize takes the given requested pageSize and adjusts as necessary.
+func AdjustPageSize(pageSize int32) int {
+	switch {
+	case pageSize >= pageSizeMax:
+		return pageSizeMax
+	case pageSize > 0:
+		return int(pageSize)
+	default:
+		return pageSizeDefault
+	}
+}
+
+// ValidatePageSize returns a non-nil error if pageSize is invalid.
+// Returns nil if pageSize is 0.
+func ValidatePageSize(pageSize int32) error {
+	if pageSize < 0 {
+		return errors.Reason("negative").Err()
+	}
+	return nil
 }
