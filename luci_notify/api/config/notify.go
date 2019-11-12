@@ -25,6 +25,7 @@ func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) b
 		panic("new status must always be valid")
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
+	case n.OnInfraFailure && newStatus == buildbucketpb.Status_INFRA_FAILURE:
 	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
 	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
 

@@ -39,6 +39,7 @@ func TestNotification(t *testing.T) {
 			n.OnSuccess = true
 			So(n.ShouldNotify(unspecified, success), ShouldBeTrue)
 			So(n.ShouldNotify(unspecified, failure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
 		})
 
 		Convey("OnFailure", func() {
@@ -48,13 +49,24 @@ func TestNotification(t *testing.T) {
 			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
 		})
 
+		Convey("OnInfraFailure", func() {
+			n.OnInfraFailure = true
+			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, failure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeTrue)
+		})
+
 		Convey("OnNewFailure", func() {
 			n.OnNewFailure = true
 			So(n.ShouldNotify(success, success), ShouldBeFalse)
 			So(n.ShouldNotify(success, failure), ShouldBeTrue)
-			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(success, infraFailure), ShouldBeFalse)
 			So(n.ShouldNotify(failure, success), ShouldBeFalse)
+			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(failure, infraFailure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, failure), ShouldBeTrue)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
 		})
 
 		Convey("OnChange", func() {

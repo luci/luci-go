@@ -26,6 +26,7 @@ def _notifier(
 
       # Conditions.
       on_failure=None,
+      on_infra_failure=None,
       on_new_failure=None,
       on_status_change=None,
       on_success=None,
@@ -60,6 +61,8 @@ def _notifier(
 
     on_failure: if True, notify on each build failure. Ignores transient (aka
         "infra") failures. Default is False.
+    on_infra_failure: if True, notify on each transient (aka "infra") failure.
+        Default is False.
     on_new_failure: if True, notify on a build failure unless the previous build
         was a failure too. Ignores transient (aka "infra") failures. Default is
         False.
@@ -87,10 +90,11 @@ def _notifier(
   name = validate.string('name', name)
 
   on_failure = validate.bool('on_failure', on_failure, required=False)
+  on_infra_failure = validate.bool('on_infra_failure', on_infra_failure, required=False)
   on_new_failure = validate.bool('on_new_failure', on_new_failure, required=False)
   on_status_change = validate.bool('on_status_change', on_status_change, required=False)
   on_success = validate.bool('on_success', on_success, required=False)
-  if not(on_failure or on_new_failure or on_status_change or on_success):
+  if not(on_failure or on_infra_failure or on_new_failure or on_status_change or on_success):
     fail('at least one on_... condition is required')
 
   notify_emails = validate.list('notify_emails', notify_emails)
@@ -108,6 +112,7 @@ def _notifier(
   graph.add_node(key, idempotent = True, props = {
       'name': name,
       'on_failure': on_failure,
+      'on_infra_failure': on_infra_failure,
       'on_new_failure': on_new_failure,
       'on_status_change': on_status_change,
       'on_success': on_success,

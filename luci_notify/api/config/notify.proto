@@ -51,7 +51,7 @@ message Notifier {
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
 //
-// Next ID: 8.
+// Next ID: 9.
 message Notification {
   // Email is a message representing a set of mail recipients (email
   // addresses).
@@ -80,6 +80,9 @@ message Notification {
 
   // Notify on each build failure.
   bool on_failure = 2;
+
+  // Notify on each infra build failure.
+  bool on_infra_failure = 8;
 
   // Notify on each build status different than the previous one.
   bool on_change = 3;

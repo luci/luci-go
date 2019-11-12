@@ -1524,6 +1524,7 @@ luci.notifier(
 
     # Optional arguments.
     on_failure = None,
+    on_infra_failure = None,
     on_new_failure = None,
     on_status_change = None,
     on_success = None,
@@ -1555,6 +1556,7 @@ recipients.
 
 * **name**: name of this notifier to reference it from other rules. Required.
 * **on_failure**: if True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_infra_failure**: if True, notify on each transient (aka "infra") failure. Default is False.
 * **on_new_failure**: if True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
 * **on_status_change**: if True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
 * **on_success**: if True, notify on each build success. Default is False.
