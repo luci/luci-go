@@ -77,6 +77,7 @@ func TestArchive(t *testing.T) {
 		winLinkData := []byte("no link on Windows")
 		if !isWindows() {
 			So(os.Symlink(filepath.Join("base", "bar"), filepath.Join(tmpDir, "link")), ShouldBeNil)
+			So(os.Symlink("bar", filepath.Join(baseDir, "relativelink")), ShouldBeNil)
 		} else {
 			So(ioutil.WriteFile(filepath.Join(tmpDir, "link"), winLinkData, 0600), ShouldBeNil)
 		}
@@ -111,7 +112,7 @@ func TestArchive(t *testing.T) {
 				}
 
 				h := isolated.GetHash(namespace)
-				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"))
+				baseData := filesArchiveExpect(h, tmpDir, filepath.Join("base", "bar"), filepath.Join("base", "relativelink"))
 				secondData := filesArchiveExpect(h, tmpDir, filepath.Join("second", "boz"))
 				topIsolated := isolated.New(h)
 				topIsolated.Includes = isolated.HexDigests{baseData.Hash, secondData.Hash}
@@ -301,6 +302,16 @@ func filesArchiveExpect(h crypto.Hash, dir string, files ...string) *archiveExpe
 
 	for _, file := range files {
 		path := filepath.Join(dir, file)
+		if !isWindows() {
+			fi, err := os.Lstat(path)
+			So(err, ShouldBeNil)
+			if fi.Mode()&os.ModeSymlink != 0 {
+				link, err := os.Readlink(path)
+				So(err, ShouldBeNil)
+				i.Files[file] = isolated.SymLink(link)
+				continue
+			}
+		}
 		fi, err := os.Stat(path)
 		So(err, ShouldBeNil)
 		data, err := ioutil.ReadFile(path)
