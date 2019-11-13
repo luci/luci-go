@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea6fdf15_d54923cb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-13T17:58:17Z",
+      "side": 1,
+      "message": "huh?",
+      "range": {
+        "startLine": 9,
+        "startChar": 42,
+        "endLine": 10,
+        "endChar": 37
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ce83121_88cfb4b0",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-13T17:58:17Z",
+      "side": 1,
+      "message": "I still think that doing this in an interceptor or even a decorator is WRONG. Per the gRPC spec, Service implementation MUST return gRPC errors already. Returning other sort of errors (and only later transforming them into gRPC) is a spec violation.",
+      "range": {
+        "startLine": 155,
+        "startChar": 9,
+        "endLine": 155,
+        "endChar": 44
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3efaab56_2f9cfabe",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-13T17:58:17Z",
+      "side": 1,
+      "message": "I\u0027m not super sure this would work correctly. In GAE world, such transports are always request-scoped and short lived. I haven\u0027t looked what happens when it is created with a root server context and retained forever.",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 59
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
