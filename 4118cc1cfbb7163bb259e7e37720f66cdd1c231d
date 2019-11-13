@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e85baa9_bcdf9ff5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:22:16Z",
+      "side": 1,
+      "message": "the param here is \"format\", not just a regular string. If someone accepts a string from someone else and passes as a note here, and it has %s, then we will end up with invalid message. We should escape it: errors.Annotate(err, \"%s\", note)",
+      "range": {
+        "startLine": 214,
+        "startChar": 29,
+        "endLine": 214,
+        "endChar": 33
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8318ed0f_798cd317",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:22:16Z",
+      "side": 1,
+      "message": "this assumes that ctx will be canceled at some point (otherwise it is a goroutine leak). please add a comment about this assumption to handleConnection comment",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6c65a29_13fdd5ce",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:22:16Z",
+      "side": 1,
+      "message": "handleConnection caller ignores the returned error, so currently ctxOnErr is noop. Besides, it would be simpler to return the error as is, but ignore it in favor of ctx.Err() at the callsite",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 17
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "434852c6_79b9c901",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:22:16Z",
+      "side": 1,
+      "message": "it looks like we create a message in each iteration instead of reusing the same one. let\u0027s move this line out of the loop",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81948e62_fdd7d7fa",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:22:16Z",
+      "side": 1,
+      "message": "this func is nice. A comment would be even nicer",
+      "range": {
+        "startLine": 247,
+        "startChar": 5,
+        "endLine": 247,
+        "endChar": 16
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
