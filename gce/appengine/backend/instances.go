@@ -57,12 +57,13 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 	vm := &model.VM{
 		ID: id,
 	}
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		if err := datastore.Get(c, vm); err != nil {
+	put := false
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		put = false
+		switch err := datastore.Get(c, vm); {
+		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
-		}
-		if vm.Created > 0 {
-			// Already created.
+		case vm.Created > 0:
 			return nil
 		}
 		vm.Created = t.Unix()
@@ -71,8 +72,13 @@ func setCreated(c context.Context, id string, inst *compute.Instance) error {
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
+		put = true
 		return nil
 	}, nil)
+	if put && err != nil {
+		metrics.ReportCreationTime(c, float64(vm.Created-vm.Configured), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone())
+	}
+	return err
 }
 
 // logErrors logs the errors in the given *googleapi.Error.
