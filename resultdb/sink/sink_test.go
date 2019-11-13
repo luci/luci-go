@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/lucictx"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -53,5 +55,19 @@ func TestHandshake(t *testing.T) {
 			err = doCheck(`garbage`, authToken)
 			So(err, ShouldErrLike, "failed to parse")
 		})
+	})
+}
+
+func TestExport(t *testing.T) {
+	Convey("Export check", t, func() {
+		ctx := context.Background()
+		s, err := NewServer(ctx, ServerConfig{Port: 42, AuthToken: "hello"})
+		So(err, ShouldBeNil)
+		ctx = s.Export(ctx)
+		db := lucictx.GetResultDB(ctx)
+		So(db, ShouldNotBeNil)
+		So(db.TestResults, ShouldNotBeNil)
+		So(db.TestResults.Port, ShouldEqual, 42)
+		So(db.TestResults.AuthToken, ShouldEqual, "hello")
 	})
 }
