@@ -215,7 +215,15 @@ message BatchCreateTestExonerationsRequest {
   // Requests to create TestExonerations.
   // requests[i].invocation MUST be either empty or equal to invocation in this
   // message.
+  // requests[i].request_id MUST be either empty or equal to request_id in
+  // this message.
   repeated CreateTestExonerationRequest requests = 2;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided, so it is
+  // strongly recommended to populate this field.
+  string request_id = 3;
 }
 
 // A response message for BatchCreateTestExonerations RPC.

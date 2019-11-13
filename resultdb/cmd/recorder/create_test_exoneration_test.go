@@ -40,7 +40,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateCreateTestExonerationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{})
+			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{}, true)
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
@@ -50,7 +50,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 				TestExoneration: &pb.TestExoneration{
 					TestVariant: &pb.TestVariant{TestPath: "\x01"},
 				},
-			})
+			}, true)
 			So(err, ShouldErrLike, `test_exoneration: test_variant: test_path: does not match`)
 		})
 
@@ -66,7 +66,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 						),
 					},
 				},
-			})
+			}, true)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -139,7 +139,7 @@ func TestCreateTestExoneration(t *testing.T) {
 
 			So(res.ExonerationId, ShouldStartWith, "6408fdc5c36df5df:") // hash of the variant
 			if withRequestID {
-				So(res.ExonerationId, ShouldEqual, "6408fdc5c36df5df:d:fcc63e142b2aa8429cde3f4e799f05fa8f179e7c57165658e89305e3f6c647580383f4e48a73ed10a58e1d70246eaad194301f053dd453a7b1a078dc2f2d5ae7")
+				So(res.ExonerationId, ShouldEqual, "6408fdc5c36df5df:d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
 			}
 
 			expected := proto.Clone(req.TestExoneration).(*pb.TestExoneration)
@@ -150,7 +150,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(res, ShouldResembleProto, expected)
 
 			// Now check the database.
-			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), "inv", "a", res.ExonerationId)
+			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
 			So(row.TestVariant.Variant, ShouldResembleProto, expected.TestVariant.Variant)
 			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)

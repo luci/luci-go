@@ -27,7 +27,8 @@ func TestExonerationName(invocationID, testPath, exonerationID string) string {
 	return fmt.Sprintf("invocations/%s/tests/%s/exonerations/%s", invocationID, url.PathEscape(testPath), exonerationID)
 }
 
-// ParseTestExonerationName extracts invocation and test exoneration IDs from the name.
+// ParseTestExonerationName extracts invocation, test path and exoneration IDs
+// from the name.
 func ParseTestExonerationName(name string) (invocationID, testPath, exonerationID string, err error) {
 	if name == "" {
 		return "", "", "", unspecified()

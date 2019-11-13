@@ -19,7 +19,6 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
-	"io"
 
 	"cloud.google.com/go/spanner"
 	"github.com/google/uuid"
@@ -34,10 +33,13 @@ import (
 )
 
 // validateCreateTestExonerationRequest returns a non-nil error if req is invalid.
-func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest) error {
-	if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
-		return errors.Annotate(err, "invocation").Err()
+func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, requireInvocation bool) error {
+	if requireInvocation || req.Invocation != "" {
+		if err := pbutil.ValidateInvocationName(req.Invocation); err != nil {
+			return errors.Annotate(err, "invocation").Err()
+		}
 	}
+
 	if err := pbutil.ValidateTestVariant(req.TestExoneration.GetTestVariant()); err != nil {
 		return errors.Annotate(err, "test_exoneration: test_variant").Err()
 	}
@@ -49,53 +51,60 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest) 
 
 // CreateTestExoneration implements pb.RecorderServer.
 func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {
-	if err := validateCreateTestExonerationRequest(in); err != nil {
+	if err := validateCreateTestExonerationRequest(in, true); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 	invID := span.MustParseInvocationName(in.Invocation)
 
+	ret, mutation := insertTestExoneration(ctx, invID, in.RequestId, 0, in.TestExoneration)
+	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		return txn.BufferWrite([]*spanner.Mutation{mutation})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func insertTestExoneration(ctx context.Context, invID span.InvocationID, requestID string, ordinal int, body *pb.TestExoneration) (ret *pb.TestExoneration, mutation *spanner.Mutation) {
 	// Compute exoneration ID and choose Insert vs InsertOrUpdate.
 	var exonerationIDSuffix string
 	mutFn := spanner.InsertMap
-	if in.RequestId == "" {
+	if requestID == "" {
 		// Use a random id.
 		exonerationIDSuffix = "r:" + uuid.New().String()
 	} else {
 		// Use a deterministic id.
-		exonerationIDSuffix = "d:" + deterministicExonerationIDSuffix(ctx, in.RequestId)
+		exonerationIDSuffix = "d:" + deterministicExonerationIDSuffix(ctx, requestID, ordinal)
 		mutFn = spanner.InsertOrUpdateMap
 	}
 
-	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(in.TestExoneration.TestVariant.Variant), exonerationIDSuffix)
-	ret := &pb.TestExoneration{
-		Name:                pbutil.TestExonerationName(string(invID), in.TestExoneration.TestVariant.TestPath, exonerationID),
+	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(body.TestVariant.Variant), exonerationIDSuffix)
+	ret = &pb.TestExoneration{
+		Name:                pbutil.TestExonerationName(string(invID), body.TestVariant.TestPath, exonerationID),
 		ExonerationId:       exonerationID,
-		TestVariant:         in.TestExoneration.TestVariant,
-		ExplanationMarkdown: in.TestExoneration.ExplanationMarkdown,
+		TestVariant:         body.TestVariant,
+		ExplanationMarkdown: body.ExplanationMarkdown,
 	}
-
-	return ret, mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		return txn.BufferWrite([]*spanner.Mutation{
-			mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
-				"InvocationId":        invID,
-				"TestPath":            ret.TestVariant.TestPath,
-				"ExonerationId":       exonerationID,
-				"Variant":             in.TestExoneration.TestVariant.Variant,
-				"ExplanationMarkdown": in.TestExoneration.ExplanationMarkdown,
-			})),
-		})
-	})
+	mutation = mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
+		"InvocationId":        invID,
+		"TestPath":            ret.TestVariant.TestPath,
+		"ExonerationId":       exonerationID,
+		"Variant":             ret.TestVariant.Variant,
+		"ExplanationMarkdown": ret.ExplanationMarkdown,
+	}))
+	return
 }
 
-func deterministicExonerationIDSuffix(ctx context.Context, requestID string) string {
+func deterministicExonerationIDSuffix(ctx context.Context, requestID string, ordinal int) string {
 	h := sha512.New()
 	// Include current identity, so that two separate clients
 	// do not override each other's test exonerations even if
 	// they happened to produce identical request ids.
 	// The alternative is to use remote IP address, but it is not
 	// implemented in pRPC.
-	io.WriteString(h, string(auth.CurrentIdentity(ctx)))
-	io.WriteString(h, "\n")
-	io.WriteString(h, requestID)
+	fmt.Fprintln(h, auth.CurrentIdentity(ctx))
+	fmt.Fprintln(h, requestID)
+	fmt.Fprintln(h, ordinal)
 	return hex.EncodeToString(h.Sum(nil))
 }
