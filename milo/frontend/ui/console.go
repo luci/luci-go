@@ -188,11 +188,14 @@ type ConsoleHeader struct {
 	Links []LinkGroup
 
 	// ConsoleGroups is a list of groups of console summaries to be displayed in
-	// the header.
+	// the header, or nil if there was an error when retrieving consoles.
 	//
 	// A console group without a title will have all of its console summaries
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
+
+	// ConsoleGroupsErr is the error thrown when retrieving console groups.
+	ConsoleGroupsErr error
 
 	// TreeStatus indicates the status of the tree if it is not nil.
 	TreeStatus *TreeStatus
