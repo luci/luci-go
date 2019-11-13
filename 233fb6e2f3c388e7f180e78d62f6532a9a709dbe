@@ -336,6 +336,30 @@
     },
     {
       "key": {
+        "uuid": "c8962787_59fb67e2",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-13T01:01:49Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-py/+/1913625",
+      "parentUuid": "573d554d_77e92c7e",
+      "range": {
+        "startLine": 29,
+        "startChar": 53,
+        "endLine": 29,
+        "endChar": 65
+      },
+      "revId": "233fb6e2f3c388e7f180e78d62f6532a9a709dbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7cdd5f60_2cb4c2de",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 2
