@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	durationpb "github.com/golang/protobuf/ptypes/duration"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
@@ -64,6 +65,30 @@ func MustTimestamp(ts *tspb.Timestamp) time.Time {
 func ValidateRequestID(requestID string) error {
 	if !requestIDRe.MatchString(requestID) {
 		return doesNotMatch(requestIDRe)
+	}
+	return nil
+}
+
+// ValidateMaxStaleness returns a non-nil error if maxStaleness is invalid.
+func ValidateMaxStaleness(maxStaleness *durationpb.Duration) error {
+	if maxStaleness == nil {
+		return unspecified()
+	}
+
+	switch d, err := ptypes.Duration(maxStaleness); {
+	case err != nil:
+		return err
+	case d < 0, d > 30*time.Minute:
+		return errors.Reason("must between 0 and 30m, inclusive").Err()
+	default:
+		return nil
+	}
+}
+
+// ValidateEnum returns a non-nil error if the value is not among valid values.
+func ValidateEnum(value int32, validValues map[int32]string) error {
+	if _, ok := validValues[value]; !ok {
+		return errors.Reason("invalid value %d", value).Err()
 	}
 	return nil
 }

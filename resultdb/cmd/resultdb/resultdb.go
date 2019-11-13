@@ -15,10 +15,6 @@
 package main
 
 import (
-	"context"
-
-	"go.chromium.org/luci/grpc/grpcutil"
-
 	"go.chromium.org/luci/resultdb/internal"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -35,8 +31,4 @@ func NewResultDBServer() pb.ResultDBServer {
 		Service:  &resultDBServer{},
 		Postlude: internal.UnwrapGrpcCodePostlude,
 	}
-}
-
-func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
-	return nil, grpcutil.Unimplemented
 }
