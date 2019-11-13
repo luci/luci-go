@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9be35d70_7cd4cb7c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T19:26:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea6fdf15_d54923cb",
+      "range": {
+        "startLine": 9,
+        "startChar": 42,
+        "endLine": 10,
+        "endChar": 37
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ce83121_88cfb4b0",
         "filename": "resultdb/cmd/recorder/create_invocation_test.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "224c79c2_911b8dd8",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T19:26:55Z",
+      "side": 1,
+      "message": "Ack. This wrongness is contained in this package. Also the structs do warn about this.",
+      "parentUuid": "7ce83121_88cfb4b0",
+      "range": {
+        "startLine": 155,
+        "startChar": 9,
+        "endLine": 155,
+        "endChar": 44
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3efaab56_2f9cfabe",
         "filename": "resultdb/internal/main.go",
         "patchSetId": 5
@@ -59,6 +107,30 @@
       "writtenOn": "2019-11-13T17:58:17Z",
       "side": 1,
       "message": "I\u0027m not super sure this would work correctly. In GAE world, such transports are always request-scoped and short lived. I haven\u0027t looked what happens when it is created with a root server context and retained forever.",
+      "range": {
+        "startLine": 51,
+        "startChar": 2,
+        "endLine": 51,
+        "endChar": 59
+      },
+      "revId": "a93a6bd8be026ae13f572dc72eda22a8045f5129",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "368efee8_22457d59",
+        "filename": "resultdb/internal/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T19:26:55Z",
+      "side": 1,
+      "message": "it worked in my experiments with -dev server",
+      "parentUuid": "3efaab56_2f9cfabe",
       "range": {
         "startLine": 51,
         "startChar": 2,
