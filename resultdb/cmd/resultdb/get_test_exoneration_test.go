@@ -68,12 +68,10 @@ func TestGetTestExoneration(t *testing.T) {
 		tr, err := srv.GetTestExoneration(ctx, req)
 		So(err, ShouldBeNil)
 		So(tr, ShouldResembleProto, &pb.TestExoneration{
-			Name:          "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
-			ExonerationId: "id",
-			TestVariant: &pb.TestVariant{
-				TestPath: "gn://chrome/test:foo_tests/BarTest.DoBaz",
-				Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
-			},
+			Name:                "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
+			ExonerationId:       "id",
+			TestPath:            "gn://chrome/test:foo_tests/BarTest.DoBaz",
+			Variant:             pbutil.Variant("k1", "v1", "k2", "v2"),
 			ExplanationMarkdown: "broken",
 		})
 	})
