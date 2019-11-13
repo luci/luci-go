@@ -78,6 +78,24 @@
     },
     {
       "key": {
+        "uuid": "ffb949d5_5bcbf395",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T16:33:10Z",
+      "side": 1,
+      "message": "typically either a function either accepts a context or guarantees to return shortly.\nlooks like processMessages should accept ctx and check ctx.Err() in the beginning of the loop. Then we don\u0027t need this additional goroutine",
+      "parentUuid": "6fcfe1ad_96e5e7d9",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6c65a29_13fdd5ce",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 15
@@ -157,6 +175,24 @@
       "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6adf70f_a59d5821",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T16:33:10Z",
+      "side": 1,
+      "message": "makes sense",
+      "parentUuid": "ed2c9d65_e28f857a",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
