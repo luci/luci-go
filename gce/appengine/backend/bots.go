@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
@@ -53,7 +54,9 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 	case vm.Connected > 0:
 		return nil
 	}
-	return datastore.RunInTransaction(c, func(c context.Context) error {
+	put := false
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		put = false
 		switch err := datastore.Get(c, vm); {
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch VM").Err()
@@ -66,8 +69,13 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 		if err := datastore.Put(c, vm); err != nil {
 			return errors.Annotate(err, "failed to store VM").Err()
 		}
+		put = true
 		return nil
 	}, nil)
+	if put && err != nil {
+		metrics.ReportConnectionTime(c, float64(vm.Connected-vm.Created), vm.Prefix, vm.Attributes.GetProject(), vm.Swarming, vm.Attributes.GetZone())
+	}
+	return err
 }
 
 // manageMissingBot manages a missing Swarming bot.

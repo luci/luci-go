@@ -80,6 +80,8 @@ func TestQueues(t *testing.T) {
 		})
 
 		Convey("createVM", func() {
+			c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+
 			Convey("invalid", func() {
 				Convey("nil", func() {
 					err := createVM(c, nil)
@@ -169,10 +171,11 @@ func TestQueues(t *testing.T) {
 						AttributesIndexed: []string{
 							"disk.image:image",
 						},
-						Config:   "config",
-						Hostname: "prefix-2-fpll",
-						Index:    2,
-						Prefix:   "prefix",
+						Config:     "config",
+						Configured: testclock.TestTimeUTC.Unix(),
+						Hostname:   "prefix-2-fpll",
+						Index:      2,
+						Prefix:     "prefix",
 					})
 				})
 
