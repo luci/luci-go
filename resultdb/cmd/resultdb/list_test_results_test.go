@@ -63,7 +63,7 @@ func TestListTestResults(t *testing.T) {
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 
-		srv := NewResultDBServer()
+		srv := &resultDBServer{}
 
 		Convey(`Works`, func() {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}
