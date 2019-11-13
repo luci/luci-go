@@ -102,7 +102,7 @@ func main() {
 func printErr(prefix string, err error) {
 	switch {
 	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "not running with a service account and not logged it")
+		fmt.Fprintln(os.Stderr, "not running with a service account and not logged in")
 	case err != nil:
 		fmt.Fprintf(os.Stderr, "%s: %v\n", prefix, err)
 	}
