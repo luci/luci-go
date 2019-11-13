@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7666ed3d_91ea26f6",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T04:06:58Z",
+      "side": 1,
+      "message": "nit: \"header, or nil\" (comma instead of fullstop)",
+      "range": {
+        "startLine": 191,
+        "startChar": 14,
+        "endLine": 191,
+        "endChar": 17
+      },
+      "revId": "8547f498d554b8e209dfd6b952b4efa306437666",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
