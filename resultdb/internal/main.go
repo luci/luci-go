@@ -18,13 +18,10 @@ import (
 	"flag"
 	"net/http"
 
-	"google.golang.org/grpc"
-
 	"cloud.google.com/go/spanner"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 
@@ -49,7 +46,13 @@ func Main(init func(srv *server.Server) error) {
 			return err
 		}
 
-		srv.PRPC.UnaryServerInterceptor = commonInterceptor
+		// TODO(crbug.com/1013316): replace this with project-identified transport
+		// and do it at the request level.
+		tr, err := auth.GetRPCTransport(srv.Context, auth.AsSelf)
+		if err != nil {
+			return err
+		}
+		srv.Context = WithHTTPClient(srv.Context, &http.Client{Transport: tr})
 
 		return init(srv)
 	})
@@ -66,39 +69,4 @@ func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context,
 		return ctx, err
 	}
 	return span.WithClient(ctx, spannerClient), nil
-}
-
-func commonInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	if err := verifyAccess(ctx); err != nil {
-		return nil, err
-	}
-
-	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-	ctx = WithHTTPClient(ctx, &http.Client{Transport: tr})
-
-	return handler(ctx, req)
-}
-
-func verifyAccess(ctx context.Context) error {
-	// TODO(crbug.com/1013316): use realms.
-
-	// WARNING: removing this restriction requires changing the way we
-	// authenticate to other services: we cannot use AsSelf RPC authority
-	// without the restriction defined here.
-	switch allowed, err := auth.IsMember(ctx, accessGroup); {
-	case err != nil:
-		return err
-
-	case !allowed:
-		return errors.
-			Reason("%s is not in %q CIA group", auth.CurrentIdentity(ctx), accessGroup).
-			Tag(grpcutil.PermissionDeniedTag).
-			Err()
-
-	default:
-		return nil
-	}
 }

@@ -50,7 +50,7 @@ func TestGetTestExoneration(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, ct)
 
-		srv := NewResultDBServer()
+		srv := &resultDBServer{}
 
 		invID := span.InvocationID("inv_0")
 		// Insert a TestExoneration.

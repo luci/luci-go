@@ -100,7 +100,7 @@ func TestUpdateInvocation(t *testing.T) {
 	Convey(`TestUpdateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		recorder := NewRecorderServer()
+		recorder := &recorderServer{}
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
