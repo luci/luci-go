@@ -194,6 +194,9 @@ type ConsoleHeader struct {
 	// appear "ungrouped" when rendered.
 	ConsoleGroups []ConsoleGroup
 
+	// ConsoleGroupsErr is the error thrown when reteriving console groups
+	ConsoleGroupsErr error
+
 	// TreeStatus indicates the status of the tree if it is not nil.
 	TreeStatus *TreeStatus
 }
