@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "904aa23b_266d584b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:01:26Z",
+      "side": 1,
+      "message": "this code is copied 4 times in this file. Dedup?",
+      "range": {
+        "startLine": 477,
+        "startChar": 1,
+        "endLine": 484,
+        "endChar": 2
+      },
+      "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "defa3250_2961ef59",
+        "filename": "milo/frontend/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:01:26Z",
+      "side": 1,
+      "message": "nit: (buildbucketID int64, reason string, err error)",
+      "range": {
+        "startLine": 46,
+        "startChar": 49,
+        "endLine": 46,
+        "endChar": 70
+      },
+      "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb9e70cc_4233229c",
+        "filename": "milo/frontend/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:01:26Z",
+      "side": 1,
+      "message": "this is identical to L51-58. Extract to a reusable func?",
+      "range": {
+        "startLine": 93,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 0
+      },
+      "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -234,6 +234,30 @@
       "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7bc67080_1359ca16",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:01:26Z",
+      "side": 1,
+      "message": "this is a standard thing in distributed systems: idempotency https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb",
+      "parentUuid": "ffdabe54_6cc166a7",
+      "range": {
+        "startLine": 85,
+        "startChar": 20,
+        "endLine": 85,
+        "endChar": 32
+      },
+      "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
