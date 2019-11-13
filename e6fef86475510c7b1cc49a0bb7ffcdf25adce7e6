@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "63ba81dd_40631cd9",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-13T23:45:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1cb8d1bb_eb52b9f2",
+      "revId": "e6fef86475510c7b1cc49a0bb7ffcdf25adce7e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18bfa890_18b1f5eb",
         "filename": "gce/appengine/backend/bots.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "e6fef86475510c7b1cc49a0bb7ffcdf25adce7e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40cad878_4e350bd1",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-13T23:45:20Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "18bfa890_18b1f5eb",
+      "revId": "e6fef86475510c7b1cc49a0bb7ffcdf25adce7e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
