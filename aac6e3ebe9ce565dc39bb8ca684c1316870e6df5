@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc9a6d9a_d2ccdbc4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T03:34:45Z",
+      "side": 1,
+      "message": "typo: nonexistent?",
+      "range": {
+        "startLine": 7,
+        "startChar": 51,
+        "endLine": 7,
+        "endChar": 61
+      },
+      "revId": "aac6e3ebe9ce565dc39bb8ca684c1316870e6df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ba08390_ef2d9378",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T03:34:45Z",
+      "side": 1,
+      "message": "nonexistent",
+      "range": {
+        "startLine": 9,
+        "startChar": 62,
+        "endLine": 9,
+        "endChar": 72
+      },
+      "revId": "aac6e3ebe9ce565dc39bb8ca684c1316870e6df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67c2c7c3_f8fd0a7b",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T03:34:45Z",
+      "side": 1,
+      "message": "nit: fullstop at the end of comments",
+      "range": {
+        "startLine": 197,
+        "startChar": 65,
+        "endLine": 197,
+        "endChar": 71
+      },
+      "revId": "aac6e3ebe9ce565dc39bb8ca684c1316870e6df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4be94149_19aeb0c2",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T03:34:45Z",
+      "side": 1,
+      "message": "typo: retrieving",
+      "range": {
+        "startLine": 197,
+        "startChar": 46,
+        "endLine": 197,
+        "endChar": 56
+      },
+      "revId": "aac6e3ebe9ce565dc39bb8ca684c1316870e6df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4628a73c_48ec9f73",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 546,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-11-13T03:34:45Z",
+      "side": 1,
+      "message": "suggest \"headerConsError\" to be consistent with abbreviations",
+      "range": {
+        "startLine": 546,
+        "startChar": 5,
+        "endLine": 546,
+        "endChar": 19
+      },
+      "revId": "aac6e3ebe9ce565dc39bb8ca684c1316870e6df5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
