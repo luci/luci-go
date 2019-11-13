@@ -24,6 +24,20 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// resultDBServer implements pb.ResultDBServer.
+//
+// It does not return gRPC-native errors. NewResultDBServer takes care of that.
+type resultDBServer struct {
+}
+
+// NewResultDBServer creates an implementation of resultDBServer.
+func NewResultDBServer() pb.ResultDBServer {
+	return &pb.DecoratedResultDB{
+		Service:  &resultDBServer{},
+		Postlude: internal.UnwrapGrpcCodePostlude,
+	}
+}
+
 func main() {
 	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {

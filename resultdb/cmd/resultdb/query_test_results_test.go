@@ -19,12 +19,12 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	durpb "github.com/golang/protobuf/ptypes/duration"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -141,4 +141,30 @@ func BenchmarkChainFetch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		read()
 	}
+}
+func TestValidateQueryTestResultsRequest(t *testing.T) {
+	t.Parallel()
+	Convey(`Valid`, t, func() {
+		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+				},
+			},
+			PageSize:     50,
+			MaxStaleness: &durpb.Duration{Seconds: 60},
+		})
+		So(err, ShouldBeNil)
+	})
+
+	Convey(`invalid predicate`, t, func() {
+		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "xxxxxxxxxxxxx"},
+				},
+			},
+		})
+		So(err, ShouldErrLike, `predicate: invocation: name: does not match`)
+	})
 }

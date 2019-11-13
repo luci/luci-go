@@ -13,4 +13,9 @@
 // limitations under the License.
 
 // Package pbutil implements utility functions for ResultDB protobuf messages.
+//
+// TODO(nodir): many of these functions are not hardly useful for clients, e.g.
+// ones involved in request validation. The request validation functions
+// themselves are not in this package. Ideally all symbols in this package
+// are useful for others. Otherwise pbutil should be in internal/.
 package pbutil
