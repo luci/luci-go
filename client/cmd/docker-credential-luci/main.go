@@ -89,7 +89,7 @@ func main() {
 func printErr(prefix string, err error) {
 	switch {
 	case err == auth.ErrLoginRequired:
-		fmt.Fprintln(os.Stderr, "docker-credential-luci: not running with a service account and not logged it")
+		fmt.Fprintln(os.Stderr, "docker-credential-luci: not running with a service account and not logged in")
 	case err != nil:
 		fmt.Fprintf(os.Stderr, "docker-credential-luci: %s: %v\n", prefix, err)
 	}
