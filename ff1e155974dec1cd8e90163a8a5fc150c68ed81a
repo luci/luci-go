@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f87b2877_5288b24c",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:23:44Z",
+      "side": 1,
+      "message": "good catch! Done",
+      "parentUuid": "8e6f9a03_2f116949",
+      "revId": "ff1e155974dec1cd8e90163a8a5fc150c68ed81a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2221ebe5_60e5e0bc",
         "filename": "resultdb/pbutil/query.go",
         "patchSetId": 6
