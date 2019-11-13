@@ -173,7 +173,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		if runtime.GOOS != "windows" {
 			l, err := os.Readlink(filepath.Join(tmpDir, blahPath))
 			So(err, ShouldBeNil)
-			So(l, ShouldResemble, filepath.Join(tmpDir, oloPath))
+			So(l, ShouldResemble, oloPath)
 		}
 	})
 }

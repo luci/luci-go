@@ -388,8 +388,7 @@ func (d *Downloader) doSymlink(filename, name string, details *isolated.File) {
 		return
 	}
 
-	linkTarget := filepath.Join(d.outputDir, *details.Link)
-	if err := os.Symlink(linkTarget, filename); err != nil {
+	if err := os.Symlink(*details.Link, filename); err != nil {
 		d.addError(fileType, name, err)
 		return
 	}
