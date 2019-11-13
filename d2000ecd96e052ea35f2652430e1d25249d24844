@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8b99e389_ee52ce63",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-11-13T23:12:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "904aa23b_266d584b",
+      "range": {
+        "startLine": 477,
+        "startChar": 1,
+        "endLine": 484,
+        "endChar": 2
+      },
+      "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "defa3250_2961ef59",
         "filename": "milo/frontend/api.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba41f9dc_d50f233d",
+        "filename": "milo/frontend/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-11-13T23:12:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "defa3250_2961ef59",
+      "range": {
+        "startLine": 46,
+        "startChar": 49,
+        "endLine": 46,
+        "endChar": 70
+      },
+      "revId": "d2000ecd96e052ea35f2652430e1d25249d24844",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
