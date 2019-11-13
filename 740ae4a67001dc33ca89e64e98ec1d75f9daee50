@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8e6e0a7_aa3dfe77",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 516,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:35:20Z",
+      "side": 1,
+      "message": "i don\u0027t think router.Context should be used in packages that do not deal with HTTP otherwise. Let\u0027s parse everything we need in the handler and pass parsed information here, so that here we accept context.Context",
+      "range": {
+        "startLine": 516,
+        "startChar": 28,
+        "endLine": 516,
+        "endChar": 34
+      },
+      "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4f16cd7_a9f42d34",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 533,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:35:20Z",
+      "side": 1,
+      "message": "nit: it is unclear what are these values. In such situations in Go, return values are named\n\n  func myfunc(....) (name1 int64, name2 string, err error)",
+      "range": {
+        "startLine": 533,
+        "startChar": 48,
+        "endLine": 533,
+        "endChar": 61
+      },
+      "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "228ea80d_b637cdb7",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 540,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:35:20Z",
+      "side": 1,
+      "message": "nit: it is more typical to use ;\nnote also that the next word is not capitalized",
+      "range": {
+        "startLine": 540,
+        "startChar": 61,
+        "endLine": 540,
+        "endChar": 62
+      },
+      "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd71c39f_1d1abc5b",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:35:20Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 542,
+        "startChar": 1,
+        "endLine": 542,
+        "endChar": 14
+      },
+      "revId": "740ae4a67001dc33ca89e64e98ec1d75f9daee50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
