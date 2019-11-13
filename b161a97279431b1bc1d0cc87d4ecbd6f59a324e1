@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55d96b2a_fd80c4ae",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T01:42:26Z",
+      "side": 1,
+      "message": "it should be\n\n  TestResults TestResults `json:\"testResults\"`\n\nin order for the json property to be \"testResults\", otherwise it is \"TestResults\"",
+      "revId": "b161a97279431b1bc1d0cc87d4ecbd6f59a324e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2615b5f2_13fdd25b",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T01:42:26Z",
+      "side": 1,
+      "message": "resultDB",
+      "range": {
+        "startLine": 49,
+        "startChar": 38,
+        "endLine": 49,
+        "endChar": 42
+      },
+      "revId": "b161a97279431b1bc1d0cc87d4ecbd6f59a324e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "098aaa0a_85e1fcc4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T01:42:26Z",
+      "side": 1,
+      "message": "if we ever add more fields to ResultDB, this will overwrite them.\nplease try to retrieve first, then set its TestResults, then set.",
+      "revId": "b161a97279431b1bc1d0cc87d4ecbd6f59a324e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aed4470_ac862402",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T01:42:26Z",
+      "side": 1,
+      "message": "nit: general pattern: make the variant pointer, instead of taking a pointer each time a variable is passed to other funcs",
+      "range": {
+        "startLine": 142,
+        "startChar": 33,
+        "endLine": 142,
+        "endChar": 34
+      },
+      "revId": "b161a97279431b1bc1d0cc87d4ecbd6f59a324e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d90b8f3c_bc769f70",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T01:42:26Z",
+      "side": 1,
+      "message": "So(db, ShouldResemble, ...)\n\nwould be more exhaustive and readable",
+      "range": {
+        "startLine": 68,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 52
+      },
+      "revId": "b161a97279431b1bc1d0cc87d4ecbd6f59a324e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
