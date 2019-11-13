@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
@@ -134,9 +135,9 @@ func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
 
 // Export exports lucictx.ResultSink derived from the server configuration into
 // the context.
-// TODO(crbug.com/1017288) lucictx.ResultSink does not exist yet.
 func (s *Server) Export(ctx context.Context) context.Context {
-	return nil
+	sink := lucictx.ResultSink{Port: s.cfg.Port, AuthToken: s.cfg.AuthToken}
+	return lucictx.SetResultSink(ctx, &sink)
 }
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
