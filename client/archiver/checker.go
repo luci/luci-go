@@ -25,6 +25,7 @@ import (
 	"google.golang.org/api/support/bundler"
 
 	service "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -69,7 +70,7 @@ type BundlingChecker struct {
 	err   error // The first error encountered, if any.
 
 	mu              sync.Mutex
-	existingDigests map[string]struct{} // set of digests of items that we presume to exist.
+	existingDigests map[isolated.HexDigest]struct{} // set of digests of items that we presume to exist.
 
 	waitc chan struct{} // Used to cap concurrent check requests.
 	wg    sync.WaitGroup
@@ -116,7 +117,7 @@ func newChecker(ctx context.Context, svc isolateService, maxConcurrent int) *Bun
 	c := &BundlingChecker{
 		ctx:             ctx,
 		svc:             svc,
-		existingDigests: make(map[string]struct{}),
+		existingDigests: make(map[isolated.HexDigest]struct{}),
 		waitc:           make(chan struct{}, maxConcurrent),
 	}
 	c.bundler = bundler.NewBundler(checkerItem{}, func(bundle interface{}) {
@@ -151,7 +152,7 @@ func (c *BundlingChecker) AddItem(item *Item, isolated bool, callback CheckerCal
 func (c *BundlingChecker) PresumeExists(item *Item) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.existingDigests[string(item.Digest)] = struct{}{}
+	c.existingDigests[item.Digest] = struct{}{}
 }
 
 // Hash returns the hashing algorithm used by this checker.
@@ -162,7 +163,7 @@ func (c *BundlingChecker) Hash() crypto.Hash {
 func (c *BundlingChecker) exists(item *Item) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	_, ok := c.existingDigests[string(item.Digest)]
+	_, ok := c.existingDigests[item.Digest]
 	return ok
 }
 
