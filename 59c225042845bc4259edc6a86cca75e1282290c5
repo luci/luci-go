@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2bb593b_818e236e",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:23:59Z",
+      "side": 1,
+      "message": "yep, this is better",
+      "revId": "59c225042845bc4259edc6a86cca75e1282290c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
