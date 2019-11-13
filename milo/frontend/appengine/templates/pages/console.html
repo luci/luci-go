@@ -113,7 +113,13 @@
       </div>
     </div>
   </div>
-
+{{ if $header.ConsoleGroupsErr }}
+  <div class="console-header-column">
+    <div style="color: red;" class="console-header-group">
+      {{ $header.ConsoleGroupsErr }}
+    </div>
+  </div>
+{{ end }}
 {{ if $header.ConsoleGroups }}
   <div class="console-header-column">
   {{ range $header.ConsoleGroups }}

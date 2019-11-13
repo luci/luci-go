@@ -213,7 +213,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	return rows, commits, nil
 }
 
-func console(c context.Context, project, id string, limit int, con *common.Console, headerCons []*common.Console) (*ui.Console, error) {
+func console(c context.Context, project, id string, limit int, con *common.Console, headerCons []*common.Console, consoleGroupsErr error) (*ui.Console, error) {
 	def := &con.Def
 	consoleID := common.ConsoleID{Project: project, ID: id}
 	var header *ui.ConsoleHeader
@@ -249,7 +249,11 @@ func console(c context.Context, project, id string, limit int, con *common.Conso
 	// Reassemble builder summaries into both the current console
 	// and also the header.
 	if header != nil {
-		header.ConsoleGroups = getConsoleGroups(def.Header, builderSummaries)
+		if consoleGroupsErr == nil {
+			header.ConsoleGroups = getConsoleGroups(def.Header, builderSummaries)
+		} else {
+			header.ConsoleGroupsErr = consoleGroupsErr
+		}
 	}
 
 	// Reassemble the builder summaries and rows into the categoryTree.
@@ -539,6 +543,7 @@ func ConsoleHandler(c *router.Context) error {
 	}
 
 	var headerCons []*common.Console
+	var headerConsError error
 	if con.Def.Header != nil {
 		ids, err := consoleHeaderGroupIDs(project, con.Def.Header.GetConsoleGroups())
 		if err != nil {
@@ -546,7 +551,8 @@ func ConsoleHandler(c *router.Context) error {
 		}
 		headerCons, err = common.GetConsoles(c.Context, ids)
 		if err != nil {
-			return errors.Annotate(err, "error getting header consoles").Err()
+			headerConsError = errors.Annotate(err, "error getting header consoles").Err()
+			headerCons = make([]*common.Console, 0)
 		}
 	}
 	if err := filterUnauthorizedBuildersFromConsoles(c.Context, append(headerCons, con)); err != nil {
@@ -554,7 +560,7 @@ func ConsoleHandler(c *router.Context) error {
 	}
 
 	// Process the request and generate a renderable structure.
-	result, err := console(c.Context, project, group, limit, con, headerCons)
+	result, err := console(c.Context, project, group, limit, con, headerCons, headerConsError)
 	if err != nil {
 		return err
 	}
