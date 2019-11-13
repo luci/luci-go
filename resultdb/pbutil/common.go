@@ -67,12 +67,3 @@ func ValidateRequestID(requestID string) error {
 	}
 	return nil
 }
-
-// ValidatePageSize returns a non-nil error if pageSize is invalid.
-// Returns nil if pageSize is 0.
-func ValidatePageSize(pageSize int32) error {
-	if pageSize < 0 {
-		return errors.Reason("negative").Err()
-	}
-	return nil
-}

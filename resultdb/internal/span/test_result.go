@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/resultdb/internal/pagetoken"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -87,7 +87,11 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 }
 
 // ReadTestResults reads the specified test results, if any, of an invocation within the transaction.
+// pageSize must be positive.
 func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
+	if pageSize <= 0 {
+		panic("pageSize is not positive")
+	}
 	var (
 		table       = "TestResults"
 		conditions  = []string{"(InvocationId = @invID)"}
@@ -95,7 +99,7 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	)
 
 	// Set start position if requested.
-	switch pos, tokErr := pagetoken.Parse(cursorTok); {
+	switch pos, tokErr := pagination.ParseToken(cursorTok); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).
@@ -183,8 +187,8 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	// If we got pageSize results, then we haven't exhausted the collection and
 	// need to return a cursor.
 	if len(trs) == pageSize {
-		trLast := trs[pageSize-1]
-		nextCursorTok = pagetoken.Format(trLast.TestPath, trLast.ResultId)
+		last := trs[pageSize-1]
+		nextCursorTok = pagination.Token(last.TestPath, last.ResultId)
 	}
 	return
 }
