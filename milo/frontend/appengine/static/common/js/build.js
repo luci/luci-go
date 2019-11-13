@@ -144,8 +144,17 @@ $(document).ready(function() {
   const closeModal = () => {
     $('#modal-overlay')
       .removeClass('show')
+      .removeClass('show-retry-build-modal')
       .removeClass('show-cancel-build-modal');
   };
+
+  $('#retry-build-button').click(e => {
+    closeModal();
+    $('#modal-overlay')
+      .addClass('show')
+      .addClass('show-retry-build-modal');
+  });
+  $('#dismiss-retry-build-button').click(closeModal);
 
   $('#cancel-build-button').click(e => {
     closeModal();
