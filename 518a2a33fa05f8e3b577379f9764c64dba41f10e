@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4053d420_8d5211b4",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-13T17:40:34Z",
+      "side": 1,
+      "message": "I don\u0027t know what NUL means. I though you mean NIL, but TestPath below is clearly not nil.",
+      "range": {
+        "startLine": 47,
+        "startChar": 10,
+        "endLine": 47,
+        "endChar": 13
+      },
+      "revId": "518a2a33fa05f8e3b577379f9764c64dba41f10e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3dd5e0f_7419bf10",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-13T17:40:34Z",
+      "side": 1,
+      "message": "I",
+      "range": {
+        "startLine": 57,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "518a2a33fa05f8e3b577379f9764c64dba41f10e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
