@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ade10cca_d64213ab",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:46:00Z",
+      "side": 1,
+      "message": "https://en.wikipedia.org/wiki/Null_character\n\n\"NUL\" is used in git documentation: https://git-scm.com/docs/git-log#Documentation/git-log.txt--z\n\n  -z\n  Separate the commits with NULs instead of with new newlines.",
+      "parentUuid": "4053d420_8d5211b4",
+      "range": {
+        "startLine": 47,
+        "startChar": 10,
+        "endLine": 47,
+        "endChar": 13
+      },
+      "revId": "518a2a33fa05f8e3b577379f9764c64dba41f10e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3dd5e0f_7419bf10",
         "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "518a2a33fa05f8e3b577379f9764c64dba41f10e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e077a996_ac0f2aba",
+        "filename": "resultdb/cmd/recorder/create_test_exoneration_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:46:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3dd5e0f_7419bf10",
+      "range": {
+        "startLine": 57,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 11
+      },
+      "revId": "518a2a33fa05f8e3b577379f9764c64dba41f10e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
