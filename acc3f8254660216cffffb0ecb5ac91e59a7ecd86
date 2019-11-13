@@ -224,6 +224,24 @@
       "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c05d5178_79369811",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T02:30:00Z",
+      "side": 1,
+      "message": "there is a lot of things a client might do, including a lot of unreasonable things. Fortunately, we don\u0027t have to support all of them because they can still get their job done if they just generate request id *right after* they decided between batch and non-batch version of the RPC. I also have hard time imagining a case where the user would be making this choice to begin with. Most likely, if the client even bothers about batching, they\u0027d just use the batching version unconditionally. In which case, they wouldn\u0027t bother creating request id in sub-requests.\n\nthe current impl matches the recommendation, and it is already implemented. Let\u0027s land this.",
+      "parentUuid": "fa47a051_5bfd24db",
+      "revId": "acc3f8254660216cffffb0ecb5ac91e59a7ecd86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
