@@ -153,6 +153,10 @@ func (vm *VM) getDisks() []*compute.AttachedDisk {
 				DiskType:    disk.Type,
 				SourceImage: disk.Image,
 			},
+			Interface: disk.GetInterface().String(),
+		}
+		if disk.Type == "local-ssd" {
+			disks[i].Type = "SCRATCH"
 		}
 	}
 	// GCE requires the first disk to be the boot disk.

@@ -62,20 +62,58 @@ func TestDisk(t *testing.T) {
 
 		Convey("Validate", func() {
 			c := &validation.Context{Context: context.Background()}
-
 			Convey("invalid", func() {
-				d := &Disk{}
-				d.Validate(c)
-				err := c.Finalize().(*validation.Error).Errors
-				So(err, ShouldContainErr, "image must match")
+				Convey("Persistent + NVMe", func() {
+					d := &Disk{
+						Type:      "pd-fake",
+						Interface: DiskInterface_NVME,
+						Image:     "",
+					}
+					d.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "persistent disk must use SCSI")
+				})
+				Convey("Persistent + No Image", func() {
+					d := &Disk{
+						Type:      "pd-fake",
+						Interface: DiskInterface_SCSI,
+						Image:     "",
+					}
+					d.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "image must match")
+				})
+				Convey("Scratch + Image", func() {
+					d := &Disk{
+						Type:      "local-ssd",
+						Interface: DiskInterface_NVME,
+						Image:     "global/images/image",
+					}
+					d.Validate(c)
+					err := c.Finalize().(*validation.Error).Errors
+					So(err, ShouldContainErr, "local ssd cannot use an image")
+				})
 			})
 
 			Convey("valid", func() {
-				d := &Disk{
-					Image: "global/images/image",
-				}
-				d.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				Convey("Persistent + SCSI + Image", func() {
+					d := &Disk{
+						Type:      "pd-fake",
+						Interface: DiskInterface_SCSI,
+						Image:     "global/images/image",
+					}
+					d.Validate(c)
+					So(c.Finalize(), ShouldBeNil)
+				})
+				Convey("Scratch + No Image", func() {
+					d := &Disk{
+						Type:      "local-ssd",
+						Interface: DiskInterface_NVME,
+						Image:     "",
+					}
+					d.Validate(c)
+					So(c.Finalize(), ShouldBeNil)
+				})
 			})
 		})
 	})

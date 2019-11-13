@@ -2,10 +2,9 @@
 
 package instances
 
-import (
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	discovery "go.chromium.org/luci/grpc/discovery"
-)
+import discovery "go.chromium.org/luci/grpc/discovery"
+
+import "github.com/golang/protobuf/protoc-gen-go/descriptor"
 
 func init() {
 	discovery.RegisterDescriptorSetCompressed(

@@ -39,8 +39,22 @@ func (d *Disk) GetImageBase() string {
 }
 
 // Validate validates this disk.
+//  The set of valid configurations is:
+//  +-------------+-------+-----------+
+//  | Type        | Image | Interface |
+//  +-------------+-------+-----------+
+//  | local-ssd   | No    | *         |
+//  | pd-ssd      | Yes   | SCSI      |
+//  | pd-standard | Yes   | SCSI      |
+//  +-------------+-------+-----------+
 func (d *Disk) Validate(c *validation.Context) {
-	if !isValidImage(d.GetImage()) {
+	if strings.HasPrefix(d.Type, "pd-") && d.GetInterface() != DiskInterface_SCSI {
+		c.Errorf("persistent disk must use SCSI")
+	}
+	if strings.HasPrefix(d.Type, "pd-") && !isValidImage(d.GetImage()) {
 		c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+	}
+	if strings.HasPrefix(d.Type, "local-ssd") && isValidImage(d.GetImage()) {
+		c.Errorf("local ssd cannot use an image")
 	}
 }

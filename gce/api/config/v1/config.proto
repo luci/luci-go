@@ -30,6 +30,13 @@ enum AccessConfigType {
   ONE_TO_ONE_NAT = 0;
 }
 
+// A disk interface.
+// GCE's default is "SCSI".
+enum DiskInterface {
+  SCSI = 0;
+  NVME = 1;
+}
+
 // A description of a network access config.
 message AccessConfig {
   // The type of config this is.
@@ -60,6 +67,9 @@ message Disk {
   // The name of a disk type to use for this disk.
   // https://cloud.google.com/compute/docs/reference/rest/v1/diskTypes/list.
   string type = 3;
+
+  // The disk interface to use for attaching this disk.
+  DiskInterface interface = 4;
 }
 
 // A description of instance metadata.
