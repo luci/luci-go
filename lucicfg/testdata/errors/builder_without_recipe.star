@@ -17,4 +17,4 @@ luci.builder(
 # Traceback (most recent call last):
 #   //testdata/errors/builder_without_recipe.star: in <toplevel>
 #   ...
-# Error: missing required field "recipe"
+# Error: missing required field "executable"

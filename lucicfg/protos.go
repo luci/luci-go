@@ -103,6 +103,7 @@ func init() {
 	// LUCI protos used by stdlib (see also starlark/internal/luci/descpb.star).
 	luciTypesDescSet = builtinDescriptorSet("lucicfg/stdlib", []string{
 		"go.chromium.org/luci/buildbucket/proto/project_config.proto",
+		"go.chromium.org/luci/buildbucket/proto/common.proto",
 		"go.chromium.org/luci/common/proto/config/project_config.proto",
 		"go.chromium.org/luci/cq/api/config/v2/cq.proto",
 		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",

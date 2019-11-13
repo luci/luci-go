@@ -104,7 +104,8 @@ def _builder(
   Args:
     name: name of the builder, will show up in UIs and logs. Required.
     bucket: a bucket the builder is in, see luci.bucket(...) rule. Required.
-    executable: an executable to run, e.g. a luci.recipe(...). Required.
+    executable: an executable to run, e.g. a luci.recipe(...) or
+        luci.executable(...). Required.
 
     properties: a dict with string keys and JSON-serializable values, defining
         properties to pass to the executable. Supports the module-scoped
@@ -184,7 +185,7 @@ def _builder(
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
-  recipe_key = keys.recipe(executable)
+  executable_key = keys.executable(executable)
 
   # TODO(vadimsh): Validators here and in lucicfg.rule(..., defaults = ...) are
   # duplicated. There's probably a way to avoid this by introducing a Schema
@@ -229,7 +230,7 @@ def _builder(
   builder_key = keys.builder(bucket_key.id, name)
   graph.add_node(builder_key, props = props)
   graph.add_edge(bucket_key, builder_key)
-  graph.add_edge(builder_key, recipe_key)
+  graph.add_edge(builder_key, executable_key)
 
   # Allow this builder to be referenced from other nodes via its bucket-scoped
   # name and via a global (perhaps ambiguous) name. See builder_ref.add(...).

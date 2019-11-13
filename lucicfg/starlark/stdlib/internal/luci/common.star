@@ -37,7 +37,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.bucket -> [luci.gitiles_poller]
 #   luci.builder_ref -> luci.builder
 #   luci.builder -> [luci.triggerer]
-#   luci.builder -> luci.recipe
+#   luci.builder -> luci.executable
 #   luci.gitiles_poller -> [luci.triggerer]
 #   luci.triggerer -> [luci.builder_ref]
 #   luci.milo_entries_root -> [luci.list_view_entry]
@@ -142,7 +142,7 @@ kinds = struct(
     PROJECT = 'luci.project',
     LOGDOG = 'luci.logdog',
     BUCKET = 'luci.bucket',
-    RECIPE = 'luci.recipe',
+    EXECUTABLE = 'luci.executable',
     BUILDER = 'luci.builder',
     GITILES_POLLER = 'luci.gitiles_poller',
     MILO = 'luci.milo',
@@ -172,7 +172,7 @@ keys = struct(
     project = lambda: _namespaced_key(kinds.PROJECT, '...'),
     logdog = lambda: _namespaced_key(kinds.LOGDOG, '...'),
     bucket = lambda ref: _project_scoped_key(kinds.BUCKET, 'bucket', ref),
-    recipe = lambda ref: _project_scoped_key(kinds.RECIPE, 'recipe', ref),
+    executable = lambda ref: _project_scoped_key(kinds.EXECUTABLE, 'executable', ref),
 
     # TODO(vadimsh): Make them accept keysets if necessary. These currently
     # require strings, not keysets. They are currently not directly used by

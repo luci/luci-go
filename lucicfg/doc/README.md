@@ -924,6 +924,39 @@ Defines a bucket: a container for LUCI resources that share the same ACL.
 
 
 
+### luci.executable {#luci.executable}
+
+```python
+luci.executable(name, cipd_package = None, cipd_version = None)
+```
+
+
+
+Defines an executable.
+
+Builders refer to such executables in their `executable` field, see
+[luci.builder(...)](#luci.builder). Multiple builders can execute the same executable (perhaps
+passing different properties to it).
+
+Executables must be available as cipd packages.
+
+The cipd version to fetch is usually a lower-cased git ref (like
+`refs/heads/master`), or it can be a cipd tag (like `git_revision:abc...`).
+
+A [luci.executable(...)](#luci.executable) with some particular name can be redeclared many times
+as long as all fields in all declaration are identical. This is helpful when
+[luci.executable(...)](#luci.executable) is used inside a helper function that at once declares
+a builder and an executable needed for this builder.
+
+#### Arguments {#luci.executable-args}
+
+* **name**: name of this executable entity, to refer to it from builders. Required.
+* **cipd_package**: a cipd package name with the executable. Supports the module-scoped default.
+* **cipd_version**: a version of the executable package to fetch, default is `refs/heads/master`. Supports the module-scoped default.
+
+
+
+
 ### luci.recipe {#luci.recipe}
 
 ```python
@@ -1060,7 +1093,7 @@ Buildbucket.
 
 * **name**: name of the builder, will show up in UIs and logs. Required.
 * **bucket**: a bucket the builder is in, see [luci.bucket(...)](#luci.bucket) rule. Required.
-* **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe). Required.
+* **executable**: an executable to run, e.g. a [luci.recipe(...)](#luci.recipe) or [luci.executable(...)](#luci.executable). Required.
 * **properties**: a dict with string keys and JSON-serializable values, defining properties to pass to the executable. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed properties.
 * **service_account**: an email of a service account to run the executable under: the executable (and various tools it calls, e.g. gsutil) will be able to make outbound HTTP calls that have an OAuth access token belonging to this service account (provided it is registered with LUCI). Supports the module-scoped default.
 * **caches**: a list of [swarming.cache(...)](#swarming.cache) objects describing Swarming named caches that should be present on the bot. See [swarming.cache(...)](#swarming.cache) doc for more details. Supports the module-scoped defaults. They are joined with the explicitly passed caches.

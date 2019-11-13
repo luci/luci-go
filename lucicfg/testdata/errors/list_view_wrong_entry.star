@@ -53,4 +53,4 @@ luci.list_view(
 # Traceback (most recent call last):
 #   //testdata/errors/list_view_wrong_entry.star: in <toplevel>
 #   ...
-# Error: expecting luci.list_view_entry, got luci.recipe
+# Error: expecting luci.list_view_entry, got luci.executable
