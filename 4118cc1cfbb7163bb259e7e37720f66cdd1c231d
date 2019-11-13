@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "6fcfe1ad_96e5e7d9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-13T03:38:53Z",
+      "side": 1,
+      "message": "The problem I am trying to solve is stopping work after the context is cancelled, but it\u0027s hard to do cleanly since none of the functions for reading on a connection or parsing JSON accept a context.\n\nIs there a common pattern for creating a context-sensitive wrapper for a context-insensitive blocking operation?",
+      "parentUuid": "481d6a5a_b298cdcd",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6c65a29_13fdd5ce",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 15
@@ -83,6 +101,30 @@
     },
     {
       "key": {
+        "uuid": "b3dd2600_5f66d778",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-13T03:38:53Z",
+      "side": 1,
+      "message": "the error returned from handleConnection is mostly for the benefit of the test code. but you\u0027re right that it probably doesn\u0027t need to squash the error when ctx is cancelled",
+      "parentUuid": "c6c65a29_13fdd5ce",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 17
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "434852c6_79b9c901",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 15
@@ -94,6 +136,24 @@
       "writtenOn": "2019-11-13T02:22:16Z",
       "side": 1,
       "message": "it looks like we create a message in each iteration instead of reusing the same one. let\u0027s move this line out of the loop",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed2c9d65_e28f857a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-13T03:38:53Z",
+      "side": 1,
+      "message": "This is actually deliberate, since I am planning to send the message to something else (dispatcher) I don\u0027t want to keep a pointer to it here.",
+      "parentUuid": "434852c6_79b9c901",
       "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
