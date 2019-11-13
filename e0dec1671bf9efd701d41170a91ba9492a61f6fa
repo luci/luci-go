@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "ce13c4b0_98ca679f",
+        "filename": "resultdb/proto/rpc/v1/query.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-13T17:17:22Z",
+      "side": 1,
+      "message": "\u003e \u003e this was just an example for illustration. The definition is the first sentence that says what you are saying, essentially. I\u0027ve rephrased this. \n\u003e \n\u003e Ah, indeed.\n\u003e \n\u003e \u003e re your proposal:\n\u003e \u003e 1) what is the use case for filtering by status, in addition to filtering by whether result is expected?\n\u003e \n\u003e AFAIR, many systems only concern about unexpected failures (Flake portal is a case, and I vaguely remember recipes is too). So if a test is expected to Fail and it unexpectedly passes, the systems don\u0027t care.\n\nSo we don\u0027t need this filter? let\u0027s add it when we we have a use case.",
+      "parentUuid": "07a726b3_90354b6d",
+      "range": {
+        "startLine": 54,
+        "startChar": 36,
+        "endLine": 55,
+        "endChar": 29
+      },
+      "revId": "e0dec1671bf9efd701d41170a91ba9492a61f6fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3eb957ed_d4cedc79",
         "filename": "resultdb/proto/rpc/v1/query.proto",
         "patchSetId": 6
