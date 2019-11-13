@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1cb8d1bb_eb52b9f2",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-13T23:35:22Z",
+      "side": 1,
+      "message": "need to reset it here:\n  put :\u003d false\n\n(see below)",
+      "revId": "e6fef86475510c7b1cc49a0bb7ffcdf25adce7e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18bfa890_18b1f5eb",
+        "filename": "gce/appengine/backend/bots.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-13T23:35:22Z",
+      "side": 1,
+      "message": "note that RunInTransaction (by default, due to `nil` 3rd param) runs the function several times.",
+      "revId": "e6fef86475510c7b1cc49a0bb7ffcdf25adce7e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
