@@ -510,3 +510,61 @@ func cancelBuild(c context.Context, id int64, reason string) (*buildbucketpb.Bui
 		SummaryMarkdown: reason,
 	})
 }
+
+// RetryBuildHandler parses inputs from HTTP form, retries the build with the given buildbucket build ID
+// then redirects the users to the retry build page.
+func RetryBuildHandler(ctx *router.Context) error {
+	buildbucketID, requestID, err := parseRetryBuildInput(ctx)
+	if err != nil {
+		return errors.Annotate(err, "error while parsing retry build request input fields").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	build, err := retryBuild(ctx.Context, buildbucketID, requestID)
+	if err != nil {
+		return err
+	}
+	uiBuild := ui.Build{
+		Build: build,
+	}
+	http.Redirect(ctx.Writer, ctx.Request, uiBuild.Link().URL, http.StatusSeeOther)
+	return nil
+}
+
+func parseRetryBuildInput(ctx *router.Context) (int64, string, error) {
+	if err := ctx.Request.ParseForm(); err != nil {
+		return 0, "", errors.Annotate(err, "unable to parse retry build form").Err()
+	}
+
+	buildbucketIDInput := ctx.Request.Form["buildbucket-id"]
+	if len(buildbucketIDInput) != 1 || buildbucketIDInput[0] == "" {
+		return 0, "", fmt.Errorf("invalid or missing buildbucket-id. expected an integer. actual value: %v", buildbucketIDInput)
+	}
+	buildbukcetID, err := strconv.ParseInt(buildbucketIDInput[0], 10, 64)
+	if err != nil {
+		return 0, "", errors.Annotate(err, "unable to parse buildbucket-id as an integer").Err()
+	}
+
+	retryRequestIDInput := ctx.Request.Form["retry-request-id"]
+	if len(retryRequestIDInput) != 1 || strings.TrimSpace(retryRequestIDInput[0]) == "" {
+		return 0, "", fmt.Errorf("invalid or missing retry request ID. expected a non-empty string. actual value: %v", retryRequestIDInput)
+	}
+	retryRequestID := strings.TrimSpace(retryRequestIDInput[0])
+
+	return buildbukcetID, retryRequestID, nil
+}
+
+func retryBuild(c context.Context, buildbucketID int64, requestID string) (*buildbucketpb.Build, error) {
+	host, err := getHost(c)
+	if err != nil {
+		return nil, err
+	}
+	client, err := buildbucketClient(c, host, auth.AsUser)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.ScheduleBuild(c, &buildbucketpb.ScheduleBuildRequest{
+		RequestId:       requestID,
+		TemplateBuildId: buildbucketID,
+	})
+}

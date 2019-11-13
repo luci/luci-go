@@ -169,6 +169,7 @@ func buildbucketBuildTestData() []TestBundle {
 					BuildbucketHost: "example.com",
 				},
 				"XsrfTokenField": template.HTML(`<input name="[XSRF Token]" type="hidden" value="[XSRF Token]">`),
+				"RetryRequestID": "[Retry Request ID]",
 			},
 		})
 	}
