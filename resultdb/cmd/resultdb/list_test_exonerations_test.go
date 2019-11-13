@@ -82,22 +82,20 @@ func TestListTestExonerations(t *testing.T) {
 
 		all := []*pb.TestExoneration{
 			{
-				Name: pbutil.TestExonerationName("inv", testPath, "0"),
-				TestVariant: &pb.TestVariant{
-					TestPath: testPath,
-					Variant:  var0,
-				},
+				Name:                pbutil.TestExonerationName("inv", testPath, "0"),
+				TestPath:            testPath,
+				Variant:             var0,
 				ExonerationId:       "0",
 				ExplanationMarkdown: "broken",
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testPath, "1"),
-				TestVariant:   &pb.TestVariant{TestPath: testPath},
+				TestPath:      testPath,
 				ExonerationId: "1",
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testPath, "2"),
-				TestVariant:   &pb.TestVariant{TestPath: testPath},
+				TestPath:      testPath,
 				ExonerationId: "2",
 			},
 		}

@@ -51,16 +51,14 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	invID := InvocationID(invIDStr)
 
 	ret := &pb.TestExoneration{
-		Name: name,
-		TestVariant: &pb.TestVariant{
-			TestPath: testPath,
-		},
+		Name:          name,
+		TestPath:      testPath,
 		ExonerationId: exonerationID,
 	}
 
 	// Populate fields from TestExonerations table.
 	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
-		"Variant":             &ret.TestVariant.Variant,
+		"Variant":             &ret.Variant,
 		"ExplanationMarkdown": &ret.ExplanationMarkdown,
 	})
 	switch {
@@ -111,14 +109,12 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
 	opts := &spanner.ReadOptions{Limit: pageSize}
 	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
-		ex := &pb.TestExoneration{
-			TestVariant: &pb.TestVariant{},
-		}
-		err := FromSpanner(row, &ex.TestVariant.TestPath, &ex.ExonerationId, &ex.TestVariant.Variant, &ex.ExplanationMarkdown)
+		ex := &pb.TestExoneration{}
+		err := FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
 		if err != nil {
 			return err
 		}
-		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestVariant.TestPath, ex.ExonerationId)
+		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestPath, ex.ExonerationId)
 		tes = append(tes, ex)
 		return nil
 	})
@@ -129,7 +125,7 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 
 	if len(tes) == pageSize {
 		last := tes[pageSize-1]
-		nextCursorTok = pagination.Token(last.TestVariant.TestPath, last.ExonerationId)
+		nextCursorTok = pagination.Token(last.TestPath, last.ExonerationId)
 	}
 	return
 }

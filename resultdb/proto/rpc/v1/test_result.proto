@@ -184,18 +184,6 @@ message Artifact {
   bytes contents = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
-// A pair of test path and a variant definition, identifying a variant of a
-// test.
-// TODO(nodir): decide whether to leave or inline this message. It is currently
-// used only in one place.
-message TestVariant {
-  // Test identifier, see TestResult.test_path.
-  string test_path = 1;
-
-  // Description of the variant of the test, see Variant.
-  luci.resultdb.type.Variant variant = 2;
-}
-
 // Indicates the test subject (e.g. a CL) is absolved from blame
 // for an unexpected result of a test variant.
 // For example, the test variant fails both with and without CL, so it is not
@@ -212,17 +200,22 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Failure of this test variant is forgiven.
-  TestVariant test_variant = 2 [ (google.api.field_behavior) = IMMUTABLE ];
+  // Test identifier, see TestResult.test_path.
+  string test_path = 2;
+
+  // Description of the variant of the test, see Variant type.
+  // Unlike TestResult.extra_variant_pairs, this one must be a full definition
+  // of the variant, i.e. it is not combined with Invocation.base_test_variant.
+  luci.resultdb.type.Variant variant = 3;
 
   // Identifies an exoneration in a given invocation and test path.
   // It is server-generated.
-  string exoneration_id = 3 [
+  string exoneration_id = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
 
   // Reasoning behind the exoneration, in markdown.
   // Markdown spec: https://spec.commonmark.org/0.29/
-  string explanation_markdown = 4 [ (google.api.field_behavior) = IMMUTABLE ];
+  string explanation_markdown = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 }

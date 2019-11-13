@@ -62,12 +62,12 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{TestPath: "\x01"},
+							TestPath: "\x01",
 						},
 					},
 				},
 			})
-			So(err, ShouldErrLike, `requests[0]: test_exoneration: test_variant: test_path: does not match`)
+			So(err, ShouldErrLike, `requests[0]: test_exoneration: test_path: does not match`)
 		})
 
 		Convey(`Inconsistent invocation`, func() {
@@ -77,9 +77,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					{
 						Invocation: "invocations/x",
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "gn://ab/cd.ef",
-							},
+							TestPath: "gn://ab/cd.ef",
 						},
 					},
 				},
@@ -95,9 +93,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					{
 						RequestId: "req2",
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "gn://ab/cd.ef",
-							},
+							TestPath: "gn://ab/cd.ef",
 						},
 					},
 				},
@@ -111,17 +107,13 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "gn://ab/cd.ef",
-							},
+							TestPath: "gn://ab/cd.ef",
 						},
 					},
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "gn://ab/cd.ef",
-								Variant:  pbutil.Variant("a/b", "1", "c", "2"),
-							},
+							TestPath: "gn://ab/cd.ef",
+							Variant:  pbutil.Variant("a/b", "1", "c", "2"),
 						},
 					},
 				},
@@ -168,18 +160,14 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "a",
-								Variant:  pbutil.Variant("a", "1", "b", "2"),
-							},
+							TestPath: "a",
+							Variant:  pbutil.Variant("a", "1", "b", "2"),
 						},
 					},
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestVariant: &pb.TestVariant{
-								TestPath: "b/c",
-								Variant:  pbutil.Variant("a", "1", "b", "2"),
-							},
+							TestPath: "b/c",
+							Variant:  pbutil.Variant("a", "1", "b", "2"),
 						},
 					},
 				},
@@ -198,7 +186,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 
 				expected := proto.Clone(req.Requests[i].TestExoneration).(*pb.TestExoneration)
 				proto.Merge(expected, &pb.TestExoneration{
-					Name:          pbutil.TestExonerationName("inv", expected.TestVariant.TestPath, actual.ExonerationId),
+					Name:          pbutil.TestExonerationName("inv", expected.TestPath, actual.ExonerationId),
 					ExonerationId: actual.ExonerationId,
 				})
 
@@ -207,7 +195,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				// Now check the database.
 				row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), actual.Name)
 				So(err, ShouldBeNil)
-				So(row.TestVariant.Variant, ShouldResembleProto, expected.TestVariant.Variant)
+				So(row.Variant, ShouldResembleProto, expected.Variant)
 				So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
 			}
 

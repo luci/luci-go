@@ -36,32 +36,41 @@ import (
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`TestValidateCreateTestExonerationRequest`, t, func() {
-		Convey(`empty`, func() {
+		Convey(`Empty`, func() {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{}, true)
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
-		Convey(`invalid test variant`, func() {
+		Convey(`NUL in test path`, func() {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestVariant: &pb.TestVariant{TestPath: "\x01"},
+					TestPath: "\x01",
 				},
 			}, true)
-			So(err, ShouldErrLike, `test_exoneration: test_variant: test_path: does not match`)
+			So(err, ShouldErrLike, "test_path: does not match")
 		})
 
-		Convey(`valid`, func() {
+		Convey(`Invalid variant`, func() {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestVariant: &pb.TestVariant{
-						TestPath: "gn://ab/cd.ef",
-						Variant: pbutil.Variant(
-							"a/b", "1",
-							"c", "2",
-						),
-					},
+					TestPath: "a",
+					Variant:  pbutil.Variant("", ""),
+				},
+			}, true)
+			So(err, ShouldErrLike, `variant: "":"": key: does not match`)
+		})
+
+		Convey(`Valid`, func() {
+			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
+				Invocation: "invocations/inv",
+				TestExoneration: &pb.TestExoneration{
+					TestPath: "gn://ab/cd.ef",
+					Variant: pbutil.Variant(
+						"a/b", "1",
+						"c", "2",
+					),
 				},
 			}, true)
 			So(err, ShouldBeNil)
@@ -78,27 +87,23 @@ func TestCreateTestExoneration(t *testing.T) {
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
-		Convey(`invalid request`, func() {
+		Convey(`Invalid request`, func() {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestVariant: &pb.TestVariant{
-						TestPath: "\x01",
-					},
+					TestPath: "\x01",
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldErrLike, `bad request: test_exoneration: test_variant: test_path: does not match`)
+			So(err, ShouldErrLike, `bad request: test_exoneration: test_path: does not match`)
 			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
-		Convey(`no invocation`, func() {
+		Convey(`No invocation`, func() {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestVariant: &pb.TestVariant{
-						TestPath: "a",
-					},
+					TestPath: "a",
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
@@ -113,10 +118,8 @@ func TestCreateTestExoneration(t *testing.T) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestVariant: &pb.TestVariant{
-						TestPath: "a",
-						Variant:  pbutil.Variant("a", "1", "b", "2"),
-					},
+					TestPath: "a",
+					Variant:  pbutil.Variant("a", "1", "b", "2"),
 				},
 			}
 
@@ -142,7 +145,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			// Now check the database.
 			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
-			So(row.TestVariant.Variant, ShouldResembleProto, expected.TestVariant.Variant)
+			So(row.Variant, ShouldResembleProto, expected.Variant)
 			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
 
 			if withRequestID {
@@ -153,10 +156,10 @@ func TestCreateTestExoneration(t *testing.T) {
 			}
 		}
 
-		Convey(`without request id, e2e`, func() {
+		Convey(`Without request id, e2e`, func() {
 			e2eTest(false)
 		})
-		Convey(`with request id, e2e`, func() {
+		Convey(`With request id, e2e`, func() {
 			e2eTest(true)
 		})
 	})

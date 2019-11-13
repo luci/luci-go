@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
@@ -97,17 +96,6 @@ func SortedVariantKeys(vr *typepb.Variant) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-// ValidateTestVariant returns a non-nil error if tv is invalid.
-func ValidateTestVariant(tv *pb.TestVariant) error {
-	if err := ValidateTestPath(tv.GetTestPath()); err != nil {
-		return errors.Annotate(err, "test_path").Err()
-	}
-	if err := ValidateVariant(tv.GetVariant()); err != nil {
-		return errors.Annotate(err, "variant").Err()
-	}
-	return nil
 }
 
 // VariantHash returns a short hash of the variant.

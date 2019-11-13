@@ -40,9 +40,14 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, 
 		}
 	}
 
-	if err := pbutil.ValidateTestVariant(req.TestExoneration.GetTestVariant()); err != nil {
-		return errors.Annotate(err, "test_exoneration: test_variant").Err()
+	ex := req.GetTestExoneration()
+	if err := pbutil.ValidateTestPath(ex.GetTestPath()); err != nil {
+		return errors.Annotate(err, "test_exoneration: test_path").Err()
 	}
+	if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
+		return errors.Annotate(err, "test_exoneration: variant").Err()
+	}
+
 	if err := pbutil.ValidateRequestID(req.RequestId); err != nil {
 		return errors.Annotate(err, "request_id").Err()
 	}
@@ -79,18 +84,19 @@ func insertTestExoneration(ctx context.Context, invID span.InvocationID, request
 		mutFn = spanner.InsertOrUpdateMap
 	}
 
-	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(body.TestVariant.Variant), exonerationIDSuffix)
+	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(body.Variant), exonerationIDSuffix)
 	ret = &pb.TestExoneration{
-		Name:                pbutil.TestExonerationName(string(invID), body.TestVariant.TestPath, exonerationID),
+		Name:                pbutil.TestExonerationName(string(invID), body.TestPath, exonerationID),
+		TestPath:            body.TestPath,
+		Variant:             body.Variant,
 		ExonerationId:       exonerationID,
-		TestVariant:         body.TestVariant,
 		ExplanationMarkdown: body.ExplanationMarkdown,
 	}
 	mutation = mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
 		"InvocationId":        invID,
-		"TestPath":            ret.TestVariant.TestPath,
+		"TestPath":            ret.TestPath,
 		"ExonerationId":       exonerationID,
-		"Variant":             ret.TestVariant.Variant,
+		"Variant":             ret.Variant,
 		"ExplanationMarkdown": ret.ExplanationMarkdown,
 	}))
 	return
