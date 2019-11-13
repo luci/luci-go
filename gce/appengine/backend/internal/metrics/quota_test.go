@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/tsmon"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -30,9 +28,7 @@ func TestQuota(t *testing.T) {
 	t.Parallel()
 
 	Convey("UpdateQuota", t, func() {
-		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
-		datastore.GetTestable(c).AutoIndex(true)
-		datastore.GetTestable(c).Consistent(true)
+		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
 		fields := []interface{}{"metric", "region", "project"}
