@@ -20,7 +20,9 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
 )
 
 var httpClientCtxKey = "context key for a *http.Client"
@@ -39,9 +41,43 @@ func HTTPClient(ctx context.Context) *http.Client {
 	return client
 }
 
-// UnwrapGrpcCodePostlude extracts an error code from a grpcutil.Tag, logs a
+// CommonPrelude must be used as a prelude in all ResultDB services.
+// Verifies access.
+func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (retCtx context.Context, err error) {
+	defer func() {
+		err = grpcutil.GRPCifyAndLogErr(ctx, err)
+	}()
+
+	if err := verifyAccess(ctx); err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
+// CommonPostlude must be used as a postlude in all ResultDB services.
+// Extracts an error code from a grpcutil.Tag, logs a
 // stack trace and returns a gRPC-native error.
-// It can be used as Postlude in a decorated gRPC service implementation.
-func UnwrapGrpcCodePostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	return grpcutil.GRPCifyAndLogErr(ctx, err)
+}
+
+func verifyAccess(ctx context.Context) error {
+	// TODO(crbug.com/1013316): use realms.
+
+	// WARNING: removing this restriction requires removing AsSelf HTTP client
+	// that is setup in internal.Main() function.
+	// DO NOT REMOVE this until that's done.
+	switch allowed, err := auth.IsMember(ctx, accessGroup); {
+	case err != nil:
+		return err
+
+	case !allowed:
+		return errors.
+			Reason("%s is not in %q CIA group", auth.CurrentIdentity(ctx), accessGroup).
+			Tag(grpcutil.PermissionDeniedTag).
+			Err()
+
+	default:
+		return nil
+	}
 }

@@ -21,11 +21,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -139,14 +136,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 	Convey(`TestBatchCreateTestExonerations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		// Init auth state.
-		ctx = authtest.MockAuthConfig(ctx)
-		authState := &authtest.FakeState{
-			Identity: identity.AnonymousIdentity,
-		}
-		ctx = auth.WithState(ctx, authState)
-
-		recorder := NewRecorderServer()
+		recorder := &recorderServer{}
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))

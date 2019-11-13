@@ -70,7 +70,7 @@ func TestValidateIncludeRequest(t *testing.T) {
 func TestInclude(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		recorder := NewRecorderServer()
+		recorder := &recorderServer{}
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))

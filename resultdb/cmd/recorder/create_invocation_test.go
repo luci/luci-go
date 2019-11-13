@@ -15,21 +15,20 @@
 package main
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -145,20 +144,18 @@ func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		// Init auth state.
-		ctx = authtest.MockAuthConfig(ctx)
-		authState := &authtest.FakeState{
-			Identity: identity.AnonymousIdentity,
-		}
-		ctx = auth.WithState(ctx, authState)
-
 		// Mock time.
 		now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		// Setup a full HTTP server in order to retrieve response headers.
 		server := &prpctest.Server{}
-		pb.RegisterRecorderServer(server, NewRecorderServer())
+		server.UnaryServerInterceptor = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+			res, err := handler(ctx, req)
+			err = grpcutil.GRPCifyAndLogErr(ctx, err)
+			return res, err
+		}
+		pb.RegisterRecorderServer(server, &recorderServer{})
 		server.Start(ctx)
 		defer server.Close()
 		client, err := server.NewClient()

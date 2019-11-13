@@ -195,7 +195,7 @@ func TestDeriveInvocation(t *testing.T) {
 			),
 		}
 
-		recorder := NewRecorderServer()
+		recorder := &recorderServer{}
 
 		Convey(`inserts a new invocation`, func() {
 			req.SwarmingTask.Id = "completed-task"

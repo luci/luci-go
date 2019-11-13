@@ -33,7 +33,8 @@ type recorderServer struct {
 func NewRecorderServer() pb.RecorderServer {
 	return &pb.DecoratedRecorder{
 		Service:  &recorderServer{},
-		Postlude: internal.UnwrapGrpcCodePostlude,
+		Prelude:  internal.CommonPrelude,
+		Postlude: internal.CommonPostlude,
 	}
 }
 

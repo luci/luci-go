@@ -53,7 +53,7 @@ func TestValidateFinalizeInvocationRequest(t *testing.T) {
 func TestFinalizeInvocation(t *testing.T) {
 	Convey(`TestFinalizeInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		recorder := NewRecorderServer()
+		recorder := &recorderServer{}
 		ct := testclock.TestRecentTimeUTC
 
 		const token = "update token"

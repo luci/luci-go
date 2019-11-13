@@ -61,7 +61,7 @@ func TestGetTestResult(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 		ctx, _ = testclock.UseTime(ctx, ct)
 
-		srv := NewResultDBServer()
+		srv := &resultDBServer{}
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
 			req := &pb.GetTestResultRequest{Name: name}
 			tr, err := srv.GetTestResult(ctx, req)
