@@ -16,7 +16,10 @@ package common
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"sort"
+	"strconv"
 
 	"google.golang.org/grpc/codes"
 
@@ -59,4 +62,27 @@ func TagGRPC(c context.Context, err error) error {
 		return errors.Reason("not logged in").Tag(grpcutil.UnauthenticatedTag).Err()
 	}
 	return grpcutil.ToGRPCErr(err)
+}
+
+// ParseIntFromForm parses an integer from a form.
+func ParseIntFromForm(form url.Values, key string, base int, bitSize int) (int64, error) {
+	input, err := ReadExactOneFromForm(form, key)
+	if err != nil {
+		return 0, err
+	}
+	ret, err := strconv.ParseInt(input, 10, 64)
+	if err != nil {
+		return 0, errors.Annotate(err, "invalid %v; expected an integer; actual value: %v", key, input).Err()
+	}
+	return ret, nil
+}
+
+// ReadExactOneFromForm read a string from a form.
+// There must be exactly one and non-empty entry of the given key in the form.
+func ReadExactOneFromForm(form url.Values, key string) (string, error) {
+	input := form[key]
+	if len(input) != 1 || input[0] == "" {
+		return "", fmt.Errorf("multiple or missing %v; actual value: %v", key, input)
+	}
+	return input[0], nil
 }

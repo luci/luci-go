@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -81,6 +82,7 @@ func renderBuild(c *router.Context, bp *ui.BuildPage, err error) error {
 
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"BuildPage":      bp,
+		"RetryRequestID": rand.Int31(),
 		"XsrfTokenField": xsrf.TokenField(c.Context),
 	})
 	return nil
@@ -116,7 +118,7 @@ func handleGetRelatedBuildsTable(c *router.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "bad build id").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	rbt, err := buildbucket.GetRelatedBuildsTable(c, id)
+	rbt, err := buildbucket.GetRelatedBuildsTable(c.Context, id)
 	if err != nil {
 		return errors.Annotate(err, "error when getting related builds table").Err()
 	}
