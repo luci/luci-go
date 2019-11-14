@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package spantest
 
 import (
 	"context"
@@ -33,67 +33,75 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateListTestResultsRequest(t *testing.T) {
-	t.Parallel()
-	Convey(`Valid`, t, func() {
-		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: 50}
-		So(validateListTestResultsRequest(req), ShouldBeNil)
-	})
-
-	Convey(`Invalid invocation`, t, func() {
-		req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "invocation: does not match")
-	})
-
-	Convey(`Invalid page size`, t, func() {
-		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: -50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "page_size: negative")
-	})
-}
-
-func TestListTestResults(t *testing.T) {
-	Convey(`ListTestResults`, t, func() {
+func TestReadTestResults(t *testing.T) {
+	Convey(`ReadTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		now := clock.Now(ctx)
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, "", now))
-		trs := insertTestResults(ctx, "req", "DoBaz", 0,
-			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
-
-		srv := &resultDBServer{}
-
-		Convey(`Works`, func() {
-			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}
-			res, err := srv.ListTestResults(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.TestResults, ShouldResembleProto, trs[:1])
-			So(res.NextPageToken, ShouldNotEqual, "")
-
-			Convey(`With pagination`, func() {
-				req.PageToken = res.NextPageToken
-				req.PageSize = 2
-				resp, err := srv.ListTestResults(ctx, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldNotBeNil)
-				So(resp.TestResults, ShouldResembleProto, trs[1:])
-				So(resp.NextPageToken, ShouldEqual, "")
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now))
+		trs := insertTestResults(ctx, "inv", "DoBaz", 0,
+			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL, pb.TestStatus_PASS, pb.TestStatus_FAIL,
 			})
 
-			Convey(`With default page size`, func() {
-				req := &pb.ListTestResultsRequest{Invocation: "invocations/req"}
-				res, err := srv.ListTestResults(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldNotBeNil)
-				So(res.TestResults, ShouldResembleProto, trs)
-				So(res.NextPageToken, ShouldEqual, "")
+		Convey(`All results`, func() {
+			token := testRead(ctx, "inv", true, "", 10, trs)
+			So(token, ShouldEqual, "")
+
+			Convey(`With pagination`, func() {
+				token := testRead(ctx, "inv", true, "", 1, trs[:1])
+				So(token, ShouldNotEqual, "")
+
+				token = testRead(ctx, "inv", true, token, 4, trs[1:])
+				So(token, ShouldNotEqual, "")
+
+				token = testRead(ctx, "inv", true, token, 5, nil)
+				So(token, ShouldEqual, "")
+			})
+		})
+
+		Convey(`Unexpected results`, func() {
+			testRead(ctx, "inv", false, "", 10, append(trs[1:3], trs[4]))
+
+			Convey(`With pagination`, func() {
+				token := testRead(ctx, "inv", false, "", 1, trs[1:2])
+				So(token, ShouldNotEqual, "")
+
+				token = testRead(ctx, "inv", false, token, 1, trs[2:3])
+				So(token, ShouldNotEqual, "")
+
+				token = testRead(ctx, "inv", false, token, 10, trs[4:])
+				So(token, ShouldEqual, "")
+			})
+		})
+
+		Convey(`Span test path boundaries`, func() {
+			trs = append(trs, insertTestResults(ctx, "inv", "DoQux", 0,
+				[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})...)
+			token := testRead(ctx, "inv", true, "", 6, trs[:6])
+			So(token, ShouldNotEqual, "")
+
+			testRead(ctx, "inv", true, token, 2, trs[6:])
+		})
+
+		Convey(`Errors with bad token`, func() {
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+
+			Convey(`From bad position`, func() {
+				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "CgVoZWxsbw==", 5)
+				So(err, ShouldErrLike, "invalid page_token")
+			})
+
+			Convey(`From decoding`, func() {
+				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "%%%", 5)
+				So(err, ShouldErrLike, "invalid page_token")
 			})
 		})
 	})
 }
-
 
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
@@ -133,4 +141,15 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 
 	testutil.MustApply(ctx, muts...)
 	return trs
+}
+
+func testRead(ctx context.Context, invID span.InvocationID, excludeExpected bool, token string, pageSize int, expected []*pb.TestResult) string {
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+
+	trs, token, err := span.ReadTestResults(ctx, txn, invID, excludeExpected, token, pageSize)
+	So(err, ShouldBeNil)
+	So(trs, ShouldResembleProto, expected)
+
+	return token
 }
