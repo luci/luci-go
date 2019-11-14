@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "37950d7a_b7b37361",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-14T02:44:59Z",
+      "side": 1,
+      "message": "deleted this function",
+      "parentUuid": "4e85baa9_bcdf9ff5",
+      "range": {
+        "startLine": 214,
+        "startChar": 29,
+        "endLine": 214,
+        "endChar": 33
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8318ed0f_798cd317",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 15
@@ -158,6 +182,30 @@
       "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d7c7743_2c04ce7b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-14T02:44:59Z",
+      "side": 1,
+      "message": "added the logging we discussed offline",
+      "parentUuid": "b3dd2600_5f66d778",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 17
+      },
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
