@@ -21,13 +21,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
-	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -176,7 +176,11 @@ func (s *Server) serveLoop(ctx context.Context) {
 	for {
 		switch conn, err := s.ln.Accept(); {
 		case err == nil:
-			go s.handleConnection(ctx, conn)
+			go func() {
+				if err := s.handleConnection(ctx, conn); err != nil {
+					logging.Errorf(ctx, "connection error: %s", err)
+				}
+			}()
 		case ctx.Err() != nil:
 			s.errC <- ctx.Err()
 			return
@@ -209,32 +213,49 @@ func (s *Server) Export(ctx context.Context) context.Context {
 	return lucictx.SetResultDB(ctx, &db)
 }
 
-func (s *Server) handleConnection(ctx context.Context, c net.Conn) {
+func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
+	done := make(chan struct{})
+	defer close(done)
 	defer c.Close()
+	go func() {
+		select {
+		case <-ctx.Done():
+			c.Close()
+		case <-done:
+		}
+	}()
+
 	dc := json.NewDecoder(c)
 	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
-		logging.Errorf(ctx, "handshake failed: %s", err)
-		return
+		return errors.Annotate(err, "handshake failed").Err()
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	// TODO(crbug.com/1017288) Actually use msg later.
-	var msg sinkpb.SinkMessageContainer
+	if err := processMessages(dc); err != nil && err != io.EOF {
+		return errors.Annotate(err, "connection").Err()
+	}
+
+	return nil
+}
+
+func processMessages(dc *json.Decoder) error {
 	for {
-		if ctx.Err() != nil {
-			return
+		msgp := &sinkpb.SinkMessageContainer{}
+		if err := readMessage(dc, msgp); err != nil {
+			return err
 		}
 
-		c.SetDeadline(clock.Now(ctx).Add(500 * time.Millisecond))
-		if err := jsonpb.UnmarshalNext(dc, &msg); err != nil {
-			if shouldKeepTrying(err) {
-				continue
-			}
-			// TODO(sajjadm): handle connection-level errors properly,
-			// possibly with full server shutdown
-			logging.Errorf(ctx, "reading next message failed: %s", err)
-			return
+		// TODO(sajjadm): msgp is valid, do something with it
+	}
+}
+
+func readMessage(dc *json.Decoder, dest proto.Message) error {
+	for {
+		err := jsonpb.UnmarshalNext(dc, dest)
+		if shouldKeepTrying(err) {
+			continue
 		}
+		return err
 	}
 }
 
