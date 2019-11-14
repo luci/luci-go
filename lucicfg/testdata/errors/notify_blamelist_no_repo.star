@@ -1,3 +1,5 @@
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_pb='buildbucket.v2')
+
 luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
@@ -11,14 +13,14 @@ luci.recipe(name = 'noop', cipd_package = 'noop')
 
 luci.notifier(
     name = 'blamelist notifier',
-    on_failure = True,
+    on_occurrence = [buildbucket_pb.FAILURE],
     notify_blamelist = True,
     blamelist_repos_whitelist = ['https://repo.example.com'],
 )
 
 luci.notifier(
     name = 'email notifier',
-    on_failure = True,
+    on_occurrence = [buildbucket_pb.FAILURE],
     notify_emails = ['a@example.com'],
 )
 
