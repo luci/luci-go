@@ -183,13 +183,12 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	values := map[string]interface{}{
 		"InvocationId":                      id,
+		"ShardId":                           0,
 		"State":                             state,
 		"Realm":                             "",
 		"UpdateToken":                       updateToken,
 		"InvocationExpirationTime":          future,
-		"InvocationExpirationWeek":          future,
 		"ExpectedTestResultsExpirationTime": future,
-		"ExpectedTestResultsExpirationWeek": future,
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
 	}

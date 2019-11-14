@@ -23,23 +23,26 @@ CREATE TABLE Invocations (
   -- Format: "${hex(sha256(user_provided_id)[:8])}:${user_provided_id}".
   InvocationId STRING(MAX) NOT NULL,
 
+  -- A random value in [0, InvocationShards) where InvocationShards constant is
+  -- defined in code.
+  -- Used in global secondary indexes, to prevent hot spots.
+  -- The maximum value of ShardId in Spanner can be determined by querying the
+  -- very first row in InvocationsByExpiration index.
+  ShardId INT64 NOT NULL,
+
   -- Invocation state, see InvocationState in invocation.proto
   State INT64 NOT NULL,
 
   -- Security realm this invocation belongs to.
-  Realm STRING(64) NOT NULL,  -- used to enforce ACLs
+  -- Used to enforce ACLs.
+  Realm STRING(64) NOT NULL,
 
   -- When to delete the invocation from the table.
   InvocationExpirationTime TIMESTAMP NOT NULL,
 
-  -- InvocationExpirationTime truncated to a week.
-  InvocationExpirationWeek TIMESTAMP NOT NULL,  -- used for indexing
-
   -- When to delete expected test results from this invocation.
-  ExpectedTestResultsExpirationTime TIMESTAMP NOT NULL,
-
-  -- ExpectedTestResultsExpirationTime truncated to a week.
-  ExpectedTestResultsExpirationWeek TIMESTAMP NOT NULL,  -- used for indexing
+  -- When expected results are removed, this column is set to NULL.
+  ExpectedTestResultsExpirationTime TIMESTAMP,
 
   -- Secret token that a client must provide to mutate this or any of the
   -- interleaved rows.
@@ -69,13 +72,15 @@ CREATE TABLE Invocations (
   CreateRequestId STRING(MAX),
 ) PRIMARY KEY (InvocationId);
 
--- Index of invocations by expiration week.
+-- Index of invocations by expiration time.
 -- Used by a cron job that periodically removes expired invocations.
-CREATE INDEX InvocationsByInvocationExpirationWeek ON Invocations (InvocationExpirationWeek, InvocationId);
+CREATE INDEX InvocationsByInvocationExpiration
+  ON Invocations (ShardId DESC, InvocationExpirationTime, InvocationId);
 
--- Index of invocations by expected test result expiration week.
+-- Index of invocations by expected test result expiration.
 -- Used by a cron job that periodically removes expected test results.
-CREATE INDEX InvocationsByExpectedTestResultsExpirationWeek ON Invocations (ExpectedTestResultsExpirationWeek, InvocationId);
+CREATE NULL_FILTERED INDEX InvocationsByExpectedTestResultsExpiration
+  ON Invocations (ShardId DESC, ExpectedTestResultsExpirationTime, InvocationId);
 
 -- Index of invocations by a tag.
 CREATE TABLE InvocationsByTag (
@@ -155,7 +160,8 @@ CREATE TABLE TestResults (
 -- for most queries.
 -- It includes TestPath to be able to find all unexpected test result with a
 -- given test path or a test path prefix.
-CREATE NULL_FILTERED INDEX UnexpectedTestResults ON TestResults (InvocationId, TestPath, IsUnexpected),
+CREATE NULL_FILTERED INDEX UnexpectedTestResults
+  ON TestResults (InvocationId, TestPath, IsUnexpected),
   INTERLEAVE IN Invocations;
 
 

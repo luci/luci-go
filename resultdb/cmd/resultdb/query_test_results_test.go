@@ -34,13 +34,12 @@ func insertInv(id span.InvocationID, included ...span.InvocationID) []*spanner.M
 	t := testclock.TestRecentTimeUTC
 	ms := []*spanner.Mutation{span.InsertMap("Invocations", map[string]interface{}{
 		"InvocationId":                      id,
+		"ShardId":                           0,
 		"State":                             pb.Invocation_COMPLETED,
 		"Realm":                             "",
 		"UpdateToken":                       "",
 		"InvocationExpirationTime":          t,
-		"InvocationExpirationWeek":          t,
 		"ExpectedTestResultsExpirationTime": t,
-		"ExpectedTestResultsExpirationWeek": t,
 		"CreateTime":                        t,
 		"Deadline":                          t,
 		"FinalizeTime":                      t,

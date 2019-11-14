@@ -245,6 +245,16 @@ func TestCreateInvocation(t *testing.T) {
 			inv, err = span.ReadInvocationFull(ctx, txn, "u:inv")
 			So(err, ShouldBeNil)
 			So(inv, ShouldResembleProto, expected)
+
+			// Check fields not present in the proto.
+			var invExpirationTime, expectedResultsExpirationTime time.Time
+			err = span.ReadInvocation(ctx, txn, "u:inv", map[string]interface{}{
+				"InvocationExpirationTime":          &invExpirationTime,
+				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
+			})
+			So(err, ShouldBeNil)
+			So(expectedResultsExpirationTime, ShouldEqual, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
+			So(invExpirationTime, ShouldEqual, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
 		})
 	})
 }
