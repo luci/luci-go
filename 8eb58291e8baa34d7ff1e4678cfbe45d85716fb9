@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "afaf2c54_396851ac",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "this may be interpreted as there was a problem while trying to connect, or with the connection, where actually can be anything, e.g. an invalid proto was sent. Let\u0027s use \"%s\" here, and instead, if needed, add more context to the error message inside handleConnection itself",
+      "range": {
+        "startLine": 181,
+        "startChar": 26,
+        "endLine": 181,
+        "endChar": 44
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0889942_71cfa201",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "if some connections were pending and got forcefully closed (via s.cancel() -\u003e s.Close() in handleConnection), then this is an exceptional case, however Close returns nil like everything is fine. The problem will be left unnoticed.\n\nlet\u0027s add a TODO to fix this",
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94c89a1d_2334a260",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "this could be simpler\n\n* here we use two signals for cancelation: done and ctx.Done. Why two instead of one?\n* we have two places where we close the connection. Why two?\n\nConsider:\n\n  ctx, cancel :\u003d context.WithCancel(ctx)\n  defer cancel()\n  go func() {\n    \u003c-ctx.Done()\n    s.Close()\n  }()",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 227,
+        "endChar": 0
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18197bee_78d0c04e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "this does not add whole a lot of meaning to this error message. Also it is inconsistent with the code: all we know is that processMessages call failed. We don\u0027t know that this is about the connection. Let\u0027s just return the err.\n\nwhy not annotate with \"failed to process messages\"? Because processing messages is pretty much all we do in handleConnection, i.e. it does not help distinguishing between different places in code.",
+      "range": {
+        "startLine": 235,
+        "startChar": 31,
+        "endLine": 235,
+        "endChar": 41
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "221902ad_39ee058c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "this would be good to annotate: \"failed to read message\"",
+      "range": {
+        "startLine": 245,
+        "startChar": 10,
+        "endLine": 245,
+        "endChar": 13
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0588c2a_a7fd60d0",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "defer cr.Close()\ndefer cw.Close()",
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fdd6b81_164a8a70",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "i suspect this will interfere with how goconvey works, because on t is used for all conveys. Besides, perhaps this isn\u0027t specific to this test? If *any* test runs for \u003e5s, something is wrong.\n\nConsider \n\n  ctx, cancel :\u003d context.WithCancel(ctx)\n  defer cancel()\n  go func() {\n    select {\n      case ctx,Done():\n      case \u003c- time.Afer(5 * time.Second):\n        c.So(ctx.Err(), ShouldNotBeNil)\n    }\n  }()\n\nin the top-level convey",
+      "range": {
+        "startLine": 123,
+        "startChar": 6,
+        "endLine": 123,
+        "endChar": 14
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "306d06c8_7c4a592e",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "should we test the err here? FWIU at the very least, the err should not be nil",
+      "range": {
+        "startLine": 124,
+        "startChar": 10,
+        "endLine": 124,
+        "endChar": 16
+      },
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b97034d5_4165fddf",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T17:42:58Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "8eb58291e8baa34d7ff1e4678cfbe45d85716fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
