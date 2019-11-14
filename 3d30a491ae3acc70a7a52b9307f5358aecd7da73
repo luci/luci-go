@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30c831fd_2b75be5c",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-14T23:58:09Z",
+      "side": 1,
+      "message": "I must be missing something about how the errorgroups/locks are working here, since the tests are passing: how does this not deadlock waiting on the deferred unlock in 183?",
+      "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56325a54_760830b9",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-14T23:58:09Z",
+      "side": 1,
+      "message": "Optional: move this to before where it\u0027s used above too",
+      "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
