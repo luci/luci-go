@@ -66,7 +66,7 @@ func TestDisk(t *testing.T) {
 				Convey("Persistent + NVMe", func() {
 					d := &Disk{
 						Type:      "pd-fake",
-						Interface: DiskInterface_NVME,
+						Interface: Disk_NVME,
 						Image:     "",
 					}
 					d.Validate(c)
@@ -76,7 +76,7 @@ func TestDisk(t *testing.T) {
 				Convey("Persistent + No Image", func() {
 					d := &Disk{
 						Type:      "pd-fake",
-						Interface: DiskInterface_SCSI,
+						Interface: Disk_SCSI,
 						Image:     "",
 					}
 					d.Validate(c)
@@ -86,7 +86,7 @@ func TestDisk(t *testing.T) {
 				Convey("Scratch + Image", func() {
 					d := &Disk{
 						Type:      "local-ssd",
-						Interface: DiskInterface_NVME,
+						Interface: Disk_NVME,
 						Image:     "global/images/image",
 					}
 					d.Validate(c)
@@ -99,7 +99,7 @@ func TestDisk(t *testing.T) {
 				Convey("Persistent + SCSI + Image", func() {
 					d := &Disk{
 						Type:      "pd-fake",
-						Interface: DiskInterface_SCSI,
+						Interface: Disk_SCSI,
 						Image:     "global/images/image",
 					}
 					d.Validate(c)
@@ -108,7 +108,7 @@ func TestDisk(t *testing.T) {
 				Convey("Scratch + No Image", func() {
 					d := &Disk{
 						Type:      "local-ssd",
-						Interface: DiskInterface_NVME,
+						Interface: Disk_NVME,
 						Image:     "",
 					}
 					d.Validate(c)
