@@ -30,6 +30,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// InvocationShards is the sharding level for the Invocations table.
+// Column Invocations.ShardId is a value in range [0, InvocationShards).
+const InvocationShards = 100
+
 // InvocationID can convert an invocation id to various formats.
 type InvocationID string
 

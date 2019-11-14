@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
+
 	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
@@ -31,6 +33,20 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
+)
+
+const (
+	day = 24 * time.Hour
+
+	// Delete Invocations row after this duration since invocation creation.
+	invocationExpirationDuration = 2 * 365 * day // 2 y
+
+	// Delete expected test results afte this duration since invocation creation.
+	expectedTestResultsExpirationDuration = 60 * day // 2mo
+
+	// By default, interrupt the invocation 1h after creation if it is still
+	// incomplete.
+	defaultInvocationDeadlineDuration = time.Hour
 )
 
 // updateTokenMetadataKey is the metadata.MD key for the secret update token
@@ -158,10 +174,16 @@ func insertInvocationsByTag(invID span.InvocationID, tags []*typepb.StringPair) 
 // Uses the value of clock.Now(ctx) to compute expiration times.
 // Assumes inv is complete and valid; may panic otherwise.
 func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
+	createTime := pbutil.MustTimestamp(inv.CreateTime)
+
 	row := map[string]interface{}{
 		"InvocationId": span.MustParseInvocationName(inv.Name),
+		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
+
+		"InvocationExpirationTime":          createTime.Add(invocationExpirationDuration),
+		"ExpectedTestResultsExpirationTime": createTime.Add(expectedTestResultsExpirationDuration),
 
 		"UpdateToken": updateToken,
 
@@ -180,18 +202,5 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 		row["CreateRequestId"] = createRequestID
 	}
 
-	populateExpirations(row, clock.Now(ctx))
-
 	return span.InsertMap("Invocations", row)
-}
-
-// populateExpirations populates the invocation row's expiration fields using the given current time.
-func populateExpirations(invRow map[string]interface{}, now time.Time) {
-	invExp := now.Add(invocationExpirationDuration)
-	invRow["InvocationExpirationTime"] = invExp
-	invRow["InvocationExpirationWeek"] = invExp.Truncate(week)
-
-	resultsExp := now.Add(expectedTestResultsExpirationDuration)
-	invRow["ExpectedTestResultsExpirationTime"] = resultsExp
-	invRow["ExpectedTestResultsExpirationWeek"] = resultsExp.Truncate(week)
 }
