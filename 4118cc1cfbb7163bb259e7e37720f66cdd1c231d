@@ -96,6 +96,24 @@
     },
     {
       "key": {
+        "uuid": "7ede6e50_6addcd0f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-14T02:13:12Z",
+      "side": 1,
+      "message": "Tried to do this, and it turns out my code hangs if the client does not send any data, since readMessage will just wait forever. This can be fixed by setting deadlines on the connection object itself, but that requires exposing the fact that it is a connection all the way down at readMessage, when I would rather that function just accept a json.Decoder. I think it would be better to keep the goroutine but make sure that it will always be terminated.",
+      "parentUuid": "ffb949d5_5bcbf395",
+      "revId": "4118cc1cfbb7163bb259e7e37720f66cdd1c231d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c6c65a29_13fdd5ce",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 15
