@@ -182,6 +182,13 @@ func ToSpanner(v interface{}) interface{} {
 	case InvocationID:
 		return v.RowID()
 
+	case []InvocationID:
+		ret := make([]string, len(v))
+		for i, id := range v {
+			ret[i] = id.RowID()
+		}
+		return ret
+
 	case *tspb.Timestamp:
 		if v == nil {
 			return spanner.NullTime{}
