@@ -164,6 +164,19 @@ func MustApply(ctx context.Context, ms ...*spanner.Mutation) {
 	So(err, ShouldBeNil)
 }
 
+// CombineMutations concatenates mutations
+func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
+	totalLen := 0
+	for _, ms := range msSlice {
+		totalLen += len(ms)
+	}
+	ret := make([]*spanner.Mutation, 0, totalLen)
+	for _, ms := range msSlice {
+		ret = append(ret, ms...)
+	}
+	return ret
+}
+
 // MustReadRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert success.
 func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
