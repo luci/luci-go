@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c8e731d_69401ef5",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-11-14T22:31:23Z",
+      "side": 0,
+      "message": "Now it\u0027s inconsistent with AccessConfigType which is top-level. Also I just realized this now but I\u0027d put this still at the top-level, but right above Disk, since it has to do with disks and nothing to do with AccessConfigs (but this is only for the benefit of humans reading the protos).\n\nI do see an argument for making it look nice in Starlark, but I also see an argument for consistency (for no other reason than inconsistencies don\u0027t look nice).",
+      "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
