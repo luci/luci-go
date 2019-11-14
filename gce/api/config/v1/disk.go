@@ -48,7 +48,7 @@ func (d *Disk) GetImageBase() string {
 //  | pd-standard | Yes   | SCSI      |
 //  +-------------+-------+-----------+
 func (d *Disk) Validate(c *validation.Context) {
-	if strings.HasPrefix(d.Type, "pd-") && d.GetInterface() != DiskInterface_SCSI {
+	if strings.HasPrefix(d.Type, "pd-") && d.GetInterface() != Disk_SCSI {
 		c.Errorf("persistent disk must use SCSI")
 	}
 	if strings.HasPrefix(d.Type, "pd-") && !isValidImage(d.GetImage()) {
