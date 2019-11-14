@@ -206,6 +206,7 @@ func TestHandleBuild(t *testing.T) {
 
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
+		newTime2 := time.Date(2015, 2, 3, 12, 59, 8, 0, time.UTC)
 
 		dispatcher, tqTestable := createMockTaskQueue(c)
 		assertTasks := func(build *Build, checkout Checkout, expectedRecipients ...EmailNotify) {
@@ -253,6 +254,12 @@ func TestHandleBuild(t *testing.T) {
 		}
 		failEmail := EmailNotify{
 			Email: "test-example-failure@google.com",
+		}
+		infraFailEmail := EmailNotify{
+			Email: "test-example-infra-failure@google.com",
+		}
+		failAndInfraFailEmail := EmailNotify{
+			Email: "test-example-failure-and-infra-failure@google.com",
 		}
 		changeEmail := EmailNotify{
 			Email: "test-example-change@google.com",
@@ -444,6 +451,28 @@ func TestHandleBuild(t *testing.T) {
 
 		Convey(`blamelist duplicate`, func() {
 			testBlamelistConfig("test-builder-blamelist-4", commit2Email, commit2Email, commit2Email)
+		})
+
+		Convey(`failure type infra`, func() {
+			infra_failure_build := pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			assertTasks(infra_failure_build, nil) // no changeEmail
+
+			infra_failure_build = pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_FAILURE, newTime, rev2)
+			assertTasks(infra_failure_build, nil) // no changeEmail
+
+			infra_failure_build = pubsubDummyBuild("test-builder-infra-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
+			assertTasks(infra_failure_build, nil, infraFailEmail)
+		})
+
+		Convey(`failure type mixed`, func() {
+			failure_and_infra_failure_build := pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			assertTasks(failure_and_infra_failure_build, nil) // no changeEmail
+
+			failure_and_infra_failure_build = pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_FAILURE, newTime, rev2)
+			assertTasks(failure_and_infra_failure_build, nil, failAndInfraFailEmail)
+
+			failure_and_infra_failure_build = pubsubDummyBuild("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_INFRA_FAILURE, newTime2, rev2)
+			assertTasks(failure_and_infra_failure_build, nil, failAndInfraFailEmail)
 		})
 	})
 }

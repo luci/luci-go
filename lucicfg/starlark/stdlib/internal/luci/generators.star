@@ -1023,9 +1023,9 @@ def _notify_notification_pb(node):
   pb = notify_pb.Notification(
       on_change = node.props.on_status_change,
       on_failure = node.props.on_failure,
-      on_infra_failure = node.props.on_infra_failure,
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
+      failure_type = node.props.failure_type,
       template = template,
   )
   if node.props.notify_emails:
