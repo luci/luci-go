@@ -42,21 +42,30 @@ func TestNotification(t *testing.T) {
 			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
 		})
 
-		Convey("OnFailure", func() {
+		Convey("OnFailure default", func() {
 			n.OnFailure = true
 			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, failure), ShouldBeTrue)
 			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
 		})
 
-		Convey("OnInfraFailure", func() {
-			n.OnInfraFailure = true
+		Convey("OnFailure InfraFailure", func() {
+			n.OnFailure = true
+			n.FailureType = Notification_INFRA_FAILURE
 			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, failure), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeTrue)
 		})
 
-		Convey("OnNewFailure", func() {
+		Convey("OnFailure Failure and InfraFailure", func() {
+			n.OnFailure = true
+			n.FailureType = Notification_FAILURE_AND_INFRA_FAILURE
+			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, failure), ShouldBeTrue)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeTrue)
+		})
+
+		Convey("OnNewFailure default", func() {
 			n.OnNewFailure = true
 			So(n.ShouldNotify(success, success), ShouldBeFalse)
 			So(n.ShouldNotify(success, failure), ShouldBeTrue)
@@ -64,9 +73,46 @@ func TestNotification(t *testing.T) {
 			So(n.ShouldNotify(failure, success), ShouldBeFalse)
 			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
 			So(n.ShouldNotify(failure, infraFailure), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, success), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, failure), ShouldBeTrue)
+			So(n.ShouldNotify(infraFailure, infraFailure), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, failure), ShouldBeTrue)
 			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeFalse)
+		})
+
+		Convey("OnNewFailure InfraFailure", func() {
+			n.OnNewFailure = true
+			n.FailureType = Notification_INFRA_FAILURE
+			So(n.ShouldNotify(success, success), ShouldBeFalse)
+			So(n.ShouldNotify(success, failure), ShouldBeFalse)
+			So(n.ShouldNotify(success, infraFailure), ShouldBeTrue)
+			So(n.ShouldNotify(failure, success), ShouldBeFalse)
+			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(failure, infraFailure), ShouldBeTrue)
+			So(n.ShouldNotify(infraFailure, success), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, infraFailure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, failure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeTrue)
+		})
+
+		Convey("OnNewFailure Failure and InfraFailure", func() {
+			n.OnNewFailure = true
+			n.FailureType = Notification_FAILURE_AND_INFRA_FAILURE
+			So(n.ShouldNotify(success, success), ShouldBeFalse)
+			So(n.ShouldNotify(success, failure), ShouldBeTrue)
+			So(n.ShouldNotify(success, infraFailure), ShouldBeTrue)
+			So(n.ShouldNotify(failure, success), ShouldBeFalse)
+			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(failure, infraFailure), ShouldBeTrue)
+			So(n.ShouldNotify(infraFailure, success), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, failure), ShouldBeTrue)
+			So(n.ShouldNotify(infraFailure, infraFailure), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
+			So(n.ShouldNotify(unspecified, failure), ShouldBeTrue)
+			So(n.ShouldNotify(unspecified, infraFailure), ShouldBeTrue)
 		})
 
 		Convey("OnChange", func() {
@@ -74,7 +120,10 @@ func TestNotification(t *testing.T) {
 			So(n.ShouldNotify(failure, success), ShouldBeTrue)
 			So(n.ShouldNotify(success, failure), ShouldBeTrue)
 			So(n.ShouldNotify(failure, infraFailure), ShouldBeTrue)
+			So(n.ShouldNotify(infraFailure, failure), ShouldBeTrue)
 			So(n.ShouldNotify(success, success), ShouldBeFalse)
+			So(n.ShouldNotify(failure, failure), ShouldBeFalse)
+			So(n.ShouldNotify(infraFailure, infraFailure), ShouldBeFalse)
 			So(n.ShouldNotify(unspecified, success), ShouldBeFalse)
 		})
 	})
