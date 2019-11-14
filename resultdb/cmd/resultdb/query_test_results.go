@@ -17,13 +17,19 @@ package main
 import (
 	"context"
 
+	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/ptypes"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+const maxInvocationGraphSize = 1000
 
 // validateQueryTestResultsRequest returns a non-nil error if req is determined
 // to be invalid.
@@ -51,5 +57,55 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	return nil, grpcutil.Unimplemented
+	// Prepare a transaction.
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+	if in.MaxStaleness != nil {
+		st, _ := ptypes.Duration(in.MaxStaleness)
+		txn.WithTimestampBound(spanner.MaxStaleness(st))
+	}
+
+	// Query invocations.
+	invs, err := span.QueryInvocations(ctx, txn, in.Predicate.Invocation, maxInvocationGraphSize)
+	if err != nil {
+		return nil, err
+	}
+
+	// Query test results.
+	invIDs := make([]span.InvocationID, 0, len(invs))
+	for id := range invs {
+		invIDs = append(invIDs, id)
+	}
+	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+		Predicate:     in.Predicate,
+		PageSize:      pagination.AdjustPageSize(in.PageSize),
+		CursorToken:   in.PageToken,
+		InvocationIDs: invIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(nodir): fetch test exonerations.
+
+	// Form a response.
+	res := &pb.QueryTestResultsResponse{
+		NextPageToken: token,
+	}
+	// Group test results by invocation ID.
+	// Note that test results are sorted by invocation ID
+	var curInvID span.InvocationID
+	var curGroup *pb.QueryTestResultsResponse_Group
+	for _, tr := range trs {
+		invID, _, _ := span.MustParseTestResultName(tr.Name)
+		if curInvID != invID {
+			curInvID = invID
+			curGroup = &pb.QueryTestResultsResponse_Group{
+				Invocation: invs[invID],
+			}
+			res.Groups = append(res.Groups, curGroup)
+		}
+		curGroup.TestResult = append(curGroup.TestResult, tr)
+	}
+	return res, nil
 }
