@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "56cc6b97_215a82a8",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-14T18:44:34Z",
+      "side": 1,
+      "message": "i\u0027ve considered this. This changes time complexity of Include RPC from O(1) to O(inclusions), which isn\u0027t great. WDYT?",
+      "parentUuid": "f96896af_020c857a",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a625367_12080c6c",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 9
