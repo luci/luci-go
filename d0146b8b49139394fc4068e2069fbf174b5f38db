@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94372211_c32a4cdb",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-14T23:56:19Z",
+      "side": 1,
+      "message": "That\u0027s unexpected formatting. I\u0027d recommend to revert this. Maybe it\u0027s because the ; is unnecessary? If so, I guess you can remove it.",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c49bf2d0_54062a7b",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-14T23:56:19Z",
+      "side": 1,
+      "message": "I prefer Vadim\u0027s idea, use a message, with bools inside. The enum idea won\u0027t scale past 3 axes, so it\u0027s less futureproof.",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

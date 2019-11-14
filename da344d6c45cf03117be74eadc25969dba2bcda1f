@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33265966_3a6483d0",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-14T23:56:19Z",
+      "side": 0,
+      "message": "Let\u0027s take no chance and reserve 8. Add at the top of the message:\n  reserved 8;\n\nText protos fail being parsed when they get unknown values but I didn\u0027t see anything in config.git so I think it\u0027s fine. If it had been the case, we would have had to keep the value until all the configs would have been cleaned up.",
+      "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
