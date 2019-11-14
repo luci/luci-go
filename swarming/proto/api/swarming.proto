@@ -814,6 +814,16 @@ message TaskRequest {
   string parent_run_id = 11;
   // Send notification to this pubsub topic for updates of this task.
   PubSub pubsub_notification = 10;
+  // Maximum delay between bot pings before the bot is considered dead
+  // while running a task.
+  //
+  // When a task is running, the bot sends update to the server every
+  // few seconds. In some cases, like when the system is overloaded,
+  // the bot may be preempted and delayed in sending its updates.
+  // After the delay specified here, the server will claim the bot to
+  // be dead and will forcibly abort the task as BOT_DIED. This is to
+  // catch system wide issues like a BSOD.
+  google.protobuf.Duration bot_ping_tolerance = 12;
 }
 
 // PubSub is a Cloud Pub/Sub topic to send task updates to.
