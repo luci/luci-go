@@ -40,7 +40,7 @@ luci.builder(
         luci.notifier(
             name = 'blamelist notifier with infra failures',
             on_failure = True,
-            on_infra_failure = True,
+            failure_type = 2,
             notify_blamelist = True,
         ),
     ],
@@ -109,7 +109,7 @@ luci.builder(
 # notifiers: <
 #   notifications: <
 #     on_failure: true
-#     on_infra_failure: true
+#     failure_type: 2
 #     notify_blamelist: <>
 #   >
 #   builders: <
