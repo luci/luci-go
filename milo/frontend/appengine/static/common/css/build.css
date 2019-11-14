@@ -30,7 +30,7 @@
     display: block;
 }
 
-#cancel-build-modal {
+.modal-content {
     display: none;
     background-color: white;
     margin: auto;
@@ -39,8 +39,12 @@
     width: 60%;
 }
 
-#cancel-build-modal * {
+.modal-content * {
     margin: 5px 0 5px 0;
+}
+
+#modal-overlay.show-retry-build-modal #retry-build-modal {
+    display: block;
 }
 
 #modal-overlay.show-cancel-build-modal #cancel-build-modal {

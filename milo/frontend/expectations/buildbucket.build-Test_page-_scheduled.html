@@ -54,9 +54,21 @@
   
   
   <div id="modal-overlay">
-    <div id="cancel-build-modal">
+    <div id="retry-build-modal" class="modal-content">
+      <h1>Retry Build</h1>
+      <form id="retry-build-form" action="/actions/retry_build" method="POST" style="overflow: auto;">
+        <input name="[XSRF Token]" type="hidden" value="[XSRF Token]">
+        <input name="buildbucket-id" type="hidden" value="8922862144121312624">
+        <input name="retry-request-id" type="hidden" value="[Retry Request ID]">
+        <div style="float: right; margin: 0;">
+          <input id="dismiss-retry-build-button" type="button" value="Dismiss">
+          <input type="submit" value="Confirm">
+        </div>
+      </form>
+    </div>
+    <div id="cancel-build-modal" class="modal-content">
       <h1>Cancel Build</h1>
-      <form id="cancel-build-form" action="/cancel_build" method="POST" style="overflow: auto;">
+      <form id="cancel-build-form" action="/actions/cancel_build" method="POST" style="overflow: auto;">
         <input name="[XSRF Token]" type="hidden" value="[XSRF Token]">
         <input name="buildbucket-id" type="hidden" value="8922862144121312624">
         Reason:<br/>
@@ -100,7 +112,8 @@
     </div>
 
       <h2>Actions</h2>
-      <input id="cancel-build-button" type="button" value="Cancel Build" >
+      <input id="retry-build-button" type="button" value="Retry Build" disabled title="this build is still running">
+      <input id="cancel-build-button" type="button" value="Cancel Build"><br>
 
     
       <h2>Input</h2>
