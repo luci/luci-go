@@ -119,9 +119,21 @@
 
 {{define "overlay"}}
   <div id="modal-overlay">
-    <div id="cancel-build-modal">
+    <div id="retry-build-modal" class="modal-content">
+      <h1>Retry Build</h1>
+      <form id="retry-build-form" action="/actions/retry_build" method="POST" style="overflow: auto;">
+        {{ .XsrfTokenField }}
+        <input name="buildbucket-id" type="hidden" value="{{.BuildPage.Id}}">
+        <input name="retry-request-id" type="hidden" value="{{.RetryRequestID}}">
+        <div style="float: right; margin: 0;">
+          <input id="dismiss-retry-build-button" type="button" value="Dismiss">
+          <input type="submit" value="Confirm">
+        </div>
+      </form>
+    </div>
+    <div id="cancel-build-modal" class="modal-content">
       <h1>Cancel Build</h1>
-      <form id="cancel-build-form" action="/cancel_build" method="POST" style="overflow: auto;">
+      <form id="cancel-build-form" action="/actions/cancel_build" method="POST" style="overflow: auto;">
         {{ .XsrfTokenField }}
         <input name="buildbucket-id" type="hidden" value="{{.BuildPage.Id}}">
         Reason:<br/>
@@ -153,7 +165,8 @@
     </div>
 
       <h2>Actions</h2>
-      <input id="cancel-build-button" type="button" value="Cancel Build" {{if .BuildPage.EndTime}}disabled title="this build has already ended"{{end}}>
+      <input id="retry-build-button" type="button" value="Retry Build"{{if not .BuildPage.EndTime}} disabled title="this build is still running"{{end}}>
+      <input id="cancel-build-button" type="button" value="Cancel Build"{{if .BuildPage.EndTime}} disabled title="this build has already ended"{{end}}><br>
 
     {{ with .BuildPage.Input }}
       <h2>Input</h2>

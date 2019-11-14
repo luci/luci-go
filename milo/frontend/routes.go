@@ -130,7 +130,8 @@ func Run(templatePath string) {
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbucket", backendMW, buildbucket.PubSubHandler)
 
-	r.POST("/cancel_build", xsrfMW, handleError(buildbucket.CancelBuildHandler))
+	r.POST("/actions/cancel_build", xsrfMW, handleError(cancelBuildHandler))
+	r.POST("/actions/retry_build", xsrfMW, handleError(retryBuildHandler))
 
 	r.GET("/internal_widgets/related_builds/:id", htmlMW, handleError(handleGetRelatedBuildsTable))
 
