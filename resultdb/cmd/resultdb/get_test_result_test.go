@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
-	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -58,8 +58,7 @@ func TestGetTestResult(t *testing.T) {
 	Convey(`GetTestResult`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		ct := testclock.TestRecentTimeUTC
-		ctx, _ = testclock.UseTime(ctx, ct)
+		now := clock.Now(ctx)
 
 		srv := &resultDBServer{}
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
@@ -72,7 +71,7 @@ func TestGetTestResult(t *testing.T) {
 		invID := span.InvocationID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", ct),
+			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", now),
 			span.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":      invID,
 				"TestPath":          "gn://chrome/test:foo_tests/BarTest.DoBaz",
