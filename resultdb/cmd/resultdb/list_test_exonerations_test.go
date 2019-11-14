@@ -17,14 +17,13 @@ package main
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/clock/testclock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/clock"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -50,15 +49,14 @@ func TestListTestExonerations(t *testing.T) {
 	Convey(`ListTestExonerations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		ct := testclock.TestRecentTimeUTC
-		ctx, _ = testclock.UseTime(ctx, ct)
+		now := clock.Now(ctx)
 
 		// Insert some TestExonerations.
 		invID := span.InvocationID("inv")
 		testPath := "gn://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", ct),
+			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":        invID,
 				"TestPath":            testPath,
