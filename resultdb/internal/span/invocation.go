@@ -26,8 +26,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // InvocationID can convert an invocation id to various formats.
@@ -140,11 +142,16 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 
 // ReadReachableInvocations fetches invocations reachable from the roots.
 // If the returned error is non-nil, it is annotated with a gRPC code.
-func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, roots ...InvocationID) (map[InvocationID]*pb.Invocation, error) {
+func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, limit int, roots ...InvocationID) (map[InvocationID]*pb.Invocation, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	if limit <= 0 {
+		panic("limit must be positive")
+	}
 	ret := map[InvocationID]*pb.Invocation{}
 	var mu sync.Mutex
 
-	var visit func(id InvocationID)
+	var visit func(id InvocationID) error
 
 	// read reads an invocation and calls visit for all invocations it includes.
 	read := func(id InvocationID) (*pb.Invocation, error) {
@@ -154,23 +161,31 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 		}
 
 		for _, name := range inv.IncludedInvocations {
-			visit(MustParseInvocationName(name))
+			if err := visit(MustParseInvocationName(name)); err != nil {
+				return nil, err
+			}
 		}
 		return inv, nil
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	visit = func(id InvocationID) {
+	visit = func(id InvocationID) error {
 		mu.Lock()
+		defer mu.Unlock()
+
 		// Check if we already started/finished fetching this invocation.
 		if _, ok := ret[id]; ok {
-			mu.Unlock()
-			return
+			return nil
+		}
+
+		// Consider fetching a new invocation.
+		if len(ret) == limit {
+			cancel()
+			return errors.Reason("more than %d invocations match", limit).Tag(TooManyInvocationsTag).Err()
 		}
 
 		// Mark the invocation as being fetched.
 		ret[id] = nil
-		mu.Unlock()
 
 		// Concurrently fetch the invocation without a lock.
 		// Then record it with a lock.
@@ -185,17 +200,99 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 			mu.Unlock()
 			return nil
 		})
+		return nil
 	}
 
 	// Trigger fetching by requesting all roots.
 	for _, id := range roots {
-		visit(id)
+		if err := visit(id); err != nil {
+			return nil, err
+		}
 	}
 
 	// Wait for the entire graph to be fetched.
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-
 	return ret, nil
+}
+
+// TooManyInvocationsTag set in an error indicates that too many invocations
+// matched a condition.
+var TooManyInvocationsTag = errors.BoolTag{
+	Key: errors.NewTagKey("too many matching invocations matched the condition"),
+}
+
+// ReadInvocationIDsByTag fetches IDs of the invocations that have the tag.
+// If limit > 0 and there is more than limit matching invocations, returns an
+// error with TooManyInvocationsTag tag.
+func ReadInvocationIDsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, limit int) ([]InvocationID, error) {
+	tagStr := pbutil.StringPairToString(tag)
+	defer metrics.Trace(ctx, "invocation search by tag %q", tagStr)()
+
+	var ret []InvocationID
+	keyRange := spanner.Key{TagRowID(tag)}.AsPrefix()
+	err := txn.Read(ctx, "InvocationsByTag", keyRange, []string{"InvocationId"}).Do(func(row *spanner.Row) error {
+		if limit > 0 && len(ret) == limit {
+			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
+		}
+		var id InvocationID
+		if err := FromSpanner(row, &id); err != nil {
+			return err
+		}
+		ret = append(ret, id)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	SortInvocationIDs(ret)
+	return ret, nil
+}
+
+// QueryInvocations returns a list of invocation IDs that satisfy the predicate.
+// The limit must be positive.
+// If the number of matching invocations exceeds the limit, returns an error
+// tagged with TooManyInvocationsTag.
+// Assumes pred is valid.
+// Does not support paging.
+func QueryInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, pred *pb.InvocationPredicate, limit int) ([]InvocationID, error) {
+	if limit <= 0 {
+		return nil, errors.Reason("pageSize is not positive").Err()
+	}
+
+	// Resolve IDs of the root invocations.
+	var invIDs []InvocationID
+	if name := pred.GetName(); name != "" {
+		invIDs = []InvocationID{MustParseInvocationName(name)}
+	} else {
+		var err error
+		if invIDs, err = ReadInvocationIDsByTag(ctx, txn, pred.GetTag(), limit); err != nil {
+			return nil, err
+		}
+	}
+
+	// Resolve all reachable invocations if needed.
+	if pred.IgnoreInclusions {
+		return invIDs, nil
+	}
+
+	reachable, err := ReadReachableInvocations(ctx, txn, limit, invIDs...)
+	if err != nil {
+		return nil, err
+	}
+	invIDs = make([]InvocationID, 0, len(reachable))
+	for id := range reachable {
+		invIDs = append(invIDs, id)
+	}
+	return invIDs, nil
+}
+
+func resolveRootInvocationIDs(ctx context.Context, txn *spanner.ReadOnlyTransaction, pred *pb.InvocationPredicate, limit int) ([]InvocationID, error) {
+	if name := pred.GetName(); name != "" {
+		return []InvocationID{MustParseInvocationName(name)}, nil
+	}
+
+	return ReadInvocationIDsByTag(ctx, txn, pred.GetTag(), limit)
 }

@@ -16,9 +16,9 @@ package span
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
+
+	"github.com/Masterminds/squirrel"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
@@ -86,20 +86,44 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	return tr, nil
 }
 
-// ReadTestResults reads the specified test results, if any, of an invocation within the transaction.
-// pageSize must be positive.
-func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeExpected bool, cursorTok string, pageSize int) (trs []*pb.TestResult, nextCursorTok string, err error) {
-	if pageSize <= 0 {
-		panic("pageSize is not positive")
+// TestResultQuery is specifies test results to fetch.
+type TestResultQuery struct {
+	Predicate       *pb.TestResultPredicate
+	PageSize        int // must be positive
+	CursorToken     string
+	InvocationLimit int // must be positive
+}
+
+// QueryTestResults reads test results matching the predicate.
+func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextCursorTok string, err error) {
+	invIDs, err := QueryInvocations(ctx, txn, q.Predicate.Invocation, q.InvocationLimit)
+	if err != nil {
+		return
 	}
-	var (
-		table       = "TestResults"
-		conditions  = []string{"(InvocationId = @invID)"}
-		queryParams = map[string]interface{}{"invID": invID, "limit": pageSize}
-	)
+	sql := squirrel.
+		Select(
+			"InvocationId",
+			"TestPath",
+			"ResultId",
+			"ExtraVariantPairs",
+			"IsUnexpected",
+			"Status",
+			"SummaryMarkdown",
+			"StartTime",
+			"RunDurationUsec",
+			"Tags",
+			"InputArtifacts",
+			"OutputArtifacts",
+		).
+		Where("InvocationId IN UNNEST(@invIDs").
+		OrderBy("InvocationId", "TestPath", "ResultId")
+	queryParams := map[string]interface{}{
+		"invIDs": invIDs,
+		"limit":  q.PageSize,
+	}
 
 	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(cursorTok); {
+	switch pos, tokErr := pagination.ParseToken(q.CursorToken); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).
@@ -109,13 +133,15 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 	case pos == nil:
 		break
 
-	case len(pos) == 2:
-		conditions = append(conditions, `(
-			(TestPath > @testPath)
-			OR (TestPath = @testPath AND ResultId > @resultID)
-		)`)
-		queryParams["testPath"] = pos[0]
-		queryParams["resultID"] = pos[1]
+	case len(pos) == 1:
+		sql = sql.Where(`(
+			(InvocationId > @cursorInvocationID)
+			OR (InvocationId = @cursorInvocationID AND TestPath > @cursorTestPath)
+			OR (InvocationId = @cursorInvocationID AND TestPath = @cursorTestPath AND ResultId > @cursorResultID)
+			)`)
+		queryParams["cursorTestPath"] = pos[0]
+		queryParams["cursorTestPath"] = pos[1]
+		queryParams["cursorResultID"] = pos[2]
 
 	default:
 		err = errors.Reason("invalid page_token").
@@ -124,38 +150,25 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 		return
 	}
 
-	// Set conditions for filtering expected results if requested.
-	if !includeExpected {
-		table += "@{FORCE_INDEX=UnexpectedTestResults}"
-		conditions = append(conditions, "IsUnexpected")
+	// TODO(nodir): add support for q.Predicate.TestPath.
+	// TODO(nodir): add support for q.Predicate.Variant.
+	// TODO(nodir): add support for q.Predicate.Expectancy.
+
+	sqlStr, _, err := sql.ToSql()
+	if err != nil {
+		return
 	}
+	st := spanner.NewStatement(sqlStr)
+	st.Params = ToSpannerMap(queryParams)
 
-	query := spanner.NewStatement(fmt.Sprintf(`
-		SELECT
-			TestPath,
-			ResultId,
-			ExtraVariantPairs,
-			IsUnexpected,
-			Status,
-			SummaryMarkdown,
-			StartTime,
-			RunDurationUsec,
-			Tags,
-			InputArtifacts,
-			OutputArtifacts
-		FROM %s
-		WHERE %s
-		ORDER BY TestPath, ResultId
-		LIMIT @limit
-	`, table, strings.Join(conditions, " AND ")))
-	query.Params = ToSpannerMap(queryParams)
-
-	trs = make([]*pb.TestResult, 0, pageSize)
-	err = txn.Query(ctx, query).Do(func(row *spanner.Row) error {
+	trs = make([]*pb.TestResult, 0, q.PageSize)
+	err = txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64
 		tr := &pb.TestResult{}
 		err = FromSpanner(row,
+			&invID,
 			&tr.TestPath,
 			&tr.ResultId,
 			&tr.ExtraVariantPairs,
@@ -186,9 +199,10 @@ func ReadTestResults(ctx context.Context, txn Txn, invID InvocationID, includeEx
 
 	// If we got pageSize results, then we haven't exhausted the collection and
 	// need to return a cursor.
-	if len(trs) == pageSize {
-		last := trs[pageSize-1]
-		nextCursorTok = pagination.Token(last.TestPath, last.ResultId)
+	if len(trs) == q.PageSize {
+		last := trs[q.PageSize-1]
+		invID, testPath, resultID := MustParseTestResultName(last.Name)
+		nextCursorTok = pagination.Token(string(invID), testPath, resultID)
 	}
 	return
 }
