@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "f3e33471_341ba739",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-14T19:24:16Z",
+      "side": 1,
+      "message": "Good point.",
+      "parentUuid": "56cc6b97_215a82a8",
+      "revId": "fec71b29b7bb0018523bd3d265f34811cd3b73bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a625367_12080c6c",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 9
