@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7dd22b4d_d38269e6",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-15T22:04:38Z",
+      "side": 1,
+      "message": "Good point, that\u0027s actually what I wrote in the docs: https://osscs.corp.google.com/chromium/infra/infra/+/master:luci/client/LUCI_CONTEXT.md;l\u003d144?q\u003dLUCI_CONTEXT.md\u0026ss\u003dchromium",
+      "parentUuid": "3484925a_004a8240",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aac096c1_d3e17d42",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 1
