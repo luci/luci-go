@@ -15,141 +15,117 @@
 package spantest
 
 import (
-	"context"
-	"strconv"
 	"testing"
-
-	"cloud.google.com/go/spanner"
-	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestReadTestResults(t *testing.T) {
-	Convey(`ReadTestResults`, t, func() {
+func TestQueryTestResults(t *testing.T) {
+	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
 		now := clock.Now(ctx)
 
-		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now))
-		trs := insertTestResults(ctx, "inv", "DoBaz", 0,
-			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL,
-				pb.TestStatus_FAIL, pb.TestStatus_PASS, pb.TestStatus_FAIL,
-			})
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now))
+		q := span.TestResultQuery{
+			Predicate:     &pb.TestResultPredicate{},
+			PageSize:      100,
+			InvocationIDs: []span.InvocationID{"inv1"},
+		}
 
-		Convey(`All results`, func() {
-			token := testRead(ctx, "inv", true, "", 10, trs)
-			So(token, ShouldEqual, "")
+		makeTestResults := testutil.MakeTestResults
+		insertTestResults := testutil.InsertTestResults
 
-			Convey(`With pagination`, func() {
-				token := testRead(ctx, "inv", true, "", 1, trs[:1])
-				So(token, ShouldNotEqual, "")
-
-				token = testRead(ctx, "inv", true, token, 4, trs[1:])
-				So(token, ShouldNotEqual, "")
-
-				token = testRead(ctx, "inv", true, token, 5, nil)
-				So(token, ShouldEqual, "")
-			})
-		})
-
-		Convey(`Unexpected results`, func() {
-			testRead(ctx, "inv", false, "", 10, append(trs[1:3], trs[4]))
-
-			Convey(`With pagination`, func() {
-				token := testRead(ctx, "inv", false, "", 1, trs[1:2])
-				So(token, ShouldNotEqual, "")
-
-				token = testRead(ctx, "inv", false, token, 1, trs[2:3])
-				So(token, ShouldNotEqual, "")
-
-				token = testRead(ctx, "inv", false, token, 10, trs[4:])
-				So(token, ShouldEqual, "")
-			})
-		})
-
-		Convey(`Span test path boundaries`, func() {
-			trs = append(trs, insertTestResults(ctx, "inv", "DoQux", 0,
-				[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})...)
-			token := testRead(ctx, "inv", true, "", 6, trs[:6])
-			So(token, ShouldNotEqual, "")
-
-			testRead(ctx, "inv", true, token, 2, trs[6:])
-		})
-
-		Convey(`Errors with bad token`, func() {
+		read := func(q span.TestResultQuery) (trs []*pb.TestResult, token string, err error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
+			return span.QueryTestResults(ctx, txn, q)
+		}
 
-			Convey(`From bad position`, func() {
-				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "CgVoZWxsbw==", 5)
-				So(err, ShouldErrLike, "invalid page_token")
+		mustRead := func(q span.TestResultQuery, expected []*pb.TestResult) string {
+			trs, token, err := read(q)
+			So(err, ShouldBeNil)
+			So(trs, ShouldResembleProto, expected)
+			return token
+		}
+
+		Convey(`Does not fetch test results of other invocations`, func() {
+			expected := makeTestResults("inv1", "DoBaz",
+				pb.TestStatus_PASS,
+				pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL,
+				pb.TestStatus_PASS,
+				pb.TestStatus_FAIL,
+			)
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now),
+				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now),
+			)
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(expected),
+				insertTestResults(makeTestResults("inv2", "Y", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+			)...)
+
+			mustRead(q, expected)
+		})
+
+		Convey(`Paging`, func() {
+			trs := makeTestResults("inv1", "DoBaz",
+				pb.TestStatus_PASS,
+				pb.TestStatus_FAIL,
+				pb.TestStatus_FAIL,
+				pb.TestStatus_PASS,
+				pb.TestStatus_FAIL,
+			)
+			testutil.MustApply(ctx, insertTestResults(trs)...)
+
+			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
+				q2 := q
+				q2.CursorToken = pageToken
+				q2.PageSize = pageSize
+				return mustRead(q2, expected)
+			}
+
+			Convey(`All results`, func() {
+				token := mustReadPage("", 10, trs)
+				So(token, ShouldEqual, "")
 			})
 
-			Convey(`From decoding`, func() {
-				_, _, err := span.ReadTestResults(ctx, txn, "invocations/inv", true, "%%%", 5)
-				So(err, ShouldErrLike, "invalid page_token")
+			Convey(`With pagination`, func() {
+				token := mustReadPage("", 1, trs[:1])
+				So(token, ShouldNotEqual, "")
+
+				token = mustReadPage(token, 4, trs[1:])
+				So(token, ShouldNotEqual, "")
+
+				token = mustReadPage(token, 5, nil)
+				So(token, ShouldEqual, "")
+			})
+
+			Convey(`Bad token`, func() {
+				txn := span.Client(ctx).ReadOnlyTransaction()
+				defer txn.Close()
+
+				Convey(`From bad position`, func() {
+					q.CursorToken = "CgVoZWxsbw=="
+					_, _, err := span.QueryTestResults(ctx, txn, q)
+					So(err, ShouldErrLike, "invalid page_token")
+				})
+
+				Convey(`From decoding`, func() {
+					q.CursorToken = "%%%"
+					_, _, err := span.QueryTestResults(ctx, txn, q)
+					So(err, ShouldErrLike, "invalid page_token")
+				})
 			})
 		})
 	})
-}
-
-// insertTestResults inserts some test results with the given statuses and returns them.
-// A result is expected IFF it is PASS.
-func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
-	trs := make([]*pb.TestResult, len(statuses))
-	muts := make([]*spanner.Mutation, len(statuses))
-
-	for i, status := range statuses {
-		testPath := "gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
-		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
-
-		trs[i] = &pb.TestResult{
-			Name:              pbutil.TestResultName(string(invID), testPath, resultID),
-			TestPath:          testPath,
-			ResultId:          resultID,
-			ExtraVariantPairs: pbutil.Variant("k1", "v1", "k2", "v2"),
-			Expected:          status == pb.TestStatus_PASS,
-			Status:            status,
-			Duration:          &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
-		}
-
-		mutMap := map[string]interface{}{
-			"InvocationId":      invID,
-			"TestPath":          testPath,
-			"ResultId":          resultID,
-			"ExtraVariantPairs": trs[i].ExtraVariantPairs,
-			"CommitTimestamp":   spanner.CommitTimestamp,
-			"Status":            status,
-			"RunDurationUsec":   1e6*i + 234567,
-		}
-		if !trs[i].Expected {
-			mutMap["IsUnexpected"] = true
-		}
-
-		muts[i] = span.InsertMap("TestResults", mutMap)
-	}
-
-	testutil.MustApply(ctx, muts...)
-	return trs
-}
-
-func testRead(ctx context.Context, invID span.InvocationID, excludeExpected bool, token string, pageSize int, expected []*pb.TestResult) string {
-	txn := span.Client(ctx).ReadOnlyTransaction()
-	defer txn.Close()
-
-	trs, token, err := span.ReadTestResults(ctx, txn, invID, excludeExpected, token, pageSize)
-	So(err, ShouldBeNil)
-	So(trs, ShouldResembleProto, expected)
-
-	return token
 }

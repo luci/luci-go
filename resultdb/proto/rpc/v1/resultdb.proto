@@ -184,14 +184,16 @@ message QueryTestResultsResponse {
     Invocation invocation = 1;
 
     // The test results included directly in the invocation.
-    repeated TestResult test_result = 2;
+    // The test results are ordered by test path and result id.
+    repeated TestResult test_results = 2;
 
     // The test exonerations included directly in the invocation.
     repeated TestExoneration test_exonerations = 3;
   }
 
   // Matched test results grouped by parent invocation.
-  repeated Group groups = 1;
+  // The map key is an invocation name.
+  map<string, Group> groups = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of
