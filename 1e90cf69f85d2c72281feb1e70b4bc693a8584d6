@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3484925a_004a8240",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-15T20:22:10Z",
+      "side": 1,
+      "message": "imo, test_results (this is the style we use elsewhere), but as you like",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aac096c1_d3e17d42",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-15T20:22:10Z",
+      "side": 1,
+      "message": "you can inline db and expected if you like:\n\n   So(lucictx.GetResultDB(ctx), ShouldResemble, \u0026lucictx.ResultDB{\n     ...\n   })\n\nBut it\u0027s up to you :)",
+      "range": {
+        "startLine": 186,
+        "startChar": 2,
+        "endLine": 186,
+        "endChar": 3
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
