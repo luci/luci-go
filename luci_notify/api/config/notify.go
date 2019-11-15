@@ -24,11 +24,9 @@ func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) b
 	case newStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
 		panic("new status must always be valid")
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
-	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
-	case n.OnInfraFailure && newStatus == buildbucketpb.Status_INFRA_FAILURE:
+	case n.OnFailure && n.IsFailure(newStatus):
 	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
-	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
-
+	case n.OnNewFailure && n.IsFailure(newStatus) && newStatus != oldStatus:
 	default:
 		return false
 	}
@@ -46,4 +44,18 @@ func (n *Notifications) Filter(oldStatus, newStatus buildbucketpb.Status) Notifi
 		}
 	}
 	return Notifications{Notifications: filtered}
+}
+
+// IsFailure checks whether or not a status matches a Notification's failure type.
+func (n *Notification) IsFailure(status buildbucketpb.Status) bool {
+	switch {
+	case n.FailureType == nil:
+		return status == buildbucketpb.Status_FAILURE
+	case status == buildbucketpb.Status_FAILURE && n.FailureType.Failure:
+		return true
+	case status == buildbucketpb.Status_INFRA_FAILURE && n.FailureType.InfraFailure:
+		return true
+	default:
+		return false
+	}
 }
