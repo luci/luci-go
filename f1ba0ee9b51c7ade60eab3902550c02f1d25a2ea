@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cadcbba1_96e57a13",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:21:12Z",
+      "side": 1,
+      "message": "The function name is unexpected. Maybe Matches()?\n\nDoes it needs to be exported?",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 12
+      },
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db527b86_75ea2939",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:21:12Z",
+      "side": 1,
+      "message": "You can add a note that it is kept for transition as configurations are upgraded.\n\nBut I\u0027d feel better if this was a method of Failure instead. So you could have this function call the right one when FailureType is not nil.",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "987e3302_b4f9914c",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:21:12Z",
+      "side": 1,
+      "message": "This is not exactly what Vadim meant in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1908092/5#message-7180837062a40ccd634286751d0d27c845e269a4\n\nHe meant:\n\n  FailureType on_failure \u003d x;\n  FailureType on_new_failure \u003d x;\n\nThis is a clash of name so new names would have to be found, but the point is to eventually deprecate 2 and 7.",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

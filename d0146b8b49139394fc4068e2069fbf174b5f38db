@@ -87,6 +87,24 @@
       "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c52efff_7f7f9234",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:21:12Z",
+      "side": 1,
+      "message": "This is a fine point about default values, but because we have configuration validation, we can update the service to refuse configurations that do not trigger on anything, so it\u0027s not as bad as it sounds, in fact it\u0027s very explicit, this is good.",
+      "parentUuid": "7ab0d24f_3463ccad",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
