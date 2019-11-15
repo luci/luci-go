@@ -21,7 +21,7 @@ import (
 
 // ResultDB is a struct that may be used with the "resultDB" section of LUCI_CONTEXT.
 type ResultDB struct {
-	TestResults TestResults
+	TestResults TestResults `json:"testResults"`
 }
 
 // TestResults is a struct that may be used with the "resultDB.testResults" section of
@@ -46,10 +46,10 @@ func GetResultDB(ctx context.Context) *ResultDB {
 }
 
 // SetResultDB sets the ResultDB in the LUCI_CONTEXT.
-func SetResultDB(ctx context.Context, sink *ResultDB) context.Context {
+func SetResultDB(ctx context.Context, resultDB *ResultDB) context.Context {
 	var raw interface{}
-	if sink != nil {
-		raw = sink
+	if resultDB != nil {
+		raw = resultDB
 	}
 	ctx, err := Set(ctx, "resultDB", raw)
 	if err != nil {
