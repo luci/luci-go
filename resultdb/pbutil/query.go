@@ -23,33 +23,17 @@ import (
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bool) error {
-	if p.GetInvocation() == nil {
-		if requireInvocation {
-			return errors.Annotate(unspecified(), "invocation").Err()
-		}
-	} else {
-		if err := ValidateInvocationPredicate(p.GetInvocation()); err != nil {
-			return errors.Annotate(err, "invocation").Err()
-		}
-	}
-
-	if p.GetTestPath() != nil {
-		if err := ValidateTestPathPredicate(p.TestPath); err != nil {
-			return errors.Annotate(err, "test_path").Err()
-		}
-	}
-
-	if p.GetVariant() != nil {
-		if err := ValidateVariantPredicate(p.Variant); err != nil {
-			return errors.Annotate(err, "variant").Err()
-		}
-	}
-
 	if err := ValidateEnum(int32(p.Expectancy), pb.TestResultPredicate_Expectancy_name); err != nil {
-		return errors.Annotate(err, "expected_results").Err()
+		return errors.Annotate(err, "expectancy").Err()
 	}
 
-	return nil
+	return ValidateTestObjectPredicate(p, requireInvocation)
+}
+
+// ValidateTestExonerationPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate, requireInvocation bool) error {
+	return ValidateTestObjectPredicate(p, requireInvocation)
 }
 
 // ValidateInvocationPredicate returns a non-nil error if p is determined to be
