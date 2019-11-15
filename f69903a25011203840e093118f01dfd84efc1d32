@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "0a961a70_c02ba382",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T21:32:29Z",
+      "side": 1,
+      "message": "yes, i appreciate L272\n\na given artifact is produced by only one test run. I think we should choose which one, but one. I suspect it is the latest one, where a test case blindly overwrite artifacts of the previous run, but we\u0027d need to look at concrete examples to prove that",
+      "parentUuid": "13c33d53_ef52a8d8",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
