@@ -15,8 +15,10 @@
 package main
 
 import (
+	"context"
 	"io"
 
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
@@ -28,6 +30,10 @@ import (
 //
 // It does not return gRPC-native errors. NewResultDBServer takes care of that.
 type resultDBServer struct {
+}
+
+func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (res *pb.QueryTestExonerationsResponse, err error) {
+	return nil, grpcutil.Unimplemented
 }
 
 // NewResultDBServer creates an implementation of resultDBServer.
