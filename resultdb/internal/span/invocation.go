@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -158,6 +159,8 @@ var TooManyInvocationsTag = errors.BoolTag{
 //
 // Does not re-fetch roots.
 func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, limit int, roots map[InvocationID]*pb.Invocation) (map[InvocationID]*pb.Invocation, error) {
+	defer metrics.Trace(ctx, "ReadReachableInvocations")()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	if limit <= 0 {
@@ -238,6 +241,7 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 // error with TooManyInvocationsTag tag.
 func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, limit int) (map[InvocationID]*pb.Invocation, error) {
 	tagStr := pbutil.StringPairToString(tag)
+	defer metrics.Trace(ctx, "ReadInvocationsByTag(ctx, txn, %s, %d)", tagStr, limit)()
 
 	st := spanner.NewStatement(`
 		SELECT
