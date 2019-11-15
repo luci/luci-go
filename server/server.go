@@ -581,10 +581,21 @@ func (s *Server) ListenAndServe() error {
 		),
 	)
 
-	defer s.runCleanup()
-
-	// Catch SIGTERM while inside this function.
-	stop := signals.HandleInterrupt(s.Shutdown)
+	// Catch SIGTERM while inside this function. Upon receiving SIGTERM, wait
+	// few seconds before actually shutting down and refusing new connections.
+	// If we shutdown immediately, some clients may see connection errors, because
+	// they are not aware yet the server is closing: Pod shutdown sequence and
+	// Endpoints list updates are racing with each other, we want Endpoints list
+	// updates to win, i.e. we want the pod to actually be fully alive as long as
+	// it is still referenced in Endpoints list. We can't guarantee this, but we
+	// can improve chances.
+	stop := signals.HandleInterrupt(func() {
+		if s.Options.Prod {
+			logging.Infof(s.Context, "Received SIGTERM, shutting down in 10 sec...")
+			time.Sleep(10 * time.Second)
+		}
+		s.Shutdown()
+	})
 	defer stop()
 
 	// Unblock all pending RunInBackground goroutines, so they can start.
@@ -614,6 +625,8 @@ func (s *Server) ListenAndServe() error {
 	// done (as indicated by Shutdown call itself exiting).
 	logging.Infof(s.Context, "Waiting for the server to stop...")
 	<-s.done
+	logging.Infof(s.Context, "The serving loop stopped, running the final cleanup...")
+	s.runCleanup()
 	logging.Infof(s.Context, "The server has stopped")
 
 	if errs.First() != nil {
