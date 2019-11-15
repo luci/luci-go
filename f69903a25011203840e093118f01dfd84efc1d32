@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "e101ee95_8dbd781e",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-15T21:41:04Z",
+      "side": 1,
+      "message": "OK, that SGTM to me too --- since if we log anyway to catch these cases, we should see if/when it happens. How do you feel about starting by assuming it\u0027s the latest one, but monitoring logging to gather evidence for or against?\n\nAnd if we don\u0027t actually see any cases where tests that generate artifacts are run more than once, we can convert it to an error condition.",
+      "parentUuid": "0a961a70_c02ba382",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
