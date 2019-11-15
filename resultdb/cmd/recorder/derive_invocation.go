@@ -105,7 +105,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	// Otherwise, get the protos and write them to Spanner.
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "task ID %q", task.TaskId).Err()
 	}
 	if inv.FinalizeTime == nil {
 		panic("missing inv.FinalizeTime")
