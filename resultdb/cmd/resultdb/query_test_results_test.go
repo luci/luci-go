@@ -26,6 +26,33 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func TestValidateQueryRequest(t *testing.T) {
+	t.Parallel()
+	Convey(`invalid max staleness`, t, func() {
+		err := validateQueryRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+				},
+			},
+			MaxStaleness: &durpb.Duration{Seconds: -1},
+		})
+		So(err, ShouldErrLike, `max_staleness: must between 0 and 30m, inclusive`)
+	})
+
+	Convey(`invalid page size`, t, func() {
+		err := validateQueryRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+				},
+			},
+			PageSize: -1,
+		})
+		So(err, ShouldErrLike, `page_size: negative`)
+	})
+}
+
 func TestValidateQueryTestResultsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`Valid`, t, func() {
@@ -50,6 +77,30 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 			},
 		})
 		So(err, ShouldErrLike, `predicate: invocation: name: does not match`)
+	})
+
+	Convey(`invalid max staleness`, t, func() {
+		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+				},
+			},
+			MaxStaleness: &durpb.Duration{Seconds: -1},
+		})
+		So(err, ShouldErrLike, `max_staleness: must between 0 and 30m, inclusive`)
+	})
+
+	Convey(`invalid page size`, t, func() {
+		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
+			Predicate: &pb.TestResultPredicate{
+				Invocation: &pb.InvocationPredicate{
+					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+				},
+			},
+			PageSize: -1,
+		})
+		So(err, ShouldErrLike, `page_size: negative`)
 	})
 }
 

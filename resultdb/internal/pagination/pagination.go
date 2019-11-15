@@ -46,6 +46,31 @@ func ParseToken(token string) ([]string, error) {
 	return cursor.Position, nil
 }
 
+// ParseTokenTo parses a position slice from token to dest.
+// Returns an error if the number of position strings in the token does not
+// match len(dest).
+// If the token is empty, sets all dest string pointers to "" and returns nil.
+func ParseTokenTo(token string, dest ...*string) error {
+	if token == "" {
+		for _, p := range dest {
+			*p = ""
+		}
+		return nil
+	}
+
+	pos, err := ParseToken(token)
+	if err != nil {
+		return err
+	}
+	if len(pos) != len(dest) {
+		return errors.Reason("expected %d position components, got %d", len(dest), len(pos)).Err()
+	}
+	for i := range dest {
+		*dest[i] = pos[i]
+	}
+	return nil
+}
+
 // Token converts an string slice representing cursor position to an opaque token string.
 func Token(pos ...string) string {
 	if pos == nil {

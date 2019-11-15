@@ -26,6 +26,14 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// TestObjectPredicate is implemented by both *pb.TestResultPredicate
+// and *pb.TestExonerationPredicate.
+type TestObjectPredicate interface {
+	GetInvocation() *pb.InvocationPredicate
+	GetTestPath() *pb.TestPathPredicate
+	GetVariant() *pb.VariantPredicate
+}
+
 // artifactFormatVersion identifies the version of artifact encoding format we're using.
 const artifactFormatVersion = 1
 

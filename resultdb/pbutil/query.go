@@ -23,6 +23,26 @@ import (
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bool) error {
+	if err := ValidateTestObjectPredicate(p, requireInvocation); err != nil {
+		return err
+	}
+
+	if err := ValidateEnum(int32(p.Expectancy), pb.TestResultPredicate_Expectancy_name); err != nil {
+		return errors.Annotate(err, "expected_results").Err()
+	}
+
+	return nil
+}
+
+// ValidateTestExonerationPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate, requireInvocation bool) error {
+	return ValidateTestObjectPredicate(p, requireInvocation)
+}
+
+// ValidateTestObjectPredicate returns a non-nil error if p is determined to be
+// invalid.
+func ValidateTestObjectPredicate(p TestObjectPredicate, requireInvocation bool) error {
 	if p.GetInvocation() == nil {
 		if requireInvocation {
 			return errors.Annotate(unspecified(), "invocation").Err()
@@ -34,21 +54,16 @@ func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bo
 	}
 
 	if p.GetTestPath() != nil {
-		if err := ValidateTestPathPredicate(p.TestPath); err != nil {
+		if err := ValidateTestPathPredicate(p.GetTestPath()); err != nil {
 			return errors.Annotate(err, "test_path").Err()
 		}
 	}
 
 	if p.GetVariant() != nil {
-		if err := ValidateVariantPredicate(p.Variant); err != nil {
+		if err := ValidateVariantPredicate(p.GetVariant()); err != nil {
 			return errors.Annotate(err, "variant").Err()
 		}
 	}
-
-	if err := ValidateEnum(int32(p.Expectancy), pb.TestResultPredicate_Expectancy_name); err != nil {
-		return errors.Annotate(err, "expected_results").Err()
-	}
-
 	return nil
 }
 

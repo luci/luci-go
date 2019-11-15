@@ -18,11 +18,13 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"github.com/Masterminds/squirrel"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -76,44 +78,64 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 }
 
-// ReadTestExonerations reads all test exonerations from the invocation.
-func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, cursorTok string, pageSize int) (tes []*pb.TestExoneration, nextCursorTok string, err error) {
-	if pageSize <= 0 {
-		panic("pageSize must be positive")
+// TestExonerationQuery specifies test results to fetch.
+type TestExonerationQuery struct {
+	InvocationIDs []InvocationID
+	Predicate     *pb.TestExonerationPredicate // Predicate.Invocation must be nil.
+	PageSize      int                          // must be positive
+	CursorToken   string
+}
+
+// QueryTestExonerations reads test results matching the predicate.
+// Returned test results from the same invocation are contiguous.
+func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextCursorTok string, err error) {
+	defer metrics.Trace(ctx, "QueryTestExonerations(ctx, txn, %#v)", q)()
+
+	switch {
+	case q.PageSize <= 0:
+		panic("PageSize <= 0")
+	case q.Predicate.GetInvocation() != nil:
+		panic("q.Predicate.Invocation != nil")
 	}
 
-	// Set start position if requested.
-	keyRange := invID.Key().AsPrefix()
-	switch pos, tokErr := pagination.ParseToken(cursorTok); {
-	case tokErr != nil:
-		err = errors.Reason("invalid page_token").
-			InternalReason("%s", tokErr).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-		return
+	sql := squirrel.
+		Select("InvocationId", "TestPath", "ExonerationId", "Variant", "ExplanationMarkdown").
+		From("TestExonerations").
+		Where("InvocationId IN UNNEST(@invIDs)").
+		OrderBy("InvocationId", "TestPath", "ExonerationId").
+		Limit(uint64(q.PageSize))
 
-	case pos == nil:
-		break
+	queryParams := map[string]interface{}{
+		"invIDs": q.InvocationIDs,
+	}
 
-	case len(pos) == 2:
-		// Start after the cursor position.
-		keyRange.Kind = spanner.OpenClosed
-		keyRange.Start = invID.Key(pos[0], pos[1])
-
-	default:
-		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	sql, err = applyTestPagination(sql, queryParams, q.CursorToken, "ExonerationId")
+	if err != nil {
 		return
 	}
 
-	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
-	opts := &spanner.ReadOptions{Limit: pageSize}
-	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
+	// TODO(nodir): add support for q.Predicate.TestPath.
+	// TODO(nodir): add support for q.Predicate.Variant.
+
+	sqlStr, _, err := sql.ToSql()
+	if err != nil {
+		return
+	}
+	st := spanner.NewStatement(sqlStr)
+	st.Params = ToSpannerMap(queryParams)
+
+	tes = make([]*pb.TestExoneration, 0, q.PageSize)
+	err = txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+		var invID InvocationID
 		ex := &pb.TestExoneration{}
-		err := FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
+		err := FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
 		if err != nil {
 			return err
 		}
+		if err != nil {
+			return err
+		}
+
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestPath, ex.ExonerationId)
 		tes = append(tes, ex)
 		return nil
@@ -123,9 +145,12 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 		return
 	}
 
-	if len(tes) == pageSize {
-		last := tes[pageSize-1]
-		nextCursorTok = pagination.Token(last.TestPath, last.ExonerationId)
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return a cursor.
+	if len(tes) == q.PageSize {
+		last := tes[q.PageSize-1]
+		invID, testPath, exID := MustParseTestExonerationName(last.Name)
+		nextCursorTok = pagination.Token(string(invID), testPath, exID)
 	}
 	return
 }

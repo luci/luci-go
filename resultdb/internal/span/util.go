@@ -16,7 +16,10 @@ package span
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/Masterminds/squirrel"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
@@ -24,6 +27,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -135,7 +140,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]InvocationID:
-		rowIDs := *(spanPtr.(*[]string))
+			rowIDs := *(spanPtr.(*[]string))
 			*goPtr = make([]InvocationID, len(rowIDs))
 			for i, rowID := range rowIDs {
 				(*goPtr)[i] = InvocationIDFromRowID(rowID)
@@ -289,4 +294,38 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 		}
 		return err
 	})
+}
+
+// encapsulatePageTokenError returns a generic error message that a page token
+// is invalid and records err as an internal error.
+// The returned error is anontated with INVALID_ARUGMENT code.
+func encapsulatePageTokenError(err error) error {
+	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
+}
+
+// applyTestPagination parses the page token into 3 components
+// invocationID, testPath and resultID and adds a WHERE clause to the query
+// based on them.
+func applyTestPagination(query squirrel.SelectBuilder, queryParams map[string]interface{}, pageToken string, resultColumn string) (squirrel.SelectBuilder, error) {
+	switch pos, tokErr := pagination.ParseToken(pageToken); {
+	case tokErr != nil:
+		return query, encapsulatePageTokenError(tokErr)
+
+	case pos == nil:
+		return query, nil
+
+	case len(pos) == 3:
+		query = query.Where(fmt.Sprintf(`(
+				(InvocationId > @cursorInvocationID)
+				OR (InvocationId = @cursorInvocationID AND TestPath > @cursorTestPath)
+				OR (InvocationId = @cursorInvocationID AND TestPath = @cursorTestPath AND %s > @cursorResultID)
+				)`, resultColumn))
+		queryParams["cursorInvocationID"] = InvocationID(pos[0])
+		queryParams["cursorTestPath"] = pos[1]
+		queryParams["cursorResultID"] = pos[2]
+		return query, nil
+
+	default:
+		return query, encapsulatePageTokenError(errors.Reason("unexpected string slice %q for TestResults cursor position", pos).Err())
+	}
 }
