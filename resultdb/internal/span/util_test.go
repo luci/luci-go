@@ -56,6 +56,14 @@ func TestTypeConversion(t *testing.T) {
 		test(int64(42), int64(42))
 	})
 
+	Convey(`*InvocationID`, t, func() {
+		test(InvocationID("a"), "ca978112ca1bbdca:a")
+	})
+
+	Convey(`*[]InvocationID`, t, func() {
+		test([]InvocationID{"a", "b"}, []string{"ca978112ca1bbdca:a", "3e23e8160039594a:b"})
+	})
+
 	Convey(`*timestamp.Timestamp`, t, func() {
 		test(
 			&tspb.Timestamp{Seconds: 1000, Nanos: 1234},
