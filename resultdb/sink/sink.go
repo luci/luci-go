@@ -39,7 +39,7 @@ import (
 
 const (
 	// DefaultPort is the TCP port that the Server listens on by default.
-	DefaultPort = 52634
+	DefaultPort = 62115
 )
 
 // ServerConfig defines the parameters of the server.
