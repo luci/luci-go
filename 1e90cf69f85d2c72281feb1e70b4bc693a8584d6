@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "28598f40_7e723a7f",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-15T22:34:43Z",
+      "side": 1,
+      "message": "Reading JSONPB supports both the original field name (in the proto file) and the java-compatible name. The default encoding is the java-compatible name (because that was the first JSONPB implementation). We typically have turned on the encoding option to use the original field names, though.\n\nPersonally I don\u0027t like the name in the .proto and the name in th JSON being mismatched. If we want snake-case names, we should call them that in the .proto file. This is so that grep/codesearch work correctly. If there\u0027s some nontrivial transformation between the two, it harms greppability.\n\nThe go struct names are also camel case, but they at least have struct field tags with the original protobuf field name next to the struct field definitions.",
+      "parentUuid": "9678a9e3_c6b48db2",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aac096c1_d3e17d42",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 1
