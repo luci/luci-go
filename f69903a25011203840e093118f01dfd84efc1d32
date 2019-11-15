@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "220d4054_11d51dc5",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T21:17:48Z",
+      "side": 1,
+      "message": "do you have examples of such tasks?\n\nalso, i was under incorrect impression that this func is executed per task. Now I see it is per test case.",
+      "parentUuid": "f2d2db9d_24e89f13",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -124,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "e5630d63_4f059e75",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T21:17:48Z",
+      "side": 1,
+      "message": "nvm, i was under impression that this is a file per task, not per test case.",
+      "parentUuid": "30315695_064a57f0",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "decb7035_a0f07364",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -163,6 +205,29 @@
         "startChar": 3,
         "endLine": 332,
         "endChar": 4
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "386e772a_d93141a5",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T21:17:48Z",
+      "side": 1,
+      "message": "i don\u0027t quite understand this. This looks like\n\n  name1\n  path1\n  \u003ctab\u003epath2\n  \u003ctab\u003epath2\n\ni feel like you intended\n\n  name1\n  \u003ctab\u003epath1\n  \u003ctab\u003epath2\n\nconsider https://godoc.org/go.chromium.org/luci/common/data/text/indented",
+      "range": {
+        "startLine": 344,
+        "startChar": 48,
+        "endLine": 344,
+        "endChar": 76
       },
       "revId": "f69903a25011203840e093118f01dfd84efc1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
