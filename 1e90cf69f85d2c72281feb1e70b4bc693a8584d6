@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9678a9e3_c6b48db2",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T22:21:08Z",
+      "side": 1,
+      "message": "this is actually a bit confusing. JSONPB encodes snake_case to camelCase, so https://osscs.corp.google.com/chromium/infra/infra/+/master:luci/client/LUCI_CONTEXT.md;l\u003d144?q\u003dLUCI_CONTEXT.md\u0026ss\u003dchromium means it will look like testResults\n\nthis is especially confusing given that the MD says\n\n\u003e It\u0027s assumed that all of the field names in the proto snippets below EXACTLY\ncorrespond to their encoded JSON forms. When encoding in golang, this would be\nequivalent to specifying the \u0027OrigName\u0027 parameter in the Marshaller.\n\nRobbie, looks like it is not EXACTLY. WDYT?",
+      "parentUuid": "7dd22b4d_d38269e6",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aac096c1_d3e17d42",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 1
