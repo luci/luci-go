@@ -18,9 +18,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
@@ -37,6 +39,18 @@ func handshakeCheck(msg, token string) error {
 func Test(t *testing.T) {
 	Convey("Test Server", t, func() {
 		ctx := context.Background()
+
+		// Create a 5-second timeout to try to catch hanging tests.
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		go func() {
+			select {
+			case <-ctx.Done():
+			case <-time.After(5 * time.Second):
+				So(ctx.Err(), ShouldNotBeNil)
+			}
+		}()
+
 		Convey("Default server config", func() {
 			s, err := NewServer(ctx, ServerConfig{})
 			So(err, ShouldBeNil)
@@ -88,6 +102,39 @@ func Test(t *testing.T) {
 
 			})
 
+			Convey("Connection handling tests", func() {
+				cr, cw := net.Pipe()
+				defer cr.Close()
+				defer cw.Close()
+				errC := make(chan error)
+				ctx, cancel := context.WithCancel(ctx)
+				go func() { errC <- server.handleConnection(ctx, cr) }()
+
+				Convey("Bad handshake", func() {
+					_, err := cw.Write([]byte(`{"auth_token":"BAD"}`))
+					So(err, ShouldBeNil)
+					So(<-errC, ShouldErrLike, "handshake failed")
+				})
+
+				Convey("Bad test result", func() {
+					_, err := cw.Write([]byte(`{"auth_token":"hello"}`))
+					So(err, ShouldBeNil)
+
+					_, err = cw.Write([]byte("kjhdsghg"))
+					So(err, ShouldBeNil)
+					So(<-errC, ShouldErrLike, "invalid")
+				})
+
+				Convey("Context cancellation", func() {
+					// With context cancellation, the failure mode is that the server
+					// ignores it and keeps running forever. To test this we cancel the
+					// top-level context and wait on the error channel. If the connection
+					// handler is hung, the top-level test timeout will fail.
+					cancel()
+					So(<-errC, ShouldNotBeNil)
+				})
+			})
+
 			Convey("Tests with Run", func() {
 				Convey("Run aborts after server error", func() {
 					fakeError := errors.New("test error")
@@ -104,6 +151,22 @@ func Test(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 				})
+			})
+		})
+
+		Convey("Message-processing check", func() {
+			badInput := `blah`
+			goodInput := `{"testResult":{"testPath":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryMarkdown":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testPath":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryMarkdown":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
+			Convey("Garbage data", func() {
+				dc := json.NewDecoder(strings.NewReader(badInput))
+				err := processMessages(dc)
+				So(err, ShouldErrLike, "invalid")
+			})
+
+			Convey("Two populated messages", func() {
+				dc := json.NewDecoder(strings.NewReader(goodInput))
+				err := processMessages(dc)
+				So(err, ShouldErrLike, io.EOF)
 			})
 		})
 	})
