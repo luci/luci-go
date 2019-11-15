@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "05d919c6_a4dc0ee1",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T18:05:03Z",
+      "side": 1,
+      "message": "I\u0027m not sure that matches is an improvement.\n\nDone",
+      "parentUuid": "cadcbba1_96e57a13",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 12
+      },
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db527b86_75ea2939",
         "filename": "luci_notify/api/config/notify.go",
         "patchSetId": 12
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "e37011ed_1d2790c2",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T18:05:03Z",
+      "side": 1,
+      "message": "Added a note, but am unclear what you mean in the second part. \n\n`Failure` refers to what exactly here? Where would this method be?",
+      "parentUuid": "db527b86_75ea2939",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "987e3302_b4f9914c",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 12
@@ -53,6 +95,24 @@
       "writtenOn": "2019-11-15T16:21:12Z",
       "side": 1,
       "message": "This is not exactly what Vadim meant in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1908092/5#message-7180837062a40ccd634286751d0d27c845e269a4\n\nHe meant:\n\n  FailureType on_failure \u003d x;\n  FailureType on_new_failure \u003d x;\n\nThis is a clash of name so new names would have to be found, but the point is to eventually deprecate 2 and 7.",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93b5dfd2_5a007ec2",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T18:05:03Z",
+      "side": 1,
+      "message": "I didn\u0027t interpret that, but agree it\u0027s likely better. Will update.",
+      "parentUuid": "987e3302_b4f9914c",
       "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
