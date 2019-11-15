@@ -19,6 +19,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -31,6 +32,29 @@ import (
 
 const maxInvocationGraphSize = 1000
 
+// queryRequest is implemented by *pb.QueryTestResultRequest and
+// *pb.QueryTestExonerationRequest.
+type queryRequest interface {
+	GetPageSize() int32
+	GetMaxStaleness() *durpb.Duration
+}
+
+// validateQueryTestResultsRequest returns a non-nil error if req is determined
+// to be invalid.
+func validateQueryRequest(req queryRequest) error {
+	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
+		return errors.Annotate(err, "page_size").Err()
+	}
+
+	if req.GetMaxStaleness() != nil {
+		if err := pbutil.ValidateMaxStaleness(req.GetMaxStaleness()); err != nil {
+			return errors.Annotate(err, "max_staleness").Err()
+		}
+	}
+
+	return nil
+}
+
 // validateQueryTestResultsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
@@ -38,17 +62,7 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 		return errors.Annotate(err, "predicate").Err()
 	}
 
-	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
-		return errors.Annotate(err, "page_size").Err()
-	}
-
-	if req.MaxStaleness != nil {
-		if err := pbutil.ValidateMaxStaleness(req.MaxStaleness); err != nil {
-			return errors.Annotate(err, "max_staleness").Err()
-		}
-	}
-
-	return nil
+	return validateQueryRequest(req)
 }
 
 // QueryTestResults implements pb.ResultDBServer.
