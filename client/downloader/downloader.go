@@ -427,7 +427,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		err := d.options.Cache.Hardlink(details.Digest, filename, os.FileMode(mode))
 		if err != nil {
 			if !os.IsNotExist(err) {
-				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache").Err())
+				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache, but file exists").Err())
 				return
 			}
 			// cache miss case
