@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7793e960_aa13c70d",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:04:04Z",
+      "side": 1,
+      "message": "Small nit, by convention these should not be exported, thus maxUint and friends.",
+      "revId": "4b700de1afe76ff0bc885e2f391202eb33d10b04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ef3786e_8945ac84",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T16:04:04Z",
+      "side": 1,
+      "message": "The value is not used.",
+      "revId": "4b700de1afe76ff0bc885e2f391202eb33d10b04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
