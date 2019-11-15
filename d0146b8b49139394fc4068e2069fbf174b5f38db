@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b7528422_12609d47",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T05:36:56Z",
+      "side": 1,
+      "message": "Done. \n\nI\u0027m not sure why my autoformatter is off here.",
+      "parentUuid": "94372211_c32a4cdb",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c49bf2d0_54062a7b",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 10
@@ -51,6 +69,24 @@
       "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ab0d24f_3463ccad",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T05:36:56Z",
+      "side": 1,
+      "message": "Updated.",
+      "parentUuid": "aabefc02_e93100d4",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

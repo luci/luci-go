@@ -16,6 +16,24 @@
       "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2ce680f_a7f2a50d",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T05:36:56Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "33265966_3a6483d0",
+      "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
