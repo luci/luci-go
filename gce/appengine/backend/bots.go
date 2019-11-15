@@ -72,7 +72,7 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 		put = true
 		return nil
 	}, nil)
-	if put && err != nil {
+	if put && err == nil {
 		metrics.ReportConnectionTime(c, float64(vm.Connected-vm.Created), vm.Prefix, vm.Attributes.GetProject(), vm.Swarming, vm.Attributes.GetZone())
 	}
 	return err
