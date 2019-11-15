@@ -156,6 +156,16 @@ func TestJSONConversions(t *testing.T) {
 				"c2/t3.html": {
 					Actual:   "FAIL",
 					Expected: "PASS",
+					Artifacts: map[string][]string{
+						"isolate_object": {"relative/path/to/log.txt"},
+						"gold_triage_link": {
+							"https://chrome-gpu-gold.skia.org/detail?test=foo&digest=beef",
+						},
+						"isolate_object_list": {
+							"relative/path/to/diff.png",
+							"unknown",
+						},
+					},
 				},
 				"c2/t4.html": {
 					Actual:   "PASS PASS PASS",
@@ -178,8 +188,23 @@ func TestJSONConversions(t *testing.T) {
 			),
 		}
 
+		isolatedOutputs := map[string]*pb.Artifact{
+			"relative/path/to/log.txt": {
+				Name:        "relative/path/to/log.txt",
+				FetchUrl:    "isolate://isosrv/a104",
+				ContentType: "plain/text",
+				Size:        32,
+			},
+			"relative/path/to/diff.png": {
+				Name:        "relative/path/to/diff.png",
+				FetchUrl:    "isolate://isosrv/ad1ff",
+				ContentType: "image/png",
+				Size:        8192,
+			},
+		}
+
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, req, inv, nil)
+		testResults, err := results.ToProtos(ctx, req, inv, isolatedOutputs)
 		So(err, ShouldBeNil)
 		So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
@@ -249,6 +274,24 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_FAIL,
 				Expected: false,
 				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
+				OutputArtifacts: []*pb.Artifact{
+					{
+						Name:    "gold_triage_link",
+						ViewUrl: "https://chrome-gpu-gold.skia.org/detail?test=foo&digest=beef",
+					},
+					{
+						Name:        "relative/path/to/diff.png",
+						FetchUrl:    "isolate://isosrv/ad1ff",
+						ContentType: "image/png",
+						Size:        8192,
+					},
+					{
+						Name:        "relative/path/to/log.txt",
+						FetchUrl:    "isolate://isosrv/a104",
+						ContentType: "plain/text",
+						Size:        32,
+					},
+				},
 			},
 
 			// Test 4

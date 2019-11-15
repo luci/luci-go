@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -89,6 +90,8 @@ func TestResultName(invID, testPath, resultID string) string {
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
 	sortStringPairs(tr.Tags)
+	NormalizeArtifactSlice(tr.InputArtifacts)
+	NormalizeArtifactSlice(tr.OutputArtifacts)
 }
 
 // NormalizeTestResultSlice converts trs to the canonical form.
@@ -103,6 +106,35 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 			return a.TestPath < b.TestPath
 		}
 		return a.Name < b.Name
+	})
+}
+
+func NormalizeArtifactSlice(arts []*pb.Artifact) {
+	sort.Slice(arts, func(i, j int) bool {
+		a := arts[i]
+		b := arts[j]
+		// Name may be nonunique, and FetchUrl or ViewUrl may be unpopulated, but at least one should
+		// differ.
+		switch {
+		case a.Name != b.Name:
+			return a.Name < b.Name
+		case a.FetchUrl != b.FetchUrl:
+			return a.FetchUrl < b.FetchUrl
+		case a.ViewUrl != b.ViewUrl:
+			return a.ViewUrl < b.ViewUrl
+
+		// We really shouldn't reach here, but we depend on user input; check anyway, for determinism.
+		case a.ContentType != b.ContentType:
+			return a.ContentType < b.ContentType
+		case a.Size != b.Size:
+			return a.Size < b.Size
+		case bytes.Compare(a.Contents, b.Contents) != 0:
+			return bytes.Compare(a.Contents, b.Contents) < 0
+
+		// At this point the contents are the same.
+		default:
+			return false
+		}
 	})
 }
 
