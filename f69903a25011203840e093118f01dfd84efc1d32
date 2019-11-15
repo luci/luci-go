@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f2d2db9d_24e89f13",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-15T20:45:15Z",
+      "side": 1,
+      "message": "A test may generate multiple runs. It\u0027s not clear to me how to distinguish between which runs of the test generated which artifacts, hence the warning statement at L272 we can use to investigate more in detail (probably want to extract task ID/host for easier digging)",
+      "parentUuid": "8ef62abd_b52846d1",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -76,6 +100,24 @@
       "writtenOn": "2019-11-15T20:11:14Z",
       "side": 1,
       "message": "let\u0027s not add this as an artifact, because this link represents a set of artifacts",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30315695_064a57f0",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-15T20:45:15Z",
+      "side": 1,
+      "message": "So we will omit Gold triage links?",
+      "parentUuid": "615a01fe_1863dce0",
       "revId": "f69903a25011203840e093118f01dfd84efc1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
