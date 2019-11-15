@@ -791,6 +791,7 @@ lucicfg.emit(
 # notifiers: <
 #   notifications: <
 #     on_new_failure: true
+#     failure_type: <>
 #     email: <
 #       recipients: "someone@example,com"
 #     >
@@ -806,6 +807,7 @@ lucicfg.emit(
 # notifiers: <
 #   notifications: <
 #     on_new_failure: true
+#     failure_type: <>
 #     email: <
 #       recipients: "someone@example,com"
 #     >
@@ -821,6 +823,7 @@ lucicfg.emit(
 # notifiers: <
 #   notifications: <
 #     on_new_failure: true
+#     failure_type: <>
 #     email: <
 #       recipients: "someone@example,com"
 #     >
