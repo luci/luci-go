@@ -33,6 +33,24 @@
       "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aabefc02_e93100d4",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-15T01:40:51Z",
+      "side": 1,
+      "message": "Yeah, that was what I was going to do originally, but then I thought it\u0027d be disruptive, since you can\u0027t set defaults in proto3 (e.g. to default failure to true). \n\nHow would I handle default case... Just have `notify.go` set failure to true if all fields are false?\n\nI guess that wouldn\u0027t be bad. Let me update.",
+      "parentUuid": "c49bf2d0_54062a7b",
+      "revId": "d0146b8b49139394fc4068e2069fbf174b5f38db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
