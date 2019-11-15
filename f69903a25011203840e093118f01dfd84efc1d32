@@ -1,0 +1,170 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ef62abd_b52846d1",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "i am very confused. Are we copying all artifacts to each test?\nwe should be determining which artifact belongs to which test",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "526c56c7_e62e6fa7",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "there are no isolated outputs in this func",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef886ee9_5f3c6a36",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "remove\n\notherwise \"ignore\" and \"mark\" seem contradict each other",
+      "range": {
+        "startLine": 308,
+        "startChar": 25,
+        "endLine": 308,
+        "endChar": 37
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "615a01fe_1863dce0",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "let\u0027s not add this as an artifact, because this link represents a set of artifacts",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "decb7035_a0f07364",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "why not init it before the loop?",
+      "range": {
+        "startLine": 327,
+        "startChar": 3,
+        "endLine": 329,
+        "endChar": 4
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d14d9c6a_a0cf5750",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "unnecessary. L333 would work without this",
+      "range": {
+        "startLine": 330,
+        "startChar": 3,
+        "endLine": 332,
+        "endChar": 4
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "716cad71_fc18c211",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "please add a comment",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34229670_38c841e6",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:11:14Z",
+      "side": 1,
+      "message": "names must be unique within a test result\n\nfrom https://osscs.corp.google.com/chromium/_/chromium/infra/luci/luci-go/+/3b26f2c2a887c4cacbb2b0f6d4174cf8e84d56b5:resultdb/proto/rpc/v1/test_result.proto;drc\u003dd9597ae4b2897d7ba9bb478d0352d8290c996f25;bpv\u003d0;bpt\u003d0;l\u003d160\n\n\"identifies the artifact.\"",
+      "range": {
+        "startLine": 116,
+        "startChar": 5,
+        "endLine": 116,
+        "endChar": 9
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
