@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3703fcfb_6a9124de",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T00:05:29Z",
+      "side": 1,
+      "message": "L181 func does not wait for L201 func. It just schedules it and returns nil",
+      "parentUuid": "30c831fd_2b75be5c",
+      "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "56325a54_760830b9",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5847595b_821092a6",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T00:05:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56325a54_760830b9",
+      "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
