@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "83d14c08_8d861a66",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T23:33:55Z",
+      "side": 1,
+      "message": "I had meant FailureType, but don\u0027t bother, it\u0027s good enough.",
+      "parentUuid": "e37011ed_1d2790c2",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "987e3302_b4f9914c",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 12
@@ -113,6 +131,24 @@
       "side": 1,
       "message": "I didn\u0027t interpret that, but agree it\u0027s likely better. Will update.",
       "parentUuid": "987e3302_b4f9914c",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10a4ed09_784a787b",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-15T23:33:55Z",
+      "side": 1,
+      "message": "I\u0027d still like something like:\n\n  FailureType on_failure_type \u003d 9;\n  FailureType on_new_failure_type \u003d 10;\n\nand then add comment on 2 and 7 about their eventual deprecation.",
+      "parentUuid": "93b5dfd2_5a007ec2",
       "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
