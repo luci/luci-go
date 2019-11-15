@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "139e58cd_b482abe5",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-15T00:07:15Z",
+      "side": 1,
+      "message": "Ah, I see, thanks!",
+      "parentUuid": "3703fcfb_6a9124de",
+      "revId": "3d30a491ae3acc70a7a52b9307f5358aecd7da73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "56325a54_760830b9",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 2
