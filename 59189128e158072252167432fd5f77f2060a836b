@@ -1,0 +1,164 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c35da0c1_f2a51a6a",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "please also mention that ToProtos deletes an outputsToProcess entry after processing",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eac954af_8a0b60b7",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "task id without a hostname is not very useful. please also add the swarming hostname\n\noutput digest is not useful in addition to task because it is trivial to find one by just going to the task page\n\n--\n\nstepping back, the callsite already knows this, so i suggest just returning this err without further annotation",
+      "range": {
+        "startLine": 117,
+        "startChar": 5,
+        "endLine": 117,
+        "endChar": 31
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a39b37ee_f2966391",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "same problem here (task id is not enough)\n\nlet\u0027s apply the same principle: \nlog the swarming hostname and task id in (s *recorderServer) DeriveInvocation\nand here only say that that it still had unprocessed files",
+      "range": {
+        "startLine": 139,
+        "startChar": 5,
+        "endLine": 139,
+        "endChar": 12
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a4bba56_ce093462",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "this switch-case grew from 10 LOC to 45. Possible to extract to its own func?",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ba08a52_c3f4edff",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "host",
+      "range": {
+        "startLine": 38,
+        "startChar": 28,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afa463b3_bdfad8f1",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "please populate ViewUrl too",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a59ff6df_07b01944",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "what is the logic here? \n\nif it is a symlink, do we want to represent it as an artifact to begin with?\nif we do, then why do we not set content type?",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0100d33_07496cc6",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T20:02:47Z",
+      "side": 1,
+      "message": "note: this may slightly surprise a reader because the behavior of this package depends on the OS of the machine where our Go code is running. So this is a bit weird, but I looked at implementations of path.Ext and filpath.Ext and, for our purposes, they are same, so this is fine",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 16
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
