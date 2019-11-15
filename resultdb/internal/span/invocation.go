@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // InvocationShards is the sharding level for the Invocations table.
@@ -142,44 +143,69 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	return inv, nil
 }
 
-// ReadReachableInvocations fetches invocations reachable from the roots.
+// TooManyInvocationsTag set in an error indicates that too many invocations
+// matched a condition.
+var TooManyInvocationsTag = errors.BoolTag{
+	Key: errors.NewTagKey("too many matching invocations matched the condition"),
+}
+
+// ReadReachableInvocations fetches all invocations reachable from the roots.
 // If the returned error is non-nil, it is annotated with a gRPC code.
-func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, roots ...InvocationID) (map[InvocationID]*pb.Invocation, error) {
-	ret := map[InvocationID]*pb.Invocation{}
+//
+// limit must be positive.
+// If the number of matching invocations exceeds limit, returns an error
+// tagged with TooManyInvocationsTag.
+//
+// Does not re-fetch roots.
+func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, limit int, roots map[InvocationID]*pb.Invocation) (map[InvocationID]*pb.Invocation, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	if limit <= 0 {
+		panic("limit <= 0")
+	}
+	if len(roots) > limit {
+		panic("len(roots) > limit")
+	}
+	ret := make(map[InvocationID]*pb.Invocation, limit)
+	for id, inv := range roots {
+		ret[id] = inv
+	}
+
 	var mu sync.Mutex
+	var visit func(id InvocationID) error
 
-	var visit func(id InvocationID)
-
-	// read reads an invocation and calls visit for all invocations it includes.
-	read := func(id InvocationID) (*pb.Invocation, error) {
-		inv, err := ReadInvocationFull(ctx, txn, id)
-		if err != nil {
-			return nil, err
-		}
-
+	visitIncluded := func(inv *pb.Invocation) error {
 		for _, name := range inv.IncludedInvocations {
-			visit(MustParseInvocationName(name))
+			if err := visit(MustParseInvocationName(name)); err != nil {
+				return err
+			}
 		}
-		return inv, nil
+		return nil
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	visit = func(id InvocationID) {
+	visit = func(id InvocationID) error {
 		mu.Lock()
+		defer mu.Unlock()
+
 		// Check if we already started/finished fetching this invocation.
 		if _, ok := ret[id]; ok {
-			mu.Unlock()
-			return
+			return nil
+		}
+
+		// Consider fetching a new invocation.
+		if len(ret) == limit {
+			cancel()
+			return errors.Reason("more than %d invocations match", limit).Tag(TooManyInvocationsTag).Err()
 		}
 
 		// Mark the invocation as being fetched.
 		ret[id] = nil
-		mu.Unlock()
 
 		// Concurrently fetch the invocation without a lock.
 		// Then record it with a lock.
 		eg.Go(func() error {
-			inv, err := read(id)
+			inv, err := ReadInvocationFull(ctx, txn, id)
 			if err != nil {
 				return err
 			}
@@ -187,19 +213,107 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 			mu.Lock()
 			ret[id] = inv
 			mu.Unlock()
-			return nil
+
+			return visitIncluded(inv)
 		})
+		return nil
 	}
 
 	// Trigger fetching by requesting all roots.
-	for _, id := range roots {
-		visit(id)
+	for _, inv := range roots {
+		if err := visitIncluded(inv); err != nil {
+			return nil, err
+		}
 	}
 
 	// Wait for the entire graph to be fetched.
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-
 	return ret, nil
+}
+
+// ReadInvocationsByTag fetches invocations that have the tag.
+// If limit > 0 and there are more than limit matching invocations, returns an
+// error with TooManyInvocationsTag tag.
+func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, limit int) (map[InvocationID]*pb.Invocation, error) {
+	tagStr := pbutil.StringPairToString(tag)
+
+	st := spanner.NewStatement(`
+		SELECT
+			i.InvocationId,
+			State,
+			CreateTime,
+			FinalizeTime,
+			Deadline,
+			BaseTestVariant,
+			Tags
+		FROM InvocationsByTag t
+		JOIN Invocations i ON i.InvocationId = t.InvocationId
+		WHERE t.TagID = @TagID
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"TagID": TagRowID(tag),
+	})
+
+	ret := make(map[InvocationID]*pb.Invocation, limit)
+	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+		if limit > 0 && len(ret) == limit {
+			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
+		}
+		var id InvocationID
+		inv := &pb.Invocation{}
+		err := FromSpanner(row,
+			&id,
+			&inv.State,
+			&inv.CreateTime,
+			&inv.FinalizeTime,
+			&inv.Deadline,
+			&inv.BaseTestVariant,
+			&inv.Tags)
+		if err != nil {
+			return err
+		}
+		inv.Name = pbutil.InvocationName(string(id))
+		ret[id] = inv
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// QueryInvocations returns a list of invocation IDs that satisfy the predicate.
+// The limit must be positive.
+// If the number of matching invocations exceeds the limit, returns an error
+// tagged with TooManyInvocationsTag.
+// Assumes pred is valid.
+// Does not support paging.
+func QueryInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, pred *pb.InvocationPredicate, limit int) (map[InvocationID]*pb.Invocation, error) {
+	if limit <= 0 {
+		panic("limit <= 0")
+	}
+
+	// Resolve IDs of the root invocations.
+	var roots map[InvocationID]*pb.Invocation
+	if name := pred.GetName(); name != "" {
+		id := MustParseInvocationName(name)
+		inv, err := ReadInvocationFull(ctx, txn, id)
+		if err != nil {
+			return nil, err
+		}
+		roots = map[InvocationID]*pb.Invocation{id: inv}
+	} else {
+		var err error
+		if roots, err = ReadInvocationsByTag(ctx, txn, pred.GetTag(), limit); err != nil {
+			return nil, err
+		}
+	}
+
+	if pred.IgnoreInclusions {
+		return roots, nil
+	}
+
+	return ReadReachableInvocations(ctx, txn, limit, roots)
 }

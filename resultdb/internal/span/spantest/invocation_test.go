@@ -68,14 +68,21 @@ func TestReadReachableInvocations(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		read := func(roots ...span.InvocationID) (map[span.InvocationID]*pb.Invocation, error) {
+		read := func(limit int, rootIDs ...span.InvocationID) (map[span.InvocationID]*pb.Invocation, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
-			return span.ReadReachableInvocations(ctx, txn, roots...)
+
+			roots := make(map[span.InvocationID]*pb.Invocation, len(rootIDs))
+			for _, id := range rootIDs {
+				root, err := span.ReadInvocationFull(ctx, txn, id)
+				So(err, ShouldBeNil)
+				roots[id] = root
+			}
+			return span.ReadReachableInvocations(ctx, txn, limit, roots)
 		}
 
-		mustReadIDs := func(roots ...span.InvocationID) []span.InvocationID {
-			invs, err := read(roots...)
+		mustReadIDs := func(limit int, roots ...span.InvocationID) []span.InvocationID {
+			invs, err := read(limit, roots...)
 			So(err, ShouldBeNil)
 			ids := make([]span.InvocationID, 0, len(invs))
 			for id := range invs {
@@ -85,32 +92,38 @@ func TestReadReachableInvocations(t *testing.T) {
 			return ids
 		}
 
-		Convey(`fetch nothing`, func() {
-			So(mustReadIDs(), ShouldBeEmpty)
-		})
-
-		Convey(`not found`, func() {
-			_, err := read("inv")
-			So(err, ShouldErrLike, `"invocations/inv" not found`)
-		})
-
 		Convey(`a -> []`, func() {
 			testutil.MustApply(ctx, insertInv("a")...)
-			So(mustReadIDs("a"), ShouldResemble, []span.InvocationID{"a"})
+			So(mustReadIDs(100, "a"), ShouldResemble, []span.InvocationID{"a"})
 		})
 
 		Convey(`a -> [b, c]`, func() {
-			testutil.MustApply(ctx, insertInv("b")...)
-			testutil.MustApply(ctx, insertInv("c")...)
-			testutil.MustApply(ctx, insertInv("a", "b", "c")...)
-			So(mustReadIDs("a"), ShouldResemble, []span.InvocationID{"a", "b", "c"})
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertInv("a", "b", "c"),
+				insertInv("b"),
+				insertInv("c"),
+			)...)
+			So(mustReadIDs(100, "a"), ShouldResemble, []span.InvocationID{"a", "b", "c"})
 		})
 
 		Convey(`a -> b -> c`, func() {
-			testutil.MustApply(ctx, insertInv("c")...)
-			testutil.MustApply(ctx, insertInv("b", "c")...)
-			testutil.MustApply(ctx, insertInv("a", "b")...)
-			So(mustReadIDs("a"), ShouldResemble, []span.InvocationID{"a", "b", "c"})
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertInv("a", "b"),
+				insertInv("b", "c"),
+				insertInv("c"),
+			)...)
+			So(mustReadIDs(100, "a"), ShouldResemble, []span.InvocationID{"a", "b", "c"})
+		})
+
+		Convey(`limit`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertInv("a", "b"),
+				insertInv("b", "c"),
+				insertInv("c"),
+			)...)
+			_, err := read(1, "a")
+			So(err, ShouldNotBeNil)
+			So(span.TooManyInvocationsTag.In(err), ShouldBeTrue)
 		})
 	})
 }
@@ -137,10 +150,17 @@ func BenchmarkChainFetch(b *testing.B) {
 		b.Fatal(err)
 	}
 
+	rootInvTxn := span.Client(ctx).ReadOnlyTransaction()
+	defer rootInvTxn.Close()
+	root, err := span.ReadInvocationFull(ctx, rootInvTxn, prev)
+	So(err, ShouldBeNil)
+	roots := map[span.InvocationID]*pb.Invocation{prev: root}
+
 	read := func() {
 		txn := span.Client(ctx).ReadOnlyTransaction()
 		defer txn.Close()
-		_, err := span.ReadReachableInvocations(ctx, txn, prev)
+
+		_, err = span.ReadReachableInvocations(ctx, txn, 100, roots)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -155,6 +175,90 @@ func BenchmarkChainFetch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		read()
 	}
+}
+
+func TestReadInvocationIDsByTag(t *testing.T) {
+	Convey(`TestReadInvocationIDsByTag`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		now := clock.Now(ctx)
+
+		tagAB := pbutil.StringPair("a", "b")
+		tagAC := pbutil.StringPair("a", "c")
+		testutil.MustApply(ctx,
+			testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now),
+			testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now),
+			testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now),
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(tagAB),
+				"InvocationId": span.InvocationID("inv0"),
+			}),
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(tagAB),
+				"InvocationId": span.InvocationID("inv1"),
+			}),
+			span.InsertMap("InvocationsByTag", map[string]interface{}{
+				"TagId":        span.TagRowID(tagAC),
+				"InvocationId": span.InvocationID("inv2"),
+			}),
+		)
+
+		txn := span.Client(ctx).ReadOnlyTransaction()
+		defer txn.Close()
+
+		Convey(`works`, func() {
+			invs, err := span.ReadInvocationsByTag(ctx, txn, tagAB, 0)
+			So(err, ShouldBeNil)
+			So(invs, ShouldHaveLength, 2)
+			So(invs, ShouldContainKey, span.InvocationID("inv0"))
+			So(invs, ShouldContainKey, span.InvocationID("inv1"))
+			So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
+			So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
+		})
+
+		Convey(`limit`, func() {
+			_, err := span.ReadInvocationsByTag(ctx, txn, tagAB, 1)
+			So(err, ShouldErrLike, `more than 1 invocations have tag "a:b"`)
+			So(span.TooManyInvocationsTag.In(err), ShouldBeTrue)
+		})
+	})
+}
+
+func TestQueryInvocations(t *testing.T) {
+	Convey(`TestQueryInvocations`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+
+		query := func(pred *pb.InvocationPredicate) map[span.InvocationID]*pb.Invocation {
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+			invs, err := span.QueryInvocations(ctx, txn, pred, 100)
+			So(err, ShouldBeNil)
+			return invs
+		}
+
+		Convey(`Invocations reachable from an invocation with a certain name`, func() {
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertInv("a", "b", "c"),
+				insertInv("b", "d"),
+				insertInv("c"),
+				insertInv("d", "e"),
+				insertInv("e"),
+				// unrelated invocations
+				insertInv("x"),
+				insertInv("y", "a"),
+			)...)
+			actual := query(&pb.InvocationPredicate{
+				RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/a"},
+			})
+			So(actual, ShouldHaveLength, 5)
+			So(actual, ShouldContainKey, span.InvocationID("a"))
+			So(actual, ShouldContainKey, span.InvocationID("b"))
+			So(actual, ShouldContainKey, span.InvocationID("c"))
+			So(actual, ShouldContainKey, span.InvocationID("d"))
+			So(actual, ShouldContainKey, span.InvocationID("e"))
+
+			So(actual["a"].IncludedInvocations, ShouldResemble, []string{"invocations/b", "invocations/c"})
+		})
+	})
 }
 
 func insertInv(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
