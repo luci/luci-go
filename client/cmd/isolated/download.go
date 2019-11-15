@@ -35,10 +35,13 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 )
 
+const maxUint = ^uint(0)
+const maxInt = int(maxUint >> 1)
+
+const cacheMaxSizeDefault = math.MaxInt64
+const cacheMaxItemsDefault = maxInt
+
 func cmdDownload(authOpts auth.Options) *subcommands.Command {
-	const MaxUint = ^uint(0)
-	const MinUint = 0
-	const MaxInt = int(MaxUint >> 1)
 	return &subcommands.Command{
 		UsageLine: "download <options>...",
 		ShortDesc: "downloads a file or a .isolated tree from an isolate server.",
@@ -54,8 +57,8 @@ Files are referenced by their hash`,
 			c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of a .isolated tree to download.")
 
 			c.Flags.StringVar(&c.cacheDir, "cache-dir", "", "Cache directory to store downloaded files.")
-			c.Flags.Int64Var(&c.maxSize, "cache-max-size", math.MaxInt64, "Cache is trimmed if the cache gets larger than this value.")
-			c.Flags.IntVar(&c.maxItems, "cache-max-items", MaxInt, "Maximum number of items to keep in the cache.")
+			c.Flags.Int64Var(&c.maxSize, "cache-max-size", cacheMaxSizeDefault, "Cache is trimmed if the cache gets larger than this value.")
+			c.Flags.IntVar(&c.maxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
 			c.Flags.Int64Var(&c.minFreeSpace, "cache-min-free-space", 0, "Cache is trimmed if disk free space becomes lower than this value.")
 			return &c
 		},
@@ -85,8 +88,8 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 		return errors.New("isolated is required")
 	}
 
-	if c.cacheDir == "" && (c.maxSize != 0 || c.maxItems != 0 || c.minFreeSpace != 0) {
-		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified,")
+	if c.cacheDir == "" && (c.maxSize != cacheMaxSizeDefault || c.maxItems != cacheMaxItemsDefault || c.minFreeSpace != 0) {
+		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
 	return nil
 }
