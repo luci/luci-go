@@ -5,7 +5,8 @@
 // Schema for project-level configuration in luci-notify.
 
 // luci-notify users can define custom email templates,
-// see [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md)
+// see
+// [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md)
 
 syntax = "proto3";
 
@@ -51,8 +52,10 @@ message Notifier {
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
 //
-// Next ID: 9.
+// Next ID: 10.
 message Notification {
+  reserved 8;
+
   // Email is a message representing a set of mail recipients (email
   // addresses).
   message Email {
@@ -60,13 +63,14 @@ message Notification {
     repeated string recipients = 1;
   }
 
-  // Blamelist is a message representing configuration for notifying the blamelist.
+  // Blamelist is a message representing configuration for notifying the
+  // blamelist.
   message Blamelist {
     // A list of repositories which we are allowed to be included as part of the
     // blamelist. If unset, a blamelist will be computed based on a Builder's
     // repository field. If set, however luci-notify computes the blamelist for
-    // all commits related to a build (which may span multiple repositories) which
-    // are part of repository in this repository whitelist.
+    // all commits related to a build (which may span multiple repositories)
+    // which are part of repository in this repository whitelist.
     //
     // Repositories should be valid Gerrit/Gitiles repository URLs, such as
     // https://chromium.googlesource.com/chromium/src
@@ -81,14 +85,23 @@ message Notification {
   // Notify on each build failure.
   bool on_failure = 2;
 
-  // Notify on each infra build failure.
-  bool on_infra_failure = 8;
-
   // Notify on each build status different than the previous one.
   bool on_change = 3;
 
   // Notify on each build failure unless the previous build was a failure.
   bool on_new_failure = 7;
+
+  // FailureType enumerates the builder statuses considered a failure for
+  // notification.
+  message FailureType {
+    // Refers to the failure builder status.
+    bool failure = 1;
+
+    // Refers to the infra failure builder status.
+    bool infra_failure = 2;
+  }
+
+  FailureType failure_type = 9;
 
   // Email is the set of email addresses to notify.
   //
@@ -126,7 +139,8 @@ message Builder {
 
   // Repository is the git repository associated with this particular builder.
   //
-  // The repository should look like a URL, e.g. https://chromium.googlesource.com/src
+  // The repository should look like a URL, e.g.
+  // https://chromium.googlesource.com/src
   //
   // Currently, luci-notify only supports Gerrit-like URLs since it checks
   // against gitiles commits, so the URL's path (e.g. "src" in the above
