@@ -154,6 +154,26 @@ func (mr *MockResultDBClientMockRecorder) QueryTestResults(ctx, in interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestResults", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestResults), varargs...)
 }
 
+// QueryTestExonerations mocks base method
+func (m *MockResultDBClient) QueryTestExonerations(ctx context.Context, in *QueryTestExonerationsRequest, opts ...grpc.CallOption) (*QueryTestExonerationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryTestExonerations", varargs...)
+	ret0, _ := ret[0].(*QueryTestExonerationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestExonerations indicates an expected call of QueryTestExonerations
+func (mr *MockResultDBClientMockRecorder) QueryTestExonerations(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBClient)(nil).QueryTestExonerations), varargs...)
+}
+
 // MockResultDBServer is a mock of ResultDBServer interface
 type MockResultDBServer struct {
 	ctrl     *gomock.Controller
@@ -265,4 +285,19 @@ func (m *MockResultDBServer) QueryTestResults(arg0 context.Context, arg1 *QueryT
 func (mr *MockResultDBServerMockRecorder) QueryTestResults(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestResults", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestResults), arg0, arg1)
+}
+
+// QueryTestExonerations mocks base method
+func (m *MockResultDBServer) QueryTestExonerations(arg0 context.Context, arg1 *QueryTestExonerationsRequest) (*QueryTestExonerationsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryTestExonerations", arg0, arg1)
+	ret0, _ := ret[0].(*QueryTestExonerationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryTestExonerations indicates an expected call of QueryTestExonerations
+func (mr *MockResultDBServerMockRecorder) QueryTestExonerations(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryTestExonerations", reflect.TypeOf((*MockResultDBServer)(nil).QueryTestExonerations), arg0, arg1)
 }

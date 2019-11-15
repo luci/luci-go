@@ -48,16 +48,21 @@ service ResultDB {
   // Retrieves test exonerations for a parent invocation.
   //
   // Note: response does not contain test results of included invocations.
-  // Use QueryTestResults instead.
+  // Use QueryTestExonerations instead.
   rpc ListTestExonerations(ListTestExonerationsRequest)
       returns (ListTestExonerationsResponse) {};
 
   // Retrieves test results from an invocation.
   // Supports invocation inclusions.
-  // Supports filtering based on "TestResult.expected", exonerations, test
-  // path and variant.
+  // Supports advanced filtering.
   rpc QueryTestResults(QueryTestResultsRequest)
       returns (QueryTestResultsResponse) {};
+
+  // Retrieves test exonerations from an invocation.
+  // Supports invocation inclusions.
+  // Supports advanced filtering.
+  rpc QueryTestExonerations(QueryTestExonerationsRequest)
+      returns (QueryTestExonerationsResponse) {};
 }
 
 // A request message for GetInvocation RPC.
@@ -186,14 +191,52 @@ message QueryTestResultsResponse {
     // The test results included directly in the invocation.
     // The test results are ordered by test path and result id.
     repeated TestResult test_results = 2;
-
-    // The test exonerations included directly in the invocation.
-    repeated TestExoneration test_exonerations = 3;
   }
 
   // Matched test results grouped by parent invocation.
   // The map key is an invocation name.
   map<string, Group> groups = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there were no subsequent pages at the time of
+  // request.
+  string next_page_token = 2;
+}
+
+// A request message for QueryTestExonerations RPC.
+message QueryTestExonerationsRequest {
+  // A test exoneration in the response must satisfy this predicate.
+  // Field predicate.invocation is required.
+  TestExonerationPredicate predicate = 1
+      [ (google.api.field_behavior) = REQUIRED ];
+
+  // The version of the state from which the response draws is allowed to be
+  // stale up to this duration.
+  // For example, with max staleness of 5m, the response might not contain
+  // results uploaded 4m ago.
+  // Choosing a larger duration may reduce request latency.
+  // Must be <=30m.
+  google.protobuf.Duration max_staleness = 2;
+
+  // The maximum number of test exonerations to return.
+  //
+  // The service may return fewer than this value.
+  // If unspecified, at most 100 test exonerations will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 3;
+
+  // A page token, received from a previous `QueryTestExonerations` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `QueryTestExonerations`
+  // MUST match the call that provided the page token.
+  string page_token = 4;
+}
+
+// A response message for QueryTestExonerations RPC.
+message QueryTestExonerationsResponse {
+  // The test exonerations matching the predicate.
+  repeated TestExoneration test_exonerations = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of
