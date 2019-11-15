@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "61043eb9_b0d1225f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T05:08:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "719a0bf6_5809b20b",
+      "range": {
+        "startLine": 26,
+        "startChar": 40,
+        "endLine": 26,
+        "endChar": 42
+      },
+      "revId": "1ca8075fd2f14b105bf82b7fcfc05e1878d02a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26dbbd49_05526388",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 7
@@ -36,6 +60,30 @@
       "writtenOn": "2019-11-15T01:31:21Z",
       "side": 1,
       "message": "Can\u0027t q.Predicate.GetInvocation() just be ignored?",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 2
+      },
+      "revId": "1ca8075fd2f14b105bf82b7fcfc05e1878d02a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9061bff_46c2d4fb",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-15T05:08:44Z",
+      "side": 1,
+      "message": "it could, but i think it would be worse. The reason I\u0027ve added this is, at some point, I was accidentally passing invocation predicate to this func and not passing any invocation IDs, and the func returned empty trs and no error. This was misleading; did not help find the bug.",
+      "parentUuid": "26dbbd49_05526388",
       "range": {
         "startLine": 106,
         "startChar": 1,
