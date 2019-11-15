@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "13c33d53_ef52a8d8",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-15T21:30:56Z",
+      "side": 1,
+      "message": "Let me look --- I\u0027m pretty sure I\u0027ve seen them before (but did not generate artifacts), but don\u0027t have a sample handy.\n\nRegardless, the JSON Test Result Format does support having multiple test runs associated with a single set of artifacts, so we have to figure out some way of accounting for that case.\n\n(That\u0027s also why I included the logging statement in L272, so that we can see where this is happening.)",
+      "parentUuid": "220d4054_11d51dc5",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
