@@ -169,19 +169,21 @@ func Test(t *testing.T) {
 				So(err, ShouldErrLike, io.EOF)
 			})
 		})
-	})
-}
 
-func TestExport(t *testing.T) {
-	Convey("Export check", t, func() {
-		ctx := context.Background()
-		s, err := NewServer(ctx, ServerConfig{Port: 42, AuthToken: "hello"})
-		So(err, ShouldBeNil)
-		ctx = s.Export(ctx)
-		db := lucictx.GetResultDB(ctx)
-		So(db, ShouldNotBeNil)
-		So(db.TestResults, ShouldNotBeNil)
-		So(db.TestResults.Port, ShouldEqual, 42)
-		So(db.TestResults.AuthToken, ShouldEqual, "hello")
+		Convey("Export check", func() {
+			port := 42
+			token := "hello"
+			s, err := NewServer(ctx, ServerConfig{Port: port, AuthToken: token})
+			So(err, ShouldBeNil)
+			ctx = s.Export(ctx)
+			db := lucictx.GetResultDB(ctx)
+			expected := &lucictx.ResultDB{
+				TestResults: lucictx.TestResults{
+					Port:      port,
+					AuthToken: token,
+				},
+			}
+			So(db, ShouldResemble, expected)
+		})
 	})
 }
