@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "2f00f56f_baaa95d2",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-16T00:54:14Z",
+      "side": 1,
+      "message": "Yeah, that\u0027s unfortunate; do you want to fix the md, or shall I?",
+      "parentUuid": "6723adc3_72b3d89d",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aac096c1_d3e17d42",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 1
