@@ -93,6 +93,30 @@
       "revId": "1ca8075fd2f14b105bf82b7fcfc05e1878d02a73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "925eb5ce_67bd81d3",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-16T00:00:04Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f9061bff_46c2d4fb",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 2
+      },
+      "revId": "1ca8075fd2f14b105bf82b7fcfc05e1878d02a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
