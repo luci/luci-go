@@ -115,24 +115,13 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
-		Convey(`invalid variant`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "u:abc",
-				Invocation: &pb.Invocation{
-					BaseTestVariant: pbutil.Variant("1", "a"),
-				},
-			}, now)
-			So(err, ShouldErrLike, `invocation: base_test_variant: "1":"a": key: does not match`)
-		})
-
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
-					Deadline:        deadline,
-					Tags:            pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
-					BaseTestVariant: pbutil.Variant("a", "b", "c", "d"),
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 				},
 			}, now)
 			So(err, ShouldBeNil)
@@ -220,10 +209,6 @@ func TestCreateInvocation(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
-					BaseTestVariant: pbutil.Variant(
-						"bucket", "ci",
-						"builder", "linux-rel",
-					),
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
