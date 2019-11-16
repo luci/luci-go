@@ -22,6 +22,52 @@
       "revId": "2784f35550cf3d7370581776bbbaced1264b21ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d0ce387_2d165cf4",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-16T15:44:18Z",
+      "side": 1,
+      "message": "actually, thinking about this more. A piece of JSON\n\n{\n  \"resultdb\": {\n    \"test_results\": {\n       \"port\": 1234,\n       \"auth_token\": \"hello\"\n     }\n  }\n}\n\n\nmakes less sense than\n\n{\n  \"resultdb\": {\n    \"resultsink\": {\n       \"port\": 1234,\n       \"auth_token\": \"hello\"\n     }\n  }\n}\n\nbecause test results do not have a port. A resultsink does because it is a server.\nWDYT?",
+      "range": {
+        "startLine": 29,
+        "startChar": 5,
+        "endLine": 29,
+        "endChar": 16
+      },
+      "revId": "2784f35550cf3d7370581776bbbaced1264b21ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65709eba_670ecc15",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-16T15:44:18Z",
+      "side": 1,
+      "message": "these two also should be annotated, e.g. `json: \"auth_token\"`",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 17
+      },
+      "revId": "2784f35550cf3d7370581776bbbaced1264b21ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
