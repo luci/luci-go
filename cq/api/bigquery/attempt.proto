@@ -1,0 +1,39 @@
+// Copyright 2019 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package bigquery;
+
+import "google/protobuf/timestamp.proto";
+
+// Attempt includes the state CQ attempt.
+// For thecompleted
+message Attempt {
+
+  // Whether the attempt is a dry run or full run. If constituent CLs have
+  // different modes, then the mode is disagreement.
+  enum Mode {
+    DISAGREEMENT = 0;
+    DRY_RUN = 1;
+    FULL_RUN = 2;
+  }
+
+  // Pass or fail state of the attempt. Pending attempts shouldn't be included
+  // in the completed attempts table.
+  enum SubmitState {
+    QUEUED = 0;
+    FAILED = 1;
+    SUBMITTED = 2;
+  }
+
+  // Time when the attempt started and stopped (TODO: define more precisely)
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp stop = 2;
+
+  Mode mode = 3;
+  SubmitState state = 4;
+
+  string attempt_key = 5;
+}
