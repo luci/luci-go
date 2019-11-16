@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -67,6 +66,8 @@ func TestReadInvocationFull(t *testing.T) {
 func TestReadReachableInvocations(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+
+		insertInv := testutil.InsertInvocationWithInclusions
 
 		read := func(limit int, rootIDs ...span.InvocationID) (map[span.InvocationID]*pb.Invocation, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -143,7 +144,7 @@ func BenchmarkChainFetch(b *testing.B) {
 		}
 		id := span.InvocationID(fmt.Sprintf("inv%d", i))
 		prev = id
-		ms = append(ms, insertInv(id, included...)...)
+		ms = append(ms, testutil.InsertInvocationWithInclusions(id, included...)...)
 	}
 
 	if _, err := client.Apply(ctx, ms); err != nil {
@@ -235,6 +236,8 @@ func TestQueryInvocations(t *testing.T) {
 			return invs
 		}
 
+		insertInv := testutil.InsertInvocationWithInclusions
+
 		Convey(`Invocations reachable from an invocation with a certain name`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertInv("a", "b", "c"),
@@ -259,24 +262,4 @@ func TestQueryInvocations(t *testing.T) {
 			So(actual["a"].IncludedInvocations, ShouldResemble, []string{"invocations/b", "invocations/c"})
 		})
 	})
-}
-
-func insertInv(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
-	t := testclock.TestRecentTimeUTC
-	ms := []*spanner.Mutation{span.InsertMap("Invocations", map[string]interface{}{
-		"InvocationId":                      id,
-		"ShardId":                           0,
-		"State":                             pb.Invocation_COMPLETED,
-		"Realm":                             "",
-		"UpdateToken":                       "",
-		"InvocationExpirationTime":          t,
-		"ExpectedTestResultsExpirationTime": t,
-		"CreateTime":                        t,
-		"Deadline":                          t,
-		"FinalizeTime":                      t,
-	})}
-	for _, incl := range included {
-		ms = append(ms, testutil.InsertInclusion(id, incl))
-	}
-	return ms
 }

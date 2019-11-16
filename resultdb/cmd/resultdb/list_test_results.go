@@ -43,12 +43,16 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	if err := validateListTestResultsRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	invID := span.MustParseInvocationName(in.Invocation)
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
-	trs, tok, err := span.ReadTestResults(ctx, txn, invID, true, in.GetPageToken(), pagination.AdjustPageSize(in.GetPageSize()))
+	q := span.TestResultQuery{
+		PageSize:      pagination.AdjustPageSize(in.PageSize),
+		CursorToken:   in.PageToken,
+		InvocationIDs: []span.InvocationID{span.MustParseInvocationName(in.Invocation)},
+	}
+	trs, tok, err := span.QueryTestResults(ctx, txn, q)
 	if err != nil {
 		return nil, err
 	}

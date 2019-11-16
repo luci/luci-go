@@ -90,6 +90,8 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = &spanner.NullString{}
 		case *InvocationID:
 			spanPtrs[i] = &spanner.NullString{}
+		case *[]InvocationID:
+			spanPtrs[i] = &[]string{}
 		case **tspb.Timestamp:
 			spanPtrs[i] = &spanner.NullTime{}
 		case *pb.TestStatus:
@@ -130,6 +132,13 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			*goPtr = ""
 			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
 				*goPtr = InvocationIDFromRowID(maybe.StringVal)
+			}
+
+		case *[]InvocationID:
+		rowIDs := *(spanPtr.(*[]string))
+			*goPtr = make([]InvocationID, len(rowIDs))
+			for i, rowID := range rowIDs {
+				(*goPtr)[i] = InvocationIDFromRowID(rowID)
 			}
 
 		case **tspb.Timestamp:
@@ -181,6 +190,13 @@ func ToSpanner(v interface{}) interface{} {
 	switch v := v.(type) {
 	case InvocationID:
 		return v.RowID()
+
+	case []InvocationID:
+		ret := make([]string, len(v))
+		for i, id := range v {
+			ret[i] = id.RowID()
+		}
+		return ret
 
 	case *tspb.Timestamp:
 		if v == nil {
