@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "6723adc3_72b3d89d",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-16T00:03:11Z",
+      "side": 1,
+      "message": "this all sounds good to me. My point is that README should say that JSON uses camel_case, otherwise the wording \"EXACTLY\" either implies the opposite, or unclear.",
+      "parentUuid": "28598f40_7e723a7f",
+      "range": {
+        "startLine": 24,
+        "startChar": 32,
+        "endLine": 24,
+        "endChar": 43
+      },
+      "revId": "1e90cf69f85d2c72281feb1e70b4bc693a8584d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aac096c1_d3e17d42",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 1
