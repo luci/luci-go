@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/klauspost/compress/snappy"
+
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
@@ -81,6 +83,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - pb.Artifact
 //   - typepb.Variant
 //   - typepb.StringPair
+//   - Snappy
 func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	spanPtrs := make([]interface{}, len(ptrs))
 
@@ -104,6 +107,8 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = &[]string{}
 		case *[]*pb.Artifact:
 			spanPtrs[i] = &[][]byte{}
+		case *Snappy:
+			spanPtrs[i] = &[]byte{}
 		default:
 			spanPtrs[i] = goPtr
 		}
@@ -135,7 +140,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]InvocationID:
-		rowIDs := *(spanPtr.(*[]string))
+			rowIDs := *(spanPtr.(*[]string))
 			*goPtr = make([]InvocationID, len(rowIDs))
 			for i, rowID := range rowIDs {
 				(*goPtr)[i] = InvocationIDFromRowID(rowID)
@@ -170,10 +175,27 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]*pb.Artifact:
+			// TODO(nodir): reuse buffer across calls.
 			byteSlices := *spanPtr.(*[][]byte)
 			if *goPtr, err = pbutil.ArtifactsFromByteSlices(byteSlices); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
+			}
+
+		case *Snappy:
+			encoded := *spanPtr.(*[]byte)
+			if len(encoded) == 0 {
+				*goPtr = nil
+			} else {
+				// Try to reuse the existing buffer.
+				buf := []byte(*goPtr)
+				buf = buf[:cap(buf)]
+				buf, err := snappy.Decode(buf, encoded)
+				if err != nil {
+					// If it was written to Spanner, it should have been validated.
+					panic(errors.Annotate(err, "invalid snappy data: %v", encoded).Err())
+				}
+				*goPtr = Snappy(buf)
 			}
 
 		default:
@@ -249,6 +271,9 @@ func ToSpanner(v interface{}) interface{} {
 		}
 		return ret
 
+	case Snappy:
+		return snappy.Encode(nil, []byte(v))
+
 	default:
 		return v
 	}
@@ -290,3 +315,8 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 		return err
 	})
 }
+
+// Snappy signals ToSpanner and FromSpanner functions that the content
+// must be compressed/decompressed with
+// https://godoc.org/github.com/golang/snappy.
+type Snappy []byte
