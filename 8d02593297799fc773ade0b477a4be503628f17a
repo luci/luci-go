@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a0e3452_ce817456",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-16T00:05:11Z",
+      "side": 1,
+      "message": "for the future, please include not only the description of the change, but also the reason of change",
+      "revId": "8d02593297799fc773ade0b477a4be503628f17a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
