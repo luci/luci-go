@@ -61,11 +61,12 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
+	var summaryMarkdown Snappy
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"ExtraVariantPairs": &tr.ExtraVariantPairs,
 		"IsUnexpected":      &maybeUnexpected,
 		"Status":            &tr.Status,
-		"SummaryMarkdown":   &tr.SummaryMarkdown,
+		"SummaryMarkdown":   &summaryMarkdown,
 		"StartTime":         &tr.StartTime,
 		"RunDurationUsec":   &micros,
 		"Tags":              &tr.Tags,
@@ -82,6 +83,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	}
 
+	tr.SummaryMarkdown = string(summaryMarkdown)
 	populateExpectedField(tr, maybeUnexpected)
 	populateDurationField(tr, micros)
 	return tr, nil
@@ -182,6 +184,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	logging.Infof(ctx, "query parameters: %#v", st.Params)
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
+	var summaryMarkdown Snappy
 	err = txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
@@ -194,7 +197,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&tr.ExtraVariantPairs,
 			&maybeUnexpected,
 			&tr.Status,
-			&tr.SummaryMarkdown,
+			&summaryMarkdown,
 			&tr.StartTime,
 			&micros,
 			&tr.Tags,
@@ -206,6 +209,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		}
 
 		tr.Name = pbutil.TestResultName(string(invID), tr.TestPath, tr.ResultId)
+		tr.SummaryMarkdown = string(summaryMarkdown)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 

@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/klauspost/compress/snappy"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -47,6 +48,10 @@ type Txn interface {
 	// Query reads multiple rows returned by SQL statement.
 	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
 }
+
+// Snappy instructs ToSpanner and FromSpanner functions to encode/decode the
+// content with https://godoc.org/github.com/golang/snappy encoding.
+type Snappy []byte
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
 	keys = make([]string, 0, len(m))
@@ -81,6 +86,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - pb.Artifact
 //   - typepb.Variant
 //   - typepb.StringPair
+//   - Snappy
 func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 	spanPtrs := make([]interface{}, len(ptrs))
 
@@ -104,6 +110,8 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			spanPtrs[i] = &[]string{}
 		case *[]*pb.Artifact:
 			spanPtrs[i] = &[][]byte{}
+		case *Snappy:
+			spanPtrs[i] = &[]byte{}
 		default:
 			spanPtrs[i] = goPtr
 		}
@@ -135,7 +143,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]InvocationID:
-		rowIDs := *(spanPtr.(*[]string))
+			rowIDs := *(spanPtr.(*[]string))
 			*goPtr = make([]InvocationID, len(rowIDs))
 			for i, rowID := range rowIDs {
 				(*goPtr)[i] = InvocationIDFromRowID(rowID)
@@ -170,10 +178,26 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]*pb.Artifact:
+			// TODO(nodir): reuse buffer across calls.
 			byteSlices := *spanPtr.(*[][]byte)
 			if *goPtr, err = pbutil.ArtifactsFromByteSlices(byteSlices); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
+			}
+
+		case *Snappy:
+			encoded := *spanPtr.(*[]byte)
+			if len(encoded) == 0 {
+				// do not set to nil; otherwise we loose the buffer.
+				*goPtr = (*goPtr)[:0]
+			} else {
+				// Try to reuse the existing buffer.
+				buf := []byte(*goPtr)
+				buf = buf[:cap(buf)]
+				if *goPtr, err = snappy.Decode(buf, encoded); err != nil {
+					// If it was written to Spanner, it should have been validated.
+					panic(errors.Annotate(err, "invalid snappy data: %v", encoded).Err())
+				}
 			}
 
 		default:
@@ -248,6 +272,9 @@ func ToSpanner(v interface{}) interface{} {
 			ret[key] = ToSpanner(el)
 		}
 		return ret
+
+	case Snappy:
+		return snappy.Encode(nil, []byte(v))
 
 	default:
 		return v
