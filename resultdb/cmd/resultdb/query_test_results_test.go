@@ -32,7 +32,7 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
 			Predicate: &pb.TestResultPredicate{
 				Invocation: &pb.InvocationPredicate{
-					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+					Names: []string{"invocations/x"},
 				},
 			},
 			PageSize:     50,
@@ -45,11 +45,11 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
 			Predicate: &pb.TestResultPredicate{
 				Invocation: &pb.InvocationPredicate{
-					RootPredicate: &pb.InvocationPredicate_Name{Name: "xxxxxxxxxxxxx"},
+					Names: []string{"x"},
 				},
 			},
 		})
-		So(err, ShouldErrLike, `predicate: invocation: name: does not match`)
+		So(err, ShouldErrLike, `predicate: invocation: name "x": does not match`)
 	})
 }
 
@@ -71,7 +71,7 @@ func TestQueryTestResults(t *testing.T) {
 		res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 			Predicate: &pb.TestResultPredicate{
 				Invocation: &pb.InvocationPredicate{
-					RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/a"},
+					Names: []string{"invocations/a"},
 				},
 			},
 		})
