@@ -83,7 +83,11 @@ func TestValidation(t *testing.T) {
 			notifiers {
 				name: "good-name"
 				notifications {
-					on_change: true
+					on_new_status {
+						status_success: true
+						status_failure: true
+						status_infra_failure: true
+					}
 					email {
 						recipients: "@@@@@"
 					}

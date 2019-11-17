@@ -5,7 +5,8 @@
 // Schema for project-level configuration in luci-notify.
 
 // luci-notify users can define custom email templates,
-// see [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md)
+// see
+// [email_templates.md](https://chromium.googlesource.com/infra/luci/luci-go/+/master/luci_notify/doc/email_templates.md)
 
 syntax = "proto3";
 
@@ -51,8 +52,10 @@ message Notifier {
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
 //
-// Next ID: 9.
+// Next ID: 11.
 message Notification {
+  reserved 8;
+
   // Email is a message representing a set of mail recipients (email
   // addresses).
   message Email {
@@ -60,13 +63,14 @@ message Notification {
     repeated string recipients = 1;
   }
 
-  // Blamelist is a message representing configuration for notifying the blamelist.
+  // Blamelist is a message representing configuration for notifying the
+  // blamelist.
   message Blamelist {
     // A list of repositories which we are allowed to be included as part of the
     // blamelist. If unset, a blamelist will be computed based on a Builder's
     // repository field. If set, however luci-notify computes the blamelist for
-    // all commits related to a build (which may span multiple repositories) which
-    // are part of repository in this repository whitelist.
+    // all commits related to a build (which may span multiple repositories)
+    // which are part of repository in this repository whitelist.
     //
     // Repositories should be valid Gerrit/Gitiles repository URLs, such as
     // https://chromium.googlesource.com/chromium/src
@@ -75,20 +79,65 @@ message Notification {
     repeated string repository_whitelist = 1;
   }
 
-  // Notify on each build success.
+  // Deprecated. Notify on each build success.
   bool on_success = 1;
 
-  // Notify on each build failure.
+  // Deprecated. Notify on each build failure.
   bool on_failure = 2;
 
-  // Notify on each infra build failure.
-  bool on_infra_failure = 8;
-
-  // Notify on each build status different than the previous one.
+  // Deprecated. Notify on each build status different than the previous one.
   bool on_change = 3;
 
-  // Notify on each build failure unless the previous build was a failure.
+  // Deprecated. Notify on each build failure unless the previous build was a failure.
   bool on_new_failure = 7;
+
+
+  // NotificationStatus enumerates the builder statuses for notification.
+  // Statuses are mapped to
+  // https://godoc.org/go.chromium.org/luci/buildbucket/proto#Status.
+  message NotificationStatus {
+    // Unspecified state. Meaning depends on the context.
+    // Left here for reference. Do not use!
+    bool status_status_unspecified = 1;
+
+    // Build was scheduled, but did not start or end yet.
+    bool status_scheduled = 2;
+
+    // Build/step has started.
+    bool status_started = 3;
+
+    // A union of all terminal statuses.
+    // Can be used in BuildPredicate.status.
+    // A concrete build/step cannot have this status.
+    // Can be used as a bitmask to check that a build/step ended.
+    bool status_ended_mask = 4;
+
+    // A build/step ended successfully.
+    // This is a terminal status. It may not transition to another status.
+    bool status_success = 5;
+
+    // A build/step ended unsuccessfully due to its Build.Input,
+    // e.g. tests failed, and NOT due to a build infrastructure failure.
+    // This is a terminal status. It may not transition to another status.
+    bool status_failure = 6;
+
+    // A build/step ended unsuccessfully due to a failure independent of the
+    // input, e.g. swarming failed, not enough capacity or the recipe was unable
+    // to read the patch from gerrit.
+    // start_time is not required for this status.
+    // This is a terminal status. It may not transition to another status.
+    bool status_infra_failure = 7;
+
+    // A build was cancelled explicitly, e.g. via an RPC.
+    // This is a terminal status. It may not transition to another status.
+    bool status_canceled = 8;
+  }
+
+  // Notify on each build with a specified status.
+  NotificationStatus on_occurrence = 9;
+
+  // Notify on each build with a specified status different than the previous one.
+  NotificationStatus on_new_status = 10;
 
   // Email is the set of email addresses to notify.
   //
@@ -126,7 +175,8 @@ message Builder {
 
   // Repository is the git repository associated with this particular builder.
   //
-  // The repository should look like a URL, e.g. https://chromium.googlesource.com/src
+  // The repository should look like a URL, e.g.
+  // https://chromium.googlesource.com/src
   //
   // Currently, luci-notify only supports Gerrit-like URLs since it checks
   // against gitiles commits, so the URL's path (e.g. "src" in the above

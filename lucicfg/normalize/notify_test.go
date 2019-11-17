@@ -28,7 +28,10 @@ const notifyIn = `
 notifiers {
   name: "n1"
   notifications {
-    on_change: true
+    on_occurrence {}
+    on_new_status {
+      status_failure: true
+    }
     email {
       recipients: "change@google.com"
     }
@@ -46,7 +49,10 @@ notifiers {
 notifiers {
   name: "n1"
   notifications {
-    on_failure: true
+    on_occurrence {
+      status_failure: true
+    }
+    on_new_status {}
     email {
       recipients: "failure@google.com"
     }
@@ -64,7 +70,11 @@ notifiers {
 
 const notifyOut = `notifiers: <
   notifications: <
-    on_failure: true
+    on_occurrence: <
+      status_failure: true
+    >
+    on_new_status: <
+    >
     email: <
       recipients: "failure@google.com"
     >
@@ -76,7 +86,11 @@ const notifyOut = `notifiers: <
 >
 notifiers: <
   notifications: <
-    on_failure: true
+    on_occurrence: <
+      status_failure: true
+    >
+    on_new_status: <
+    >
     email: <
       recipients: "failure@google.com"
     >
@@ -88,7 +102,11 @@ notifiers: <
 >
 notifiers: <
   notifications: <
-    on_change: true
+    on_occurrence: <
+    >
+    on_new_status: <
+      status_failure: true
+    >
     email: <
       recipients: "change@google.com"
     >
@@ -100,7 +118,11 @@ notifiers: <
 >
 notifiers: <
   notifications: <
-    on_change: true
+    on_occurrence: <
+    >
+    on_new_status: <
+      status_failure: true
+    >
     email: <
       recipients: "change@google.com"
     >
