@@ -13,7 +13,9 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'email notifier',
-            on_failure = True,
+            on_occurrence = {
+                'status_failure': True,
+            },
             notify_emails = ['a@example.com'],
         ),
     ],
@@ -26,7 +28,9 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'blamelist notifier',
-            on_failure = True,
+            on_occurrence = {
+                'status_failure': True,
+            },
             notify_blamelist = True,
         ),
     ],
@@ -39,8 +43,10 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'blamelist notifier with infra failures',
-            on_failure = True,
-            on_infra_failure = True,
+            on_occurrence = {
+                'status_failure': True,
+                'status_infra_failure': True,
+            },
             notify_blamelist = True,
         ),
     ],
@@ -85,7 +91,10 @@ luci.builder(
 # === luci-notify.cfg
 # notifiers: <
 #   notifications: <
-#     on_failure: true
+#     on_occurrence: <
+#       status_failure: true
+#     >
+#     on_new_status: <>
 #     email: <
 #       recipients: "a@example.com"
 #     >
@@ -97,7 +106,10 @@ luci.builder(
 # >
 # notifiers: <
 #   notifications: <
-#     on_failure: true
+#     on_occurrence: <
+#       status_failure: true
+#     >
+#     on_new_status: <>
 #     notify_blamelist: <>
 #   >
 #   builders: <
@@ -108,8 +120,11 @@ luci.builder(
 # >
 # notifiers: <
 #   notifications: <
-#     on_failure: true
-#     on_infra_failure: true
+#     on_occurrence: <
+#       status_failure: true
+#       status_infra_failure: true
+#     >
+#     on_new_status: <>
 #     notify_blamelist: <>
 #   >
 #   builders: <
