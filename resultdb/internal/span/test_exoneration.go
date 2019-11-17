@@ -57,7 +57,8 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 
 	// Populate fields from TestExonerations table.
-	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
+	var vb ValueBuffer
+	err = vb.ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
 		"Variant":             &ret.Variant,
 		"ExplanationMarkdown": &ret.ExplanationMarkdown,
 	})
@@ -108,9 +109,10 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 
 	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
 	opts := &spanner.ReadOptions{Limit: pageSize}
+	var vb ValueBuffer
 	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
 		ex := &pb.TestExoneration{}
-		err := FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
+		err := vb.FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
 		if err != nil {
 			return err
 		}

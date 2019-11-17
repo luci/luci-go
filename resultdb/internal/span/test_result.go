@@ -62,7 +62,8 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
 	var summaryMarkdown Snappy
-	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
+	var vb ValueBuffer
+	err := vb.ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"ExtraVariantPairs": &tr.ExtraVariantPairs,
 		"IsUnexpected":      &maybeUnexpected,
 		"Status":            &tr.Status,
@@ -185,12 +186,13 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
 	var summaryMarkdown Snappy
+	var vb ValueBuffer
 	err = txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64
 		tr := &pb.TestResult{}
-		err = FromSpanner(row,
+		err = vb.FromSpanner(row,
 			&invID,
 			&tr.TestPath,
 			&tr.ResultId,

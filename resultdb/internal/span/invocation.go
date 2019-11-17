@@ -88,7 +88,8 @@ func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[st
 	if id == "" {
 		return errors.Reason("id is unspecified").Err()
 	}
-	err := ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
+	var vb ValueBuffer
+	err := vb.ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
 		return errors.Reason("%q not found", id.Name()).
@@ -261,13 +262,14 @@ func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, 
 	})
 
 	ret := make(map[InvocationID]*pb.Invocation, limit)
+	var vb ValueBuffer
 	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		if limit > 0 && len(ret) == limit {
 			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
 		}
 		var id InvocationID
 		inv := &pb.Invocation{}
-		err := FromSpanner(row,
+		err := vb.FromSpanner(row,
 			&id,
 			&inv.State,
 			&inv.CreateTime,
