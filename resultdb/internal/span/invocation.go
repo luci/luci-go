@@ -261,13 +261,14 @@ func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, 
 	})
 
 	ret := make(map[InvocationID]*pb.Invocation, limit)
+	var vb ValueBuffer
 	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
 		if limit > 0 && len(ret) == limit {
 			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
 		}
 		var id InvocationID
 		inv := &pb.Invocation{}
-		err := FromSpanner(row,
+		err := vb.FromSpanner(row,
 			&id,
 			&inv.State,
 			&inv.CreateTime,

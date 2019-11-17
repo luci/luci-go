@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -104,52 +103,4 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 		}
 		return a.Name < b.Name
 	})
-}
-
-// ArtifactsToByteSlices converts a slice of artifacts to a slice of byte slices.
-// For each artifact, we reserve the leading byte to store format version.
-func ArtifactsToByteSlices(artifacts []*pb.Artifact) ([][]byte, error) {
-	if len(artifacts) == 0 {
-		return nil, nil
-	}
-
-	bytes := make([][]byte, len(artifacts))
-	for i, art := range artifacts {
-		buf := proto.NewBuffer(nil)
-		if err := buf.EncodeVarint(artifactFormatVersion); err != nil {
-			return nil, errors.Annotate(err, "artifact format version").Err()
-		}
-		if err := buf.EncodeMessage(art); err != nil {
-			return nil, errors.Annotate(err, "converting artifact #%d %q", i, art.Name).Err()
-		}
-		bytes[i] = buf.Bytes()
-	}
-	return bytes, nil
-}
-
-// ArtifactsFromByteSlices unmarshals byte slices into a slice of pb.Artifacts.
-// We reserve the leading byte in each slice to store format version.
-func ArtifactsFromByteSlices(byteSlices [][]byte) ([]*pb.Artifact, error) {
-	arts := make([]*pb.Artifact, len(byteSlices))
-	for i, b := range byteSlices {
-		buf := proto.NewBuffer(b)
-
-		// Check version.
-		version, err := buf.DecodeVarint()
-		if err != nil {
-			return nil, errors.Annotate(err, "decoding version").Err()
-		}
-		if version != artifactFormatVersion {
-			return nil, errors.Reason(
-				"unrecognized artifact format version %d, expected %d",
-				version, artifactFormatVersion).Err()
-		}
-
-		// Convert artifact bytes.
-		arts[i] = &pb.Artifact{}
-		if err := buf.DecodeMessage(arts[i]); err != nil {
-			return nil, errors.Annotate(err, "converting byte slice #%d", i).Err()
-		}
-	}
-	return arts, nil
 }
