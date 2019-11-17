@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "3f9ca450_b7469acf",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-17T01:04:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05d919c6_a4dc0ee1",
+      "range": {
+        "startLine": 49,
+        "startChar": 3,
+        "endLine": 49,
+        "endChar": 12
+      },
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db527b86_75ea2939",
         "filename": "luci_notify/api/config/notify.go",
         "patchSetId": 12
@@ -96,6 +120,24 @@
       "side": 1,
       "message": "I had meant FailureType, but don\u0027t bother, it\u0027s good enough.",
       "parentUuid": "e37011ed_1d2790c2",
+      "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0fb5d135_0dc3b7ff",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-17T01:04:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83d14c08_8d861a66",
       "revId": "f1ba0ee9b51c7ade60eab3902550c02f1d25a2ea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
