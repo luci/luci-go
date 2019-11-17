@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7938c900_1afbec64",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-17T20:49:07Z",
+      "side": 1,
+      "message": "Consistency with the source:\nhttps://godoc.org/go.chromium.org/luci/buildbucket/proto#Status",
+      "parentUuid": "4c7828e6_72ce73a9",
+      "revId": "00a39525c0961a71c78f95539056952048b8a6af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "94436ef3_5ce3ca9c",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 15
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "58f25c3b_ee16dfcc",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-17T20:49:07Z",
+      "side": 1,
+      "message": "They\u0027re useful in that they\u0027re consistent with the source:\nhttps://godoc.org/go.chromium.org/luci/buildbucket/proto#Status",
+      "parentUuid": "94436ef3_5ce3ca9c",
+      "revId": "00a39525c0961a71c78f95539056952048b8a6af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "426d2fe3_03befee7",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 15
@@ -47,6 +83,30 @@
       "writtenOn": "2019-11-17T20:23:58Z",
       "side": 1,
       "message": "Sorry can you explain what you mean by concrete?",
+      "range": {
+        "startLine": 111,
+        "startChar": 9,
+        "endLine": 111,
+        "endChar": 17
+      },
+      "revId": "00a39525c0961a71c78f95539056952048b8a6af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8351040_c81ee282",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-17T20:49:07Z",
+      "side": 1,
+      "message": "I mean to say that I took the language from the source:\nhttps://godoc.org/go.chromium.org/luci/buildbucket/proto#Status",
+      "parentUuid": "426d2fe3_03befee7",
       "range": {
         "startLine": 111,
         "startChar": 9,
