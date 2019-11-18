@@ -250,20 +250,13 @@ func validateGerrit(ctx *validation.Context, g *v2.ConfigGroup_Gerrit) {
 	if len(g.Projects) == 0 {
 		ctx.Errorf("at least 1 project is required")
 	}
-	isCrosMigration := func(gp *v2.ConfigGroup_Gerrit_Project) bool {
-		return len(gp.RefRegexp) > 0 && gp.CrosMigration != nil
-	}
 	nameToIndex := make(map[string]int, len(g.Projects))
 	for i, p := range g.Projects {
 		ctx.Enter("projects #%d", i+1)
 		validateGerritProject(ctx, p)
 		if p.Name != "" {
-			if idx, dup := nameToIndex[p.Name]; !dup {
+			if _, dup := nameToIndex[p.Name]; !dup {
 				nameToIndex[p.Name] = i
-			} else if isCrosMigration(g.Projects[idx]) && isCrosMigration(p) {
-				// TODO(crbug/965615): remove this after CrOS migration is complete.
-				// CrOS needs to duplicate projects to specify different migration
-				// percentage per ref.
 			} else {
 				ctx.Errorf("duplicate project in the same gerrit: %q", p.Name)
 			}
