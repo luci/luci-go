@@ -840,9 +840,9 @@ type RecorderClient interface {
 	// Atomically appends a batch of test exonerations to a non-finalized
 	// invocation.
 	BatchCreateTestExonerations(ctx context.Context, in *BatchCreateTestExonerationsRequest, opts ...grpc.CallOption) (*BatchCreateTestExonerationsResponse, error)
-	// Derives an invocation and test results from a swarming task.
-	// If necessary, writes them to Spanner. Returns the derived invocation;
-	// results must be separately queried.
+	// Derives an invocation and test results from a Chromium swarming task.
+	// Returns the derived invocation; test results should retrieved using
+	// ResultDB.ListTestResults or ResultDB.QueryTestResults.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
@@ -1053,9 +1053,9 @@ type RecorderServer interface {
 	// Atomically appends a batch of test exonerations to a non-finalized
 	// invocation.
 	BatchCreateTestExonerations(context.Context, *BatchCreateTestExonerationsRequest) (*BatchCreateTestExonerationsResponse, error)
-	// Derives an invocation and test results from a swarming task.
-	// If necessary, writes them to Spanner. Returns the derived invocation;
-	// results must be separately queried.
+	// Derives an invocation and test results from a Chromium swarming task.
+	// Returns the derived invocation; test results should retrieved using
+	// ResultDB.ListTestResults or ResultDB.QueryTestResults.
 	//
 	// TODO: Remove. This is meant as a temporary rpc for the intermediary stage
 	// in which we derive invocations given swarming task IDs, rather than have
