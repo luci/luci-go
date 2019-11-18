@@ -65,6 +65,11 @@ service Gerrit {
   //
   // https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#get-mergeable-info
   rpc GetMergeable(GetMergeableRequest) returns (MergeableInfo);
+
+  // Lists the files that were modified, added or deleted in a revision.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 }
 
 // Specifies what extra information to include in the response.
@@ -501,3 +506,38 @@ message MergeableInfo {
   repeated string mergeable_into = 7;
 }
 
+// Information for requesting the files in a change.
+//
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+message ListFilesRequest {
+  // Change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Unique ID for the revision to query.
+  // See
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 3;
+
+  // Changes the response to return a list of all files (modified or unmodified)
+  // that contain this substring in the path name.
+  string substring_query = 4;
+
+  // For merge commits only, this requests a diff of files against a parent
+  // revision. Use value 1 to compare against a CL's target ref.
+  int64 parent = 5;
+}
+
+// Information about the files in a change.
+//
+// See
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#list-files
+message ListFilesResponse {
+  // A map of file paths to FileInfos.
+  map<string, FileInfo> files = 1;
+}
