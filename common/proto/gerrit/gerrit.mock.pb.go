@@ -215,6 +215,26 @@ func (mr *MockGerritClientMockRecorder) GetMergeable(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritClient)(nil).GetMergeable), varargs...)
 }
 
+// ListFiles mocks base method
+func (m *MockGerritClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (*ListFilesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFiles", varargs...)
+	ret0, _ := ret[0].(*ListFilesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFiles indicates an expected call of ListFiles
+func (mr *MockGerritClientMockRecorder) ListFiles(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritClient)(nil).ListFiles), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -371,4 +391,19 @@ func (m *MockGerritServer) GetMergeable(arg0 context.Context, arg1 *GetMergeable
 func (mr *MockGerritServerMockRecorder) GetMergeable(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeable", reflect.TypeOf((*MockGerritServer)(nil).GetMergeable), arg0, arg1)
+}
+
+// ListFiles mocks base method
+func (m *MockGerritServer) ListFiles(arg0 context.Context, arg1 *ListFilesRequest) (*ListFilesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFiles", arg0, arg1)
+	ret0, _ := ret[0].(*ListFilesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFiles indicates an expected call of ListFiles
+func (mr *MockGerritServerMockRecorder) ListFiles(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFiles", reflect.TypeOf((*MockGerritServer)(nil).ListFiles), arg0, arg1)
 }

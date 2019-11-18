@@ -273,6 +273,50 @@ func TestGetMergeable(t *testing.T) {
 	})
 }
 
+func TestListFiles(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ListFiles basic", t, func() {
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'
+				{
+					"gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java": {
+						"lines_inserted": 123456
+					},
+					"file2": {
+						"size": 7
+					}
+				}`)
+		})
+		defer srv.Close()
+
+		mi, err := c.ListFiles(ctx, &gerritpb.ListFilesRequest{
+			Number:     42,
+			Project:    "someproject",
+			RevisionId: "somerevision",
+			Parent:     999,
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/files/")
+		So(actualURL.Query().Get("parent"), ShouldEqual, "999")
+		So(mi, ShouldResemble, &gerritpb.ListFilesResponse{
+			Files: map[string]*gerritpb.FileInfo{
+				"gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java": {
+					LinesInserted: 123456,
+				},
+				"file2": {
+					Size: 7,
+				},
+			},
+		})
+	})
+}
+
 func newMockPbClient(handler func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, gerritpb.GerritClient) {
 	// TODO(tandrii): rename this func once newMockClient name is no longer used in the same package.
 	srv := httptest.NewServer(http.HandlerFunc(handler))
