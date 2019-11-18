@@ -127,18 +127,6 @@ message ConfigGroup {
       // that every typical Git branch to be CQ-able, including
       // "refs/heads/experimental/foobar".
       repeated string ref_regexp = 2;
-
-      // DO NOT USE. TODO(crbug/965615, tandrii): delete this.
-      // HACK(cbrug/965615). Only for CrOS during LUCI CQ migration.
-      message CrOSMigration {
-        // % of new CQ attempts which LUCI CQ will process itself.
-        // The rest will be delegated to legacy CrOS CQ.
-        // If not set, implies 0%, ie all CLs are delegated.
-        // To set these per ref_regexp of a single repo, duplicate project{}
-        // block for this repo but with diff regexp.
-        float luci_percentage = 1;
-      }
-      CrOSMigration cros_migration = 3;
     }
   }
 
