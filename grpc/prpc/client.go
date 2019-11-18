@@ -354,6 +354,23 @@ func prepareRequest(host, serviceName, methodName string, md metadata.MD, conten
 	if host == "" {
 		panic("Host is not set")
 	}
+
+	// Convert headers to HTTP canonical form (i.e. Title-Case). Extract Host
+	// header, it is special and must be passed via http.Request.Host.
+	headers := make(http.Header, len(md))
+	hostHdr := ""
+	for key, vals := range md {
+		if len(vals) == 0 {
+			continue
+		}
+		key := http.CanonicalHeaderKey(key)
+		if key == "Host" {
+			hostHdr = vals[0]
+		} else {
+			headers[key] = vals
+		}
+	}
+
 	req := &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -361,7 +378,8 @@ func prepareRequest(host, serviceName, methodName string, md metadata.MD, conten
 			Host:   host,
 			Path:   fmt.Sprintf("/prpc/%s/%s", serviceName, methodName),
 		},
-		Header: http.Header(md.Copy()),
+		Host:   hostHdr,
+		Header: headers,
 	}
 	if options.Insecure {
 		req.URL.Scheme = "http"
