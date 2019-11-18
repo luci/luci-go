@@ -24,6 +24,7 @@ import (
 	"strings"
 	"testing"
 
+	durpb "github.com/golang/protobuf/ptypes/duration"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -184,15 +185,16 @@ func TestDeriveInvocation(t *testing.T) {
 
 		// Define base request we'll be using.
 		swarmingHostname := strings.TrimPrefix(swarmingFake.URL, "https://")
+		variant := pbutil.Variant(
+			"bucket", "bkt",
+			"builder", "blder",
+			"test_suite", "foo_unittests",
+		)
 		req := &pb.DeriveInvocationRequest{
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
+			BaseTestVariant: variant,
 		}
 
 		recorder := &recorderServer{}
@@ -202,19 +204,54 @@ func TestDeriveInvocation(t *testing.T) {
 			inv, err := recorder.DeriveInvocation(ctx, req)
 			So(err, ShouldBeNil)
 
-			// inv.Name changes every time because hostname is encoded in it, so clear it for comparison.
-			inv.Name = ""
 			So(inv, ShouldResembleProto, &pb.Invocation{
+				Name:         inv.Name, // inv.Name is non-determinisic in this test
 				State:        pb.Invocation_COMPLETED,
 				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
 				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
 				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				BaseTestVariant: pbutil.Variant(
-					"bucket", "bkt",
-					"builder", "blder",
-					"test_suite", "foo_unittests",
-				),
+			})
+
+			// Assert we wrote correct test results.
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name)},
+				PageSize:      100,
+			})
+			So(err, ShouldBeNil)
+			So(trs, ShouldResembleProto, []*pb.TestResult{
+				{
+					Name:     inv.Name + "/tests/c1%2Fc2%2Ft1.html/results/0",
+					TestPath: "c1/c2/t1.html",
+					ResultId: "0",
+					Variant:  variant,
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &durpb.Duration{Nanos: 3e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+				{
+					Name:     inv.Name + "/tests/c1%2Fc2%2Ft1.html/results/1",
+					TestPath: "c1/c2/t1.html",
+					ResultId: "1",
+					Variant:  variant,
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &durpb.Duration{Nanos: 2e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
+				{
+					Name:     inv.Name + "/tests/c1%2Fc2%2Ft1.html/results/2",
+					TestPath: "c1/c2/t1.html",
+					ResultId: "2",
+					Variant:  variant,
+					Status:   pb.TestStatus_PASS,
+					Expected: true,
+					Duration: &durpb.Duration{Nanos: 1e8},
+					Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				},
 			})
 		})
 	})

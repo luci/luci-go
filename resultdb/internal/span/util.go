@@ -135,7 +135,7 @@ func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
 			}
 
 		case *[]InvocationID:
-		rowIDs := *(spanPtr.(*[]string))
+			rowIDs := *(spanPtr.(*[]string))
 			*goPtr = make([]InvocationID, len(rowIDs))
 			for i, rowID := range rowIDs {
 				(*goPtr)[i] = InvocationIDFromRowID(rowID)
