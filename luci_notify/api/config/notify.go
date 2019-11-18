@@ -21,16 +21,20 @@ import (
 // ShouldNotify is the predicate function for whether a trigger's conditions have been met.
 func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
+
 	case newStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
 		panic("new status must always be valid")
+
+	// deprecated functionality
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
-	case n.OnInfraFailure && newStatus == buildbucketpb.Status_INFRA_FAILURE:
 	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
 	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
 
+	case oldStatus == buildbucketpb.Status_STATUS_UNSPECIFIED || newStatus == oldStatus:
+		return n.matches(newStatus, false)
 	default:
-		return false
+		return n.matches(newStatus, true)
 	}
 	return true
 }
@@ -46,4 +50,21 @@ func (n *Notifications) Filter(oldStatus, newStatus buildbucketpb.Status) Notifi
 		}
 	}
 	return Notifications{Notifications: filtered}
+}
+
+// matches checks whether or not a build status matches a Notification's NotificationStatus.
+func (n *Notification) matches(status buildbucketpb.Status, includeChange bool) bool {
+	if includeChange {
+		for _, newStatus := range n.OnNewStatus {
+			if status == newStatus {
+				return true
+			}
+		}
+	}
+	for _, occurrenceStatus := range n.OnOccurrence {
+		if status == occurrenceStatus {
+			return true
+		}
+	}
+	return false
 }

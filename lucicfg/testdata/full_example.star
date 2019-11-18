@@ -324,7 +324,8 @@ luci.console_view_entry(
 
 luci.notifier(
     name = 'main notifier',
-    on_new_failure = True,
+    on_new_status = ['status_failure']
+    },
     notify_emails = ['someone@example,com'],
     notify_blamelist = True,
     template = 'notifier-template',
@@ -790,7 +791,7 @@ lucicfg.emit(
 # === luci-notify.cfg
 # notifiers: <
 #   notifications: <
-#     on_new_failure: true
+#     on_new_status: FAILURE
 #     email: <
 #       recipients: "someone@example,com"
 #     >
@@ -805,7 +806,7 @@ lucicfg.emit(
 # >
 # notifiers: <
 #   notifications: <
-#     on_new_failure: true
+#     on_new_status: FAILURE
 #     email: <
 #       recipients: "someone@example,com"
 #     >
@@ -820,7 +821,7 @@ lucicfg.emit(
 # >
 # notifiers: <
 #   notifications: <
-#     on_new_failure: true
+#     on_new_status: FAILURE
 #     email: <
 #       recipients: "someone@example,com"
 #     >
