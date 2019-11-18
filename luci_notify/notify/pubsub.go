@@ -108,7 +108,8 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 //
 // This function should serve as documentation of the process of going from
 // a Build to sent notifications. It also should explicitly handle ACLs and
-// stop the process of handling notifications early to avoid wasting compute time.
+// stop the process of handling notifications early to avoid wasting compute
+// time.
 //
 // getCheckout produces the associated source checkout for a build, if available.
 // It's passed in as a parameter in order to mock it for testing.
@@ -117,16 +118,17 @@ func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string)
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
 func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
-	project := &config.Project{Name: build.Builder.Project}
+	luciProject := build.Builder.Project
+	gCommit := build.Input.GetGitilesCommit()
+	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
+
+	project := &config.Project{Name: luciProject}
 	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
 		return err
 	case !ex.All():
 		return nil // This project is not tracked by luci-notify
 	}
-
-	gCommit := build.Input.GetGitilesCommit()
-	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
 	checkout, err := getCheckout(c, build)
 	if err != nil {
@@ -162,7 +164,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		case err == datastore.ErrNoSuchEntity:
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
-			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
+			logging.Infof(c, "No builder %q found for project %q", builderID, luciProject)
 			return Notify(c, d, recipients, templateInput)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
@@ -223,7 +225,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	}
 
 	// Get the revision history for the build-related commit.
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.Revision, gCommit.Id)
+	commits, err := history(c, luciProject, gCommit.Host, gCommit.Project, builder.Revision, gCommit.Id)
 	if err != nil {
 		return errors.Annotate(err, "failed to retrieve git history for input commit").Err()
 	}
@@ -237,7 +239,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	aggregateRepoWhiteset := BlamelistRepoWhiteset(builder.Notifications)
 	if len(aggregateRepoWhiteset) > 0 {
 		oldCheckout := NewCheckout(builder.GitilesCommits)
-		aggregateLogs, err = ComputeLogs(c, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
+		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
 		if err != nil {
 			return errors.Annotate(err, "failed to compute logs").Err()
 		}

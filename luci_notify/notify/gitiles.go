@@ -33,29 +33,29 @@ import (
 //
 // If oldRevision is not reachable from newRevision, returns an empty slice
 // and nil error.
-type HistoryFunc func(ctx context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error)
+type HistoryFunc func(ctx context.Context, luciProject, gerritHost, gerritProject, oldRevision, newRevision string) ([]*gitpb.Commit, error)
 
 // gitilesHistory is an implementation of a HistoryFunc intended to be used
 // in production (not for testing).
-func gitilesHistory(ctx context.Context, host, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
+func gitilesHistory(ctx context.Context, luciProject, gerritHost, gerritProject, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	opts := []auth.RPCOption{
-		auth.WithProject(project),
+		auth.WithProject(luciProject),
 		auth.WithScopes(gitiles.OAuthScope),
 	}
 	transport, err := auth.GetRPCTransport(ctx, auth.AsProject, opts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	client, err := gitiles.NewRESTClient(&http.Client{Transport: transport}, host, true)
+	client, err := gitiles.NewRESTClient(&http.Client{Transport: transport}, gerritHost, true)
 	if err != nil {
 		return nil, errors.Annotate(err, "creating Gitiles client").Err()
 	}
 
 	req := gitilespb.LogRequest{
-		Project: project,
+		Project: gerritProject,
 		// With ~1, if newCommit.Revision == oldRevision,
 		// we'll get one commit,
 		// otherwise we will get 0 commits which is indistinguishable from
@@ -63,7 +63,7 @@ func gitilesHistory(ctx context.Context, host, project, oldRevision, newRevision
 		ExcludeAncestorsOf: oldRevision + "~1",
 		Committish:         newRevision,
 	}
-	logging.Infof(ctx, "Gitiles request to host %q: %q", host, &req)
+	logging.Infof(ctx, "Gitiles request to host %q: %q", gerritHost, &req)
 	res, err := gitiles.PagingLog(ctx, client, req, 0)
 	switch {
 	case err != nil:

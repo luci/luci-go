@@ -118,9 +118,10 @@ func (c Checkout) Filter(whiteset stringset.Set) Checkout {
 // the Git log for that repository.
 type Logs map[string][]*gitpb.Commit
 
-// ComputeLogs produces a set of Git diffs between oldCheckout and newCheckout, using the
-// repositories in the newCheckout. historyFunc is used to grab the Git history.
-func ComputeLogs(c context.Context, oldCheckout, newCheckout Checkout, history HistoryFunc) (Logs, error) {
+// ComputeLogs produces a set of Git diffs between oldCheckout and newCheckout,
+// using the repositories in the newCheckout. historyFunc is used to grab
+// the Git history.
+func ComputeLogs(c context.Context, luciProject string, oldCheckout, newCheckout Checkout, history HistoryFunc) (Logs, error) {
 	var resultMu sync.Mutex
 	result := make(Logs)
 	err := parallel.WorkPool(8, func(ch chan<- func() error) {
@@ -133,7 +134,7 @@ func ComputeLogs(c context.Context, oldCheckout, newCheckout Checkout, history H
 			}
 			host, project, _ := gitiles.ParseRepoURL(repo)
 			ch <- func() error {
-				log, err := history(c, host, project, oldRev, newRev)
+				log, err := history(c, luciProject, host, project, oldRev, newRev)
 				if err != nil {
 					return err
 				}
