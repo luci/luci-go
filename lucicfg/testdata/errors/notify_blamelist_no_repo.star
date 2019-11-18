@@ -11,14 +11,14 @@ luci.recipe(name = 'noop', cipd_package = 'noop')
 
 luci.notifier(
     name = 'blamelist notifier',
-    on_failure = True,
+    on_occurrence = [20],
     notify_blamelist = True,
     blamelist_repos_whitelist = ['https://repo.example.com'],
 )
 
 luci.notifier(
     name = 'email notifier',
-    on_failure = True,
+    on_occurrence = [20],
     notify_emails = ['a@example.com'],
 )
 
