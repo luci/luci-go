@@ -164,6 +164,30 @@
       "revId": "2784f35550cf3d7370581776bbbaced1264b21ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62cd21d4_ae250c20",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1333728
+      },
+      "writtenOn": "2019-11-18T22:46:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "65709eba_670ecc15",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 17
+      },
+      "revId": "2784f35550cf3d7370581776bbbaced1264b21ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
