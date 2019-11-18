@@ -22,6 +22,30 @@
       "revId": "4345f882a93846fbbee905020d63b96f9b25ea62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4384f7ef_4ce89112",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-18T22:12:27Z",
+      "side": 1,
+      "message": "Nope, see https://freecontent.manning.com/handling-client-requests-properly-with-kubernetes/\n\nK8s is full of race conditions like that.",
+      "parentUuid": "3672be1b_6ba5c17f",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 50
+      },
+      "revId": "4345f882a93846fbbee905020d63b96f9b25ea62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
