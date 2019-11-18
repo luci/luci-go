@@ -209,10 +209,12 @@ func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
 // Export exports lucictx.ResultDB derived from the server configuration into
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
-	db := lucictx.ResultDB{
-		TestResults: lucictx.TestResults{Port: s.cfg.Port, AuthToken: s.cfg.AuthToken},
+	db := lucictx.GetResultDB(ctx)
+	if db == nil {
+		db = &lucictx.ResultDB{}
 	}
-	return lucictx.SetResultDB(ctx, &db)
+	db.Sink = lucictx.ResultSink{Port: s.cfg.Port, AuthToken: s.cfg.AuthToken}
+	return lucictx.SetResultDB(ctx, db)
 }
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
