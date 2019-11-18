@@ -33,15 +33,17 @@ import (
 func TestTypeConversion(t *testing.T) {
 	t.Parallel()
 
+	var b Buffer
+
 	test := func(goValue, spValue interface{}) {
 		// FromSpanner
 		row, err := spanner.NewRow([]string{"a"}, []interface{}{spValue})
 		So(err, ShouldBeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
-		err = FromSpanner(row, goPtr.Interface())
+		err = b.FromSpanner(row, goPtr.Interface())
 		So(err, ShouldBeNil)
 		switch goValue.(type) {
-		case proto.Message:
+		case proto.Message, []*pb.Artifact:
 			So(goPtr.Elem().Interface(), ShouldResembleProto, goValue)
 		default:
 			So(goPtr.Elem().Interface(), ShouldResemble, goValue)
@@ -94,8 +96,8 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`[]*pb.Artifact`, t, func() {
-		test(
-			[]*pb.Artifact{
+		arts := &Artifacts{
+			Artifacts: []*pb.Artifact{
 				{
 					Name:        "traces/a.txt",
 					FetchUrl:    "gs://a.txt",
@@ -110,21 +112,19 @@ func TestTypeConversion(t *testing.T) {
 					Size:        16384,
 				},
 			},
-			[][]byte{
-				{1, 46, 10, 12, 116, 114, 97, 99, 101, 115, 47, 97, 46, 116, 120, 116, 18, 10, 103, 115, 58, 47, 47, 97, 46, 116, 120, 116, 34, 10, 112, 108, 97, 105, 110, 47, 116, 101, 120, 116, 40, 4, 50, 4, 49, 50, 51, 52},
-				{1, 44, 10, 10, 100, 105, 102, 102, 47, 98, 46, 112, 110, 103, 18, 15, 105, 115, 111, 108, 97, 116, 101, 58, 47, 47, 98, 46, 112, 110, 103, 34, 9, 105, 109, 97, 103, 101, 47, 112, 110, 103, 40, 128, 128, 1},
-			},
-		)
+		}
+		expected, err := proto.Marshal(arts)
+		So(err, ShouldBeNil)
+		test(arts.Artifacts, expected)
 	})
 
 	Convey(`Slice`, t, func() {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
-		// FromSpanner
 		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(2)})
 		So(err, ShouldBeNil)
-		err = FromSpanner(row, &varIntA, &varIntB, &varState)
+		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
 		So(err, ShouldBeNil)
 		So(varIntA, ShouldEqual, 42)
 		So(varIntB, ShouldEqual, 56)
