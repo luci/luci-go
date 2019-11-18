@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "a5a44d50_4ac733a0",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-18T00:38:43Z",
+      "side": 1,
+      "message": "Ok this made me realize two things:\n- there\u0027s build and build steps, some of these are about steps, some about build. Should it only focus on builds?\n- an option would be to just have a repeated field of the buildbucket Status enum. This has the advantage of less copy pasting, the whole Notification message is not needed after.\n\nThe second point make the first one a bit irrelevant, since it can be enforced server side.\n\nwdyt?",
+      "parentUuid": "7938c900_1afbec64",
+      "revId": "00a39525c0961a71c78f95539056952048b8a6af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "94436ef3_5ce3ca9c",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 15
