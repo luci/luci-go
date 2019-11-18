@@ -23,14 +23,8 @@ import (
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bool) error {
-	if p.GetInvocation() == nil {
-		if requireInvocation {
-			return errors.Annotate(unspecified(), "invocation").Err()
-		}
-	} else {
-		if err := ValidateInvocationPredicate(p.GetInvocation()); err != nil {
-			return errors.Annotate(err, "invocation").Err()
-		}
+	if err := ValidateInvocationPredicate(p.GetInvocation(), !requireInvocation); err != nil {
+		return errors.Annotate(err, "invocation").Err()
 	}
 
 	if p.GetTestPath() != nil {
@@ -54,16 +48,27 @@ func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bo
 
 // ValidateInvocationPredicate returns a non-nil error if p is determined to be
 // invalid.
-func ValidateInvocationPredicate(p *pb.InvocationPredicate) error {
-	switch pr := p.GetRootPredicate().(type) {
-	case *pb.InvocationPredicate_Name:
-		return errors.Annotate(ValidateInvocationName(pr.Name), "name").Err()
-	case *pb.InvocationPredicate_Tag:
-		return errors.Annotate(ValidateStringPair(pr.Tag), "tag").Err()
-	case nil:
+func ValidateInvocationPredicate(p *pb.InvocationPredicate, allowEmpty bool) error {
+	switch {
+	case p.GetTag() != nil && len(p.GetNames()) > 0:
+		return errors.Reason("tag and names are mutually exclusive").Err()
+
+	case p.GetTag() != nil:
+		return errors.Annotate(ValidateStringPair(p.Tag), "tag").Err()
+
+	case len(p.GetNames()) > 0:
+		for _, name := range p.Names {
+			if err := ValidateInvocationName(name); err != nil {
+				return errors.Annotate(err, "name %q", name).Err()
+			}
+		}
+		return nil
+
+	case !allowEmpty:
 		return unspecified()
+
 	default:
-		panic("impossible")
+		return nil
 	}
 }
 
