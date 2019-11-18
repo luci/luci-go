@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "86bc1a88_929a1ccd",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-18T18:45:15Z",
+      "side": 0,
+      "message": "Should this TODO be removed?",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 34
+      },
+      "revId": "f124967927889cf61e7a36a59aa7861758dc10e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d5ca0ab6_28878bea",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-18T18:45:15Z",
+      "side": 1,
+      "message": "To be clear, the variants mentioned in this paragraph are base variants, right?",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 37
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "374b31c6_809ce885",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-18T18:45:15Z",
+      "side": 1,
+      "message": "GetDef()?",
+      "range": {
+        "startLine": 122,
+        "startChar": 28,
+        "endLine": 122,
+        "endChar": 31
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08bf71a1_7d179de4",
+        "filename": "resultdb/cmd/recorder/derive_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-18T18:45:15Z",
+      "side": 1,
+      "message": "Optional: It would be nice to also test combining variants.",
+      "range": {
+        "startLine": 249,
+        "startChar": 5,
+        "endLine": 249,
+        "endChar": 23
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f4c3312_d4b156ca",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-18T18:45:15Z",
+      "side": 1,
+      "message": "Optional: include a more complete list of variants? Like bucket, builder and test suite",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 72,
+        "endChar": 39
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
