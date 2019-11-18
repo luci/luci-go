@@ -315,6 +315,28 @@ func (c *client) GetMergeable(ctx context.Context, in *gerritpb.GetMergeableRequ
 	return resp.ToProto()
 }
 
+func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, opts ...grpc.CallOption) (*gerritpb.ListFilesResponse, error) {
+	var resp map[string]fileInfo
+	params := url.Values{}
+	if req.Parent > 0 {
+		params.Add("parent", strconv.FormatInt(req.Parent, 10))
+	}
+	if req.SubstringQuery != "" {
+		params.Add("q", req.SubstringQuery)
+	}
+	path := fmt.Sprintf("/changes/%s/revisions/%s/files/", gerritChangeIDForRouting(req.Number, req.Project), req.RevisionId)
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, errors.Annotate(err, "list files").Err()
+	}
+	lfr := &gerritpb.ListFilesResponse{
+		Files:  make(map[string]*gerritpb.FileInfo, len(resp)),
+	}
+	for k, v := range resp {
+		lfr.Files[k] = v.ToProto()
+	}
+	return lfr, nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 // If data is nil, request will be made without a body.
 //
