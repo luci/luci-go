@@ -97,5 +97,17 @@ func TestParseCommit(t *testing.T) {
 				Id:      "",
 			})
 		})
+
+		Convey("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x", func() {
+			actual, confirm, err := parseCommit("https://chromium-foo.googlesource.com/infra/luci/luci-go/+/refs/x")
+			So(err, ShouldBeNil)
+			So(confirm, ShouldBeTrue)
+			So(actual, ShouldResembleProto, &pb.GitilesCommit{
+				Host:    "chromium-foo.googlesource.com",
+				Project: "infra/luci/luci-go",
+				Ref:     "refs/x",
+				Id:      "",
+			})
+		})
 	})
 }
