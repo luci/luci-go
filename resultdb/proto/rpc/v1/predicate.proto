@@ -66,23 +66,18 @@ message TestResultPredicate {
 }
 
 // Represents a function Invocation -> bool.
-//
-// Consists of two parts, connected with logical OR:
-// - "root_predicate" oneof, which selects "root" invocations.
-// - "ignore_included" predicate, defined on top of the roots.
 message InvocationPredicate {
+  // An invocation must have one of these names.
+  // Mutually exclusive with tag.
+  repeated string names = 1;
 
-  // Invocations matching this predicate are called "roots".
-  oneof root_predicate {
-    // An invocation must have this name.
-    string name = 1;
+  // An invocation must have this tag.
+  // Mutually exclusive with names.
+  luci.resultdb.type.StringPair tag = 2;
 
-    // An invocation must have this tag.
-    luci.resultdb.type.StringPair tag = 2;
-  }
-
-  // If false, an invocation must be reachable from any of the roots via path of
-  // Invocation.included_invocations edges.
+  // If false, an invocation must be reachable from any of roots via path of
+  // Invocation.included_invocations edges, where roots are the invocations
+  // that satisfy the rest of the predicate (names, tag).
   // If true, do not follow inclusion edges.
   bool ignore_inclusions = 3;
 }
