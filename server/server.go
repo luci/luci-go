@@ -301,8 +301,9 @@ type Server struct {
 	// Options is a copy of options passed to New.
 	Options Options
 
-	startTime time.Time // for calculating uptime for /healthz
-	hostname  string    // obtained from os.Hostname in New
+	startTime   time.Time    // for calculating uptime for /healthz
+	hostname    string       // obtained from os.Hostname in New
+	lastReqTime atomic.Value // time.Time when the last request finished
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
@@ -582,21 +583,23 @@ func (s *Server) ListenAndServe() error {
 	)
 
 	// Catch SIGTERM while inside this function. Upon receiving SIGTERM, wait
-	// few seconds before actually shutting down and refusing new connections.
-	// If we shutdown immediately, some clients may see connection errors, because
-	// they are not aware yet the server is closing: Pod shutdown sequence and
-	// Endpoints list updates are racing with each other, we want Endpoints list
-	// updates to win, i.e. we want the pod to actually be fully alive as long as
-	// it is still referenced in Endpoints list. We can't guarantee this, but we
-	// can improve chances.
+	// until the pod is removed from the load balancer before actually shutting
+	// down and refusing new connections. If we shutdown immediately, some clients
+	// may see connection errors, because they are not aware yet the server is
+	// closing: Pod shutdown sequence and Endpoints list updates are racing with
+	// each other, we want Endpoints list updates to win, i.e. we want the pod to
+	// actually be fully alive as long as it is still referenced in Endpoints
+	// list. We can't guarantee this, but we can improve chances.
 	stop := signals.HandleInterrupt(func() {
 		if s.Options.Prod {
-			logging.Infof(s.Context, "Received SIGTERM, shutting down in 10 sec...")
-			time.Sleep(10 * time.Second)
+			s.waitUntilNotServing()
 		}
 		s.Shutdown()
 	})
 	defer stop()
+
+	// Log how long it took from 'New' to the serving loop.
+	logging.Infof(s.Context, "Startup done in %s", clock.Now(s.Context).Sub(s.startTime))
 
 	// Unblock all pending RunInBackground goroutines, so they can start.
 	close(s.ready)
@@ -718,6 +721,35 @@ func (s *Server) serveLoop(srv *http.Server) error {
 	return errors.Reason("test listener is not set").Err()
 }
 
+// waitUntilNotServing is called during the graceful shutdown and it tries to
+// figure out when the traffic stops flowing to the server (i.e. when it is
+// removed from the load balancer).
+//
+// It's a heuristic optimization for the case when the load balancer keeps
+// sending traffic to a terminating Pod for some time after the Pod entered
+// "Terminating" state. It can happen due to latencies in Endpoints list
+// updates. We want to keep the listening socket open as long as there are
+// incoming requests (but no longer than 1 min).
+//
+// Effective only for servers that serve >0.2 QPS in a steady state.
+func (s *Server) waitUntilNotServing() {
+	logging.Infof(s.Context, "Received SIGTERM, waiting for the traffic to stop...")
+	deadline := clock.Now(s.Context).Add(time.Minute)
+	for {
+		now := clock.Now(s.Context)
+		lastReq, ok := s.lastReqTime.Load().(time.Time)
+		if !ok || now.Sub(lastReq) > 5*time.Second {
+			logging.Infof(s.Context, "No requests in last 5 sec, proceeding with the shutdown...")
+			break
+		}
+		if now.After(deadline) {
+			logging.Warningf(s.Context, "Gave up waiting for the traffic to stop, proceeding with the shutdown...")
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
 // RegisterCleanup registers a callback that is run in ListenAndServe after the
 // server has exited the serving loop.
 //
@@ -785,6 +817,8 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			// Emit a warning if the health check is slow, this likely indicates
 			// high CPU load.
 			logging.Warningf(c.Context, "Health check is slow: %s > %s", latency, healthTimeLogThreshold)
+		} else {
+			s.lastReqTime.Store(now)
 		}
 		entry := gkelogger.LogEntry{
 			Severity: severityTracker.MaxSeverity(),
