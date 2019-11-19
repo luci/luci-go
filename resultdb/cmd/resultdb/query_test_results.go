@@ -34,7 +34,7 @@ const maxInvocationGraphSize = 1000
 // validateQueryTestResultsRequest returns a non-nil error if req is determined
 // to be invalid.
 func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
-	if err := pbutil.ValidateTestResultPredicate(req.Predicate, true); err != nil {
+	if err := pbutil.ValidateTestResultPredicate(req.Predicate); err != nil {
 		return errors.Annotate(err, "predicate").Err()
 	}
 
