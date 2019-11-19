@@ -51,7 +51,7 @@ func TestGTestConversions(t *testing.T) {
 							"elapsed_time_ms": 1856,
 							"losless_snippet": false,
 							"output_snippet_base64": "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
-							"status": "FAIL"
+							"status": "FAILURE"
 						}
 					],
 					"FooTest.TestDoBaz": [
@@ -97,7 +97,7 @@ func TestGTestConversions(t *testing.T) {
 						OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFy",
 					},
 					{
-						Status:              "FAIL",
+						Status:              "FAILURE",
 						ElapsedTimeMs:       1856,
 						OutputSnippetBase64: "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
 					},

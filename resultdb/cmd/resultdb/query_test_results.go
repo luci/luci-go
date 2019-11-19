@@ -87,28 +87,8 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
-	// TODO(nodir): fetch test exonerations.
-
-	// Form a response.
-	res := &pb.QueryTestResultsResponse{
+	return &pb.QueryTestResultsResponse{
 		NextPageToken: token,
-		Groups:        map[string]*pb.QueryTestResultsResponse_Group{},
-	}
-	// Group test results by invocation ID.
-	// Note that test results from the same invocation are contiguous.
-	var lastInvID span.InvocationID
-	var lastGroup *pb.QueryTestResultsResponse_Group
-	for _, tr := range trs {
-		invID, _, _ := span.MustParseTestResultName(tr.Name)
-		if lastInvID != invID {
-			lastGroup = &pb.QueryTestResultsResponse_Group{
-				Invocation: invs[invID],
-			}
-			lastInvID = invID
-			res.Groups[invID.Name()] = lastGroup
-		}
-
-		lastGroup.TestResults = append(lastGroup.TestResults, tr)
-	}
-	return res, nil
+		TestResults:   trs,
+	}, nil
 }

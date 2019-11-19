@@ -68,13 +68,12 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		var updateToken spanner.NullString
 
 		err = span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
-			"UpdateToken":     &updateToken,
-			"State":           &ret.State,
-			"CreateTime":      &ret.CreateTime,
-			"FinalizeTime":    &ret.FinalizeTime,
-			"Deadline":        &ret.Deadline,
-			"BaseTestVariant": &ret.BaseTestVariant,
-			"Tags":            &ret.Tags,
+			"UpdateToken":  &updateToken,
+			"State":        &ret.State,
+			"CreateTime":   &ret.CreateTime,
+			"FinalizeTime": &ret.FinalizeTime,
+			"Deadline":     &ret.Deadline,
+			"Tags":         &ret.Tags,
 		})
 
 		switch {
