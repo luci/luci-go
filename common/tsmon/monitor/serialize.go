@@ -35,6 +35,9 @@ func SerializeCells(cells []types.Cell, now time.Time) []*pb.MetricsCollection {
 	collections := map[uint64]*pb.MetricsCollection{}
 	dataSets := map[dataSetKey]*pb.MetricsDataSet{}
 
+	// TODO(1026140): the hash and proto of a Target object should be created
+	// at the time of the object creation to avoid unnecessary invocation of
+	// Target.Hash() and Target.PopulateProto()
 	for _, c := range cells {
 		// Find the collection, add it if it doesn't exist.
 		targetHash := c.Target.Hash()
