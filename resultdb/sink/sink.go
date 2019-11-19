@@ -24,6 +24,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"sync"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -31,6 +32,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -72,6 +75,8 @@ type Server struct {
 	cancel context.CancelFunc
 	errC   chan error
 	ln     net.Listener
+	upC    dispatcher.Channel
+	wg     sync.WaitGroup
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -165,6 +170,11 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	ctx, s.cancel = context.WithCancel(ctx)
+	err = s.startBackend(ctx)
+	if err != nil {
+		return err
+	}
+
 	go s.serveLoop(ctx)
 	return nil
 }
@@ -176,7 +186,9 @@ func (s *Server) serveLoop(ctx context.Context) {
 	for {
 		switch conn, err := s.ln.Accept(); {
 		case err == nil:
+			s.wg.Add(1)
 			go func() {
+				defer s.wg.Done()
 				if err := s.handleConnection(ctx, conn); err != nil {
 					logging.Errorf(ctx, "%s", err)
 				}
@@ -198,7 +210,20 @@ func (s *Server) Close() error {
 	// TODO(sajjadm): Determine if some pending connections were forcefully closed by s.cancel()
 	// and report that as an error.
 	s.cancel()
-	return s.ln.Close()
+	err := s.ln.Close()
+	// If a connection goroutine tries to send on upC after Close it will panic, so wait for all
+	// of them to finish before closing.
+	s.wg.Wait()
+	s.upC.Close()
+	return err
+}
+
+// Shutdown stops the server from accepting new connections and allows existing ones to
+// finish processing their data.
+func (s *Server) Shutdown(ctx context.Context) error {
+	// TODO(sajjadm): Implement Shutdown using dispatcher.Channel's CloseAndDrain
+	// method. We also need to signal to connections to finish their work.
+	return errors.New("not implemented yet")
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
@@ -271,4 +296,23 @@ func processHandshake(dc *json.Decoder, authToken string) error {
 func shouldKeepTrying(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Temporary() || e.Timeout())
+}
+
+func (s *Server) startBackend(ctx context.Context) error {
+	opts := dispatcher.Options{
+		// TODO(sajjadm): Add ErrorFn that will trigger a server shutdown on fatal
+		// errors.
+		// TODO(sajjadm): Determine appropriate options for the buffer.
+		Buffer: buffer.Defaults,
+	}
+	send := func(data *buffer.Batch) error {
+		// TODO(sajjadm): Send the batch of test results to ResultDB.
+		return nil
+	}
+	c, err := dispatcher.NewChannel(ctx, &opts, send)
+	if err != nil {
+		return err
+	}
+	s.upC = c
+	return nil
 }
