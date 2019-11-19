@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ba9cf29_195631a5",
+        "filename": "tools/filegraph/git.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "typeChanged? The others are in passive tense.",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 11
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815f3b9a_b777369e",
+        "filename": "tools/filegraph/git.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "AddedLines? To be not confused with the file status.",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 6
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5c71dee_f88d05fa",
+        "filename": "tools/filegraph/git.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "Do you mean two dots?",
+      "range": {
+        "startLine": 99,
+        "startChar": 31,
+        "endLine": 99,
+        "endChar": 34
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e510a48_e8196817",
+        "filename": "tools/filegraph/git.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "In this case, do we care about |err| itself? Maybe there is something interesting there?",
+      "range": {
+        "startLine": 112,
+        "startChar": 2,
+        "endLine": 112,
+        "endChar": 51
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43079ada_af81fab1",
+        "filename": "tools/filegraph/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "I\u0027m a little bit confused about the usage of this |delim|, it seems that it\u0027s not initialized anywhere except for the tests, is that correct?",
+      "range": {
+        "startLine": 31,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 11
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "becd7000_9df71720",
+        "filename": "tools/filegraph/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "Is there a reason why the type is \"parser\", but the constructor function uses \"reader\"?",
+      "range": {
+        "startLine": 35,
+        "startChar": 11,
+        "endLine": 35,
+        "endChar": 17
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14379c28_52c9aeb6",
+        "filename": "tools/filegraph/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "I think it will be more intuitive to either use \u0027p\u0027 or rename \u0027logParser\u0027 to \u0027logReader\u0027",
+      "range": {
+        "startLine": 41,
+        "startChar": 6,
+        "endLine": 41,
+        "endChar": 18
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3859509_d9ac64d8",
+        "filename": "tools/filegraph/log.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-19T07:26:34Z",
+      "side": 1,
+      "message": "read",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 6
+      },
+      "revId": "8cf4dc7441c6c405af83bce7af0dedd33e267a29",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
