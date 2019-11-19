@@ -147,6 +147,14 @@ func TestJSONConversions(t *testing.T) {
 					Expected: "PASS",
 					Time:     0.3,
 					Times:    []float64{0.3, 0.2, 0.1},
+					Artifacts: map[string][]string{
+						"isolate_object_list": {
+							"harness/log.txt",
+							"harness/retry_1/log.txt",
+							"harness/retry_2/log.txt",
+							"harness/retry_wat/log.txt",
+						},
+					},
 				},
 				"c1/c2/t2.html": {
 					Actual:   "PASS FAIL PASS CRASH",
@@ -156,6 +164,16 @@ func TestJSONConversions(t *testing.T) {
 				"c2/t3.html": {
 					Actual:   "FAIL",
 					Expected: "PASS",
+					Artifacts: map[string][]string{
+						"isolate_object": {"relative/path/to/log.txt"},
+						"gold_triage_link": {
+							"https://chrome-gpu-gold.skia.org/detail?test=foo&digest=beef",
+						},
+						"isolate_object_list": {
+							"relative/path/to/diff.png",
+							"unknown",
+						},
+					},
 				},
 				"c2/t4.html": {
 					Actual:   "PASS PASS PASS",
@@ -178,8 +196,26 @@ func TestJSONConversions(t *testing.T) {
 			),
 		}
 
+		isolatedOutputs := map[string]*pb.Artifact{
+			"harness/log.txt":         {Name: "log_0.txt"},
+			"harness/retry_1/log.txt": {Name: "log_1.txt"},
+			"harness/retry_2/log.txt": {Name: "log_2.txt"},
+			"relative/path/to/log.txt": {
+				Name:        "relative/path/to/log.txt",
+				FetchUrl:    "isolate://isosrv/a104",
+				ContentType: "plain/text",
+				Size:        32,
+			},
+			"relative/path/to/diff.png": {
+				Name:        "relative/path/to/diff.png",
+				FetchUrl:    "isolate://isosrv/ad1ff",
+				ContentType: "image/png",
+				Size:        8192,
+			},
+		}
+
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, req, inv, nil)
+		testResults, err := results.ToProtos(ctx, req, inv, isolatedOutputs)
 		So(err, ShouldBeNil)
 		So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
@@ -192,25 +228,28 @@ func TestJSONConversions(t *testing.T) {
 		So(testResults, ShouldResembleProto, []*pb.TestResult{
 			// Test 1.
 			{
-				TestPath: "prefix/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 3e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestPath:        "prefix/c1/c2/t1.html",
+				Status:          pb.TestStatus_PASS,
+				Expected:        true,
+				Duration:        &duration.Duration{Nanos: 3e8},
+				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
+				OutputArtifacts: []*pb.Artifact{{Name: "log_0.txt"}},
 			},
 			{
-				TestPath: "prefix/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 2e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestPath:        "prefix/c1/c2/t1.html",
+				Status:          pb.TestStatus_PASS,
+				Expected:        true,
+				Duration:        &duration.Duration{Nanos: 2e8},
+				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
+				OutputArtifacts: []*pb.Artifact{{Name: "log_1.txt"}},
 			},
 			{
-				TestPath: "prefix/c1/c2/t1.html",
-				Status:   pb.TestStatus_PASS,
-				Expected: true,
-				Duration: &duration.Duration{Nanos: 1e8},
-				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				TestPath:        "prefix/c1/c2/t1.html",
+				Status:          pb.TestStatus_PASS,
+				Expected:        true,
+				Duration:        &duration.Duration{Nanos: 1e8},
+				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
+				OutputArtifacts: []*pb.Artifact{{Name: "log_2.txt"}},
 			},
 
 			// Test 2.
@@ -249,6 +288,24 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_FAIL,
 				Expected: false,
 				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
+				OutputArtifacts: []*pb.Artifact{
+					{
+						Name:    "gold_triage_link",
+						ViewUrl: "https://chrome-gpu-gold.skia.org/detail?test=foo&digest=beef",
+					},
+					{
+						Name:        "relative/path/to/diff.png",
+						FetchUrl:    "isolate://isosrv/ad1ff",
+						ContentType: "image/png",
+						Size:        8192,
+					},
+					{
+						Name:        "relative/path/to/log.txt",
+						FetchUrl:    "isolate://isosrv/a104",
+						ContentType: "plain/text",
+						Size:        32,
+					},
+				},
 			},
 
 			// Test 4
@@ -272,5 +329,16 @@ func TestJSONConversions(t *testing.T) {
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 		})
+	})
+}
+
+func TestArtifactUtils(t *testing.T) {
+	Convey(`Logging`, t, func() {
+		arts := map[string][]string{
+			"stdout": {"log_0.txt", "log_1.txt"},
+			"links":  {"https://linklink.com"},
+		}
+		So(artifactsToString(arts), ShouldEqual,
+			"links\n\thttps://linklink.com\nstdout\n\tlog_0.txt\n\tlog_1.txt\n")
 	})
 }
