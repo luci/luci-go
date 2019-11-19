@@ -15,6 +15,7 @@
 package main
 
 import (
+	"sort"
 	"testing"
 
 	durpb "github.com/golang/protobuf/ptypes/duration"
@@ -76,31 +77,25 @@ func TestQueryTestResults(t *testing.T) {
 			},
 		})
 		So(err, ShouldBeNil)
-		So(res.Groups, ShouldHaveLength, 3)
+		So(res.TestResults, ShouldHaveLength, 5)
 
-		g := res.Groups["invocations/a"]
-		So(g.Invocation.Name, ShouldEqual, "invocations/a")
-		So(g.Invocation.State, ShouldEqual, pb.Invocation_COMPLETED)
-		So(g.TestResults, ShouldHaveLength, 2)
-		So(g.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
-		So(g.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
-		So(g.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
-		So(g.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+		sort.Slice(res.TestResults, func(i, j int) bool {
+			return res.TestResults[i].Name < res.TestResults[j].Name
+		})
 
-		g = res.Groups["invocations/b"]
-		So(g.Invocation.Name, ShouldEqual, "invocations/b")
-		So(g.Invocation.State, ShouldEqual, pb.Invocation_COMPLETED)
-		So(g.TestResults, ShouldHaveLength, 2)
-		So(g.TestResults[0].Name, ShouldEqual, "invocations/b/tests/B/results/0")
-		So(g.TestResults[0].Status, ShouldEqual, pb.TestStatus_CRASH)
-		So(g.TestResults[1].Name, ShouldEqual, "invocations/b/tests/B/results/1")
-		So(g.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+		So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
+		So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
 
-		g = res.Groups["invocations/c"]
-		So(g.Invocation.Name, ShouldEqual, "invocations/c")
-		So(g.Invocation.State, ShouldEqual, pb.Invocation_COMPLETED)
-		So(g.TestResults, ShouldHaveLength, 1)
-		So(g.TestResults[0].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-		So(g.TestResults[0].Status, ShouldEqual, pb.TestStatus_PASS)
+		So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
+		So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+
+		So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
+		So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
+
+		So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
+		So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
+
+		So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
+		So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
 	})
 }
