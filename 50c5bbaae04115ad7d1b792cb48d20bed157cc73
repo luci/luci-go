@@ -22,6 +22,30 @@
       "revId": "50c5bbaae04115ad7d1b792cb48d20bed157cc73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ce6e82f_7cae6962",
+        "filename": "resultdb/proto/rpc/v1/predicate.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T18:27:26Z",
+      "side": 1,
+      "message": "Done.\n\nNote that this was a pretty large change, so I\u0027ve removed your LGTM. PTAL again. Feel free not to give LGTM if you suggest a large change.",
+      "parentUuid": "9c833c2e_16eb3cf0",
+      "range": {
+        "startLine": 76,
+        "startChar": 32,
+        "endLine": 76,
+        "endChar": 35
+      },
+      "revId": "50c5bbaae04115ad7d1b792cb48d20bed157cc73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
