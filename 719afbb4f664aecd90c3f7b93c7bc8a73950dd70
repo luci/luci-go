@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4ace7349_038930d4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:23:20Z",
+      "side": 1,
+      "message": "from the user perspective, a test result have only one variant, the variant of the test. At this level, there is no distinction between base test variant and extra pairs. It is just one variant, a combination of both. The reason we *artificially* split it into two is optimization.\n\nfeel free to ping me too",
+      "parentUuid": "d5ca0ab6_28878bea",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 37
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "374b31c6_809ce885",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abb95a34_915a5903",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:23:20Z",
+      "side": 1,
+      "message": "good catch. done",
+      "parentUuid": "374b31c6_809ce885",
+      "range": {
+        "startLine": 122,
+        "startChar": 28,
+        "endLine": 122,
+        "endChar": 31
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "941a18d9_d719e7b1",
+        "filename": "resultdb/cmd/recorder/derive_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:23:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08bf71a1_7d179de4",
+      "range": {
+        "startLine": 249,
+        "startChar": 5,
+        "endLine": 249,
+        "endChar": 23
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f4c3312_d4b156ca",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b38438b8_f614c54a",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:23:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f4c3312_d4b156ca",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 72,
+        "endChar": 39
+      },
+      "revId": "719afbb4f664aecd90c3f7b93c7bc8a73950dd70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
