@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "8ff311cf_3a4a4c60",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-19T04:56:00Z",
+      "side": 1,
+      "message": "Got it. Thanks for the explanation.",
+      "parentUuid": "55a2fbd8_e11c597e",
+      "range": {
+        "startLine": 134,
+        "startChar": 20,
+        "endLine": 134,
+        "endChar": 37
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a39b37ee_f2966391",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 3
