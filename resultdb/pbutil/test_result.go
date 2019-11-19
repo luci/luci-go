@@ -89,6 +89,8 @@ func TestResultName(invID, testPath, resultID string) string {
 // NormalizeTestResult converts inv to the canonical form.
 func NormalizeTestResult(tr *pb.TestResult) {
 	sortStringPairs(tr.Tags)
+	NormalizeArtifactSlice(tr.InputArtifacts)
+	NormalizeArtifactSlice(tr.OutputArtifacts)
 }
 
 // NormalizeTestResultSlice converts trs to the canonical form.
@@ -101,6 +103,18 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 		b := trs[j]
 		if a.TestPath != b.TestPath {
 			return a.TestPath < b.TestPath
+		}
+		return a.Name < b.Name
+	})
+}
+
+// NormalizeArtifactSlice converts arts to the canonical form.
+func NormalizeArtifactSlice(arts []*pb.Artifact) {
+	sort.Slice(arts, func(i, j int) bool {
+		a := arts[i]
+		b := arts[j]
+		if a.Name != b.Name {
+			return a.Name < b.Name
 		}
 		return a.Name < b.Name
 	})
