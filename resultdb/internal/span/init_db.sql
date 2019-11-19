@@ -132,8 +132,8 @@ CREATE TABLE TestResults (
   -- Test status, see TestStatus in test_result.proto.
   Status INT64 NOT NULL,
 
-  -- Summary of the test result for humans, in Markdown.
-  SummaryMarkdown STRING(MAX),
+  -- Snappy-encoded summary of the test result for humans, in Markdown.
+  SummaryMarkdown BYTES(MAX),
 
   -- When the test execution started.
   StartTime TIMESTAMP,
