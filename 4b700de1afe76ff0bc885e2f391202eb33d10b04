@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b7e25894_31ef2396",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-19T01:47:35Z",
+      "side": 1,
+      "message": "fixed by iannucci",
+      "parentUuid": "7793e960_aa13c70d",
+      "revId": "4b700de1afe76ff0bc885e2f391202eb33d10b04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ef3786e_8945ac84",
         "filename": "client/cmd/isolated/download.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "4b700de1afe76ff0bc885e2f391202eb33d10b04",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94e7eeee_2256cf28",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-19T01:47:35Z",
+      "side": 1,
+      "message": "fixed by iannucci",
+      "parentUuid": "5ef3786e_8945ac84",
+      "revId": "4b700de1afe76ff0bc885e2f391202eb33d10b04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
