@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/spanner"
+	"github.com/Masterminds/squirrel"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
@@ -29,7 +30,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // InvocationShards is the sharding level for the Invocations table.
@@ -55,6 +55,17 @@ func MustParseInvocationName(name string) InvocationID {
 		panic(err)
 	}
 	return InvocationID(id)
+}
+
+// MustParseInvocationNames converts invocation names to InvocationIDs.
+// Panics if a name is invalid. Useful for situations when names were already
+// validated.
+func MustParseInvocationNames(names []string) []InvocationID {
+	ids := make([]InvocationID, len(names))
+	for i, name := range names {
+		ids[i] = MustParseInvocationName(name)
+	}
+	return ids
 }
 
 // InvocationIDFromRowID converts a Spanner-level row ID to an InvocationID.
@@ -108,40 +119,19 @@ func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[st
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, error) {
-	inv := &pb.Invocation{Name: id.Name()}
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// Populate fields from Invocation table.
-	eg.Go(func() error {
-		return ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"State":           &inv.State,
-			"CreateTime":      &inv.CreateTime,
-			"FinalizeTime":    &inv.FinalizeTime,
-			"Deadline":        &inv.Deadline,
-			"BaseTestVariant": &inv.BaseTestVariant,
-			"Tags":            &inv.Tags,
-		})
-	})
-
-	// Populate included_invocations.
-	eg.Go(func() error {
-		included, err := ReadIncludedInvocations(ctx, txn, id)
-		if err != nil {
-			return err
-		}
-		inv.IncludedInvocations = make([]string, len(included))
-		for i, id := range included {
-			inv.IncludedInvocations[i] = id.Name()
-		}
-		return nil
-	})
-
-	if err := eg.Wait(); err != nil {
-		return nil, err
+	name := id.Name()
+	pred := &pb.InvocationPredicate{
+		Names:            []string{name},
+		IgnoreInclusions: true,
 	}
-
-	return inv, nil
+	invs, err := QueryInvocations(ctx, txn, pred, 1)
+	switch {
+	case err != nil:
+		return nil, err
+	case len(invs) == 0:
+		return nil, errors.Reason("%q not found", name).Tag(grpcutil.NotFoundTag).Err()
+	}
+	return invs[id], nil
 }
 
 // TooManyInvocationsTag set in an error indicates that too many invocations
@@ -158,7 +148,7 @@ var TooManyInvocationsTag = errors.BoolTag{
 // tagged with TooManyInvocationsTag.
 //
 // Does not re-fetch roots.
-func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, limit int, roots map[InvocationID]*pb.Invocation) (map[InvocationID]*pb.Invocation, error) {
+func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots map[InvocationID]*pb.Invocation) (map[InvocationID]*pb.Invocation, error) {
 	defer metrics.Trace(ctx, "ReadReachableInvocations")()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -236,38 +226,68 @@ func ReadReachableInvocations(ctx context.Context, txn *spanner.ReadOnlyTransact
 	return ret, nil
 }
 
-// ReadInvocationsByTag fetches invocations that have the tag.
-// If limit > 0 and there are more than limit matching invocations, returns an
-// error with TooManyInvocationsTag tag.
-func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, limit int) (map[InvocationID]*pb.Invocation, error) {
-	tagStr := pbutil.StringPairToString(tag)
-	defer metrics.Trace(ctx, "ReadInvocationsByTag(ctx, txn, %s, %d)", tagStr, limit)()
+// QueryInvocations returns invocations that satisfy the predicate.
+// Assumes pred is valid.
+//
+// Does not support paging.
+// The limit must be positive.
+// If the number of matching invocations exceeds the limit, returns an error
+// tagged with TooManyInvocationsTag.
+func QueryInvocations(ctx context.Context, txn Txn, pred *pb.InvocationPredicate, limit int) (map[InvocationID]*pb.Invocation, error) {
+	defer metrics.Trace(ctx, "QueryInvocations(ctx, txn, %q, %d)", pred, limit)()
+	switch {
+	case limit <= 0:
+		panic("limit <= 0")
+	}
 
+	queryParams := map[string]interface{}{}
+	var invIDCond squirrel.Or
+
+	if len(pred.Names) > 0 {
+		invIDCond = append(invIDCond, squirrel.Expr(`i.InvocationID IN UNNEST(@invIDs)`))
+		queryParams["invIDs"] = MustParseInvocationNames(pred.Names)
+	}
+
+	if len(pred.Tags) > 0 {
+		invIDCond = append(
+			invIDCond,
+			squirrel.Expr(`i.InvocationID IN (SELECT InvocationID from InvocationsByTag t where t.TagID IN UNNEST(@tagIDs))`),
+		)
+		queryParams["tagIDs"] = TagRowIDs(pred.Tags...)
+	}
+
+	// Fetch the root invocations.
 	st := spanner.NewStatement(`
 		SELECT
-			i.InvocationId,
-			State,
-			CreateTime,
-			FinalizeTime,
-			Deadline,
-			BaseTestVariant,
-			Tags
-		FROM InvocationsByTag t
-		JOIN Invocations i ON i.InvocationId = t.InvocationId
-		WHERE t.TagID = @TagID
+		 i.InvocationId,
+		 i.State,
+		 i.CreateTime,
+		 i.FinalizeTime,
+		 i.Deadline,
+		 i.BaseTestVariant,
+		 i.Tags,
+		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId)
+		FROM Invocations i
+		WHERE
+			i.InvocationID IN UNNEST(@invIDs) OR
+			i.InvocationID IN (SELECT t.InvocationID from InvocationsByTag t WHERE t.TagID IN UNNEST(@tagIDs)
+			)
+		LIMIT @limit
 	`)
 	st.Params = ToSpannerMap(map[string]interface{}{
-		"TagID": TagRowID(tag),
+		"limit":  limit + 1, // request one more to detect overflow
+		"invIDs": MustParseInvocationNames(pred.GetNames()),
+		"tagIDs": TagRowIDs(pred.GetTags()...),
 	})
-
-	ret := make(map[InvocationID]*pb.Invocation, limit)
+	roots := make(map[InvocationID]*pb.Invocation, limit)
 	var b Buffer
 	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
-		if limit > 0 && len(ret) == limit {
-			return errors.Reason("more than %d invocations have tag %q", limit, tagStr).Tag(TooManyInvocationsTag).Err()
+		if len(roots) == limit {
+			return errors.Reason("more than %d invocations match the predicate", limit).Tag(TooManyInvocationsTag).Err()
 		}
 		var id InvocationID
 		inv := &pb.Invocation{}
+		var included []InvocationID
 		err := b.FromSpanner(row,
 			&id,
 			&inv.State,
@@ -275,45 +295,25 @@ func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, 
 			&inv.FinalizeTime,
 			&inv.Deadline,
 			&inv.BaseTestVariant,
-			&inv.Tags)
+			&inv.Tags,
+			&included)
 		if err != nil {
 			return err
 		}
 		inv.Name = pbutil.InvocationName(string(id))
-		ret[id] = inv
+		inv.IncludedInvocations = make([]string, len(included))
+		for i, id := range included {
+			inv.IncludedInvocations[i] = id.Name()
+		}
+		sort.Strings(inv.IncludedInvocations)
+		if _, ok := roots[id]; ok {
+			panic("query is incorect; it returned duplicated invocation IDs")
+		}
+		roots[id] = inv
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-	return ret, nil
-}
-
-// QueryInvocations returns a list of invocation IDs that satisfy the predicate.
-// The limit must be positive.
-// If the number of matching invocations exceeds the limit, returns an error
-// tagged with TooManyInvocationsTag.
-// Assumes pred is valid.
-// Does not support paging.
-func QueryInvocations(ctx context.Context, txn *spanner.ReadOnlyTransaction, pred *pb.InvocationPredicate, limit int) (map[InvocationID]*pb.Invocation, error) {
-	if limit <= 0 {
-		panic("limit <= 0")
-	}
-
-	// Resolve IDs of the root invocations.
-	var roots map[InvocationID]*pb.Invocation
-	if name := pred.GetName(); name != "" {
-		id := MustParseInvocationName(name)
-		inv, err := ReadInvocationFull(ctx, txn, id)
-		if err != nil {
-			return nil, err
-		}
-		roots = map[InvocationID]*pb.Invocation{id: inv}
-	} else {
-		var err error
-		if roots, err = ReadInvocationsByTag(ctx, txn, pred.GetTag(), limit); err != nil {
-			return nil, err
-		}
 	}
 
 	if pred.IgnoreInclusions {
