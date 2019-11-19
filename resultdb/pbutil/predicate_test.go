@@ -26,54 +26,53 @@ import (
 func TestValidateTestResultPredicate(t *testing.T) {
 	Convey(`TestValidateTestResultPredicate`, t, func() {
 		Convey(`Empty`, func() {
-			err := ValidateTestResultPredicate(&pb.TestResultPredicate{}, false)
-			So(err, ShouldBeNil)
+			err := ValidateTestResultPredicate(&pb.TestResultPredicate{})
+			So(err, ShouldErrLike, "invocation: unspecified")
 		})
 
 		Convey(`Invocation`, func() {
-			Convey(`Require`, func() {
-				err := ValidateTestResultPredicate(&pb.TestResultPredicate{}, true)
-				So(err, ShouldErrLike, "invocation: unspecified")
-			})
-
 			validate := func(p *pb.InvocationPredicate) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{Invocation: p}, false)
+				return ValidateTestResultPredicate(&pb.TestResultPredicate{Invocation: p})
 			}
 
 			Convey(`Name`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+						Names: []string{"invocations/x", "invocations/y"},
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Name{Name: "x"},
+						Names: []string{"invocations/x", "y"},
 					})
-					So(err, ShouldErrLike, `invocation: name: does not match`)
+					So(err, ShouldErrLike, `invocation: name "y": does not match`)
 				})
 			})
 
 			Convey(`Tag`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Tag{Tag: StringPair("k", "v")},
+						Tags: StringPairs("k", "v"),
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Tag{Tag: StringPair("-", "v")},
+						Tags: StringPairs("-", "v"),
 					})
-					So(err, ShouldErrLike, `invocation: tag: key: does not match`)
+					So(err, ShouldErrLike, `invocation: tag "-:v": key: does not match`)
 				})
 			})
 		})
 
+		invPred := &pb.InvocationPredicate{Names: []string{"invocations/inv"}}
 		Convey(`Test path`, func() {
 			validate := func(p *pb.TestPathPredicate) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{TestPath: p}, false)
+				return ValidateTestResultPredicate(&pb.TestResultPredicate{
+					Invocation: invPred,
+					TestPath:   p,
+				})
 			}
 
 			Convey(`Exact`, func() {
@@ -117,7 +116,10 @@ func TestValidateTestResultPredicate(t *testing.T) {
 			invalidVariant := Variant("", "")
 
 			validate := func(p *pb.VariantPredicate) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{Variant: p}, false)
+				return ValidateTestResultPredicate(&pb.TestResultPredicate{
+					Invocation: invPred,
+					Variant:    p,
+				})
 			}
 
 			Convey(`Exact`, func() {

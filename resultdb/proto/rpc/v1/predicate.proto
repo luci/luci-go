@@ -80,22 +80,27 @@ message TestExonerationPredicate {
 
 // Represents a function Invocation -> bool.
 //
-// Consists of two parts, connected with logical OR:
-// - "root_predicate" oneof, which selects "root" invocations.
-// - "ignore_included" predicate, defined on top of the roots.
+// Note: all components of the predicate are connected with logical OR.
 message InvocationPredicate {
+  // An invocation must have one of these names.
+  //
+  // Compatible with tags: names and tags are connected with a logical OR.
+  repeated string names = 1;
 
-  // Invocations matching this predicate are called "roots".
-  oneof root_predicate {
-    // An invocation must have this name.
-    string name = 1;
+  // An invocation must have *ANY* of these tags.
+  //
+  // WARNING: unlike some of other systems, multiple tags are connected with a
+  // a logical OR. To construct a logical AND, an invocation must have a tag
+  // that represents a conjunction, e.g. "my_combination_tag:<value1>:<value2>".
+  // Unlike other systems, this approach enables generic conditions in the
+  // disjunctive normal form.
+  //
+  // Compatible with names: names and tags are connected with a logical OR.
+  repeated luci.resultdb.type.StringPair tags = 2;
 
-    // An invocation must have this tag.
-    luci.resultdb.type.StringPair tag = 2;
-  }
-
-  // If false, an invocation must be reachable from any of the roots via path of
-  // Invocation.included_invocations edges.
+  // If false, an invocation must be reachable from any of roots via path of
+  // Invocation.included_invocations edges, where roots are the invocations
+  // that satisfy the rest of the predicate (names, tag).
   // If true, do not follow inclusion edges.
   bool ignore_inclusions = 3;
 }

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/Masterminds/squirrel"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
@@ -26,6 +27,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -339,4 +342,16 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 		}
 		return err
 	})
+}
+
+// query executes a select query.
+func query(ctx context.Context, txn Txn, sql squirrel.SelectBuilder, params map[string]interface{}) *spanner.RowIterator {
+	sqlStr, _ := sql.MustSql()
+	st := spanner.NewStatement(sqlStr)
+	st.Params = ToSpannerMap(params)
+
+	logging.Infof(ctx, "executing %s", st.SQL)
+	logging.Infof(ctx, "query parameters: %#v", st.Params)
+
+	return txn.Query(ctx, st)
 }

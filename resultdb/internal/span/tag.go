@@ -23,3 +23,12 @@ import (
 func TagRowID(tag *typepb.StringPair) string {
 	return prefixWithHash(pbutil.StringPairToString(tag))
 }
+
+// TagRowIDs converts tags to tag row IDs. See also TagRowID.
+func TagRowIDs(tags ...*typepb.StringPair) []string {
+	ids := make([]string, len(tags))
+	for i, t := range tags {
+		ids[i] = TagRowID(t)
+	}
+	return ids
+}
