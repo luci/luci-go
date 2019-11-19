@@ -29,7 +29,7 @@ func insertTestResult(invID span.InvocationID, tr *pb.TestResult, i int) (*spann
 		"TestPath":     tr.TestPath,
 		"ResultId":     strconv.Itoa(i),
 
-		"ExtraVariantPairs": tr.GetExtraVariantPairs(),
+		"Variant": tr.Variant,
 
 		"CommitTimestamp": spanner.CommitTimestamp,
 

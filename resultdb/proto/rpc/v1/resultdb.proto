@@ -182,20 +182,8 @@ message QueryTestResultsRequest {
 
 // A response message for QueryTestResults RPC.
 message QueryTestResultsResponse {
-
-  // A group of test results from the same invocation.
-  message Group {
-    // The parent invocation.
-    Invocation invocation = 1;
-
-    // The test results included directly in the invocation.
-    // The test results are ordered by test path and result id.
-    repeated TestResult test_results = 2;
-  }
-
-  // Matched test results grouped by parent invocation.
-  // The map key is an invocation name.
-  map<string, Group> groups = 1;
+  // Matched test results.
+  repeated TestResult test_results = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
   // If this field is omitted, there were no subsequent pages at the time of

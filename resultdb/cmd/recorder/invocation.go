@@ -189,8 +189,7 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 		"CreateTime": inv.CreateTime,
 		"Deadline":   inv.Deadline,
 
-		"BaseTestVariant": inv.BaseTestVariant,
-		"Tags":            inv.Tags,
+		"Tags": inv.Tags,
 	}
 
 	if inv.FinalizeTime != nil {

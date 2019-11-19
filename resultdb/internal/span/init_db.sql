@@ -57,11 +57,6 @@ CREATE TABLE Invocations (
   -- When to force invocation finalization with state INTERRUPTED.
   Deadline TIMESTAMP NOT NULL,
 
-  -- Variant definition pairs common for all test results in this invocation.
-  -- Each string is a colon-separated key-value pair.
-  -- A particular test result can have additional key-value pairs.
-  BaseTestVariant ARRAY<STRING(MAX)>,
-
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.
   -- For each tag here, there is a row in the InvocationsByTag table.
@@ -116,9 +111,9 @@ CREATE TABLE TestResults (
   -- Generated on the server.
   ResultId STRING(MAX) NOT NULL,
 
-  -- Extra variant pairs, in addition to parent Invocation.BaseTestVariant.
-  -- See also TestResult.extra_variant_pairs in test_result.proto.
-  ExtraVariantPairs ARRAY<STRING(MAX)>,
+  -- key:value pairs in the test variant.
+  -- See also TestResult.variant in test_result.proto.
+  Variant ARRAY<STRING(MAX)>,
 
   -- Last time this row was modified.
   -- Given that we only create and delete row, for an existing row this equals

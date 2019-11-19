@@ -85,12 +85,6 @@ message Invocation {
   // Can be extended with UpdateInvocation until finalized.
   google.protobuf.Timestamp deadline = 6;
 
-  // == Test results specific ==================================================
-
-  // Variant definition pairs common for all test results in this invocation.
-  // A particular test result can have additional key-value pairs.
-  luci.resultdb.type.Variant base_test_variant = 7;
-
   // Names of invocations included into this one. Overall results of this
   // invocation is a UNION of results directly included into this invocation
   // and results from the included invocations, recursively.
@@ -107,6 +101,6 @@ message Invocation {
   // invocations.
   //
   // Use Recorder.Include RPC to modify this field.
-  repeated string included_invocations = 8
+  repeated string included_invocations = 7
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }

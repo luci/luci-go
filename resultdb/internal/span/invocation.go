@@ -115,12 +115,11 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 	// Populate fields from Invocation table.
 	eg.Go(func() error {
 		return ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"State":           &inv.State,
-			"CreateTime":      &inv.CreateTime,
-			"FinalizeTime":    &inv.FinalizeTime,
-			"Deadline":        &inv.Deadline,
-			"BaseTestVariant": &inv.BaseTestVariant,
-			"Tags":            &inv.Tags,
+			"State":        &inv.State,
+			"CreateTime":   &inv.CreateTime,
+			"FinalizeTime": &inv.FinalizeTime,
+			"Deadline":     &inv.Deadline,
+			"Tags":         &inv.Tags,
 		})
 	})
 
@@ -250,7 +249,6 @@ func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, 
 			CreateTime,
 			FinalizeTime,
 			Deadline,
-			BaseTestVariant,
 			Tags
 		FROM InvocationsByTag t
 		JOIN Invocations i ON i.InvocationId = t.InvocationId
@@ -274,7 +272,6 @@ func ReadInvocationsByTag(ctx context.Context, txn Txn, tag *typepb.StringPair, 
 			&inv.CreateTime,
 			&inv.FinalizeTime,
 			&inv.Deadline,
-			&inv.BaseTestVariant,
 			&inv.Tags)
 		if err != nil {
 			return err

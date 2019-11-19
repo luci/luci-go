@@ -63,15 +63,15 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	var micros int64
 	var summaryMarkdown Snappy
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
-		"ExtraVariantPairs": &tr.ExtraVariantPairs,
-		"IsUnexpected":      &maybeUnexpected,
-		"Status":            &tr.Status,
-		"SummaryMarkdown":   &summaryMarkdown,
-		"StartTime":         &tr.StartTime,
-		"RunDurationUsec":   &micros,
-		"Tags":              &tr.Tags,
-		"InputArtifacts":    &tr.InputArtifacts,
-		"OutputArtifacts":   &tr.OutputArtifacts,
+		"Variant":         &tr.Variant,
+		"IsUnexpected":    &maybeUnexpected,
+		"Status":          &tr.Status,
+		"SummaryMarkdown": &summaryMarkdown,
+		"StartTime":       &tr.StartTime,
+		"RunDurationUsec": &micros,
+		"Tags":            &tr.Tags,
+		"InputArtifacts":  &tr.InputArtifacts,
+		"OutputArtifacts": &tr.OutputArtifacts,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -114,7 +114,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			"InvocationId",
 			"TestPath",
 			"ResultId",
-			"ExtraVariantPairs",
+			"Variant",
 			"IsUnexpected",
 			"Status",
 			"SummaryMarkdown",
@@ -195,7 +195,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&invID,
 			&tr.TestPath,
 			&tr.ResultId,
-			&tr.ExtraVariantPairs,
+			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
 			&summaryMarkdown,

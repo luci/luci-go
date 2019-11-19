@@ -94,7 +94,6 @@ func TestListTestResults(t *testing.T) {
 	})
 }
 
-
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
 func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
@@ -106,23 +105,23 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
 		trs[i] = &pb.TestResult{
-			Name:              pbutil.TestResultName(string(invID), testPath, resultID),
-			TestPath:          testPath,
-			ResultId:          resultID,
-			ExtraVariantPairs: pbutil.Variant("k1", "v1", "k2", "v2"),
-			Expected:          status == pb.TestStatus_PASS,
-			Status:            status,
-			Duration:          &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
+			Name:     pbutil.TestResultName(string(invID), testPath, resultID),
+			TestPath: testPath,
+			ResultId: resultID,
+			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
+			Expected: status == pb.TestStatus_PASS,
+			Status:   status,
+			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
 		}
 
 		mutMap := map[string]interface{}{
-			"InvocationId":      invID,
-			"TestPath":          testPath,
-			"ResultId":          resultID,
-			"ExtraVariantPairs": trs[i].ExtraVariantPairs,
-			"CommitTimestamp":   spanner.CommitTimestamp,
-			"Status":            status,
-			"RunDurationUsec":   1e6*i + 234567,
+			"InvocationId":    invID,
+			"TestPath":        testPath,
+			"ResultId":        resultID,
+			"Variant":         trs[i].Variant,
+			"CommitTimestamp": spanner.CommitTimestamp,
+			"Status":          status,
+			"RunDurationUsec": 1e6*i + 234567,
 		}
 		if !trs[i].Expected {
 			mutMap["IsUnexpected"] = true
