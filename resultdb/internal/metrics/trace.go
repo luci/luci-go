@@ -30,6 +30,6 @@ func Trace(ctx context.Context, titleFormat string, args ...interface{}) func() 
 
 	start := clock.Now(ctx)
 	return func() {
-		logging.Infof(ctx, titleFormat+" took %s", append(args, clock.Since(ctx, start)))
+		logging.Infof(ctx, titleFormat+" took %s", append(args, clock.Since(ctx, start))...)
 	}
 }
