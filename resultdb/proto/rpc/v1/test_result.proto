@@ -68,13 +68,9 @@ message TestResult {
     (google.api.field_behavior) = REQUIRED
   ];
 
-  // Added to Invocation.base_test_variant of the parent invocation.
-  // The complete variant definition of this test result is the result of
-  // addition.
-  //
-  // MUST NOT have keys present in Invocation.test_variant_def, or MUST
-  // have the same value.
-  luci.resultdb.type.Variant extra_variant_pairs = 4
+  // Description of one specific way of running the test,
+  // e.g. a specific bucket, builder and a test suite.
+  luci.resultdb.type.Variant variant = 4
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Whether the result of test case execution is expected.

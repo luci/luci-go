@@ -145,19 +145,28 @@ func TestDeriveInvocation(t *testing.T) {
 
 		// Inject isolated objects.
 		fileDigest := isoFake.Inject("ns", []byte(`{
-			"version": 3,
-			"tests": {
-				"c1": {
-					"c2": {
-						"t1.html": {
-							"actual": "PASS PASS PASS",
-							"expected": "PASS",
-							"time": 0.3,
-							"times": [ 0.3, 0.2, 0.1 ]
-						}
+			"all_tests": [
+				"FooTest.TestDoBar",
+				"FooTest.DoesBar"
+			],
+			"per_iteration_data": [{
+				"MyInstantiation/FooTest.DoesBar/1": [
+					{
+						"status": "SUCCESS",
+						"elapsed_time_ms": 100
 					}
-				}
-			}
+				],
+				"FooTest.TestDoBar": [
+					{
+						"status": "CRASH",
+						"elapsed_time_ms": 200
+					},
+					{
+						"status": "FAILURE",
+						"elapsed_time_ms": 300
+					}
+				]
+			}]
 		}`))
 		isoOut := isolated.Isolated{
 			Files: map[string]isolated.File{"output.json": {Digest: fileDigest}},
@@ -184,15 +193,16 @@ func TestDeriveInvocation(t *testing.T) {
 
 		// Define base request we'll be using.
 		swarmingHostname := strings.TrimPrefix(swarmingFake.URL, "https://")
+		variant := pbutil.Variant(
+			"bucket", "bkt",
+			"builder", "blder",
+			"test_suite", "foo_unittests",
+		)
 		req := &pb.DeriveInvocationRequest{
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
+			BaseTestVariant: variant,
 		}
 
 		recorder := &recorderServer{}
@@ -202,20 +212,37 @@ func TestDeriveInvocation(t *testing.T) {
 			inv, err := recorder.DeriveInvocation(ctx, req)
 			So(err, ShouldBeNil)
 
-			// inv.Name changes every time because hostname is encoded in it, so clear it for comparison.
-			inv.Name = ""
 			So(inv, ShouldResembleProto, &pb.Invocation{
+				Name:         inv.Name, // inv.Name is non-determinisic in this test
 				State:        pb.Invocation_COMPLETED,
 				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR),
+				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
 				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				BaseTestVariant: pbutil.Variant(
-					"bucket", "bkt",
-					"builder", "blder",
-					"test_suite", "foo_unittests",
-				),
 			})
+
+			// Assert we wrote correct test results.
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name)},
+				PageSize:      100,
+			})
+			So(err, ShouldBeNil)
+			So(trs, ShouldHaveLength, 3)
+			So(trs[0].TestPath, ShouldEqual, "FooTest.DoesBar")
+			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
+			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+				"param/instantiation", "MyInstantiation",
+				"param/id", "1",
+			))
+			So(trs[1].TestPath, ShouldEqual, "FooTest.TestDoBar")
+			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
+			So(trs[2].TestPath, ShouldEqual, "FooTest.TestDoBar")
+			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 		})
 	})
 }

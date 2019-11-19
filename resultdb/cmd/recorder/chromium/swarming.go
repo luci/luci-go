@@ -60,8 +60,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 
 	inv := &pb.Invocation{
-		Name:            invID.Name(),
-		BaseTestVariant: req.BaseTestVariant,
+		Name: invID.Name(),
 	}
 
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
@@ -117,6 +116,23 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		// Otherwise we expect output but have none, so fail.
 		return nil, nil, errors.Reason(
 			"missing expected isolated outputs").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Inject base test variant if any.
+	if len(req.BaseTestVariant.GetDef()) > 0 {
+		for _, r := range results {
+			if len(r.Variant.GetDef()) == 0 {
+				r.Variant = req.BaseTestVariant
+				continue
+			}
+
+			// Otherwise combine.
+			for k, v := range req.BaseTestVariant.Def {
+				if _, ok := r.Variant.Def[k]; !ok {
+					r.Variant.Def[k] = v
+				}
+			}
+		}
 	}
 
 	return inv, results, nil
