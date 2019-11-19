@@ -107,16 +107,18 @@ message InvocationPredicate {
 
 // Represents a function (test path) -> bool.
 message TestPathPredicate {
-  oneof predicate {
-    // A test path must be this value exactly.
-    string exact = 1;
+  // A test path must be one of these values exactly.
+  // Compatible with path_prefixes: they are connected with logical
+  // OR.
+  repeated string paths = 1;
 
-    // A test path must start with this prefix.
-    // Note: most of the time, the prefix must end with a delimiter,
-    // for example, if there tests "foo.bar" and "foo.baz", the prefix should
-    // be "foo." (not "foo"), so that "fooz.qux" is not accidentally matched.
-    string prefix = 2;
-  }
+  // A test path must start with one of these prefixes.
+  // Compatible with paths: they are connected with logical OR.
+  //
+  // Note: most of the time, the prefix must end with a delimiter,
+  // for example, if there tests "foo.bar" and "foo.baz", the prefix should
+  // be "foo." (not "foo"), so that "fooz.qux" is not accidentally matched.
+  repeated string path_prefixes = 2;
 }
 
 // Represents a function Variant -> bool.
