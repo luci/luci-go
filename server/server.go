@@ -505,6 +505,13 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 	r := router.New()
 	r.Use(mw)
 
+	// Add NotFound handler wrapped in our middlewares so that unrecognized
+	// requests are at least logged. If we don't do that they'll be handled
+	// completely silently and this is very confusing when debugging 404s.
+	r.NotFound(router.MiddlewareChain{}, func(c *router.Context) {
+		http.NotFound(c.Writer, c.Request)
+	})
+
 	s.httpSrv = append(s.httpSrv, &http.Server{
 		Addr:     addr,
 		Handler:  r,
