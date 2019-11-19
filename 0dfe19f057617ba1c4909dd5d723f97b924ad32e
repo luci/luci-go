@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b8c8548_002810df",
+        "filename": "logdog/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-19T22:47:08Z",
+      "side": 1,
+      "message": "I would say this differently:\n\n  Chrome Operations currently runs a LogDog instance serving *.chromium.org which is located at logs.chromium.org. You can view it\u0027s RPC explorer at \u003clink\u003e.",
+      "revId": "0dfe19f057617ba1c4909dd5d723f97b924ad32e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
