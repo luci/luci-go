@@ -34,6 +34,8 @@ LogDog offers several useful features:
 Most applications will interact with a LogDog Coordinator instance via its
 [Coordinator Logs API](api/endpoints/coordinator/logs/v1).
 
+Querying for logs with specific criteria can be done through the
+[LogDog RPCExplorer](https://logs.chromium.org/rpcexplorer/services/).
 
 ## Life of a Log Stream
 
