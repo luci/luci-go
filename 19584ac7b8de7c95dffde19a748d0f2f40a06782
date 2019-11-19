@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e797bdcb_bf693003",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T21:47:58Z",
+      "side": 1,
+      "message": "if a query is rather dynamic, then squirrel. Otherwise simple statement.\n\neven more generally: use the simplest tool for the job. Not using squirrel is simpler, and still works",
+      "parentUuid": "5483b4f8_c1df7ed4",
+      "range": {
+        "startLine": 243,
+        "startChar": 7,
+        "endLine": 243,
+        "endChar": 27
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17f65892_dc619501",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "504c4fc0_bdc91233",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T21:47:58Z",
+      "side": 1,
+      "message": "added a check above\n\nstrictly speaking, the SQL query won\u0027t fail. But it will try to retrieve all invocations and we will hit the limit (unless the db is emptyish)",
+      "parentUuid": "17f65892_dc619501",
+      "range": {
+        "startLine": 254,
+        "startChar": 0,
+        "endLine": 256,
+        "endChar": 100
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43f2a7fa_e8666880",
         "filename": "resultdb/pbutil/predicate.go",
         "patchSetId": 7
@@ -68,6 +116,30 @@
       "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95dff7b7_bd667dd2",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T21:47:58Z",
+      "side": 1,
+      "message": "let\u0027s remove this parameter altogether. it is not like we will ever support TestResultPredicate without an invocation predicate",
+      "parentUuid": "43f2a7fa_e8666880",
+      "range": {
+        "startLine": 25,
+        "startChar": 60,
+        "endLine": 25,
+        "endChar": 77
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
