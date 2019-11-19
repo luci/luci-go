@@ -21,21 +21,21 @@ import (
 
 // ResultDB is a struct that may be used with the "resultDB" section of LUCI_CONTEXT.
 type ResultDB struct {
-	TestResults TestResults
+	Sink ResultSink `json:"sink"`
 }
 
 // TestResults is a struct that may be used with the "resultDB.testResults" section of
 // LUCI_CONTEXT.
-type TestResults struct {
-	Port      int
-	AuthToken string
+type ResultSink struct {
+	Port      int    `json:"port"`
+	AuthToken string `json:"auth_token"`
 }
 
 // GetResultDB returns the current ResultDB from LUCI_CONTEXT
 // if it was present. If no ResultDB is in the context it returns nil.
 func GetResultDB(ctx context.Context) *ResultDB {
 	ret := ResultDB{}
-	ok, err := Lookup(ctx, "resultDB", &ret)
+	ok, err := Lookup(ctx, "resultdb", &ret)
 	if err != nil {
 		panic(err)
 	}
@@ -46,12 +46,12 @@ func GetResultDB(ctx context.Context) *ResultDB {
 }
 
 // SetResultDB sets the ResultDB in the LUCI_CONTEXT.
-func SetResultDB(ctx context.Context, sink *ResultDB) context.Context {
+func SetResultDB(ctx context.Context, resultDB *ResultDB) context.Context {
 	var raw interface{}
-	if sink != nil {
-		raw = sink
+	if resultDB != nil {
+		raw = resultDB
 	}
-	ctx, err := Set(ctx, "resultDB", raw)
+	ctx, err := Set(ctx, "resultdb", raw)
 	if err != nil {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
