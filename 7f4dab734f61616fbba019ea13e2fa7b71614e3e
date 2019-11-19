@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a52f042a_ce1236a3",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-19T00:58:17Z",
+      "side": 1,
+      "message": "Could you explained a little more on how\u0027s buf used here?",
+      "range": {
+        "startLine": 195,
+        "startChar": 4,
+        "endLine": 196,
+        "endChar": 24
+      },
+      "revId": "7f4dab734f61616fbba019ea13e2fa7b71614e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
