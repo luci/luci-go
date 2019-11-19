@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7db3f71_6b48ec9e",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Some others of these helper functions can be made internal, but I\u0027ll do that in a separate CL",
+      "revId": "fb027138114c6d878774e1d1ba45e55261902235",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

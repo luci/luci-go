@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "3dda3f23_290582eb",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "PTAL at wording",
+      "parentUuid": "c35da0c1_f2a51a6a",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eac954af_8a0b60b7",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "59189128e158072252167432fd5f77f2060a836b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee201478_54fa9b4e",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eac954af_8a0b60b7",
+      "range": {
+        "startLine": 117,
+        "startChar": 5,
+        "endLine": 117,
+        "endChar": 31
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "0de82cf1_b2081f91",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7416589b_7bafcf5c",
+      "range": {
+        "startLine": 120,
+        "startChar": 15,
+        "endLine": 120,
+        "endChar": 21
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cce1ad27_f80dad84",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 3
@@ -76,6 +142,30 @@
       "writtenOn": "2019-11-15T23:35:39Z",
       "side": 1,
       "message": "Should the function name be updated? For example to ConvertOutputs?",
+      "range": {
+        "startLine": 134,
+        "startChar": 20,
+        "endLine": 134,
+        "endChar": 37
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55a2fbd8_e11c597e",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Good question. The motivation for \"ConvertOutputJSON\" here is to make it explicit that it\u0027s the JSON we\u0027re converting here, and anything else is only as far as being needed for that conversion (and we have an output that is not needed by output.json, we\u0027ll ignore it, though I don\u0027t have an example for that handy). Maybe that\u0027s not too necessary given everything\u0027s already scoped to being swarming tasks for Chromium, though --- thoughts?",
+      "parentUuid": "cce1ad27_f80dad84",
       "range": {
         "startLine": 134,
         "startChar": 20,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "a8d67c8e_165c98b7",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done\n\nThis was in order to make sure we could associate the task with it having unprocessed files, but I forgot we group logging statements by request, which ought to take care of this.",
+      "parentUuid": "a39b37ee_f2966391",
+      "range": {
+        "startLine": 139,
+        "startChar": 5,
+        "endLine": 139,
+        "endChar": 12
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a4bba56_ce093462",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 3
@@ -125,6 +239,24 @@
       "revId": "59189128e158072252167432fd5f77f2060a836b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71c3f3ba_26428c6e",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a4bba56_ce093462",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "70676bc8_0302747a",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ba08a52_c3f4edff",
+      "range": {
+        "startLine": 38,
+        "startChar": 28,
+        "endLine": 38,
+        "endChar": 31
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "afa463b3_bdfad8f1",
         "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
         "patchSetId": 3
@@ -165,6 +321,24 @@
       "revId": "59189128e158072252167432fd5f77f2060a836b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c3a4b79_46a58f2b",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afa463b3_bdfad8f1",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -185,6 +359,24 @@
     },
     {
       "key": {
+        "uuid": "32e64157_bc0ddd88",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Good question, and I\u0027m not sure how we want to deal with symlink files (also haven\u0027t seen any instances of it yet). Would you prefer to return nil so the caller knows to log it and then we can look closer at it?",
+      "parentUuid": "a59ff6df_07b01944",
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c0100d33_07496cc6",
         "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
         "patchSetId": 3
@@ -196,6 +388,30 @@
       "writtenOn": "2019-11-15T20:02:47Z",
       "side": 1,
       "message": "note: this may slightly surprise a reader because the behavior of this package depends on the OS of the machine where our Go code is running. So this is a bit weird, but I looked at implementations of path.Ext and filpath.Ext and, for our purposes, they are same, so this is fine",
+      "range": {
+        "startLine": 52,
+        "startChar": 8,
+        "endLine": 52,
+        "endChar": 16
+      },
+      "revId": "59189128e158072252167432fd5f77f2060a836b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "339cec7a_23b3757f",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T02:43:24Z",
+      "side": 1,
+      "message": "Switched to use path.Ext",
+      "parentUuid": "c0100d33_07496cc6",
       "range": {
         "startLine": 52,
         "startChar": 8,
