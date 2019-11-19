@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f4e94ce_26d2a955",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "([0-9]+)",
+      "range": {
+        "startLine": 40,
+        "startChar": 49,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ad0ea0_efe8ce88",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "this is not what i see in the type signature. What i see is \"maps a run index to a slice of associated *pb.Artifacts.\"",
+      "range": {
+        "startLine": 251,
+        "startChar": 22,
+        "endLine": 252,
+        "endChar": 28
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47ef39f6_f6b1feaf",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "nit: this is not going to look nice in godoc. Please indent with \"  \" so that godoc preserves newlines.\n\nusing - is more consistent with all godoc comments I\u0027ve seen",
+      "range": {
+        "startLine": 322,
+        "startChar": 3,
+        "endLine": 322,
+        "endChar": 4
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e81f2be1_b2a55973",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "what is \"isolated outputs\" in this func? this func does not interact with isolate. Do you mean \"outputsToProcess\"?",
+      "range": {
+        "startLine": 322,
+        "startChar": 26,
+        "endLine": 322,
+        "endChar": 70
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75506810_1675b85a",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "does this code assume that runID is 0? if so, let\u0027s just say 0. It would be easier to understand since we check for 0 in L350",
+      "range": {
+        "startLine": 355,
+        "startChar": 14,
+        "endLine": 355,
+        "endChar": 19
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "889a38f2_839a3eaa",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T19:50:26Z",
+      "side": 1,
+      "message": "this and L117 are the same lines, so if condition is unnecessary",
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
