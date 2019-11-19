@@ -22,15 +22,9 @@ import (
 
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
-func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bool) error {
-	if p.GetInvocation() == nil {
-		if requireInvocation {
-			return errors.Annotate(unspecified(), "invocation").Err()
-		}
-	} else {
-		if err := ValidateInvocationPredicate(p.GetInvocation()); err != nil {
-			return errors.Annotate(err, "invocation").Err()
-		}
+func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
+	if err := ValidateInvocationPredicate(p.GetInvocation()); err != nil {
+		return errors.Annotate(err, "invocation").Err()
 	}
 
 	if p.GetTestPath() != nil {
@@ -54,17 +48,26 @@ func ValidateTestResultPredicate(p *pb.TestResultPredicate, requireInvocation bo
 
 // ValidateInvocationPredicate returns a non-nil error if p is determined to be
 // invalid.
+//
+// Requires that p has tags or names.
 func ValidateInvocationPredicate(p *pb.InvocationPredicate) error {
-	switch pr := p.GetRootPredicate().(type) {
-	case *pb.InvocationPredicate_Name:
-		return errors.Annotate(ValidateInvocationName(pr.Name), "name").Err()
-	case *pb.InvocationPredicate_Tag:
-		return errors.Annotate(ValidateStringPair(pr.Tag), "tag").Err()
-	case nil:
+	if len(p.GetNames()) == 0 && len(p.GetTags()) == 0 {
 		return unspecified()
-	default:
-		panic("impossible")
 	}
+
+	for _, name := range p.GetNames() {
+		if err := ValidateInvocationName(name); err != nil {
+			return errors.Annotate(err, "name %q", name).Err()
+		}
+	}
+
+	for _, tag := range p.GetTags() {
+		if err := ValidateStringPair(tag); err != nil {
+			return errors.Annotate(err, "tag %q", StringPairToString(tag)).Err()
+		}
+	}
+
+	return nil
 }
 
 // ValidateTestPathPredicate returns a non-nil error if p is determined to be

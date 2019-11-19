@@ -25,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/metrics"
@@ -174,19 +173,10 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return nil, "", grpcutil.Unimplemented
 	}
 
-	sqlStr, _, err := sql.ToSql()
-	if err != nil {
-		return
-	}
-	st := spanner.NewStatement(sqlStr)
-	st.Params = ToSpannerMap(queryParams)
-	logging.Infof(ctx, "querying test results: %s", st.SQL)
-	logging.Infof(ctx, "query parameters: %#v", st.Params)
-
 	trs = make([]*pb.TestResult, 0, q.PageSize)
 	var summaryMarkdown Snappy
 	var b Buffer
-	err = txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+	err = query(ctx, txn, sql, queryParams).Do(func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64
