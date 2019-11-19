@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f06e35c7_fdb22a68",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f4e94ce_26d2a955",
+      "range": {
+        "startLine": 40,
+        "startChar": 49,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24ad0ea0_efe8ce88",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f36bd34_ed87cf69",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24ad0ea0_efe8ce88",
+      "range": {
+        "startLine": 251,
+        "startChar": 22,
+        "endLine": 252,
+        "endChar": 28
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "474c2198_2c04103a",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "Yes, but outputsToProcess are (at this point) only the isolated outputs. Any thoughts on wording to make that clearer?\n\nI\u0027d like to keep that information somewhere because of this situation where we\u0027re populating some things from one place, other things from another place. If we get into a state where we\u0027re missing outputs for processing because we thought outputsToProcess includes everything, but in fact (for now) only includes those in the isolated directory, hopefully the additional information is useful for figuring that out.",
+      "parentUuid": "e81f2be1_b2a55973",
+      "range": {
+        "startLine": 322,
+        "startChar": 26,
+        "endLine": 322,
+        "endChar": 70
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04b2a7c3_cbde1587",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47ef39f6_f6b1feaf",
+      "range": {
+        "startLine": 322,
+        "startChar": 3,
+        "endLine": 322,
+        "endChar": 4
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75506810_1675b85a",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 5
@@ -105,6 +201,30 @@
       "writtenOn": "2019-11-19T19:50:26Z",
       "side": 1,
       "message": "does this code assume that runID is 0? if so, let\u0027s just say 0. It would be easier to understand since we check for 0 in L350",
+      "range": {
+        "startLine": 355,
+        "startChar": 14,
+        "endLine": 355,
+        "endChar": 19
+      },
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a307f4ff_3efa11c1",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "No; we can\u0027t know for sure there\u0027s only one run.\n\nBrian mentioned that in practice we probably don\u0027t end up with multiple runs, but to store the additional links if there are any, hence the run index suffix to \"gold_triage_link\" if there is more than one run to disambiguate.",
+      "parentUuid": "75506810_1675b85a",
       "range": {
         "startLine": 355,
         "startChar": 14,
@@ -131,6 +251,24 @@
       "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "830e61ad_40e2dc07",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T23:04:31Z",
+      "side": 1,
+      "message": "Done\n\nI\u0027m also happy to inline this",
+      "parentUuid": "889a38f2_839a3eaa",
+      "revId": "64de7c99b53a0dc875459dfb5bb0a4e27de867a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
