@@ -43,30 +43,30 @@ func TestValidateTestResultPredicate(t *testing.T) {
 			Convey(`Name`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/x"},
+						Names: []string{"invocations/x", "invocations/y"},
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Name{Name: "x"},
+						Names: []string{"invocations/x", "y"},
 					})
-					So(err, ShouldErrLike, `invocation: name: does not match`)
+					So(err, ShouldErrLike, `invocation: name "y": does not match`)
 				})
 			})
 
 			Convey(`Tag`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Tag{Tag: StringPair("k", "v")},
+						Tags: StringPairs("k", "v"),
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.InvocationPredicate{
-						RootPredicate: &pb.InvocationPredicate_Tag{Tag: StringPair("-", "v")},
+						Tags: StringPairs("-", "v"),
 					})
-					So(err, ShouldErrLike, `invocation: tag: key: does not match`)
+					So(err, ShouldErrLike, `invocation: tag "-:v": key: does not match`)
 				})
 			})
 		})

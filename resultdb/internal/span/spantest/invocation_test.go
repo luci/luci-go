@@ -178,55 +178,10 @@ func BenchmarkChainFetch(b *testing.B) {
 	}
 }
 
-func TestReadInvocationIDsByTag(t *testing.T) {
-	Convey(`TestReadInvocationIDsByTag`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
-		now := clock.Now(ctx)
-
-		tagAB := pbutil.StringPair("a", "b")
-		tagAC := pbutil.StringPair("a", "c")
-		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now),
-			span.InsertMap("InvocationsByTag", map[string]interface{}{
-				"TagId":        span.TagRowID(tagAB),
-				"InvocationId": span.InvocationID("inv0"),
-			}),
-			span.InsertMap("InvocationsByTag", map[string]interface{}{
-				"TagId":        span.TagRowID(tagAB),
-				"InvocationId": span.InvocationID("inv1"),
-			}),
-			span.InsertMap("InvocationsByTag", map[string]interface{}{
-				"TagId":        span.TagRowID(tagAC),
-				"InvocationId": span.InvocationID("inv2"),
-			}),
-		)
-
-		txn := span.Client(ctx).ReadOnlyTransaction()
-		defer txn.Close()
-
-		Convey(`works`, func() {
-			invs, err := span.ReadInvocationsByTag(ctx, txn, tagAB, 0)
-			So(err, ShouldBeNil)
-			So(invs, ShouldHaveLength, 2)
-			So(invs, ShouldContainKey, span.InvocationID("inv0"))
-			So(invs, ShouldContainKey, span.InvocationID("inv1"))
-			So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
-			So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
-		})
-
-		Convey(`limit`, func() {
-			_, err := span.ReadInvocationsByTag(ctx, txn, tagAB, 1)
-			So(err, ShouldErrLike, `more than 1 invocations have tag "a:b"`)
-			So(span.TooManyInvocationsTag.In(err), ShouldBeTrue)
-		})
-	})
-}
-
 func TestQueryInvocations(t *testing.T) {
 	Convey(`TestQueryInvocations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		now := clock.Now(ctx)
 
 		query := func(pred *pb.InvocationPredicate) map[span.InvocationID]*pb.Invocation {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -236,9 +191,102 @@ func TestQueryInvocations(t *testing.T) {
 			return invs
 		}
 
-		insertInv := testutil.InsertInvocationWithInclusions
+		Convey(`No graph traversal`, func() {
+			tags := pbutil.StringPairs("a", "b", "a", "c")
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now),
+				testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now),
+				testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now),
+				span.InsertMap("InvocationsByTag", map[string]interface{}{
+					"TagId":        span.TagRowID(tags[0]),
+					"InvocationId": span.InvocationID("inv0"),
+				}),
+				span.InsertMap("InvocationsByTag", map[string]interface{}{
+					"TagId":        span.TagRowID(tags[0]),
+					"InvocationId": span.InvocationID("inv1"),
+				}),
+				span.InsertMap("InvocationsByTag", map[string]interface{}{
+					"TagId":        span.TagRowID(tags[1]),
+					"InvocationId": span.InvocationID("inv1"),
+				}),
+				span.InsertMap("InvocationsByTag", map[string]interface{}{
+					"TagId":        span.TagRowID(tags[1]),
+					"InvocationId": span.InvocationID("inv2"),
+				}),
+			)
 
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+
+			Convey(`Search by Name`, func() {
+				pred := &pb.InvocationPredicate{Names: []string{"invocations/inv1"}}
+				Convey(`One name`, func() {
+					invs, err := span.QueryInvocations(ctx, txn, pred, 10)
+					So(err, ShouldBeNil)
+					So(invs, ShouldHaveLength, 1)
+					So(invs, ShouldContainKey, span.InvocationID("inv1"))
+					So(invs["inv1"].Name, ShouldEqual, "invocations/inv1")
+					So(invs["inv1"].State, ShouldEqual, pb.Invocation_COMPLETED)
+				})
+
+				Convey(`Two names`, func() {
+					pred := &pb.InvocationPredicate{Names: []string{"invocations/inv0", "invocations/inv1"}}
+					invs, err := span.QueryInvocations(ctx, txn, pred, 10)
+					So(err, ShouldBeNil)
+					So(invs, ShouldHaveLength, 2)
+					So(invs, ShouldContainKey, span.InvocationID("inv0"))
+					So(invs, ShouldContainKey, span.InvocationID("inv1"))
+					So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
+					So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
+				})
+			})
+
+			Convey(`Search by Tags`, func() {
+				Convey(`One tag`, func() {
+					pred := &pb.InvocationPredicate{Tags: tags[:1]}
+					invs, err := span.QueryInvocations(ctx, txn, pred, 10)
+					So(err, ShouldBeNil)
+					So(invs, ShouldHaveLength, 2)
+					So(invs, ShouldContainKey, span.InvocationID("inv0"))
+					So(invs, ShouldContainKey, span.InvocationID("inv1"))
+					So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
+					So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
+				})
+
+				Convey(`Two tags`, func() {
+					pred := &pb.InvocationPredicate{Tags: tags}
+					invs, err := span.QueryInvocations(ctx, txn, pred, 10)
+					So(err, ShouldBeNil)
+					So(invs, ShouldHaveLength, 3)
+					So(invs, ShouldContainKey, span.InvocationID("inv0"))
+					So(invs, ShouldContainKey, span.InvocationID("inv1"))
+					So(invs, ShouldContainKey, span.InvocationID("inv2"))
+					So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
+					So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
+				})
+			})
+
+			Convey(`Search by Tags and Names, with duplicates`, func() {
+				pred := &pb.InvocationPredicate{
+					Names: []string{"invocations/inv0"},
+					Tags:  tags[:1],
+				}
+				invs, err := span.QueryInvocations(ctx, txn, pred, 10)
+				So(err, ShouldBeNil)
+				So(invs, ShouldHaveLength, 2)
+				So(invs, ShouldContainKey, span.InvocationID("inv0"))
+				So(invs, ShouldContainKey, span.InvocationID("inv1"))
+			})
+
+			Convey(`limit`, func() {
+				pred := &pb.InvocationPredicate{Tags: tags}
+				_, err := span.QueryInvocations(ctx, txn, pred, 1)
+				So(err, ShouldErrLike, `more than 1 invocations match the predicate`)
+				So(span.TooManyInvocationsTag.In(err), ShouldBeTrue)
+			})
+		})
 		Convey(`Invocations reachable from an invocation with a certain name`, func() {
+			insertInv := testutil.InsertInvocationWithInclusions
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertInv("a", "b", "c"),
 				insertInv("b", "d"),
@@ -250,7 +298,7 @@ func TestQueryInvocations(t *testing.T) {
 				insertInv("y", "a"),
 			)...)
 			actual := query(&pb.InvocationPredicate{
-				RootPredicate: &pb.InvocationPredicate_Name{Name: "invocations/a"},
+				Names: []string{"invocations/a"},
 			})
 			So(actual, ShouldHaveLength, 5)
 			So(actual, ShouldContainKey, span.InvocationID("a"))
