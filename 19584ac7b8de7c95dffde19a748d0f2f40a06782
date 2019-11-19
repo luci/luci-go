@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5483b4f8_c1df7ed4",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-19T20:53:32Z",
+      "side": 1,
+      "message": "General question: how do you decide to use squirrel or statement?",
+      "range": {
+        "startLine": 243,
+        "startChar": 7,
+        "endLine": 243,
+        "endChar": 27
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17f65892_dc619501",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-19T20:53:32Z",
+      "side": 1,
+      "message": "This will not work if unspecified is allowed, right?",
+      "range": {
+        "startLine": 254,
+        "startChar": 0,
+        "endLine": 256,
+        "endChar": 100
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43f2a7fa_e8666880",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-19T20:53:32Z",
+      "side": 1,
+      "message": "How about using the same argument name here and ValidateInvocationPredicate  to be consistent (The double negative at Ln26 \u0026 Ln52 is confusing)?\n\nallowUnspecified seems to be a better name.",
+      "range": {
+        "startLine": 25,
+        "startChar": 60,
+        "endLine": 25,
+        "endChar": 77
+      },
+      "revId": "19584ac7b8de7c95dffde19a748d0f2f40a06782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
