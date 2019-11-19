@@ -179,7 +179,7 @@ func TestJSONConversions(t *testing.T) {
 		}
 
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, req, inv)
+		testResults, err := results.ToProtos(ctx, req, inv, nil)
 		So(err, ShouldBeNil)
 		So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
