@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/klauspost/compress/snappy"
@@ -76,8 +77,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 	return FromSpanner(row, ptrs...)
 }
 
-// FromSpanner reads values from row to ptrs, converting types from Spanner
-// to Go along the way.
+// Buffer can convert a value from a Spanner type to a Go type.
 // Supported types:
 //   - string
 //   - tspb.Timestamp
@@ -87,122 +87,145 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - typepb.Variant
 //   - typepb.StringPair
 //   - Snappy
-func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
-	spanPtrs := make([]interface{}, len(ptrs))
+type Buffer struct {
+	nullStr   spanner.NullString
+	nullTime  spanner.NullTime
+	i64       int64
+	strSlice  []string
+	byteSlice []byte
+}
 
-	for i, goPtr := range ptrs {
-		switch goPtr.(type) {
-		case *string:
-			spanPtrs[i] = &spanner.NullString{}
-		case *InvocationID:
-			spanPtrs[i] = &spanner.NullString{}
-		case *[]InvocationID:
-			spanPtrs[i] = &[]string{}
-		case **tspb.Timestamp:
-			spanPtrs[i] = &spanner.NullTime{}
-		case *pb.TestStatus:
-			spanPtrs[i] = new(int64)
-		case *pb.Invocation_State:
-			spanPtrs[i] = new(int64)
-		case **typepb.Variant:
-			spanPtrs[i] = &[]string{}
-		case *[]*typepb.StringPair:
-			spanPtrs[i] = &[]string{}
-		case *[]*pb.Artifact:
-			spanPtrs[i] = &[][]byte{}
-		case *Snappy:
-			spanPtrs[i] = &[]byte{}
-		default:
-			spanPtrs[i] = goPtr
-		}
+// FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
+// Appropriate when FromSpanner is called only once, whereas Buffer is reusable
+// throughout function.
+func FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
+	return (&Buffer{}).FromSpanner(row, ptrs...)
+}
+
+// FromSpanner reads values from row to ptrs, converting types from Spanner
+// to Go along the way.
+func (b *Buffer) FromSpanner(row *spanner.Row, ptrs ...interface{}) error {
+	if len(ptrs) != row.Size() {
+		panic("len(ptrs) != row.Size()")
 	}
 
-	if err := row.Columns(spanPtrs...); err != nil {
+	for i, goPtr := range ptrs {
+		if err := b.fromSpanner(row, i, goPtr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error {
+	b.strSlice = b.strSlice[:0]
+	b.byteSlice = b.byteSlice[:0]
+
+	var spanPtr interface{}
+	switch goPtr.(type) {
+	case *string:
+		spanPtr = &b.nullStr
+	case *InvocationID:
+		spanPtr = &b.nullStr
+	case *[]InvocationID:
+		spanPtr = &b.strSlice
+	case **tspb.Timestamp:
+		spanPtr = &b.nullTime
+	case *pb.TestStatus:
+		spanPtr = &b.i64
+	case *pb.Invocation_State:
+		spanPtr = &b.i64
+	case **typepb.Variant:
+		spanPtr = &b.strSlice
+	case *[]*typepb.StringPair:
+		spanPtr = &b.strSlice
+	case *[]*pb.Artifact:
+		spanPtr = &b.byteSlice
+	case *Snappy:
+		spanPtr = &b.byteSlice
+	default:
+		spanPtr = goPtr
+	}
+
+	if err := row.Column(col, spanPtr); err != nil {
 		return err
 	}
 
-	// Declare err to use in short statements.
+	if spanPtr == goPtr {
+		return nil
+	}
+
 	var err error
-	for i, spanPtr := range spanPtrs {
-		goPtr := ptrs[i]
-		if spanPtr == goPtr {
-			continue
+	switch goPtr := goPtr.(type) {
+	case *string:
+		*goPtr = ""
+		if b.nullStr.Valid {
+			*goPtr = b.nullStr.StringVal
 		}
 
-		switch goPtr := goPtr.(type) {
-		case *string:
-			*goPtr = ""
-			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
-				*goPtr = maybe.StringVal
-			}
+	case *InvocationID:
+		*goPtr = ""
+		if b.nullStr.Valid {
+			*goPtr = InvocationIDFromRowID(b.nullStr.StringVal)
+		}
 
-		case *InvocationID:
-			*goPtr = ""
-			if maybe := *spanPtr.(*spanner.NullString); maybe.Valid {
-				*goPtr = InvocationIDFromRowID(maybe.StringVal)
-			}
+	case *[]InvocationID:
+		*goPtr = make([]InvocationID, len(b.strSlice))
+		for i, rowID := range b.strSlice {
+			(*goPtr)[i] = InvocationIDFromRowID(rowID)
+		}
 
-		case *[]InvocationID:
-			rowIDs := *(spanPtr.(*[]string))
-			*goPtr = make([]InvocationID, len(rowIDs))
-			for i, rowID := range rowIDs {
-				(*goPtr)[i] = InvocationIDFromRowID(rowID)
-			}
+	case **tspb.Timestamp:
+		*goPtr = nil
+		if b.nullTime.Valid {
+			*goPtr = pbutil.MustTimestampProto(b.nullTime.Time)
+		}
 
-		case **tspb.Timestamp:
-			*goPtr = nil
-			if maybe := *spanPtr.(*spanner.NullTime); maybe.Valid {
-				*goPtr = pbutil.MustTimestampProto(maybe.Time)
-			}
+	case *pb.Invocation_State:
+		*goPtr = pb.Invocation_State(b.i64)
 
-		case *pb.Invocation_State:
-			*goPtr = pb.Invocation_State(*spanPtr.(*int64))
+	case *pb.TestStatus:
+		*goPtr = pb.TestStatus(b.i64)
 
-		case *pb.TestStatus:
-			*goPtr = pb.TestStatus(*spanPtr.(*int64))
+	case **typepb.Variant:
+		if *goPtr, err = pbutil.VariantFromStrings(b.strSlice); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			panic(err)
+		}
 
-		case **typepb.Variant:
-			if *goPtr, err = pbutil.VariantFromStrings(*spanPtr.(*[]string)); err != nil {
+	case *[]*typepb.StringPair:
+		*goPtr = make([]*typepb.StringPair, len(b.strSlice))
+		for i, p := range b.strSlice {
+			if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(err)
 			}
-
-		case *[]*typepb.StringPair:
-			pairs := *spanPtr.(*[]string)
-			*goPtr = make([]*typepb.StringPair, len(pairs))
-			for i, p := range pairs {
-				if (*goPtr)[i], err = pbutil.StringPairFromString(p); err != nil {
-					// If it was written to Spanner, it should have been validated.
-					panic(err)
-				}
-			}
-
-		case *[]*pb.Artifact:
-			// TODO(nodir): reuse buffer across calls.
-			byteSlices := *spanPtr.(*[][]byte)
-			if *goPtr, err = pbutil.ArtifactsFromByteSlices(byteSlices); err != nil {
-				// If it was written to Spanner, it should have been validated.
-				panic(err)
-			}
-
-		case *Snappy:
-			encoded := *spanPtr.(*[]byte)
-			if len(encoded) == 0 {
-				// do not set to nil; otherwise we loose the buffer.
-				*goPtr = (*goPtr)[:0]
-			} else {
-				// Try to reuse the existing buffer.
-				buf := []byte(*goPtr)
-				buf = buf[:cap(buf)]
-				if *goPtr, err = snappy.Decode(buf, encoded); err != nil {
-					// If it was written to Spanner, it should have been validated.
-					panic(errors.Annotate(err, "invalid snappy data: %v", encoded).Err())
-				}
-			}
-
-		default:
-			panic("impossible")
 		}
+
+	case *[]*pb.Artifact:
+		container := &Artifacts{}
+		if err := proto.Unmarshal(b.byteSlice, container); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			panic(err)
+		}
+		*goPtr = container.Artifacts
+
+	case *Snappy:
+		if len(b.byteSlice) == 0 {
+			// do not set to nil; otherwise we loose the buffer.
+			*goPtr = (*goPtr)[:0]
+		} else {
+			// Try to reuse the existing buffer.
+			buf := []byte(*goPtr)
+			buf = buf[:cap(buf)]
+			if *goPtr, err = snappy.Decode(buf, b.byteSlice); err != nil {
+				// If it was written to Spanner, it should have been validated.
+				panic(errors.Annotate(err, "invalid snappy data: %v", b.byteSlice).Err())
+			}
+		}
+
+	default:
+		panic("impossible")
 	}
 	return nil
 }
@@ -253,7 +276,7 @@ func ToSpanner(v interface{}) interface{} {
 		return pbutil.StringPairsToStrings(v...)
 
 	case []*pb.Artifact:
-		ret, err := pbutil.ArtifactsToByteSlices(v)
+		ret, err := proto.Marshal(&Artifacts{Artifacts: v})
 		if err != nil {
 			panic(err)
 		}
