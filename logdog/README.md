@@ -34,6 +34,11 @@ LogDog offers several useful features:
 Most applications will interact with a LogDog Coordinator instance via its
 [Coordinator Logs API](api/endpoints/coordinator/logs/v1).
 
+Chrome Operations currently runs a LogDog instance serving *.chromium.org
+which is located at logs.chromium.org. You can view it's RPC explorer 
+[here](https://logs.chromium.org/rpcexplorer/services/).
+Access it through the command line with the prpc from depot_tools with
+`prpc show logs.chromium.org`
 
 ## Life of a Log Stream
 
