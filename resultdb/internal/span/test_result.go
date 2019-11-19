@@ -131,31 +131,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		"invIDs": q.InvocationIDs,
 	}
 
-	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(q.CursorToken); {
-	case tokErr != nil:
-		err = errors.Reason("invalid page_token").
-			InternalReason("%s", tokErr).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-		return
-
-	case pos == nil:
-		break
-
-	case len(pos) == 3:
-		sql = sql.Where(`(
-			(InvocationId > @cursorInvocationID)
-			OR (InvocationId = @cursorInvocationID AND TestPath > @cursorTestPath)
-			OR (InvocationId = @cursorInvocationID AND TestPath = @cursorTestPath AND ResultId > @cursorResultID)
-			)`)
-		queryParams["cursorInvocationID"] = InvocationID(pos[0])
-		queryParams["cursorTestPath"] = pos[1]
-		queryParams["cursorResultID"] = pos[2]
-
-	default:
-		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	sql, err = applyTestPagination(sql, queryParams, q.CursorToken, "ResultId")
+	if err != nil {
 		return
 	}
 
