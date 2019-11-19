@@ -137,32 +137,32 @@ func TestLogs(t *testing.T) {
 			"https://chromium.googlesource.com/third_party/what": rev2,
 		}
 		Convey(`Both empty`, func() {
-			logs, err := ComputeLogs(ctx, nil, nil, history)
+			logs, err := ComputeLogs(ctx, "luci-proj", nil, nil, history)
 			So(err, ShouldBeNil)
 			So(logs, ShouldHaveLength, 0)
 		})
 		Convey(`One empty`, func() {
-			logs1, err := ComputeLogs(ctx, checkout1Old, nil, history)
+			logs1, err := ComputeLogs(ctx, "luci-proj", checkout1Old, nil, history)
 			So(err, ShouldBeNil)
 			So(logs1, ShouldHaveLength, 0)
 
-			logs2, err := ComputeLogs(ctx, nil, checkout1Old, history)
+			logs2, err := ComputeLogs(ctx, "luci-proj", nil, checkout1Old, history)
 			So(err, ShouldBeNil)
 			So(logs2, ShouldHaveLength, 0)
 		})
 		Convey(`Both valid, full overlap`, func() {
-			logs, err := ComputeLogs(ctx, checkout1Old, checkout1New, history)
+			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout1New, history)
 			So(err, ShouldBeNil)
 			So(logs["https://chromium.googlesource.com/chromium/src"], ShouldResembleProto, testCommits[:1])
 			So(logs["https://chromium.googlesource.com/third_party/hello"], ShouldResembleProto, testCommits[:1])
 		})
 		Convey(`Both valid, partial overlap`, func() {
-			logs, err := ComputeLogs(ctx, checkout1Old, checkout2, history)
+			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout2, history)
 			So(err, ShouldBeNil)
 			So(logs["https://chromium.googlesource.com/chromium/src"], ShouldResembleProto, testCommits[:1])
 		})
 		Convey(`Both valid, no overlap`, func() {
-			logs, err := ComputeLogs(ctx, checkout1Old, checkout3, history)
+			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout3, history)
 			So(err, ShouldBeNil)
 			So(logs, ShouldHaveLength, 0)
 		})
@@ -201,7 +201,7 @@ func TestLogs(t *testing.T) {
 // mockCommits should be ordered from newest to oldest, to mimic the ordering
 // returned by Gitiles.
 func mockHistoryFunc(projectCommits map[string][]*gitpb.Commit) HistoryFunc {
-	return func(_ context.Context, _, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
+	return func(_ context.Context, _, _, project, oldRevision, newRevision string) ([]*gitpb.Commit, error) {
 		mockCommits := projectCommits[project]
 		oldCommit := -1
 		newCommit := -1
