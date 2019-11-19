@@ -99,7 +99,7 @@ type TestResultQuery struct {
 // QueryTestResults reads test results matching the predicate.
 // Returned test results from the same invocation are contiguous.
 func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextCursorTok string, err error) {
-	defer metrics.Trace(ctx, "QueryTestRsults(ctx, txn, %#v)", q)()
+	defer metrics.Trace(ctx, "QueryTestResults(ctx, txn, %#v)", q)()
 
 	switch {
 	case q.PageSize <= 0:
