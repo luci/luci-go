@@ -108,9 +108,10 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 
 	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
 	opts := &spanner.ReadOptions{Limit: pageSize}
+	var b Buffer
 	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
 		ex := &pb.TestExoneration{}
-		err := FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
+		err := b.FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
 		if err != nil {
 			return err
 		}

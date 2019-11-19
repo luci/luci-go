@@ -146,12 +146,12 @@ CREATE TABLE TestResults (
   Tags ARRAY<STRING(MAX)>,
 
   -- Input artifacts, see also TestResult.input_artifacts in test_result.proto.
-  -- Each element is Artifact message encoded in bytes.
-  InputArtifacts ARRAY<BYTES(MAX)>,
+  -- Encoded as resultdb.internal.Artifacts message.
+  InputArtifacts BYTES(MAX),
 
   -- Output artifacts, see also TestResult.output_artifacts in test_result.proto.
-  -- Each element is Artifact message encoded in bytes.
-  OutputArtifacts ARRAY<BYTES(MAX)>
+  -- Encoded as resultdb.internal.Artifacts message.
+  OutputArtifacts BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
