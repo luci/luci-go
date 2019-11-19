@@ -48,6 +48,13 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (r
 		err = grpcutil.GRPCifyAndLogErr(ctx, err)
 	}()
 
+	// TODO(crbug.com/1013316): replace this with project-identified transport.
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
+	if err != nil {
+		return ctx, err
+	}
+	ctx = WithHTTPClient(ctx, &http.Client{Transport: tr})
+
 	if err := verifyAccess(ctx); err != nil {
 		return nil, err
 	}
@@ -65,7 +72,7 @@ func verifyAccess(ctx context.Context) error {
 	// TODO(crbug.com/1013316): use realms.
 
 	// WARNING: removing this restriction requires removing AsSelf HTTP client
-	// that is setup in internal.Main() function.
+	// that is setup in CommonPrelude()
 	// DO NOT REMOVE this until that's done.
 	switch allowed, err := auth.IsMember(ctx, accessGroup); {
 	case err != nil:
