@@ -16,6 +16,24 @@
       "revId": "f124967927889cf61e7a36a59aa7861758dc10e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80364c10_88945394",
+        "filename": "tools/filegraph/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T16:54:09Z",
+      "side": 0,
+      "message": "must be a bad merge. undone",
+      "parentUuid": "f2eb207e_3182b1ae",
+      "revId": "f124967927889cf61e7a36a59aa7861758dc10e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
