@@ -16,14 +16,12 @@ package internal
 
 import (
 	"flag"
-	"net/http"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -45,14 +43,6 @@ func Main(init func(srv *server.Server) error) {
 		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB); err != nil {
 			return err
 		}
-
-		// TODO(crbug.com/1013316): replace this with project-identified transport
-		// and do it at the request level.
-		tr, err := auth.GetRPCTransport(srv.Context, auth.AsSelf)
-		if err != nil {
-			return err
-		}
-		srv.Context = WithHTTPClient(srv.Context, &http.Client{Transport: tr})
 
 		return init(srv)
 	})
