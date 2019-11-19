@@ -252,6 +252,24 @@
     },
     {
       "key": {
+        "uuid": "68a65c0e_685c8f35",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T22:04:16Z",
+      "side": 1,
+      "message": "Ack\n\nto be absolutely clear: what I meant is that at this level, in this function, we don\u0027t really that outputsToProcess are coming from isolate. It is the caller that knows that, but not in this func. But it does not matter",
+      "parentUuid": "6a6dccc9_9f42bd41",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ef886ee9_5f3c6a36",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
