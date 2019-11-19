@@ -22,6 +22,30 @@
       "revId": "7f4dab734f61616fbba019ea13e2fa7b71614e3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ea0a6c0_9e86200d",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-19T18:31:29Z",
+      "side": 1,
+      "message": "i have another CL https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1921139/6 on top of this one, where I refactor this func. Let me expanding the the comment above in another CL.",
+      "parentUuid": "a52f042a_ce1236a3",
+      "range": {
+        "startLine": 195,
+        "startChar": 4,
+        "endLine": 196,
+        "endChar": 24
+      },
+      "revId": "7f4dab734f61616fbba019ea13e2fa7b71614e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
