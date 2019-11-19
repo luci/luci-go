@@ -15,6 +15,8 @@
 package target
 
 import (
+	"reflect"
+
 	"github.com/golang/protobuf/proto"
 
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
@@ -45,4 +47,26 @@ func (t *NetworkDevice) PopulateProto(d *pb.MetricsCollection) {
 			Hostgroup: &t.Hostgroup,
 		},
 	}
+}
+
+func RootLabel(key string, value interface{}) *pb.MetricsCollection_RootLabels {
+	label := &pb.MetricsCollection_RootLabels{Key: proto.String(key)}
+
+	switch v := reflect.ValueOf(value); v.Kind() {
+	case reflect.String:
+		label.Value = &pb.MetricsCollection_RootLabels_StringValue{
+			StringValue: value.(string),
+		}
+	case reflect.Int64:
+		label.Value = &pb.MetricsCollection_RootLabels_Int64Value{
+			Int64Value: value.(int64),
+		}
+	case reflect.Bool:
+		label.Value = &pb.MetricsCollection_RootLabels_BoolValue{
+			BoolValue: value.(bool),
+		}
+	default:
+		panic("unsupported type; all target fields must be one of string, int64, or bool.")
+	}
+	return label
 }

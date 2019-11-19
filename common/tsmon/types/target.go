@@ -23,6 +23,8 @@ import (
 
 // A Target knows how to put information about itself in a MetricsData message.
 type Target interface {
+	// TODO(1026140): the hash and proto of a Target object should be created
+	// at the time of the object creation.
 	PopulateProto(d *pb.MetricsCollection)
 	Hash() uint64
 	Clone() Target
