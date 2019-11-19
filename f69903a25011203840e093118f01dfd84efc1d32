@@ -193,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "28da9325_462c0700",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "Rakib is already working on making these paths consistent --- thank you!\n\nSo I\u0027ll just read the paths directly.",
+      "parentUuid": "78771a07_27762c01",
+      "range": {
+        "startLine": 289,
+        "startChar": 20,
+        "endLine": 289,
+        "endChar": 24
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "526c56c7_e62e6fa7",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -204,6 +228,24 @@
       "writtenOn": "2019-11-15T20:11:14Z",
       "side": 1,
       "message": "there are no isolated outputs in this func",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a6dccc9_9f42bd41",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "PTAL at wording",
+      "parentUuid": "526c56c7_e62e6fa7",
       "revId": "f69903a25011203840e093118f01dfd84efc1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -230,6 +272,30 @@
       "revId": "f69903a25011203840e093118f01dfd84efc1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cb7bb77_bd14e985",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ef886ee9_5f3c6a36",
+      "range": {
+        "startLine": 308,
+        "startChar": 25,
+        "endLine": 308,
+        "endChar": 37
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -309,6 +375,30 @@
     },
     {
       "key": {
+        "uuid": "74d7d990_c120c843",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "It was to retain the association that nil unknownArtifacts means none unknown, but I can just make it a length check instead.",
+      "parentUuid": "decb7035_a0f07364",
+      "range": {
+        "startLine": 327,
+        "startChar": 3,
+        "endLine": 329,
+        "endChar": 4
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d14d9c6a_a0cf5750",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 3
@@ -329,6 +419,30 @@
       "revId": "f69903a25011203840e093118f01dfd84efc1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849664ec_075efed9",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d14d9c6a_a0cf5750",
+      "range": {
+        "startLine": 330,
+        "startChar": 3,
+        "endLine": 332,
+        "endChar": 4
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -355,6 +469,30 @@
     },
     {
       "key": {
+        "uuid": "2e3ad0a1_e29e9c5a",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "386e772a_d93141a5",
+      "range": {
+        "startLine": 344,
+        "startChar": 48,
+        "endLine": 344,
+        "endChar": 76
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "716cad71_fc18c211",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 3
@@ -372,6 +510,24 @@
     },
     {
       "key": {
+        "uuid": "b737197f_3f759923",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "716cad71_fc18c211",
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "34229670_38c841e6",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 3
@@ -383,6 +539,30 @@
       "writtenOn": "2019-11-15T20:11:14Z",
       "side": 1,
       "message": "names must be unique within a test result\n\nfrom https://osscs.corp.google.com/chromium/_/chromium/infra/luci/luci-go/+/3b26f2c2a887c4cacbb2b0f6d4174cf8e84d56b5:resultdb/proto/rpc/v1/test_result.proto;drc\u003dd9597ae4b2897d7ba9bb478d0352d8290c996f25;bpv\u003d0;bpt\u003d0;l\u003d160\n\n\"identifies the artifact.\"",
+      "range": {
+        "startLine": 116,
+        "startChar": 5,
+        "endLine": 116,
+        "endChar": 9
+      },
+      "revId": "f69903a25011203840e093118f01dfd84efc1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b06e391_6fa491bd",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-19T17:41:50Z",
+      "side": 1,
+      "message": "This /may/ cause issues (e.g. if it turns out we have artifacts not in the isolated output that share a name which is used as the artifact name). I haven\u0027t seen any such case in practice, though, so just noting it as a special case for Gold triage links which will get logged.\n\nIt\u0027ll be nice when we convert all the unknown cases to errors.",
+      "parentUuid": "34229670_38c841e6",
       "range": {
         "startLine": 116,
         "startChar": 5,
