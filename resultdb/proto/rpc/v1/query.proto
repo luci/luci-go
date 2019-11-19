@@ -65,6 +65,19 @@ message TestResultPredicate {
   Expectancy expectancy = 4;
 }
 
+// Represents a function TestExoneration -> bool.
+// Empty message matches all test exonerations.
+message TestExonerationPredicate {
+  // A test exoneration must belong to an invocation satisfying this predicate.
+  InvocationPredicate invocation = 1;
+
+  // A test exoneration must have a test path satisfying this predicate.
+  TestPathPredicate test_path = 2;
+
+  // A test exoneration must have a variant satisfying this predicate.
+  VariantPredicate variant = 3;
+}
+
 // Represents a function Invocation -> bool.
 //
 // Consists of two parts, connected with logical OR:

@@ -124,3 +124,20 @@ func (s *DecoratedResultDB) QueryTestResults(ctx context.Context, req *QueryTest
 	}
 	return
 }
+
+func (s *DecoratedResultDB) QueryTestExonerations(ctx context.Context, req *QueryTestExonerationsRequest) (rsp *QueryTestExonerationsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestExonerations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestExonerations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestExonerations", rsp, err)
+	}
+	return
+}
