@@ -94,7 +94,6 @@ func TestListTestResults(t *testing.T) {
 	})
 }
 
-
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
 func insertTestResults(ctx context.Context, invID span.InvocationID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
