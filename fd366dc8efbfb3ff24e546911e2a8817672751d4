@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84637fc2_8ddf3fae",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T06:35:43Z",
+      "side": 1,
+      "message": "nit: update",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 34
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3fce226_05fc3773",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T06:35:43Z",
+      "side": 1,
+      "message": "Nit: use PageToken to be consistent?",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 12
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88599325_4f02c382",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T06:35:43Z",
+      "side": 1,
+      "message": "I think this function is not generic enough to be here. Probably move it to span/test_result.go ?",
+      "range": {
+        "startLine": 309,
+        "startChar": 5,
+        "endLine": 309,
+        "endChar": 24
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2140090f_bb34a215",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T06:35:43Z",
+      "side": 1,
+      "message": "Since there\u0027s no extra logic here, probably this function is not needed?",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
