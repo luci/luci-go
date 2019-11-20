@@ -29,7 +29,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -120,10 +120,15 @@ func mainImpl() int {
 		},
 	}
 
-	logging.Infof(ctx, "Initial build proto:\n%s",
-		proto.MarshalTextString(input.Build))
+	initialJSONPB, err := (&jsonpb.Marshaler{
+		OrigName: true, Indent: "  ",
+	}).MarshalToString(input)
+	check(errors.Annotate(err, "marshalling input args").Err())
+	logging.Infof(ctx, "Input args:\n%s", initialJSONPB)
 
 	builds, err := host.Run(cctx, opts, func(ctx context.Context) error {
+		logging.Infof(ctx, "running luciexe: %q", exePath)
+		logging.Infof(ctx, "  (cache dir): %q", input.CacheDir)
 		subp, err := invoke.Start(ctx, exePath, input.Build, &invoke.Options{
 			CacheDir: input.CacheDir,
 		})

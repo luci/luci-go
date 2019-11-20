@@ -27,6 +27,7 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -54,6 +55,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	if err := opts.initialize(); err != nil {
 		return nil, err
 	}
+	logging.Infof(ctx, "starting luciexe host env with: %+v", opts)
 
 	// cleanup will accumulate all of the cleanup functions as we set up the
 	// environment. If an error occurs before we can start the user code (`cb`),
@@ -71,12 +73,12 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 	// First, capture the entire env to restore it later.
 	cleanup.add("restoreEnv", restoreEnv())
 
-	// Startup auth services
+	logging.Infof(ctx, "starting auth services")
 	if err := cleanup.concat(startAuthServices(ctx, &opts)); err != nil {
 		return nil, err
 	}
 
-	// Startup butler
+	logging.Infof(ctx, "starting butler")
 	butler, err := startButler(ctx, &opts)
 	if err != nil {
 		return nil, err
@@ -86,6 +88,7 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 		return butler.Wait()
 	})
 
+	logging.Infof(ctx, "starting build.proto merging agent")
 	agent := spyOn(ctx, butler, opts.BaseBuild)
 	cleanup.add("buildmerge spy", func() error {
 		agent.Close()
@@ -129,9 +132,12 @@ func Run(ctx context.Context, options *Options, cb func(context.Context) error) 
 
 	go func() {
 		defer userCleanup.run(ctx)
+		logging.Infof(ctx, "invoking host environment callback")
 
-		// TODO(iannucci): do something with retval of cb
-		cb(ctx)
+		if err := cb(ctx); err != nil {
+			logging.Errorf(ctx, "host environment callback failed:")
+			errors.Log(ctx, err)
+		}
 	}()
 
 	return buildCh, nil
