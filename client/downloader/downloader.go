@@ -645,15 +645,8 @@ type Stats struct {
 	ItemsHot  []byte `json:"items_hot"`
 }
 
-// FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
-func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
-	start := time.Now()
-
-	d := New(ctx, c, isolatedHash, outDir, &Options{
-		Cache: cache,
-	})
-
-	waitErr := d.Wait()
+// GetCacheStats returns packed stats for cache miss/hit.
+func GetCacheStats(cache cache.Cache) ([]byte, []byte, error) {
 	// TODO(yyanagisawa): refactor this.
 	added := cache.GetAdded()
 	used := cache.GetUsed()
@@ -661,7 +654,7 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
 	itemsCold, err := isolated.Pack(added)
 	if err != nil {
-		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for cold items").Err()
+		return nil, nil, errors.Annotate(err, "failed to call Pack for cold items").Err()
 	}
 
 	hotCounter := make(map[int64]int)
@@ -682,7 +675,25 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 	sort.Slice(hot, func(i, j int) bool { return hot[i] < hot[j] })
 	itemsHot, err := isolated.Pack(hot)
 	if err != nil {
-		return nil, Stats{}, errors.Annotate(err, "failed to call Pack for hot items").Err()
+		return nil, nil, errors.Annotate(err, "failed to call Pack for hot items").Err()
+	}
+
+	return itemsCold, itemsHot, nil
+}
+
+// FetchAndMap fetches an isolated tree, create the tree and returns isolated tree.
+func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolatedclient.Client, cache cache.Cache, outDir string) (*isolated.Isolated, Stats, error) {
+	start := time.Now()
+
+	d := New(ctx, c, isolatedHash, outDir, &Options{
+		Cache: cache,
+	})
+
+	waitErr := d.Wait()
+
+	itemsCold, itemsHot, err := GetCacheStats(cache)
+	if err != nil {
+		return nil, Stats{}, errors.Annotate(err, "failed to call GetCacheStats").Err()
 	}
 
 	return d.isoMap[isolatedHash], Stats{
