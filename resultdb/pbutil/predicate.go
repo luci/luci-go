@@ -73,16 +73,19 @@ func ValidateInvocationPredicate(p *pb.InvocationPredicate) error {
 // ValidateTestPathPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestPathPredicate(p *pb.TestPathPredicate) error {
-	switch pr := p.Predicate.(type) {
-	case *pb.TestPathPredicate_Exact:
-		return errors.Annotate(ValidateTestPath(pr.Exact), "exact").Err()
-	case *pb.TestPathPredicate_Prefix:
-		return errors.Annotate(ValidateTestPath(pr.Prefix), "prefix").Err()
-	case nil:
-		return unspecified()
-	default:
-		panic("impossible")
+	for _, path := range p.GetPaths() {
+		if err := ValidateTestPath(path); err != nil {
+			return errors.Annotate(err, "path %q", path).Err()
+		}
 	}
+
+	for _, prefix := range p.GetPathPrefixes() {
+		if err := ValidateTestPath(prefix); err != nil {
+			return errors.Annotate(err, "prefix %q", prefix).Err()
+		}
+	}
+
+	return nil
 }
 
 // ValidateVariantPredicate returns a non-nil error if p is determined to be

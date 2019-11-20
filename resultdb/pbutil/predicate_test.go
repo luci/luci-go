@@ -75,39 +75,39 @@ func TestValidateTestResultPredicate(t *testing.T) {
 				})
 			}
 
-			Convey(`Exact`, func() {
+			Convey(`nil`, func() {
+				err := validate(nil)
+				So(err, ShouldBeNil)
+			})
+
+			Convey(`Paths`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.TestPathPredicate{
-						Predicate: &pb.TestPathPredicate_Exact{Exact: "a"},
+						Paths: []string{"a"},
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.TestPathPredicate{
-						Predicate: &pb.TestPathPredicate_Exact{Exact: "\x00"},
+						Paths: []string{"\x00"},
 					})
-					So(err, ShouldErrLike, "test_path: exact: does not match")
+					So(err, ShouldErrLike, `test_path: path "\x00": does not match`)
 				})
 			})
 
-			Convey(`Prefix`, func() {
+			Convey(`PathPrefixes`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.TestPathPredicate{
-						Predicate: &pb.TestPathPredicate_Prefix{Prefix: "a"},
+						PathPrefixes: []string{"a"},
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.TestPathPredicate{
-						Predicate: &pb.TestPathPredicate_Prefix{Prefix: "\x00"},
+						PathPrefixes: []string{"\x00"},
 					})
-					So(err, ShouldErrLike, "test_path: prefix: does not match")
+					So(err, ShouldErrLike, `test_path: prefix "\x00": does not match`)
 				})
-			})
-
-			Convey(`Unspecified`, func() {
-				err := validate(&pb.TestPathPredicate{})
-				So(err, ShouldErrLike, `test_path: unspecified`)
 			})
 		})
 
