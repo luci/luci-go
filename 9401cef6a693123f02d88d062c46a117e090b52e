@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "90cb49b3_36245f43",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T17:50:51Z",
+      "side": 1,
+      "message": "Have you considered to create resultdb/proto/internal/ and then keep \ninternal proto messages there?",
+      "range": {
+        "startLine": 9,
+        "startChar": 40,
+        "endLine": 9,
+        "endChar": 64
+      },
+      "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ad833a6_9174fe28",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T17:50:51Z",
+      "side": 1,
+      "message": "Since Artifact itself is versioned, should this proto be versioned as well?",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 75
+      },
+      "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
