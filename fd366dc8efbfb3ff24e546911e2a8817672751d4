@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e115db74_45363bc9",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T16:51:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84637fc2_8ddf3fae",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 34
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3fce226_05fc3773",
         "filename": "resultdb/internal/span/test_exoneration.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea1b9c19_01e20919",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T16:51:05Z",
+      "side": 1,
+      "message": "I am glad you said that. We had this conversation for Jao-ke. Let\u0027s converge on page token.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1925256",
+      "parentUuid": "e3fce226_05fc3773",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 12
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "0b08e989_b3dd36e3",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T16:51:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88599325_4f02c382",
+      "range": {
+        "startLine": 309,
+        "startChar": 5,
+        "endLine": 309,
+        "endChar": 24
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2140090f_bb34a215",
         "filename": "resultdb/pbutil/query.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "005afed4_2647be65",
+        "filename": "resultdb/pbutil/query.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T16:51:05Z",
+      "side": 1,
+      "message": "the fact that it has no extra logic is an impl detail. One day we may add extra logic and will need to update all callsites to call ValidateTestExonerationPredicate.\n\nThis actually helped me realize that I should have made ValidateTestObjectPredicate internal. Done",
+      "parentUuid": "2140090f_bb34a215",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "fd366dc8efbfb3ff24e546911e2a8817672751d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
