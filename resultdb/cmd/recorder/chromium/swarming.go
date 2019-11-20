@@ -268,6 +268,10 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveIn
 
 // convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
 func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
+	if ts == "" {
+		return nil, errors.Reason("missing").Err()
+	}
+
 	// Timestamp strings from swarming should be RFC3339 without the trailing Z; check in case.
 	if !strings.HasSuffix(ts, "Z") {
 		ts += "Z"
