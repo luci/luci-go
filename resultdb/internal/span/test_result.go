@@ -93,12 +93,12 @@ type TestResultQuery struct {
 	InvocationIDs []InvocationID
 	Predicate     *pb.TestResultPredicate // Predicate.Invocation must be nil.
 	PageSize      int                     // must be positive
-	CursorToken   string
+	PageToken     string
 }
 
 // QueryTestResults reads test results matching the predicate.
 // Returned test results from the same invocation are contiguous.
-func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextCursorTok string, err error) {
+func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
 	defer metrics.Trace(ctx, "QueryTestResults(ctx, txn, %#v)", q)()
 
 	switch {
@@ -133,7 +133,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(q.CursorToken); {
+	switch pos, tokErr := pagination.ParseToken(q.PageToken); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).
@@ -145,17 +145,17 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 
 	case len(pos) == 3:
 		sql = sql.Where(`(
-			(InvocationId > @cursorInvocationID)
-			OR (InvocationId = @cursorInvocationID AND TestPath > @cursorTestPath)
-			OR (InvocationId = @cursorInvocationID AND TestPath = @cursorTestPath AND ResultId > @cursorResultID)
+			(InvocationId > @afterInvocationID)
+			OR (InvocationId = @afterInvocationID AND TestPath > @afterTestPath)
+			OR (InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultID)
 			)`)
-		queryParams["cursorInvocationID"] = InvocationID(pos[0])
-		queryParams["cursorTestPath"] = pos[1]
-		queryParams["cursorResultID"] = pos[2]
+		queryParams["afterInvocationID"] = InvocationID(pos[0])
+		queryParams["afterTestPath"] = pos[1]
+		queryParams["afterResultID"] = pos[2]
 
 	default:
 		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
+			InternalReason("unexpected string slice %q", pos).
 			Tag(grpcutil.InvalidArgumentTag).Err()
 		return
 	}
@@ -213,11 +213,11 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	// If we got pageSize results, then we haven't exhausted the collection and
-	// need to return a cursor.
+	// need to return the next page token.
 	if len(trs) == q.PageSize {
 		last := trs[q.PageSize-1]
 		invID, testPath, resultID := MustParseTestResultName(last.Name)
-		nextCursorTok = pagination.Token(string(invID), testPath, resultID)
+		nextPageToken = pagination.Token(string(invID), testPath, resultID)
 	}
 	return
 }

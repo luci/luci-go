@@ -20,10 +20,8 @@ option go_package = "internalpb";
 
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
-// A message for storing all the information attached to a cursor through query
-// results.
-// TODO(nodir): rename to PageToken.
-message Cursor {
+// A message for storing all the information attached to a page token.
+message PageToken {
   // Position marks the cursor's start (exclusive). Its interpretation is
   // implementation-specific. For instance, for a Spanner cursor, this is a
   // string slice representation of the Spanner key corresponding to the entry

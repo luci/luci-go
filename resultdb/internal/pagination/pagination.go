@@ -28,7 +28,7 @@ const (
 	pageSizeDefault = 100
 )
 
-// ParseToken extracts a string slice position from the given cursor token.
+// ParseToken extracts a string slice position from the given page token.
 func ParseToken(token string) ([]string, error) {
 	if token == "" {
 		return nil, nil
@@ -39,20 +39,21 @@ func ParseToken(token string) ([]string, error) {
 		return nil, err
 	}
 
-	cursor := &internalpb.Cursor{}
-	if err := proto.Unmarshal(tokBytes, cursor); err != nil {
+	msg := &internalpb.PageToken{}
+	if err := proto.Unmarshal(tokBytes, msg); err != nil {
 		return nil, err
 	}
-	return cursor.Position, nil
+	return msg.Position, nil
 }
 
-// Token converts an string slice representing cursor position to an opaque token string.
+// Token converts an string slice representing page token position to an opaque
+// token string.
 func Token(pos ...string) string {
 	if pos == nil {
 		return ""
 	}
 
-	msgBytes, err := proto.Marshal(&internalpb.Cursor{Position: pos})
+	msgBytes, err := proto.Marshal(&internalpb.PageToken{Position: pos})
 	if err != nil {
 		panic(err)
 	}

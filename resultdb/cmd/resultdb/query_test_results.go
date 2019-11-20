@@ -80,7 +80,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
-		CursorToken:   in.PageToken,
+		PageToken:   in.PageToken,
 		InvocationIDs: invIDs,
 	})
 	if err != nil {

@@ -89,7 +89,7 @@ func TestQueryTestResults(t *testing.T) {
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
 				q2 := q
-				q2.CursorToken = pageToken
+				q2.PageToken = pageToken
 				q2.PageSize = pageSize
 				return mustRead(q2, expected)
 			}
@@ -115,13 +115,13 @@ func TestQueryTestResults(t *testing.T) {
 				defer txn.Close()
 
 				Convey(`From bad position`, func() {
-					q.CursorToken = "CgVoZWxsbw=="
+					q.PageToken = "CgVoZWxsbw=="
 					_, _, err := span.QueryTestResults(ctx, txn, q)
 					So(err, ShouldErrLike, "invalid page_token")
 				})
 
 				Convey(`From decoding`, func() {
-					q.CursorToken = "%%%"
+					q.PageToken = "%%%"
 					_, _, err := span.QueryTestResults(ctx, txn, q)
 					So(err, ShouldErrLike, "invalid page_token")
 				})
