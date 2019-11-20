@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da78b8ce_09e6c94c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:55:06Z",
+      "side": 1,
+      "message": "yes, and this won\u0027t work because \"internal\" is a special name in Golang: only descendants of internal\u0027s parent can access symbols in the internal package",
+      "parentUuid": "90cb49b3_36245f43",
+      "range": {
+        "startLine": 9,
+        "startChar": 40,
+        "endLine": 9,
+        "endChar": 64
+      },
+      "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ad833a6_9174fe28",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d05c9355_52659706",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:55:06Z",
+      "side": 1,
+      "message": "made the field versioned. I don\u0027t think we want the message to be versioned because we need one message to be used in the spanner (otherwise we\u0027d have to have a column per version)",
+      "parentUuid": "0ad833a6_9174fe28",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 37,
+        "endChar": 75
+      },
+      "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
