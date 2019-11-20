@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37df83e9_f474d85f",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "Should these be named with \u0027Client\u0027 postfix to be consistent with \"httpClient\"?",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 9
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b87b04e8_08575f99",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "This \u0027Then\u0027 is confusing as it\u0027s easy to think that it pairs with the \u0027If\u0027 on line#30. How about rewrite as following:\n\nDerives Invocation(s) from Chromium Swarming task(s) and print results, like ls subcommand.\nIf an invocation already exists for a given task, then reuses it.",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f76fd874_be5c354f",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "I don\u0027t think this is useful, it\u0027s pretty clear from the UsageLine.",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 49
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c6d6b41_55550c9e",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "Do you mean deriveRun?",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 14
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b57839ff_aa0f24ba",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "I\u0027m having a hard time understanding why this function private while |Validate| is public, I thought they should be the same in terms of visibility.",
+      "range": {
+        "startLine": 59,
+        "startChar": 19,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb12bc16_e9c79525",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "I thought we have one now? results.api.cr.dev",
+      "range": {
+        "startLine": 61,
+        "startChar": 54,
+        "endLine": 61,
+        "endChar": 86
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "777fbef8_3d1bfe22",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "Unrelated to this CL, but why do we capture this group?",
+      "range": {
+        "startLine": 30,
+        "startChar": 45,
+        "endLine": 30,
+        "endChar": 63
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87ff2b99_3e99152e",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T23:48:15Z",
+      "side": 1,
+      "message": "I don\u0027t think we reserved enough capacity, or maybe it doesn\u0027t matter? I\u0027m not sure about the performance implication or best practice.",
+      "range": {
+        "startLine": 125,
+        "startChar": 8,
+        "endLine": 125,
+        "endChar": 45
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
