@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "383a3b38_9873f980",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:40:03Z",
+      "side": 1,
+      "message": "listener is not closed. consider\n\n1. give a name to the returned error:\n\n\n  func (s *Server) Start(ctx context.Context) (err error)\n\n2. add after L161\n\n  defer func() {\n    if err !\u003d nil {\n      ln.Close()\n    }\n  }()",
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36131925_4ff16fd8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:40:03Z",
+      "side": 1,
+      "message": "nit: make the variable a pointer instead",
+      "range": {
+        "startLine": 312,
+        "startChar": 38,
+        "endLine": 312,
+        "endChar": 39
+      },
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
