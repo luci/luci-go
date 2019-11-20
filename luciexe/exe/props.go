@@ -86,7 +86,7 @@ func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) err
 //
 //  * a non-nil proto.Message. The data in this field will be interpreted as
 //    JSONPB and Unmarshaled into the proto.Message.
-//  * a valid "json/encoding" marshal source. The data in this field will be
+//  * a valid "encoding/json" marshal source. The data in this field will be
 //    interpreted as json and marshaled with the stdlib "encoding/json" package.
 //
 // This function will scan the inputs and marshal them as appropriate into

@@ -113,9 +113,6 @@ func (as *AnnotationStream) populateCache(c context.Context) error {
 
 	// Make sure that this is an annotation stream.
 	switch {
-	case state.Desc.ContentType != miloProto.ContentTypeAnnotations:
-		return errNotMilo
-
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:
 		return errNotDatagram
 
