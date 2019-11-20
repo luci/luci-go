@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -206,12 +207,12 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		}
 
 	case *[]*pb.Artifact:
-		container := &Artifacts{}
+		container := &internalpb.Artifacts{}
 		if err := proto.Unmarshal(b.byteSlice, container); err != nil {
 			// If it was written to Spanner, it should have been validated.
 			panic(err)
 		}
-		*goPtr = container.Artifacts
+		*goPtr = container.ArtifactsV1
 
 	case *Snappy:
 		if len(b.byteSlice) == 0 {
@@ -279,7 +280,7 @@ func ToSpanner(v interface{}) interface{} {
 		return pbutil.StringPairsToStrings(v...)
 
 	case []*pb.Artifact:
-		ret, err := proto.Marshal(&Artifacts{Artifacts: v})
+		ret, err := proto.Marshal(&internalpb.Artifacts{ArtifactsV1: v})
 		if err != nil {
 			panic(err)
 		}

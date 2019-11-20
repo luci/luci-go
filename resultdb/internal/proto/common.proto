@@ -18,11 +18,22 @@ package internal.proto;
 
 option go_package = "internalpb";
 
-// A message for storing all the information attached to a cursor through query results.
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+
+// A message for storing all the information attached to a cursor through query
+// results.
+// TODO(nodir): rename to PageToken.
 message Cursor {
-  // Position marks the cursor's start (exclusive). Its interpretation is implementation-specific.
-  // For instance, for a Spanner cursor, this is a string slice representation of the Spanner key
-  // corresponding to the entry prior to the one at which to start reading, or
-  // empty if the cursor is to start at the beginning.
+  // Position marks the cursor's start (exclusive). Its interpretation is
+  // implementation-specific. For instance, for a Spanner cursor, this is a
+  // string slice representation of the Spanner key corresponding to the entry
+  // prior to the one at which to start reading, or empty if the cursor is to
+  // start at the beginning.
   repeated string position = 1;
+}
+
+// A container of artifacts.
+// Used to store artifacts in Spanner.
+message Artifacts {
+  repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1;
 }

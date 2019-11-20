@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -96,8 +97,8 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`[]*pb.Artifact`, t, func() {
-		arts := &Artifacts{
-			Artifacts: []*pb.Artifact{
+		arts := &internalpb.Artifacts{
+			ArtifactsV1: []*pb.Artifact{
 				{
 					Name:        "traces/a.txt",
 					FetchUrl:    "gs://a.txt",
@@ -115,7 +116,7 @@ func TestTypeConversion(t *testing.T) {
 		}
 		expected, err := proto.Marshal(arts)
 		So(err, ShouldBeNil)
-		test(arts.Artifacts, expected)
+		test(arts.ArtifactsV1, expected)
 	})
 
 	Convey(`Slice`, t, func() {
