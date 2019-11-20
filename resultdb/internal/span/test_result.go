@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -132,31 +133,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		"invIDs": q.InvocationIDs,
 	}
 
-	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(q.PageToken); {
-	case tokErr != nil:
-		err = errors.Reason("invalid page_token").
-			InternalReason("%s", tokErr).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-		return
-
-	case pos == nil:
-		break
-
-	case len(pos) == 3:
-		sql = sql.Where(`(
-			(InvocationId > @afterInvocationID)
-			OR (InvocationId = @afterInvocationID AND TestPath > @afterTestPath)
-			OR (InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultID)
-			)`)
-		queryParams["afterInvocationID"] = InvocationID(pos[0])
-		queryParams["afterTestPath"] = pos[1]
-		queryParams["afterResultID"] = pos[2]
-
-	default:
-		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q", pos).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	sql, err = applyTestPagination(sql, queryParams, q.PageToken, "ResultId")
+	if err != nil {
 		return
 	}
 
@@ -238,4 +216,40 @@ func ToMicros(d *durpb.Duration) int64 {
 // FromMicros converts microseconds to a duration.Duration proto.
 func FromMicros(micros int64) *durpb.Duration {
 	return ptypes.DurationProto(time.Duration(1e3 * micros))
+}
+
+// encapsulatePageTokenError returns a generic error message that a page token
+// is invalid and records err as an internal error.
+// The returned error is anontated with INVALID_ARUGMENT code.
+func encapsulatePageTokenError(err error) error {
+	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
+}
+
+// applyTestPagination parses the page token into 3 components
+// invocationID, testPath and resultID and adds a WHERE clause to the query
+// based on them.
+func applyTestPagination(query squirrel.SelectBuilder, queryParams map[string]interface{}, pageToken string, resultColumn string) (squirrel.SelectBuilder, error) {
+	switch pos, tokErr := pagination.ParseToken(pageToken); {
+	case tokErr != nil:
+		return query, encapsulatePageTokenError(tokErr)
+
+	case pos == nil:
+		return query, nil
+
+	case len(pos) != 3:
+		return query, encapsulatePageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
+
+	default:
+		query = query.Where(fmt.Sprintf(`(
+				(InvocationId > @afterInvocationID) OR
+				(InvocationId = @afterInvocationID AND TestPath > @afterTestPath) OR
+				(InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND %s > @afterResultID)
+			)`,
+			resultColumn,
+		))
+		queryParams["afterInvocationID"] = InvocationID(pos[0])
+		queryParams["afterTestPath"] = pos[1]
+		queryParams["afterResultID"] = pos[2]
+		return query, nil
+	}
 }
