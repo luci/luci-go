@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/Masterminds/squirrel"
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/grpc/codes"
@@ -105,44 +104,40 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		panic("q.Predicate.Invocation != nil")
 	}
 
-	// TODO(nodir): stop using squirrel.
-	sql := squirrel.
-		Select(
-			"InvocationId",
-			"TestPath",
-			"ResultId",
-			"Variant",
-			"IsUnexpected",
-			"Status",
-			"SummaryMarkdown",
-			"StartTime",
-			"RunDurationUsec",
-			"Tags",
-			"InputArtifacts",
-			"OutputArtifacts",
-		).
-		From("TestResults").
-		Where("InvocationId IN UNNEST(@invIDs)").
-		OrderBy("InvocationId", "TestPath", "ResultId").
-		Limit(uint64(q.PageSize))
-
-	queryParams := map[string]interface{}{
-		"invIDs": q.InvocationIDs,
-	}
-
-	// Set start position if requested.
-	queryParams["afterInvocationID"],
-		queryParams["afterTestPath"],
-		queryParams["afterResultID"],
+	st := spanner.NewStatement(`
+		SELECT
+			InvocationId,
+			TestPath,
+			ResultId,
+			Variant,
+			IsUnexpected,
+			Status,
+			SummaryMarkdown,
+			StartTime,
+			RunDurationUsec,
+			Tags,
+			InputArtifacts,
+			OutputArtifacts
+		FROM TestResults
+		WHERE InvocationId IN UNNEST(@invIDs)
+			# Skip test results after the one specified in the page token.
+			AND (
+				(InvocationId > @afterInvocationID) OR
+				(InvocationId = @afterInvocationID AND TestPath > @afterTestPath) OR
+				(InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultId)
+			)
+		ORDER BY InvocationId, TestPath, ResultId
+		LIMIT @limit
+	`)
+	st.Params["invIDs"] = q.InvocationIDs
+	st.Params["limit"] = q.PageSize
+	st.Params["afterInvocationId"],
+		st.Params["afterTestPath"],
+		st.Params["afterResultId"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
 		return
 	}
-	sql = sql.Where(`(
-			(InvocationId > @afterInvocationID)
-			OR (InvocationId = @afterInvocationID AND TestPath > @afterTestPath)
-			OR (InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultID)
-	)`)
 
 	if q.Predicate.GetTestPath() != nil {
 		// TODO(nodir): add support for q.Predicate.TestPath.
@@ -156,10 +151,6 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		// TODO(nodir): add support for q.Predicate.Expectancy.
 		return nil, "", grpcutil.Unimplemented
 	}
-
-	sqlStr, _ := sql.MustSql()
-	st := spanner.NewStatement(sqlStr)
-	st.Params = queryParams
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
 	var summaryMarkdown Snappy
