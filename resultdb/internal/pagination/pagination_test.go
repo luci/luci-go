@@ -20,7 +20,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestCursor(t *testing.T) {
+func TestPageToken(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Token works`, t, func() {
@@ -30,7 +30,7 @@ func TestCursor(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(pos, ShouldResemble, []string{"v1", "v2"})
 
-		Convey(`For fresh cursor`, func() {
+		Convey(`For fresh token`, func() {
 			So(Token(), ShouldResemble, "")
 
 			pos, err := ParseToken("")

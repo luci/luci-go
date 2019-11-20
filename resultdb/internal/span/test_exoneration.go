@@ -77,14 +77,14 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 }
 
 // ReadTestExonerations reads all test exonerations from the invocation.
-func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, cursorTok string, pageSize int) (tes []*pb.TestExoneration, nextCursorTok string, err error) {
+func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, pageToken string, pageSize int) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	if pageSize <= 0 {
 		panic("pageSize must be positive")
 	}
 
 	// Set start position if requested.
 	keyRange := invID.Key().AsPrefix()
-	switch pos, tokErr := pagination.ParseToken(cursorTok); {
+	switch pos, tokErr := pagination.ParseToken(pageToken); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).
@@ -95,13 +95,13 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 		break
 
 	case len(pos) == 2:
-		// Start after the cursor position.
+		// Start after the page token position.
 		keyRange.Kind = spanner.OpenClosed
 		keyRange.Start = invID.Key(pos[0], pos[1])
 
 	default:
 		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q for TestResults cursor position", pos).
+			InternalReason("unexpected string slice %q", pos).
 			Tag(grpcutil.InvalidArgumentTag).Err()
 		return
 	}
@@ -126,7 +126,7 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, curs
 
 	if len(tes) == pageSize {
 		last := tes[pageSize-1]
-		nextCursorTok = pagination.Token(last.TestPath, last.ExonerationId)
+		nextPageToken = pagination.Token(last.TestPath, last.ExonerationId)
 	}
 	return
 }
