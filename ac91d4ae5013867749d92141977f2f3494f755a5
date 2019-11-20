@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5bbaf883_7a44fbcf",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-20T19:34:20Z",
+      "side": 1,
+      "message": "this also looks wrong; unless you\u0027re using context cancelation as the primary way of shutting the server down, you shouldn\u0027t need context.WithCancel.\n\nMaybe what you want to do is\n\n  go func() {\n    \u003c-ctx.Done()\n    if ctx.Err() !\u003d nil {\n      s.Close()\n    }\n  }()\n\nTo bind the cancelation of `ctx` to shutdown of this server.",
+      "range": {
+        "startLine": 172,
+        "startChar": 8,
+        "endLine": 172,
+        "endChar": 14
+      },
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "383a3b38_9873f980",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 1
@@ -13,6 +36,29 @@
       "writtenOn": "2019-11-20T17:40:03Z",
       "side": 1,
       "message": "listener is not closed. consider\n\n1. give a name to the returned error:\n\n\n  func (s *Server) Start(ctx context.Context) (err error)\n\n2. add after L161\n\n  defer func() {\n    if err !\u003d nil {\n      ln.Close()\n    }\n  }()",
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "833c3b13_02e8d7c7",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-20T19:34:20Z",
+      "side": 1,
+      "message": "this doesn\u0027t look right to me; nothing cancels this context, and nothing selects on ctx.Done()",
+      "range": {
+        "startLine": 184,
+        "startChar": 6,
+        "endLine": 184,
+        "endChar": 12
+      },
       "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
