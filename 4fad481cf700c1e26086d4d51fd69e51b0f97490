@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6546200_44cccfce",
+        "filename": "cq/api/recipe/v1/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-11-20T19:22:37Z",
+      "side": 1,
+      "message": "Question: what does active mean? Does it mean this tryjob \"contributes to\" a CQ attempt?",
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
