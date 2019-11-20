@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8b6fd2fd_b161fe04",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-20T19:52:01Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0d66a167_11e59cee",
+      "range": {
+        "startLine": 172,
+        "startChar": 8,
+        "endLine": 172,
+        "endChar": 14
+      },
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "383a3b38_9873f980",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 1
@@ -110,6 +134,30 @@
       "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dea7c0fd_2a0bce4f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-20T19:52:01Z",
+      "side": 1,
+      "message": "discussed offline; I see what you\u0027re going for here now. A comment would also help :)\n\nAs you like :)",
+      "parentUuid": "879685b9_0f9a76e5",
+      "range": {
+        "startLine": 184,
+        "startChar": 6,
+        "endLine": 184,
+        "endChar": 12
+      },
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
