@@ -161,6 +161,23 @@
     },
     {
       "key": {
+        "uuid": "063c935f_5be04a28",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T19:55:39Z",
+      "side": 1,
+      "message": "what if the server was stopped via context cancelation. We don\u0027t close upC in this case?",
+      "revId": "ac91d4ae5013867749d92141977f2f3494f755a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "36131925_4ff16fd8",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 1
