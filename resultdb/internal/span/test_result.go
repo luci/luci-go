@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -99,8 +98,6 @@ type TestResultQuery struct {
 // QueryTestResults reads test results matching the predicate.
 // Returned test results from the same invocation are contiguous.
 func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
-	defer metrics.Trace(ctx, "QueryTestResults(ctx, txn, %#v)", q)()
-
 	switch {
 	case q.PageSize <= 0:
 		panic("PageSize <= 0")
@@ -108,6 +105,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		panic("q.Predicate.Invocation != nil")
 	}
 
+	// TODO(nodir): stop using squirrel.
 	sql := squirrel.
 		Select(
 			"InvocationId",
@@ -133,32 +131,18 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(q.PageToken); {
-	case tokErr != nil:
-		err = errors.Reason("invalid page_token").
-			InternalReason("%s", tokErr).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	queryParams["afterInvocationID"],
+		queryParams["afterTestPath"],
+		queryParams["afterResultID"],
+		err = parseTestObjectPageToken(q.PageToken)
+	if err != nil {
 		return
-
-	case pos == nil:
-		break
-
-	case len(pos) == 3:
-		sql = sql.Where(`(
+	}
+	sql = sql.Where(`(
 			(InvocationId > @afterInvocationID)
 			OR (InvocationId = @afterInvocationID AND TestPath > @afterTestPath)
 			OR (InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultID)
-			)`)
-		queryParams["afterInvocationID"] = InvocationID(pos[0])
-		queryParams["afterTestPath"] = pos[1]
-		queryParams["afterResultID"] = pos[2]
-
-	default:
-		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q", pos).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-		return
-	}
+	)`)
 
 	if q.Predicate.GetTestPath() != nil {
 		// TODO(nodir): add support for q.Predicate.TestPath.
@@ -173,10 +157,14 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return nil, "", grpcutil.Unimplemented
 	}
 
+	sqlStr, _ := sql.MustSql()
+	st := spanner.NewStatement(sqlStr)
+	st.Params = queryParams
+
 	trs = make([]*pb.TestResult, 0, q.PageSize)
 	var summaryMarkdown Snappy
 	var b Buffer
-	err = query(ctx, txn, sql, queryParams).Do(func(row *spanner.Row) error {
+	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64
@@ -238,4 +226,32 @@ func ToMicros(d *durpb.Duration) int64 {
 // FromMicros converts microseconds to a duration.Duration proto.
 func FromMicros(micros int64) *durpb.Duration {
 	return ptypes.DurationProto(time.Duration(1e3 * micros))
+}
+
+// parseTestObjectPageToken parses the page token into invocation ID, test path
+// and a test object id.
+func parseTestObjectPageToken(pageToken string) (inv InvocationID, testPath, objID string, err error) {
+	switch pos, tokErr := pagination.ParseToken(pageToken); {
+	case tokErr != nil:
+		err = encapsulatePageTokenError(tokErr)
+
+	case pos == nil:
+
+	case len(pos) != 3:
+		err = encapsulatePageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
+
+	default:
+		inv = InvocationID(pos[0])
+		testPath = pos[1]
+		objID = pos[2]
+	}
+
+	return
+}
+
+// encapsulatePageTokenError returns a generic error message that a page token
+// is invalid and records err as an internal error.
+// The returned error is anontated with INVALID_ARUGMENT code.
+func encapsulatePageTokenError(err error) error {
+	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
 }
