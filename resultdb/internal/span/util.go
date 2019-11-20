@@ -219,9 +219,10 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			// do not set to nil; otherwise we loose the buffer.
 			*goPtr = (*goPtr)[:0]
 		} else {
-			// Try to reuse the existing buffer.
+			// *goPtr might be pointing to an existing memory buffer.
+			// Try to reuse it for decoding.
 			buf := []byte(*goPtr)
-			buf = buf[:cap(buf)]
+			buf = buf[:cap(buf)] // use all capacity
 			if *goPtr, err = snappy.Decode(buf, b.byteSlice); err != nil {
 				// If it was written to Spanner, it should have been validated.
 				panic(errors.Annotate(err, "invalid snappy data: %v", b.byteSlice).Err())
