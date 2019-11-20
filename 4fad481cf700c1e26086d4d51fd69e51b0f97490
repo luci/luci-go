@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "8fc83266_e71cdee6",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-20T19:39:05Z",
+      "side": 1,
+      "message": "does this have any functional difference?",
+      "range": {
+        "startLine": 43,
+        "startChar": 27,
+        "endLine": 43,
+        "endChar": 45
+      },
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9dd01cf4_102bdb64",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-20T19:39:05Z",
+      "side": 1,
+      "message": "the point isn\u0027t additionality of the extra value, but rather ability to distinguish unset from `false`.\n\nSo, maybe \"with an unset (ie default) value\"?",
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5be2bbdb_32a38a6f",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-20T19:39:05Z",
+      "side": 1,
+      "message": "TIL!",
+      "range": {
+        "startLine": 434,
+        "startChar": 25,
+        "endLine": 434,
+        "endChar": 30
+      },
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6546200_44cccfce",
         "filename": "cq/api/recipe/v1/cq.proto",
         "patchSetId": 4
@@ -13,6 +76,24 @@
       "writtenOn": "2019-11-20T19:22:37Z",
       "side": 1,
       "message": "Question: what does active mean? Does it mean this tryjob \"contributes to\" a CQ attempt?",
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1cf19bd_e6616861",
+        "filename": "cq/api/recipe/v1/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-20T19:39:05Z",
+      "side": 1,
+      "message": "active implies CQ triggered this build, possibly indirectly (say CQ -\u003e compiler -\u003e tester)\n\na build with active\u003dfalse may still be waited by CQ, consider scenario:\n00:00 user does \"git cl try -b linux-rel\"\n00:01 bb -\u003e swarming -\u003e runs a recipe, where \u0027.active\u0027 is False.\n00:05 user does \"CQ+2\"\n~00:06 CQ starts running, notices existing linux-rel build and is now waiting on it.",
+      "parentUuid": "f6546200_44cccfce",
       "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
