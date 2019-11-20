@@ -227,7 +227,7 @@ func (d *Downloader) CmdAndCwd() ([]string, string, error) {
 	d.mu.Unlock()
 	if !finished {
 		return nil, "", errors.New(
-			"can only call CumulativeIsolated on a finished Downloader")
+			"can only call CmdAndCwd on a finished Downloader")
 	}
 
 	if d.err != nil {
