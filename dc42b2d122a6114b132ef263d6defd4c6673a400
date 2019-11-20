@@ -22,6 +22,30 @@
       "revId": "dc42b2d122a6114b132ef263d6defd4c6673a400",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de6a334b_a610edba",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T16:16:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b26467b6_01295506",
+      "range": {
+        "startLine": 76,
+        "startChar": 24,
+        "endLine": 76,
+        "endChar": 29
+      },
+      "revId": "dc42b2d122a6114b132ef263d6defd4c6673a400",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
