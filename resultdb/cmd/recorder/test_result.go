@@ -17,6 +17,8 @@ package main
 import (
 	"strconv"
 
+	"go.chromium.org/luci/resultdb/pbutil"
+
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -29,7 +31,8 @@ func insertTestResult(invID span.InvocationID, tr *pb.TestResult, i int) (*spann
 		"TestPath":     tr.TestPath,
 		"ResultId":     strconv.Itoa(i),
 
-		"Variant": tr.Variant,
+		"Variant":     tr.Variant,
+		"VariantHash": pbutil.VariantHash(tr.Variant),
 
 		"CommitTimestamp": spanner.CommitTimestamp,
 
