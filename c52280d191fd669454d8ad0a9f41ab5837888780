@@ -180,6 +180,30 @@
     },
     {
       "key": {
+        "uuid": "4df544ed_b78f46a3",
+        "filename": "tools/filegraph/graph.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T21:55:48Z",
+      "side": 1,
+      "message": "I just saw that this is actually a popular way to declare variables, such as var x, y int \u003d 1, 2.\n\nThe documentation says that Go is able to infer the type by itself, that makes sense for |var x, y int \u003d 1, 2|, but what about |moveLeaf(from, to Path)|? The type of from is unknown until execution, how Go is able to allocate memory for this function?",
+      "parentUuid": "62b81771_231d5fb8",
+      "range": {
+        "startLine": 202,
+        "startChar": 25,
+        "endLine": 202,
+        "endChar": 29
+      },
+      "revId": "c52280d191fd669454d8ad0a9f41ab5837888780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5cf65ab9_b1d1be10",
         "filename": "tools/filegraph/graph.go",
         "patchSetId": 7
