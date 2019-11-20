@@ -43,12 +43,16 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 	if err := validateListTestExonerationsRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	invID := span.MustParseInvocationName(in.Invocation)
+
+	q := span.TestExonerationQuery{
+		InvocationIDs: []span.InvocationID{span.MustParseInvocationName(in.Invocation)},
+		PageSize:      pagination.AdjustPageSize(in.PageSize),
+		PageToken:     in.GetPageToken(),
+	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-
-	tes, tok, err := span.ReadTestExonerations(ctx, txn, invID, in.GetPageToken(), pagination.AdjustPageSize(in.GetPageSize()))
+	tes, tok, err := span.QueryTestExonerations(ctx, txn, q)
 	if err != nil {
 		return nil, err
 	}
