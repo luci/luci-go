@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/data/strpair"
+
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -74,5 +76,21 @@ func TestValidateStringPair(t *testing.T) {
 			err := ValidateStringPair(StringPair("a", "b"))
 			So(err, ShouldBeNil)
 		})
+	})
+}
+
+func TestFromStrpairMap(t *testing.T) {
+	t.Parallel()
+	Convey(`FromStrpairMap`, t, func() {
+		m := strpair.Map{}
+		m.Add("k1", "v1")
+		m.Add("k2", "v1")
+		m.Add("k2", "v2")
+
+		So(FromStrpairMap(m), ShouldResemble, StringPairs(
+			"k1", "v1",
+			"k2", "v1",
+			"k2", "v2",
+		))
 	})
 }

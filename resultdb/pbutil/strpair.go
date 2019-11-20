@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"sort"
 
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -115,6 +116,17 @@ func StringPairsToStrings(pairs ...*typepb.StringPair) []string {
 	ret := make([]string, len(pairs))
 	for i, p := range pairs {
 		ret[i] = StringPairToString(p)
+	}
+	return ret
+}
+
+// FromStrpairMap converts a strpair.Map to []*pb.StringPair.
+func FromStrpairMap(m strpair.Map) []*typepb.StringPair {
+	ret := make([]*typepb.StringPair, 0, len(m))
+	for k, vs := range m {
+		for _, v := range vs {
+			ret = append(ret, StringPair(k, v))
+		}
 	}
 	return ret
 }
