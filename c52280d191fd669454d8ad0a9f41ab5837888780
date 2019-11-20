@@ -204,6 +204,30 @@
     },
     {
       "key": {
+        "uuid": "2314fc9e_4abe66d4",
+        "filename": "tools/filegraph/graph.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-20T22:13:16Z",
+      "side": 1,
+      "message": "nvm, I missed the \"Multiple variable declaration\" part in the doc, I think it just applies the type to all the variables.",
+      "parentUuid": "4df544ed_b78f46a3",
+      "range": {
+        "startLine": 202,
+        "startChar": 25,
+        "endLine": 202,
+        "endChar": 29
+      },
+      "revId": "c52280d191fd669454d8ad0a9f41ab5837888780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5cf65ab9_b1d1be10",
         "filename": "tools/filegraph/graph.go",
         "patchSetId": 7
