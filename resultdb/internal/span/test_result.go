@@ -93,7 +93,7 @@ type TestResultQuery struct {
 	InvocationIDs []InvocationID
 	Predicate     *pb.TestResultPredicate // Predicate.Invocation must be nil.
 	PageSize      int                     // must be positive
-	CursorToken   string
+	PageToken   string
 }
 
 // QueryTestResults reads test results matching the predicate.
@@ -133,7 +133,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	// Set start position if requested.
-	switch pos, tokErr := pagination.ParseToken(q.CursorToken); {
+	switch pos, tokErr := pagination.ParseToken(q.PageToken); {
 	case tokErr != nil:
 		err = errors.Reason("invalid page_token").
 			InternalReason("%s", tokErr).

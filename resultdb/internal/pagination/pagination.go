@@ -28,7 +28,7 @@ const (
 	pageSizeDefault = 100
 )
 
-// ParseToken extracts a string slice position from the given cursor token.
+// ParseToken extracts a string slice position from the given page token.
 func ParseToken(token string) ([]string, error) {
 	if token == "" {
 		return nil, nil
