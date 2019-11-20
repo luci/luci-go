@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8530e597_1b121f12",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:42:26Z",
+      "side": 1,
+      "message": "resultdb",
+      "range": {
+        "startLine": 22,
+        "startChar": 51,
+        "endLine": 22,
+        "endChar": 59
+      },
+      "revId": "7531631619735a8d3fd4d9614628fc86ed9e0759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a2499bf_94bf4aa1",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:42:26Z",
+      "side": 1,
+      "message": "ResultSink",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 14
+      },
+      "revId": "7531631619735a8d3fd4d9614628fc86ed9e0759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8f8fbdd_be9805fe",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-20T17:42:26Z",
+      "side": 1,
+      "message": "resultdb.sink\n\nalso better to remove the quotes, otherwise someone may interpret with as {\"resultdb.sink\": {...}}",
+      "range": {
+        "startLine": 27,
+        "startChar": 54,
+        "endLine": 27,
+        "endChar": 74
+      },
+      "revId": "7531631619735a8d3fd4d9614628fc86ed9e0759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
