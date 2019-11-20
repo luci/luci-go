@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "14db5401_d290e3b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-20T18:23:10Z",
+      "side": 1,
+      "message": "Got it. Thanks.",
+      "parentUuid": "da78b8ce_09e6c94c",
+      "range": {
+        "startLine": 9,
+        "startChar": 40,
+        "endLine": 9,
+        "endChar": 64
+      },
+      "revId": "9401cef6a693123f02d88d062c46a117e090b52e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0ad833a6_9174fe28",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 3
