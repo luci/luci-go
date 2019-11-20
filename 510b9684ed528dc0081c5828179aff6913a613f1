@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c404fe2b_9c9ed69a",
+        "filename": "buildbucket/cmd/bbagent/util/dump_bbagent_arg/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-20T22:46:54Z",
+      "side": 1,
+      "message": "LOL",
+      "revId": "510b9684ed528dc0081c5828179aff6913a613f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
