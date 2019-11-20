@@ -115,6 +115,10 @@ CREATE TABLE TestResults (
   -- See also TestResult.variant in test_result.proto.
   Variant ARRAY<STRING(MAX)>,
 
+  -- A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  -- Used to filter test results by variant.
+  VariantHash STRING(64) NOT NULL,
+
   -- Last time this row was modified.
   -- Given that we only create and delete row, for an existing row this equals
   -- row creation time.
@@ -179,6 +183,10 @@ CREATE TABLE TestExonerations (
 
   -- The exoneration applies only to test results with this exact test variant.
   Variant ARRAY<STRING(MAX)> NOT NULL,
+
+  -- A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+  -- Used in conjunction with TestResults.VariantHash column.
+  VariantHash STRING(64) NOT NULL,
 
   -- Explanation of the exoneration for humans, in Markdown.
   ExplanationMarkdown STRING(MAX)

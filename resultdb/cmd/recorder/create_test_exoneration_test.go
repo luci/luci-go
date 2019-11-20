@@ -148,6 +148,14 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(row.Variant, ShouldResembleProto, expected.Variant)
 			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
 
+			// Check variant hash.
+			key := span.InvocationID("inv").Key(res.TestPath, res.ExonerationId)
+			var variantHash string
+			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
+				"VariantHash": &variantHash,
+			})
+			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))
+
 			if withRequestID {
 				// Test idempotency.
 				res2, err := recorder.CreateTestExoneration(ctx, req)

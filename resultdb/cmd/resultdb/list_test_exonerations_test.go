@@ -63,6 +63,7 @@ func TestListTestExonerations(t *testing.T) {
 				"TestPath":            testPath,
 				"ExonerationId":       "0",
 				"Variant":             var0,
+				"VariantHash":         "deadbeef",
 				"ExplanationMarkdown": "broken",
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
@@ -70,12 +71,14 @@ func TestListTestExonerations(t *testing.T) {
 				"TestPath":      testPath,
 				"ExonerationId": "1",
 				"Variant":       pbutil.Variant(),
+				"VariantHash":   "deadbeef",
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
 				"TestPath":      testPath,
 				"ExonerationId": "2",
 				"Variant":       pbutil.Variant(),
+				"VariantHash":   "deadbeef",
 			}),
 		)
 

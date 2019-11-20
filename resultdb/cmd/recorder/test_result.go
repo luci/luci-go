@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -29,7 +30,8 @@ func insertTestResult(invID span.InvocationID, tr *pb.TestResult, i int) (*spann
 		"TestPath":     tr.TestPath,
 		"ResultId":     strconv.Itoa(i),
 
-		"Variant": tr.Variant,
+		"Variant":     tr.Variant,
+		"VariantHash": pbutil.VariantHash(tr.Variant),
 
 		"CommitTimestamp": spanner.CommitTimestamp,
 
