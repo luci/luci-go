@@ -60,6 +60,7 @@ func TestGetTestExoneration(t *testing.T) {
 				"TestPath":            "gn://chrome/test:foo_tests/BarTest.DoBaz",
 				"ExonerationId":       "id",
 				"Variant":             pbutil.Variant("k1", "v1", "k2", "v2"),
+				"VariantHash":         "deadbeef",
 				"ExplanationMarkdown": "broken",
 			}))
 

@@ -119,6 +119,7 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 			"TestPath":        testPath,
 			"ResultId":        resultID,
 			"Variant":         trs[i].Variant,
+			"VariantHash":     pbutil.VariantHash(trs[i].Variant),
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"Status":          status,
 			"RunDurationUsec": 1e6*i + 234567,
