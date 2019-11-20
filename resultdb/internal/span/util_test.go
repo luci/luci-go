@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -96,7 +97,7 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`[]*pb.Artifact`, t, func() {
-		arts := &Artifacts{
+		arts := &internalpb.Artifacts{
 			Artifacts: []*pb.Artifact{
 				{
 					Name:        "traces/a.txt",
