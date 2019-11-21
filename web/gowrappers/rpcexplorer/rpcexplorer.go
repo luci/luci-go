@@ -34,9 +34,12 @@ func Install(r *router.Router) {
 		http.Redirect(c.Writer, c.Request, "/rpcexplorer/", http.StatusMovedPermanently)
 	})
 
+	// Everything under "services/" should load the main web app (it then itself
+	// routes the request based on its URL). Everything else is assumed to be
+	// a static resource loaded from assets bundle.
 	r.GET("/rpcexplorer/*path", router.MiddlewareChain{}, func(c *router.Context) {
 		path := strings.TrimPrefix(c.Params.ByName("path"), "/")
-		if path == "" {
+		if path == "" || path == "services" || strings.HasPrefix(path, "services/") {
 			path = "index.html"
 		}
 
