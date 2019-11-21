@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c748e5db_1cd871dc",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 928,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-21T19:43:15Z",
+      "side": 1,
+      "message": "t",
+      "range": {
+        "startLine": 928,
+        "startChar": 29,
+        "endLine": 928,
+        "endChar": 30
+      },
+      "revId": "8394f7e4532dac0cd040bbbd69e9d42d76286a21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
