@@ -321,6 +321,7 @@ func TestGTestConversions(t *testing.T) {
 				// Iteration 1.
 				{
 					TestPath: "prefix/BazTest.DoesQux",
+					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
@@ -355,6 +356,7 @@ func TestGTestConversions(t *testing.T) {
 				// Iteration 2.
 				{
 					TestPath: "prefix/BazTest.DoesQux",
+					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",
@@ -363,6 +365,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 				{
 					TestPath: "prefix/BazTest.DoesQux",
+					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "SUCCESS",

@@ -275,6 +275,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name str
 
 	rpb := &pb.TestResult{
 		TestPath: testPath,
+		Expected: status == pb.TestStatus_PASS,
 		Status:   status,
 		Tags: pbutil.StringPairs(
 			// Store the original GTest status.
