@@ -16,6 +16,23 @@
       "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a058e13_cbce6c38",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-21T14:19:47Z",
+      "side": 1,
+      "message": "I\u0027m surprised d.isoMap is accessed here and line 252, 263, 714 without lock. Feels like a design error in the code.",
+      "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
