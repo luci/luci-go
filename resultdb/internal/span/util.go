@@ -19,16 +19,17 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/Masterminds/squirrel"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/klauspost/compress/snappy"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -346,14 +347,17 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 	})
 }
 
-// query executes a select query.
-func query(ctx context.Context, txn Txn, sql squirrel.SelectBuilder, params map[string]interface{}) *spanner.RowIterator {
-	sqlStr, _ := sql.MustSql()
-	st := spanner.NewStatement(sqlStr)
-	st.Params = ToSpannerMap(params)
+// query executes a query.
+// Ensures st.Params are Spanner-compatible by modifying st.Params in place.
+// Logs the query and the time it took to run it.
+func query(ctx context.Context, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) error {
+	// Generate a random query ID in case we have multiple concurrent queries.
+	queryID := mathrand.Intn(ctx, 1000)
 
-	logging.Infof(ctx, "executing %s", st.SQL)
-	logging.Infof(ctx, "query parameters: %#v", st.Params)
+	defer metrics.Trace(ctx, "query %d", queryID)()
 
-	return txn.Query(ctx, st)
+	st.Params = ToSpannerMap(st.Params)
+	logging.Infof(ctx, "query %d: %s\n with params %#v", queryID, st.SQL, st.Params)
+
+	return txn.Query(ctx, st).Do(fn)
 }
