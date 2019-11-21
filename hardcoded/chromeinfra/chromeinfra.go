@@ -63,7 +63,7 @@ const (
 	ConfigServiceHost = "luci-config.appspot.com"
 
 	// ResultDBHost is the hostname of the production ResultDB service.
-	ResultDBHost = "results.apis.chromium.org"
+	ResultDBHost = "results.api.cr.dev"
 
 	// TestSpannerInstance is the name of the Spanner instance used for testing.
 	TestSpannerInstance = "projects/chops-spanner-testing/instances/testing"
