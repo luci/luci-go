@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "db634c4c_7e0c0ba0",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "renamed httpClient to http instead",
+      "parentUuid": "37df83e9_f474d85f",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 9
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b87b04e8_08575f99",
         "filename": "resultdb/cli/cmd_derive.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a8bb7ab_7d07fa89",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b87b04e8_08575f99",
+      "range": {
+        "startLine": 31,
+        "startChar": 3,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "be4aede8_4a3ac6f3",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f76fd874_be5c354f",
+      "range": {
+        "startLine": 35,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 49
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c6d6b41_55550c9e",
         "filename": "resultdb/cli/cmd_derive.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b7e5bad_22e9bff0",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c6d6b41_55550c9e",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 14
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "97a55e3d_426fbaac",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "made all functions private",
+      "parentUuid": "b57839ff_aa0f24ba",
+      "range": {
+        "startLine": 59,
+        "startChar": 19,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cb12bc16_e9c79525",
         "filename": "resultdb/cli/queryrun.go",
         "patchSetId": 5
@@ -137,6 +257,30 @@
       "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e71d33e_641cef7c",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "updated to results.api.cr.dev\n\nthis still needed because the domain name is not pointing to the IP address yet",
+      "parentUuid": "cb12bc16_e9c79525",
+      "range": {
+        "startLine": 61,
+        "startChar": 54,
+        "endLine": 61,
+        "endChar": 86
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "27ad648d_cab9216f",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "the intention is not to capture, but specify * qualifier",
+      "parentUuid": "777fbef8_3d1bfe22",
+      "range": {
+        "startLine": 30,
+        "startChar": 45,
+        "endLine": 30,
+        "endChar": 63
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87ff2b99_3e99152e",
         "filename": "resultdb/pbutil/strpair.go",
         "patchSetId": 5
@@ -174,6 +342,30 @@
       "writtenOn": "2019-11-20T23:48:15Z",
       "side": 1,
       "message": "I don\u0027t think we reserved enough capacity, or maybe it doesn\u0027t matter? I\u0027m not sure about the performance implication or best practice.",
+      "range": {
+        "startLine": 125,
+        "startChar": 8,
+        "endLine": 125,
+        "endChar": 45
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c81f75a_b1a32f72",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:35:06Z",
+      "side": 1,
+      "message": "that\u0027s correct, but doing it precisely will complicate the code for a tiny optimization. This still better than allocating slice with len 0, and the increasing it multiple times. In most cases, this will either be sufficient, or we will re-allocate once",
+      "parentUuid": "87ff2b99_3e99152e",
       "range": {
         "startLine": 125,
         "startChar": 8,
