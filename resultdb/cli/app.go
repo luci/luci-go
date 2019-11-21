@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -45,6 +46,10 @@ func application(p Params) *cli.Application {
 		Name:  "rdb",
 		Title: "A CLI client for ResultDB.",
 		Context: func(ctx context.Context) context.Context {
+			// TODO(crbug.com/1021849): remove, when this domain name points to the
+			// associated IP address.
+			ctx = metadata.AppendToOutgoingContext(ctx, "host", "nodir.results.api.cr.dev")
+
 			return logCfg.Use(ctx)
 		},
 		Commands: []*subcommands.Command{

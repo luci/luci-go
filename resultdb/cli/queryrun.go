@@ -22,7 +22,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
-	"google.golang.org/grpc/metadata"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -57,9 +56,6 @@ func (r *queryRun) validate() error {
 
 // queryAndPrint queries results and prints them.
 func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicate) error {
-	// TODO(crbug.com/1021849): remove, when we have a hostname.
-	ctx = metadata.AppendToOutgoingContext(ctx, "host", "nodir.results.api.dev")
-
 	// TODO(crbug.com/1021849): implement paging.
 	res, err := r.resultdb.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 		Predicate: &pb.TestResultPredicate{

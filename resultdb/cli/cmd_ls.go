@@ -15,9 +15,6 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
@@ -68,9 +65,13 @@ type lsRun struct {
 	tags   strpair.Map
 }
 
-func (r *lsRun) Validate() error {
+func (r *lsRun) parseArgs(args []string) error {
 	if len(r.invIDs) == 0 && len(r.tags) == 0 {
 		return errors.Reason("-inv or -tag are required").Err()
+	}
+
+	if len(args) != 0 {
+		return errors.Reason("unexpected positional arguments").Err()
 	}
 
 	return r.queryRun.validate()
@@ -79,9 +80,8 @@ func (r *lsRun) Validate() error {
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
-	if err := r.Validate(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
+	if err := r.parseArgs(args); err != nil {
+		return r.done(err)
 	}
 
 	if err := r.initClients(ctx); err != nil {
