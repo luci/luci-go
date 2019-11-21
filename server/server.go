@@ -18,11 +18,11 @@
 // following services available via context.Context:
 //   * go.chromium.org/luci/common/logging: Logging.
 //   * go.chromium.org/luci/server/caching: Process cache.
-//   * go.chromium.org/luci/server/secrets: Secrets.
-//   * go.chromium.org/luci/server/settings: Access to app settings.
+//   * go.chromium.org/luci/server/secrets: Secrets (optional).
+//   * go.chromium.org/luci/server/settings: Access to app settings (optional).
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
-//   * go.chromium.org/luci/server/redisconn: Redis connection pool.
-//   * go.chromium.org/gae: Datastore.
+//   * go.chromium.org/luci/server/redisconn: Redis connection pool (optional).
+//   * go.chromium.org/gae: Datastore (optional).
 //
 // Usage example:
 //
@@ -189,7 +189,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
-	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key")
+	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key, or literal \":dev\" for development not-really-a-secret")
 	f.StringVar(&o.SettingsPath, "settings-path", o.SettingsPath, "Path to a JSON file with app settings")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
@@ -324,7 +324,7 @@ type Server struct {
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
 	cleanup  []func()
 
-	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such
+	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such, may be nil
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
 	tsmon    *tsmon.State              // manages flushing of tsmon metrics
 
@@ -921,18 +921,22 @@ func (s *Server) initLogging() {
 	s.Context = logging.SetLevel(s.Context, logging.Debug)
 }
 
-// initSecrets reads the initial root secret and launches a job to periodically
-// reread it.
+// initSecrets reads the initial root secret (if provided) and launches a job to
+// periodically reread it.
 //
-// Absence of the secret when the server starts is a fatal error. But if the
-// server managed to stars successfully but can't re-read the secret later (e.g.
-// the file disappeared), it logs the error and keeps using the cached secret.
+// An error to read the secret when the server starts is fatal. But if the
+// server managed to start successfully but can't re-read the secret later
+// (e.g. the file disappeared), it logs the error and keeps using the cached
+// secret.
 func (s *Server) initSecrets() error {
 	secret, err := s.readRootSecret()
-	if err != nil {
+	switch {
+	case err != nil:
 		return err
+	case secret == nil:
+		return nil
 	}
-	s.secrets = secrets.NewDerivedStore(secret)
+	s.secrets = secrets.NewDerivedStore(*secret)
 	s.Context = secrets.Set(s.Context, s.secrets)
 
 	s.RunInBackground("luci.secrets", func(c context.Context) {
@@ -941,10 +945,10 @@ func (s *Server) initSecrets() error {
 				return // the context is canceled
 			}
 			secret, err := s.readRootSecret()
-			if err != nil {
+			if secret == nil {
 				logging.WithError(err).Errorf(c, "Failed to re-read the root secret, using the cached one")
 			} else {
-				s.secrets.SetRoot(secret)
+				s.secrets.SetRoot(*secret)
 			}
 		}
 	})
@@ -952,26 +956,31 @@ func (s *Server) initSecrets() error {
 }
 
 // readRootSecret reads the secret from a path specified via -root-secret-path.
-func (s *Server) readRootSecret() (secrets.Secret, error) {
-	if s.Options.RootSecretPath == "" {
-		if !s.Options.Prod {
-			return secrets.Secret{Current: []byte("dev-non-secret")}, nil
-		}
-		return secrets.Secret{}, errors.Reason("-root-secret-path is required when running in prod mode").Err()
+//
+// Returns nil if the secret is not configured. Returns an error if the secret
+// is configured, but could not be loaded.
+func (s *Server) readRootSecret() (*secrets.Secret, error) {
+	switch {
+	case s.Options.RootSecretPath == "":
+		return nil, nil // not configured
+	case s.Options.RootSecretPath == ":dev" && !s.Options.Prod:
+		return &secrets.Secret{Current: []byte("dev-non-secret")}, nil
+	case s.Options.RootSecretPath == ":dev" && s.Options.Prod:
+		return nil, errors.Reason("-root-secret-path \":dev\" is not allowed in production mode").Err()
 	}
 
 	f, err := os.Open(s.Options.RootSecretPath)
 	if err != nil {
-		return secrets.Secret{}, err
+		return nil, err
 	}
 	defer f.Close()
 
-	secret := secrets.Secret{}
-	if err = json.NewDecoder(f).Decode(&secret); err != nil {
-		return secrets.Secret{}, errors.Annotate(err, "not a valid JSON").Err()
+	secret := &secrets.Secret{}
+	if err = json.NewDecoder(f).Decode(secret); err != nil {
+		return nil, errors.Annotate(err, "not a valid JSON").Err()
 	}
 	if len(secret.Current) == 0 {
-		return secrets.Secret{}, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
+		return nil, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
 	}
 	return secret, nil
 }
