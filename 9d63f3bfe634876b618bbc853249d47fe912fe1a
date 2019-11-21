@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "feb99ffd_c0416cb7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "we still try to reuse as much as possible, e.g. predicate validation",
+      "parentUuid": "8f0a769b_87206d49",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 58
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26fec516_c88732d6",
         "filename": "resultdb/cmd/resultdb/query_test_exonerations.go",
         "patchSetId": 9
@@ -36,6 +60,30 @@
       "writtenOn": "2019-11-21T01:22:24Z",
       "side": 1,
       "message": "General question: Should we try to use GetXXX() as much as possible or it really doesn\u0027t matter?",
+      "range": {
+        "startLine": 51,
+        "startChar": 7,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5252e96b_62bcf33c",
+        "filename": "resultdb/cmd/resultdb/query_test_exonerations.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "it matters when the message can be nil, e.g. in validation code. That\u0027s why GetXXX functions exist. I generally try to use the simplest tool for the job (just fields, not GetXXX), but sometimes GetXXX is required and/or makes the code easier to read (no need to extra nil checks). \n\nhere, in may not possible be nil\n\nWDYT?\n\n--\n\nanyway, this discussion applies to all code in resultdb, not specific to this CL. I think we can continue discussing this, e.g. in ML, and if we decide to change things, then we can make one large CL that changes all code in resultdb.",
+      "parentUuid": "26fec516_c88732d6",
       "range": {
         "startLine": 51,
         "startChar": 7,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "55490f87_54b01ad4",
+        "filename": "resultdb/cmd/resultdb/query_test_exonerations.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0729aa0c_cbadff01",
+      "range": {
+        "startLine": 73,
+        "startChar": 15,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2975a61f_32390871",
         "filename": "resultdb/cmd/resultdb/query_test_results.go",
         "patchSetId": 9
@@ -91,6 +163,30 @@
       "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc7746f1_b299924a",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2975a61f_32390871",
+      "range": {
+        "startLine": 35,
+        "startChar": 38,
+        "endLine": 35,
+        "endChar": 60
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "26743b63_32197b70",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "no, an empty id is not valid: pbutil/invocation.go has invocationIDPattern [a-z][a-z0-9_\\-:]*\n\nempty id means it is not specified, and this translation should translate it to unspecified rowid\nvery strictly speaking, \"unspecified\" in Spanner world is NULL, but that complicates the queries: \n  \n  (InvocationId \u003e @afterInvocationID)\n\nno longer works. We have to do\n\n  (@afterInvocationID IS NULL OR InvocationId \u003e @afterInvocationID)\n\nlet\u0027s keep this, tentatively",
+      "parentUuid": "17e36910_ddf6ab1e",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 30
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ef2fe55_c80f6f53",
         "filename": "resultdb/internal/span/test_exoneration.go",
         "patchSetId": 9
@@ -137,6 +257,30 @@
       "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dc8bda2_b6b59ef1",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T16:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ef2fe55_c80f6f53",
+      "range": {
+        "startLine": 79,
+        "startChar": 39,
+        "endLine": 79,
+        "endChar": 46
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
