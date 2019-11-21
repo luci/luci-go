@@ -375,6 +375,30 @@
       "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0659d3f6_ee0903bf",
+        "filename": "resultdb/pbutil/strpair.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-21T16:40:39Z",
+      "side": 1,
+      "message": "Got it, makes sense.",
+      "parentUuid": "0c81f75a_b1a32f72",
+      "range": {
+        "startLine": 125,
+        "startChar": 8,
+        "endLine": 125,
+        "endChar": 45
+      },
+      "revId": "32e388a33dcde4ea171978bdfc0e444dc428067a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
