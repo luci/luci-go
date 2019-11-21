@@ -128,5 +128,6 @@ func FromStrpairMap(m strpair.Map) []*typepb.StringPair {
 			ret = append(ret, StringPair(k, v))
 		}
 	}
+	sortStringPairs(ret)
 	return ret
 }
