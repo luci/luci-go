@@ -923,3 +923,7 @@ div.step-text:first-child {
 .hide-debug-logs li.debug-log {
   display: none;
 }
+
+.critical-NO {
+  opacity: 0.5;
+}
