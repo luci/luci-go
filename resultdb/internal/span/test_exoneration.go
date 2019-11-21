@@ -76,42 +76,57 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 }
 
-// ReadTestExonerations reads all test exonerations from the invocation.
-func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, pageToken string, pageSize int) (tes []*pb.TestExoneration, nextPageToken string, err error) {
-	if pageSize <= 0 {
-		panic("pageSize must be positive")
+// TestExonerationQuery specifies test exonerations to fetch.
+type TestExonerationQuery struct {
+	InvocationIDs []InvocationID
+	Predicate     *pb.TestExonerationPredicate // Predicate.Invocation must be nil.
+	PageSize      int                          // must be positive
+	PageToken     string
+}
+
+// QueryTestExonerations reads test exonerations matching the predicate.
+// Returned test exonerations from the same invocation are contiguous.
+func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
+	switch {
+	case q.PageSize <= 0:
+		panic("PageSize <= 0")
+	case q.Predicate.GetInvocation() != nil:
+		panic("q.Predicate.Invocation != nil")
 	}
 
-	// Set start position if requested.
-	keyRange := invID.Key().AsPrefix()
-	switch pos, tokErr := pagination.ParseToken(pageToken); {
-	case tokErr != nil:
-		err = errors.Reason("invalid page_token").
-			InternalReason("%s", tokErr).
-			Tag(grpcutil.InvalidArgumentTag).Err()
-		return
-
-	case pos == nil:
-		break
-
-	case len(pos) == 2:
-		// Start after the page token position.
-		keyRange.Kind = spanner.OpenClosed
-		keyRange.Start = invID.Key(pos[0], pos[1])
-
-	default:
-		err = errors.Reason("invalid page_token").
-			InternalReason("unexpected string slice %q", pos).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	// TODO(nodir): use Snappy for ExplanationMarkdown.
+	st := spanner.NewStatement(`
+		SELECT InvocationId, TestPath, ExonerationId, Variant, ExplanationMarkdown
+		FROM TestExonerations
+		WHERE InvocationId IN UNNEST(@invIDs)
+			# Skip test exonerations after the one specified in the page token.
+			AND (
+				(InvocationId > @afterInvocationID) OR
+				(InvocationId = @afterInvocationID AND TestPath > @afterTestPath) OR
+				(InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ExonerationID > @afterExonerationID)
+		  )
+		ORDER BY InvocationId, TestPath, ExonerationId
+		LIMIT @limit
+	`)
+	st.Params["invIDs"] = q.InvocationIDs
+	st.Params["limit"] = q.PageSize
+	st.Params["afterInvocationId"],
+		st.Params["afterTestPath"],
+		st.Params["afterExonerationID"],
+		err = parseTestObjectPageToken(q.PageToken)
+	if err != nil {
 		return
 	}
 
-	columns := []string{"TestPath", "ExonerationId", "Variant", "ExplanationMarkdown"}
-	opts := &spanner.ReadOptions{Limit: pageSize}
+	// TODO(nodir): add support for q.Predicate.TestPath.
+	// TODO(nodir): add support for q.Predicate.Variant.
+
+	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
-	err = txn.ReadWithOptions(ctx, "TestExonerations", keyRange, columns, opts).Do(func(row *spanner.Row) error {
+	err = query(ctx, txn, st, func(row *spanner.Row) error {
+		var invID InvocationID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
+		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
 		if err != nil {
 			return err
 		}
@@ -124,9 +139,12 @@ func ReadTestExonerations(ctx context.Context, txn Txn, invID InvocationID, page
 		return
 	}
 
-	if len(tes) == pageSize {
-		last := tes[pageSize-1]
-		nextPageToken = pagination.Token(last.TestPath, last.ExonerationId)
+	// If we got pageSize results, then we haven't exhausted the collection and
+	// need to return the next page token.
+	if len(tes) == q.PageSize {
+		last := tes[q.PageSize-1]
+		invID, testPath, exID := MustParseTestExonerationName(last.Name)
+		nextPageToken = pagination.Token(string(invID), testPath, exID)
 	}
 	return
 }
