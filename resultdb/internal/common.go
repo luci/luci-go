@@ -17,6 +17,7 @@ package internal
 import (
 	"net/http"
 
+	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
@@ -65,6 +66,15 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (r
 // Extracts an error code from a grpcutil.Tag, logs a
 // stack trace and returns a gRPC-native error.
 func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+	// Make sure we never return spanner-level errors to the clients.
+	if _, ok := err.(*spanner.Error); ok {
+		err = errors.
+			Annotate(err, "Internal server error").
+			InternalReason("%s", err).
+			Tag(grpcutil.InternalTag).
+			Err()
+	}
+
 	return grpcutil.GRPCifyAndLogErr(ctx, err)
 }
 
