@@ -81,6 +81,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
@@ -120,6 +121,13 @@ const (
 	healthEndpoint = "/healthz"
 	// Log a warning if health check is slower than this.
 	healthTimeLogThreshold = 50 * time.Millisecond
+)
+
+var (
+	versionMetric = metric.NewString(
+		"server/version",
+		"Version of the running container image (taken from -container-image-id).",
+		nil)
 )
 
 // Main initializes the server and runs its serving loop until SIGTERM.
@@ -275,6 +283,23 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
 	)
+}
+
+// imageVersion extracts image tag or digest from ContainerImageID.
+//
+// This is eventually reported as a value of 'server/version' metric.
+//
+// Returns "unknown" if ContainerImageID is empty or malformed.
+func (o *Options) imageVersion() string {
+	// Recognize "<path>@sha256:<digest>" and "<path>:<tag>".
+	idx := strings.LastIndex(o.ContainerImageID, "@")
+	if idx == -1 {
+		idx = strings.LastIndex(o.ContainerImageID, ":")
+	}
+	if idx == -1 {
+		return "unknown"
+	}
+	return o.ContainerImageID[idx+1:]
 }
 
 // Server is responsible for initializing and launching the serving environment.
@@ -1317,6 +1342,11 @@ func (s *Server) initTSMon() error {
 			}
 		},
 	}
+
+	// Report our image version as a metric, useful to monitor rollouts.
+	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {
+		versionMetric.Set(ctx, s.Options.imageVersion())
+	})
 
 	// Periodically flush metrics.
 	s.RunInBackground("luci.tsmon", s.tsmon.FlushPeriodically)
