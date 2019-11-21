@@ -47,7 +47,7 @@
            href="{{ $build.SelfLink }}"
            title="{{ $build.BuildID }}"
            aria-label="builder {{ $builder }} got status {{ $build.Summary.Status }} on recent build {{ $build.BuildID }}">
-          <div class="builder-state-bubble finished-build status-{{ $build.Summary.Status }}">
+          <div class="builder-state-bubble finished-build status-{{ $build.Summary.Status }} critical-{{ $build.Critical }}">
             {{ if eq $i 0 }}
               newest
             {{ end }}

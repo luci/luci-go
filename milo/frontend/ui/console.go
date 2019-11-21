@@ -21,7 +21,6 @@ import (
 	"net/url"
 	"strings"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -370,7 +369,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 
 	status := "None"
 	link := "#"
-	nonCritical := false
+	critical := "UNSET"
 
 	// Below is a state machine for rendering a single builder's column.
 	// In essence, the state machine takes 3 inputs: the current state, and
@@ -426,7 +425,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		switch state {
 		case empty:
 			console = "empty-cell"
-			nonCritical = false
+			critical = "UNSET"
 			switch {
 			case nextBuild && nextNextBuild:
 				nextState = cell
@@ -439,7 +438,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			console = "cell-top"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
-			nonCritical = build.Critical == buildbucketpb.Trinary_NO
+			critical = build.Critical.String()
 			switch {
 			case nextNextBuild:
 				nextState = bottom
@@ -466,7 +465,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			console = "cell"
 			status = build.Summary.Status.String()
 			link = build.SelfLink()
-			nonCritical = build.Critical == buildbucketpb.Trinary_NO
+			critical = build.Critical.String()
 			switch {
 			case nextNextBuild:
 				nextState = cell
@@ -477,10 +476,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 			panic("Unrecognized state")
 		}
 		// Write current state's information.
-		class := fmt.Sprintf("console-%s status-%s", console, status)
-		if nonCritical {
-			class += " non-critical"
-		}
+		class := fmt.Sprintf("console-%s status-%s critical-%s", console, status, critical)
 		must(fmt.Fprintf(buffer,
 			`<div class="console-cell-container"><a class="%s" href="%s" title="%s">`+
 				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
