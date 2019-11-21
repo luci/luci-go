@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8f0a769b_87206d49",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "nit: remove?",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 58
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26fec516_c88732d6",
+        "filename": "resultdb/cmd/resultdb/query_test_exonerations.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "General question: Should we try to use GetXXX() as much as possible or it really doesn\u0027t matter?",
+      "range": {
+        "startLine": 51,
+        "startChar": 7,
+        "endLine": 51,
+        "endChar": 19
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0729aa0c_cbadff01",
+        "filename": "resultdb/cmd/resultdb/query_test_exonerations.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "indentation?",
+      "range": {
+        "startLine": 73,
+        "startChar": 15,
+        "endLine": 73,
+        "endChar": 17
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2975a61f_32390871",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "Nit: QueryTestResultRequest -\u003e QueryTestResultsRequest (missing an s after Result).\n\nSame below QueryTestExonerationRequest -\u003e QueryTestExonerationsRequest",
+      "range": {
+        "startLine": 35,
+        "startChar": 38,
+        "endLine": 35,
+        "endChar": 60
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17e36910_ddf6ab1e",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "Does that mean an empty id is valid?",
+      "range": {
+        "startLine": 81,
+        "startChar": 2,
+        "endLine": 81,
+        "endChar": 30
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ef2fe55_c80f6f53",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-21T01:22:24Z",
+      "side": 1,
+      "message": "nit: update",
+      "range": {
+        "startLine": 79,
+        "startChar": 39,
+        "endLine": 79,
+        "endChar": 46
+      },
+      "revId": "9d63f3bfe634876b618bbc853249d47fe912fe1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
