@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "082aa4cf_0639f10d",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acf4f2ae_cd345508",
+      "range": {
+        "startLine": 62,
+        "startChar": 20,
+        "endLine": 62,
+        "endChar": 29
+      },
+      "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7bbdd58f_48163e8a",
         "filename": "resultdb/cli/cmd_derive.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "6c9b8eec_4af684e1",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T22:53:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bbdd58f_48163e8a",
+      "range": {
+        "startLine": 100,
+        "startChar": 21,
+        "endLine": 100,
+        "endChar": 28
+      },
+      "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5bfcfbb_86eea329",
         "filename": "resultdb/cli/cmd_derive.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2019-11-21T21:36:17Z",
       "side": 1,
       "message": "Why do we have these two lines?",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 12
+      },
+      "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "660f95b9_b86211dd",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T22:53:18Z",
+      "side": 1,
+      "message": "because otherwise the function literal captures only i and tid from the last iteration of the loop. What you see here is a common technique in Golang",
+      "parentUuid": "b5bfcfbb_86eea329",
       "range": {
         "startLine": 107,
         "startChar": 0,
@@ -91,6 +163,30 @@
       "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fcba953_dfb5a980",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T22:53:18Z",
+      "side": 1,
+      "message": "usually go race detector complains about this, but it didn\u0027t just now, so I\u0027ve removed this",
+      "parentUuid": "fc778ede_1bc93449",
+      "range": {
+        "startLine": 120,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 14
+      },
+      "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
