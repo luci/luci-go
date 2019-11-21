@@ -78,7 +78,11 @@ func (id InvocationID) Name() string {
 }
 
 // RowID returns an invocation ID used in spanner rows.
+// If id is empty, returns "".
 func (id InvocationID) RowID() string {
+	if id == "" {
+		return ""
+	}
 	return prefixWithHash(string(id))
 }
 
@@ -233,7 +237,6 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots map
 // If the number of matching invocations exceeds the limit, returns an error
 // tagged with TooManyInvocationsTag.
 func QueryInvocations(ctx context.Context, txn Txn, pred *pb.InvocationPredicate, limit int) (map[InvocationID]*pb.Invocation, error) {
-	defer metrics.Trace(ctx, "QueryInvocations(ctx, txn, %q, %d)", pred, limit)()
 	switch {
 	case limit <= 0:
 		panic("limit <= 0")
@@ -265,7 +268,7 @@ func QueryInvocations(ctx context.Context, txn Txn, pred *pb.InvocationPredicate
 	})
 	roots := make(map[InvocationID]*pb.Invocation, limit)
 	var b Buffer
-	err := txn.Query(ctx, st).Do(func(row *spanner.Row) error {
+	err := query(ctx, txn, st, func(row *spanner.Row) error {
 		if len(roots) == limit {
 			return errors.Reason("more than %d invocations match the predicate", limit).Tag(TooManyInvocationsTag).Err()
 		}

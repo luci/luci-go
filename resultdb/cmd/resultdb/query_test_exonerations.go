@@ -19,7 +19,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
-	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -30,44 +29,19 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const maxInvocationGraphSize = 1000
-
-// queryRequest is implemented by *pb.QueryTestResultsRequest and
-// *pb.QueryTestExonerationsRequest.
-type queryRequest interface {
-	GetPageSize() int32
-	GetMaxStaleness() *durpb.Duration
-}
-
-// validateQueryRequest returns a non-nil error if req is determined to be
-// invalid.
-func validateQueryRequest(req queryRequest) error {
-	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
-		return errors.Annotate(err, "page_size").Err()
-	}
-
-	if req.GetMaxStaleness() != nil {
-		if err := pbutil.ValidateMaxStaleness(req.GetMaxStaleness()); err != nil {
-			return errors.Annotate(err, "max_staleness").Err()
-		}
-	}
-
-	return nil
-}
-
-// validateQueryTestResultsRequest returns a non-nil error if req is determined
+// validateQueryTestExonerationsRequest returns a non-nil error if req is determined
 // to be invalid.
-func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
-	if err := pbutil.ValidateTestResultPredicate(req.Predicate); err != nil {
+func validateQueryTestExonerationsRequest(req *pb.QueryTestExonerationsRequest) error {
+	if err := pbutil.ValidateTestExonerationPredicate(req.Predicate); err != nil {
 		return errors.Annotate(err, "predicate").Err()
 	}
 
 	return validateQueryRequest(req)
 }
 
-// QueryTestResults implements pb.ResultDBServer.
-func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
-	if err := validateQueryTestResultsRequest(in); err != nil {
+// QueryTestExonerations implements pb.ResultDBServer.
+func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error) {
+	if err := validateQueryTestExonerationsRequest(in); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
@@ -80,6 +54,8 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	}
 
 	// Query invocations.
+	// TODO(nodir): this could be optimized. It is querying full invocations
+	// although we need only invocation IDs.
 	invs, err := span.QueryInvocations(ctx, txn, in.Predicate.Invocation, maxInvocationGraphSize)
 	if err != nil {
 		return nil, err
@@ -91,7 +67,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 
 	// Query test results.
 	in.Predicate.Invocation = nil
-	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+	tes, token, err := span.QueryTestExonerations(ctx, txn, span.TestExonerationQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
@@ -100,9 +76,8 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	if err != nil {
 		return nil, err
 	}
-
-	return &pb.QueryTestResultsResponse{
-		NextPageToken: token,
-		TestResults:   trs,
+	return &pb.QueryTestExonerationsResponse{
+		TestExonerations: tes,
+		NextPageToken:    token,
 	}, nil
 }

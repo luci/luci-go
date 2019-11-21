@@ -224,6 +224,9 @@ message QueryTestExonerationsRequest {
 // A response message for QueryTestExonerations RPC.
 message QueryTestExonerationsResponse {
   // The test exonerations matching the predicate.
+  //
+  // The order is not defined, but test exonerations from the same invocation
+  // are contiguous.
   repeated TestExoneration test_exonerations = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.

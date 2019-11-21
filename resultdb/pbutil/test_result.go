@@ -25,6 +25,35 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// testObjectPredicate is implemented by both *pb.TestResultPredicate
+// and *pb.TestExonerationPredicate.
+type testObjectPredicate interface {
+	GetInvocation() *pb.InvocationPredicate
+	GetTestPath() *pb.TestPathPredicate
+	GetVariant() *pb.VariantPredicate
+}
+
+// validateTestObjectPredicate returns a non-nil error if p is determined to be
+// invalid.
+func validateTestObjectPredicate(p testObjectPredicate) error {
+	if err := ValidateInvocationPredicate(p.GetInvocation()); err != nil {
+		return errors.Annotate(err, "invocation").Err()
+	}
+
+	if p.GetTestPath() != nil {
+		if err := ValidateTestPathPredicate(p.GetTestPath()); err != nil {
+			return errors.Annotate(err, "test_path").Err()
+		}
+	}
+
+	if p.GetVariant() != nil {
+		if err := ValidateVariantPredicate(p.GetVariant()); err != nil {
+			return errors.Annotate(err, "variant").Err()
+		}
+	}
+	return nil
+}
+
 // artifactFormatVersion identifies the version of artifact encoding format we're using.
 const artifactFormatVersion = 1
 

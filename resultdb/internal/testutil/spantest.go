@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -251,6 +253,22 @@ func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
 		}
 
 		ms[i] = span.InsertMap("TestResults", mutMap)
+	}
+	return ms
+}
+
+// InsertTestExonerations returns spanner mutations to insert test exonerations.
+func InsertTestExonerations(invID span.InvocationID, testPath string, variant *typepb.Variant, count int) []*spanner.Mutation {
+	ms := make([]*spanner.Mutation, count)
+	for i := 0; i < count; i++ {
+		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
+			"InvocationId":        invID,
+			"TestPath":            testPath,
+			"ExonerationId":       strconv.Itoa(i),
+			"Variant":             variant,
+			"VariantHash":         pbutil.VariantHash(variant),
+			"ExplanationMarkdown": fmt.Sprintf("explanation %d", i),
+		})
 	}
 	return ms
 }

@@ -614,6 +614,9 @@ func (m *QueryTestExonerationsRequest) GetPageToken() string {
 // A response message for QueryTestExonerations RPC.
 type QueryTestExonerationsResponse struct {
 	// The test exonerations matching the predicate.
+	//
+	// The order is not defined, but test exonerations from the same invocation
+	// are contiguous.
 	TestExonerations []*TestExoneration `protobuf:"bytes,1,rep,name=test_exonerations,json=testExonerations,proto3" json:"test_exonerations,omitempty"`
 	// A token, which can be sent as `page_token` to retrieve the next page.
 	// If this field is omitted, there were no subsequent pages at the time of
