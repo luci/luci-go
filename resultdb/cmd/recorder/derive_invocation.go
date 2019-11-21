@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
@@ -69,6 +70,8 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	logging.Infof(ctx, "Deriving an invocation from task %s/%s", in.SwarmingTask.Hostname, in.SwarmingTask.Id)
+
 	// Get the swarming service to use.
 	swarmingURL := "https://" + in.SwarmingTask.Hostname
 	swarmSvc, err := chromium.GetSwarmSvc(internal.HTTPClient(ctx), swarmingURL)
@@ -114,6 +117,8 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// TODO(jchinlee): Validate invocation and results.
 
+	logging.Infof(ctx, "inserting %d test results", len(results))
+
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
 		switch doWrite, err := shouldWriteInvocation(ctx, txn, invID); {
@@ -145,6 +150,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 }
 
 func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
+	inv, err := span.ReadInvocationFull()
 	state, err := readInvocationState(ctx, txn, id)
 	switch {
 	case grpcutil.Code(err) == codes.NotFound:

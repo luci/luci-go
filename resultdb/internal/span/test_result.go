@@ -57,7 +57,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	}
 
 	var maybeUnexpected spanner.NullBool
-	var micros int64
+	var micros spanner.NullInt64
 	var summaryMarkdown Snappy
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
@@ -158,7 +158,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
-		var micros int64
+		var micros spanner.NullInt64
 		tr := &pb.TestResult{}
 		err = b.FromSpanner(row,
 			&invID,
@@ -201,7 +201,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
-func populateDurationField(tr *pb.TestResult, micros int64) {
+func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
 	tr.Duration = FromMicros(micros)
 }
 
@@ -210,13 +210,22 @@ func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) 
 }
 
 // ToMicros converts a duration.Duration proto to microseconds.
-func ToMicros(d *durpb.Duration) int64 {
-	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
+func ToMicros(d *durpb.Duration) spanner.NullInt64 {
+	if d == nil {
+		return spanner.NullInt64{}
+	}
+	return spanner.NullInt64{
+		Valid: true,
+		Int64: 1e6*d.Seconds + int64(1e-3*float64(d.Nanos)),
+	}
 }
 
 // FromMicros converts microseconds to a duration.Duration proto.
-func FromMicros(micros int64) *durpb.Duration {
-	return ptypes.DurationProto(time.Duration(1e3 * micros))
+func FromMicros(micros spanner.NullInt64) *durpb.Duration {
+	if !micros.Valid {
+		return nil
+	}
+	return ptypes.DurationProto(time.Duration(1e3 * micros.Int64))
 }
 
 // parseTestObjectPageToken parses the page token into invocation ID, test path
