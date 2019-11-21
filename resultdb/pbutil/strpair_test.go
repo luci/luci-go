@@ -87,7 +87,7 @@ func TestFromStrpairMap(t *testing.T) {
 		m.Add("k2", "v1")
 		m.Add("k2", "v2")
 
-		So(FromStrpairMap(m), ShouldResemble, StringPairs(
+		So(FromStrpairMap(m), ShouldResembleProto, StringPairs(
 			"k1", "v1",
 			"k2", "v1",
 			"k2", "v2",
