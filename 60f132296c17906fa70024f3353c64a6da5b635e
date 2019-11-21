@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "0d2b47d8_6541d408",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-21T23:03:11Z",
+      "side": 1,
+      "message": "this is common to many programming languages.\n\nJS: \"Creating closures in loops: A common mistake\" in \nhttps://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures for \nC#: https://stackoverflow.com/questions/643542/doesnt-javascript-support-closures-with-local-variables\nGolang: https://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables",
+      "parentUuid": "23bf3009_f97678b0",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 12
+      },
+      "revId": "60f132296c17906fa70024f3353c64a6da5b635e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fc778ede_1bc93449",
         "filename": "resultdb/cli/cmd_derive.go",
         "patchSetId": 2
