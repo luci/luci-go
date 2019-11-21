@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "ea1c3a63_c89b0c72",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-11-21T22:30:27Z",
+      "side": 1,
+      "message": "It looks like by default enums will be treated like strings (when used as schemas for bq by bqschemaupdater etc.), e.g. for cr-buildbucket.builds.completed, status is an enum and in the table it\u0027s a string.\n\nAccording to https://cloud.google.com/apis/design/naming_convention, it\u0027s standard to have the 0 value of an enum be *_UNSPECIFIED. Now updated.",
+      "parentUuid": "9eb2179e_2c7253a6",
+      "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85c5aab2_8114f92e",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 1
@@ -53,6 +71,30 @@
       "writtenOn": "2019-11-17T19:27:20Z",
       "side": 1,
       "message": "2 things:\nA: what about dry run?\nB: the submit info of an attempt should include which of the CLs landed (since partial 2/3 CLs submitted is possible)\n\nIf you stick this into struct, then dry run will just never specify a value for it.",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 39
+      },
+      "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9228a2fe_7a9fcacf",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-11-21T22:30:27Z",
+      "side": 1,
+      "message": "Hm, I think that AttemptSubmitState for dry run attempts *might* be kept at QUEUED at the point that they\u0027re removed?\n\nMaybe we could do without this SubmitState and have a bool failed (or bool passed) (which indicates whether any verifiers failed, or all passed?)",
+      "parentUuid": "85c5aab2_8114f92e",
       "range": {
         "startLine": 23,
         "startChar": 4,
@@ -79,6 +121,24 @@
       "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c68852ad_0bcf3a83",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-11-21T22:30:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84321a9a_22b5268d",
+      "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
