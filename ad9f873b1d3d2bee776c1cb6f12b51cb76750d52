@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2cc79046_fdabdf97",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-11-21T02:46:33Z",
+      "side": 1,
+      "message": "nit: extract these codes as a small function so that you can remove/maintain it easily.",
+      "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
