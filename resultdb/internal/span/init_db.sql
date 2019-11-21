@@ -160,7 +160,7 @@ CREATE TABLE TestResults (
 -- It includes TestPath to be able to find all unexpected test result with a
 -- given test path or a test path prefix.
 CREATE NULL_FILTERED INDEX UnexpectedTestResults
-  ON TestResults (InvocationId, TestPath, IsUnexpected),
+  ON TestResults (InvocationId, TestPath, IsUnexpected) STORING (VariantHash),
   INTERLEAVE IN Invocations;
 
 
