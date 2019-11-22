@@ -45,8 +45,9 @@ func init() {
 }
 
 // validateRefCfg validates legacy ref-specific cq.cfg.
-// Validation result is returned via validation ctx,
-// while error returned directly implies only a bug in this code.
+//
+// Validation result is returned via validation ctx, while error returned
+// directly implies only a bug in this code.
 func validateRef(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	// cq.cfg has been disallowed since Feb 1, 2019.
@@ -60,8 +61,9 @@ func validateRef(ctx *validation.Context, configSet, path string, content []byte
 }
 
 // validateProjectCfg validates project-level cq.cfg.
-// Validation result is returned via validation ctx,
-// while error returned directly implies only a bug in this code.
+//
+// Validation result is returned via validation ctx, while error returned
+// directly implies only a bug in this code.
 func validateProject(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := v2.Config{}
@@ -454,9 +456,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		}
 	})
 
-	// Between passes, DFS into triggers-whom DAG starting with only those
-	// builders which can be triggered directly by CQ and w/o any extra features,
-	// expanding the set to all indirectly triggerable builders.
+	// Between passes, do a depth-first search into triggers-whom DAG starting
+	// with only those builders which can be triggered directly by CQ and
+	// without any extra features, expanding the set to all indirectly
+	// triggerable builders.
 	q := canStartTriggeringTree
 	canBeTriggered := stringset.NewFromSlice(q...)
 	for len(q) > 0 {
@@ -471,8 +474,8 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			}
 		}
 	}
-	// Corrolary: all builders with triggered_by but not in canBeTriggered set are
-	// not properly configured, either referring to non-existing builder OR
+	// Corollary: all builders with triggered_by but not in canBeTriggered set
+	// are not properly configured, either referring to non-existing builder OR
 	// forming a loop.
 
 	// Pass 2, global: verify builder relationships.
@@ -508,8 +511,8 @@ func validateBuilderName(ctx *validation.Context, name string, knownNames string
 	for _, part := range parts {
 		subs := strings.Split(part, ".")
 		if len(subs) >= 3 && subs[0] == "luci" {
-			// Technically, this is allowed. However, practically, this is exremely
-			// likely to be misunderstanding of project or bucket is.
+			// Technically, this is allowed. However, practically, this is
+			// extremely likely to be misunderstanding of project or bucket is.
 			ctx.Errorf("name %q is highly likely malformed; it should be project/short-bucket-name/builder, e.g. 'v8/try/linux'", name)
 			return
 		}
