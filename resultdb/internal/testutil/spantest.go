@@ -15,6 +15,7 @@
 package testutil
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -28,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/spantest"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -279,7 +281,7 @@ func MakeTestResults(invID, testPath string, statuses ...pb.TestStatus) []*pb.Te
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(string(invID), testPath, resultID),
+			Name:     pbutil.TestResultName(invID, testPath, resultID),
 			TestPath: testPath,
 			ResultId: resultID,
 			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
@@ -289,4 +291,31 @@ func MakeTestResults(invID, testPath string, statuses ...pb.TestStatus) []*pb.Te
 		}
 	}
 	return trs
+}
+
+// LogQueryResults executes the statement and logs results.
+// Useful to debug failing tests.
+func LogQueryResults(ctx context.Context, st spanner.Statement) {
+	var values []interface{}
+	buf := &bytes.Buffer{}
+	err := span.Client(ctx).Single().Query(ctx, st).Do(func(row *spanner.Row) error {
+		if len(values) < row.Size() {
+			values = make([]interface{}, row.Size())
+			for i := range values {
+				values[i] = &spanner.GenericColumnValue{}
+			}
+		}
+		if err := row.Columns(values...); err != nil {
+			return err
+		}
+
+		buf.Reset()
+		for i, v := range values {
+			fmt.Fprintf(buf, "\n  %s = %s", row.ColumnName(i), v.(*spanner.GenericColumnValue).Value)
+		}
+
+		logging.Infof(ctx, "row: %s", buf)
+		return nil
+	})
+	So(err, ShouldBeNil)
 }
