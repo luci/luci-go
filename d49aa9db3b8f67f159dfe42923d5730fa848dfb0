@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64b898d7_bb4f87af",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-22T05:02:27Z",
+      "side": 1,
+      "message": "if necessary\n\n?",
+      "range": {
+        "startLine": 197,
+        "startChar": 20,
+        "endLine": 197,
+        "endChar": 29
+      },
+      "revId": "d49aa9db3b8f67f159dfe42923d5730fa848dfb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78d4e7bf_5314e1d6",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-22T05:02:27Z",
+      "side": 1,
+      "message": "please replace \\ with /\n\nand then please call path.Clean()",
+      "range": {
+        "startLine": 46,
+        "startChar": 12,
+        "endLine": 46,
+        "endChar": 19
+      },
+      "revId": "d49aa9db3b8f67f159dfe42923d5730fa848dfb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
