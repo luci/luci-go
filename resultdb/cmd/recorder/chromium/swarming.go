@@ -63,13 +63,6 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		Name: invID.Name(),
 	}
 
-	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-
 	// Decide how to continue based on task state.
 	mustFetchOutputJSON := false
 	switch task.State {
@@ -97,6 +90,14 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	default:
 		return nil, nil, errors.Reason(
 			"unknown swarming state %q", task.State).Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	// Populate timestamps if present.
+	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
 	// Fetch outputs, converting if any.
@@ -268,6 +269,10 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveIn
 
 // convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
 func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
+	if ts == "" {
+		return nil, nil
+	}
+
 	// Timestamp strings from swarming should be RFC3339 without the trailing Z; check in case.
 	if !strings.HasSuffix(ts, "Z") {
 		ts += "Z"

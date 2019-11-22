@@ -75,10 +75,14 @@ func TestSwarming(t *testing.T) {
 
 		// Set up fake swarming service.
 		swarmingFake := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			resp := `{"state": `
+			resp := `{"created_ts": "2014-09-24T13:49:16.01"`
+			hasCompletion := true
+
+			resp += `, "state": `
 			switch r.URL.Path {
 			case fmt.Sprintf("/%stask/pending-task/result", swarmingAPIEndpoint):
 				resp += `"PENDING"`
+				hasCompletion = false
 
 			case fmt.Sprintf("/%stask/bot-died-task/result", swarmingAPIEndpoint):
 				resp += `"BOT_DIED"`
@@ -95,11 +99,19 @@ func TestSwarming(t *testing.T) {
 			case fmt.Sprintf("/%stask/completed-outputs-task/result", swarmingAPIEndpoint):
 				resp += `"COMPLETED", ` + makeOutputsRefString(isoServer.URL, outputsDigest)
 
+			case fmt.Sprintf("/%stask/no-completion-task/result", swarmingAPIEndpoint):
+				resp += `"BOT_DIED"`
+				hasCompletion = false
+
 			default:
 				resp += `"INVALID"`
 			}
 
-			resp += `, "created_ts": "2014-09-24T13:49:16.01", "completed_ts": "2014-09-24T14:49:16.01"}`
+			if hasCompletion {
+				resp += `, "completed_ts": "2014-09-24T14:49:16.0"`
+			}
+
+			resp += `}`
 			io.WriteString(w, resp)
 		}))
 		defer swarmingFake.Close()
@@ -182,6 +194,15 @@ func TestSwarming(t *testing.T) {
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
 			})
+		})
+
+		Convey(`that are invalid`, func() {
+			task, err := swarmSvc.Task.Result("no-completion-task").Context(ctx).Do()
+			So(err, ShouldBeNil)
+
+			inv, _, err := DeriveProtosForWriting(ctx, task, req)
+			So(err, ShouldBeNil)
+			So(inv.FinalizeTime, ShouldBeNil)
 		})
 	})
 
