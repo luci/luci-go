@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	pageSizeMax     = 1000
-	pageSizeDefault = 100
+	pageSizeMax     = 10000
+	pageSizeDefault = 1000
 )
 
 // ParseToken extracts a string slice position from the given page token.
