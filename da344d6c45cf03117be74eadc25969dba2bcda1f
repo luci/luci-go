@@ -16,6 +16,24 @@
       "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "316a7dc3_f6fc59e0",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-11-22T22:20:33Z",
+      "side": 0,
+      "message": "Ack",
+      "parentUuid": "3c8e731d_69401ef5",
+      "revId": "da344d6c45cf03117be74eadc25969dba2bcda1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
