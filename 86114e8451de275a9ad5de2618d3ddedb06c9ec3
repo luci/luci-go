@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7029b195_c3dddb21",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-22T20:19:09Z",
+      "side": 1,
+      "message": "Isn\u0027t sort by value better?\n\nfor example if the the prefixes are [\u0027a\u0027, \u0027a.b\u0027, \u0027a.b.c\u0027, \u0027m\u0027, \u0027n\u0027]\n\nIf sort by length (prefixes becomes [\u0027a\u0027, \u0027m\u0027, \u0027n\u0027 , \u0027a.b\u0027, \u0027a.b.c\u0027]), by the time checking  \u0027a.b\u0027 or \u0027a.b.c\u0027, ret.PathPrefixes is already [\u0027a\u0027, \u0027m\u0027, \u0027n\u0027]\n\nAnd if sort by value, ret.PathPrefixes is just [\u0027a\u0027]",
+      "range": {
+        "startLine": 128,
+        "startChar": 21,
+        "endLine": 128,
+        "endChar": 27
+      },
+      "revId": "86114e8451de275a9ad5de2618d3ddedb06c9ec3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
