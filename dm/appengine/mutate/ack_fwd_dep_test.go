@@ -20,10 +20,10 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/data/bit_field"
-	"go.chromium.org/luci/dm/api/service/v1"
+	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
+	"go.chromium.org/luci/tumble/bitfield"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -52,7 +52,7 @@ func TestAckFwdDep(t *testing.T) {
 			Convey("AddingDeps", func() {
 				Convey("good", func() {
 					a.State = dm.Attempt_WAITING
-					a.DepMap = bit_field.Make(2)
+					a.DepMap = bitfield.Make(2)
 					So(ds.Put(c, a, fwd), ShouldBeNil)
 
 					Convey("not-last", func() {
@@ -82,7 +82,7 @@ func TestAckFwdDep(t *testing.T) {
 
 				Convey("bad", func() {
 					a.State = dm.Attempt_WAITING
-					a.DepMap = bit_field.Make(2)
+					a.DepMap = bitfield.Make(2)
 					a.CurExecution = 1
 					So(ds.Put(c, a, fwd), ShouldBeNil)
 

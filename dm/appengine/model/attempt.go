@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	bf "go.chromium.org/luci/common/data/bit_field"
 	google_pb "go.chromium.org/luci/common/proto/google"
 	dm "go.chromium.org/luci/dm/api/service/v1"
+	bf "go.chromium.org/luci/tumble/bitfield"
 )
 
 // AttemptRetryState indicates the current state of the Attempt's retry

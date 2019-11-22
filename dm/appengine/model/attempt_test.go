@@ -23,9 +23,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/bit_field"
 	google_pb "go.chromium.org/luci/common/proto/google"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/tumble/bitfield"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
 )
@@ -95,7 +95,7 @@ func TestAttempt(t *testing.T) {
 				So(a.ModifyState(c, dm.Attempt_EXECUTING), ShouldBeNil)
 				clk.Add(10 * time.Second)
 				So(a.ModifyState(c, dm.Attempt_WAITING), ShouldBeNil)
-				a.DepMap = bit_field.Make(4)
+				a.DepMap = bitfield.Make(4)
 				a.DepMap.Set(2)
 
 				atmpt := dm.NewAttemptWaiting(3)
@@ -111,7 +111,7 @@ func TestAttempt(t *testing.T) {
 				a := MakeAttempt(c, dm.NewAttemptID("quest", 10))
 				a.State = dm.Attempt_FINISHED
 				a.CurExecution = math.MaxUint32
-				a.DepMap = bit_field.Make(20)
+				a.DepMap = bitfield.Make(20)
 				a.Result.Data = dm.NewJsonResult("", testclock.TestTimeUTC.Add(10*time.Second))
 
 				a.DepMap.Set(1)
