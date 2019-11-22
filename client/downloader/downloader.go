@@ -223,8 +223,8 @@ func (d *Downloader) Wait() error {
 // Note that new uses of isolated should NOT use cmd or relative_cwd!
 func (d *Downloader) CmdAndCwd() ([]string, string, error) {
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	finished := d.finished
-	d.mu.Unlock()
 	if !finished {
 		return nil, "", errors.New(
 			"can only call CumulativeIsolated on a finished Downloader")
