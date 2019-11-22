@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proto
+// Package paged implements a helper for making paginated Datastore queries.
+package paged
 
 import (
 	"context"
@@ -27,9 +28,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// PagedResponse is an interface implemented by ListResponses which support
-// page tokens.
-type PagedResponse interface {
+// Response is an interface implemented by ListResponses which support page
+// tokens.
+type Response interface {
 	proto.Message
 	// GetNextPageToken returns a token to use to fetch the next page of results.
 	GetNextPageToken() string
@@ -44,7 +45,7 @@ var returnedNil = reflect.ValueOf(func() error { return nil }).Call([]reflect.Va
 // returnedStop is a []reflect.Value{} containing one datastore.Stop error.
 var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call([]reflect.Value{})
 
-// PageQuery executes a query to fetch the given page of results, invoking a
+// Query executes a query to fetch the given page of results, invoking a
 // callback function for each key or entity returned by the query. If the page
 // isn't the last of the query, the given response will have its next page token
 // set appropriately.
@@ -58,7 +59,7 @@ var returnedStop = reflect.ValueOf(func() error { return datastore.Stop }).Call(
 // nil halts the query, and if the error is not datastore.Stop, causes this
 // function to return an error as well. See datastore.Run for more information.
 // No maximum page size is imposed, use datastore.Stop to enforce one.
-func PageQuery(c context.Context, lim int32, tok string, rsp PagedResponse, q *datastore.Query, cb interface{}) error {
+func Query(c context.Context, lim int32, tok string, rsp Response, q *datastore.Query, cb interface{}) error {
 	// Validate as much about the callback as this function relies on.
 	// The rest is validated by datastore.Run.
 	v := reflect.ValueOf(cb)

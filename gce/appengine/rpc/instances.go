@@ -27,7 +27,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/proto/paged"
 
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -228,7 +228,7 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 	}
 
 	rsp := &instances.ListResponse{}
-	if err := proto.PageQuery(c, lim, req.GetPageToken(), rsp, q, func(vm *model.VM) error {
+	if err := paged.Query(c, lim, req.GetPageToken(), rsp, q, func(vm *model.VM) error {
 		rsp.Instances = append(rsp.Instances, toInstance(vm))
 		return nil
 	}); err != nil {
