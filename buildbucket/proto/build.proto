@@ -401,10 +401,21 @@ message BuildInfra {
     string name = 2;
   }
 
+  // ResultDB-specific information.
+  message ResultDB {
+    // Hostname of the ResultDB instance, such as "results.api.cr.dev".
+    string hostname = 1;
+
+    // Name of the invocation for results of this build.
+    // Typically "invocations/build:<build_id>".
+    string invocation = 2;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
   LogDog logdog = 3;
   Recipe recipe = 4;
+  ResultDB resultdb = 5;
 }
 
 // Identifies a builder.
