@@ -46,6 +46,30 @@
       "revId": "86114e8451de275a9ad5de2618d3ddedb06c9ec3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f2ea737_ece5e161",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-22T20:52:38Z",
+      "side": 1,
+      "message": "I don\u0027t get the reason of the choice.\n\nAdded a separate comment.",
+      "parentUuid": "1f7add6a_1d335ec6",
+      "range": {
+        "startLine": 128,
+        "startChar": 21,
+        "endLine": 128,
+        "endChar": 27
+      },
+      "revId": "86114e8451de275a9ad5de2618d3ddedb06c9ec3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
