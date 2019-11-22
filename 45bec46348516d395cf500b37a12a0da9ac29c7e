@@ -22,6 +22,30 @@
       "revId": "45bec46348516d395cf500b37a12a0da9ac29c7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aac53e82_3f9e2dad",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-22T19:44:23Z",
+      "side": 1,
+      "message": "you mean prefix?\n\ni think not. In general, I think we don\u0027t have to mention everything that it is not supported. There are also regexes and globs.",
+      "parentUuid": "f3b4126e_3f246918",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 34
+      },
+      "revId": "45bec46348516d395cf500b37a12a0da9ac29c7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
