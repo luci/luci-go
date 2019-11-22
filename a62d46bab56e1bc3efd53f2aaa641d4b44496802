@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6554552f_1eed7037",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:55:06Z",
+      "side": 1,
+      "message": "fine to start, but it I think it has confusing meaning for someone reading BQ query:\n\nSELECT * FROM attempts WHERE mode \u003d \u0027FULL_RUN\u0027 AND passed;\n\nsomeone may read it \"all attempts CQ submitted\".\n\nSo, i\u0027m still thinking of maybe\nverifications {\n  bool passed;\n  // per verifier info, incl. tryjob one\n}\n\nWe should continue this on design doc. But let\u0027s land this CL anyway.",
+      "revId": "a62d46bab56e1bc3efd53f2aaa641d4b44496802",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

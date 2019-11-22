@@ -60,6 +60,24 @@
     },
     {
       "key": {
+        "uuid": "3a1f0b28_41d7041a",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:55:06Z",
+      "side": 1,
+      "message": "awesome!",
+      "parentUuid": "ea1c3a63_c89b0c72",
+      "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "85c5aab2_8114f92e",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 1
@@ -95,6 +113,30 @@
       "side": 1,
       "message": "Hm, I think that AttemptSubmitState for dry run attempts *might* be kept at QUEUED at the point that they\u0027re removed?\n\nMaybe we could do without this SubmitState and have a bool failed (or bool passed) (which indicates whether any verifiers failed, or all passed?)",
       "parentUuid": "85c5aab2_8114f92e",
+      "range": {
+        "startLine": 23,
+        "startChar": 4,
+        "endLine": 23,
+        "endChar": 39
+      },
+      "revId": "09009084e5acabcc3762d5b6416d86150a7544fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe15c5c9_458b505f",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:55:06Z",
+      "side": 1,
+      "message": "Priority for BQ should be what we\u0027ll query for. IMO, \"queued\" state isn\u0027t useful. You either query for dry run only, or you query for full run, which will either:\n(1) fail at some verifier\n(2) succeed all verifiers and fail at submission\n(3) succeed all veriifers and succeed at submission [ie perfect case]\n\nThe reason I advocate for SubmitState (I\u0027d name field \"submission\") is that (2) will have extra details s.t. which CL failed and which succeeded.\nAnd both (2) and (3) should eventually have info how long attempt was waiting to be submitted (say due to tree closure and/or other waiting for other attempts)",
+      "parentUuid": "9228a2fe_7a9fcacf",
       "range": {
         "startLine": 23,
         "startChar": 4,
