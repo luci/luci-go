@@ -15,22 +15,29 @@
 package formats
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 const testNamePrefixKey = "test_name_prefix"
+
+var testRunSubdirRe = regexp.MustCompile("/retry_([0-9]+)/")
 
 // JSONTestResults represents the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
@@ -110,8 +117,21 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 	ret := make([]*pb.TestResult, 0, len(r.Tests))
 	for _, name := range testNames {
 		testPath := req.TestPathPrefix + name
-		if err := r.Tests[name].toProtos(&ret, testPath, outputsToProcess); err != nil {
+
+		// Populate protos.
+		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testPath, outputsToProcess)
+		if err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
+		}
+
+		// If any outputs cannot be processed, don't cause the rest of processing to fail, but do log.
+		if len(unresolvedOutputs) > 0 {
+			logging.Errorf(ctx,
+				"Test %s in task %s on %s could not generate artifact protos for the following:\n%s",
+				testPath,
+				req.SwarmingTask.Id,
+				req.SwarmingTask.Hostname,
+				artifactsToString(unresolvedOutputs))
 		}
 	}
 
@@ -228,9 +248,16 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
+// testArtifactsPerRun maps a run index to a map of run index to slice of
+// associated *pb.Artifacts.
+type testArtifactsPerRun map[int][]*pb.Artifact
+
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
-func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string, outputsToProcess map[string]*pb.Artifact) error {
+//
+// Any artifacts that could not be processed are returned.
+// TODO(jchinlee): once we've curated the artifacts to process, make unprocessed artifacts error.
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testPath string, outputsToProcess map[string]*pb.Artifact) (map[string][]string, error) {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -239,7 +266,7 @@ func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string, outputsTo
 	// Time and Times are both optional, but if Times is present, its length should match the number
 	// of runs. Otherwise we have only Time as the duration of the first run.
 	if len(f.Times) > 0 && len(f.Times) != len(actualStatuses) {
-		return errors.Reason(
+		return nil, errors.Reason(
 			"%d durations populated but has %d test statuses; should match",
 			len(f.Times), len(actualStatuses)).Err()
 	}
@@ -251,28 +278,118 @@ func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string, outputsTo
 		durations = []float64{f.Time}
 	}
 
+	// Get artifacts.
+	// We expect that if we have any artifacts, the number of runs from deriving the artifacts
+	// should match the number of actual runs. Because the arts are a map from run index to
+	// *pb.Artifacts slice, we will not error if artifacts are missing for a run, but log a warning
+	// in case the number of runs do not match each other for further investigation.
+	arts, unresolved := f.getArtifacts(outputsToProcess)
+	if len(arts) > 0 && len(actualStatuses) != len(arts) {
+		logging.Warningf(ctx,
+			"Number of runs of test %s (%d) does not match number of runs generated from artifacts (%d)",
+			len(actualStatuses), len(arts), testPath)
+	}
+
 	// Populate protos.
 	for i, runStatus := range actualStatuses {
 		status, err := fromJSONStatus(runStatus)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		tr := &pb.TestResult{
-			TestPath: testPath,
-			Expected: expectedSet.Has(runStatus),
-			Status:   status,
-			Tags:     pbutil.StringPairs("json_format_status", runStatus),
+			TestPath:        testPath,
+			Expected:        expectedSet.Has(runStatus),
+			Status:          status,
+			Tags:            pbutil.StringPairs("json_format_status", runStatus),
+			OutputArtifacts: arts[i],
 		}
 
 		if i < len(durations) {
 			tr.Duration = secondsToDuration(durations[i])
 		}
 
-		// TODO(jchinlee): Populate artifacts.
-
+		pbutil.NormalizeTestResult(tr)
 		*dest = append(*dest, tr)
 	}
 
-	return nil
+	return unresolved, nil
+}
+
+// getArtifacts gets pb.Artifacts corresponding to the TestField's artifacts.
+//
+// It tries to derive the pb.Artifacts in the following order:
+//   - look for them in the isolated outputs represented as pb.Artifacts
+//   - check if they're a known special case
+//   - fail to process and mark them as `unresolvedArtifacts`
+func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (artifacts testArtifactsPerRun, unresolvedArtifacts map[string][]string) {
+	artifacts = testArtifactsPerRun{}
+	unresolvedArtifacts = map[string][]string{}
+
+	for name, paths := range f.Artifacts {
+		for i, path := range paths {
+			// Get the run ID of the artifact. Defaults to 0 (i.e. assumes there is only one run).
+			runID, err := artifactRunID(path)
+			if err != nil {
+				unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
+				continue
+			}
+
+			// Look for the path in isolated outputs.
+			if art, ok := outputsToProcess[path]; ok {
+				artifacts[runID] = append(artifacts[runID], art)
+				delete(outputsToProcess, path)
+				continue
+			}
+
+			// If the name is otherwise understood by ResultDB, process it.
+			// So far, that's only gold_triage_links.
+			if name == "gold_triage_link" {
+				// We don't expect more than one triage link per test run, but if there is more than one,
+				// suffix the name with index to ensure we retain it too.
+				if i > 0 {
+					name = fmt.Sprintf("%s_%d", name, i)
+				}
+
+				artifacts[runID] = append(artifacts[runID], &pb.Artifact{Name: name, ViewUrl: path})
+				continue
+			}
+
+			// Otherwise, could not populate artifact, so mark it as unresolved.
+			unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
+		}
+	}
+
+	return
+}
+
+// artifactRunID extracts a run ID, defaulting to 0, or error if it doesn't recognize the format.
+func artifactRunID(path string) (int, error) {
+	if m := testRunSubdirRe.FindStringSubmatch(path); m != nil {
+		return strconv.Atoi(m[1])
+	}
+
+	// No retry_<i> subdirectory, so assume it's the first/0th run.
+	return 0, nil
+}
+
+// artifactsToString converts the given name->paths artifacts map to a string for logging.
+func artifactsToString(arts map[string][]string) string {
+	names := make([]string, 0, len(arts))
+	for name := range arts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	var msg bytes.Buffer
+	w := &indented.Writer{Writer: &msg}
+	for _, name := range names {
+		fmt.Fprintln(w, name)
+		w.Level++
+		for _, p := range arts[name] {
+			fmt.Fprintln(w, p)
+		}
+		w.Level--
+	}
+	return msg.String()
 }
