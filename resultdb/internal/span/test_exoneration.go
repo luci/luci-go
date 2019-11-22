@@ -57,9 +57,10 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 
 	// Populate fields from TestExonerations table.
+	var explanationMarkdown Snappy
 	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
 		"Variant":             &ret.Variant,
-		"ExplanationMarkdown": &ret.ExplanationMarkdown,
+		"ExplanationMarkdown": &explanationMarkdown,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -72,6 +73,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()
 
 	default:
+		ret.ExplanationMarkdown = string(explanationMarkdown)
 		return ret, nil
 	}
 }
@@ -123,14 +125,16 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
+	var explanationMarkdown Snappy
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &ex.ExplanationMarkdown)
+		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &explanationMarkdown)
 		if err != nil {
 			return err
 		}
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestPath, ex.ExonerationId)
+		ex.ExplanationMarkdown = string(explanationMarkdown)
 		tes = append(tes, ex)
 		return nil
 	})

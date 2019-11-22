@@ -188,7 +188,7 @@ CREATE TABLE TestExonerations (
   -- Used in conjunction with TestResults.VariantHash column.
   VariantHash STRING(64) NOT NULL,
 
-  -- Explanation of the exoneration for humans, in Markdown.
-  ExplanationMarkdown STRING(MAX)
+  -- Snappy-encoded explanation of the exoneration for humans, in Markdown.
+  ExplanationMarkdown BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
