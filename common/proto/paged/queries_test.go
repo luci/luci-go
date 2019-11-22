@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proto
+package paged
 
 import (
 	"context"
@@ -28,10 +28,10 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestPageQueries(t *testing.T) {
+func TestQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("PageQuery", t, func() {
+	Convey("Query", t, func() {
 		type Record struct {
 			_kind string `gae:"$kind,kind"`
 			ID    string `gae:"$id"`
@@ -46,34 +46,34 @@ func TestPageQueries(t *testing.T) {
 		Convey("invalid", func() {
 			Convey("function", func() {
 				Convey("nil", func() {
-					So(PageQuery(c, 0, "", rsp, q, nil), ShouldErrLike, "callback must be a function")
+					So(Query(c, 0, "", rsp, q, nil), ShouldErrLike, "callback must be a function")
 				})
 
 				Convey("no inputs", func() {
 					f := func() error {
 						return nil
 					}
-					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
 				})
 
 				Convey("many inputs", func() {
 					f := func(interface{}, datastore.CursorCB) error {
 						return nil
 					}
-					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
 				})
 
 				Convey("no outputs", func() {
 					f := func(interface{}) {
 					}
-					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
+					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
 				})
 
 				Convey("many outputs", func() {
 					f := func(interface{}) (interface{}, error) {
 						return nil, nil
 					}
-					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
+					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
 				})
 			})
 
@@ -81,7 +81,7 @@ func TestPageQueries(t *testing.T) {
 				f := func(interface{}) error {
 					return nil
 				}
-				So(PageQuery(c, 0, "tok", rsp, q, f), ShouldErrLike, "invalid page token")
+				So(Query(c, 0, "tok", rsp, q, f), ShouldErrLike, "invalid page token")
 			})
 		})
 
@@ -93,7 +93,7 @@ func TestPageQueries(t *testing.T) {
 					}
 					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-					So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "error")
+					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "error")
 				})
 
 				Convey("stop", func() {
@@ -107,33 +107,33 @@ func TestPageQueries(t *testing.T) {
 
 						Convey("limit", func() {
 							Convey("greater", func() {
-								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(PageQuery(c, 10, tok, rsp, q, f), ShouldBeNil)
+								So(Query(c, 10, tok, rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 
 							Convey("equal", func() {
-								So(PageQuery(c, 1, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 1, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(PageQuery(c, 1, tok, rsp, q, f), ShouldBeNil)
+								So(Query(c, 1, tok, rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 						})
 
 						Convey("no limit", func() {
-							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 							So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 							tok := rsp.NextPageToken
 							rsp.NextPageToken = ""
-							So(PageQuery(c, 0, tok, rsp, q, f), ShouldBeNil)
+							So(Query(c, 0, tok, rsp, q, f), ShouldBeNil)
 							So(rsp.NextPageToken, ShouldBeEmpty)
 						})
 					})
@@ -153,33 +153,33 @@ func TestPageQueries(t *testing.T) {
 
 						Convey("limit", func() {
 							Convey("greater", func() {
-								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(PageQuery(c, 10, tok, rsp, q, f), ShouldBeNil)
+								So(Query(c, 10, tok, rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 
 							Convey("equal", func() {
-								So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(PageQuery(c, 2, tok, rsp, q, f), ShouldBeNil)
+								So(Query(c, 2, tok, rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 						})
 
 						Convey("no limit", func() {
-							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 							So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 							tok := rsp.NextPageToken
 							rsp.NextPageToken = ""
-							So(PageQuery(c, 0, tok, rsp, q, f), ShouldBeNil)
+							So(Query(c, 0, tok, rsp, q, f), ShouldBeNil)
 							So(rsp.NextPageToken, ShouldBeEmpty)
 						})
 					})
@@ -189,18 +189,18 @@ func TestPageQueries(t *testing.T) {
 
 						Convey("limit", func() {
 							Convey("greater", func() {
-								So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 
 							Convey("equal", func() {
-								So(PageQuery(c, 1, "", rsp, q, f), ShouldBeNil)
+								So(Query(c, 1, "", rsp, q, f), ShouldBeNil)
 								So(rsp.NextPageToken, ShouldBeEmpty)
 							})
 						})
 
 						Convey("no limit", func() {
-							So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 							So(rsp.NextPageToken, ShouldBeEmpty)
 						})
 					})
@@ -213,11 +213,11 @@ func TestPageQueries(t *testing.T) {
 					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
 					Convey("limit", func() {
-						So(PageQuery(c, 10, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
 					})
 
 					Convey("no limit", func() {
-						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 					})
 				})
 			})
@@ -231,14 +231,14 @@ func TestPageQueries(t *testing.T) {
 
 				Convey("limit", func() {
 					Convey("none", func() {
-						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldBeEmpty)
 					})
 
 					Convey("one", func() {
 						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id"})
 						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
@@ -248,14 +248,14 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
 
-						So(PageQuery(c, 2, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id1", "id2"})
 						So(rsp.NextPageToken, ShouldNotBeEmpty)
 
 						tok := rsp.NextPageToken
 						rsp.NextPageToken = ""
 						rsp.Records = make([]string, 0)
-						So(PageQuery(c, 2, tok, rsp, q, f), ShouldBeNil)
+						So(Query(c, 2, tok, rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id3"})
 						So(rsp.NextPageToken, ShouldBeEmpty)
 					})
@@ -263,14 +263,14 @@ func TestPageQueries(t *testing.T) {
 
 				Convey("no limit", func() {
 					Convey("none", func() {
-						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldBeEmpty)
 					})
 
 					Convey("one", func() {
 						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
 
-						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id"})
 					})
 
@@ -279,7 +279,7 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
 
-						So(PageQuery(c, 0, "", rsp, q, f), ShouldBeNil)
+						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
 						So(rsp.Records, ShouldResemble, []string{"id1", "id2", "id3"})
 					})
 
@@ -292,7 +292,7 @@ func TestPageQueries(t *testing.T) {
 						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
 						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
 
-						So(PageQuery(c, 0, "", rsp, q, f), ShouldErrLike, "error")
+						So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "error")
 						So(rsp.Records, ShouldBeEmpty)
 						So(rsp.NextPageToken, ShouldBeEmpty)
 					})

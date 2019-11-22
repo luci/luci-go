@@ -24,7 +24,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/proto/paged"
 
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -84,7 +84,7 @@ func (*Projects) Get(c context.Context, req *projects.GetRequest) (*projects.Con
 // List handles a request to list all projects.
 func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.ListResponse, error) {
 	rsp := &projects.ListResponse{}
-	if err := proto.PageQuery(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
+	if err := paged.Query(c, req.GetPageSize(), req.GetPageToken(), rsp, datastore.NewQuery(model.ProjectKind), func(p *model.Project) error {
 		rsp.Projects = append(rsp.Projects, &p.Config)
 		return nil
 	}); err != nil {
