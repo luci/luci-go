@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -49,11 +50,10 @@ func TestQueryTestResults(t *testing.T) {
 			return span.QueryTestResults(ctx, txn, q)
 		}
 
-		mustRead := func(q span.TestResultQuery, expected []*pb.TestResult) string {
+		mustRead := func(q span.TestResultQuery) (trs []*pb.TestResult, token string) {
 			trs, token, err := read(q)
 			So(err, ShouldBeNil)
-			So(trs, ShouldResembleProto, expected)
-			return token
+			return
 		}
 
 		Convey(`Does not fetch test results of other invocations`, func() {
@@ -74,7 +74,41 @@ func TestQueryTestResults(t *testing.T) {
 				insertTestResults(makeTestResults("inv2", "Y", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 			)...)
 
-			mustRead(q, expected)
+			actual, _ := mustRead(q)
+			So(actual, ShouldResembleProto, expected)
+		})
+
+		Convey(`Expectancy filter`, func() {
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now))
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T1", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T2", pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv1", "T3", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T4", pb.TestStatus_FAIL)),
+			)...)
+
+			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
+			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
+			actual, _ := mustRead(q)
+			pbutil.NormalizeTestResultSlice(actual)
+
+			// Clear fields we don't intend to test.
+			names := make([]string, len(actual))
+			for i, a := range actual {
+				names[i] = a.Name
+			}
+			So(names, ShouldResemble, []string{
+				"invocations/inv0/tests/T1/results/0",
+				"invocations/inv0/tests/T1/results/1",
+				"invocations/inv1/tests/T1/results/0",
+
+				"invocations/inv0/tests/T2/results/0",
+				"invocations/inv1/tests/T2/results/0",
+
+				"invocations/inv1/tests/T4/results/0",
+			})
 		})
 
 		Convey(`Paging`, func() {
@@ -91,7 +125,9 @@ func TestQueryTestResults(t *testing.T) {
 				q2 := q
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
-				return mustRead(q2, expected)
+				actual, token := mustRead(q2)
+				So(actual, ShouldResembleProto, expected)
+				return token
 			}
 
 			Convey(`All results`, func() {

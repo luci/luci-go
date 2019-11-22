@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -104,31 +105,52 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		panic("q.Predicate.Invocation != nil")
 	}
 
-	st := spanner.NewStatement(`
+	from := "TestResults tr"
+	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
+		// We must return only test results of test variants that have unexpected results.
+		//
+		// The following query ensures that we first select test variants with
+		// unexpected results, and then for each variant do a lookup in TestResults
+		// table.
+		from = `
+			VariantsWithUnexpectedResults vur
+			JOIN@{FORCE_JOIN_ORDER=TRUE} TestResults tr
+				ON vur.TestPath = tr.TestPath AND vur.VariantHash = tr.VariantHash
+		`
+	}
+
+	st := spanner.NewStatement(fmt.Sprintf(`
+		WITH VariantsWithUnexpectedResults AS (
+			# Note: this query is not executed if it ends up not used in the top-level
+			# query.
+			SELECT DISTINCT TestPath, VariantHash
+			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+			WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
+		)
 		SELECT
-			InvocationId,
-			TestPath,
-			ResultId,
-			Variant,
-			IsUnexpected,
-			Status,
-			SummaryMarkdown,
-			StartTime,
-			RunDurationUsec,
-			Tags,
-			InputArtifacts,
-			OutputArtifacts
-		FROM TestResults
+			tr.InvocationId,
+			tr.TestPath,
+			tr.ResultId,
+			tr.Variant,
+			tr.IsUnexpected,
+			tr.Status,
+			tr.SummaryMarkdown,
+			tr.StartTime,
+			tr.RunDurationUsec,
+			tr.Tags,
+			tr.InputArtifacts,
+			tr.OutputArtifacts
+		FROM %s
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
-				(InvocationId > @afterInvocationID) OR
-				(InvocationId = @afterInvocationID AND TestPath > @afterTestPath) OR
-				(InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ResultId > @afterResultId)
+				(tr.InvocationId > @afterInvocationID) OR
+				(tr.InvocationId = @afterInvocationID AND tr.TestPath > @afterTestPath) OR
+				(tr.InvocationId = @afterInvocationID AND tr.TestPath = @afterTestPath AND tr.ResultId > @afterResultId)
 			)
-		ORDER BY InvocationId, TestPath, ResultId
+		ORDER BY tr.InvocationId, tr.TestPath, tr.ResultId
 		LIMIT @limit
-	`)
+	`, from))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["afterInvocationId"],
@@ -145,10 +167,6 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
-		return nil, "", grpcutil.Unimplemented
-	}
-	if q.Predicate.GetExpectancy() != pb.TestResultPredicate_ALL {
-		// TODO(nodir): add support for q.Predicate.Expectancy.
 		return nil, "", grpcutil.Unimplemented
 	}
 
