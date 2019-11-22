@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5e37259c_2001d384",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-22T00:59:18Z",
+      "side": 1,
+      "message": "Assuming you mean the subquery within the WITH clause, if so move the comment within the clause?",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 124,
+        "endChar": 10
+      },
+      "revId": "0b66a571af3d2bc4af2333d66ea720d0dd89bafa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
