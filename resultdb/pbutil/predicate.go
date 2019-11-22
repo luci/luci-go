@@ -15,10 +15,17 @@
 package pbutil
 
 import (
+	"sort"
+	"strings"
+
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+// AllTestPaths is satisfied by all test paths.
+var AllTestPaths = &pb.TestPathPredicate{PathPrefixes: []string{""}}
 
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
@@ -91,4 +98,54 @@ func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	default:
 		panic("impossible")
 	}
+}
+
+// NormalizeTestPathPredicate returns an equivalent predicate with possibly
+// fewer conditions
+// If pred is empty, returns AllTestPaths.
+// The paths and prefixes in the returned predicate are guaranteed not to
+// overlap.
+func NormalizeTestPathPredicate(pred *pb.TestPathPredicate) *pb.TestPathPredicate {
+	if len(pred.GetPathPrefixes()) == 0 && len(pred.GetPaths()) == 0 {
+		return AllTestPaths
+	}
+
+	ret := &pb.TestPathPredicate{
+		Paths:        make([]string, 0, len(pred.Paths)),
+		PathPrefixes: make([]string, 0, len(pred.PathPrefixes)),
+	}
+
+	// covered returns true if s is already covered by ret.PathPrefixes.
+	covered := func(s string) bool {
+		for _, prefix := range ret.PathPrefixes {
+			if strings.HasPrefix(s, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Sort prefixes by length to exclude redundant prefixes.
+	prefixes := append([]string(nil), pred.PathPrefixes...)
+	sort.Slice(prefixes, func(i, j int) bool {
+		return len(prefixes[i]) < len(prefixes[j])
+	})
+	for _, prefix := range prefixes {
+		if !covered(prefix) {
+			ret.PathPrefixes = append(ret.PathPrefixes, prefix)
+		}
+	}
+
+	// Add only paths not covered by prefixes, and only unique ones.
+	paths := stringset.New(len(pred.Paths))
+	for _, path := range pred.Paths {
+		if !covered(path) && !paths.Has(path) {
+			ret.Paths = append(ret.Paths, path)
+			paths.Add(path)
+		}
+	}
+
+	sort.Strings(ret.Paths)
+	sort.Strings(ret.PathPrefixes)
+	return ret
 }
