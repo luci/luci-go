@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c85afbad_20fbbfd2",
+        "filename": "tumble/bitfield/bf_table.gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T18:29:07Z",
+      "side": 1,
+      "message": "wow, we rolled out own popcnt.",
+      "revId": "d1adf541556156a9a384f5283968e0df1d80a1ea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
