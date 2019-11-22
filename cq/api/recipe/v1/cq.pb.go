@@ -22,16 +22,17 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Input provides CQ metadata for CQ-triggered tryjob.
 type Input struct {
-	// If active is false, CQ isn't active for the current build.
+	// If true, CQ is active for the current build. CQ is considered "active" for
+	// a build if CQ triggered the build, either directly or indirectly.
 	Active bool `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
 	// If false, CQ would try to submit CL(s) if all other checks pass.
 	// If true, CQ won't try to submit.
 	DryRun bool `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
-	// If true, CQ will not take this build into account while deciding whether CL
-	// is good or not. See also `experiment_percentage` of CQ's config file.
+	// If true, CQ will not take this build into account while deciding whether
+	// CL is good or not. See also `experiment_percentage` of CQ's config file.
 	Experimental bool `protobuf:"varint,3,opt,name=experimental,proto3" json:"experimental,omitempty"`
-	// If true, CQ triggered this build directly, otherwise typically indicates
-	// a child build triggered by a CQ triggered one (possibly indirectly).
+	// If true, CQ triggered this build directly, otherwise typically indicates a
+	// child build triggered by a CQ triggered one (possibly indirectly).
 	//
 	// Can be spoofed. *DO NOT USE FOR SECURITY CHECKS.*
 	//
