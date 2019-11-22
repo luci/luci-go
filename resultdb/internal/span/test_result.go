@@ -140,7 +140,11 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			tr.Tags,
 			tr.InputArtifacts,
 			tr.OutputArtifacts
-		FROM %s
+		# Run the query for each testPathPredicate.
+		# This query assumes that test path predicates do not overlap, so we don't
+		# have to remove duplicates. This is achieved by
+		# pbutil.NormalizeTestPathPredicate.
+		FROM UNNEST(@testPathPredicates) tpp, %s
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
@@ -148,11 +152,24 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 				(tr.InvocationId = @afterInvocationID AND tr.TestPath > @afterTestPath) OR
 				(tr.InvocationId = @afterInvocationID AND tr.TestPath = @afterTestPath AND tr.ResultId > @afterResultId)
 			)
+
+			# Filter by TestPath.
+			# Based on experiments, Spanner generates an efficient query plan for this
+			# expression:
+			# 1. It takes advantage of the fact that test rows are sorted by TestPath
+			#    at the physical level, i.e. operation graph leaves do not read test
+			#    results that do not match this predicate. In particular, filter
+			#    (prefix=false, value="A") does not read all test results that start
+			#    with A, but only ones with TestPath="A".
+			# 2. If VariantsWithUnexpectedResults is used, this filter is pushed
+			#    there, because this is an expression on TestPath.
+			AND STARTS_WITH(tr.TestPath, tpp.Value) AND (tpp.IsPrefix OR tr.TestPath = tpp.Value)
 		ORDER BY tr.InvocationId, tr.TestPath, tr.ResultId
 		LIMIT @limit
 	`, from))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
+	st.Params["testPathPredicates"] = testPathPredToParam(q.Predicate.GetTestPath())
 	st.Params["afterInvocationId"],
 		st.Params["afterTestPath"],
 		st.Params["afterResultId"],
@@ -161,10 +178,6 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return
 	}
 
-	if q.Predicate.GetTestPath() != nil {
-		// TODO(nodir): add support for q.Predicate.TestPath.
-		return nil, "", grpcutil.Unimplemented
-	}
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
 		return nil, "", grpcutil.Unimplemented
@@ -263,4 +276,23 @@ func parseTestObjectPageToken(pageToken string) (inv InvocationID, testPath, obj
 // The returned error is anontated with INVALID_ARUGMENT code.
 func encapsulatePageTokenError(err error) error {
 	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
+}
+
+type testPathPredicate struct {
+	IsPrefix bool
+	Value    string
+}
+
+// testPathPredToParam returns a query parameter to filter by test path.
+func testPathPredToParam(pred *pb.TestPathPredicate) []testPathPredicate {
+	pred = pbutil.NormalizeTestPathPredicate(pred)
+
+	ret := make([]testPathPredicate, 0, len(pred.PathPrefixes)+len(pred.Paths))
+	for _, prefix := range pred.PathPrefixes {
+		ret = append(ret, testPathPredicate{IsPrefix: true, Value: prefix})
+	}
+	for _, path := range pred.Paths {
+		ret = append(ret, testPathPredicate{Value: path})
+	}
+	return ret
 }
