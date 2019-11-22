@@ -92,8 +92,10 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
-// Does not populate TestResult.Name.
-func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
+// Takes outputsToProcess, the isolated outputs associated with the task, to use to populate
+// artifacts, and deletes any that are successfully processed.
+// Does not populate TestResult.Name; that happens server-side on RPC response.
+func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationRequest, inv *pb.Invocation, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -108,7 +110,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 	ret := make([]*pb.TestResult, 0, len(r.Tests))
 	for _, name := range testNames {
 		testPath := req.TestPathPrefix + name
-		if err := r.Tests[name].toProtos(&ret, testPath); err != nil {
+		if err := r.Tests[name].toProtos(&ret, testPath, outputsToProcess); err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
 	}
@@ -228,7 +230,7 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
-func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string) error {
+func (f *TestFields) toProtos(dest *[]*pb.TestResult, testPath string, outputsToProcess map[string]*pb.Artifact) error {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
