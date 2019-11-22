@@ -22,6 +22,30 @@
       "revId": "86114e8451de275a9ad5de2618d3ddedb06c9ec3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f7add6a_1d335ec6",
+        "filename": "resultdb/pbutil/predicate.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-22T20:45:06Z",
+      "side": 1,
+      "message": "\u003e Isn\u0027t sort by value better?\n\u003e \n\u003e for example if the the prefixes are [\u0027a\u0027, \u0027a.b\u0027, \u0027a.b.c\u0027, \u0027m\u0027, \u0027n\u0027]\n\u003e \n\u003e If sort by length (prefixes becomes [\u0027a\u0027, \u0027m\u0027, \u0027n\u0027 , \u0027a.b\u0027, \u0027a.b.c\u0027]), by the time checking  \u0027a.b\u0027 or \u0027a.b.c\u0027, ret.PathPrefixes is already [\u0027a\u0027, \u0027m\u0027, \u0027n\u0027]\n\u003e \n\u003e And if sort by value, ret.PathPrefixes is just [\u0027a\u0027]\n\nyes. What exactly is your concern?\n\n--\n\ni\u0027ve expanded the comment to explain the choice.",
+      "parentUuid": "7029b195_c3dddb21",
+      "range": {
+        "startLine": 128,
+        "startChar": 21,
+        "endLine": 128,
+        "endChar": 27
+      },
+      "revId": "86114e8451de275a9ad5de2618d3ddedb06c9ec3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
