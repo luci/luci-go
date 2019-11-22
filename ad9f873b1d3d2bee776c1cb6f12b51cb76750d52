@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d695b51b_a7e943e0",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-22T09:54:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2cc79046_fdabdf97",
+      "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a058e13_cbce6c38",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce0d30db_6c6a94f7",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-22T09:54:35Z",
+      "side": 1,
+      "message": "made https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1928364",
+      "parentUuid": "3a058e13_cbce6c38",
+      "revId": "ad9f873b1d3d2bee776c1cb6f12b51cb76750d52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
