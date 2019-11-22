@@ -39,29 +39,12 @@ import (
 
 func init() {
 	validation.Rules.Add("regex:projects/[^/]+", "${appid}.cfg", validateProject)
-	// TODO(tandrii): delete this by April 1st, 2019.
-	// Legacy. Will be validated by both -dev and prod instances until deleted.
-	validation.Rules.Add("regex:projects/[^/]+/refs/.+", "cq.cfg", validateRef)
 }
 
-// validateRefCfg validates legacy ref-specific cq.cfg.
-// Validation result is returned via validation ctx,
-// while error returned directly implies only a bug in this code.
-func validateRef(ctx *validation.Context, configSet, path string, content []byte) error {
-	ctx.SetFile(path)
-	// cq.cfg has been disallowed since Feb 1, 2019.
-	// keep this error in place till Apr 1, 2019, to encourage clients remove this
-	// config file from their repo.
-	ctx.Errorf(
-		"cq.cfg is no longer used and has no effect. Please, delete cq.cfg in your repo.\n" +
-			"cq.cfg is replaced by commit-queue.cfg.\n" +
-			"Doc: https://chromium.googlesource.com/infra/luci/luci-go/+/HEAD/cq/api/config/v2/cq.proto\n")
-	return nil
-}
-
-// validateProjectCfg validates project-level cq.cfg.
-// Validation result is returned via validation ctx,
-// while error returned directly implies only a bug in this code.
+// validateProject validates a project-level CQ config.
+//
+// Validation result is returned via validation ctx, while error returned
+// directly implies only a bug in this code.
 func validateProject(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := v2.Config{}
