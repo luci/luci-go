@@ -29,9 +29,9 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/bit_field"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/tumble/bitfield"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -99,8 +99,8 @@ func (u *User) MakeOutgoingMessage(c context.Context, msg string, toUsers ...str
 		FromUser:   ds.KeyForObj(c, u),
 		Message:    msg,
 		Recipients: toUsers,
-		Success:    bit_field.Make(uint32(len(toUsers))),
-		Failure:    bit_field.Make(uint32(len(toUsers))),
+		Success:    bitfield.Make(uint32(len(toUsers))),
+		Failure:    bitfield.Make(uint32(len(toUsers))),
 	}
 }
 
@@ -122,8 +122,8 @@ type OutgoingMessage struct {
 	Message    string   `gae:",noindex"`
 	Recipients []string `gae:",noindex"`
 
-	Success bit_field.BitField
-	Failure bit_field.BitField
+	Success bitfield.BitField
+	Failure bitfield.BitField
 
 	Notified bool
 	TimedOut bool
