@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "682d2760_2b5b4990",
+        "filename": "lucicfg/testdata/errors/notify_blamelist_no_repo.star",
+        "patchSetId": 18
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-22T01:27:08Z",
+      "side": 1,
+      "message": "I\u0027m with fine with the change, the only detail that remains is that I prefer to not hardcode the enum numbers and use the enums, it\u0027s making the thing potentially unmaintainable long time. :(\n\nThe way to use it is something like buildbucket_pb.Status_FAILURE.\n\nHere\u0027s a somewhat similar example:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/master/lucicfg/starlark/stdlib/internal/luci/generators.star#204",
+      "range": {
+        "startLine": 14,
+        "startChar": 21,
+        "endLine": 14,
+        "endChar": 23
+      },
+      "revId": "b749d1fdf837ace835e57386bc070a34fdb33efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
