@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d791c304_43111f53",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:17:54Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "5d90dd5c_5a8b51d1",
+      "range": {
+        "startLine": 43,
+        "startChar": 27,
+        "endLine": 43,
+        "endChar": 45
+      },
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9dd01cf4_102bdb64",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 4
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "Makes sense, rephrased as \u0027... with an \"unset\" default value\u0027\n\n(This is slightly different from your suggestion; \"(i.e. default)\" might sort of sound like unset is a synonym of default, but I think want we want to say here is that \"unset\" is the default just for Toggle.)",
       "parentUuid": "9dd01cf4_102bdb64",
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "985f634c_dea9d6d0",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:17:54Z",
+      "side": 1,
+      "message": "yup, 👍",
+      "parentUuid": "54d9dad7_a785ae4d",
       "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -181,6 +223,24 @@
       "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d457c74_8966938e",
+        "filename": "cq/api/recipe/v1/cq.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-22T20:17:54Z",
+      "side": 1,
+      "message": "new descr. is good.",
+      "parentUuid": "7f0ca3e0_4454bbbf",
+      "revId": "4fad481cf700c1e26086d4d51fd69e51b0f97490",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
