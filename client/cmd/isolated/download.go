@@ -16,10 +16,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -60,6 +62,8 @@ Files are referenced by their hash`,
 			c.Flags.Int64Var(&c.maxSize, "cache-max-size", cacheMaxSizeDefault, "Cache is trimmed if the cache gets larger than this value.")
 			c.Flags.IntVar(&c.maxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
 			c.Flags.Int64Var(&c.minFreeSpace, "cache-min-free-space", 0, "Cache is trimmed if disk free space becomes lower than this value.")
+
+			c.Flags.StringVar(&c.resultDir, "fetch-and-map-result-dir", "", "This is created only for crbug.com/932396, do not use other than from run_isolated.py.")
 			return &c
 		},
 	}
@@ -70,6 +74,8 @@ type downloadRun struct {
 	outputDir   string
 	outputFiles string
 	isolated    string
+
+	resultDir string
 
 	cacheDir     string
 	maxSize      int64
@@ -91,6 +97,43 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	if c.cacheDir == "" && (c.maxSize != cacheMaxSizeDefault || c.maxItems != cacheMaxItemsDefault || c.minFreeSpace != 0) {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
+	return nil
+}
+
+func (c *downloadRun) outputResults(cache cache.Cache, dl *downloader.Downloader) error {
+	if c.resultDir == "" {
+		return nil
+	}
+
+	itemsCold, itemsHot, err := downloader.GetCacheStats(cache)
+	if err != nil {
+		return errors.Annotate(err, "failed to call GetCacheStats").Err()
+	}
+
+	path := filepath.Join(c.resultDir, "items_cold")
+	if err := ioutil.WriteFile(path, itemsCold, 0664); err != nil {
+		return errors.Annotate(err, "failed to write cold items to %s", path).Err()
+	}
+
+	path = filepath.Join(c.resultDir, "items_hot")
+	if err := ioutil.WriteFile(path, itemsHot, 0664); err != nil {
+		return errors.Annotate(err, "failed to write hot items to %s", path).Err()
+	}
+
+	root, err := dl.RootIsolated()
+	if err != nil {
+		return errors.Annotate(err, "failed to get root isolated").Err()
+	}
+
+	rootJSON, err := json.Marshal(root)
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal root isolated").Err()
+	}
+	path = filepath.Join(c.resultDir, "isolated.json")
+	if err := ioutil.WriteFile(path, rootJSON, 0664); err != nil {
+		return errors.Annotate(err, "failed to write root json to %s", path).Err()
+	}
+
 	return nil
 }
 
@@ -130,6 +173,7 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
 	}
+
 	if c.outputFiles != "" {
 		filesData := strings.Join(files, "\n")
 		if len(files) > 0 {
@@ -140,7 +184,8 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			return errors.Annotate(err, "failed to call WriteFile(%s, ...)", c.outputFiles).Err()
 		}
 	}
-	return nil
+
+	return c.outputResults(diskCache, dl)
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
