@@ -159,3 +159,66 @@ func TestValidateTestResultPredicate(t *testing.T) {
 		})
 	})
 }
+
+func TestNormalizeTestPathPredicate(t *testing.T) {
+	Convey(`TestNormalizeTestPathPredicate`, t, func() {
+		Convey(`1.*, 2.*`, func() {
+			input := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1.", "2."},
+			}
+			expected := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1.", "2."},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+
+		Convey(`1, 2`, func() {
+			input := &pb.TestPathPredicate{
+				Paths: []string{"1", "2"},
+			}
+			expected := &pb.TestPathPredicate{
+				Paths: []string{"1", "2"},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+
+		Convey(`1, 2, 2`, func() {
+			input := &pb.TestPathPredicate{
+				Paths: []string{"1", "2", "2"},
+			}
+			expected := &pb.TestPathPredicate{
+				Paths: []string{"1", "2"},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+
+		Convey(`1.1.*, 1.*`, func() {
+			input := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1.1.", "1."},
+			}
+			expected := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1."},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+
+		Convey(`1.*, 1.1`, func() {
+			input := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1."},
+				Paths:        []string{"1.1"},
+			}
+			expected := &pb.TestPathPredicate{
+				PathPrefixes: []string{"1."},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+
+		Convey(`Empty`, func() {
+			input := &pb.TestPathPredicate{}
+			expected := &pb.TestPathPredicate{
+				PathPrefixes: []string{""},
+			}
+			So(NormalizeTestPathPredicate(input), ShouldResembleProto, expected)
+		})
+	})
+}
