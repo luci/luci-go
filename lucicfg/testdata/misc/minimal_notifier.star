@@ -1,3 +1,5 @@
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_pb='buildbucket.v2')
+
 luci.project(
     name = 'project',
     buildbucket = 'cr-buildbucket.appspot.com',
@@ -13,7 +15,7 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'email notifier',
-            on_failure = True,
+            on_occurrence = [buildbucket_pb.FAILURE],
             notify_emails = ['a@example.com'],
         ),
     ],
@@ -26,7 +28,7 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'blamelist notifier',
-            on_failure = True,
+            on_occurrence = [buildbucket_pb.FAILURE],
             notify_blamelist = True,
         ),
     ],
@@ -39,8 +41,7 @@ luci.builder(
     notifies = [
         luci.notifier(
             name = 'blamelist notifier with infra failures',
-            on_failure = True,
-            on_infra_failure = True,
+            on_occurrence = [buildbucket_pb.FAILURE, buildbucket_pb.INFRA_FAILURE],
             notify_blamelist = True,
         ),
     ],
@@ -85,7 +86,7 @@ luci.builder(
 # === luci-notify.cfg
 # notifiers: <
 #   notifications: <
-#     on_failure: true
+#     on_occurrence: FAILURE
 #     email: <
 #       recipients: "a@example.com"
 #     >
@@ -97,7 +98,7 @@ luci.builder(
 # >
 # notifiers: <
 #   notifications: <
-#     on_failure: true
+#     on_occurrence: FAILURE
 #     notify_blamelist: <>
 #   >
 #   builders: <
@@ -108,8 +109,8 @@ luci.builder(
 # >
 # notifiers: <
 #   notifications: <
-#     on_failure: true
-#     on_infra_failure: true
+#     on_occurrence: FAILURE
+#     on_occurrence: INFRA_FAILURE
 #     notify_blamelist: <>
 #   >
 #   builders: <
