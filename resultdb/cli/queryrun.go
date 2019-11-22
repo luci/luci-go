@@ -29,10 +29,10 @@ import (
 // queryRun is a base subcommandRun for subcommands ls and derive.
 type queryRun struct {
 	baseCommandRun
-	limit int
+	limit              int
+	ignoreExpectations bool
 
 	// TODO(crbug.com/1021849): add flag -test-path
-	// TODO(crbug.com/1021849): add flag -include-expected
 	// TODO(crbug.com/1021849): add flag -artifact-dir
 	// TODO(crbug.com/1021849): add flag -artifact-name
 }
@@ -40,8 +40,19 @@ type queryRun struct {
 func (r *queryRun) registerFlags(p Params) {
 	r.RegisterGlobalFlags(p)
 	r.RegisterJSONFlag()
+
 	r.Flags.IntVar(&r.limit, "n", 0, text.Doc(`
 		Print up to n results of each result type. If 0, then unlimited.
+	`))
+
+	r.Flags.BoolVar(&r.ignoreExpectations, "ignore-expectations", false, text.Doc(`
+		Do not filter based on whether the result was expected.
+		Note that this may significantly increase output size and latency.
+
+		If false (default), print only results of test variants that have unexpected
+		results.
+		For example, if a test variant expected PASS and had results FAIL, FAIL,
+		PASS, then print all of them.
 	`))
 }
 
@@ -56,13 +67,19 @@ func (r *queryRun) validate() error {
 
 // queryAndPrint queries results and prints them.
 func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicate) error {
-	// TODO(crbug.com/1021849): implement paging.
-	res, err := r.resultdb.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
+	req := &pb.QueryTestResultsRequest{
 		Predicate: &pb.TestResultPredicate{
 			Invocation: inv,
+			Expectancy: pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
 		},
 		PageSize: int32(r.limit),
-	})
+	}
+	if r.ignoreExpectations {
+		req.Predicate.Expectancy = pb.TestResultPredicate_ALL
+	}
+
+	// TODO(crbug.com/1021849): implement paging.
+	res, err := r.resultdb.QueryTestResults(ctx, req)
 	if err != nil {
 		return err
 	}
