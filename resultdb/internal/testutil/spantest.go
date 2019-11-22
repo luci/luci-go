@@ -269,7 +269,7 @@ func InsertTestExonerations(invID span.InvocationID, testPath string, variant *t
 			"ExonerationId":       strconv.Itoa(i),
 			"Variant":             variant,
 			"VariantHash":         pbutil.VariantHash(variant),
-			"ExplanationMarkdown": fmt.Sprintf("explanation %d", i),
+			"ExplanationMarkdown": span.Snappy(fmt.Sprintf("explanation %d", i)),
 		})
 	}
 	return ms
