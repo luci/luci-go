@@ -16,6 +16,24 @@
       "revId": "a62d46bab56e1bc3efd53f2aaa641d4b44496802",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c86b7f75_ed735105",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-11-22T23:52:20Z",
+      "side": 1,
+      "message": "Will land as-is for now :-)",
+      "parentUuid": "6554552f_1eed7037",
+      "revId": "a62d46bab56e1bc3efd53f2aaa641d4b44496802",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
