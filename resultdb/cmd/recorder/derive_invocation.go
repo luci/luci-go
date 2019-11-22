@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
@@ -103,9 +104,11 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	}
 
 	// Otherwise, get the protos and write them to Spanner.
+	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err,
+			"task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
 	}
 	if inv.FinalizeTime == nil {
 		panic("missing inv.FinalizeTime")

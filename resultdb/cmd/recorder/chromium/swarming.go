@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -104,12 +105,8 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	var results []*pb.TestResult
 	switch {
 	case task.OutputsRef != nil && task.OutputsRef.Isolated != "":
-		// If we have output, fetch it regardless.
-		outputJSON, err := FetchOutputJSON(ctx, task, task.OutputsRef)
-		if err != nil {
-			return nil, nil, err
-		}
-		if results, err = ConvertOutputJSON(ctx, inv, req, outputJSON); err != nil {
+		// If we have output, try to process it regardless.
+		if results, err = processOutputs(ctx, task, inv, req); err != nil {
 			return nil, nil, err
 		}
 
@@ -197,15 +194,51 @@ func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 	return span.InvocationID("swarming_" + hex.EncodeToString(h.Sum(nil))), nil
 }
 
-// FetchOutputJSON fetches the output.json from the given task with the given ref.
-func FetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, ref *swarmingAPI.SwarmingRpcsFilesRef) ([]byte, error) {
-	// Get isolated client for getting isolated objects.
-	cl := internal.HTTPClient(ctx)
-	isoClient := isolatedclient.New(nil, cl, ref.Isolatedserver, ref.Namespace, nil, nil)
+// processOutputs fetches the output.json from the given task and processes it using whichever
+// additional isolated outputs necessary.
+func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
+	outputsRef := task.OutputsRef
+	isoClient := isolatedclient.New(
+		nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil)
 
+	// Get the isolated outputs.
+	outputs, err := GetOutputs(ctx, isoClient, outputsRef)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the output.json file itself and convert it.
+	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert the isolated.File outputs to pb.Artifacts for later processing.
+	outputsToProcess := make(map[string]*pb.Artifact, len(outputs))
+	for path, f := range outputs {
+		art := util.IsolatedFileToArtifact(
+			outputsRef.Isolatedserver, outputsRef.Namespace, path, &f)
+		if art == nil {
+			logging.Warningf(ctx, "Could not process %q in task %s on %s", path, task.TaskId, outputsRef.Isolatedserver)
+		}
+
+		outputsToProcess[path] = art
+	}
+
+	// Convert the output JSON.
+	if results, err = ConvertOutputJSON(ctx, inv, req, outputJSON, outputsToProcess); err != nil {
+		return nil, err
+	}
+	if outputsToProcess != nil {
+		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
+	}
+
+	return results, nil
+}
+
+// GetOutputs gets the map of isolated.Files associated with the given task.
+func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swarmingAPI.SwarmingRpcsFilesRef) (map[string]isolated.File, error) {
 	// Fetch the isolate.
-	logging.Infof(
-		ctx, "Fetching %s for isolated outs of task %s", ref.Isolated, task.TaskId)
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
 		// TODO(jchinlee): handle error codes from here. Nonexisting isolates should not result in
@@ -213,12 +246,18 @@ func FetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 		return nil, err
 	}
 
+	// Get the files.
 	isolates := &isolated.Isolated{}
 	if err := json.Unmarshal(buf.Bytes(), isolates); err != nil {
 		return nil, errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
 	}
+	return isolates.Files, nil
+}
 
-	outputFile, ok := isolates.Files[outputJSONFileName]
+// FetchOutputJSON fetches the output.json given the outputs map, updating it in-place to mark the
+// file as processed.
+func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outputsToProcess map[string]isolated.File) ([]byte, error) {
+	outputFile, ok := outputsToProcess[outputJSONFileName]
 	if !ok {
 		return nil, errors.Reason(
 			"missing expected output %s in isolated outputs",
@@ -226,25 +265,25 @@ func FetchOutputJSON(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 	}
 
 	// Now fetch (from the same server and namespace) the output file by digest.
-	logging.Infof(
-		ctx, "Fetching %s for output of task %s", outputFile.Digest, task.TaskId)
-	buf = &bytes.Buffer{}
+	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, outputFile.Digest, buf); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err,
+			"%s digest %q", outputJSONFileName, outputFile.Digest).Err()
 	}
 
+	delete(outputsToProcess, outputJSONFileName)
 	return buf.Bytes(), nil
 }
 
 // ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveInvocationRequest, data []byte) ([]*pb.TestResult, error) {
+func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveInvocationRequest, data []byte, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, req, inv)
+		results, err := jsonFormat.ToProtos(ctx, req, inv, outputsToProcess)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
