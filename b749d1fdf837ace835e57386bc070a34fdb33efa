@@ -22,6 +22,30 @@
       "revId": "b749d1fdf837ace835e57386bc070a34fdb33efa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed11ad83_605ff64c",
+        "filename": "lucicfg/testdata/errors/notify_blamelist_no_repo.star",
+        "patchSetId": 18
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-22T23:49:15Z",
+      "side": 1,
+      "message": "updated. PTAL",
+      "parentUuid": "682d2760_2b5b4990",
+      "range": {
+        "startLine": 14,
+        "startChar": 21,
+        "endLine": 14,
+        "endChar": 23
+      },
+      "revId": "b749d1fdf837ace835e57386bc070a34fdb33efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
