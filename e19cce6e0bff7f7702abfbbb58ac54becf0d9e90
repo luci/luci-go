@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a00a3a9_9107961a",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-11-22T17:10:20Z",
+      "side": 1,
+      "message": "Is it worth mentioning that ignore-expectations may significantly increases response size and latency?",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 31
+      },
+      "revId": "e19cce6e0bff7f7702abfbbb58ac54becf0d9e90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
