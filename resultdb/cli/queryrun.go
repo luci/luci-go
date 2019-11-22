@@ -15,16 +15,19 @@
 package cli
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -83,6 +86,7 @@ func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicat
 		},
 		PageSize: int32(r.limit),
 	}
+
 	if r.ignoreExpectations {
 		req.Predicate.Expectancy = pb.TestResultPredicate_ALL
 	}
@@ -95,25 +99,56 @@ func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicat
 		*dest = append(*dest, p)
 	}
 
-	// TODO(crbug.com/1021849): implement paging.
-	res, err := r.resultdb.QueryTestResults(ctx, req)
-	if err != nil {
-		return err
-	}
+	itemC := make(chan proto.Message)
+	errC := make(chan error)
+	queryCtx, stopQuering := context.WithCancel(ctx)
+	defer stopQuering()
+	go func() {
+		err := pbutil.QueryResults(queryCtx, itemC, r.resultdb, req)
+		close(itemC)
+		errC <- err
+	}()
 
+	// TODO(crbug.com/1021849): query test exonerations.
+
+	return r.printItems(itemC)
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (r *queryRun) printItems(itemC chan proto.Message) error {
 	if !r.json {
 		// TODO(crbug.com/1021849): implement human-oriented output.
 		return errors.Reason("unimplemented").Err()
 	}
 
-	// TODO(crbug.com/1021849): query test exonerations.
+	m := jsonpb.Marshaler{}
+	buf := &bytes.Buffer{}
+	for item := range itemC {
+		var key string
+		switch item.(type) {
+		case *pb.TestResult:
+			key = "testResult"
+		case *pb.TestExoneration:
+			key = "testExoneration"
+		default:
+			panic("impossible")
+		}
 
-	m := jsonpb.Marshaler{
-		Indent: "  ",
-	}
-	for _, res := range res.TestResults {
-		m.Marshal(os.Stdout, res)
-		fmt.Println()
+		buf.Reset()
+		if err := m.Marshal(buf, item); err != nil {
+			return err
+		}
+		envelope := map[string]interface{}{key: json.RawMessage(buf.Bytes())}
+		entryJSON, err := json.MarshalIndent(envelope, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s\n", entryJSON)
 	}
 	return nil
 }
