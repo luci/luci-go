@@ -96,7 +96,6 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 		panic("q.Predicate.Invocation != nil")
 	}
 
-	// TODO(nodir): use Snappy for ExplanationMarkdown.
 	st := spanner.NewStatement(`
 		SELECT InvocationId, TestPath, ExonerationId, Variant, ExplanationMarkdown
 		FROM TestExonerations
