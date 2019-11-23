@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c334f4ec_e3c92303",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T23:12:32Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "04e43ef7_7ec0a888",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 2
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1da822b8_9d642fc9",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 20
@@ -45,6 +69,30 @@
       "revId": "4d57f69747c785de3764f34a1631156680d21362",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11fee88c_0915e323",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T23:12:32Z",
+      "side": 1,
+      "message": "Deleted the no longer correct statement above and added a `,` for grammatical correctness.",
+      "parentUuid": "1da822b8_9d642fc9",
+      "range": {
+        "startLine": 53,
+        "startChar": 30,
+        "endLine": 53,
+        "endChar": 77
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2bdaf72c_a08cbd18",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T23:12:32Z",
+      "side": 1,
+      "message": "The comment blocks have been swapped.",
+      "parentUuid": "ad71630f_5300cec7",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 66
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4d7c238_3b681ea2",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 20
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "a5e49d29_35e62420",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T23:12:32Z",
+      "side": 1,
+      "message": "Done. Please provide a style guide so I can set up an automated linter.",
+      "parentUuid": "a4d7c238_3b681ea2",
+      "range": {
+        "startLine": 104,
+        "startChar": 16,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f35a28b_6bdf1460",
         "filename": "lucicfg/testdata/misc/minimal_notifier.star",
         "patchSetId": 20
@@ -114,6 +210,30 @@
       "revId": "4d57f69747c785de3764f34a1631156680d21362",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "487181b8_982c5717",
+        "filename": "lucicfg/testdata/misc/minimal_notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T23:12:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f35a28b_6bdf1460",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 100
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
