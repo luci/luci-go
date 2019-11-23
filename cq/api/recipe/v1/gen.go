@@ -17,5 +17,5 @@
 // Package recipe contains CQ Recipe input proto.
 package recipe
 
-// Until CQ service isn't rewritten in Go, the generated protos aren't actually
-// used for anything but verifying that .proto file in this dir is valid.
+// Until CQ service is rewritten in Go, the generated protos aren't actually
+// used for anything but verifying that .proto files in this dir are valid.
