@@ -36,6 +36,8 @@ load('@stdlib//internal/luci/proto.star',
 load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_common_pb='buildbucket.v2')
+
 
 def register():
   """Registers all LUCI config generator callbacks."""
@@ -1020,13 +1022,17 @@ def _notify_notification_pb(node):
     template = templs[0].props.name
   else:
     fail('impossible')
+
   pb = notify_pb.Notification(
+      on_occurrence = _build_bucket_status(node.props.on_occurrence),
+      on_new_status = _build_bucket_status(node.props.on_new_status),
+      template = template,
+
+      # deprecated
       on_change = node.props.on_status_change,
       on_failure = node.props.on_failure,
-      on_infra_failure = node.props.on_infra_failure,
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
-      template = template,
   )
   if node.props.notify_emails:
     pb.email = notify_pb.Notification.Email(recipients=node.props.notify_emails)
@@ -1035,6 +1041,21 @@ def _notify_notification_pb(node):
         repository_whitelist = node.props.blamelist_repos_whitelist,
     )
   return pb
+
+
+def _build_bucket_status(status_list):
+  """Given a list of build statuses returns a list of corresponding identifiers
+  from the buildbucket status enum.
+  """
+  if not status_list:
+    return None
+
+  for status in status_list:
+    if not hasattr(buildbucket_common_pb, status):
+      error('%s is not a valid status. Try one of the following %s.' %
+        (status, str(dir(buildbucket_common_pb))))
+
+  return [getattr(buildbucket_common_pb, status) for status in status_list]
 
 
 def _notify_pollers_map():
