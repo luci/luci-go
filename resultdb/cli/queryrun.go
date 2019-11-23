@@ -15,12 +15,14 @@
 package cli
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"encoding/json"
 	"os"
 	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
@@ -109,12 +111,25 @@ func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicat
 
 	// TODO(crbug.com/1021849): query test exonerations.
 
-	m := jsonpb.Marshaler{
-		Indent: "  ",
+	// Marshal results to JSON.
+	testResultJSONs := make([]json.RawMessage, len(res.TestResults))
+	for i, res := range res.TestResults {
+		testResultJSONs[i] = toJSONMessage(res)
 	}
-	for _, res := range res.TestResults {
-		m.Marshal(os.Stdout, res)
-		fmt.Println()
+
+	// Combine everything and marshal.
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(map[string]interface{}{
+		"testResults": testResultJSONs,
+	})
+}
+
+func toJSONMessage(msg proto.Message) json.RawMessage {
+	m := jsonpb.Marshaler{}
+	buf := &bytes.Buffer{}
+	if err := m.Marshal(buf, msg); err != nil {
+		panic("failed to marshal a protobuf message: " + err.Error())
 	}
-	return nil
+	return json.RawMessage(buf.Bytes())
 }
