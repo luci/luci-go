@@ -16,6 +16,24 @@
       "revId": "5011c67c558dbdad5e198cda2d0d22e02fc643f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f873726_5cf25e96",
+        "filename": "lucicfg/testdata/errors/notify_blamelist_no_repo.star",
+        "patchSetId": 19
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-23T02:14:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d659b7c3_a4791da1",
+      "revId": "5011c67c558dbdad5e198cda2d0d22e02fc643f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
