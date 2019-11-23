@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -48,6 +49,9 @@ type BuilderSummary struct {
 
 	// LastFinishedStatus is the status of last finished build on builder.
 	LastFinishedStatus Status
+
+	// LastFinishedCritical is the criticality of last finished build on builder.
+	LastFinishedCritical buildbucketpb.Trinary
 
 	// LastFinishedBuildID is the BuildID of the BuildSummary associated with last finished build on
 	// the builder.
@@ -144,5 +148,6 @@ func UpdateBuilderForBuild(c context.Context, build *BuildSummary) error {
 	builder.LastFinishedCreated = build.Created
 	builder.LastFinishedExperimental = build.Experimental
 	builder.LastFinishedStatus = build.Summary.Status
+	builder.LastFinishedCritical = build.Critical
 	return datastore.Put(c, builder)
 }
