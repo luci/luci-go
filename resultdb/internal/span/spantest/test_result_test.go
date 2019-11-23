@@ -15,13 +15,13 @@
 package spantest
 
 import (
-	"sort"
 	"testing"
 
 	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -54,17 +54,6 @@ func TestQueryTestResults(t *testing.T) {
 			trs, token, err := read(q)
 			So(err, ShouldBeNil)
 			return
-		}
-
-		mustReadNames := func(q span.TestResultQuery) []string {
-			trs, _, err := read(q)
-			So(err, ShouldBeNil)
-			names := make([]string, len(trs))
-			for i, a := range trs {
-				names[i] = a.Name
-			}
-			sort.Strings(names)
-			return names
 		}
 
 		Convey(`Does not fetch test results of other invocations`, func() {
@@ -102,91 +91,23 @@ func TestQueryTestResults(t *testing.T) {
 
 			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
 			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
-			So(mustReadNames(q), ShouldResemble, []string{
+			actual, _ := mustRead(q)
+			pbutil.NormalizeTestResultSlice(actual)
+
+			// Clear fields we don't intend to test.
+			names := make([]string, len(actual))
+			for i, a := range actual {
+				names[i] = a.Name
+			}
+			So(names, ShouldResemble, []string{
 				"invocations/inv0/tests/T1/results/0",
 				"invocations/inv0/tests/T1/results/1",
-				"invocations/inv0/tests/T2/results/0",
 				"invocations/inv1/tests/T1/results/0",
+
+				"invocations/inv0/tests/T2/results/0",
 				"invocations/inv1/tests/T2/results/0",
+
 				"invocations/inv1/tests/T4/results/0",
-			})
-		})
-
-		Convey(`Test path filter`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now))
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insertTestResults(makeTestResults("inv0", "1.1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "1.2", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1.1", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1.2.3", pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv1", "2.1", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2", pb.TestStatus_FAIL)),
-			)...)
-
-			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
-			q.Predicate.TestPath = &pb.TestPathPredicate{}
-
-			Convey("1.1", func() {
-				q.Predicate.TestPath.Paths = []string{"1.1"}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv1/tests/1.1/results/0",
-				})
-			})
-
-			Convey("1.1, 1.2", func() {
-				q.Predicate.TestPath.Paths = []string{"1.1", "1.2"}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv0/tests/1.2/results/0",
-					"invocations/inv1/tests/1.1/results/0",
-				})
-			})
-
-			Convey("1.1*", func() {
-				q.Predicate.TestPath.Paths = []string{"1.1"}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv1/tests/1.1/results/0",
-				})
-			})
-
-			Convey("1.*", func() {
-				q.Predicate.TestPath.PathPrefixes = []string{"1."}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv0/tests/1.2/results/0",
-					"invocations/inv1/tests/1.1/results/0",
-					"invocations/inv1/tests/1.2.3/results/0",
-				})
-			})
-
-			Convey("1.*, 2.*", func() {
-				q.Predicate.TestPath.PathPrefixes = []string{"1.", "2."}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv0/tests/1.2/results/0",
-					"invocations/inv1/tests/1.1/results/0",
-					"invocations/inv1/tests/1.2.3/results/0",
-					"invocations/inv1/tests/2.1/results/0",
-				})
-			})
-
-			Convey("1.*, 1.1", func() {
-				q.Predicate.TestPath.PathPrefixes = []string{"1."}
-				q.Predicate.TestPath.Paths = []string{"1.1"}
-				So(mustReadNames(q), ShouldResemble, []string{
-					"invocations/inv0/tests/1.1/results/0",
-					"invocations/inv0/tests/1.1/results/1",
-					"invocations/inv0/tests/1.2/results/0",
-					"invocations/inv1/tests/1.1/results/0",
-					"invocations/inv1/tests/1.2.3/results/0",
-				})
 			})
 		})
 
