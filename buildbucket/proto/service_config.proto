@@ -27,6 +27,7 @@ message SettingsCfg {
   // Swarmbucket settings.
   SwarmingSettings swarming = 1;
   LogDogSettings logdog = 2;
+  ResultDBSettings resultdb = 4;
 
   // List of Gerrit hosts to force git authentication for.
   //
@@ -104,4 +105,9 @@ message BuilderPredicate {
 
   // Like regex field, but negation. Negation always wins.
   repeated string regex_exclude = 2;
+}
+
+message ResultDBSettings {
+  // Hostname of the ResultDB instance to use, e.g. "results.api.cr.dev".
+  string hostname = 1;
 }
