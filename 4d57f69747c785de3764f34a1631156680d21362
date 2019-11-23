@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04e43ef7_7ec0a888",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-23T02:39:49Z",
+      "side": 1,
+      "message": "This logic is hard to read... on_occurrence is documented as \"Notify on each build with a specified status\". i.e. it doesn\u0027t depend on oldStatus. So let\u0027s do it first and then deal with on_new_status and all legacy conditions separately, no longer bothering about OnOccurrence, i.e.\n\nfunc (...) ShouldNotify(...) bool {\n  switch {\n    case checkInList(newStatus, n.OnOccurrence): return true\n    case newStatus !\u003d oldStatus \u0026\u0026 checkInList(newStatus, n.OnNewStatus): return true\n\n    // All legacy conditions.\n    ...\n  }\n}",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 38,
+        "endChar": 2
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1da822b8_9d642fc9",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-23T02:39:49Z",
+      "side": 1,
+      "message": "this is no longer correct",
+      "range": {
+        "startLine": 53,
+        "startChar": 30,
+        "endLine": 53,
+        "endChar": 77
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad71630f_5300cec7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-23T02:39:49Z",
+      "side": 1,
+      "message": "Please either swap comment blocks here, or swap order in which on_new_status and on_occurrence are defined in the argument list above.",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 66
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4d7c238_3b681ea2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-23T02:39:49Z",
+      "side": 1,
+      "message": "nit: space",
+      "range": {
+        "startLine": 104,
+        "startChar": 16,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f35a28b_6bdf1460",
+        "filename": "lucicfg/testdata/misc/minimal_notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-23T02:39:49Z",
+      "side": 1,
+      "message": "We shouldn\u0027t require users to load this in their *.star files.\n\nConsider doing something like:\n\nluci.notifier(\n   ...\n   on_occurrence \u003d [\u0027FAILURE\u0027]\n)\n\nAnd in the implementation:\n  \n  getattr(buildbucket_pb, on_occurrence[i])\n\nBonus points for documenting possible statuses and validating them with user-friendly error message.",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 100
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
