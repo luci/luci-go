@@ -1556,16 +1556,20 @@ luci.notifier(
     name,
 
     # Optional arguments.
-    on_failure = None,
-    on_infra_failure = None,
-    on_new_failure = None,
-    on_status_change = None,
-    on_success = None,
+    on_new_status = None,
+    on_occurrence = None,
     notify_emails = None,
     notify_blamelist = None,
     blamelist_repos_whitelist = None,
     template = None,
     notified_by = None,
+
+    # Deprecated arguments
+    on_failure = None,
+    on_new_failure = None,
+    on_status_change = None,
+    on_success = None,
+
 )
 ```
 
@@ -1588,17 +1592,18 @@ recipients.
 #### Arguments {#luci.notifier-args}
 
 * **name**: name of this notifier to reference it from other rules. Required.
-* **on_failure**: if True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
-* **on_infra_failure**: if True, notify on each transient (aka "infra") failure. Default is False.
-* **on_new_failure**: if True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
-* **on_status_change**: if True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
-* **on_success**: if True, notify on each build success. Default is False.
+* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_occurrence**: a list specifying which build statuses to notify for. Notifies for every build status specified. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
 * **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template named `default` is defined in the project somewhere, it is used implicitly by the notifier.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
+* **on_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_new_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
+* **on_status_change**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
+* **on_success**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build success. Default is False.
 
 
 
