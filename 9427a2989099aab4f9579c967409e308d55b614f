@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a5ca1e26_4f0ed26b",
+        "filename": "common/api/luci_config/config/v1/config-gen.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-25T16:17:19Z",
+      "side": 1,
+      "message": "Please revert changes to this file, they do not belong to this CL.",
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "858563d0_9104e688",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 22
+      },
+      "lineNbr": 1058,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-25T16:17:19Z",
+      "side": 1,
+      "message": "This validation and conversion should be in luci.notifier(...) so errors have relevant stack trace, pointing to the invalid luci.notifier(...) call.",
+      "range": {
+        "startLine": 1053,
+        "startChar": 0,
+        "endLine": 1058,
+        "endChar": 75
+      },
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f744202e_2f7f3c88",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 22
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-25T16:17:19Z",
+      "side": 1,
+      "message": "\"Valid values are string literals `SUCCESS`, `FAILURE`, `INFRA_FAILURE`.\"",
+      "range": {
+        "startLine": 66,
+        "startChar": 49,
+        "endLine": 66,
+        "endChar": 50
+      },
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
