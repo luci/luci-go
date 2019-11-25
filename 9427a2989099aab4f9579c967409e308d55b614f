@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4df11e04_c3178e2c",
+        "filename": "common/api/luci_config/config/v1/config-gen.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 699,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-25T19:33:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5ca1e26_4f0ed26b",
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "858563d0_9104e688",
         "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
         "patchSetId": 22
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "01b34e95_b0e433f7",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 22
+      },
+      "lineNbr": 1058,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-25T19:33:25Z",
+      "side": 1,
+      "message": "Ok. Updated. PTAL.",
+      "parentUuid": "858563d0_9104e688",
+      "range": {
+        "startLine": 1053,
+        "startChar": 0,
+        "endLine": 1058,
+        "endChar": 75
+      },
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f744202e_2f7f3c88",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
         "patchSetId": 22
@@ -62,6 +104,30 @@
       "revId": "9427a2989099aab4f9579c967409e308d55b614f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ee5651c_e6732144",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 22
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-25T19:33:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f744202e_2f7f3c88",
+      "range": {
+        "startLine": 66,
+        "startChar": 49,
+        "endLine": 66,
+        "endChar": 50
+      },
+      "revId": "9427a2989099aab4f9579c967409e308d55b614f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

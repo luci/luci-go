@@ -214,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "013df8b2_949a0344",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1354087
+      },
+      "writtenOn": "2019-11-25T19:33:25Z",
+      "side": 1,
+      "message": "Ack. Thought it might be pyformat, but I didn\u0027t see that documented anywhere.",
+      "parentUuid": "20215198_604ca011",
+      "range": {
+        "startLine": 104,
+        "startChar": 16,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f35a28b_6bdf1460",
         "filename": "lucicfg/testdata/misc/minimal_notifier.star",
         "patchSetId": 20
