@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "20215198_604ca011",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/notifier.star",
+        "patchSetId": 20
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-25T15:08:48Z",
+      "side": 1,
+      "message": "There\u0027s neither yet. That\u0027s something anyone who care can take on. For example nodir@ contributed to the other style guides. For now we\u0027re doing styling manually.",
+      "parentUuid": "a5e49d29_35e62420",
+      "range": {
+        "startLine": 104,
+        "startChar": 16,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "4d57f69747c785de3764f34a1631156680d21362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f35a28b_6bdf1460",
         "filename": "lucicfg/testdata/misc/minimal_notifier.star",
         "patchSetId": 20

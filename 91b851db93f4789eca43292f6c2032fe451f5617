@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e55b621a_bc8b7d9e",
+        "filename": "luci_notify/api/config/notify_test.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-25T15:08:48Z",
+      "side": 0,
+      "message": "Please keep the old test cases, as this functionality needs to still be supported and tested until it\u0027s removed.",
+      "revId": "91b851db93f4789eca43292f6c2032fe451f5617",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
