@@ -223,8 +223,8 @@ func (d *Downloader) Wait() error {
 // Note that new uses of isolated should NOT use cmd or relative_cwd!
 func (d *Downloader) CmdAndCwd() ([]string, string, error) {
 	d.mu.Lock()
+	defer d.mu.Unlock()
 	finished := d.finished
-	d.mu.Unlock()
 	if !finished {
 		return nil, "", errors.New(
 			"can only call CmdAndCwd on a finished Downloader")
@@ -696,6 +696,8 @@ func FetchAndMap(ctx context.Context, isolatedHash isolated.HexDigest, c *isolat
 		return nil, Stats{}, errors.Annotate(err, "failed to call GetCacheStats").Err()
 	}
 
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	return d.isoMap[isolatedHash], Stats{
 		Duration:  time.Now().Sub(start),
 		ItemsCold: itemsCold,
