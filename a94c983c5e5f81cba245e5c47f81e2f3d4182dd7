@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f119282f_ebc4f1c5",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-11-25T17:57:17Z",
+      "side": 1,
+      "message": "I\u0027m confused, you want to write this directly in the cache directory?\n\nI\u0027d prefer the caller to specify the path to a json/proto file to output stats to, than hardcoded file name inside the cache directory.",
+      "revId": "a94c983c5e5f81cba245e5c47f81e2f3d4182dd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
