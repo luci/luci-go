@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "46918d4f_a971360e",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T21:03:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4d4b21ee_e8921489",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 78
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9fbdee9c_35cd5fb7",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -237,6 +261,30 @@
     },
     {
       "key": {
+        "uuid": "40834cfd_cc33a4db",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T21:03:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "058bfeb6_2b79d850",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 61
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be8cb580_79496126",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -284,6 +332,30 @@
     },
     {
       "key": {
+        "uuid": "5801f1b9_c51d06fb",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T21:03:07Z",
+      "side": 1,
+      "message": "No, you didn\u0027t.",
+      "parentUuid": "ff5e0832_4081c1b8",
+      "range": {
+        "startLine": 232,
+        "startChar": 5,
+        "endLine": 232,
+        "endChar": 16
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b5060c3f_125ce786",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -328,6 +400,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "98facc66_3e250b4d",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T21:03:07Z",
+      "side": 1,
+      "message": "Not done... I think you forgot to update the CL...",
+      "parentUuid": "3b62b52e_bc1f5f6e",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 13
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
