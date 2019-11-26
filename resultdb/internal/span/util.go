@@ -334,6 +334,12 @@ func InsertMap(table string, in map[string]interface{}) *spanner.Mutation {
 	return spanner.InsertMap(table, ToSpannerMap(in))
 }
 
+// InsertOrUpdateMap is a shortcut for spanner.InsertOrUpdateMap with ToSpannerMap applied to
+// in.
+func InsertOrUpdateMap(table string, in map[string]interface{}) *spanner.Mutation {
+	return spanner.InsertOrUpdateMap(table, ToSpannerMap(in))
+}
+
 // ReadWriteTransaction calls Client(ctx).ReadWriteTransaction and unwraps
 // a "transaction is aborted" errors such that the spanner client properly
 // retries the function.

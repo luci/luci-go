@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -103,7 +104,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return span.ReadInvocationFull(ctx, readTxn, invID)
 	}
 
-	// Otherwise, get the protos and write them to Spanner.
+	// Otherwise, get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
@@ -116,6 +117,36 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	inv.Deadline = inv.FinalizeTime
 
 	// TODO(jchinlee): Validate invocation and results.
+
+	// Write test results in batches.
+	batches := batchTestResults(ctx, inv, results)
+	eg, egCtx := errgroup.WithContext(ctx)
+	writeBatch := func(b *testResultBatch) error {
+		eg.Go(func() error {
+			muts := b.ToMutations(egCtx)
+			_, err := span.ReadWriteTransaction(egCtx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+				return txn.BufferWrite(muts)
+			})
+			return err
+		})
+		return nil
+	}
+
+	// Do the writes concurrently, accumulating the names of the invocations that will be included.
+	includedInvs := make([]string, len(batches))
+	for i, batch := range batches {
+		if err := writeBatch(batch); err != nil {
+			return nil, err
+		}
+		includedInvs[i] = batch.BatchInv.Name
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Set inclusions and write invocation.
+	inv.IncludedInvocations = includedInvs
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
@@ -131,12 +162,6 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		// Insert the invocation.
 		muts = append(muts, insertInvocation(ctx, inv, "", ""))
 
-		// Insert test results.
-		for i, tr := range results {
-			muts = append(muts, insertTestResult(invID, tr, i))
-		}
-
-		// Write mutations.
 		return txn.BufferWrite(muts)
 	})
 
