@@ -92,9 +92,9 @@ func fixFieldMasksAfterMarshal(fieldPath []string, msg map[string]interface{}, m
 			return fmt.Errorf("unexpected field path %q", strings.Join(localPath, "."))
 		}
 		if typ == fieldMaskType {
-			fixed, err := pathsToJSON(val)
+			fixed, err := pathsToJSONPB(val)
 			if err != nil {
-				return nil
+				return err
 			}
 			msg[name] = fixed
 			continue
@@ -191,6 +191,21 @@ func toSnakeCase(s string) string {
 	return buf.String()
 }
 
+func toTitleCase(s string, buf *strings.Builder) {
+	underscore := false
+	for _, c := range s {
+		switch {
+		case c == '_':
+			underscore = true
+		case underscore:
+			buf.WriteRune(unicode.ToUpper(c))
+			underscore = false
+		default:
+			buf.WriteRune(c)
+		}
+	}
+}
+
 // parseFieldMaskString parses a google.protobuf.FieldMask string according to
 // https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
 // Does not convert JSON names (e.g. fooBar) to original names (e.g. foo_bar).
@@ -226,20 +241,20 @@ func parseFieldMaskString(s string) (paths []string) {
 	return paths
 }
 
-// pathsToJSON takes naive FieldMask JSON serialization and converts it to valid
+// pathsToJSONPB takes naive FieldMask JSON serialization and converts it to valid
 // one according to spec
 // https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
-func pathsToJSON(val interface{}) (string, error) {
-	pathsMap := val.(map[string]interface{})
-	if pathsMap == nil {
+func pathsToJSONPB(val interface{}) (string, error) {
+	pathsMap, ok := val.(map[string]interface{})
+	if !ok {
 		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
 	}
 	paths, ok := pathsMap["paths"]
 	if !ok {
 		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
 	}
-	pathsAsList := paths.([]interface{})
-	if pathsAsList == nil {
+	pathsAsList, ok := paths.([]interface{})
+	if !ok {
 		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
 	}
 
@@ -252,18 +267,7 @@ func pathsToJSON(val interface{}) (string, error) {
 		if i != 0 {
 			buf.WriteRune(',')
 		}
-		underscore := false
-		for _, c := range path {
-			switch {
-			case c == '_':
-				underscore = true
-			case underscore:
-				buf.WriteRune(unicode.ToUpper(c))
-				underscore = false
-			default:
-				buf.WriteRune(c)
-			}
-		}
+		toTitleCase(path, &buf)
 	}
 	return buf.String(), nil
 }
