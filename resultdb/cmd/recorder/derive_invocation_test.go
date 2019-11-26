@@ -213,19 +213,20 @@ func TestDeriveInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(inv, ShouldResembleProto, &pb.Invocation{
-				Name:         inv.Name, // inv.Name is non-determinisic in this test
-				State:        pb.Invocation_COMPLETED,
-				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
-				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				Name:                inv.Name, // inv.Name is non-determinisic in this test
+				State:               pb.Invocation_COMPLETED,
+				CreateTime:          &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
+				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
+				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				IncludedInvocations: []string{inv.Name + "_0"},
 			})
 
 			// Assert we wrote correct test results.
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
-				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name)},
+				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name + "_0")},
 				PageSize:      100,
 			})
 			So(err, ShouldBeNil)
