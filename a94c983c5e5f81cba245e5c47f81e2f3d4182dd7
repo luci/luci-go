@@ -52,6 +52,24 @@
       "revId": "a94c983c5e5f81cba245e5c47f81e2f3d4182dd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07242db3_03bae01e",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-26T01:25:58Z",
+      "side": 1,
+      "message": "Ah, I see. Done",
+      "parentUuid": "66a0f0c9_93ec9ba5",
+      "revId": "a94c983c5e5f81cba245e5c47f81e2f3d4182dd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
