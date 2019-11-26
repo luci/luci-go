@@ -105,6 +105,27 @@ message BuilderPredicate {
 
   // Like regex field, but negation. Negation always wins.
   repeated string regex_exclude = 2;
+
+  // AND-connected list of regular expressions to match REQUESTED swarming
+  // dimensions in the form "key:value". Note that many builders intentionally
+  // under-specify some dimensions (like os), for example, specifying
+  // "os:Windows" instead of "os:Windows-10".
+  //
+  // Each regex is wrapped in ^ and $ automatically.
+  //
+  // Example:
+  //
+  //    # All windows builders
+  //    dim_regex: "os:Windows.*"
+  //
+  // Defaults to matching all builders.
+  repeated string dim_regex = 3;
+
+  // Like dim_regex field, but OR-connected, and negation. Negation always wins.
+  //
+  // ANY matching dim_regex_exclude overrides a full set of matching
+  // dim_regex's.
+  repeated string dim_regex_exclude = 4;
 }
 
 message ResultDBSettings {
