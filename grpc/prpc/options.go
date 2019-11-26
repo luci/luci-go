@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -39,6 +40,11 @@ type Options struct {
 	// Otherwise, if this timeout is hit, the RPC round will be considered
 	// transient.
 	PerRPCTimeout time.Duration
+
+	// ContentSubtype defines Content-Type over the wire.
+	// Valid values are "binary" and "json". Empty value defaults to "binary".
+	// It can be overridden on per-call basis via CallContentSubtype().
+	ContentSubtype string
 
 	// the rest can be set only using CallOption.
 
@@ -112,6 +118,19 @@ func ExpectedCode(codes ...codes.Code) *CallOption {
 		grpc.EmptyCallOption{},
 		func(o *Options) {
 			o.expectedCodes = append(o.expectedCodes, codes...)
+		},
+	}
+}
+
+// CallContentSubtype returns a CallOption that sets Content-Type.
+// For example, if content-subtype is "json", the Content-Type over the wire
+// will be "application/json".
+// Can be used instead of with grpc.CallContentSubtype.
+func CallContentSubtype(contentSubtype string) *CallOption {
+	return &CallOption{
+		grpc.CallContentSubtype(contentSubtype),
+		func(o *Options) {
+			o.ContentSubtype = strings.ToLower(contentSubtype)
 		},
 	}
 }
