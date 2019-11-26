@@ -309,9 +309,14 @@ func newBuildsClient(c context.Context, host, project string) (buildbucketpb.Bui
 	if err != nil {
 		return nil, err
 	}
+	opts := prpc.DefaultOptions()
+	// TODO(crbug/1016443): remove CallContentSubtype defaulting into binary
+	// protobuf encoding once Buildbucket server becomes faster.
+	opts.ContentSubtype = "json"
 	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
-		C:    &http.Client{Transport: t},
-		Host: host,
+		C:       &http.Client{Transport: t},
+		Host:    host,
+		Options: opts,
 	}), nil
 }
 
