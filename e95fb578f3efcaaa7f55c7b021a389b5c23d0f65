@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8351461_eaafcebf",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 155,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 21
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dee6b392_7a3b5d7a",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "\"text encoding for pRPC calls ...\"",
+      "range": {
+        "startLine": 156,
+        "startChar": 21,
+        "endLine": 156,
+        "endChar": 63
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da61f116_68ce121d",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "we could keep using binary serialization for requests only (and use JSONPB only for responses) and avoid implementing FixFieldMasksAfterMarshal...",
+      "range": {
+        "startLine": 161,
+        "startChar": 60,
+        "endLine": 161,
+        "endChar": 74
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9dae4d9a_3b627712",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "this is also unreachable",
+      "range": {
+        "startLine": 171,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 65
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49288113_3c1c3f86",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "IIUC, there are no public users of this function. I think we should hide it from the public API or remove completely.",
+      "range": {
+        "startLine": 189,
+        "startChar": 17,
+        "endLine": 189,
+        "endChar": 32
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d235364_1d48a319",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "I don\u0027t think it should be public, considering it\u0027s in the section titled \"the rest can be only using CallOption\"",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "409d2e22_f3b068d7",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-26T20:28:09Z",
+      "side": 1,
+      "message": "Can we just use that? Why do we need a separate wrapper?\n\ngprc.CallContentSubtype returns public grpc.ContentSubtypeCallOption struct with public fields, we can totally inspect it from pRPC code.",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 41
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
