@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "fcb4b425_bd9c30c2",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-26T17:31:31Z",
+      "side": 1,
+      "message": "Yes, I was a bit surprised by the numbers in crbug/1027194 given they seemed to be an order of magnitude off, but point 2 makes sense, thanks",
+      "parentUuid": "1c127fc7_c823f6ec",
+      "range": {
+        "startLine": 30,
+        "startChar": 31,
+        "endLine": 30,
+        "endChar": 35
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2edca274_82756f55",
         "filename": "resultdb/cmd/recorder/test_result.go",
         "patchSetId": 5
@@ -106,6 +130,30 @@
       "side": 1,
       "message": "i think this is still considered append-only. BigQuery is append only and it also has deduplication based on insert id. The strictness that you seem to imply isn\u0027t really possible in distributed systems.\n\ni think random inv ids is fine given that we shouldn\u0027t see this situation often, but what you do here is ok too",
       "parentUuid": "2edca274_82756f55",
+      "range": {
+        "startLine": 58,
+        "startChar": 13,
+        "endLine": 58,
+        "endChar": 30
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97674a1a_9da06ded",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-26T17:31:31Z",
+      "side": 1,
+      "message": "OK, thanks",
+      "parentUuid": "59303f61_b8f82bde",
       "range": {
         "startLine": 58,
         "startChar": 13,
@@ -158,6 +206,30 @@
     },
     {
       "key": {
+        "uuid": "e457a57c_2fce83f4",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-26T17:31:31Z",
+      "side": 1,
+      "message": "Agreed, and I don\u0027t have a test for this behavior because it would get hit as a race between two DeriveInvocation RPCs for the same test. Thoughts on the best way to structure such a test?",
+      "parentUuid": "fb1cc3c2_f0a0e9df",
+      "range": {
+        "startLine": 77,
+        "startChar": 21,
+        "endLine": 77,
+        "endChar": 37
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "337e6f33_636aa085",
         "filename": "resultdb/cmd/recorder/test_result.go",
         "patchSetId": 5
@@ -192,6 +264,30 @@
       "writtenOn": "2019-11-26T14:49:23Z",
       "side": 1,
       "message": "this is incorrect if len(trs) \u003d\u003d 0\n\noverall, i starred at this formula for 5m and i still don\u0027t see clearly why this is correct. I think it would be safer if we estimated the number of batches, got on extra JIC, but then computed number of batches dynamically. e.g.\n\nfor len(trs) \u003e 0 {\n  // record a batch\n  trs \u003d trs[size:]\n}",
+      "range": {
+        "startLine": 90,
+        "startChar": 37,
+        "endLine": 90,
+        "endChar": 69
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a8cd63d_45206277",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-26T17:31:31Z",
+      "side": 1,
+      "message": "What\u0027s the expected number of batches if len(trs) \u003d\u003d 0? Is it not 0?\n\nThe logic is that if len(trs) \\in [(N-1)*batchSize+1, N*batchSize], then we\u0027ll be in the Nth batch.\n\nI\u0027m fine with doing it dynamically too.",
+      "parentUuid": "dda2b867_ef63be34",
       "range": {
         "startLine": 90,
         "startChar": 37,
