@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "b3528979_99526f6f",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T20:37:05Z",
+      "side": 1,
+      "message": "nit: serialization format",
+      "range": {
+        "startLine": 41,
+        "startChar": 31,
+        "endLine": 41,
+        "endChar": 44
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81d387b2_21a70f6f",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T20:37:05Z",
+      "side": 1,
+      "message": "FixFieldMasksBeforeUnmarshal",
+      "range": {
+        "startLine": 66,
+        "startChar": 33,
+        "endLine": 66,
+        "endChar": 61
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bc615e9f_4300b4d2",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -284,6 +330,29 @@
     },
     {
       "key": {
+        "uuid": "774cb70d_aa382685",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T20:37:05Z",
+      "side": 1,
+      "message": "T",
+      "range": {
+        "startLine": 250,
+        "startChar": 73,
+        "endLine": 250,
+        "endChar": 74
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4d996223_725c424f",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -328,6 +397,23 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "44a6cbdf_93cc906f",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T20:37:05Z",
+      "side": 1,
+      "message": "this doesn\u0027t produce valid JSON, because strings are not quoted and not escaped. I think we should not try to invent our own json marshaling. Please make a []interface{} and then call json.Marshal",
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
