@@ -35,27 +35,97 @@ var (
 	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 )
 
-// FixFieldMasks reads FieldMask fields from a JSON-encoded message,
+// FixFieldMasksBeforeUnmarshal reads FieldMask fields from a JSON-encoded message,
 // parses them as a string according to
 // https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
-// and converts them to a JSON object that Golang Protobuf library understands.
+// and converts them to a JSON serialization format that Golang Protobuf library can
+// unmarshal from.
 // It is a workaround for https://github.com/golang/protobuf/issues/745.
 //
+// This function is a reverse of FixFieldMasksAfterMarshal.
+//
 // messageType must be a struct, not a struct pointer.
-func FixFieldMasks(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
+func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
 	var msg map[string]interface{}
 	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
 		return nil, err
 	}
 
-	if err := fixFieldMasks(make([]string, 0, 10), msg, messageType); err != nil {
+	if err := fixFieldMasksBeforeUnmarshal(make([]string, 0, 10), msg, messageType); err != nil {
 		return nil, err
 	}
 
 	return json.Marshal(msg)
 }
 
-func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
+// FixFieldMasksAfterMarshal reads FieldMask fields from a JSON-encoded message,
+// and corrects incorrect Golang Protobuf library encoding according to
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+// It is a workaround for https://github.com/golang/protobuf/issues/745.
+//
+// This function is a reverse of FixFieldMasksBeforeUnmarshal.
+//
+// messageType must be a struct, not a struct pointer.
+func FixFieldMasksAfterMarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
+	var msg map[string]interface{}
+	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
+		return nil, err
+	}
+
+	if err := fixFieldMasksAfterMarshal(make([]string, 0, 10), msg, messageType); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(msg)
+}
+
+//
+// private implementation details.
+//
+
+func fixFieldMasksAfterMarshal(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
+	fieldTypes := getFieldTypes(messageType)
+	for name, val := range msg {
+		localPath := append(fieldPath, name)
+		typ := fieldTypes[name]
+		if typ == nil {
+			return fmt.Errorf("unexpected field path %q", strings.Join(localPath, "."))
+		}
+		if typ == fieldMaskType {
+			fixed, err := pathsToJSON(val)
+			if err != nil {
+				return nil
+			}
+			msg[name] = fixed
+			continue
+		}
+
+		// recurse.
+		switch val := val.(type) {
+		case map[string]interface{}:
+			if typ != structType && typ.Implements(protoMessageType) {
+				if err := fixFieldMasksAfterMarshal(localPath, val, typ.Elem()); err != nil {
+					return err
+				}
+			}
+		case []interface{}:
+			if typ.Kind() == reflect.Slice && typ.Elem().Implements(protoMessageType) {
+				subMsgType := typ.Elem().Elem()
+				for i, el := range val {
+					if subMsg, ok := el.(map[string]interface{}); ok {
+						elPath := append(localPath, strconv.Itoa(i))
+						if err := fixFieldMasksAfterMarshal(elPath, subMsg, subMsgType); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
 	fieldTypes := getFieldTypes(messageType)
 	for name, val := range msg {
 		localPath := append(fieldPath, name)
@@ -72,7 +142,7 @@ func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType r
 
 		case map[string]interface{}:
 			if typ != structType && typ.Implements(protoMessageType) {
-				if err := fixFieldMasks(localPath, val, typ.Elem()); err != nil {
+				if err := fixFieldMasksBeforeUnmarshal(localPath, val, typ.Elem()); err != nil {
 					return err
 				}
 			}
@@ -83,7 +153,7 @@ func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType r
 				for i, el := range val {
 					if subMsg, ok := el.(map[string]interface{}); ok {
 						elPath := append(localPath, strconv.Itoa(i))
-						if err := fixFieldMasks(elPath, subMsg, subMsgType); err != nil {
+						if err := fixFieldMasksBeforeUnmarshal(elPath, subMsg, subMsgType); err != nil {
 							return err
 						}
 					}
@@ -154,6 +224,48 @@ func parseFieldMaskString(s string) (paths []string) {
 	}
 	paths = append(paths, s[seps[len(seps)-1]+1:])
 	return paths
+}
+
+// pathsToJSON takes naive FieldMask JSON serialization and converts it to valid
+// one according to spec
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+func pathsToJSON(val interface{}) (string, error) {
+	pathsMap := val.(map[string]interface{})
+	if pathsMap == nil {
+		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
+	}
+	paths, ok := pathsMap["paths"]
+	if !ok {
+		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
+	}
+	pathsAsList := paths.([]interface{})
+	if pathsAsList == nil {
+		return "", fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
+	}
+
+	var buf strings.Builder
+	for i, p := range pathsAsList {
+		path, ok := p.(string)
+		if !ok {
+			return "", fmt.Errorf("expected paths in %s to be strings, but found %T", val, p)
+		}
+		if i != 0 {
+			buf.WriteRune(',')
+		}
+		underscore := false
+		for _, c := range path {
+			switch {
+			case c == '_':
+				underscore = true
+			case underscore:
+				buf.WriteRune(unicode.ToUpper(c))
+				underscore = false
+			default:
+				buf.WriteRune(c)
+			}
+		}
+	}
+	return buf.String(), nil
 }
 
 var fieldTypeCache struct {

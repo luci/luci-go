@@ -70,7 +70,7 @@ func (r *batchRun) Run(a subcommands.Application, args []string, env subcommands
 	if err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to read stdin").Err())
 	}
-	requestBytes, err = proto.FixFieldMasks(requestBytes, reflect.TypeOf(pb.BatchRequest{}))
+	requestBytes, err = proto.FixFieldMasksBeforeUnmarshal(requestBytes, reflect.TypeOf(pb.BatchRequest{}))
 	if err != nil {
 		return r.done(ctx, errors.Annotate(err, "failed to parse BatchRequest from stdin").Err())
 	}
