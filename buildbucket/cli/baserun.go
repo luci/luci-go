@@ -101,6 +101,9 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
+	// TODO(crbug/1016443): remove CallContentSubtype defaulting into binary
+	// protobuf encoding once Buildbucket server becomes faster.
+	rpcOpts.ContentSubtype = "json"
 	r.client = pb.NewBuildsPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
