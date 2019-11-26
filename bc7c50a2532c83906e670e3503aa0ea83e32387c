@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2edca274_82756f55",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-26T09:26:28Z",
+      "side": 1,
+      "message": "This means TestResults is no longer append-only; the alternative of generating a random ID for the container Invocation for each batch retains that but means potentially duplicating thousands of writes whose subsequent resulting orphaned TestResults will need to be cleaned up.",
+      "range": {
+        "startLine": 58,
+        "startChar": 13,
+        "endLine": 58,
+        "endChar": 30
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
