@@ -215,6 +215,21 @@ func (d *Downloader) Wait() error {
 	return nil
 }
 
+// RootIsolated returns Isolated for rootHash.
+func (d *Downloader) RootIsolated() (*isolated.Isolated, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	finished := d.finished
+	if !finished {
+		return nil, errors.New(
+			"can only call RootIsolated on a finished Downloader")
+	}
+	if root, ok := d.isoMap[d.rootHash]; ok {
+		return root, nil
+	}
+	return nil, errors.New("there is no isolated for root hash")
+}
+
 // CmdAndCwd returns the effective command and relative_cwd entries
 // from the fetched isolated.
 //
