@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/grpc/prpc"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -68,6 +69,6 @@ func (r *getRun) Run(a subcommands.Application, args []string, env subcommands.E
 			return nil, err
 		}
 		req.Fields = fields
-		return r.client.GetBuild(ctx, req, expectedCodeRPCOption)
+		return r.client.GetBuild(ctx, req, expectedCodeRPCOption, prpc.CallContentSubtype("json"))
 	})
 }
