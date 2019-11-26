@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -46,6 +47,7 @@ type Options struct {
 	resTrailerMetadata *metadata.MD // destination for response HTTP trailers.
 	serverDeadline     time.Duration
 	expectedCodes      []codes.Code // list of non-OK grpc codes NOT to log
+	ContentSubtype     string
 }
 
 // DefaultOptions are used if no options are specified in Client.
@@ -112,6 +114,19 @@ func ExpectedCode(codes ...codes.Code) *CallOption {
 		grpc.EmptyCallOption{},
 		func(o *Options) {
 			o.expectedCodes = append(o.expectedCodes, codes...)
+		},
+	}
+}
+
+// CallContentSubtype returns a CallOption that sets Content-Type.
+// For example, if content-subtype is "json", the Content-Type over the wire
+// will be "application/json".
+// Can be used instead of with grpc.CallContentSubtype.
+func CallContentSubtype(contentSubtype string) *CallOption {
+	return &CallOption{
+		grpc.CallContentSubtype(contentSubtype),
+		func(o *Options) {
+			o.ContentSubtype = strings.ToLower(contentSubtype)
 		},
 	}
 }
