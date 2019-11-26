@@ -527,6 +527,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdcf9c40_3a3d3a40",
+        "filename": "common/proto/fieldmasks_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:51:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e81673e_e6bcfb5b",
+      "range": {
+        "startLine": 24,
+        "startChar": 1,
+        "endLine": 28,
+        "endChar": 52
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
