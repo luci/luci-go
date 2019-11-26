@@ -230,6 +230,30 @@
     },
     {
       "key": {
+        "uuid": "8df377e6_e333db7f",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T18:12:06Z",
+      "side": 1,
+      "message": "i suspect we wouldn\u0027t need this test if the code itself is simpler. See my other comments",
+      "parentUuid": "e457a57c_2fce83f4",
+      "range": {
+        "startLine": 77,
+        "startChar": 21,
+        "endLine": 77,
+        "endChar": 37
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "337e6f33_636aa085",
         "filename": "resultdb/cmd/recorder/test_result.go",
         "patchSetId": 5
@@ -288,6 +312,30 @@
       "side": 1,
       "message": "What\u0027s the expected number of batches if len(trs) \u003d\u003d 0? Is it not 0?\n\nThe logic is that if len(trs) \\in [(N-1)*batchSize+1, N*batchSize], then we\u0027ll be in the Nth batch.\n\nI\u0027m fine with doing it dynamically too.",
       "parentUuid": "dda2b867_ef63be34",
+      "range": {
+        "startLine": 90,
+        "startChar": 37,
+        "endLine": 90,
+        "endChar": 69
+      },
+      "revId": "bc7c50a2532c83906e670e3503aa0ea83e32387c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99538291_90121ede",
+        "filename": "resultdb/cmd/recorder/test_result.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T18:12:06Z",
+      "side": 1,
+      "message": "\u003e What\u0027s the expected number of batches if len(trs) \u003d\u003d 0? Is it not 0?\n\nYou are right.\n\n\u003e \n\u003e The logic is that if len(trs) \\in [(N-1)*batchSize+1, N*batchSize], then we\u0027ll be in the Nth batch.\n\nthis would be a great comment, but doing it simpler (without having to write comments) sounds better to me",
+      "parentUuid": "6a8cd63d_45206277",
       "range": {
         "startLine": 90,
         "startChar": 37,
