@@ -417,6 +417,24 @@
     },
     {
       "key": {
+        "uuid": "e7e74f92_61278a5e",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-26T20:41:13Z",
+      "side": 1,
+      "message": "ah, nvm. we are producing a string, not an array\n\nit still does not do escaping properly, but looks like the counterpart doesn\u0027t do it either, and it worked some how",
+      "parentUuid": "44a6cbdf_93cc906f",
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e81673e_e6bcfb5b",
         "filename": "common/proto/fieldmasks_test.go",
         "patchSetId": 7
