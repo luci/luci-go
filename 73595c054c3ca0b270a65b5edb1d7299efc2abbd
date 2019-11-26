@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4d4b21ee_e8921489",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "this is very good point, but I think it applies to fixFieldMasksBeforeUnmarshal, which I\u0027m not changing nor intend to use.\n\nHere, the fields are supposed to be from the proto message that has just been marshaled using buggy  jsonpb.",
+      "parentUuid": "bc615e9f_4300b4d2",
+      "range": {
+        "startLine": 92,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 78
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9fbdee9c_35cd5fb7",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "eb8c27e3_19cc7c51",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "nope, bug.",
+      "parentUuid": "9fbdee9c_35cd5fb7",
+      "range": {
+        "startLine": 97,
+        "startChar": 11,
+        "endLine": 97,
+        "endChar": 14
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df810e0e_a5de32a6",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -59,6 +107,30 @@
       "writtenOn": "2019-11-26T20:13:19Z",
       "side": 1,
       "message": "I wonder how this logic works with oneof fields. They represented weirdly in Go. I suspect it doesn\u0027t.",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 106,
+        "endChar": 61
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "058bfeb6_2b79d850",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "Nodir had them in tests, which I adopted and tests pass. So, I guess it works.",
+      "parentUuid": "df810e0e_a5de32a6",
       "range": {
         "startLine": 104,
         "startChar": 2,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "ff5e0832_4081c1b8",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "I think it\u0027s *to* because valid JSONPB contains what this function outputs.\nRenamed to pathsToJSONPB",
+      "parentUuid": "be8cb580_79496126",
+      "range": {
+        "startLine": 232,
+        "startChar": 5,
+        "endLine": 232,
+        "endChar": 16
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5060c3f_125ce786",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b62b52e_bc1f5f6e",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b5060c3f_125ce786",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 13
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "f06b9876_eec67146",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6fb4ce53_40dd972b",
+      "range": {
+        "startLine": 241,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 12
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d996223_725c424f",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -160,6 +304,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d860665e_4d6ba0b6",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 266,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:31:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d996223_725c424f",
+      "range": {
+        "startLine": 255,
+        "startChar": 1,
+        "endLine": 266,
+        "endChar": 3
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
