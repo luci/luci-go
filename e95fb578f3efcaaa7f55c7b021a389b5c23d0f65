@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d0a447af_6f2c69e1",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "this is why I think I need a field in Options struct: \n after this is called, call func operates just on Options struct.",
+      "range": {
+        "startLine": 97,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 20
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b8351461_eaafcebf",
         "filename": "grpc/prpc/client.go",
         "patchSetId": 4
@@ -22,6 +45,30 @@
       "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "767fce67_c4d5d2ee",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8351461_eaafcebf",
+      "range": {
+        "startLine": 155,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 21
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -48,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "39d429fa_5d21844f",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dee6b392_7a3b5d7a",
+      "range": {
+        "startLine": 156,
+        "startChar": 21,
+        "endLine": 156,
+        "endChar": 63
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da61f116_68ce121d",
         "filename": "grpc/prpc/client.go",
         "patchSetId": 4
@@ -59,6 +130,30 @@
       "writtenOn": "2019-11-26T20:28:09Z",
       "side": 1,
       "message": "we could keep using binary serialization for requests only (and use JSONPB only for responses) and avoid implementing FixFieldMasksAfterMarshal...",
+      "range": {
+        "startLine": 161,
+        "startChar": 60,
+        "endLine": 161,
+        "endChar": 74
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49e16a6e_e7e7e60d",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "true, but this isn\u0027t how grpc\u0027s CallContentSubtype option works (afais).",
+      "parentUuid": "da61f116_68ce121d",
       "range": {
         "startLine": 161,
         "startChar": 60,
@@ -94,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "d3256895_ccf1bb9b",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9dae4d9a_3b627712",
+      "range": {
+        "startLine": 171,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 65
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49288113_3c1c3f86",
         "filename": "grpc/prpc/client.go",
         "patchSetId": 4
@@ -114,6 +233,30 @@
       "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d18d703_356f9780",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "prpc cmd client uses it.",
+      "parentUuid": "49288113_3c1c3f86",
+      "range": {
+        "startLine": 189,
+        "startChar": 17,
+        "endLine": 189,
+        "endChar": 32
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "fcfecbc1_727204aa",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "derp, I meant to keep it private, but changed my mind after looking at Milo/bb (cmd tool) use of Buildbucket (see follow up CL in a stack).\nIt\u0027s easier to set this as well as remove once per client creation.",
+      "parentUuid": "7d235364_1d48a319",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "409d2e22_f3b068d7",
         "filename": "grpc/prpc/options.go",
         "patchSetId": 4
@@ -151,6 +318,30 @@
       "writtenOn": "2019-11-26T20:28:09Z",
       "side": 1,
       "message": "Can we just use that? Why do we need a separate wrapper?\n\ngprc.CallContentSubtype returns public grpc.ContentSubtypeCallOption struct with public fields, we can totally inspect it from pRPC code.",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 41
+      },
+      "revId": "e95fb578f3efcaaa7f55c7b021a389b5c23d0f65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a5aef0e_2ab3cc4a",
+        "filename": "grpc/prpc/options.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T21:08:27Z",
+      "side": 1,
+      "message": "I can inspect it from the apply func (below) and I at first did that, but it\u0027s more code here w/o substantial gain 😞\nNote that I still need a field in options.",
+      "parentUuid": "409d2e22_f3b068d7",
       "range": {
         "startLine": 127,
         "startChar": 2,
