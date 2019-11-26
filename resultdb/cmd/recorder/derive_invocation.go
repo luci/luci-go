@@ -133,11 +133,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 		// Insert test results.
 		for i, tr := range results {
-			mut, err := insertTestResult(invID, tr, i)
-			if err != nil {
-				return errors.Annotate(err, "test result #%d %q", i, tr.TestPath).Err()
-			}
-			muts = append(muts, mut)
+			muts = append(muts, insertTestResult(invID, tr, i))
 		}
 
 		// Write mutations.
