@@ -16,6 +16,24 @@
       "revId": "a94c983c5e5f81cba245e5c47f81e2f3d4182dd7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a9d2dc9_33433618",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-26T00:18:57Z",
+      "side": 1,
+      "message": "\u003e I\u0027m confused, you want to write this directly in the cache directory?\n\u003e \n\nNo, I will pass temporary directory not in cache directory to resultDir.\n\n\u003e I\u0027d prefer the caller to specify the path to a json/proto file to output stats to, than hardcoded file name inside the cache directory.\n\nBut I think it is better to pass just 1 flag for outputs instead of paths for items_cold, items_hot and isolated.json.",
+      "parentUuid": "f119282f_ebc4f1c5",
+      "revId": "a94c983c5e5f81cba245e5c47f81e2f3d4182dd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
