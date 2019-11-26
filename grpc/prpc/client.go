@@ -22,10 +22,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	"golang.org/x/net/context/ctxhttp"
@@ -36,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -122,19 +125,54 @@ func (c *Client) getHTTPClient() *http.Client {
 // If there is a Deadline applied to the Context, it will be forwarded to the
 // server using the HeaderTimeout header.
 func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, out proto.Message, opts ...grpc.CallOption) error {
-	reqBody, err := proto.Marshal(in)
+	options, err := c.renderOptions(opts)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.CallRaw(ctx, serviceName, methodName, reqBody, FormatBinary, FormatBinary, opts...)
+	var reqBody []byte
+	var format Format
+	switch options.ContentSubtype {
+	case "", mtPRPCEncodingBinary:
+		format = FormatBinary
+		if reqBody, err = proto.Marshal(in); err != nil {
+			return err
+		}
+	case mtPRPCEncodingJSONPB:
+		format = FormatJSONPB
+		s, err := (&jsonpb.Marshaler{}).MarshalToString(in)
+		if err != nil {
+			return err
+		}
+		// WORKAROUND(https://github.com/golang/protobuf/issues/745): due to a bug
+		// in jsonpb handling of FieldMask, extra massaging of the output is
+		// required.
+		reqBody, err = luciproto.FixFieldMasksAfterMarshal([]byte(s), reflect.TypeOf(in).Elem())
+		if err != nil {
+			return err
+		}
+	case mtPRPCEncodingText:
+		return errors.New("text encoding for pRPC calls is not implemented")
+	default:
+		return fmt.Errorf("unrecognized contentSubtype %q of CallContentSubtype", options.ContentSubtype)
+	}
+
+	resp, err := c.call(ctx, serviceName, methodName, reqBody, format, format, options)
 	if err != nil {
 		return err
 	}
-	return proto.Unmarshal(resp, out)
+
+	switch format {
+	case FormatBinary:
+		return proto.Unmarshal(resp, out)
+	case FormatJSONPB:
+		return jsonpb.UnmarshalString(string(resp), out)
+	default:
+		return errors.New("unreachable")
+	}
 }
 
-// CallRaw makes an RPC, sending and returning the raw data without
+// CallWithFormats makes an RPC, sending and returning the raw data without
 // unmarshalling it.
 // Retries on transient errors according to retry options.
 // Logs HTTP errors.
@@ -142,16 +180,24 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 //
 // opts must be created by this package.
 // Calling from multiple goroutines concurrently is safe, unless Client is mutated.
-// Called from generated code.
 //
 // If there is a Deadline applied to the Context, it will be forwarded to the
 // server using the HeaderTimeout header.
-func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
+func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
 	opts ...grpc.CallOption) ([]byte, error) {
 	options, err := c.renderOptions(opts)
 	if err != nil {
 		return nil, err
 	}
+	if options.ContentSubtype != "" {
+		return nil, errors.New("prpc.CallContentSubtype call option not allowed with `CallWithFormats`" +
+			" because input/output formats are already specified")
+	}
+	return c.call(ctx, serviceName, methodName, in, inf, outf, options)
+}
+
+func (c *Client) call(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format,
+	options *Options) ([]byte, error) {
 
 	md, _ := metadata.FromOutgoingContext(ctx)
 	req := prepareRequest(c.Host, serviceName, methodName, md, len(in), inf, outf, options)
@@ -164,7 +210,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 	// Send the request in a retry loop.
 	var buf bytes.Buffer
 	var contentType string
-	err = retry.Retry(
+	err := retry.Retry(
 		ctx,
 		transient.Only(options.Retry),
 		func() error {
