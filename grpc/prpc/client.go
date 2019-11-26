@@ -152,7 +152,8 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 			return err
 		}
 	case mtPRPCEncodingText:
-		return errors.New("text encoding for pRPC calls is not implemented")
+		format = FormatText
+		return errors.New("Not implemented and probably should not be")
 	default:
 		return fmt.Errorf("unrecognized contentSubtype %q of CallContentSubtype", options.ContentSubtype)
 	}
@@ -167,6 +168,8 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, o
 		return proto.Unmarshal(resp, out)
 	case FormatJSONPB:
 		return jsonpb.UnmarshalString(string(resp), out)
+	case FormatText:
+		return errors.New("Not implemented and probably should not be")
 	default:
 		return errors.New("unreachable")
 	}

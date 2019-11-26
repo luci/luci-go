@@ -41,17 +41,13 @@ type Options struct {
 	// transient.
 	PerRPCTimeout time.Duration
 
-	// ContentSubtype defines Content-Type over the wire.
-	// Valid values are "binary" and "json". Empty value defaults to "binary".
-	// It can be overridden on per-call basis via CallContentSubtype().
-	ContentSubtype string
-
 	// the rest can be set only using CallOption.
 
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
 	resTrailerMetadata *metadata.MD // destination for response HTTP trailers.
 	serverDeadline     time.Duration
 	expectedCodes      []codes.Code // list of non-OK grpc codes NOT to log
+	ContentSubtype     string
 }
 
 // DefaultOptions are used if no options are specified in Client.
