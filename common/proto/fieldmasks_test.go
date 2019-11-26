@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -36,26 +38,36 @@ func TestFixFieldMasks(t *testing.T) {
 			So(err, ShouldBeNil)
 			return buf.String()
 		}
-		testFix := func(messageExample interface{}, jsonMessage, expected string) {
-			actual, err := FixFieldMasks([]byte(jsonMessage), reflect.TypeOf(messageExample))
+		testFix := func(messageExample proto.Message, jsonMessage, expected string) {
+			typ := reflect.TypeOf(messageExample).Elem()
+			actual, err := FixFieldMasks([]byte(jsonMessage), typ)
 			So(err, ShouldBeNil)
 			So(normalizeJSON(actual), ShouldEqual, normalizeJSON([]byte(expected)))
+
+			So(jsonpb.UnmarshalString(string(actual), messageExample), ShouldBeNil)
+			buggySerialized, err := (&jsonpb.Marshaler{}).MarshalToString(messageExample)
+			So(err, ShouldBeNil)
+			So(normalizeJSON([]byte(buggySerialized)), ShouldEqual, normalizeJSON([]byte(expected)))
+
+			reverse, err := FixFieldMasksReverse([]byte(buggySerialized), typ)
+			So(err, ShouldBeNil)
+			So(normalizeJSON([]byte(reverse)), ShouldEqual, normalizeJSON([]byte(jsonMessage)))
 		}
 		Convey("No field masks", func() {
 			testFix(
-				testingpb.Simple{},
+				&testingpb.Simple{},
 				`{
-					"id": 1
+					"id": "1"
 				}`,
 				`{
-					"id": 1
+					"id": "1"
 				}`,
 			)
 		})
 
 		Convey("Works", func() {
 			testFix(
-				testingpb.Simple{},
+				&testingpb.Simple{},
 				`{
 					"fields": "id,someField"
 				}`,
@@ -72,7 +84,7 @@ func TestFixFieldMasks(t *testing.T) {
 
 		Convey("Properties", func() {
 			testFix(
-				testingpb.Props{},
+				&testingpb.Props{},
 				`{
 					"properties": {
 						"foo": "bar"
@@ -88,7 +100,7 @@ func TestFixFieldMasks(t *testing.T) {
 
 		Convey("Nested type", func() {
 			testFix(
-				testingpb.WithInner{},
+				&testingpb.WithInner{},
 				`{
 					"msgs": [
 						{

@@ -100,7 +100,7 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI, instanceID=%q", info.InstanceID)
+	rpcOpts.UserAgent = fmt.Sprintf("buildbucket CLI XXX, instanceID=%q", info.InstanceID)
 	r.client = pb.NewBuildsPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,

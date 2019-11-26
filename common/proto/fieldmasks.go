@@ -55,6 +55,74 @@ func FixFieldMasks(jsonMessage []byte, messageType reflect.Type) ([]byte, error)
 	return json.Marshal(msg)
 }
 
+func FixFieldMasksReverse(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
+	var msg map[string]interface{}
+	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
+		return nil, err
+	}
+
+	if err := fixFieldMasksOut(make([]string, 0, 10), msg, messageType); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(msg)
+}
+
+func fixFieldMasksOut(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
+	fieldTypes := getFieldTypes(messageType)
+	for name, val := range msg {
+		localPath := append(fieldPath, name)
+		typ := fieldTypes[name]
+		if typ == nil {
+			return fmt.Errorf("unexpected field path %q", strings.Join(localPath, "."))
+		}
+		if typ == fieldMaskType {
+			pathsMap := val.(map[string]interface{})
+			if pathsMap == nil {
+				return fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, val)
+			}
+			paths, ok := pathsMap["paths"]
+			if !ok {
+				return fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, pathsMap)
+			}
+			pathsAsList := paths.([]interface{})
+			if pathsAsList == nil {
+				return fmt.Errorf(`expected {"paths": [...]} in place of FieldMask, got %s`, pathsMap)
+			}
+			// actual fix.
+			fixed, err := pathsToJSON(pathsAsList)
+			if err != nil {
+				return nil
+			}
+			msg[name] = fixed
+			continue
+		}
+
+		// recurse.
+		switch val := val.(type) {
+		case map[string]interface{}:
+			if typ != structType && typ.Implements(protoMessageType) {
+				if err := fixFieldMasksOut(localPath, val, typ.Elem()); err != nil {
+					return err
+				}
+			}
+		case []interface{}:
+			if typ.Kind() == reflect.Slice && typ.Elem().Implements(protoMessageType) {
+				subMsgType := typ.Elem().Elem()
+				for i, el := range val {
+					if subMsg, ok := el.(map[string]interface{}); ok {
+						elPath := append(localPath, strconv.Itoa(i))
+						if err := fixFieldMasksOut(elPath, subMsg, subMsgType); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func fixFieldMasks(fieldPath []string, msg map[string]interface{}, messageType reflect.Type) error {
 	fieldTypes := getFieldTypes(messageType)
 	for name, val := range msg {
@@ -154,6 +222,34 @@ func parseFieldMaskString(s string) (paths []string) {
 	}
 	paths = append(paths, s[seps[len(seps)-1]+1:])
 	return paths
+}
+
+// pathsToJSON actually serializes FieldMask paths to JSON according to spec
+// https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
+func pathsToJSON(paths []interface{}) (string, error) {
+	var buf strings.Builder
+	for i, p := range paths {
+		path, ok := p.(string)
+		if !ok {
+			return "", fmt.Errorf("expected paths to be strings, but found %t", p)
+		}
+		if i != 0 {
+			buf.WriteRune(',')
+		}
+		underscore := false
+		for _, c := range path {
+			switch {
+			case c == '_':
+				underscore = true
+			case underscore:
+				buf.WriteRune(unicode.ToUpper(c))
+				underscore = false
+			default:
+				buf.WriteRune(c)
+			}
+		}
+	}
+	return buf.String(), nil
 }
 
 var fieldTypeCache struct {
