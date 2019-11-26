@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "aec48d64_7f922e2c",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3528979_99526f6f",
+      "range": {
+        "startLine": 41,
+        "startChar": 31,
+        "endLine": 41,
+        "endChar": 44
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81d387b2_21a70f6f",
         "filename": "common/proto/fieldmasks.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db9d884b_8f298927",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81d387b2_21a70f6f",
+      "range": {
+        "startLine": 66,
+        "startChar": 33,
+        "endLine": 66,
+        "endChar": 61
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -350,6 +398,30 @@
       "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "189a681e_0a46b2ca",
+        "filename": "common/proto/fieldmasks.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-11-26T20:48:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "774cb70d_aa382685",
+      "range": {
+        "startLine": 250,
+        "startChar": 73,
+        "endLine": 250,
+        "endChar": 74
+      },
+      "revId": "73595c054c3ca0b270a65b5edb1d7299efc2abbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
