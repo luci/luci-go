@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -60,6 +61,8 @@ Files are referenced by their hash`,
 			c.Flags.Int64Var(&c.maxSize, "cache-max-size", cacheMaxSizeDefault, "Cache is trimmed if the cache gets larger than this value.")
 			c.Flags.IntVar(&c.maxItems, "cache-max-items", cacheMaxItemsDefault, "Maximum number of items to keep in the cache.")
 			c.Flags.Int64Var(&c.minFreeSpace, "cache-min-free-space", 0, "Cache is trimmed if disk free space becomes lower than this value.")
+
+			c.Flags.StringVar(&c.resultJSON, "fetch-and-map-result-json", "", "This is created only for crbug.com/932396, do not use other than from run_isolated.py.")
 			return &c
 		},
 	}
@@ -70,6 +73,8 @@ type downloadRun struct {
 	outputDir   string
 	outputFiles string
 	isolated    string
+
+	resultJSON string
 
 	cacheDir     string
 	maxSize      int64
@@ -91,6 +96,42 @@ func (c *downloadRun) Parse(a subcommands.Application, args []string) error {
 	if c.cacheDir == "" && (c.maxSize != cacheMaxSizeDefault || c.maxItems != cacheMaxItemsDefault || c.minFreeSpace != 0) {
 		return errors.New("cache-dir is necessary when cache-max-size, cache-max-items or cache-min-free-space are specified")
 	}
+	return nil
+}
+
+type results struct {
+	ItemsCold []byte             `json:"items_cold"`
+	ItemsHot  []byte             `json:"items_hot"`
+	Isolated  *isolated.Isolated `json:"isolated"`
+}
+
+func (c *downloadRun) outputResults(cache cache.Cache, dl *downloader.Downloader) error {
+	if c.resultJSON == "" {
+		return nil
+	}
+
+	itemsCold, itemsHot, err := downloader.GetCacheStats(cache)
+	if err != nil {
+		return errors.Annotate(err, "failed to call GetCacheStats").Err()
+	}
+
+	root, err := dl.RootIsolated()
+	if err != nil {
+		return errors.Annotate(err, "failed to get root isolated").Err()
+	}
+
+	resultJSON, err := json.Marshal(results{
+		ItemsCold: itemsCold,
+		ItemsHot:  itemsHot,
+		Isolated:  root,
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to marshal result json").Err()
+	}
+	if err := ioutil.WriteFile(c.resultJSON, resultJSON, 0664); err != nil {
+		return errors.Annotate(err, "failed to write result json to %s", c.resultJSON).Err()
+	}
+
 	return nil
 }
 
@@ -140,7 +181,8 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			return errors.Annotate(err, "failed to call WriteFile(%s, ...)", c.outputFiles).Err()
 		}
 	}
-	return nil
+
+	return c.outputResults(diskCache, dl)
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
