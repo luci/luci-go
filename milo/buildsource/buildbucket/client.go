@@ -38,6 +38,9 @@ func ProdClientFactory(c context.Context, host string, as auth.RPCAuthorityKind,
 	}
 	rpcOpts := prpc.DefaultOptions()
 	rpcOpts.PerRPCTimeout = bbRPCTimeout
+	// TODO(crbug/1016443): remove CallContentSubtype defaulting into binary
+	// protobuf encoding once Buildbucket server becomes faster.
+	rpcOpts.ContentSubtype = "json"
 	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
 		C:       &http.Client{Transport: t},
 		Host:    host,
