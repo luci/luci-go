@@ -20,6 +20,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -36,82 +41,81 @@ func TestFixFieldMasks(t *testing.T) {
 			So(err, ShouldBeNil)
 			return buf.String()
 		}
-		testFix := func(messageExample interface{}, jsonMessage, expected string) {
-			actual, err := FixFieldMasks([]byte(jsonMessage), reflect.TypeOf(messageExample))
+		testFix := func(pb proto.Message, expected string) {
+			typ := reflect.TypeOf(pb).Elem()
+
+			jsBad, err := (&jsonpb.Marshaler{}).MarshalToString(pb)
+			So(err, ShouldBeNil)
+
+			actual, err := FixFieldMasksAfterMarshal([]byte(jsBad), typ)
 			So(err, ShouldBeNil)
 			So(normalizeJSON(actual), ShouldEqual, normalizeJSON([]byte(expected)))
+
+			jsBadEmulated, err := FixFieldMasksBeforeUnmarshal([]byte(actual), typ)
+			So(err, ShouldBeNil)
+			So(normalizeJSON(jsBadEmulated), ShouldEqual, normalizeJSON([]byte(jsBad)))
+
+			So(jsonpb.UnmarshalString(string(jsBadEmulated), pb), ShouldBeNil)
 		}
 		Convey("No field masks", func() {
 			testFix(
-				testingpb.Simple{},
+				&testingpb.Simple{Id: 1},
 				`{
-					"id": 1
-				}`,
-				`{
-					"id": 1
+					"id": "1"
 				}`,
 			)
 		})
 
 		Convey("Works", func() {
 			testFix(
-				testingpb.Simple{},
+				&testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
+					"id", "some_field",
+				}}},
 				`{
 					"fields": "id,someField"
-				}`,
-				`{
-					"fields": {
-						"paths": [
-							"id",
-							"some_field"
-						]
-					}
 				}`,
 			)
 		})
 
 		Convey("Properties", func() {
 			testFix(
-				testingpb.Props{},
+				&testingpb.Props{
+					Properties: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"foo": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bar"}},
+						},
+					},
+				},
 				`{
-					"properties": {
-						"foo": "bar"
-					}
-				}`,
-				`{
-					"properties": {
-						"foo": "bar"
-					}
-				}`,
+						"properties": {
+							"foo": "bar"
+						}
+					}`,
 			)
 		})
 
 		Convey("Nested type", func() {
 			testFix(
-				testingpb.WithInner{},
+				&testingpb.WithInner{
+					Msgs: []*testingpb.WithInner_Inner{
+						&testingpb.WithInner_Inner{
+							Msg: &testingpb.WithInner_Inner_Simple{
+								Simple: &testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
+									"id", "some_field",
+								}}},
+							},
+						},
+					},
+				},
 				`{
-					"msgs": [
-						{
-							"simple": {
-								"fields": "id,someField"
-							}
-						}
-					]
-				}`,
-				`{
-					"msgs": [
-						{
-							"simple": {
-								"fields": {
-									"paths": [
-										"id",
-										"some_field"
-									]
+						"msgs": [
+							{
+								"simple": {
+									"fields": "id,someField"
 								}
 							}
-						}
-					]
-				}`,
+						]
+					}`,
 			)
 		})
 
@@ -119,7 +123,9 @@ func TestFixFieldMasks(t *testing.T) {
 			input := `{
 				"a": 1
 			}`
-			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			So(err, ShouldErrLike, `unexpected field path "a"`)
+			_, err = FixFieldMasksAfterMarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			So(err, ShouldErrLike, `unexpected field path "a"`)
 		})
 
@@ -127,7 +133,9 @@ func TestFixFieldMasks(t *testing.T) {
 			input := `{
 				"some": {"a": 1}
 			}`
-			_, err := FixFieldMasks([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			So(err, ShouldErrLike, `unexpected field path "some.a"`)
+			_, err = FixFieldMasksAfterMarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			So(err, ShouldErrLike, `unexpected field path "some.a"`)
 		})
 
