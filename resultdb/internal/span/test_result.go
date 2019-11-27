@@ -161,8 +161,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return
 	}
 
-	if q.Predicate.GetTestPath() != nil {
-		// TODO(nodir): add support for q.Predicate.TestPath.
+	if q.Predicate.GetTestPathRegexp() != "" {
+		// TODO(nodir): add support for q.Predicate.TestPathRegexp.
 		return nil, "", grpcutil.Unimplemented
 	}
 	if q.Predicate.GetVariant() != nil {

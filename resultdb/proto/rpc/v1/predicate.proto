@@ -32,8 +32,9 @@ message TestResultPredicate {
   // A test result must belong to an invocation satisfying this predicate.
   InvocationPredicate invocation = 1;
 
-  // A test result must have a path satisfying this predicate.
-  TestPathPredicate test_path = 2;
+  // A test result must have a test path matching this regular expression
+  // entirely, i.e. the expression is implicitly wrapped with ^ and $.
+  string test_path_regexp = 2;
 
   // A test result must have a variant satisfying this predicate.
   VariantPredicate variant = 3;
@@ -71,8 +72,9 @@ message TestExonerationPredicate {
   // A test exoneration must belong to an invocation satisfying this predicate.
   InvocationPredicate invocation = 1;
 
-  // A test exoneration must have a test path satisfying this predicate.
-  TestPathPredicate test_path = 2;
+  // A test exoneration must have a test path matching this regular expression
+  // entirely, i.e. the expression is implicitly wrapped with ^ and $.
+  string test_path_regexp = 2;
 
   // A test exoneration must have a variant satisfying this predicate.
   VariantPredicate variant = 3;
@@ -103,22 +105,6 @@ message InvocationPredicate {
   // that satisfy the rest of the predicate (names, tag).
   // If true, do not follow inclusion edges.
   bool ignore_inclusions = 3;
-}
-
-// Represents a function (test path) -> bool.
-message TestPathPredicate {
-  // A test path must be one of these values exactly.
-  // Compatible with path_prefixes: they are connected with logical
-  // OR.
-  repeated string paths = 1;
-
-  // A test path must start with one of these prefixes.
-  // Compatible with paths: they are connected with logical OR.
-  //
-  // Note: most of the time, the prefix must end with a delimiter,
-  // for example, if there tests "foo.bar" and "foo.baz", the prefix should
-  // be "foo." (not "foo"), so that "fooz.qux" is not accidentally matched.
-  repeated string path_prefixes = 2;
 }
 
 // Represents a function Variant -> bool.

@@ -15,6 +15,8 @@
 package pbutil
 
 import (
+	"regexp/syntax"
+
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -60,22 +62,12 @@ func ValidateInvocationPredicate(p *pb.InvocationPredicate) error {
 	return nil
 }
 
-// ValidateTestPathPredicate returns a non-nil error if p is determined to be
-// invalid.
-func ValidateTestPathPredicate(p *pb.TestPathPredicate) error {
-	for _, path := range p.GetPaths() {
-		if err := ValidateTestPath(path); err != nil {
-			return errors.Annotate(err, "path %q", path).Err()
-		}
-	}
-
-	for _, prefix := range p.GetPathPrefixes() {
-		if err := ValidateTestPath(prefix); err != nil {
-			return errors.Annotate(err, "prefix %q", prefix).Err()
-		}
-	}
-
-	return nil
+// validateRegexp returns a non-nil error if re is an invalid regular
+// expression.
+func validateRegexp(re string) error {
+	// Note: regexp.Compile uses syntax.Perl.
+	_, err := syntax.Parse(re, syntax.Perl)
+	return err
 }
 
 // ValidateVariantPredicate returns a non-nil error if p is determined to be
