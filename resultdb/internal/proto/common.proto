@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package internal.proto;
+package luci.resultdb.internal;
 
 option go_package = "internalpb";
 
