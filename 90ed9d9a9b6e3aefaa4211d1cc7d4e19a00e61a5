@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0c38a9d9_bdc3987e",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T18:44:24Z",
+      "side": 1,
+      "message": "it is hard to tell because spanner returns responsds very fast, e.g. \n\nSELECT TestPath\nFROM TestResults\nWHERE REGEXP_CONTAINS(TestPath, \"^^.*$$\")\n AND InvocationId \u003d \"014c8dcc1ff32509:swarming_588fec7b1ffca35884d438d271baaaec60fe77276389179b2634905cabf8cac5\"\n \n\nin luci-resultdb-nodir returns 1115 results and the reading part is done in 1.28ms. I forgot to count this low",
+      "parentUuid": "fe88ef12_16f572c5",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 2
+      },
+      "revId": "90ed9d9a9b6e3aefaa4211d1cc7d4e19a00e61a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e13834c8_1c145bef",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "90ed9d9a9b6e3aefaa4211d1cc7d4e19a00e61a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ba733df_23180ec0",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T18:44:24Z",
+      "side": 1,
+      "message": "still works https://regex101.com/r/pQWSoQ/1",
+      "parentUuid": "e13834c8_1c145bef",
+      "range": {
+        "startLine": 162,
+        "startChar": 31,
+        "endLine": 162,
+        "endChar": 66
+      },
+      "revId": "90ed9d9a9b6e3aefaa4211d1cc7d4e19a00e61a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
