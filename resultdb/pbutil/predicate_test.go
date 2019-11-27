@@ -68,46 +68,26 @@ func TestValidateTestResultPredicate(t *testing.T) {
 
 		invPred := &pb.InvocationPredicate{Names: []string{"invocations/inv"}}
 		Convey(`Test path`, func() {
-			validate := func(p *pb.TestPathPredicate) error {
+			validate := func(re string) error {
 				return ValidateTestResultPredicate(&pb.TestResultPredicate{
-					Invocation: invPred,
-					TestPath:   p,
+					Invocation:     invPred,
+					TestPathRegexp: re,
 				})
 			}
 
-			Convey(`nil`, func() {
-				err := validate(nil)
+			Convey(`empty`, func() {
+				err := validate("")
 				So(err, ShouldBeNil)
 			})
 
-			Convey(`Paths`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.TestPathPredicate{
-						Paths: []string{"a"},
-					})
-					So(err, ShouldBeNil)
-				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.TestPathPredicate{
-						Paths: []string{"\x00"},
-					})
-					So(err, ShouldErrLike, `test_path: path "\x00": does not match`)
-				})
+			Convey(`literal`, func() {
+				err := validate("A")
+				So(err, ShouldBeNil)
 			})
 
-			Convey(`PathPrefixes`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.TestPathPredicate{
-						PathPrefixes: []string{"a"},
-					})
-					So(err, ShouldBeNil)
-				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.TestPathPredicate{
-						PathPrefixes: []string{"\x00"},
-					})
-					So(err, ShouldErrLike, `test_path: prefix "\x00": does not match`)
-				})
+			Convey(`invalid`, func() {
+				err := validate("(")
+				So(err, ShouldErrLike, "test_path_regexp: error parsing regexp")
 			})
 		})
 

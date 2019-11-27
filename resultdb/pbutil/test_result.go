@@ -29,7 +29,7 @@ import (
 // and *pb.TestExonerationPredicate.
 type testObjectPredicate interface {
 	GetInvocation() *pb.InvocationPredicate
-	GetTestPath() *pb.TestPathPredicate
+	GetTestPathRegexp() string
 	GetVariant() *pb.VariantPredicate
 }
 
@@ -40,10 +40,8 @@ func validateTestObjectPredicate(p testObjectPredicate) error {
 		return errors.Annotate(err, "invocation").Err()
 	}
 
-	if p.GetTestPath() != nil {
-		if err := ValidateTestPathPredicate(p.GetTestPath()); err != nil {
-			return errors.Annotate(err, "test_path").Err()
-		}
+	if err := validateRegexp(p.GetTestPathRegexp()); err != nil {
+		return errors.Annotate(err, "test_path_regexp").Err()
 	}
 
 	if p.GetVariant() != nil {
