@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	"google.golang.org/grpc"
@@ -44,7 +45,6 @@ func sayHello(c C) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c.So(r.Method, ShouldEqual, "POST")
 		c.So(r.URL.Path, ShouldEqual, "/prpc/prpc.Greeter/SayHello")
-		c.So(r.Header.Get("Accept"), ShouldEqual, "application/prpc; encoding=binary")
 		c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/prpc; encoding=binary")
 		c.So(r.Header.Get("User-Agent"), ShouldEqual, "prpc-test")
 
@@ -65,8 +65,18 @@ func sayHello(c C) http.HandlerFunc {
 		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
 
 		res := HelloReply{Message: "Hello " + req.Name}
-		buf, err := proto.Marshal(&res)
-		c.So(err, ShouldBeNil)
+		var buf []byte
+
+		if req.Name == "ACCEPT JSONPB" {
+			c.So(r.Header.Get("Accept"), ShouldEqual, "application/json")
+			sbuf, err := (&jsonpb.Marshaler{}).MarshalToString(&res)
+			c.So(err, ShouldBeNil)
+			buf = []byte(sbuf)
+		} else {
+			c.So(r.Header.Get("Accept"), ShouldEqual, "application/prpc; encoding=binary")
+			buf, err = proto.Marshal(&res)
+			c.So(err, ShouldBeNil)
+		}
 
 		code := codes.OK
 		status := http.StatusOK
@@ -75,8 +85,8 @@ func sayHello(c C) http.HandlerFunc {
 			status = http.StatusNotFound
 		}
 
+		w.Header().Set("Content-Type", r.Header.Get("Accept"))
 		w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
-		w.Header().Set("Content-Type", ContentTypePRPC)
 		w.WriteHeader(status)
 
 		_, err = w.Write(buf)
@@ -174,6 +184,21 @@ func TestClient(t *testing.T) {
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
+				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
+
+				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+			})
+
+			Convey("Works with response in JSONPB", func(c C) {
+				req.Name = "ACCEPT JSONPB"
+				client, server := setUp(sayHello(c))
+				client.Options.AcceptContentSubtype = "json"
+				defer server.Close()
+
+				var hd metadata.MD
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, Header(&hd))
+				So(err, ShouldBeNil)
+				So(res.Message, ShouldEqual, "Hello ACCEPT JSONPB")
 				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
 
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
