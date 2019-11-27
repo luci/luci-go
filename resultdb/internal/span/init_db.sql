@@ -192,3 +192,28 @@ CREATE TABLE TestExonerations (
   ExplanationMarkdown BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Stores Invocations that need to be processed.
+-- E.g. Invocations to be exported to BigQuery table(s).
+CREATE TABLE InvocationsToProcess (
+  -- ID of the parent Invocations row.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- Payload that encodes an resultdb.internal.InvocationProcess message.
+  -- TODO(chanli): define resultdb.internal.InvocationProcess.
+  Payload BYTES(MAX) NOT NULL,
+
+  -- A hex-encoded sha256 of payload.
+  -- Used to differentiate rows for the same invocation.
+  PayloadHash STRING(64) NOT NULL,
+
+  -- If the invocation is ready to be processed.
+  Ready BOOL,
+) PRIMARY KEY (InvocationId, PayloadHash),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Index of InvocationsToProcess by readiness.
+-- Used by a cron job that periodically scans the table and perform required
+-- processing on invocations.
+CREATE INDEX InvocationsReadyToProcess
+  ON InvocationsToProcess (Ready DESC, InvocationId);
