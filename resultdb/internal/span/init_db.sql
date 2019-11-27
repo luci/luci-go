@@ -192,3 +192,25 @@ CREATE TABLE TestExonerations (
   ExplanationMarkdown BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Stores Invocations that need to be exported to BigQuery table(s).
+CREATE TABLE InvocationsToBeExported (
+  -- ID of the parent Invocations row.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- Payload that encodes a BigQueryExport message.
+  Payload BYTES(MAX) NOT NULL,
+
+  -- A hex-encoded sha256 of payload.
+  -- Used to differentiate rows for the same invocation.
+  PayloadHash STRING(64) NOT NULL,
+
+  -- If the invocation is ready to be exported.
+  Ready BOOL,
+) PRIMARY KEY (InvocationId, PayloadHash),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Index of InvocationsToBeExported by readiness.
+-- Used by a cron job that periodically exports results to BigQuery tables.
+CREATE INDEX InvocationsReadyToExport
+  ON InvocationsToBeExported (Ready DESC, InvocationId);
