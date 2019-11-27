@@ -68,6 +68,9 @@ service Builds {
 
   // Cancels a build.
   // The requester must have at least SCHEDULER role in the destination bucket.
+  // Note that cancelling a build in ended state (meaning build is not in
+  // STATUS_UNSPECIFIED, SCHEDULED or STARTED status) will be a no-op and
+  // directly return up-to-date Build message
   rpc CancelBuild(CancelBuildRequest) returns (Build) {};
 
   // Executes multiple requests in a batch.
