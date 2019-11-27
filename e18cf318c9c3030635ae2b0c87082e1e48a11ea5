@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f08070b6_2c5397f9",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:43:26Z",
+      "side": 1,
+      "message": "looks like the package is \"internal.proto\" but it should be \"luci.resultdb.internal\". let\u0027s use the latter here\n\nif you have time, please edit the file too. Otherwise i can do it.",
+      "range": {
+        "startLine": 202,
+        "startChar": 29,
+        "endLine": 202,
+        "endChar": 37
+      },
+      "revId": "e18cf318c9c3030635ae2b0c87082e1e48a11ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eca010ce_ba24870a",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:43:26Z",
+      "side": 1,
+      "message": "this name looks like there is an invocation process of some sort. Maybe \"ProcessInvocation\"?",
+      "range": {
+        "startLine": 202,
+        "startChar": 47,
+        "endLine": 202,
+        "endChar": 64
+      },
+      "revId": "e18cf318c9c3030635ae2b0c87082e1e48a11ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2599bb70_2ecf109c",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:43:26Z",
+      "side": 1,
+      "message": "there will be no \"a cron job\". Let\u0027s says \"It is periodically scanned to perform ...\"",
+      "range": {
+        "startLine": 216,
+        "startChar": 11,
+        "endLine": 216,
+        "endChar": 21
+      },
+      "revId": "e18cf318c9c3030635ae2b0c87082e1e48a11ea5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
