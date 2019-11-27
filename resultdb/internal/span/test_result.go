@@ -148,11 +148,19 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 				(tr.InvocationId = @afterInvocationID AND tr.TestPath > @afterTestPath) OR
 				(tr.InvocationId = @afterInvocationID AND tr.TestPath = @afterTestPath AND tr.ResultId > @afterResultId)
 			)
+			AND REGEXP_CONTAINS(tr.TestPath, @testPathRegexp)
 		ORDER BY tr.InvocationId, tr.TestPath, tr.ResultId
 		LIMIT @limit
 	`, from))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
+
+	testPathRegexp := q.Predicate.GetTestPathRegexp()
+	if testPathRegexp == "" {
+		testPathRegexp = ".*"
+	}
+	st.Params["testPathRegexp"] = fmt.Sprintf("^%s$", testPathRegexp)
+
 	st.Params["afterInvocationId"],
 		st.Params["afterTestPath"],
 		st.Params["afterResultId"],
@@ -161,10 +169,6 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return
 	}
 
-	if q.Predicate.GetTestPathRegexp() != "" {
-		// TODO(nodir): add support for q.Predicate.TestPathRegexp.
-		return nil, "", grpcutil.Unimplemented
-	}
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
 		return nil, "", grpcutil.Unimplemented
