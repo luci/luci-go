@@ -45,6 +45,8 @@ var (
 // This function is a reverse of FixFieldMasksAfterMarshal.
 //
 // messageType must be a struct, not a struct pointer.
+//
+// WARNING: AVOID. LIKELY BUGGY, see https://crbug.com/1028915.
 func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
 	var msg map[string]interface{}
 	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
@@ -66,6 +68,8 @@ func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) 
 // This function is a reverse of FixFieldMasksBeforeUnmarshal.
 //
 // messageType must be a struct, not a struct pointer.
+//
+// WARNING: AVOID. LIKELY BUGGY, see https://crbug.com/1028915.
 func FixFieldMasksAfterMarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
 	var msg map[string]interface{}
 	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
