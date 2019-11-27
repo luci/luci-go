@@ -54,6 +54,31 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 	}
 }
 
+// validateBigQueryExport returns a non-nil error if bq_export is determined to
+// be invalid.
+func validateBigQueryExport(bq_export *pb.BigQueryExport) error {
+	switch {
+	case bq_export.Project == "":
+		return errors.Reason("BigQuery project missing").Err()
+	case bq_export.Dataset == "":
+		return errors.Reason("BigQuery dataset missing").Err()
+	case bq_export.Table == "":
+		return errors.Reason("BigQuery table missing").Err()
+	}
+
+	if bq_export.GetTestResultsExport() != nil {
+		if bq_export.TestResultsExport.GetPredicate() == nil {
+			return errors.Reason("test_results_export.predicate missing").Err()
+		}
+
+		if err := pbutil.ValidateTestResultPredicate(bq_export.TestResultsExport.Predicate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
 func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
@@ -83,6 +108,12 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	if inv.GetDeadline() != nil {
 		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
 			return errors.Annotate(err, "invocation: deadline").Err()
+		}
+	}
+
+	for _, bq_export := range req.GetBigQueryExports() {
+		if err := validateBigQueryExport(bq_export); err != nil {
+			return errors.Annotate(err, "big_query_export").Err()
 		}
 	}
 
@@ -148,6 +179,8 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 		muts := insertInvocationsByTag(invID, inv.Tags)
 		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
+
+		// TODO(chanli): insert invocation to InvocationsToBeExported.
 
 		return txn.BufferWrite(muts)
 	})
