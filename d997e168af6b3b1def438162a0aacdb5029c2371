@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "fa786dfc_fe063946",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T23:47:53Z",
+      "side": 1,
+      "message": "it is enough. i mean, if it is nil, we should return an error",
+      "parentUuid": "fe4103d5_196b966e",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5e5d765_7156f290",
         "filename": "resultdb/cmd/recorder/create_invocation.go",
         "patchSetId": 2
@@ -107,6 +125,30 @@
       "side": 1,
       "message": "I was thinking predicate is the only field in TestResultsExport so without it seems to indicate the request is incomplete.",
       "parentUuid": "c5e5d765_7156f290",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 3
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2921b9a_f86b3516",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T23:47:53Z",
+      "side": 1,
+      "message": "no, it is ok to have empty messages.\n\npredicate should be optional",
+      "parentUuid": "d6608752_aa001489",
       "range": {
         "startLine": 70,
         "startChar": 0,
