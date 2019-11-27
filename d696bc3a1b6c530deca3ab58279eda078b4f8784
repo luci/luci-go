@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa994d2a_79d2f87c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2019-11-27T01:47:00Z",
+      "side": 1,
+      "message": "Oh yeah.. I\u0027ve configured that for the code but not realizing that for the commit message. Fixed it and will take care of it next time",
+      "parentUuid": "7ee62c3f_243bfb99",
+      "range": {
+        "startLine": 7,
+        "startChar": 46,
+        "endLine": 7,
+        "endChar": 48
+      },
+      "revId": "d696bc3a1b6c530deca3ab58279eda078b4f8784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e78127d4_7675a273",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "d696bc3a1b6c530deca3ab58279eda078b4f8784",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2154d53_5adda4c8",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2019-11-27T01:47:00Z",
+      "side": 1,
+      "message": "Yup! you are right:)",
+      "parentUuid": "e78127d4_7675a273",
+      "range": {
+        "startLine": 72,
+        "startChar": 59,
+        "endLine": 72,
+        "endChar": 72
+      },
+      "revId": "d696bc3a1b6c530deca3ab58279eda078b4f8784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
