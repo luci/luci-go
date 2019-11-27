@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ee62c3f_243bfb99",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-27T00:25:33Z",
+      "side": 1,
+      "message": "please wrap at 80 columns (worth configuring your editor to do this for commit messages)",
+      "range": {
+        "startLine": 7,
+        "startChar": 46,
+        "endLine": 7,
+        "endChar": 48
+      },
+      "revId": "d696bc3a1b6c530deca3ab58279eda078b4f8784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e78127d4_7675a273",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-11-27T00:25:33Z",
+      "side": 1,
+      "message": "nit: ... will be a no-op and ...\n\n(since a No-Op is \u0027no operation\u0027 it doesn\u0027t really mean anything to perform it :))",
+      "range": {
+        "startLine": 72,
+        "startChar": 59,
+        "endLine": 72,
+        "endChar": 72
+      },
+      "revId": "d696bc3a1b6c530deca3ab58279eda078b4f8784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
