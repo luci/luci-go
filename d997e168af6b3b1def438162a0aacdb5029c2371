@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "592e9416_05c932b7",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "a102e694_b2a7802c",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1f6ce5c_4012317a",
         "filename": "resultdb/cmd/recorder/create_invocation.go",
         "patchSetId": 2
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "fe4103d5_196b966e",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Checking it\u0027s not nil is not enough for this?",
+      "parentUuid": "a1f6ce5c_4012317a",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c5e5d765_7156f290",
         "filename": "resultdb/cmd/recorder/create_invocation.go",
         "patchSetId": 2
@@ -47,6 +83,30 @@
       "writtenOn": "2019-11-27T21:38:55Z",
       "side": 1,
       "message": "why is it required?",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 3
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6608752_aa001489",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "I was thinking predicate is the only field in TestResultsExport so without it seems to indicate the request is incomplete.",
+      "parentUuid": "c5e5d765_7156f290",
       "range": {
         "startLine": 70,
         "startChar": 0,
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "c3bcea9f_44436625",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4640034d_5ddee9ec",
+      "range": {
+        "startLine": 75,
+        "startChar": 10,
+        "endLine": 75,
+        "endChar": 13
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82b30fad_d2bd9924",
         "filename": "resultdb/cmd/recorder/create_invocation.go",
         "patchSetId": 2
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "d8c25c78_1d5ec42a",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "82b30fad_d2bd9924",
+      "range": {
+        "startLine": 116,
+        "startChar": 32,
+        "endLine": 116,
+        "endChar": 48
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c0a1fb5_814dcc37",
         "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
         "patchSetId": 2
@@ -119,6 +227,24 @@
       "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce7b5ce4_44e09dee",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c0a1fb5_814dcc37",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -145,6 +271,30 @@
     },
     {
       "key": {
+        "uuid": "07add601_bf7f9e00",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a0c76e5_b8ea21d0",
+      "range": {
+        "startLine": 36,
+        "startChar": 52,
+        "endLine": 36,
+        "endChar": 56
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d601e1fb_ca333714",
         "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
         "patchSetId": 2
@@ -168,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "d52631df_5ad632f6",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d601e1fb_ca333714",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 62
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4652a849_8d7ae00b",
         "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
         "patchSetId": 2
@@ -179,6 +353,30 @@
       "writtenOn": "2019-11-27T21:38:55Z",
       "side": 1,
       "message": "are all result-type-specific types will have _export suffix? should it be just \"test_results\"?",
+      "range": {
+        "startLine": 42,
+        "startChar": 22,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8322ed7_553b13e9",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Just \"test_results\" makes me think this as a field to hold real test results, which it doesn\u0027t do.\n\nWDYT about test_results_input?",
+      "parentUuid": "4652a849_8d7ae00b",
       "range": {
         "startLine": 42,
         "startChar": 22,
@@ -211,6 +409,30 @@
       "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91ce3dda_2987d7b9",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:44:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9da1d2d0_c0f39491",
+      "range": {
+        "startLine": 109,
+        "startChar": 26,
+        "endLine": 109,
+        "endChar": 35
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
