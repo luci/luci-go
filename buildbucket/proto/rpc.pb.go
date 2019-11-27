@@ -1328,6 +1328,9 @@ type BuildsClient interface {
 	ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Note that cancelling a build in ended state (meaning build is not in
+	// STATUS_UNSPECIFIED, SCHEDULED or STARTED status) will be a no-op and
+	// directly return up-to-date Build message
 	CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
@@ -1500,6 +1503,9 @@ type BuildsServer interface {
 	ScheduleBuild(context.Context, *ScheduleBuildRequest) (*Build, error)
 	// Cancels a build.
 	// The requester must have at least SCHEDULER role in the destination bucket.
+	// Note that cancelling a build in ended state (meaning build is not in
+	// STATUS_UNSPECIFIED, SCHEDULED or STARTED status) will be a no-op and
+	// directly return up-to-date Build message
 	CancelBuild(context.Context, *CancelBuildRequest) (*Build, error)
 	// Executes multiple requests in a batch.
 	// The response code is always OK.
