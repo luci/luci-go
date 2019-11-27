@@ -63,6 +63,59 @@ func TestValidateInvocationDeadline(t *testing.T) {
 	})
 }
 
+func TestValidateBigQueryExport(t *testing.T) {
+	Convey(`ValidateBigQueryExport`, t, func() {
+		Convey(`Valid, no predicate`, func() {
+			err := validateBigQueryExport(&pb.BigQueryExport{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Empty project`, func() {
+			err := validateBigQueryExport(&pb.BigQueryExport{
+				Dataset: "dataset",
+				Table:   "table",
+			})
+			So(err, ShouldErrLike, `BigQuery project missing`)
+		})
+
+		Convey(`Empty dataset`, func() {
+			err := validateBigQueryExport(&pb.BigQueryExport{
+				Project: "project",
+				Table:   "table",
+			})
+			So(err, ShouldErrLike, `BigQuery dataset missing`)
+		})
+
+		Convey(`Empty table`, func() {
+			err := validateBigQueryExport(&pb.BigQueryExport{
+				Project: "project",
+				Dataset: "dataset",
+			})
+			So(err, ShouldErrLike, `BigQuery table missing`)
+		})
+
+		Convey(`invalid test result predicate`, func() {
+			err := validateBigQueryExport(&pb.BigQueryExport{
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "table",
+				TestResultsExport: &pb.BigQueryExport_TestResultsExport{
+					Predicate: &pb.TestResultPredicate{
+						Invocation: &pb.InvocationPredicate{
+							Names: []string{"x"},
+						},
+					},
+				},
+			})
+			So(err, ShouldErrLike, `invocation: name "x": does not match ^invocations/([a-z][a-z0-9_\-:]*)$`)
+		})
+	})
+}
+
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
@@ -113,6 +166,23 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				},
 			}, now)
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
+		})
+
+		Convey(`invalid big_query_exports`, func() {
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u:abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+				},
+				BigQueryExports: []*pb.BigQueryExport{
+					&pb.BigQueryExport{
+						Project: "project",
+					},
+				},
+			}, now)
+			So(err, ShouldErrLike, `big_query_export: BigQuery dataset missing`)
 		})
 
 		Convey(`valid`, func() {
