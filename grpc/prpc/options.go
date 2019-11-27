@@ -41,10 +41,11 @@ type Options struct {
 	// transient.
 	PerRPCTimeout time.Duration
 
-	// ContentSubtype defines Content-Type over the wire.
+	// AcceptContentSubtype defines Content-Type over the wire for accepting
+	// responses.
 	// Valid values are "binary" and "json". Empty value defaults to "binary".
-	// It can be overridden on per-call basis via CallContentSubtype().
-	ContentSubtype string
+	// It can be overridden on per-call basis via CallAcceptContentSubtype().
+	AcceptContentSubtype string
 
 	// the rest can be set only using CallOption.
 
@@ -122,15 +123,16 @@ func ExpectedCode(codes ...codes.Code) *CallOption {
 	}
 }
 
-// CallContentSubtype returns a CallOption that sets Content-Type.
+// CallAcceptContentSubtype returns a CallOption that sets Content-Type.
 // For example, if content-subtype is "json", the Content-Type over the wire
 // will be "application/json".
-// Can be used instead of with grpc.CallContentSubtype.
-func CallContentSubtype(contentSubtype string) *CallOption {
+// Unlike that of the grpc.CallContentSubtype, sets Content-Type only for
+// response, not for the request.
+func CallAcceptContentSubtype(contentSubtype string) *CallOption {
 	return &CallOption{
-		grpc.CallContentSubtype(contentSubtype),
+		grpc.EmptyCallOption{},
 		func(o *Options) {
-			o.ContentSubtype = strings.ToLower(contentSubtype)
+			o.AcceptContentSubtype = strings.ToLower(contentSubtype)
 		},
 	}
 }
