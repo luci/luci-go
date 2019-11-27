@@ -1,0 +1,51 @@
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.bq.v1;
+
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/bq/v1;bqpb";
+
+// Represents a test result row in a BigQuery table.
+message TestResultRow {
+  // A subset of luci.resultdb.rpc.v1.Invocation message
+  // in ../../rpc/v1/invocation.proto.
+  message Invocation {
+    // Invocation-level string key-value pairs.
+    // A key can be repeated.
+    repeated luci.resultdb.type.StringPair tags = 1;
+  }
+
+  // Invocation level information.
+  Invocation invocation = 1;
+
+  // A result of a functional test case.
+  // Refer to ../../rpc/v1/test_result.proto for definition.
+  luci.resultdb.rpc.v1.TestResult result = 2;
+
+  message TestExoneration {
+    // True if the test subject (e.g. a CL) is absolved from blame for this
+    // result, otherwise False.
+    // For more details, refer to luci.resultdb.rpc.v1.TestExoneration
+    // in ../../rpc/v1/test_result.proto.
+    bool exonerated = 1;
+  }
+  // Indicates that the test subject (e.g. a CL) is absolved from blame
+  // for this result.
+  TestExoneration exoneration = 3;
+}
