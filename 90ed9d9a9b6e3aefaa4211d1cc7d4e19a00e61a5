@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe88ef12_16f572c5",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T07:10:34Z",
+      "side": 1,
+      "message": "What\u0027s the query performance in this case? Will Spanner\u0027s REGEXP_CONTAINS be no-op? Or will it try to match each and every TestPath?",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 2
+      },
+      "revId": "90ed9d9a9b6e3aefaa4211d1cc7d4e19a00e61a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e13834c8_1c145bef",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T07:10:34Z",
+      "side": 1,
+      "message": "What if testPathRegexp is already wrapped with ^ and $?",
+      "range": {
+        "startLine": 162,
+        "startChar": 31,
+        "endLine": 162,
+        "endChar": 66
+      },
+      "revId": "90ed9d9a9b6e3aefaa4211d1cc7d4e19a00e61a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
