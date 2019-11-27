@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16d133e9_41f72095",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T06:58:54Z",
+      "side": 1,
+      "message": "Nit: Implicitly.",
+      "range": {
+        "startLine": 59,
+        "startChar": 38,
+        "endLine": 59,
+        "endChar": 47
+      },
+      "revId": "d2f4e6b38e84ad095dee3d447f8134e02951bf19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7eeeeaa_d483ce43",
+        "filename": "resultdb/proto/rpc/v1/predicate.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T06:58:54Z",
+      "side": 1,
+      "message": "Should this be removed?",
+      "range": {
+        "startLine": 111,
+        "startChar": 8,
+        "endLine": 111,
+        "endChar": 25
+      },
+      "revId": "d2f4e6b38e84ad095dee3d447f8134e02951bf19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
