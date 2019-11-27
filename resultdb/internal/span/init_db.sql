@@ -145,11 +145,11 @@ CREATE TABLE TestResults (
   Tags ARRAY<STRING(MAX)>,
 
   -- Input artifacts, see also TestResult.input_artifacts in test_result.proto.
-  -- Encoded as resultdb.internal.Artifacts message.
+  -- Encoded as luci.resultdb.internal.Artifacts message.
   InputArtifacts BYTES(MAX),
 
   -- Output artifacts, see also TestResult.output_artifacts in test_result.proto.
-  -- Encoded as resultdb.internal.Artifacts message.
+  -- Encoded as luci.resultdb.internal.Artifacts message.
   OutputArtifacts BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
@@ -192,3 +192,27 @@ CREATE TABLE TestExonerations (
   ExplanationMarkdown BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Stores Invocations that need to be processed.
+-- E.g. Invocations to be exported to BigQuery table(s).
+CREATE TABLE InvocationsToProcess (
+  -- ID of the parent Invocations row.
+  InvocationId STRING(MAX) NOT NULL,
+
+  -- Binary-encoded luci.resultdb.internal.ProcessInvocation.
+  -- TODO(chanli): define luci.resultdb.internal.ProcessInvocation.
+  Payload BYTES(MAX) NOT NULL,
+
+  -- A hex-encoded sha256 of payload.
+  -- Used to differentiate rows for the same invocation.
+  PayloadHash STRING(64) NOT NULL,
+
+  -- If the invocation is ready to be processed.
+  Ready BOOL,
+) PRIMARY KEY (InvocationId, PayloadHash),
+  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Index of InvocationsToProcess by readiness.
+-- It is periodically scanned to perform required processing on invocations.
+CREATE INDEX InvocationsReadyToProcess
+  ON InvocationsToProcess (Ready DESC, InvocationId);
