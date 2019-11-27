@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "e9b342f0_71be5cf2",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:57:16Z",
+      "side": 1,
+      "message": "Ah, right. We\u0027ll need this to determine it\u0027s the test_results to export.\n\nDone.",
+      "parentUuid": "fa786dfc_fe063946",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5e5d765_7156f290",
         "filename": "resultdb/cmd/recorder/create_invocation.go",
         "patchSetId": 2
@@ -158,6 +176,30 @@
       "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c95d8241_89d3fd40",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-11-27T23:57:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2921b9a_f86b3516",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 3
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
