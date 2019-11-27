@@ -1,0 +1,216 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a102e694_b2a7802c",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "other functions use unspecified() and use \"\u003cfield name\u003e: \" prefix, e.g.\n\n  errors.Annotate(unspecified(), \"project\").Err()",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1f6ce5c_4012317a",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "we should check that it is initialized",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5e5d765_7156f290",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "why is it required?",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 3
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4640034d_5ddee9ec",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "must be annotated with \"predicate\"",
+      "range": {
+        "startLine": 75,
+        "startChar": 10,
+        "endLine": 75,
+        "endChar": 13
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82b30fad_d2bd9924",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "does not say which one. there are multiple ones here\n\nlet\u0027s use bigquery_export[\u003ci\u003e]",
+      "range": {
+        "startLine": 116,
+        "startChar": 32,
+        "endLine": 116,
+        "endChar": 48
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c0a1fb5_814dcc37",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "nit: invocation_processing.proto\n\n\"process\" sounds like it describes some invocation process, like an invocation has a process",
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a0c76e5_b8ea21d0",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "should",
+      "range": {
+        "startLine": 36,
+        "startChar": 52,
+        "endLine": 36,
+        "endChar": 56
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d601e1fb_ca333714",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "should\n\notherwise we use 3 different words in this file: \"should\" in L24, \"will\" in L36 and required here. let\u0027s be consistent",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 62
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4652a849_8d7ae00b",
+        "filename": "resultdb/proto/rpc/v1/invocation_process.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "are all result-type-specific types will have _export suffix? should it be just \"test_results\"?",
+      "range": {
+        "startLine": 42,
+        "startChar": 22,
+        "endLine": 42,
+        "endChar": 41
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9da1d2d0_c0f39491",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T21:38:55Z",
+      "side": 1,
+      "message": "nit: bigquery\n\ni\u0027ve never seen big query as two words https://cloud.google.com/bigquery",
+      "range": {
+        "startLine": 109,
+        "startChar": 26,
+        "endLine": 109,
+        "endChar": 35
+      },
+      "revId": "d997e168af6b3b1def438162a0aacdb5029c2371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
