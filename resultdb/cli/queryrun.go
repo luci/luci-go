@@ -18,12 +18,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
-	luciflag "go.chromium.org/luci/common/flag"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -33,7 +31,7 @@ type queryRun struct {
 	baseCommandRun
 	limit              int
 	ignoreExpectations bool
-	testPaths          []string
+	testPath           string
 
 	// TODO(crbug.com/1021849): add flag -artifact-dir
 	// TODO(crbug.com/1021849): add flag -artifact-name
@@ -57,11 +55,10 @@ func (r *queryRun) registerFlags(p Params) {
 		PASS, then print all of them.
 	`))
 
-	r.Flags.Var(luciflag.StringSlice(&r.testPaths), "test-path", text.Doc(`
-		Filter by test path. If ends with "*", then treated as a prefix, e.g.
-		gn://chrome/test:browser_tests/*
+	r.Flags.StringVar(&r.testPath, "test-path", "", text.Doc(`
+		A regular expression for test path. Implicitly wrapped with ^ and $.
 
-		May be specified multiple times. Test paths are connected with logical OR.
+		Example: gn://chrome/test:browser_tests/.+
 	`))
 }
 
@@ -78,22 +75,14 @@ func (r *queryRun) validate() error {
 func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicate) error {
 	req := &pb.QueryTestResultsRequest{
 		Predicate: &pb.TestResultPredicate{
-			Invocation: inv,
-			TestPath:   &pb.TestPathPredicate{},
-			Expectancy: pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
+			Invocation:     inv,
+			TestPathRegexp: r.testPath,
+			Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
 		},
 		PageSize: int32(r.limit),
 	}
 	if r.ignoreExpectations {
 		req.Predicate.Expectancy = pb.TestResultPredicate_ALL
-	}
-	for _, p := range r.testPaths {
-		dest := &req.Predicate.TestPath.Paths
-		if strings.HasSuffix(p, "*") {
-			p = strings.TrimSuffix(p, "*")
-			dest = &req.Predicate.TestPath.PathPrefixes
-		}
-		*dest = append(*dest, p)
 	}
 
 	// TODO(crbug.com/1021849): implement paging.
