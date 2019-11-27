@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44bc02bb_3a068012",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "i really like how you structured code here. batchInsertTestResults has a very clear purpose",
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a50929d6_4d4d40b9",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "nit: now that we don\u0027t use ctx after eg, let\u0027s just call it \"ctx\"",
+      "range": {
+        "startLine": 179,
+        "startChar": 5,
+        "endLine": 179,
+        "endChar": 10
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04787291_a1638f3d",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "unclear what you mean here. it seems to return all batches, not only remainder",
+      "range": {
+        "startLine": 224,
+        "startChar": 15,
+        "endLine": 224,
+        "endChar": 39
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3f1a783_8522c636",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "this code has nothing to do with invocations? e.g. there is no \"given invocation\"",
+      "range": {
+        "startLine": 223,
+        "startChar": 50,
+        "endLine": 224,
+        "endChar": 13
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b7f07a8_5d6d0418",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "nit: i think\n\n  end \u003e len(trs)\n\nwould express the intention more clearly",
+      "range": {
+        "startLine": 229,
+        "startChar": 5,
+        "endLine": 229,
+        "endChar": 25
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55185a97_614fe20e",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-27T01:14:14Z",
+      "side": 1,
+      "message": "this requires the reader read extra hard to ensure that this does indeed result in 0 if d is nil.\ni think the intention would be clearer if we just check d for nil and return 0",
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
