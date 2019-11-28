@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fac12073_3447b3c0",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-28T00:14:43Z",
+      "side": 1,
+      "message": "nit: test_results",
+      "range": {
+        "startLine": 34,
+        "startChar": 41,
+        "endLine": 34,
+        "endChar": 59
+      },
+      "revId": "9d9200416cbe912d5099f73ad84562e759b61c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81c10bcf_f42c92f4",
+        "filename": "resultdb/pbutil/invocation_processing.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-28T00:14:43Z",
+      "side": 1,
+      "message": "test_results: predicate\n\nsince it is not BigQueryExport.predicate",
+      "range": {
+        "startLine": 38,
+        "startChar": 31,
+        "endLine": 38,
+        "endChar": 40
+      },
+      "revId": "9d9200416cbe912d5099f73ad84562e759b61c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6f40387_e21f18aa",
+        "filename": "resultdb/pbutil/invocation_processing_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-28T00:14:43Z",
+      "side": 1,
+      "message": "please use a different predicate. I am planning to remove TestResultPredicate.invocation field",
+      "range": {
+        "startLine": 78,
+        "startChar": 6,
+        "endLine": 80,
+        "endChar": 8
+      },
+      "revId": "9d9200416cbe912d5099f73ad84562e759b61c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a125ee5_4138ecfe",
+        "filename": "resultdb/proto/rpc/v1/invocation_processing.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-28T00:14:43Z",
+      "side": 1,
+      "message": "nit: TestResults",
+      "range": {
+        "startLine": 37,
+        "startChar": 12,
+        "endLine": 37,
+        "endChar": 28
+      },
+      "revId": "9d9200416cbe912d5099f73ad84562e759b61c81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
