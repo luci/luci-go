@@ -91,8 +91,6 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 		setUpTarringArchiver(ta, largeFileSize, largeFilePath, &numHashCalls)
 		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate2")
 
-		// TODO(https://crbug.com/969162): Fix the caching and then change this
-		// assertion to check that numHashCalls == 1.
-		So(numHashCalls, ShouldEqual, 2)
+		So(numHashCalls, ShouldEqual, 1)
 	})
 }
