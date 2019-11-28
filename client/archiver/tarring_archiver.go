@@ -33,6 +33,9 @@ type TarringArchiver struct {
 	uploader Uploader
 	tracker  *UploadTracker
 
+	// The file hash cache is shared across upload trackers.
+	fileHashCache map[string]hashResult
+
 	// Exposed as a member so that tests can overwrite this.
 	filePathWalk func(string, filepath.WalkFunc) error
 }
@@ -41,12 +44,12 @@ type TarringArchiver struct {
 //
 func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
 
-	return &TarringArchiver{checker: checker, uploader: uploader, filePathWalk: filepath.Walk}
+	return &TarringArchiver{checker: checker, uploader: uploader, fileHashCache: make(map[string]hashResult), filePathWalk: filepath.Walk}
 }
 
 // Each call to Archive() must be proceeded by a call to PrepareToArchive()
 func (ta *TarringArchiver) PrepareToArchive(isol *isolated.Isolated) {
-	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol)
+	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol, &ta.fileHashCache)
 }
 
 // Archive uploads a single isolate.

@@ -80,7 +80,7 @@ type UploadTracker struct {
 	isol     *isolated.Isolated
 
 	// A cache of file hashes, to speed up future requests for a hash of the same file.
-	fileHashCache map[string]hashResult
+	fileHashCache *map[string]hashResult
 
 	// Override for testing.
 	lOS            limitedOS
@@ -88,13 +88,13 @@ type UploadTracker struct {
 }
 
 // newUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
-func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
+func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated, fileHashCache *map[string]hashResult) *UploadTracker {
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
 		checker:        checker,
 		uploader:       uploader,
 		isol:           isol,
-		fileHashCache:  make(map[string]hashResult),
+		fileHashCache:  fileHashCache,
 		lOS:            standardOS{},
 		doHashFileImpl: doHashFile,
 	}
@@ -250,12 +250,12 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 
 // hashFile returns the hash of the contents of path, memoizing its results.
 func (ut *UploadTracker) hashFile(path string) (isolated.HexDigest, error) {
-	if result, ok := ut.fileHashCache[path]; ok {
+	if result, ok := (*ut.fileHashCache)[path]; ok {
 		return result.digest, result.err
 	}
 
 	digest, err := ut.doHashFileImpl(ut, path)
-	ut.fileHashCache[path] = hashResult{digest, err}
+	(*ut.fileHashCache)[path] = hashResult{digest, err}
 	return digest, err
 }
 
