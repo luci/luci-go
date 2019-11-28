@@ -155,7 +155,8 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
 	archiver := archiver.NewTarringArchiver(checker, uploader)
 
-	isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
+	archiver.PrepareToArchive(isol)
+	isolSummary, err := archiver.Archive(deps, rootDir, opts.Blacklist, opts.Isolated)
 	if err != nil {
 		return fmt.Errorf("isolate %s: %v", opts.Isolate, err)
 	}
