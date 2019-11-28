@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "928c4848_86fb53b3",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-28T01:28:29Z",
+      "side": 1,
+      "message": "I think this is used from multiple go routine, so you need to guard this by mutex?",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5acb71b3_ec13ca37",
+        "filename": "client/archiver/upload_tracker.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-28T01:28:29Z",
+      "side": 1,
+      "message": "map is reference rather than value in Go, so you don\u0027t need to use pointer here?\nhttps://play.golang.org/p/JIAGyBBFl4E",
+      "range": {
+        "startLine": 83,
+        "startChar": 15,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
