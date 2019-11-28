@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "32db01fc_39e33a60",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7ba5ec8_31501b8c",
+      "range": {
+        "startLine": 44,
+        "startChar": 63,
+        "endLine": 44,
+        "endChar": 77
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4faa0ebc_b2d2db4a",
         "filename": "client/archiver/tarring_archiver_test.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a78395e_83aef477",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4faa0ebc_b2d2db4a",
+      "range": {
+        "startLine": 39,
+        "startChar": 32,
+        "endLine": 39,
+        "endChar": 39
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b111f9f5_3ecfe8b1",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf66a075_e7059ae3",
+      "range": {
+        "startLine": 43,
+        "startChar": 31,
+        "endLine": 43,
+        "endChar": 46
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13f60270_1ac517f5",
         "filename": "client/archiver/tarring_archiver_test.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcc93414_a3ce2f71",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13f60270_1ac517f5",
+      "range": {
+        "startLine": 47,
+        "startChar": 32,
+        "endLine": 47,
+        "endChar": 39
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "23a8cdc3_23f9c74d",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ee01345_d6c0d48c",
+      "range": {
+        "startLine": 51,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 8
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30b82f8e_e9a84186",
         "filename": "client/archiver/tarring_archiver_test.go",
         "patchSetId": 2
@@ -137,6 +257,30 @@
       "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30a370b2_b1e0d5c0",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-11-28T01:08:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30b82f8e_e9a84186",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 67
+      },
+      "revId": "40b00b581d73508eadba18f43e766e06751a87e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
