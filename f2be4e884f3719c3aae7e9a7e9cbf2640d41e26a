@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d422677b_d16370a3",
+        "filename": "client/archiver/tarring_archiver_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-28T01:14:07Z",
+      "side": 1,
+      "message": "better to return resulf of this call?",
+      "range": {
+        "startLine": 62,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 10
+      },
+      "revId": "f2be4e884f3719c3aae7e9a7e9cbf2640d41e26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "535fb13f_80d2c92d",
+        "filename": "client/cmd/isolate/archive.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-28T01:14:07Z",
+      "side": 1,
+      "message": "fix indent?",
+      "revId": "f2be4e884f3719c3aae7e9a7e9cbf2640d41e26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
