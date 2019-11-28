@@ -16,9 +16,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -31,6 +33,9 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+// testResultBatchSizeMax is the maximum number of TestResults to include per transaction.
+const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
 
@@ -103,7 +108,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return span.ReadInvocationFull(ctx, readTxn, invID)
 	}
 
-	// Otherwise, get the protos and write them to Spanner.
+	// Otherwise, get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
@@ -116,6 +121,14 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	inv.Deadline = inv.FinalizeTime
 
 	// TODO(jchinlee): Validate invocation and results.
+
+	// Write test results in batches concurrently, updating inv with the names of the invocations
+	// that will be included.
+	batchInvs, err := batchInsertTestResults(ctx, inv, results, testResultBatchSizeMax)
+	if err != nil {
+		return nil, err
+	}
+	inv.IncludedInvocations = batchInvs
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
@@ -131,12 +144,6 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		// Insert the invocation.
 		muts = append(muts, insertInvocation(ctx, inv, "", ""))
 
-		// Insert test results.
-		for i, tr := range results {
-			muts = append(muts, insertTestResult(invID, tr, i))
-		}
-
-		// Write mutations.
 		return txn.BufferWrite(muts)
 	})
 
@@ -160,4 +167,71 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 
 	// The invocation exists and is finalized, so no need to write it.
 	return false, nil
+}
+
+// batchInsertTestResults inserts the given TestResults in batches under container Invocations,
+// returning the names of these containers.
+func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) ([]string, error) {
+	batches := batchTestResults(trs, batchSize)
+	includedInvs := make([]string, len(batches))
+
+	invID := span.MustParseInvocationName(inv.Name)
+	eg, ctx := errgroup.WithContext(ctx)
+	client := span.Client(ctx)
+	for i, batch := range batches {
+		i := i
+		batch := batch
+
+		batchID := batchInvocationID(invID, i)
+		includedInvs[i] = batchID.Name()
+
+		eg.Go(func() error {
+			muts := make([]*spanner.Mutation, 0, len(batch)+1)
+
+			// Convert the container Invocation in the batch.
+			batchInv := &pb.Invocation{
+				Name:         batchID.Name(),
+				State:        pb.Invocation_COMPLETED,
+				CreateTime:   inv.CreateTime,
+				FinalizeTime: inv.FinalizeTime,
+				Deadline:     inv.Deadline,
+			}
+			muts = append(muts, insertOrUpdateInvocation(ctx, batchInv, "", ""))
+
+			// Convert the TestResults in the batch.
+			for k, tr := range batch {
+				muts = append(muts, insertOrUpdateTestResult(batchID, tr, k))
+			}
+
+			_, err := client.Apply(ctx, muts)
+			return err
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	return includedInvs, nil
+}
+
+// batchInvocationID returns an InvocationID for the Invocation containing the referenced batch.
+func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID {
+	return span.InvocationID(fmt.Sprintf("%s::batch::%d", invID, batchInd))
+}
+
+// batchTestResults batches the given TestResults given the maximum batch size.
+func batchTestResults(trs []*pb.TestResult, batchSize int) [][]*pb.TestResult {
+	batches := make([][]*pb.TestResult, 0, len(trs)/batchSize+1)
+	for len(trs) > 0 {
+		end := batchSize
+		if end > len(trs) {
+			end = len(trs)
+		}
+
+		batches = append(batches, trs[:end])
+		trs = trs[end:]
+	}
+
+	return batches
 }
