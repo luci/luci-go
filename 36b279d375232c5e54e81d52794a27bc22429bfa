@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "506f813e_236ef526",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "44bc02bb_3a068012",
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a50929d6_4d4d40b9",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d81a229b_f3be17ed",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a50929d6_4d4d40b9",
+      "range": {
+        "startLine": 179,
+        "startChar": 5,
+        "endLine": 179,
+        "endChar": 10
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "368fbfaa_74e4cb28",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04787291_a1638f3d",
+      "range": {
+        "startLine": 224,
+        "startChar": 15,
+        "endLine": 224,
+        "endChar": 39
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a8ec53c_5820bf3f",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3f1a783_8522c636",
+      "range": {
+        "startLine": 223,
+        "startChar": 50,
+        "endLine": 224,
+        "endChar": 13
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8b7f07a8_5d6d0418",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 7
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "1cb84a41_9cb6da64",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b7f07a8_5d6d0418",
+      "range": {
+        "startLine": 229,
+        "startChar": 5,
+        "endLine": 229,
+        "endChar": 25
+      },
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "55185a97_614fe20e",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 7
@@ -125,6 +239,24 @@
       "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "093465f3_5b6cfbca",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-11-28T00:51:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55185a97_614fe20e",
+      "revId": "36b279d375232c5e54e81d52794a27bc22429bfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
