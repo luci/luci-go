@@ -83,18 +83,20 @@ type UploadTracker struct {
 	fileHashCache map[string]hashResult
 
 	// Override for testing.
-	lOS limitedOS
+	lOS            limitedOS
+	doHashFileImpl func(*UploadTracker, string) (isolated.HexDigest, error)
 }
 
 // newUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
 func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
-		checker:       checker,
-		uploader:      uploader,
-		isol:          isol,
-		fileHashCache: make(map[string]hashResult),
-		lOS:           standardOS{},
+		checker:        checker,
+		uploader:       uploader,
+		isol:           isol,
+		fileHashCache:  make(map[string]hashResult),
+		lOS:            standardOS{},
+		doHashFileImpl: doHashFile,
 	}
 }
 
@@ -252,14 +254,14 @@ func (ut *UploadTracker) hashFile(path string) (isolated.HexDigest, error) {
 		return result.digest, result.err
 	}
 
-	digest, err := ut.doHashFile(path)
+	digest, err := ut.doHashFileImpl(ut, path)
 	ut.fileHashCache[path] = hashResult{digest, err}
 	return digest, err
 }
 
 // doHashFile returns the hash of the contents of path. This should not be
 // called directly; call hashFile instead.
-func (ut *UploadTracker) doHashFile(path string) (isolated.HexDigest, error) {
+func doHashFile(ut *UploadTracker, path string) (isolated.HexDigest, error) {
 	f, err := ut.lOS.Open(path)
 	if err != nil {
 		return "", err
