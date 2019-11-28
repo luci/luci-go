@@ -229,7 +229,7 @@ func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResul
 	if results, err = ConvertOutputJSON(ctx, inv, req, outputJSON, outputsToProcess); err != nil {
 		return nil, err
 	}
-	if outputsToProcess != nil {
+	if len(outputsToProcess) > 0 {
 		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
 	}
 
