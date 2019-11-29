@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "95cf468c_00e8232a",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-11-29T06:10:52Z",
+      "side": 1,
+      "message": "If you do like this, no need to extract PrepareToArchive with changing interface of Archive() in\ncrrev.com/c/1941157 ?",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5acb71b3_ec13ca37",
         "filename": "client/archiver/upload_tracker.go",
         "patchSetId": 4
