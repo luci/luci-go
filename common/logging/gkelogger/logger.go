@@ -47,6 +47,10 @@ type LogEntry struct {
 	Time string `json:"time"`
 	// TraceID is 32-byte hex string with Stackdriver trace ID.
 	TraceID string `json:"logging.googleapis.com/trace,omitempty"`
+	// TraceSampled is true if this trace will be uploaded to Stackdriver.
+	TraceSampled bool `json:"logging.googleapis.com/trace_sampled"`
+	// SpanID is a 16-byte hex string with Stackdriver span ID.
+	SpanID string `json:"logging.googleapis.com/spanId,omitempty"`
 	// Operation is used to group log lines from a single request together.
 	Operation *Operation `json:"logging.googleapis.com/operation,omitempty"`
 	// RequestInfo is information about the handled HTTP request.
@@ -74,6 +78,9 @@ type RequestInfo struct {
 	RemoteIP     string `json:"remoteIp"`      // e.g. "192.168.1.1"
 	Latency      string `json:"latency"`       // e.g. "3.5s"
 }
+
+// LogEntryMutator may mutate log entries before they are written.
+type LogEntryMutator func(context.Context, *LogEntry)
 
 // LogEntryWriter knows how to write LogEntries to some output.
 type LogEntryWriter interface {
@@ -124,17 +131,19 @@ func FormatTime(t time.Time) string {
 // prototype for log entries.
 //
 // For each log message, makes a copy of 'prototype', overwrites its Severity,
-// Message, Time and Fields (keeping other fields as they are), and writes it to
+// Message, Time and Fields (keeping other fields as they are), calls 'mut'
+// callback (which is allowed to mutate the log entry), and writes the result to
 // LogEntryWriter. This allows to "prepopulate" fields like TraceID or
 // OperationID in all log entries emitted by logging.Logger.
 //
 // Such factory can be installed in the context via logging.SetFactory.
-func Factory(w LogEntryWriter, prototype LogEntry) func(context.Context) logging.Logger {
+func Factory(w LogEntryWriter, prototype LogEntry, mut LogEntryMutator) func(context.Context) logging.Logger {
 	return func(c context.Context) logging.Logger {
 		return &jsonLogger{
 			ctx:       c,
 			w:         w,
 			prototype: prototype,
+			mut:       mut,
 		}
 	}
 }
@@ -143,6 +152,7 @@ type jsonLogger struct {
 	ctx       context.Context
 	w         LogEntryWriter
 	prototype LogEntry
+	mut       LogEntryMutator
 }
 
 func (l *jsonLogger) Debugf(format string, args ...interface{}) {
@@ -179,6 +189,10 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 	if err, ok := e.Fields[logging.ErrorKey].(error); ok {
 		e.Fields = logging.NewFields(e.Fields)
 		e.Fields[logging.ErrorKey] = err.Error()
+	}
+
+	if l.mut != nil {
+		l.mut(l.ctx, &e)
 	}
 
 	l.w.Write(&e)
