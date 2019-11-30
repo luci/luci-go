@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8bdba93d_edb1e24b",
+        "filename": "server/internal/tracesampler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T06:24:43Z",
+      "side": 1,
+      "message": "For some reason https://opencensus.io/tracing/sampling/ratelimited/ is not implemented in Go version of the library :-/",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 15
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1fb2bba4_5033fb76",
+        "filename": "server/internal/tracesampler_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T06:24:43Z",
+      "side": 1,
+      "message": "I had a fancier implementation at first (as described in https://github.com/census-instrumentation/opencensus-specs/blob/master/trace/Sampling.md#ratelimiting-sampler-implementation-details), but it suspiciously produced 271.828 QPS instead of 100 QPS in the tests. \n\nInstead of thinking about math I did the dumbest implementation instead, but left the test.",
+      "range": {
+        "startLine": 71,
+        "startChar": 3,
+        "endLine": 72,
+        "endChar": 75
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "69d3961c_1849756b",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 911,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T06:24:43Z",
+      "side": 1,
+      "message": "This is generally !\u003d spanCtx.SpanID since \u0027ctx\u0027 here comes from where logging.Log(...) is called, and it may be some inner span. StackDriver trace viewer puts such log lines into their corresponding spans (it looks like shit, but it tries).",
+      "range": {
+        "startLine": 911,
+        "startChar": 4,
+        "endLine": 911,
+        "endChar": 12
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
