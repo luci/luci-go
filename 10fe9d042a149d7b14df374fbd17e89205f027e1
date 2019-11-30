@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "1eeca398_684c5ca7",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "describes how SpanID is encoded, but doesn\u0027t explain what is it to begin with. See TraceID above",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6303929_82802269",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "mutate",
+      "range": {
+        "startLine": 82,
+        "startChar": 23,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8bdba93d_edb1e24b",
         "filename": "server/internal/tracesampler.go",
         "patchSetId": 1
@@ -48,6 +94,40 @@
     },
     {
       "key": {
+        "uuid": "58fb4021_1eee53dd",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 836,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "why do we call this func if it is a healthcheck? do you anticipate allowing servers to override it? that would be useful and would explain it (but I don\u0027t see a TODO in healthResponse)",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd7938b8_7bffe1a9",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 900,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "do you plan to add RPC-level attributes (service, method, err code)? we could record them in an unary interceptor",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "69d3961c_1849756b",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -68,6 +148,93 @@
       "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "63294d8e_06f7c0e5",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 911,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "should this be a comment in the code?",
+      "parentUuid": "69d3961c_1849756b",
+      "range": {
+        "startLine": 911,
+        "startChar": 4,
+        "endLine": 911,
+        "endChar": 12
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88e61b4b_48dfe862",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1420,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "was DefaultTraceAttributes considered for global fields like host that are currently set below?",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e46514fc_66ada829",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1528,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "if this span is a part of span of another cloud project, will owners of that project still understand that this is a request to *this* cloud project?",
+      "range": {
+        "startLine": 1528,
+        "startChar": 43,
+        "endLine": 1528,
+        "endChar": 53
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8d3cf21_4a3be8b4",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1544,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-11-30T16:38:38Z",
+      "side": 1,
+      "message": "are you sure you want to proliferate these arcane service/job pair from poorly designed monarch metrics here? what value do they add in addition to host and image? can we instead add more native stuff like k8s ns?",
+      "range": {
+        "startLine": 1543,
+        "startChar": 30,
+        "endLine": 1544,
+        "endChar": 62
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
