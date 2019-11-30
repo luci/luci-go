@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "64ca1119_dea7a069",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1eeca398_684c5ca7",
+      "range": {
+        "startLine": 52,
+        "startChar": 12,
+        "endLine": 52,
+        "endChar": 68
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6303929_82802269",
         "filename": "common/logging/gkelogger/logger.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a03faa40_b4606e48",
+        "filename": "common/logging/gkelogger/logger.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6303929_82802269",
+      "range": {
+        "startLine": 82,
+        "startChar": 23,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "a3a9a518_eca884af",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 836,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Opening a not-recorded span simplifies the code (no need to do \u0027if span !\u003d nil\u0027 checks in a bunch of places) and also makes sure if some of health check code accidentally (or not) opens a span, this span will be ignored (since it will be a child of not-recorded span). Added comment.",
+      "parentUuid": "58fb4021_1eee53dd",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd7938b8_7bffe1a9",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -125,6 +191,24 @@
       "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "383a3f7f_276b54bc",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 900,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Maybe. I just want to add minimal support for now.",
+      "parentUuid": "cd7938b8_7bffe1a9",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -175,6 +259,30 @@
     },
     {
       "key": {
+        "uuid": "d13a476a_a22782e4",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 911,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63294d8e_06f7c0e5",
+      "range": {
+        "startLine": 911,
+        "startChar": 4,
+        "endLine": 911,
+        "endChar": 12
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88e61b4b_48dfe862",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -189,6 +297,24 @@
       "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89732d4f_60fb6210",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1420,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "Done. Forgot about them.",
+      "parentUuid": "88e61b4b_48dfe862",
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -215,6 +341,30 @@
     },
     {
       "key": {
+        "uuid": "b07bba47_aacd0c6d",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1528,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "If both projects use opencensus library, there\u0027ll be two spans: \"Send.HTTP:\u003cURL\u003e\" (uploaded from the calling project), and nested \"Recv.HTTP:\u003cURL\u003e\" (uploading from the project being called). But I don\u0027t really know how it would look. Docs aren\u0027t great. I don\u0027t know how visually different are \"a span linked to a parent span via AddLink\" and \"a span created as a child of a parent span\".",
+      "parentUuid": "e46514fc_66ada829",
+      "range": {
+        "startLine": 1528,
+        "startChar": 43,
+        "endLine": 1528,
+        "endChar": 53
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8d3cf21_4a3be8b4",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -235,6 +385,30 @@
       "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77bc2d2f_759b864b",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1544,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-11-30T21:27:34Z",
+      "side": 1,
+      "message": "I think it is important to have all tsmon target fields here (whatever they are), so we can find a metric stream from a trace, and a trace from a metric stream. As soon as we have \"not poorly designed monarch metrics\", we\u0027ll change these attributes here too.",
+      "parentUuid": "b8d3cf21_4a3be8b4",
+      "range": {
+        "startLine": 1543,
+        "startChar": 30,
+        "endLine": 1544,
+        "endChar": 62
+      },
+      "revId": "10fe9d042a149d7b14df374fbd17e89205f027e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
