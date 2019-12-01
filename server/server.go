@@ -363,6 +363,7 @@ type Server struct {
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such, may be nil
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
 	tsmon    *tsmon.State              // manages flushing of tsmon metrics
+	sampler  trace.Sampler             // trace sampler to use for top level spans
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
@@ -409,6 +410,7 @@ func New(opts Options) (srv *Server, err error) {
 		rnd:          rand.New(rand.NewSource(seed)),
 		bgrDone:      make(chan struct{}),
 		authPerScope: map[string]scopedAuth{},
+		sampler:      trace.NeverSample(),
 	}
 
 	// Cleanup what we can on failures.
@@ -1401,8 +1403,8 @@ func (s *Server) initTracing() error {
 		sampling = "1qps"
 	}
 	logging.Infof(s.Context, "Setting up StackDriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
-	sampler, err := internal.Sampler(sampling)
-	if err != nil {
+	var err error
+	if s.sampler, err = internal.Sampler(sampling); err != nil {
 		return errors.Annotate(err, "bad -trace-sampling").Err()
 	}
 
@@ -1435,7 +1437,11 @@ func (s *Server) initTracing() error {
 		return err
 	}
 	trace.RegisterExporter(exporter)
-	trace.ApplyConfig(trace.Config{DefaultSampler: sampler})
+
+	// No matter what, do not sample "random" top-level spans from background
+	// goroutines we don't control. We'll start top spans ourselves in
+	// startRequestSpan.
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.NeverSample()})
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(exporter.Flush)
@@ -1518,26 +1524,18 @@ func (s *Server) initCloudContext() error {
 	return nil
 }
 
-// Predefined bundles of options for server-side trace spans.
-var (
-	defaultSamplingOpts = []trace.StartOption{
-		trace.WithSpanKind(trace.SpanKindServer),
-	}
-	skipSamplingOpts = []trace.StartOption{
-		trace.WithSpanKind(trace.SpanKindServer),
-		trace.WithSampler(trace.NeverSample()),
-	}
-)
-
 // startRequestSpan opens a new per-request trace span.
 func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSampling bool) (context.Context, *trace.Span) {
-	var opts []trace.StartOption
+	var sampler trace.Sampler
 	if skipSampling {
-		opts = skipSamplingOpts
+		sampler = trace.NeverSample()
 	} else {
-		opts = defaultSamplingOpts
+		sampler = s.sampler
 	}
-	ctx, span := trace.StartSpan(ctx, "HTTP:"+r.URL.Path, opts...)
+	ctx, span := trace.StartSpan(ctx, "HTTP:"+r.URL.Path,
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithSampler(sampler),
+	)
 
 	// Link this span to a parent span propagated through X-Cloud-Trace-Context
 	// header (if any).
