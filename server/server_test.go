@@ -87,9 +87,8 @@ func TestServer(t *testing.T) {
 
 			srv.ServeInBackground()
 			resp, err := srv.Get("/test", map[string]string{
-				"User-Agent":            "Test-user-agent",
-				"X-Cloud-Trace-Context": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/00001;trace=TRUE",
-				"X-Forwarded-For":       "1.1.1.1,2.2.2.2,3.3.3.3",
+				"User-Agent":      "Test-user-agent",
+				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, "Hello, world")
@@ -99,7 +98,6 @@ func TestServer(t *testing.T) {
 				{
 					Severity: "warning",
 					Time:     "1454472307.7",
-					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					RequestInfo: &gkelogger.RequestInfo{
 						Method:       "GET",
 						URL:          srv.mainAddr + "/test",
@@ -118,18 +116,16 @@ func TestServer(t *testing.T) {
 					Severity: "info",
 					Message:  "Info log",
 					Time:     "1454472306.7",
-					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					Operation: &gkelogger.Operation{
-						ID: "6694d2c422acd208a0072939487f6999",
+						ID: "81855ad8681d0d86d1e91e00167939cb",
 					},
 				},
 				{
 					Severity: "warning",
 					Message:  "Warn log",
 					Time:     "1454472307.7",
-					TraceID:  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					Operation: &gkelogger.Operation{
-						ID: "6694d2c422acd208a0072939487f6999",
+						ID: "81855ad8681d0d86d1e91e00167939cb",
 					},
 				},
 			})
@@ -385,7 +381,6 @@ func BenchmarkServer(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		req.Header.Set("X-Cloud-Trace-Context", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/00001;trace=TRUE")
 		req.Header.Set("X-Forwarded-For", "1.1.1.1,2.2.2.2,3.3.3.3")
 		rr := httptest.NewRecorder()
 		srv.Routes.ServeHTTP(rr, req)
@@ -640,6 +635,11 @@ func (r *logsRecorder) Write(e *gkelogger.LogEntry) {
 	if r.discard {
 		return
 	}
+
+	// opencensus.io/trace generates random trace and span IDs. Scrub them.
+	e.TraceID = ""
+	e.SpanID = ""
+
 	r.m.Lock()
 	r.logs = append(r.logs, *e)
 	r.m.Unlock()

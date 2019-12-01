@@ -17,6 +17,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
+
+	"go.opencensus.io/trace"
 
 	"github.com/gomodule/redigo/redis"
 	"go.chromium.org/luci/common/logging"
@@ -31,7 +34,12 @@ func main() {
 		// Logging example.
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello debug world")
-			logging.Infof(c.Context, "Hello info world")
+
+			ctx, span := trace.StartSpan(c.Context, "Testing")
+			logging.Infof(ctx, "Hello info world")
+			time.Sleep(100 * time.Millisecond)
+			span.End()
+
 			logging.Warningf(c.Context, "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
 		})

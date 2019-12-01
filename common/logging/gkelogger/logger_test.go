@@ -29,7 +29,7 @@ import (
 )
 
 func use(ctx context.Context, out io.Writer, proto LogEntry) context.Context {
-	return logging.SetFactory(ctx, Factory(&Sink{Out: out}, proto))
+	return logging.SetFactory(ctx, Factory(&Sink{Out: out}, proto, nil))
 }
 
 func read(b *bytes.Buffer) *LogEntry {
