@@ -19,9 +19,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/net/context"
+	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -53,10 +55,25 @@ func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context,
 		return ctx, errors.Reason("-spanner-database flag is required").Err()
 	}
 
+	// A token source with Cloud scope.
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(server.DefaultOAuthScopes...))
+	if err != nil {
+		return ctx, errors.Annotate(err, "failed to get the token source").Err()
+	}
+
 	// Init a Spanner client.
-	spannerClient, err := spanner.NewClient(ctx, dbFlag)
+	spannerClient, err := spanner.NewClient(ctx, dbFlag, option.WithTokenSource(ts))
 	if err != nil {
 		return ctx, err
 	}
+
+	// Run a "ping" query to verify the database exists and we can access it
+	// before we actually serve any requests. On misconfiguration better to fail
+	// early.
+	iter := spannerClient.Single().Query(ctx, spanner.NewStatement("SELECT 1;"))
+	if err := iter.Do(func(*spanner.Row) error { return nil }); err != nil {
+		return ctx, errors.Annotate(err, "failed to ping Spanner").Err()
+	}
+
 	return span.WithClient(ctx, spannerClient), nil
 }
