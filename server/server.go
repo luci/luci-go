@@ -69,6 +69,10 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 
+	"contrib.go.opencensus.io/exporter/stackdriver"
+	"go.opencensus.io/exporter/stackdriver/propagation"
+	"go.opencensus.io/trace"
+
 	"go.chromium.org/gae/impl/cloud"
 
 	"go.chromium.org/luci/common/clock"
@@ -173,6 +177,7 @@ type Options struct {
 	RedisAddr        string             // Redis server to connect to as "host:port" (optional)
 	RedisDB          int                // index of a logical Redis DB to use by default (optional)
 	CloudProject     string             // name of hosting Google Cloud Project
+	TraceSampling    string             // what portion of traces to upload to StackDriver
 	TsMonAccount     string             // service account to flush metrics as
 	TsMonServiceName string             // service name of tsmon target
 	TsMonJobName     string             // job name of tsmon target
@@ -258,6 +263,12 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"cloud-project",
 		o.CloudProject,
 		"Name of hosting Google Cloud Project (optional)",
+	)
+	f.StringVar(
+		&o.TraceSampling,
+		"trace-sampling",
+		o.TraceSampling,
+		"What portion of traces to upload to StackDriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Default is 1qps.",
 	)
 	f.StringVar(
 		&o.TsMonAccount,
@@ -434,6 +445,9 @@ func New(opts Options) (srv *Server, err error) {
 	}
 	if err := srv.initTSMon(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tsmon").Err()
+	}
+	if err := srv.initTracing(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
 	}
 	if err := srv.initRedis(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize Redis pool").Err()
@@ -812,19 +826,22 @@ func (s *Server) genUniqueID(l int) string {
 	return hex.EncodeToString(b)
 }
 
+var cloudTraceFormat = propagation.HTTPFormat{}
+
 // rootMiddleware prepares the per-request context.
 func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
-	// Either grab Trace ID from X-Cloud-Trace-Context header or generate a new
-	// random one. By using X-Cloud-Trace-Context we tell Stackdriver to associate
-	// logs with existing traces. This header may be set by Google HTTPs load
-	// balancer itself, see https://cloud.google.com/load-balancing/docs/https.
-	//
-	// TraceID is also used to group log lines together in Stackdriver UI, even if
-	// such trace doesn't actually exist.
-	traceID := getCloudTraceID(c.Request)
-	if traceID == "" {
-		traceID = s.genUniqueID(32)
-	}
+	// Wrap the request in a tracing span. The span is closed in the defer below
+	// (where we know the response status code). If this is a health check, open
+	// the span nonetheless, but do not record it (health checks are spammy and
+	// not interesting). This way the code is simpler ('span' is always non-nil
+	// and has TraceID). Additionally if some of health check code opens a span
+	// of its own, it will be ignored (as a child of not-recorded span).
+	healthCheck := isHealthCheckRequest(c.Request)
+	ctx, span := s.startRequestSpan(s.Context, c.Request, healthCheck)
+
+	// Associate all logs with the span via its Trace ID.
+	spanCtx := span.SpanContext()
+	traceID := hex.EncodeToString(spanCtx.TraceID[:])
 
 	// Track how many response bytes are sent and what status is set.
 	rw := iotools.NewResponseWriter(c.Writer)
@@ -841,7 +858,8 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 	defer func() {
 		now := clock.Now(s.Context)
 		latency := now.Sub(started)
-		if isHealthCheckRequest(c.Request) {
+		statusCode := rw.Status()
+		if healthCheck {
 			// Do not log fast health check calls AT ALL, they just spam logs.
 			if latency < healthTimeLogThreshold {
 				return
@@ -853,13 +871,15 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			s.lastReqTime.Store(now)
 		}
 		entry := gkelogger.LogEntry{
-			Severity: severityTracker.MaxSeverity(),
-			Time:     gkelogger.FormatTime(now),
-			TraceID:  traceID,
+			Severity:     severityTracker.MaxSeverity(),
+			Time:         gkelogger.FormatTime(now),
+			TraceID:      traceID,
+			TraceSampled: span.IsRecordingEvents(),
+			SpanID:       spanCtx.SpanID.String(), // the top-level span ID
 			RequestInfo: &gkelogger.RequestInfo{
 				Method:       c.Request.Method,
 				URL:          getRequestURL(c.Request),
-				Status:       rw.Status(),
+				Status:       statusCode,
 				RequestSize:  fmt.Sprintf("%d", c.Request.ContentLength),
 				ResponseSize: fmt.Sprintf("%d", rw.ResponseSize()),
 				UserAgent:    c.Request.UserAgent(),
@@ -877,17 +897,30 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 				entry.RequestInfo.Latency,
 			)
 		}
+		span.AddAttributes(
+			trace.Int64Attribute("/http/status_code", int64(statusCode)),
+			trace.Int64Attribute("/http/request/size", c.Request.ContentLength),
+			trace.Int64Attribute("/http/response/size", rw.ResponseSize()),
+		)
+		span.End()
 	}()
 
-	ctx, cancel := context.WithTimeout(s.Context, time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	// Make the request logger emit log entries with same TraceID.
+	// Make the request logger emit log entries associated with the tracing span.
 	if s.Options.Prod {
+		annotateWithSpan := func(ctx context.Context, e *gkelogger.LogEntry) {
+			// Note: here 'span' is some inner span from where logging.Log(...) was
+			// called. We annotate log lines with spans that emitted them.
+			if span := trace.FromContext(ctx); span != nil {
+				e.SpanID = span.SpanContext().SpanID.String()
+			}
+		}
 		ctx = logging.SetFactory(ctx, gkelogger.Factory(&severityTracker, gkelogger.LogEntry{
 			TraceID:   traceID,
 			Operation: &gkelogger.Operation{ID: s.genUniqueID(32)},
-		}))
+		}, annotateWithSpan))
 	}
 
 	ctx = caching.WithRequestCache(ctx)
@@ -941,7 +974,7 @@ func (s *Server) initLogging() {
 			Operation: &gkelogger.Operation{
 				ID: s.genUniqueID(32), // correlate all global server logs together
 			},
-		}),
+		}, nil),
 	)
 	s.Context = logging.SetLevel(s.Context, logging.Debug)
 }
@@ -1353,6 +1386,62 @@ func (s *Server) initTSMon() error {
 	return nil
 }
 
+// initTracing initialized StackDriver opencensus.io trace exporter.
+func (s *Server) initTracing() error {
+	if s.Options.CloudProject == "" {
+		return nil
+	}
+
+	// Parse -trace-sampling spec to get a sampler.
+	sampling := s.Options.TraceSampling
+	if sampling == "" {
+		if !s.Options.Prod {
+			return nil // the default in the dev mode is "don't upload samples"
+		}
+		sampling = "1qps"
+	}
+	logging.Infof(s.Context, "Setting up StackDriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
+	sampler, err := internal.Sampler(sampling)
+	if err != nil {
+		return errors.Annotate(err, "bad -trace-sampling").Err()
+	}
+
+	// Grab the token source to call StackDriver API.
+	auth, err := s.initTokenSource(DefaultOAuthScopes)
+	if err != nil {
+		return errors.Annotate(err, "failed to initialize token source").Err()
+	}
+	opts := []option.ClientOption{option.WithTokenSource(auth.source)}
+
+	// Register the trace uploader. It is also accidentally metrics uploader, but
+	// we shouldn't be using metrics (we have tsmon instead).
+	exporter, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID:               s.Options.CloudProject,
+		MonitoringClientOptions: opts, // note: this should be effectively unused
+		TraceClientOptions:      opts,
+		BundleDelayThreshold:    10 * time.Second,
+		BundleCountThreshold:    512,
+		DefaultTraceAttributes: map[string]interface{}{
+			"cr.dev/image":   s.Options.ContainerImageID,
+			"cr.dev/service": s.Options.TsMonServiceName,
+			"cr.dev/job":     s.Options.TsMonJobName,
+			"cr.dev/host":    s.hostname,
+		},
+		OnError: func(err error) {
+			logging.Errorf(s.Context, "StackDriver error: %s", err)
+		},
+	})
+	if err != nil {
+		return err
+	}
+	trace.RegisterExporter(exporter)
+	trace.ApplyConfig(trace.Config{DefaultSampler: sampler})
+
+	// Do the final flush before exiting.
+	s.RegisterCleanup(exporter.Flush)
+	return nil
+}
+
 // initRedis sets up Redis connection pool, if enabled.
 //
 // Does nothing is RedisAddr options is unset. In this case redisconn.Get will
@@ -1429,15 +1518,45 @@ func (s *Server) initCloudContext() error {
 	return nil
 }
 
-// getCloudTraceID extract Trace ID from X-Cloud-Trace-Context header.
-func getCloudTraceID(r *http.Request) string {
-	// hdr has form "<trace-id>/<span-id>;<trace-options>".
-	hdr := r.Header.Get("X-Cloud-Trace-Context")
-	idx := strings.IndexByte(hdr, '/')
-	if idx == -1 {
-		return ""
+// Predefined bundles of options for server-side trace spans.
+var (
+	defaultSamplingOpts = []trace.StartOption{
+		trace.WithSpanKind(trace.SpanKindServer),
 	}
-	return hdr[:idx]
+	skipSamplingOpts = []trace.StartOption{
+		trace.WithSpanKind(trace.SpanKindServer),
+		trace.WithSampler(trace.NeverSample()),
+	}
+)
+
+// startRequestSpan opens a new per-request trace span.
+func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSampling bool) (context.Context, *trace.Span) {
+	var opts []trace.StartOption
+	if skipSampling {
+		opts = skipSamplingOpts
+	} else {
+		opts = defaultSamplingOpts
+	}
+	ctx, span := trace.StartSpan(ctx, "HTTP:"+r.URL.Path, opts...)
+
+	// Link this span to a parent span propagated through X-Cloud-Trace-Context
+	// header (if any).
+	if parent, ok := cloudTraceFormat.SpanContextFromRequest(r); ok {
+		span.AddLink(trace.Link{
+			TraceID: parent.TraceID,
+			SpanID:  parent.SpanID,
+			Type:    trace.LinkTypeParent,
+		})
+	}
+
+	// Request info (these are recognized by StackDriver natively).
+	span.AddAttributes(
+		trace.StringAttribute("/http/host", r.Host),
+		trace.StringAttribute("/http/method", r.Method),
+		trace.StringAttribute("/http/path", r.URL.Path),
+	)
+
+	return ctx, span
 }
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.

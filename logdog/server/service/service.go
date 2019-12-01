@@ -157,7 +157,7 @@ type Service struct {
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	// Log to Stdout using fluentd-compatible JSON log lines.
 	sink := &gkelogger.Sink{Out: os.Stdout}
-	c = teelogger.Use(c, gkelogger.Factory(sink, gkelogger.LogEntry{}))
+	c = teelogger.Use(c, gkelogger.Factory(sink, gkelogger.LogEntry{}, nil))
 
 	// If a service name isn't specified, default to the base of the current
 	// executable.
