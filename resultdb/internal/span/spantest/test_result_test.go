@@ -15,6 +15,7 @@
 package spantest
 
 import (
+	"sort"
 	"testing"
 
 	"go.chromium.org/luci/common/clock"
@@ -56,6 +57,17 @@ func TestQueryTestResults(t *testing.T) {
 			return
 		}
 
+		mustReadNames := func(q span.TestResultQuery) []string {
+			trs, _, err := read(q)
+			So(err, ShouldBeNil)
+			names := make([]string, len(trs))
+			for i, a := range trs {
+				names[i] = a.Name
+			}
+			sort.Strings(names)
+			return names
+		}
+
 		Convey(`Does not fetch test results of other invocations`, func() {
 			expected := makeTestResults("inv1", "DoBaz",
 				pb.TestStatus_PASS,
@@ -94,20 +106,34 @@ func TestQueryTestResults(t *testing.T) {
 			actual, _ := mustRead(q)
 			pbutil.NormalizeTestResultSlice(actual)
 
-			// Clear fields we don't intend to test.
-			names := make([]string, len(actual))
-			for i, a := range actual {
-				names[i] = a.Name
-			}
-			So(names, ShouldResemble, []string{
+			So(mustReadNames(q), ShouldResemble, []string{
 				"invocations/inv0/tests/T1/results/0",
 				"invocations/inv0/tests/T1/results/1",
-				"invocations/inv1/tests/T1/results/0",
-
 				"invocations/inv0/tests/T2/results/0",
+				"invocations/inv1/tests/T1/results/0",
 				"invocations/inv1/tests/T2/results/0",
-
 				"invocations/inv1/tests/T4/results/0",
+			})
+		})
+
+		Convey(`Test path filter`, func() {
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now))
+			testutil.MustApply(ctx, testutil.CombineMutations(
+				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "1-1", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2-1", pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2", pb.TestStatus_FAIL)),
+			)...)
+
+			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
+			q.Predicate.TestPathRegexp = "1-.+"
+
+			So(mustReadNames(q), ShouldResemble, []string{
+				"invocations/inv0/tests/1-1/results/0",
+				"invocations/inv0/tests/1-1/results/1",
+				"invocations/inv0/tests/1-2/results/0",
+				"invocations/inv1/tests/1-1/results/0",
 			})
 		})
 
