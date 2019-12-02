@@ -21,6 +21,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -213,19 +215,20 @@ func TestDeriveInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			So(inv, ShouldResembleProto, &pb.Invocation{
-				Name:         inv.Name, // inv.Name is non-determinisic in this test
-				State:        pb.Invocation_COMPLETED,
-				CreateTime:   &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
-				Tags:         pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
-				FinalizeTime: &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
-				Deadline:     &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				Name:                inv.Name, // inv.Name is non-determinisic in this test
+				State:               pb.Invocation_COMPLETED,
+				CreateTime:          &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
+				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
+				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
+				IncludedInvocations: []string{inv.Name + "::batch::0"},
 			})
 
 			// Assert we wrote correct test results.
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
-				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name)},
+				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name + "::batch::0")},
 				PageSize:      100,
 			})
 			So(err, ShouldBeNil)
@@ -243,6 +246,78 @@ func TestDeriveInvocation(t *testing.T) {
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
 			So(trs[2].TestPath, ShouldEqual, "FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
+		})
+	})
+}
+
+func TestBatchInsertTestResults(t *testing.T) {
+	Convey(`TestBatchInsertTestResults`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		now := pbutil.MustTimestampProto(testclock.TestRecentTimeUTC)
+
+		inv := &pb.Invocation{
+			State:        pb.Invocation_COMPLETED,
+			CreateTime:   now,
+			FinalizeTime: now,
+			Deadline:     now,
+		}
+		results := []*pb.TestResult{
+			{TestPath: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS},
+			{TestPath: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
+			{TestPath: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
+		}
+
+		checkBatches := func(baseID span.InvocationID, actualInclusions []string, expectedBatches [][]*pb.TestResult) {
+			// Check included Invocations.
+			expectedInclusions := make([]string, len(expectedBatches))
+			for i := range expectedBatches {
+				expectedInclusions[i] = batchInvocationID(baseID, i).Name()
+			}
+			sort.Strings(actualInclusions)
+			So(actualInclusions, ShouldResemble, expectedInclusions)
+
+			// Check that the TestResults are batched as expected.
+			for i, expectedBatch := range expectedBatches {
+				txn := span.Client(ctx).ReadOnlyTransaction()
+				defer txn.Close()
+				actualResults, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+					InvocationIDs: []span.InvocationID{batchInvocationID(baseID, i)},
+					PageSize:      100,
+				})
+				So(err, ShouldBeNil)
+				So(actualResults, ShouldHaveLength, len(expectedBatch))
+
+				for k, expectedResult := range expectedBatch {
+					So(actualResults[k].TestPath, ShouldEqual, expectedResult.TestPath)
+					So(actualResults[k].ResultId, ShouldEqual, strconv.Itoa(k))
+					So(actualResults[k].Status, ShouldEqual, expectedResult.Status)
+				}
+			}
+		}
+
+		Convey(`for one batch`, func() {
+			baseID := span.InvocationID("one_batch")
+			inv.Name = baseID.Name()
+			actualInclusions, err := batchInsertTestResults(ctx, inv, results, 5)
+			So(err, ShouldBeNil)
+			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results})
+		})
+
+		Convey(`for multiple batches`, func() {
+			baseID := span.InvocationID("multiple_batches")
+			inv.Name = baseID.Name()
+			actualInclusions, err := batchInsertTestResults(ctx, inv, results, 2)
+			So(err, ShouldBeNil)
+			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results[:2], results[2:]})
+
+			Convey(`with batch size a factor of number of TestResults`, func() {
+				baseID := span.InvocationID("multiple_batches_factor")
+				inv.Name = baseID.Name()
+				actualInclusions, err := batchInsertTestResults(ctx, inv, results, 1)
+				So(err, ShouldBeNil)
+				checkBatches(baseID, actualInclusions,
+					[][]*pb.TestResult{results[:1], results[1:2], results[2:]})
+			})
 		})
 	})
 }

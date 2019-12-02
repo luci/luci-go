@@ -233,6 +233,9 @@ func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) 
 
 // ToMicros converts a duration.Duration proto to microseconds.
 func ToMicros(d *durpb.Duration) int64 {
+	if d == nil {
+		return 0
+	}
 	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
 }
 

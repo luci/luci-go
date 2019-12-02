@@ -169,10 +169,7 @@ func insertInvocationsByTag(invID span.InvocationID, tags []*typepb.StringPair) 
 	return muts
 }
 
-// insertInvocation returns an spanner mutation that inserts an Invocation row.
-// Uses the value of clock.Now(ctx) to compute expiration times.
-// Assumes inv is complete and valid; may panic otherwise.
-func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
+func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
 	createTime := pbutil.MustTimestamp(inv.CreateTime)
 
 	row := map[string]interface{}{
@@ -200,5 +197,20 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 		row["CreateRequestId"] = createRequestID
 	}
 
-	return span.InsertMap("Invocations", row)
+	return row
+}
+
+// insertInvocation returns an spanner mutation that inserts an Invocation row.
+// Uses the value of clock.Now(ctx) to compute expiration times.
+// Assumes inv is complete and valid; may panic otherwise.
+func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
+	return span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
+}
+
+// insertOrUpdateInvocation returns an spanner mutation that inserts or updates an Invocation row.
+// Uses the value of clock.Now(ctx) to compute expiration times.
+// Assumes inv is complete and valid; may panic otherwise.
+func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
+	return span.InsertOrUpdateMap(
+		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
 }
