@@ -52,6 +52,24 @@
       "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35361411_fa311998",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1142534
+      },
+      "writtenOn": "2019-12-02T23:10:12Z",
+      "side": 1,
+      "message": "In that way I need to change the imported paths of all files in the chromeos/proto/ (https://chromium.googlesource.com/chromiumos/infra/proto/+/refs/heads/master/src/) \u0026 quite a bit of scripts like generate.sh. It\u0027s too much I feel... Can I pass in some import paths, like whitelist -I for goPath?",
+      "parentUuid": "4fc27775_705fc518",
+      "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
