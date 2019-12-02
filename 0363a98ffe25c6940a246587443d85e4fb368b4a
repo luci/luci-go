@@ -34,6 +34,24 @@
       "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fc27775_705fc518",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T23:01:19Z",
+      "side": 1,
+      "message": "the solution is to change https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/chromiumos/infra/proto/src/lab/device.proto?q\u003dsrc%2Flab%2Fdevice.proto to use absolute import paths, i.e. starting with go.chromium.org",
+      "parentUuid": "603eb3f3_e871ea29",
+      "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
