@@ -52,6 +52,24 @@
       "revId": "09304c855e531bb52b759a6c909e80085dcb512a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92945fae_5755618f",
+        "filename": "common/data/caching/cache/lru.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-02T14:31:03Z",
+      "side": 1,
+      "message": "Ah, I see.",
+      "parentUuid": "ce2202e9_2ea09ee7",
+      "revId": "09304c855e531bb52b759a6c909e80085dcb512a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
