@@ -89,7 +89,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 // TestResultQuery specifies test results to fetch.
 type TestResultQuery struct {
-	InvocationIDs []InvocationID
+	InvocationIDs InvocationIDSet
 	Predicate     *pb.TestResultPredicate // Predicate.Invocation must be nil.
 	PageSize      int                     // must be positive
 	PageToken     string
@@ -101,8 +101,6 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	switch {
 	case q.PageSize <= 0:
 		panic("PageSize <= 0")
-	case q.Predicate.GetInvocation() != nil:
-		panic("q.Predicate.Invocation != nil")
 	}
 
 	from := "TestResults tr"

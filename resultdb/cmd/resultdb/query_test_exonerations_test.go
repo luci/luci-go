@@ -32,9 +32,7 @@ func TestValidateQueryTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`Valid`, t, func() {
 		err := validateQueryTestExonerationsRequest(&pb.QueryTestExonerationsRequest{
-			Predicate: &pb.TestExonerationPredicate{
-				Invocation: &pb.InvocationPredicate{Names: []string{"invocations/x"}},
-			},
+			Invocations:  []string{"invocations/x"},
 			PageSize:     50,
 			MaxStaleness: &durpb.Duration{Seconds: 60},
 		})
@@ -43,11 +41,9 @@ func TestValidateQueryTestExonerationsRequest(t *testing.T) {
 
 	Convey(`invalid predicate`, t, func() {
 		err := validateQueryTestExonerationsRequest(&pb.QueryTestExonerationsRequest{
-			Predicate: &pb.TestExonerationPredicate{
-				Invocation: &pb.InvocationPredicate{Names: []string{"x"}},
-			},
+			Invocations: []string{"x"},
 		})
-		So(err, ShouldErrLike, `predicate: invocation: name "x": does not match`)
+		So(err, ShouldErrLike, `invocations: "x": does not match`)
 	})
 }
 
@@ -67,9 +63,7 @@ func TestQueryTestExonerations(t *testing.T) {
 
 		srv := &resultDBServer{}
 		res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
-			Predicate: &pb.TestExonerationPredicate{
-				Invocation: &pb.InvocationPredicate{Names: []string{"invocations/a"}},
-			},
+			Invocations: []string{"invocations/a"},
 		})
 		So(err, ShouldBeNil)
 		actual := res.TestExonerations

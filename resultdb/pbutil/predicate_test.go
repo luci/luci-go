@@ -23,71 +23,30 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateTestResultPredicate(t *testing.T) {
-	Convey(`TestValidateTestResultPredicate`, t, func() {
+func TestValidateTestObjectPredicate(t *testing.T) {
+	Convey(`TestValidateTestObjectPredicate`, t, func() {
 		Convey(`Empty`, func() {
-			err := ValidateTestResultPredicate(&pb.TestResultPredicate{})
-			So(err, ShouldErrLike, "invocation: unspecified")
+			err := validateTestObjectPredicate(&pb.TestResultPredicate{})
+			So(err, ShouldBeNil)
 		})
 
-		Convey(`Invocation`, func() {
-			validate := func(p *pb.InvocationPredicate) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{Invocation: p})
-			}
-
-			Convey(`Name`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.InvocationPredicate{
-						Names: []string{"invocations/x", "invocations/y"},
-					})
-					So(err, ShouldBeNil)
-				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.InvocationPredicate{
-						Names: []string{"invocations/x", "y"},
-					})
-					So(err, ShouldErrLike, `invocation: name "y": does not match`)
-				})
-			})
-
-			Convey(`Tag`, func() {
-				Convey(`Valid`, func() {
-					err := validate(&pb.InvocationPredicate{
-						Tags: StringPairs("k", "v"),
-					})
-					So(err, ShouldBeNil)
-				})
-				Convey(`Invalid`, func() {
-					err := validate(&pb.InvocationPredicate{
-						Tags: StringPairs("-", "v"),
-					})
-					So(err, ShouldErrLike, `invocation: tag "-:v": key: does not match`)
-				})
-			})
-		})
-
-		invPred := &pb.InvocationPredicate{Names: []string{"invocations/inv"}}
-		Convey(`Test path`, func() {
-			validate := func(re string) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{
-					Invocation:     invPred,
-					TestPathRegexp: re,
+		Convey(`TestPath`, func() {
+			validate := func(testPathRegexp string) error {
+				return validateTestObjectPredicate(&pb.TestResultPredicate{
+					TestPathRegexp: testPathRegexp,
 				})
 			}
 
 			Convey(`empty`, func() {
-				err := validate("")
-				So(err, ShouldBeNil)
+				So(validate(""), ShouldBeNil)
 			})
 
-			Convey(`literal`, func() {
-				err := validate("A")
-				So(err, ShouldBeNil)
+			Convey(`valid`, func() {
+				So(validate("A.+"), ShouldBeNil)
 			})
 
 			Convey(`invalid`, func() {
-				err := validate("(")
-				So(err, ShouldErrLike, "test_path_regexp: error parsing regexp")
+				So(validate(")"), ShouldErrLike, "test_path_regexp: error parsing regex")
 			})
 		})
 
@@ -96,9 +55,8 @@ func TestValidateTestResultPredicate(t *testing.T) {
 			invalidVariant := Variant("", "")
 
 			validate := func(p *pb.VariantPredicate) error {
-				return ValidateTestResultPredicate(&pb.TestResultPredicate{
-					Invocation: invPred,
-					Variant:    p,
+				return validateTestObjectPredicate(&pb.TestResultPredicate{
+					Variant: p,
 				})
 			}
 

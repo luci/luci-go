@@ -50,7 +50,7 @@ func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestRes
 	q := span.TestResultQuery{
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: []span.InvocationID{span.MustParseInvocationName(in.Invocation)},
+		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),
 	}
 	trs, tok, err := span.QueryTestResults(ctx, txn, q)
 	if err != nil {

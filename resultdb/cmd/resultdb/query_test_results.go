@@ -35,6 +35,7 @@ const maxInvocationGraphSize = 1000
 // queryRequest is implemented by *pb.QueryTestResultsRequest and
 // *pb.QueryTestExonerationsRequest.
 type queryRequest interface {
+	GetInvocations() []string
 	GetPageSize() int32
 	GetMaxStaleness() *durpb.Duration
 }
@@ -42,6 +43,15 @@ type queryRequest interface {
 // validateQueryRequest returns a non-nil error if req is determined to be
 // invalid.
 func validateQueryRequest(req queryRequest) error {
+	if len(req.GetInvocations()) == 0 {
+		return errors.Reason("invocations: unspecified").Err()
+	}
+	for _, name := range req.GetInvocations() {
+		if err := pbutil.ValidateInvocationName(name); err != nil {
+			return errors.Annotate(err, "invocations: %q", name).Err()
+		}
+	}
+
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
 		return errors.Annotate(err, "page_size").Err()
 	}
@@ -79,23 +89,18 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		txn.WithTimestampBound(spanner.MaxStaleness(st))
 	}
 
-	// Query invocations.
-	invs, err := span.QueryInvocations(ctx, txn, in.Predicate.Invocation, maxInvocationGraphSize)
+	// Get the transitive closure.
+	invs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.MustParseInvocationNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
-	invIDs := make([]span.InvocationID, 0, len(invs))
-	for id := range invs {
-		invIDs = append(invIDs, id)
-	}
 
 	// Query test results.
-	in.Predicate.Invocation = nil
 	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invIDs,
+		InvocationIDs: invs,
 	})
 	if err != nil {
 		return nil, err
