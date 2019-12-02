@@ -97,7 +97,12 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
 		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
-	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
+
+	finalizeTS := task.CompletedTs
+	if finalizeTS == "" {
+		finalizeTS = task.AbandonedTs
+	}
+	if inv.FinalizeTime, err = convertSwarmingTs(finalizeTS); err != nil {
 		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
