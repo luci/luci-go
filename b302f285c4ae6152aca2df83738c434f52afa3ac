@@ -94,6 +94,30 @@
       "revId": "b302f285c4ae6152aca2df83738c434f52afa3ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8da5c80_ce7e6327",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-02T23:53:17Z",
+      "side": 1,
+      "message": "it\u0027s correct already, yes.\n\nWhat I was thinking is that explicitly saying \"no idea who canceled\" is better than saying nothing. I\u0027m not insisting, just my $0.01",
+      "parentUuid": "97ce54b8_0c5788bb",
+      "range": {
+        "startLine": 157,
+        "startChar": 62,
+        "endLine": 157,
+        "endChar": 64
+      },
+      "revId": "b302f285c4ae6152aca2df83738c434f52afa3ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
