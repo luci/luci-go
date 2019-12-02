@@ -18,13 +18,11 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/resultdb/pbutil"
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func cmdLs(p Params) *subcommands.Command {
@@ -32,22 +30,12 @@ func cmdLs(p Params) *subcommands.Command {
 		UsageLine: `ls [flags]`,
 		ShortDesc: "query results",
 		CommandRun: func() subcommands.CommandRun {
-			r := &lsRun{
-				tags: strpair.Map{},
-			}
+			r := &lsRun{}
 			r.queryRun.registerFlags(p)
 			r.Flags.Var(luciflag.StringSlice(&r.invIDs), "inv", text.Doc(`
 				Retrieve results from the invocation with this ID.
 
-				May be specified multiple times and compatible with -tag:
-				tags and invocation ids are connected with logical OR.
-			`))
-
-			r.Flags.Var(luciflag.StringPairs(r.tags), "tag", text.Doc(`
-				Retrieve results from invocations having this tag.
-
-				May be specified multiple times and compatible with -inv:
-				tags and invocation ids are connected with logical OR.
+				May be specified multiple times.
 			`))
 
 			// TODO(crbug.com/1021849): add flag -cl
@@ -62,12 +50,11 @@ func cmdLs(p Params) *subcommands.Command {
 type lsRun struct {
 	queryRun
 	invIDs []string
-	tags   strpair.Map
 }
 
 func (r *lsRun) parseArgs(args []string) error {
-	if len(r.invIDs) == 0 && len(r.tags) == 0 {
-		return errors.Reason("-inv or -tag are required").Err()
+	if len(r.invIDs) == 0 {
+		return errors.Reason("-inv is required").Err()
 	}
 
 	if len(args) != 0 {
@@ -88,16 +75,13 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(err)
 	}
 
-	return r.done(r.queryAndPrint(ctx, r.InvocationPredicate()))
+	return r.done(r.queryAndPrint(ctx, r.InvocationNames()))
 }
 
-func (r *lsRun) InvocationPredicate() *pb.InvocationPredicate {
-	ret := &pb.InvocationPredicate{
-		Names: make([]string, len(r.invIDs)),
-		Tags:  pbutil.FromStrpairMap(r.tags),
-	}
+func (r *lsRun) InvocationNames() []string {
+	names := make([]string, len(r.invIDs))
 	for i, id := range r.invIDs {
-		ret.Names[i] = pbutil.InvocationName(id)
+		names[i] = pbutil.InvocationName(id)
 	}
-	return ret
+	return names
 }
