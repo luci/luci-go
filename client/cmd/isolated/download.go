@@ -149,6 +149,9 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 
 	var diskCache cache.Cache
 	if c.cacheDir != "" {
+		if err := os.MkdirAll(c.cacheDir, os.ModePerm); err != nil {
+			return errors.Annotate(err, "failed to create cache dir: %s", c.cacheDir).Err()
+		}
 		diskCache, err = cache.NewDisk(cache.Policies{
 			MaxSize:      units.Size(c.maxSize),
 			MaxItems:     c.maxItems,
@@ -158,6 +161,10 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			return err
 		}
 		defer diskCache.Close()
+	}
+
+	if err := os.MkdirAll(c.outputDir, os.ModePerm); err != nil {
+		return errors.Annotate(err, "failed to create output dir: %s", c.outputDir).Err()
 	}
 
 	dl := downloader.New(ctx, client, isolated.HexDigest(c.isolated), c.outputDir, &downloader.Options{
