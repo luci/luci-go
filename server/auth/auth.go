@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/delegation"
@@ -163,7 +164,10 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 // Returns an error if credentials are provided, but invalid. If no credentials
 // are provided (i.e. the request is anonymous), finishes successfully, but in
 // that case State.Identity() returns AnonymousIdentity.
-func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
+func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (_ context.Context, err error) {
+	c, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth.Authenticate")
+	defer func() { span.End(err) }()
+
 	report := durationReporter(c, authenticateDuration)
 
 	// We will need working DB factory below to check IP whitelist.
@@ -203,7 +207,6 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	if cfg.EndUserIP != nil {
 		remoteAddr = cfg.EndUserIP(r)
 	}
-	var err error
 	s.peerIP, err = parseRemoteIP(remoteAddr)
 	if err != nil {
 		panic(fmt.Errorf("auth: bad remote_addr: %v", err))

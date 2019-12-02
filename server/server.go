@@ -1443,6 +1443,9 @@ func (s *Server) initTracing() error {
 	// startRequestSpan.
 	trace.ApplyConfig(trace.Config{DefaultSampler: trace.NeverSample()})
 
+	// Enable tracing in various LUCI libraries.
+	internal.EnableOpenCensusTracing()
+
 	// Do the final flush before exiting.
 	s.RegisterCleanup(exporter.Flush)
 	return nil
