@@ -115,6 +115,23 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
+		Convey(`invalid bigquery_exports`, func() {
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "u:abc",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+				},
+				BigqueryExports: []*pb.BigQueryExport{
+					&pb.BigQueryExport{
+						Project: "project",
+					},
+				},
+			}, now)
+			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
+		})
+
 		Convey(`valid`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{

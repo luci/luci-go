@@ -86,6 +86,12 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
+	for i, bq_export := range req.GetBigqueryExports() {
+		if err := pbutil.ValidateBigQueryExport(bq_export); err != nil {
+			return errors.Annotate(err, "bigquery_export[%d]", i).Err()
+		}
+	}
+
 	return nil
 }
 
@@ -148,6 +154,8 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 		muts := insertInvocationsByTag(invID, inv.Tags)
 		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
+
+		// TODO(chanli): insert invocation to InvocationsToBeExported.
 
 		return txn.BufferWrite(muts)
 	})

@@ -19,9 +19,10 @@ package luci.resultdb.rpc.v1;
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation_processing.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
+import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 
@@ -102,6 +103,10 @@ message CreateInvocationRequest {
   // A random UUID is recommended.
   // This request is only idempotent if a `request_id` is provided.
   string request_id = 3;
+
+  // bigquery_exports indicates what BigQuery table(s) that results in this
+  // invocation should export to, with optional filter on the results.
+  repeated BigQueryExport bigquery_exports = 4;
 }
 
 // A request message for UpdateInvocation RPC.
