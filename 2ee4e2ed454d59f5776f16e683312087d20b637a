@@ -51,6 +51,24 @@
       "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbb24bd9_5f3995c1",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-02T22:51:49Z",
+      "side": 1,
+      "message": "You can just overwrite prepareToArchive inside test.\n```\norigPrepareToArchive :\u003d prepareToArchive\ndefer func(){\n  prepareToArchive \u003d origPrepareToArchive\n}()\nprepareToArchive \u003d func(...){\n}\n```",
+      "parentUuid": "49e0fbe6_d6f6588f",
+      "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
