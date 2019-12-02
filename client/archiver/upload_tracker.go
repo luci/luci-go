@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/common/isolated"
@@ -80,7 +81,8 @@ type UploadTracker struct {
 	isol     *isolated.Isolated
 
 	// A cache of file hashes, to speed up future requests for a hash of the same file.
-	fileHashCache map[string]hashResult
+	fileHashCache      map[string]hashResult
+	fileHashCacheMutex *sync.Mutex
 
 	// Override for testing.
 	lOS            limitedOS
@@ -88,15 +90,16 @@ type UploadTracker struct {
 }
 
 // newUploadTracker constructs an UploadTracker.  It tracks uploaded files in isol.Files.
-func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated) *UploadTracker {
+func newUploadTracker(checker Checker, uploader Uploader, isol *isolated.Isolated, fileHashCache map[string]hashResult, fileHashCacheMutex *sync.Mutex) *UploadTracker {
 	isol.Files = make(map[string]isolated.File)
 	return &UploadTracker{
-		checker:        checker,
-		uploader:       uploader,
-		isol:           isol,
-		fileHashCache:  make(map[string]hashResult),
-		lOS:            standardOS{},
-		doHashFileImpl: doHashFile,
+		checker:            checker,
+		uploader:           uploader,
+		isol:               isol,
+		fileHashCache:      fileHashCache,
+		fileHashCacheMutex: fileHashCacheMutex,
+		lOS:                standardOS{},
+		doHashFileImpl:     doHashFile,
 	}
 }
 
@@ -250,12 +253,18 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 
 // hashFile returns the hash of the contents of path, memoizing its results.
 func (ut *UploadTracker) hashFile(path string) (isolated.HexDigest, error) {
-	if result, ok := ut.fileHashCache[path]; ok {
+	ut.fileHashCacheMutex.Lock()
+	result, ok := ut.fileHashCache[path]
+	ut.fileHashCacheMutex.Unlock()
+
+	if ok {
 		return result.digest, result.err
 	}
 
 	digest, err := ut.doHashFileImpl(ut, path)
+	ut.fileHashCacheMutex.Lock()
 	ut.fileHashCache[path] = hashResult{digest, err}
+	ut.fileHashCacheMutex.Unlock()
 	return digest, err
 }
 
