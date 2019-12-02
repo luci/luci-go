@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9b12baa3_61ae6f83",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T20:14:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "928c4848_86fb53b3",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95cf468c_00e8232a",
         "filename": "client/archiver/tarring_archiver.go",
         "patchSetId": 4
@@ -30,6 +48,24 @@
       "writtenOn": "2019-11-29T06:10:52Z",
       "side": 1,
       "message": "If you do like this, no need to extract PrepareToArchive with changing interface of Archive() in\ncrrev.com/c/1941157 ?",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95967770_f436880a",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T20:14:44Z",
+      "side": 1,
+      "message": "this is needed for mocking for internals of UploadTracker before calling Archive()",
+      "parentUuid": "95cf468c_00e8232a",
       "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -56,6 +92,30 @@
       "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b18737e7_ff303a2e",
+        "filename": "client/archiver/upload_tracker.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T20:14:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5acb71b3_ec13ca37",
+      "range": {
+        "startLine": 83,
+        "startChar": 15,
+        "endLine": 83,
+        "endChar": 16
+      },
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
