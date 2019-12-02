@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8d791b17_e8254c91",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T23:49:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52f7b107_98d9ee91",
+      "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b76cff0_c4a01de8",
         "filename": "client/archiver/tarring_archiver.go",
         "patchSetId": 1
@@ -102,6 +120,24 @@
       "side": 1,
       "message": "I meant to use function variable like below.\nhttps://play.golang.org/p/RLzkEMiG9GA",
       "parentUuid": "16e5c401_80764cb9",
+      "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd1ec5c_83d26675",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T23:49:09Z",
+      "side": 1,
+      "message": "thanks for the concrete example. I didn\u0027t realize that golang had module variables.",
+      "parentUuid": "ae16ad33_3582ba90",
       "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
