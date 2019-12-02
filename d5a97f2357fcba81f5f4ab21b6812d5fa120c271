@@ -16,6 +16,24 @@
       "revId": "d5a97f2357fcba81f5f4ab21b6812d5fa120c271",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c8cb5d0_34f1fa27",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T19:45:08Z",
+      "side": 1,
+      "message": "will be done in a separate CL",
+      "parentUuid": "342144d9_894c6a11",
+      "revId": "d5a97f2357fcba81f5f4ab21b6812d5fa120c271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
