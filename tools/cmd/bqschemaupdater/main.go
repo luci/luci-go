@@ -258,6 +258,7 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 	var goSources []string
 	inGopath := false
 	grpcProtoPath := ""
+	crosProtoPath := ""
 	for _, p := range goPaths() {
 		src := filepath.Join(p, "src")
 		switch info, err := os.Stat(src); {
@@ -276,6 +277,11 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 			grpcPath := filepath.Join(src, "go.chromium.org", "luci", "grpc", "proto")
 			if info, err := os.Stat(grpcPath); err == nil && info.IsDir() {
 				grpcProtoPath = grpcPath
+			}
+
+			crosPath := filepath.Join(src, "go.chromium.org", "chromiumos", "infra", "proto", "src")
+			if info, err := os.Stat(crosPath); err == nil && info.IsDir() {
+				crosProtoPath = crosPath
 			}
 		}
 	}
@@ -301,6 +307,11 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 		// Include gRPC protos.
 		if grpcProtoPath != "" {
 			importPaths = append(importPaths, grpcProtoPath)
+		}
+
+		// Include ChromeOS protos
+		if crosProtoPath != "" {
+			importPaths = append(importPaths, crosProtoPath)
 		}
 		return importPaths, nil
 	}
