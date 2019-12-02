@@ -70,6 +70,24 @@
       "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cb9ab11_1884b9b4",
+        "filename": "tools/cmd/bqschemaupdater/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T23:26:56Z",
+      "side": 1,
+      "message": "you are asking for a permission to do a wrong thing and adapt correct tools to support a wrong way of doing things. Sorry, no. Please do the right thing. paths. The fact that you have to pass -proto-path in https://chromium-review.googlesource.com/c/infra/infra/+/1947203/1/go/src/infra/appengine/cros/lab_inventory/api/bigquery/gen.go is another manifestation of the problem. This one is probably not the last one. The right thing to do here is to fix the problem once and for all, at the source, in those files.",
+      "parentUuid": "35361411_fa311998",
+      "revId": "0363a98ffe25c6940a246587443d85e4fb368b4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
