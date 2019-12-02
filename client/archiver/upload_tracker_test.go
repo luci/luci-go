@@ -23,6 +23,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -164,7 +165,9 @@ func TestSkipsUpload(t *testing.T) {
 
 		namespace := isolatedclient.DefaultNamespace
 		h := isolated.GetHash(namespace)
-		ut := newUploadTracker(checker, uploader, isol)
+
+		syncMap := sync.Map{}
+		ut := newUploadTracker(checker, uploader, isol, &syncMap)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -199,7 +202,8 @@ func TestDontSkipUpload(t *testing.T) {
 
 		uploader := &fakeUploader{}
 		namespace := isolatedclient.DefaultNamespace
-		ut := newUploadTracker(checker, uploader, isol)
+		syncMap := sync.Map{}
+		ut := newUploadTracker(checker, uploader, isol, &syncMap)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -239,7 +243,8 @@ func TestHandlesSymlinks(t *testing.T) {
 		checker := &fakeChecker{ps: &isolatedclient.PushState{}}
 		uploader := &fakeUploader{}
 		namespace := isolatedclient.DefaultNamespace
-		ut := newUploadTracker(checker, uploader, isol)
+		syncMap := sync.Map{}
+		ut := newUploadTracker(checker, uploader, isol, &syncMap)
 		fos := &fakeOS{}
 		ut.lOS = fos // Override filesystem calls with fake.
 
@@ -289,7 +294,8 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		uploader := &fakeUploader{}
 
 		namespace := isolatedclient.DefaultNamespace
-		ut := newUploadTracker(checker, uploader, isol)
+		syncMap := sync.Map{}
+		ut := newUploadTracker(checker, uploader, isol, &syncMap)
 		fos := &fakeOS{
 			readFiles: map[string]io.Reader{
 				"/a/b/foo": strings.NewReader("foo contents"),
