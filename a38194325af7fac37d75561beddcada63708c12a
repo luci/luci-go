@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c65c087_c2e954a3",
+        "filename": "common/trace/trace.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T23:39:51Z",
+      "side": 1,
+      "message": "does this contract imply that the error can be annotated with a gRPC code? if so, please make it clear",
+      "revId": "a38194325af7fac37d75561beddcada63708c12a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34b04eff_54d85a87",
+        "filename": "common/trace/trace.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T23:39:51Z",
+      "side": 1,
+      "message": "this reads as name of the trace, but you meant name of the span?",
+      "range": {
+        "startLine": 34,
+        "startChar": 32,
+        "endLine": 34,
+        "endChar": 57
+      },
+      "revId": "a38194325af7fac37d75561beddcada63708c12a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7640db52_dec5ce51",
+        "filename": "common/trace/trace.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T23:39:51Z",
+      "side": 1,
+      "message": "why this isn\u0027t in the context?",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 15
+      },
+      "revId": "a38194325af7fac37d75561beddcada63708c12a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
