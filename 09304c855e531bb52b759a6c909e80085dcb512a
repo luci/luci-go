@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6a51487_f162b83d",
+        "filename": "common/data/caching/cache/lru.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-12-02T13:56:36Z",
+      "side": 1,
+      "message": "nit: define const",
+      "revId": "09304c855e531bb52b759a6c909e80085dcb512a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
