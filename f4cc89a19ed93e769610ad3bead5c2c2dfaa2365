@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4dce2ded_7e03c3e6",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-02T21:57:16Z",
+      "side": 1,
+      "message": "I think it is better to create a struct for thread safe map.",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 30
+      },
+      "revId": "f4cc89a19ed93e769610ad3bead5c2c2dfaa2365",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

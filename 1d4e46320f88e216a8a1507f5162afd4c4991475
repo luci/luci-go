@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "12c02bb1_a6aef4c3",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-02T21:57:16Z",
+      "side": 1,
+      "message": "Then I think it is better to make newUploadTracker variable instead of function and replace that in test?\n\nIf you agree on that, could you make the CL separately?",
+      "parentUuid": "95967770_f436880a",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5acb71b3_ec13ca37",
         "filename": "client/archiver/upload_tracker.go",
         "patchSetId": 4
