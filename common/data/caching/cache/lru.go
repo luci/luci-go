@@ -18,7 +18,6 @@ import (
 	"container/list"
 	"crypto"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"go.chromium.org/luci/common/data/text/units"
@@ -215,11 +214,12 @@ func (l *lruDict) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	if s.Version != 1 {
-		return errors.New("invalid lru dict version")
+	const supportedVersion = 1
+	if s.Version != supportedVersion {
+		return fmt.Errorf("invalid lru dict version %d instead of supported version %d", s.Version, supportedVersion)
 	}
 	if s.Algo != "sha-1" {
-		return errors.New("invalid lru dict algo")
+		return fmt.Errorf("invalid lru dict algo: %s", s.Algo)
 	}
 	l.sum = 0
 	for _, e := range s.Items {
