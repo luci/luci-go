@@ -90,6 +90,24 @@
     },
     {
       "key": {
+        "uuid": "bdb14c77_78ff1a38",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T22:16:19Z",
+      "side": 1,
+      "message": "I think that will make the test flow less clear.\n\nRight now the test flow is:\n1) PrepareToArchive\n2) Set up mocks/fakes\n3) Archive\n\nIn your suggesiton, the test would need to indirect the logic in (2) into an overwritten callback for (1).",
+      "parentUuid": "12c02bb1_a6aef4c3",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5acb71b3_ec13ca37",
         "filename": "client/archiver/upload_tracker.go",
         "patchSetId": 4
