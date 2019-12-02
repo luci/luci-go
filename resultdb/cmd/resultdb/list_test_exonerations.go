@@ -45,7 +45,7 @@ func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTe
 	}
 
 	q := span.TestExonerationQuery{
-		InvocationIDs: []span.InvocationID{span.MustParseInvocationName(in.Invocation)},
+		InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(in.Invocation)),
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.GetPageToken(),
 	}
