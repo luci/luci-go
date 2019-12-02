@@ -69,6 +69,24 @@
       "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16e5c401_80764cb9",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-02T22:59:41Z",
+      "side": 1,
+      "message": "I\u0027m sorry, but where is prepareToArchive defined? Is it a module variable [I didn\u0027t think that was possible in go]. A function variable, as you\u0027re suggesting? It\u0027s not clear to me how we can override function variables in tests without dependency injeciton",
+      "parentUuid": "dbb24bd9_5f3995c1",
+      "revId": "2ee4e2ed454d59f5776f16e683312087d20b637a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
