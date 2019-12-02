@@ -70,6 +70,30 @@
       "revId": "b302f285c4ae6152aca2df83738c434f52afa3ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97ce54b8_0c5788bb",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2019-12-02T23:48:30Z",
+      "side": 1,
+      "message": "You might be misreading the code? Right now it prints:\nCanceled (by jsca@google.com)\nor if there\u0027s no canceled_by, it just prints:\nCanceled\n\nThat should be fine, right?",
+      "parentUuid": "433f2fda_bf8fa55b",
+      "range": {
+        "startLine": 157,
+        "startChar": 62,
+        "endLine": 157,
+        "endChar": 64
+      },
+      "revId": "b302f285c4ae6152aca2df83738c434f52afa3ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
