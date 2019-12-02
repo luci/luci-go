@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "839bcb92_61b372bb",
+        "filename": "resultdb/cmd/recorder/derive_invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-02T21:08:22Z",
+      "side": 1,
+      "message": "Please add test for reading from IncludedInvocations table",
+      "revId": "388aa2cd1e606c26475bba53dc5116dd510d98bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
