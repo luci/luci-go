@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "342144d9_894c6a11",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-02T00:54:20Z",
+      "side": 1,
+      "message": "this is ignored in insertInvocation, so the new invocation is created any inclusions",
+      "revId": "d5a97f2357fcba81f5f4ab21b6812d5fa120c271",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
