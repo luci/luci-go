@@ -28,8 +28,10 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -194,12 +196,25 @@ func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResu
 	return span.InvocationID("swarming_" + hex.EncodeToString(h.Sum(nil))), nil
 }
 
+type isolatedClient struct {
+	*isolatedclient.Client
+	host      string
+	namespace string
+}
+
 // processOutputs fetches the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
 func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
+	isolatedServerPrefix := "https://"
 	outputsRef := task.OutputsRef
-	isoClient := isolatedclient.New(
-		nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil)
+	if !strings.HasPrefix(outputsRef.Isolatedserver, isolatedServerPrefix) {
+		return nil, errors.Reason("isolate server %q does not start with https://", outputsRef.Isolatedserver).Err()
+	}
+	isoClient := isolatedClient{
+		Client:    isolatedclient.New(nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil),
+		host:      strings.TrimPrefix(outputsRef.Isolatedserver, isolatedServerPrefix),
+		namespace: outputsRef.Namespace,
+	}
 
 	// Get the isolated outputs.
 	outputs, err := GetOutputs(ctx, isoClient, outputsRef)
@@ -208,7 +223,7 @@ func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResul
 	}
 
 	// Fetch the output.json file itself and convert it.
-	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
+	outputJSON, err := FetchOutputJSON(ctx, isoClient.Client, outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -231,6 +246,11 @@ func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResul
 	}
 	if len(outputsToProcess) > 0 {
 		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
+	}
+
+	// If some artifacts are large, store them in isolate.
+	if err := isolateArtifacts(ctx, isoClient, reuslts); err != nil {
+		return err
 	}
 
 	return results, nil
@@ -322,4 +342,51 @@ func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
 		return nil, errors.Annotate(err, "converting timestamp string %q", ts).Err()
 	}
 	return ptypes.TimestampProto(t)
+}
+
+// isolateArtifacts isolates contents of large artifacts and replaces them with
+// a link to isolate.
+func isolateArtifacts(ctx context.Context, isoClient isolatedClient, results []*pb.TestResult) error {
+	eg, ctx := errgroup.WithContext(ctx)
+	for _, r := range results {
+		for _, art := range r.OutputArtifacts {
+			// If larger than 4 Kib
+			if len(art.Contents) > 4*1024 {
+				art := art
+				eg.Go(func() error {
+					return isolateArtifact(ctx, isoClient, art)
+				})
+			}
+		}
+	}
+
+	return eg.Wait()
+}
+
+func isolateArtifact(ctx context.Context, isoClient isolatedClient, art *pb.Artifact) error {
+	hash := isolated.GetHash(isoClient.namespace)
+	digest := string(isolated.HashBytes(hash, art.Contents))
+
+	states, err := isoClient.Contains(ctx, []*isolateservice.HandlersEndpointsV1Digest{
+		{
+			Digest: digest,
+			Size:   int64(len(art.Contents)),
+		},
+	})
+	if err != nil {
+		return err
+	}
+	pushState := states[0]
+	// Contains returns a nil state for items that do not exist.
+	if pushState != nil {
+		if err := isoClient.Push(ctx, pushState, isolatedclient.NewBytesSource(art.Contents)); err != nil {
+			return errors.Annotate(err, "failed to isolate the artifact").Err()
+		}
+	}
+
+	// Make art just a pointer.
+	art.Contents = nil
+	art.FetchUrl = util.IsolateFetchURL(isoClient.host, isoClient.namespace, digest)
+	art.ViewUrl = util.IsolateViewURL(isoClient.host, isoClient.namespace, digest)
+	return nil
 }
