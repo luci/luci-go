@@ -128,7 +128,17 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	if err != nil {
 		return nil, err
 	}
-	inv.IncludedInvocations = batchInvs
+	inv.IncludedInvocations = batchInvs.Names()
+
+	// Prepare mutations.
+	ms := make([]*spanner.Mutation, 0, len(inv.IncludedInvocations)+1)
+	ms = append(ms, insertInvocation(ctx, inv, "", ""))
+	for includedID := range batchInvs {
+		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
+			"InvocationId":         invID,
+			"IncludedInvocationId": includedID,
+		}))
+	}
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
@@ -137,13 +147,9 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			return err
 		case !doWrite:
 			return nil
+		default:
+			return txn.BufferWrite(ms)
 		}
-
-		return txn.BufferWrite([]*spanner.Mutation{
-			// Insert the invocation.
-			insertInvocation(ctx, inv, "", ""),
-			// TODO(jchinlee): insert inclusions.
-		})
 	})
 
 	return inv, err
@@ -169,10 +175,10 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 }
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
-// returning the names of these containers.
-func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) ([]string, error) {
+// returning container ids.
+func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
-	includedInvs := make([]string, len(batches))
+	includedInvs := make(span.InvocationIDSet, len(batches))
 
 	invID := span.MustParseInvocationName(inv.Name)
 	eg, ctx := errgroup.WithContext(ctx)
@@ -182,7 +188,7 @@ func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.T
 		batch := batch
 
 		batchID := batchInvocationID(invID, i)
-		includedInvs[i] = batchID.Name()
+		includedInvs.Add(batchID)
 
 		eg.Go(func() error {
 			muts := make([]*spanner.Mutation, 0, len(batch)+1)
