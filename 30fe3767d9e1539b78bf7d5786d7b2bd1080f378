@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f8f745ee_36a9650d",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-12-03T18:28:55Z",
+      "side": 1,
+      "message": "\"zones/foo/diskTypes/bar/bazpd-ssd\" would pass. Not a big deal but the check is a bit weak.\n\nThis can be improved with the fix below and checking for \"/pd-foo\" instead of \"pd-foo\"",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffe794a2_5ac18998",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-12-03T18:28:55Z",
+      "side": 1,
+      "message": "len(parts) \u003d\u003d 4 \u0026\u0026 ...\n\notherwise passing \"foo\" would crash",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
