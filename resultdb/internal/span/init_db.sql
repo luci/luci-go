@@ -183,26 +183,31 @@ CREATE TABLE TestExonerations (
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
--- Stores Invocations that need to be processed.
--- E.g. Invocations to be exported to BigQuery table(s).
-CREATE TABLE InvocationsToProcess (
+-- Stores tasks to perform on invocations.
+-- E.g. to export an invocation to a BigQuery table.
+CREATE TABLE InvocationTasks (
   -- ID of the parent Invocations row.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- Binary-encoded luci.resultdb.internal.ProcessInvocation.
-  -- TODO(chanli): define luci.resultdb.internal.ProcessInvocation.
+  -- Binary-encoded luci.resultdb.internal.InvocationTask.
+  -- TODO(chanli): define luci.resultdb.internal.InvocationTask.
   Payload BYTES(MAX) NOT NULL,
 
   -- A hex-encoded sha256 of payload.
   -- Used to differentiate rows for the same invocation.
   PayloadHash STRING(64) NOT NULL,
 
-  -- If the invocation is ready to be processed.
-  Ready BOOL,
-) PRIMARY KEY (InvocationId, PayloadHash),
-  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+  -- When to process the invocation.
+  -- ProcessAfter can be set to NOW indicating the invocation can be processed
+  -- or a future time indicating the invocation is not available to process yet.
+  -- ProcessAfter can be reset in following conditions:
+  --  * if ResetOnFinalize is true, ProcessAfter will be set to the finalization
+  -- time when the invocation is finalized.
+  --  * if a worker has started working on this task, ProcessAfter will be set
+  -- to a future time to prevent other workers picking up the same task.
+  ProcessAfter TIMESTAMP,
 
--- Index of InvocationsToProcess by readiness.
--- It is periodically scanned to perform required processing on invocations.
-CREATE INDEX InvocationsReadyToProcess
-  ON InvocationsToProcess (Ready DESC, InvocationId);
+  -- If true, set ProcessAfter to NOW when finalizing the invocation,
+  -- otherwise don't set it.
+  ResetOnFinalize BOOL,
+) PRIMARY KEY (InvocationId, PayloadHash);
