@@ -37,8 +37,12 @@ func TestTypeConversion(t *testing.T) {
 	var b Buffer
 
 	test := func(goValue, spValue interface{}) {
+		// ToSpanner
+		actualSPValue := ToSpanner(goValue)
+		So(actualSPValue, ShouldResemble, spValue)
+
 		// FromSpanner
-		row, err := spanner.NewRow([]string{"a"}, []interface{}{spValue})
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
 		So(err, ShouldBeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
@@ -49,10 +53,6 @@ func TestTypeConversion(t *testing.T) {
 		default:
 			So(goPtr.Elem().Interface(), ShouldResemble, goValue)
 		}
-
-		// ToSpanner
-		actual := ToSpanner(goValue)
-		So(actual, ShouldResemble, spValue)
 	}
 
 	Convey(`int64`, t, func() {
@@ -117,6 +117,15 @@ func TestTypeConversion(t *testing.T) {
 		expected, err := proto.Marshal(arts)
 		So(err, ShouldBeNil)
 		test(arts.ArtifactsV1, expected)
+	})
+
+	Convey(`Snappy`, t, func() {
+		Convey(`Empty`, func() {
+			test(Snappy(nil), []byte(nil))
+		})
+		Convey(`non-Empty`, func() {
+			test(Snappy("aaaaaaaaaaaaaaaaaaaa"), []byte{20, 0, 97, 74, 1, 0})
+		})
 	})
 
 	Convey(`Slice`, t, func() {
