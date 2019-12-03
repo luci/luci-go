@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55c68bf9_257fb8b1",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-03T08:37:53Z",
+      "side": 1,
+      "message": "Curiosity question: do we want to keep metrics on sizes of inlined artifacts in general (including potentially input artifacts, though I don\u0027t think we have any such existing cases)?",
+      "revId": "8fbcdb29f874214e93ae708fb43cb6b49aa5e795",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
