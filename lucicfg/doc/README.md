@@ -2612,6 +2612,23 @@ Serializes a protobuf message to a string using JSONPB serialization.
 
 
 
+### proto.to_wirepb {#proto.to_wirepb}
+
+```python
+proto.to_wirepb(msg)
+```
+
+
+
+Serializes a protobuf message to a string using binary wire encoding.
+
+#### Arguments {#proto.to_wirepb-args}
+
+* **msg**: a proto message to serialize. Required.
+
+
+
+
 ### proto.from_textpb {#proto.from_textpb}
 
 ```python
@@ -2624,7 +2641,7 @@ Deserializes a protobuf message given its ASCII proto serialization.
 
 #### Arguments {#proto.from_textpb-args}
 
-* **ctor**: a message constructor function, same one you would normally use to create a new message. Required.
+* **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
 
 
@@ -2646,11 +2663,33 @@ Deserializes a protobuf message given its JSONPB serialization.
 
 #### Arguments {#proto.from_jsonpb-args}
 
-* **ctor**: a message constructor function, same one you would normally use to create a new message. Required.
+* **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
 * **text**: a string with the serialized message. Required.
 
 
 #### Returns  {#proto.from_jsonpb-returns}
+
+Deserialized message constructed via `ctor`.
+
+
+
+### proto.from_wirepb {#proto.from_wirepb}
+
+```python
+proto.from_wirepb(ctor, blob)
+```
+
+
+
+Deserializes a protobuf message given its wire serialization.
+
+#### Arguments {#proto.from_wirepb-args}
+
+* **ctor**: a message constructor function, the same one you would normally use to create a new message. Required.
+* **blob**: a string with the serialized message. Required.
+
+
+#### Returns  {#proto.from_wirepb-returns}
 
 Deserialized message constructed via `ctor`.
 
