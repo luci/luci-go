@@ -22,7 +22,6 @@ import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation_processing.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 
@@ -248,30 +247,18 @@ message DeriveInvocationRequest {
     string hostname = 1 [ (google.api.field_behavior) = REQUIRED ];
 
     // ID of swarming task to process and insert.
+    //
+    // The task should have tags:
+    //  gn_target: the GN target used to compile the test binary used in the
+    //    task
+    //  bucket: the LUCI bucket of the parent build
+    //  buildername: the LUCI builder of the parent build.
+    //  test_suite: a name from
+    //    https://chromium.googlesource.com/chromium/src/+/master/testing/buildbot/test_suites.pyl
+    //    used to create the swarming task.
     string id = 2 [ (google.api.field_behavior) = REQUIRED ];
   }
 
   // Derive the invocation from the Swarming task.
   SwarmingTask swarming_task = 1 [ (google.api.field_behavior) = REQUIRED ];
-
-  // Test path prefix.
-  //
-  // Examples: "gn:{label}/".
-  //
-  // See https://gn.googlesource.com/gn/+/master/docs/reference.md#labels for
-  // label examples.
-  //
-  // Generated test path examples:
-  // * GTest: gn:{label}/{suite}/{case}
-  // * javatests: gn:{label}/{full_java_method_name}
-  // * web tests: gn:{label}/{file_name}
-  string test_path_prefix = 2;
-
-  // Test variant base. These get combined with the remainder of the test
-  // variant definition, including test parameters and other key/value pairs
-  // that may be derived from the swarming task.
-  //
-  // For Chromium, expected keys in the def map are "bucket", "builder", and
-  // "test_suite".
-  luci.resultdb.type.Variant base_test_variant = 3;
 }

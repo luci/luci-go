@@ -125,12 +125,11 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 // If an error is returned, inv is left unchanged.
 //
 // Does not populate TestResult.Name.
-func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
+func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation) ([]*pb.TestResult, error) {
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
-		logging.Infof(ctx,
-			"Got %d iterations for task %s on %s", len(r.PerIterationData), req.SwarmingTask.Id, req.SwarmingTask.Hostname)
+		logging.Infof(ctx, "Got %d GTest iterations")
 	}
 
 	// Assume the invocation was not interrupted; if any results are NOTRUN,
@@ -154,7 +153,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationReq
 					"failed to extract test base name and parameters from %q", name).Err()
 			}
 
-			testPath := req.TestPathPrefix + baseName
+			testPath := testPathPrefix + baseName
 
 			for i, result := range data[name] {
 				// Store the processed test result into the correct part of the overall map.

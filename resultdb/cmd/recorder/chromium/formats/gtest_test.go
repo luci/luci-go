@@ -263,19 +263,6 @@ func TestGTestConversions(t *testing.T) {
 	})
 
 	Convey(`ToProtos`, t, func() {
-		req := &pb.DeriveInvocationRequest{
-			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-				Hostname: "host-swarming",
-				Id:       "123",
-			},
-			TestPathPrefix: "prefix/",
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
-		}
-
 		inv := &pb.Invocation{}
 
 		Convey("Works", func() {
@@ -320,13 +307,13 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			testResults, err := results.ToProtos(ctx, req, inv)
+			testResults, err := results.ToProtos(ctx, "gn://tests/", inv)
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest)), ShouldBeTrue)
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
-					TestPath: "prefix/BazTest.DoesQux",
+					TestPath: "gn://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -335,7 +322,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/BazTest.DoesQux",
+					TestPath: "gn://tests/BazTest.DoesQux",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -343,7 +330,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/FooTest.DoesBar",
+					TestPath: "gn://tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
@@ -351,7 +338,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/FooTest.DoesBar",
+					TestPath: "gn://tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -361,7 +348,7 @@ func TestGTestConversions(t *testing.T) {
 
 				// Iteration 2.
 				{
-					TestPath: "prefix/BazTest.DoesQux",
+					TestPath: "gn://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -370,7 +357,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/BazTest.DoesQux",
+					TestPath: "gn://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -379,7 +366,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/FooTest.DoesBar",
+					TestPath: "gn://tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -387,7 +374,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "prefix/FooTest.DoesBar",
+					TestPath: "gn://tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -409,7 +396,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			_, err := results.ToProtos(ctx, req, inv)
+			_, err := results.ToProtos(ctx, "gn://tests/", inv)
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
@@ -424,7 +411,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			_, err := results.ToProtos(ctx, req, inv)
+			_, err := results.ToProtos(ctx, "gn://tests/", inv)
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		})
