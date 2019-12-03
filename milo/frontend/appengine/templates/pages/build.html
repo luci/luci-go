@@ -154,7 +154,7 @@
     {{ end }}
     <h2>Overview</h2>
     <div class="result status {{.BuildPage.Status}}">
-      <div class="main-status">{{ .BuildPage.HumanStatus }}</div>
+      <div class="main-status">{{ .BuildPage.HumanStatus }}{{ if eq .BuildPage.Status.String "CANCELED" }} (by {{ or .BuildPage.CanceledBy "UNKNOWN"}}){{ end }}</div>
       {{ with .BuildPage.SummaryMarkdown }}
         {{ . | renderMarkdown }}
       {{ else }}
