@@ -29,7 +29,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const deriveUsage = `derive [flags] SWARMING_HOST TASK_ID [TASK_ID]...`
+const deriveUsage = `chromium-derive [flags] SWARMING_HOST TASK_ID [TASK_ID]...`
 
 func cmdDerive(p Params) *subcommands.Command {
 	return &subcommands.Command{
@@ -43,6 +43,7 @@ func cmdDerive(p Params) *subcommands.Command {
 			SWARMING_HOST must be a hostname without a scheme, e.g.
 			chromium-swarm.appspot.com.
 		`),
+		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
 			r.queryRun.registerFlags(p)
