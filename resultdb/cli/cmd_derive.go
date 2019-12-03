@@ -22,7 +22,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -34,7 +33,7 @@ func cmdDerive(p Params) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: deriveUsage,
 		ShortDesc: "derive results from Chromium swarming tasks and query them",
-		LongDesc: text.Doc(`
+		LongDesc: help(`
 			Derives Invocation(s) from Chromium Swarming task(s) and prints results,
 			like ls subcommand.
 			If an invocation already exists for a given task, then reuses it.

@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -41,11 +40,11 @@ func (r *queryRun) registerFlags(p Params) {
 	r.RegisterGlobalFlags(p)
 	r.RegisterJSONFlag()
 
-	r.Flags.IntVar(&r.limit, "n", 0, text.Doc(`
+	r.Flags.IntVar(&r.limit, "n", 0, help(`
 		Print up to n results of each result type. If 0, then unlimited.
 	`))
 
-	r.Flags.BoolVar(&r.ignoreExpectations, "ignore-expectations", false, text.Doc(`
+	r.Flags.BoolVar(&r.ignoreExpectations, "ignore-expectations", false, help(`
 		Do not filter based on whether the result was expected.
 		Note that this may significantly increase output size and latency.
 
@@ -55,7 +54,7 @@ func (r *queryRun) registerFlags(p Params) {
 		PASS, then print all of them.
 	`))
 
-	r.Flags.StringVar(&r.testPath, "test-path", "", text.Doc(`
+	r.Flags.StringVar(&r.testPath, "test-path", "", help(`
 		A regular expression for test path. Implicitly wrapped with ^ and $.
 
 		Example: gn://chrome/test:browser_tests/.+

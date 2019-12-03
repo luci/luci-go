@@ -18,7 +18,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 
@@ -32,7 +31,7 @@ func cmdLs(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
 			r.queryRun.registerFlags(p)
-			r.Flags.Var(luciflag.StringSlice(&r.invIDs), "inv", text.Doc(`
+			r.Flags.Var(luciflag.StringSlice(&r.invIDs), "inv", help(`
 				Retrieve results from the invocation with this ID.
 
 				May be specified multiple times.
