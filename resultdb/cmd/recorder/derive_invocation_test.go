@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -227,8 +226,11 @@ func TestDeriveInvocation(t *testing.T) {
 			// Assert we wrote correct test results.
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
+
+			invIDs, err := span.ReadReachableInvocations(ctx, txn, 100, span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name)))
+			So(err, ShouldBeNil)
 			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
-				InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name + "::batch::0")),
+				InvocationIDs: invIDs,
 				PageSize:      100,
 			})
 			So(err, ShouldBeNil)
@@ -267,19 +269,19 @@ func TestBatchInsertTestResults(t *testing.T) {
 			{TestPath: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
 		}
 
-		checkBatches := func(baseID span.InvocationID, actualInclusions []string, expectedBatches [][]*pb.TestResult) {
+		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*pb.TestResult) {
 			// Check included Invocations.
-			expectedInclusions := make([]string, len(expectedBatches))
+			expectedInclusions := make(span.InvocationIDSet, len(expectedBatches))
 			for i := range expectedBatches {
-				expectedInclusions[i] = batchInvocationID(baseID, i).Name()
+				expectedInclusions.Add(batchInvocationID(baseID, i))
 			}
-			sort.Strings(actualInclusions)
 			So(actualInclusions, ShouldResemble, expectedInclusions)
+
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
 
 			// Check that the TestResults are batched as expected.
 			for i, expectedBatch := range expectedBatches {
-				txn := span.Client(ctx).ReadOnlyTransaction()
-				defer txn.Close()
 				actualResults, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
 					InvocationIDs: span.NewInvocationIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
