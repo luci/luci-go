@@ -49,6 +49,15 @@ func ToJSONPB(msg *Message) ([]byte, error) {
 	return opts.Marshal(msg.ToProto())
 }
 
+// ToWirePB serializes a protobuf message to binary wire format.
+func ToWirePB(msg *Message) ([]byte, error) {
+	opts := proto.MarshalOptions{
+		AllowPartial:  true,
+		Deterministic: true,
+	}
+	return opts.Marshal(msg.ToProto())
+}
+
 // FromTextPB deserializes a protobuf message given in text proto form.
 func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 	pb := dynamicpb.New(typ.desc)
@@ -66,6 +75,20 @@ func FromTextPB(typ *MessageType, blob []byte) (*Message, error) {
 func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 	pb := dynamicpb.New(typ.desc)
 	opts := protojson.UnmarshalOptions{
+		AllowPartial:   true,
+		DiscardUnknown: true,
+		Resolver:       typ.loader.types, // used for google.protobuf.Any fields
+	}
+	if err := opts.Unmarshal(blob, pb); err != nil {
+		return nil, err
+	}
+	return typ.MessageFromProto(pb), nil
+}
+
+// FromWirePB deserializes a protobuf message given as a wire-encoded blob.
+func FromWirePB(typ *MessageType, blob []byte) (*Message, error) {
+	pb := dynamicpb.New(typ.desc)
+	opts := proto.UnmarshalOptions{
 		AllowPartial:   true,
 		DiscardUnknown: true,
 		Resolver:       typ.loader.types, // used for google.protobuf.Any fields
@@ -122,6 +145,16 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 //        A str representing msg in JSONPB format.
 //      """
 //
+//    def to_wirepb(msg):
+//      """Serializes a protobuf message to a string using binary wire encoding.
+//
+//      Args:
+//        msg: a *Message to serialize.
+//
+//      Returns:
+//        A str representing msg in binary wire format.
+//      """
+//
 //    def from_textpb(ctor, body):
 //      """Deserializes a protobuf message given in text proto form.
 //
@@ -137,6 +170,19 @@ func FromJSONPB(typ *MessageType, blob []byte) (*Message, error) {
 //
 //    def from_jsonpb(ctor, body):
 //      """Deserializes a protobuf message given as JBONPB string.
+//
+//      Unknown fields are silently skipped.
+//
+//      Args:
+//        ctor: a message constructor function.
+//        body: a string with serialized message.
+//
+//      Returns:
+//        Deserialized message constructed via `ctor`.
+//      """
+//
+//    def from_wirepb(ctor, body):
+//      """Deserializes a protobuf message given its wire serialization.
 //
 //      Unknown fields are silently skipped.
 //
@@ -166,8 +212,10 @@ func ProtoLib() starlark.StringDict {
 			"message_type":       starlark.NewBuiltin("message_type", messageType),
 			"to_textpb":          marshallerBuiltin("to_textpb", ToTextPB),
 			"to_jsonpb":          marshallerBuiltin("to_jsonpb", ToJSONPB),
+			"to_wirepb":          marshallerBuiltin("to_wirepb", ToWirePB),
 			"from_textpb":        unmarshallerBuiltin("from_textpb", FromTextPB),
 			"from_jsonpb":        unmarshallerBuiltin("from_jsonpb", FromJSONPB),
+			"from_wirepb":        unmarshallerBuiltin("from_wirepb", FromWirePB),
 			"struct_to_textpb":   starlark.NewBuiltin("struct_to_textpb", structToTextPb),
 		}),
 	}
