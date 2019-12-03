@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "d1bfd659_7f4f72cd",
+        "filename": "resultdb/cli/cmd_ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1eaf620_665ab8df",
+      "range": {
+        "startLine": 41,
+        "startChar": 54,
+        "endLine": 41,
+        "endChar": 59
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c496e33_12a8cf15",
+        "filename": "resultdb/cli/cmd_ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:13:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f75ae90_27c975c9",
+      "range": {
+        "startLine": 41,
+        "startChar": 9,
+        "endLine": 41,
+        "endChar": 22
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6e6db75_17a7f180",
         "filename": "resultdb/cli/queryrun.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0de15ce_d02a2109",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:13:10Z",
+      "side": 1,
+      "message": "\u003e Why do we differentiate invocation names and ids? \n\nbecause https://aip.dev/122\nit makes API more consistent. All resources in ResultDB have name: invocations, test results, test exonerations, etc. Test result name consists of invocation id, test path and result id. Having names everywhere means we have one consistent way to identifying resources\n\n\u003e Is it possible to just use invocation id everywhere?\n\nit would require a lot of refactoring on the server side, and make API inconsistent. I\u0027d rather not do this.",
+      "parentUuid": "c6e6db75_17a7f180",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 41
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
