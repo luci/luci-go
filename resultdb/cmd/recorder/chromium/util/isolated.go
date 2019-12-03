@@ -44,8 +44,8 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 	// Otherwise, populate the artifact fields.
 	a := &pb.Artifact{
 		Name:     path.Clean(strings.ReplaceAll(relPath, "\\", "/")),
-		FetchUrl: fmt.Sprintf("isolate://%s/%s/%s", host, ns, f.Digest),
-		ViewUrl:  fmt.Sprintf("https://%s/browse?namespace=%s&digest=%s", host, ns, f.Digest),
+		FetchUrl: IsolateFetchURL(host, ns, string(f.Digest)),
+		ViewUrl:  IsolateViewURL(host, ns, string(f.Digest)),
 	}
 
 	if f.Size != nil {
@@ -60,4 +60,14 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 	}
 
 	return a
+}
+
+// IsolateFetchURL returns a fetch URL for an isolated object.
+func IsolateFetchURL(host, ns, digest string) string {
+	return fmt.Sprintf("isolate://%s/%s/%s", host, ns, digest)
+}
+
+// IsolateViewURL returns a view URL for an isolated object.
+func IsolateViewURL(host, ns, digest string) string {
+	return fmt.Sprintf("https://%s/browse?namespace=%s&digest=%s", host, ns, digest)
 }
