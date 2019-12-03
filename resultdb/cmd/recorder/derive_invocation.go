@@ -86,10 +86,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	if task, err = chromium.GetOriginTask(ctx, task, swarmSvc); err != nil {
 		return nil, err
 	}
-	invID, err := chromium.GetInvocationID(ctx, task, in)
-	if err != nil {
-		return nil, err
-	}
+	invID := chromium.GetInvocationID(task, in)
 
 	client := span.Client(ctx)
 
