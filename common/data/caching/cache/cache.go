@@ -375,11 +375,11 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
 	if err := os.Link(src, dest); err != nil {
-		return fmt.Errorf("failed to call os.Link(%s, %s): %v", src, dest, err)
+		return fmt.Errorf("failed to call os.Link(%s, %s): %w", src, dest, err)
 	}
 
 	if err := os.Chmod(dest, perm); err != nil {
-		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %v", dest, perm, err)
+		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %w", dest, perm, err)
 	}
 	return nil
 }
