@@ -26,9 +26,14 @@ message TestResultRow {
   // A subset of luci.resultdb.rpc.v1.Invocation message
   // in ../../rpc/v1/invocation.proto.
   message Invocation {
+    // Id of the exported invocation.
+    // Note that it's possible that this invocation is not the result's
+    // immediate parent invocation, but the including invocation.
+    string id = 1;
+
     // Invocation-level string key-value pairs.
     // A key can be repeated.
-    repeated luci.resultdb.type.StringPair tags = 1;
+    repeated luci.resultdb.type.StringPair tags = 2;
   }
 
   // Invocation level information.
