@@ -329,6 +329,7 @@ var (
 			"builder",
 			"number",
 			"created_by",
+			"canceled_by",
 			"create_time",
 			"start_time",
 			"end_time",
