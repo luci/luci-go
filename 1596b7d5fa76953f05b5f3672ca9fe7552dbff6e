@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "aadf7843_b9c19279",
+        "filename": "common/trace/transport.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T07:51:36Z",
+      "side": 1,
+      "message": "ok. ideally this is answered in code comments, for future readers",
+      "parentUuid": "b791c044_a281c370",
+      "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec5e5a51_217700cf",
         "filename": "server/internal/trace.go",
         "patchSetId": 2
