@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -221,11 +223,20 @@ func TestCreateInvocation(t *testing.T) {
 		Convey(`end to end`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			headers := &metadata.MD{}
+			bq_export := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "table",
+				TestResults: &pb.BigQueryExport_TestResults{},
+			}
 			req := &pb.CreateInvocationRequest{
 				InvocationId: "u:inv",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+				},
+				BigqueryExports: []*pb.BigQueryExport{
+					bq_export,
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
@@ -257,6 +268,18 @@ func TestCreateInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(expectedResultsExpirationTime, ShouldEqual, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
 			So(invExpirationTime, ShouldEqual, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
+
+			// Check invocationTask is inserted.
+			payload, _ := proto.Marshal(&internalpb.InvocationTask{
+				BigqueryExport: bq_export,
+			})
+			payload_hash := hex.EncodeToString(payload[:8])
+			key := spanner.Key{span.InvocationID("u:inv").RowID(), payload_hash}
+			var throwaway string
+			err = span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", key, map[string]interface{}{
+				"InvocationId": &throwaway,
+			})
+			So(err, ShouldBeNil)
 		})
 	})
 }
