@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/client/internal/common"
@@ -33,6 +34,9 @@ type TarringArchiver struct {
 	uploader Uploader
 	tracker  *UploadTracker
 
+	// The file hash cache is shared across upload trackers.
+	fileHashCache sync.Map
+
 	// Exposed as a member so that tests can overwrite this.
 	filePathWalk func(string, filepath.WalkFunc) error
 }
@@ -40,17 +44,17 @@ type TarringArchiver struct {
 // NewTarringArchiver constructs a TarringArchiver.
 func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
 
-	return &TarringArchiver{checker: checker, uploader: uploader, filePathWalk: filepath.Walk}
+	return &TarringArchiver{checker: checker, uploader: uploader, fileHashCache: sync.Map{}, filePathWalk: filepath.Walk}
 }
 
 // This module variable is overwritten by tests.
-var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated) {
-	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol)
+var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
+	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol, fileHashCache)
 }
 
 // Archive uploads a single isolate.
 func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []string, isolated string, isol *isolated.Isolated) (IsolatedSummary, error) {
-	prepareToArchive(ta, isol)
+	prepareToArchive(ta, isol, &ta.fileHashCache)
 	parts, err := ta.partitionDeps(deps, rootDir, blacklist)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
