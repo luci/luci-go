@@ -50,6 +50,23 @@
       "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e7c5fd8_7564fba0",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-03T23:48:37Z",
+      "side": 1,
+      "message": "You could make disk.IsPersistent/disk.IsScratch public methods of Disk.",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
