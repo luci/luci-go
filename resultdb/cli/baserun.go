@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/grpc/prpc"
 
@@ -107,4 +108,10 @@ func (r *baseCommandRun) done(err error) int {
 		return 1
 	}
 	return 0
+}
+
+func help(s string) string {
+	s = text.Doc(s)
+	s = strings.TrimSpace(s)
+	return s
 }

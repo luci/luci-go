@@ -15,19 +15,13 @@
 package cli
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"golang.org/x/sync/errgroup"
-
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -76,143 +70,39 @@ func (r *queryRun) validate() error {
 	return nil
 }
 
-type resultItem struct {
-	invocationIDs []string
-	result        proto.Message
-}
-
 // queryAndPrint queries results and prints them.
-func (r *queryRun) queryAndPrint(ctx context.Context, merge bool, invIDs []string) error {
-	var invIDGroups [][]string
-	if merge {
-		invIDGroups = [][]string{invIDs}
-	} else {
-		invIDGroups = make([][]string, len(invIDs))
-		for i, id := range invIDs {
-			invIDGroups[i] = []string{id}
-		}
+func (r *queryRun) queryAndPrint(ctx context.Context, invocations []string) error {
+	req := &pb.QueryTestResultsRequest{
+		Invocations: invocations,
+		Predicate: &pb.TestResultPredicate{
+			TestPathRegexp: r.testPath,
+			Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
+		},
+		PageSize: int32(r.limit),
+	}
+	if r.ignoreExpectations {
+		req.Predicate.Expectancy = pb.TestResultPredicate_ALL
 	}
 
-	resultC := make(chan resultItem)
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, ids := range invIDGroups {
-		ids := ids
-		eg.Go(func() error {
-			return r.fetch(ctx, ids, resultC)
-		})
+	// TODO(crbug.com/1021849): implement paging.
+	res, err := r.resultdb.QueryTestResults(ctx, req)
+	if err != nil {
+		return err
 	}
 
-	errC := make(chan error)
-	go func() {
-		err := eg.Wait()
-		close(resultC)
-		errC <- err
-	}()
-
-	if r.json {
-		r.printJSON(resultC, merge)
-		return nil
+	if !r.json {
+		// TODO(crbug.com/1021849): implement human-oriented output.
+		return errors.Reason("unimplemented").Err()
 	}
 
-	return errors.Reason("unimplemented").Err()
-}
+	// TODO(crbug.com/1021849): query test exonerations.
 
-// fetch fetches test results and exonerations from the specified invocations.
-// Does not set bundle.InvocationID.
-func (r *queryRun) fetch(ctx context.Context, invIDs []string, dest chan<- resultItem) error {
-	invNames := make([]string, len(invIDs))
-	for i, id := range invIDs {
-		invNames[i] = pbutil.InvocationName(id)
+	m := jsonpb.Marshaler{
+		Indent: "  ",
 	}
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	// Fetch test results.
-	eg.Go(func() error {
-		req := &pb.QueryTestResultsRequest{
-			Invocations: invNames,
-			Predicate: &pb.TestResultPredicate{
-				TestPathRegexp: r.testPath,
-				Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
-			},
-			PageSize: int32(r.limit),
-		}
-		if r.ignoreExpectations {
-			req.Predicate.Expectancy = pb.TestResultPredicate_ALL
-		}
-		// TODO(crbug.com/1021849): implement paging.
-		res, err := r.resultdb.QueryTestResults(ctx, req)
-		if err != nil {
-			return err
-		}
-		for _, tr := range res.TestResults {
-			select {
-			case dest <- resultItem{invocationIDs: invIDs, result: tr}:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return nil
-	})
-
-	// Fetch test exonerations.
-	eg.Go(func() error {
-		req := &pb.QueryTestExonerationsRequest{
-			Invocations: invNames,
-			Predicate: &pb.TestExonerationPredicate{
-				TestPathRegexp: r.testPath,
-			},
-			PageSize: int32(r.limit),
-		}
-		// TODO(crbug.com/1021849): implement paging.
-		res, err := r.resultdb.QueryTestExonerations(ctx, req)
-		if err != nil {
-			return err
-		}
-		for _, te := range res.TestExonerations {
-			select {
-			case dest <- resultItem{invocationIDs: invIDs, result: te}:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return nil
-	})
-
-	return eg.Wait()
-}
-
-func (r *queryRun) printJSON(resultC <-chan resultItem, merge bool) {
-	enc := json.NewEncoder(os.Stdout)
-	for res := range resultC {
-		var key string
-		switch res.result.(type) {
-		case *pb.TestResult:
-			key = "testResult"
-		case *pb.TestExoneration:
-			key = "testExoneration"
-		default:
-			panic(fmt.Sprintf("unexpected result type %T", res.result))
-		}
-
-		obj := map[string]interface{}{
-			key: json.RawMessage(msgToJSON(res.result)),
-		}
-		if !merge {
-			if len(res.invocationIDs) != 1 {
-				panic("impossible")
-			}
-			obj["invocationId"] = res.invocationIDs[0]
-		}
-		enc.Encode(obj) // prints \n in the end
+	for _, res := range res.TestResults {
+		m.Marshal(os.Stdout, res)
+		fmt.Println()
 	}
-}
-
-func msgToJSON(msg proto.Message) []byte {
-	buf := &bytes.Buffer{}
-	m := jsonpb.Marshaler{}
-	if err := m.Marshal(buf, msg); err != nil {
-		panic(fmt.Sprintf("failed to marshal protobuf message %q in memory", msg))
-	}
-	return buf.Bytes()
+	return nil
 }

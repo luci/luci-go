@@ -22,10 +22,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -85,16 +83,16 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(err)
 	}
 
-	invIDs, err := r.deriveInvocations(ctx)
+	invNames, err := r.deriveInvocations(ctx)
 	if err != nil {
 		return r.done(err)
 	}
 
-	return r.done(r.queryAndPrint(ctx, true, invIDs))
+	return r.done(r.queryAndPrint(ctx, invNames))
 }
 
 // deriveInvocations derives invocations from the swarming tasks and returns
-// invocation ids.
+// invocation names.
 func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 	eg, ctx := errgroup.WithContext(ctx)
 	ret := make([]string, len(r.taskIDs))
@@ -112,15 +110,9 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 				return err
 			}
 
-			ret[i], err = pbutil.ParseInvocationName(res.Name)
-			return err
+			ret[i] = res.Name
+			return nil
 		})
 	}
 	return ret, eg.Wait()
-}
-
-func help(s string) string {
-	s = text.Doc(s)
-	s = strings.TrimSpace(s)
-	return s
 }

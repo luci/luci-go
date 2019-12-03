@@ -48,7 +48,7 @@ func application(p Params) *cli.Application {
 		Context: func(ctx context.Context) context.Context {
 			// TODO(crbug.com/1021849): remove, when this domain name points to the
 			// associated IP address.
-			ctx = metadata.AppendToOutgoingContext(ctx, "host", "jchinlee.results.api.cr.dev")
+			ctx = metadata.AppendToOutgoingContext(ctx, "host", "nodir.results.api.cr.dev")
 
 			return logCfg.Use(ctx)
 		},
