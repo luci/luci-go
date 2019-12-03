@@ -303,6 +303,10 @@ func ToSpanner(v interface{}) interface{} {
 		return ret
 
 	case Snappy:
+		if len(v) == 0 {
+			// Do not store empty bytes.
+			return []byte(nil)
+		}
 		return snappy.Encode(nil, []byte(v))
 
 	default:
