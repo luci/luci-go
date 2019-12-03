@@ -33,6 +33,27 @@ func isValidImage(s string) bool {
 	return false
 }
 
+// isPersistentDisk returns whether or not the given string is a persistent
+// disk type.  Persistent disk types must have the form
+// zones/<zone>/diskTypes/pd-(ssd|standard).
+func isPersistentDisk(s string) bool {
+	return isValidDiskType(s) && (strings.HasSuffix(s, "pd-standard") || strings.HasSuffix(s, "pd-ssd"))
+}
+
+// isScratchDisk returns whether or not the given string is a valid scratch disk
+// type.  Persistent disk types must have the form
+// zones/<zone>/diskTypes/local-ssd.
+func isScratchDisk(s string) bool {
+	return isValidDiskType(s) && strings.HasSuffix(s, "local-ssd")
+}
+
+// isValidDiskType returns whether or not the given string is a valid disk
+// type. Disk types have the form zones/<zone>/diskTypes/<type>.
+func isValidDiskType(s string) bool {
+	parts := strings.Split(s, "/")
+	return parts[0] == "zones" && parts[2] == "diskTypes"
+}
+
 // GetImageBase returns the base image name for this validated disk.
 func (d *Disk) GetImageBase() string {
 	return d.GetImage()[strings.LastIndex(d.GetImage(), "/")+1:]
@@ -48,13 +69,13 @@ func (d *Disk) GetImageBase() string {
 //  | pd-standard | Yes   | SCSI      |
 //  +-------------+-------+-----------+
 func (d *Disk) Validate(c *validation.Context) {
-	if strings.HasPrefix(d.Type, "pd-") && d.GetInterface() != Disk_SCSI {
+	if isPersistentDisk(d.Type) && d.GetInterface() != Disk_SCSI {
 		c.Errorf("persistent disk must use SCSI")
 	}
-	if strings.HasPrefix(d.Type, "pd-") && !isValidImage(d.GetImage()) {
+	if isPersistentDisk(d.Type) && !isValidImage(d.GetImage()) {
 		c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
 	}
-	if strings.HasPrefix(d.Type, "local-ssd") && isValidImage(d.GetImage()) {
+	if isScratchDisk(d.Type) && isValidImage(d.GetImage()) {
 		c.Errorf("local ssd cannot use an image")
 	}
 }

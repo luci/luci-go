@@ -155,7 +155,7 @@ func (vm *VM) getDisks() []*compute.AttachedDisk {
 			},
 			Interface: disk.GetInterface().String(),
 		}
-		if disk.Type == "local-ssd" {
+		if strings.HasSuffix(disk.Type, "local-ssd") {
 			disks[i].Type = "SCRATCH"
 		}
 	}
