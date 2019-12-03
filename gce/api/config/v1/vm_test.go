@@ -33,13 +33,13 @@ func TestVM(t *testing.T) {
 				vm := &VM{
 					Disk: []*Disk{
 						{
-							Type: "type",
+							Type: "zones/zone/diskTypes/type",
 						},
 					},
 					MachineType: "type",
 				}
 				vm.SetZone("zone")
-				So(vm.Disk[0].Type, ShouldEqual, "type")
+				So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
 				So(vm.MachineType, ShouldEqual, "type")
 				So(vm.Zone, ShouldEqual, "zone")
 			})
@@ -49,13 +49,13 @@ func TestVM(t *testing.T) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
-								Type: "{{.Zone}}/type",
+								Type: "zones/{{.Zone}}/diskTypes/type",
 							},
 						},
 						MachineType: "type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "zone/type")
+					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
 					So(vm.MachineType, ShouldEqual, "type")
 					So(vm.Zone, ShouldEqual, "zone")
 				})
@@ -64,13 +64,13 @@ func TestVM(t *testing.T) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
-								Type: "type",
+								Type: "zones/zone/diskTypes/type",
 							},
 						},
 						MachineType: "{{.Zone}}/type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "type")
+					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
 					So(vm.MachineType, ShouldEqual, "zone/type")
 					So(vm.Zone, ShouldEqual, "zone")
 				})
@@ -79,17 +79,17 @@ func TestVM(t *testing.T) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
-								Type: "{{.Zone}}/type-1",
+								Type: "zones/{{.Zone}}/diskTypes/type-1",
 							},
 							{
-								Type: "{{.Zone}}/type-2",
+								Type: "zones/{{.Zone}}/diskTypes/type-2",
 							},
 						},
 						MachineType: "{{.Zone}}/type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "zone/type-1")
-					So(vm.Disk[1].Type, ShouldEqual, "zone/type-2")
+					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type-1")
+					So(vm.Disk[1].Type, ShouldEqual, "zones/zone/diskTypes/type-2")
 					So(vm.MachineType, ShouldEqual, "zone/type")
 					So(vm.Zone, ShouldEqual, "zone")
 				})
@@ -145,7 +145,7 @@ func TestVM(t *testing.T) {
 					Disk: []*Disk{
 						{
 							Image: "global/images/image",
-							Type:  "{{.Zone}}/type",
+							Type:  "zones/{{.Zone}}/diskTypes/type",
 						},
 					},
 					MachineType: "type",
