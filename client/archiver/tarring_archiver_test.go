@@ -47,27 +47,6 @@ func (ffi *fakeFileInfo) IsDir() bool {
 	return false
 }
 
-func setUpTarringArchiver(ta *TarringArchiver, largeFileSize int, largeFilePath string, numHashCalls *int) {
-	isol := &isolated.Isolated{}
-	ta.PrepareToArchive(isol)
-	fos := &fakeOS{
-		readFiles: map[string]io.Reader{
-			largeFilePath: strings.NewReader(strings.Repeat("a", largeFileSize)),
-		},
-	}
-	ta.tracker.lOS = fos
-	// Override filesystem walker in tarring_archiver with fake.
-	ta.filePathWalk = func(dummy string, walkfunc filepath.WalkFunc) error {
-		fileinfo := &fakeFileInfo{size: int64(largeFileSize)}
-		return walkfunc(largeFilePath, fileinfo, nil)
-	}
-	origDoHashFileImpl := ta.tracker.doHashFileImpl
-	ta.tracker.doHashFileImpl = func(ut *UploadTracker, path string) (isolated.HexDigest, error) {
-		*numHashCalls += 1
-		return origDoHashFileImpl(ut, path)
-	}
-}
-
 func TestFileHashingSharedAcrossArchives(t *testing.T) {
 	Convey(`Any given file should only be hashed once, even when it's a dependency of multiple archives`, t, func() {
 
@@ -78,17 +57,39 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 
 		// namespace := isolatedclient.DefaultNamespace
 		ta := NewTarringArchiver(checker, uploader)
+		isol := &isolated.Isolated{}
 
 		// Override filesystem calls in upload_tracker with fake.
 		largeFileSize := 10000000
 		largeFilePath := "/a/b/foo"
 
 		numHashCalls := 0
+		origPrepareToArchive := prepareToArchive
+		defer func() {
+			prepareToArchive = origPrepareToArchive
+		}()
+		prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated) {
+			origPrepareToArchive(ta, isol)
+			fos := &fakeOS{
+				readFiles: map[string]io.Reader{
+					largeFilePath: strings.NewReader(strings.Repeat("a", largeFileSize)),
+				},
+			}
+			ta.tracker.lOS = fos
+			// Override filesystem walker in tarring_archiver with fake.
+			ta.filePathWalk = func(dummy string, walkfunc filepath.WalkFunc) error {
+				fileinfo := &fakeFileInfo{size: int64(largeFileSize)}
+				return walkfunc(largeFilePath, fileinfo, nil)
+			}
+			origDoHashFileImpl := ta.tracker.doHashFileImpl
+			ta.tracker.doHashFileImpl = func(ut *UploadTracker, path string) (isolated.HexDigest, error) {
+				numHashCalls += 1
+				return origDoHashFileImpl(ut, path)
+			}
+		}
 
-		setUpTarringArchiver(ta, largeFileSize, largeFilePath, &numHashCalls)
-		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate1")
-		setUpTarringArchiver(ta, largeFileSize, largeFilePath, &numHashCalls)
-		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate2")
+		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate1", isol)
+		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate2", isol)
 
 		// TODO(https://crbug.com/969162): Fix the caching and then change this
 		// assertion to check that numHashCalls == 1.
