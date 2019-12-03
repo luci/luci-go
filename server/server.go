@@ -17,6 +17,7 @@
 // It interprets command line flags and initializes the serving environment with
 // following services available via context.Context:
 //   * go.chromium.org/luci/common/logging: Logging.
+//   * go.chromium.org/luci/common/trace: Tracing.
 //   * go.chromium.org/luci/server/caching: Process cache.
 //   * go.chromium.org/luci/server/secrets: Secrets (optional).
 //   * go.chromium.org/luci/server/settings: Access to app settings (optional).
@@ -1442,6 +1443,9 @@ func (s *Server) initTracing() error {
 	// goroutines we don't control. We'll start top spans ourselves in
 	// startRequestSpan.
 	trace.ApplyConfig(trace.Config{DefaultSampler: trace.NeverSample()})
+
+	// Enable tracing in various LUCI libraries.
+	internal.EnableOpenCensusTracing()
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(exporter.Flush)

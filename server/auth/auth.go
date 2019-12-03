@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/delegation"
@@ -163,11 +164,14 @@ func (a *Authenticator) GetMiddleware() router.Middleware {
 // Returns an error if credentials are provided, but invalid. If no credentials
 // are provided (i.e. the request is anonymous), finishes successfully, but in
 // that case State.Identity() returns AnonymousIdentity.
-func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (context.Context, error) {
-	report := durationReporter(c, authenticateDuration)
+func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ context.Context, err error) {
+	tracedCtx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.Authenticate")
+	defer func() { span.End(err) }()
+
+	report := durationReporter(tracedCtx, authenticateDuration)
 
 	// We will need working DB factory below to check IP whitelist.
-	cfg := getConfig(c)
+	cfg := getConfig(tracedCtx)
 	if cfg == nil || cfg.DBProvider == nil || len(a.Methods) == 0 {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
@@ -177,7 +181,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	s := state{authenticator: a}
 	for _, m := range a.Methods {
 		var err error
-		s.user, err = m.Authenticate(c, r)
+		s.user, err = m.Authenticate(tracedCtx, r)
 		if err != nil {
 			report(err, "ERROR_BROKEN_CREDS") // e.g. malformed OAuth token
 			return nil, err
@@ -203,7 +207,6 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	if cfg.EndUserIP != nil {
 		remoteAddr = cfg.EndUserIP(r)
 	}
-	var err error
 	s.peerIP, err = parseRemoteIP(remoteAddr)
 	if err != nil {
 		panic(fmt.Errorf("auth: bad remote_addr: %v", err))
@@ -211,7 +214,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 
 	// Grab a snapshot of auth DB to use consistently for the duration of this
 	// request.
-	s.db, err = cfg.DBProvider(c)
+	s.db, err = cfg.DBProvider(tracedCtx)
 	if err != nil {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
@@ -219,14 +222,14 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 
 	// If using OAuth2, make sure ClientID is whitelisted.
 	if s.user.ClientID != "" {
-		valid, err := s.db.IsAllowedOAuthClientID(c, s.user.Email, s.user.ClientID)
+		valid, err := s.db.IsAllowedOAuthClientID(tracedCtx, s.user.Email, s.user.ClientID)
 		if err != nil {
 			report(err, "ERROR_TRANSIENT_IN_OAUTH_WHITELIST")
 			return nil, err
 		}
 		if !valid {
 			logging.Warningf(
-				c, "auth: %q is using client_id %q not in the whitelist",
+				tracedCtx, "auth: %q is using client_id %q not in the whitelist",
 				s.user.Email, s.user.ClientID)
 			report(ErrBadClientID, "ERROR_FORBIDDEN_OAUTH_CLIENT")
 			return nil, ErrBadClientID
@@ -234,12 +237,12 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	}
 
 	// Some callers may be constrained by an IP whitelist.
-	switch ipWhitelist, err := s.db.GetWhitelistForIdentity(c, s.user.Identity); {
+	switch ipWhitelist, err := s.db.GetWhitelistForIdentity(tracedCtx, s.user.Identity); {
 	case err != nil:
 		report(err, "ERROR_TRANSIENT_IN_IP_WHITELIST")
 		return nil, err
 	case ipWhitelist != "":
-		switch whitelisted, err := s.db.IsInWhitelist(c, s.peerIP, ipWhitelist); {
+		switch whitelisted, err := s.db.IsInWhitelist(tracedCtx, s.peerIP, ipWhitelist); {
 		case err != nil:
 			report(err, "ERROR_TRANSIENT_IN_IP_WHITELIST")
 			return nil, err
@@ -266,16 +269,16 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 		// to grab the info about the token from the token server logs.
 		logging.Fields{
 			"fingerprint": tokenFingerprint(delegationTok),
-		}.Debugf(c, "auth: Received delegation token")
+		}.Debugf(tracedCtx, "auth: Received delegation token")
 
 		// Need to grab our own identity to verify that the delegation token is
 		// minted for consumption by us and not some other service.
-		ownServiceIdentity, err := getOwnServiceIdentity(c, cfg.Signer)
+		ownServiceIdentity, err := getOwnServiceIdentity(tracedCtx, cfg.Signer)
 		if err != nil {
 			report(err, "ERROR_TRANSIENT_IN_OWN_IDENTITY")
 			return nil, err
 		}
-		delegatedIdentity, err := delegation.CheckToken(c, delegation.CheckTokenParams{
+		delegatedIdentity, err := delegation.CheckToken(tracedCtx, delegation.CheckTokenParams{
 			Token:                delegationTok,
 			PeerID:               s.peerIdent,
 			CertificatesProvider: s.db,
@@ -299,7 +302,7 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 		logging.Fields{
 			"peerID":      s.peerIdent,
 			"delegatedID": delegatedIdentity,
-		}.Debugf(c, "auth: Using delegation")
+		}.Debugf(tracedCtx, "auth: Using delegation")
 	}
 
 	// If not using the delegation, grab the end user creds in case we want to
@@ -309,13 +312,13 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 	s.endUserErr = ErrNoForwardableCreds
 	if delegationTok == "" {
 		if credsGetter, _ := s.method.(UserCredentialsGetter); credsGetter != nil {
-			s.endUserTok, s.endUserErr = credsGetter.GetUserCredentials(c, r)
+			s.endUserTok, s.endUserErr = credsGetter.GetUserCredentials(tracedCtx, r)
 		}
 	}
 
-	// Inject auth state.
+	// Inject the auth state into the original context (not the traced one).
 	report(nil, "SUCCESS")
-	return WithState(c, &s), nil
+	return WithState(ctx, &s), nil
 }
 
 // usersAPI returns implementation of UsersAPI by examining Methods.
