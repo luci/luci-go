@@ -16,6 +16,24 @@
       "revId": "8fbcdb29f874214e93ae708fb43cb6b49aa5e795",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2425f8cd_56ee2a5e",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T09:15:58Z",
+      "side": 1,
+      "message": "yeah, we might. note that API limits the size of the content anyway",
+      "parentUuid": "55c68bf9_257fb8b1",
+      "revId": "8fbcdb29f874214e93ae708fb43cb6b49aa5e795",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
