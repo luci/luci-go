@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d18f858_9e0580d5",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T22:24:02Z",
+      "side": 1,
+      "message": "nit: pre-allocate slice\n  make([]*spanner.Mutation, 0, len(in.GetBigqueryExports())+1)",
+      "revId": "a40e7a472ac0887b3c95a6d1e2a6b3e151189acb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b23ebb6b_a813681a",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T22:24:02Z",
+      "side": 1,
+      "message": "see my another comment, without err this would be just append(muts, insertBqExportingTasks(...))",
+      "range": {
+        "startLine": 157,
+        "startChar": 17,
+        "endLine": 157,
+        "endChar": 20
+      },
+      "revId": "a40e7a472ac0887b3c95a6d1e2a6b3e151189acb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
