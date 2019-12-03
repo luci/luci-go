@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b791c044_a281c370",
+        "filename": "common/trace/transport.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T00:55:30Z",
+      "side": 1,
+      "message": "Per http.Response contract, response.Body may optionally implement io.Writer.\n\n   // As of Go 1.12, the Body will also implement io.Writer\n    // on a successful \"101 Switching Protocols\" response,\n    // as used by WebSockets and HTTP/2\u0027s \"h2c\" mode.\n\nThe acrobatics in wrappedBody is necessary to guarantee the wrapper is fully \"transparent\".",
+      "parentUuid": "c3e3ee6a_09fc8c40",
+      "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec5e5a51_217700cf",
         "filename": "server/internal/trace.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "590917eb_5359a807",
+        "filename": "server/internal/trace.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T00:55:30Z",
+      "side": 1,
+      "message": "No, I don\u0027t need a deep copy, since SpanContextToRequest overrides headers with Set, not appends them.",
+      "parentUuid": "ec5e5a51_217700cf",
+      "range": {
+        "startLine": 63,
+        "startChar": 14,
+        "endLine": 63,
+        "endChar": 15
+      },
+      "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
