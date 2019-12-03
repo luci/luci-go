@@ -45,8 +45,6 @@ func cmdDerive(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
 			r.queryRun.registerFlags(p)
-			// TODO(crbug.com/1021849): add -base-test-variant flag.
-			// TODO(crbug.com/1021849): add -base-test-path-prefix flag.
 			return r
 		},
 	}

@@ -28,6 +28,7 @@ import (
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 
+	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -55,7 +56,7 @@ func TestSwarming(t *testing.T) {
 	isoServer := httptest.NewServer(isoFake)
 	defer isoServer.Close()
 
-	Convey(`deriveProtosForWriting correctly handles tasks`, t, func() {
+	Convey(`deriveProtosForWriting correctly handles tasks`, t, func(c C) {
 		// Inject isolated objects.
 		fileDigest := isoFake.Inject("ns", []byte(`"f00df00d"`))
 		isoOut := isolated.Isolated{
@@ -75,44 +76,69 @@ func TestSwarming(t *testing.T) {
 
 		// Set up fake swarming service.
 		swarmingFake := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			resp := `{"created_ts": "2014-09-24T13:49:16.01"`
+			resp := &swarmingAPI.SwarmingRpcsTaskResult{
+				CreatedTs: "2014-09-24T13:49:16.01",
+				Tags: []string{
+					"bucket:bkt",
+					"builder:blder",
+					"test_suite:foo_unittests",
+					"gn_target:chrome/tests:browser_tests",
+				},
+			}
 			hasCompletion := true
 
-			resp += `, "state": `
 			switch r.URL.Path {
 			case fmt.Sprintf("/%stask/pending-task/result", swarmingAPIEndpoint):
-				resp += `"PENDING"`
+				resp.State = "PENDING"
 				hasCompletion = false
 
 			case fmt.Sprintf("/%stask/bot-died-task/result", swarmingAPIEndpoint):
-				resp += `"BOT_DIED"`
+				resp.State = "BOT_DIED"
 
 			case fmt.Sprintf("/%stask/timed-out-task/result", swarmingAPIEndpoint):
-				resp += `"TIMED_OUT"`
+				resp.State = "TIMED_OUT"
+
 			case fmt.Sprintf("/%stask/timed-out-outputs-task/result", swarmingAPIEndpoint):
-				resp += `"TIMED_OUT", ` + makeOutputsRefString(isoServer.URL, outputsDigest)
+				resp.State = "TIMED_OUT"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
 
 			case fmt.Sprintf("/%stask/completed-no-outputs-task/result", swarmingAPIEndpoint):
-				resp += fmt.Sprintf(`"COMPLETED"`)
+				resp.State = "COMPLETED"
+
 			case fmt.Sprintf("/%stask/completed-no-output-file-task/result", swarmingAPIEndpoint):
-				resp += `"COMPLETED", ` + makeOutputsRefString(isoServer.URL, badOutputsDigest)
+				resp.State = "COMPLETED"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(badOutputsDigest),
+				}
+
 			case fmt.Sprintf("/%stask/completed-outputs-task/result", swarmingAPIEndpoint):
-				resp += `"COMPLETED", ` + makeOutputsRefString(isoServer.URL, outputsDigest)
+				resp.State = "COMPLETED"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
 
 			case fmt.Sprintf("/%stask/no-completion-task/result", swarmingAPIEndpoint):
-				resp += `"BOT_DIED"`
+				resp.State = "BOT_DIED"
 				hasCompletion = false
 
 			default:
-				resp += `"INVALID"`
+				resp.State = "INVALID"
 			}
 
 			if hasCompletion {
-				resp += `, "completed_ts": "2014-09-24T14:49:16.0"`
+				resp.CompletedTs = "2014-09-24T14:49:16.0"
 			}
 
-			resp += `}`
-			io.WriteString(w, resp)
+			err := json.NewEncoder(w).Encode(resp)
+			c.So(err, ShouldBeNil)
 		}))
 		defer swarmingFake.Close()
 
@@ -125,11 +151,6 @@ func TestSwarming(t *testing.T) {
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
 		}
 
 		Convey(`that are not finalized`, func() {
@@ -283,19 +304,6 @@ func TestSwarming(t *testing.T) {
 	})
 
 	Convey(`Converting output JSON`, t, func() {
-		req := &pb.DeriveInvocationRequest{
-			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-				Hostname: "host-swarming",
-				Id:       "123",
-			},
-			TestPathPrefix: "prefix/",
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
-		}
-
 		Convey(`chooses JSON Test Results Format correctly`, func() {
 			buf := []byte(
 				`{
@@ -314,7 +322,7 @@ func TestSwarming(t *testing.T) {
 					}
 				}`)
 			inv := &pb.Invocation{}
-			_, err := ConvertOutputJSON(ctx, inv, req, buf, nil)
+			_, err := ConvertOutputJSON(ctx, inv, "", buf, nil)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR))
@@ -337,7 +345,7 @@ func TestSwarming(t *testing.T) {
 					}]
 				}`)
 			inv := &pb.Invocation{}
-			_, err := ConvertOutputJSON(ctx, inv, req, buf, nil)
+			_, err := ConvertOutputJSON(ctx, inv, "", buf, nil)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest))
@@ -349,7 +357,7 @@ func TestSwarming(t *testing.T) {
 					"all_tests": "not GTest format",
 					"version": "not JSON Test Results format"
 				}`)
-			_, err := ConvertOutputJSON(ctx, &pb.Invocation{}, req, buf, nil)
+			_, err := ConvertOutputJSON(ctx, &pb.Invocation{}, "", buf, nil)
 			So(err, ShouldErrLike, `(and 1 other error)`)
 		})
 	})
@@ -367,11 +375,4 @@ func TestSwarming(t *testing.T) {
 			So(tpb, ShouldResembleProto, &tspb.Timestamp{Seconds: 1411566556, Nanos: 12345e3})
 		})
 	})
-}
-
-// makeOutputsRefString makes the "outputs_ref" value in a swarming task result response.
-func makeOutputsRefString(url string, digest isolated.HexDigest) string {
-	return fmt.Sprintf(
-		`"outputs_ref": {"isolatedserver": "%s", "namespace": "ns", "isolated": "%s"}`,
-		url, digest)
 }

@@ -102,7 +102,7 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // Takes outputsToProcess, the isolated outputs associated with the task, to use to populate
 // artifacts, and deletes any that are successfully processed.
 // Does not populate TestResult.Name; that happens server-side on RPC response.
-func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocationRequest, inv *pb.Invocation, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -116,7 +116,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 
 	ret := make([]*pb.TestResult, 0, len(r.Tests))
 	for _, name := range testNames {
-		testPath := req.TestPathPrefix + name
+		testPath := testPathPrefix + name
 
 		// Populate protos.
 		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testPath, outputsToProcess)
@@ -127,10 +127,8 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, req *pb.DeriveInvocation
 		// If any outputs cannot be processed, don't cause the rest of processing to fail, but do log.
 		if len(unresolvedOutputs) > 0 {
 			logging.Errorf(ctx,
-				"Test %s in task %s on %s could not generate artifact protos for the following:\n%s",
+				"Test %s could not generate artifact protos for the following:\n%s",
 				testPath,
-				req.SwarmingTask.Id,
-				req.SwarmingTask.Hostname,
 				artifactsToString(unresolvedOutputs))
 		}
 	}

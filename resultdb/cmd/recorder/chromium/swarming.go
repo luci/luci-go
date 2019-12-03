@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -45,6 +46,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -105,12 +107,19 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 			"unknown swarming state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
+	// Parse swarming tags.
+	baseVariant, gnTarget := parseSwarmingTags(task)
+	testPathPrefix := ""
+	if gnTarget != "" {
+		testPathPrefix = fmt.Sprintf("gn:%s/", gnTarget)
+	}
+
 	// Fetch outputs, converting if any.
 	var results []*pb.TestResult
 	switch {
 	case task.OutputsRef != nil && task.OutputsRef.Isolated != "":
 		// If we have output, try to process it regardless.
-		if results, err = processOutputs(ctx, task, inv, req); err != nil {
+		if results, err = processOutputs(ctx, task.OutputsRef, testPathPrefix, inv, req); err != nil {
 			return nil, nil, err
 		}
 
@@ -120,24 +129,39 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 			"missing expected isolated outputs").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
-	// Inject base test variant if any.
-	if len(req.BaseTestVariant.GetDef()) > 0 {
-		for _, r := range results {
-			if len(r.Variant.GetDef()) == 0 {
-				r.Variant = req.BaseTestVariant
-				continue
-			}
+	// Apply the base variant.
+	for _, r := range results {
+		if len(r.Variant.GetDef()) == 0 {
+			r.Variant = baseVariant
+			continue
+		}
 
-			// Otherwise combine.
-			for k, v := range req.BaseTestVariant.Def {
-				if _, ok := r.Variant.Def[k]; !ok {
-					r.Variant.Def[k] = v
-				}
+		// Otherwise combine.
+		for k, v := range baseVariant.Def {
+			if _, ok := r.Variant.Def[k]; !ok {
+				r.Variant.Def[k] = v
 			}
 		}
 	}
 
 	return inv, results, nil
+}
+
+func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, gnTarget string) {
+	baseVariant = &typepb.Variant{Def: make(map[string]string, 3)}
+	for _, t := range task.Tags {
+		switch k, v := strpair.Parse(t); k {
+		case "bucket":
+			baseVariant.Def["bucket"] = v
+		case "buildername":
+			baseVariant.Def["builder"] = v
+		case "test_suite":
+			baseVariant.Def["test_suite"] = v
+		case "gn_target":
+			gnTarget = v
+		}
+	}
+	return
 }
 
 // GetSwarmSvc gets a swarming service for the given URL.
@@ -206,8 +230,7 @@ type isolatedClient struct {
 
 // processOutputs fetches the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
-func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
-	outputsRef := task.OutputsRef
+func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testPathPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
 	isoClient := isolatedClient{
 		Client:    isolatedclient.New(nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil),
 		host:      strings.TrimPrefix(strings.TrimPrefix(outputsRef.Isolatedserver, "https://"), "http://"),
@@ -231,14 +254,14 @@ func processOutputs(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResul
 	for path, f := range outputs {
 		art := util.IsolatedFileToArtifact(isoClient.host, outputsRef.Namespace, path, &f)
 		if art == nil {
-			logging.Warningf(ctx, "Could not process %q in task %s on %s", path, task.TaskId, outputsRef.Isolatedserver)
+			logging.Warningf(ctx, "Could not process artifact %q", path)
 		}
 
 		outputsToProcess[path] = art
 	}
 
 	// Convert the output JSON.
-	if results, err = ConvertOutputJSON(ctx, inv, req, outputJSON, outputsToProcess); err != nil {
+	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputsToProcess); err != nil {
 		return nil, err
 	}
 	if len(outputsToProcess) > 0 {
@@ -295,12 +318,12 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 // ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveInvocationRequest, data []byte, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix string, data []byte, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, req, inv, outputsToProcess)
+		results, err := jsonFormat.ToProtos(ctx, testPathPrefix, inv, outputsToProcess)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
@@ -311,7 +334,7 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, req *pb.DeriveIn
 	gtestFormat := &formats.GTestResults{}
 	gtestErr := gtestFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if gtestErr == nil {
-		results, err := gtestFormat.ToProtos(ctx, req, inv)
+		results, err := gtestFormat.ToProtos(ctx, testPathPrefix, inv)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as GTest results format").Err()
 		}
