@@ -126,6 +126,24 @@
     },
     {
       "key": {
+        "uuid": "7340d55a_0c3fa215",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1115906
+      },
+      "writtenOn": "2019-12-03T01:03:55Z",
+      "side": 1,
+      "message": "*shrug*, you\u0027re the owner. done.",
+      "parentUuid": "c151f6ae_2b3162c0",
+      "revId": "1d4e46320f88e216a8a1507f5162afd4c4991475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5acb71b3_ec13ca37",
         "filename": "client/archiver/upload_tracker.go",
         "patchSetId": 4
