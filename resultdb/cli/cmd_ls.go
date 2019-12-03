@@ -15,33 +15,54 @@
 package cli
 
 import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/common/cli"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
-	luciflag "go.chromium.org/luci/common/flag"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
 func cmdLs(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `ls [flags]`,
+		UsageLine: `ls [flags] [INVOCATION_ID]...`,
 		ShortDesc: "query results",
+		LongDesc: help(`
+			Query results.
+
+			If no invocation is specified on the command line, reads them from stdin
+			separated by \n. Example:
+			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
+
+			If -json and not -merge, the output is a JSON array with an
+			element per requested invocation, in the same order.
+			The element properties are
+				invocationId: a string
+				testResults: an array of luci.resultdb.rpc.v1.TestResult messages
+				testExonerations: an array of luci.resultdb.rpc.v1.TestResult messages
+
+			If -json and -merge, then the output is a JSON array with a single
+			elment for the same structure, except without invocationId.
+		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
 			r.queryRun.registerFlags(p)
-			r.Flags.Var(luciflag.StringSlice(&r.invIDs), "inv", text.Doc(`
-				Retrieve results from the invocation with this ID.
-
-				May be specified multiple times.
+			r.Flags.BoolVar(&r.merge, "merge", false, help(`
+				Merge results of all specified invocations.
+				This is equivalent to querying one invocation that includes the
+				specified ones.
 			`))
 
-			// TODO(crbug.com/1021849): add flag -cl
 			// TODO(crbug.com/1021849): add flag -var
 			// TODO(crbug.com/1021849): add flag -watch
-
 			return r
 		},
 	}
@@ -50,15 +71,22 @@ func cmdLs(p Params) *subcommands.Command {
 type lsRun struct {
 	queryRun
 	invIDs []string
+	merge  bool
 }
 
 func (r *lsRun) parseArgs(args []string) error {
+	r.invIDs = args
 	if len(r.invIDs) == 0 {
-		return errors.Reason("-inv is required").Err()
+		var err error
+		if r.invIDs, err = readStdin(); err != nil {
+			return err
+		}
 	}
 
-	if len(args) != 0 {
-		return errors.Reason("unexpected positional arguments").Err()
+	for _, id := range r.invIDs {
+		if err := pbutil.ValidateInvocationID(id); err != nil {
+			return errors.Annotate(err, "invocation id %q", id).Err()
+		}
 	}
 
 	return r.queryRun.validate()
@@ -75,13 +103,33 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 		return r.done(err)
 	}
 
-	return r.done(r.queryAndPrint(ctx, r.InvocationNames()))
+	return r.done(r.queryAndPrint(ctx, r.merge, r.invIDs))
 }
 
-func (r *lsRun) InvocationNames() []string {
-	names := make([]string, len(r.invIDs))
-	for i, id := range r.invIDs {
-		names[i] = pbutil.InvocationName(id)
+// readStdin reads all lines from os.Stdin.
+func readStdin() ([]string, error) {
+	// this context is used only to cancel the goroutine below
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		select {
+		case <-time.After(time.Second):
+			fmt.Fprintln(os.Stderr, "expecting invocation ids on stdin...")
+		case <-ctx.Done():
+		}
+	}()
+
+	var ret []string
+	stdin := bufio.NewReader(os.Stdin)
+	for {
+		line, err := stdin.ReadString('\n')
+		if err == io.EOF {
+			return ret, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, strings.TrimSuffix(line, "\n"))
+		cancel()
 	}
-	return names
 }

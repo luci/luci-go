@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
-	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/grpc/prpc"
 
@@ -48,17 +47,17 @@ type baseCommandRun struct {
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, text.Doc(`
+	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, help(`
 		Host of the resultdb instance.
 	`))
-	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
+	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, help(`
 		Force HTTP, as opposed to HTTPS.
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
 }
 
 func (r *baseCommandRun) RegisterJSONFlag() {
-	r.Flags.BoolVar(&r.json, "json", false, text.Doc(`
+	r.Flags.BoolVar(&r.json, "json", false, help(`
 		Print objects in JSON format, one after another (not an array).
 	`))
 }
