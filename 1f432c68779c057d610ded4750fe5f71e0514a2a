@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "03b23f2e_4015d57f",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T20:22:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e430668d_2a0a01d8",
+      "range": {
+        "startLine": 52,
+        "startChar": 18,
+        "endLine": 52,
+        "endChar": 31
+      },
+      "revId": "1f432c68779c057d610ded4750fe5f71e0514a2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6427d97e_d2595c66",
         "filename": "resultdb/cli/queryrun.go",
         "patchSetId": 7
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "i have a draft CL which implements one function that works for both test results and exonerations\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1948608\ni will this in that CL",
       "parentUuid": "6dfd6a62_fb137f86",
+      "range": {
+        "startLine": 184,
+        "startChar": 0,
+        "endLine": 196,
+        "endChar": 12
+      },
+      "revId": "1f432c68779c057d610ded4750fe5f71e0514a2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c4910a4b_5e5942c7",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T20:22:02Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b4a09bf9_4a1655d9",
       "range": {
         "startLine": 184,
         "startChar": 0,
