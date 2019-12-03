@@ -22,10 +22,9 @@ import (
 
 // Doc transforms doc:
 //
-//  1. Strips leading and trailing blank lines.
+//  1. Strips leading and trailing whitespace.
 //  2. Removes common '\t' indentation.
 //  3. Replaces '\n' not-followed by whitespace with ' '.
-//  4. Guarantees '\n' in the end.
 //
 // See example.
 //
@@ -33,11 +32,10 @@ import (
 func Doc(doc string) string {
 	lines := strings.Split(doc, "\n")
 
-	// Strip leading blank lines.
+	// Strip leading and trailing blank lines before computing common indentation.
 	for len(lines) > 0 && isBlank(lines[0]) {
 		lines = lines[1:]
 	}
-	// Strip trailing blank lines.
 	for len(lines) > 0 && isBlank(lines[len(lines)-1]) {
 		lines = lines[:len(lines)-1]
 	}
@@ -90,8 +88,7 @@ func Doc(doc string) string {
 		ret.WriteString(line)
 		newParagraph = false
 	}
-	ret.WriteRune('\n')
-	return ret.String()
+	return strings.TrimSpace(ret.String())
 }
 
 func isBlank(line string) bool {
