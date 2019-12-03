@@ -40,7 +40,17 @@ func cmdLs(p Params) *subcommands.Command {
 
 			If no invocation is specified on the command line, reads them from stdin
 			separated by \n. Example:
-			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
+				bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
+
+			If -json and not -merge, the output is a JSON array with an
+			element per requested invocation, in the same order.
+			The element properties are
+				invocationId: a string
+				testResults: an array of luci.resultdb.rpc.v1.TestResult messages
+				testExonerations: an array of luci.resultdb.rpc.v1.TestResult messages
+
+			If -json and -merge, then the output is a JSON array with a single
+			elment for the same structure, except without invocationId.
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
