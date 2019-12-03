@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/signing"
@@ -94,7 +95,10 @@ type CheckTokenParams struct {
 // token).
 //
 // May return transient errors.
-func CheckToken(c context.Context, params CheckTokenParams) (identity.Identity, error) {
+func CheckToken(c context.Context, params CheckTokenParams) (_ identity.Identity, err error) {
+	c, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/delegation.CheckToken")
+	defer func() { span.End(err) }()
+
 	// base64-encoded token -> DelegationToken proto (with signed serialized
 	// subtoken).
 	tok, err := deserializeToken(params.Token)

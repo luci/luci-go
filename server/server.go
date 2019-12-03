@@ -72,7 +72,7 @@ import (
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"go.opencensus.io/exporter/stackdriver/propagation"
-	"go.opencensus.io/trace"
+	octrace "go.opencensus.io/trace"
 
 	"go.chromium.org/gae/impl/cloud"
 
@@ -85,6 +85,7 @@ import (
 	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/signals"
+	"go.chromium.org/luci/common/trace"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -380,7 +381,7 @@ type Server struct {
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such, may be nil
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
 	tsmon    *tsmon.State              // manages flushing of tsmon metrics
-	sampler  trace.Sampler             // trace sampler to use for top level spans
+	sampler  octrace.Sampler           // trace sampler to use for top level spans
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
@@ -434,7 +435,7 @@ func New(opts Options) (srv *Server, err error) {
 		rnd:          rand.New(rand.NewSource(seed)),
 		bgrDone:      make(chan struct{}),
 		authPerScope: map[string]scopedAuth{},
-		sampler:      trace.NeverSample(),
+		sampler:      octrace.NeverSample(),
 	}
 
 	// Cleanup what we can on failures.
@@ -924,9 +925,9 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			)
 		}
 		span.AddAttributes(
-			trace.Int64Attribute("/http/status_code", int64(statusCode)),
-			trace.Int64Attribute("/http/request/size", c.Request.ContentLength),
-			trace.Int64Attribute("/http/response/size", rw.ResponseSize()),
+			octrace.Int64Attribute("/http/status_code", int64(statusCode)),
+			octrace.Int64Attribute("/http/request/size", c.Request.ContentLength),
+			octrace.Int64Attribute("/http/response/size", rw.ResponseSize()),
 		)
 		span.End()
 	}()
@@ -939,7 +940,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		annotateWithSpan := func(ctx context.Context, e *gkelogger.LogEntry) {
 			// Note: here 'span' is some inner span from where logging.Log(...) was
 			// called. We annotate log lines with spans that emitted them.
-			if span := trace.FromContext(ctx); span != nil {
+			if span := octrace.FromContext(ctx); span != nil {
 				e.SpanID = span.SpanContext().SpanID.String()
 			}
 		}
@@ -1187,17 +1188,19 @@ func (s *Server) initAuth() error {
 //
 // It should implement caching internally. This function may be called very
 // often, concurrently, from multiple goroutines.
-func (s *Server) getAccessToken(c context.Context, scopes []string) (*oauth2.Token, error) {
+func (s *Server) getAccessToken(c context.Context, scopes []string) (_ *oauth2.Token, err error) {
 	key := strings.Join(scopes, " ")
+
+	_, span := trace.StartSpan(c, "go.chromium.org/luci/server.GetAccessToken")
+	span.Attribute("cr.dev/scopes", key)
+	defer func() { span.End(err) }()
 
 	s.authM.RLock()
 	au, ok := s.authPerScope[key]
 	s.authM.RUnlock()
 
 	if !ok {
-		var err error
-		au, err = s.initTokenSource(scopes)
-		if err != nil {
+		if au, err = s.initTokenSource(scopes); err != nil {
 			return nil, err
 		}
 	}
@@ -1457,12 +1460,12 @@ func (s *Server) initTracing() error {
 	if err != nil {
 		return err
 	}
-	trace.RegisterExporter(exporter)
+	octrace.RegisterExporter(exporter)
 
 	// No matter what, do not sample "random" top-level spans from background
 	// goroutines we don't control. We'll start top spans ourselves in
 	// startRequestSpan.
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.NeverSample()})
+	octrace.ApplyConfig(octrace.Config{DefaultSampler: octrace.NeverSample()})
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(exporter.Flush)
@@ -1546,33 +1549,33 @@ func (s *Server) initCloudContext() error {
 }
 
 // startRequestSpan opens a new per-request trace span.
-func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSampling bool) (context.Context, *trace.Span) {
-	var sampler trace.Sampler
+func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSampling bool) (context.Context, *octrace.Span) {
+	var sampler octrace.Sampler
 	if skipSampling {
-		sampler = trace.NeverSample()
+		sampler = octrace.NeverSample()
 	} else {
 		sampler = s.sampler
 	}
-	ctx, span := trace.StartSpan(ctx, "HTTP:"+r.URL.Path,
-		trace.WithSpanKind(trace.SpanKindServer),
-		trace.WithSampler(sampler),
+	ctx, span := octrace.StartSpan(ctx, "HTTP:"+r.URL.Path,
+		octrace.WithSpanKind(octrace.SpanKindServer),
+		octrace.WithSampler(sampler),
 	)
 
 	// Link this span to a parent span propagated through X-Cloud-Trace-Context
 	// header (if any).
 	if parent, ok := cloudTraceFormat.SpanContextFromRequest(r); ok {
-		span.AddLink(trace.Link{
+		span.AddLink(octrace.Link{
 			TraceID: parent.TraceID,
 			SpanID:  parent.SpanID,
-			Type:    trace.LinkTypeParent,
+			Type:    octrace.LinkTypeParent,
 		})
 	}
 
 	// Request info (these are recognized by StackDriver natively).
 	span.AddAttributes(
-		trace.StringAttribute("/http/host", r.Host),
-		trace.StringAttribute("/http/method", r.Method),
-		trace.StringAttribute("/http/path", r.URL.Path),
+		octrace.StringAttribute("/http/host", r.Host),
+		octrace.StringAttribute("/http/method", r.Method),
+		octrace.StringAttribute("/http/path", r.URL.Path),
 	)
 
 	return ctx, span

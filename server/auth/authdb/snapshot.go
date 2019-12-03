@@ -19,12 +19,14 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
@@ -152,6 +154,11 @@ func (db *SnapshotDB) IsMember(c context.Context, id identity.Identity, groups [
 	if db.groups == nil {
 		return false, nil
 	}
+
+	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.IsMember")
+	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
+	defer span.End(nil)
+
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
 		if db.groups.IsMember(id, gr) {
@@ -174,6 +181,11 @@ func (db *SnapshotDB) CheckMembership(c context.Context, id identity.Identity, g
 	if db.groups == nil {
 		return
 	}
+
+	_, span := trace.StartSpan(c, "go.chromium.org/luci/server/auth/authdb.CheckMembership")
+	span.Attribute("cr.dev/groups", strings.Join(groups, ", "))
+	defer span.End(nil)
+
 	// TODO(vadimsh): Optimize multi-group case.
 	for _, gr := range groups {
 		if db.groups.IsMember(id, gr) {
