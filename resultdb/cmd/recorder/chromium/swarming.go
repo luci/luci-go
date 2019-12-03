@@ -54,6 +54,12 @@ const (
 //
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
+	if task.State == "PENDING" || task.State == "RUNNING" {
+		// Tasks not yet completed should not be requested to be processed by the recorder.
+		return nil, nil, errors.Reason(
+			"unexpectedly incomplete state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
+	}
+
 	// Populate fields we will need in the base invocation.
 	invID, err := GetInvocationID(ctx, task, req)
 	if err != nil {
@@ -64,14 +70,17 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		Name: invID.Name(),
 	}
 
+	// Populate timestamps if present.
+	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
+		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
 	// Decide how to continue based on task state.
 	mustFetchOutputJSON := false
 	switch task.State {
-	// Tasks not yet completed should not be requested to be processed by the recorder.
-	case "PENDING", "RUNNING":
-		return nil, nil, errors.Reason(
-			"unexpectedly incomplete state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
-
 	// Tasks that got interrupted for which we expect no output just need to set the correct
 	// Invocation state and are done.
 	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED":
@@ -91,14 +100,6 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	default:
 		return nil, nil, errors.Reason(
 			"unknown swarming state %q", task.State).Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-
-	// Populate timestamps if present.
-	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
-	}
-	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
 	// Fetch outputs, converting if any.
