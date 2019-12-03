@@ -16,9 +16,11 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
 
@@ -28,6 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -45,6 +48,9 @@ const (
 	// By default, interrupt the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
+
+	// To make sure an invocation_task can be performed eventually.
+	eventualInvocationTaskProcessAfter = 2 * day
 )
 
 // updateTokenMetadataKey is the metadata.MD key for the secret update token
@@ -201,4 +207,42 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	return span.InsertOrUpdateMap(
 		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
+}
+
+// insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
+func insertBQExportingTasks(invID span.InvocationID, inv *pb.Invocation, bq_exports []*pb.BigQueryExport, now time.Time) ([]*spanner.Mutation, error) {
+	processAfter := now
+	if !pbutil.IsFinalized(inv.State) {
+		processAfter = now.Add(eventualInvocationTaskProcessAfter)
+	}
+
+	muts := make([]*spanner.Mutation, len(bq_exports))
+	for i, bq_export := range bq_exports {
+		invTask := &internalpb.InvocationTask{
+			BigqueryExport: bq_export,
+		}
+
+		var err error
+		muts[i], err = insertInvocationTask(invID, invTask, processAfter, true)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return muts, nil
+}
+
+// insertInvocationTask inserts one row to InvocationTasks.
+func insertInvocationTask(invID span.InvocationID, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) (*spanner.Mutation, error) {
+	payload, err := proto.Marshal(invTask)
+	if err != nil {
+		return nil, err
+	}
+
+	return span.InsertMap("InvocationTasks", map[string]interface{}{
+		"InvocationId":    invID,
+		"Payload":         span.Snappy(payload),
+		"PayloadHash":     hex.EncodeToString(payload[:8]),
+		"ProcessAfter":    pbutil.MustTimestampProto(processAfter),
+		"ResetOnFinalize": resetOnFinalize,
+	}), nil
 }
