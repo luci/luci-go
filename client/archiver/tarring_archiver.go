@@ -38,19 +38,19 @@ type TarringArchiver struct {
 }
 
 // NewTarringArchiver constructs a TarringArchiver.
-//
 func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
 
 	return &TarringArchiver{checker: checker, uploader: uploader, filePathWalk: filepath.Walk}
 }
 
-// Each call to Archive() must be proceeded by a call to PrepareToArchive()
-func (ta *TarringArchiver) PrepareToArchive(isol *isolated.Isolated) {
+// This module variable is overwritten by tests.
+var prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated) {
 	ta.tracker = newUploadTracker(ta.checker, ta.uploader, isol)
 }
 
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []string, isolated string) (IsolatedSummary, error) {
+func (ta *TarringArchiver) Archive(deps []string, rootDir string, blacklist []string, isolated string, isol *isolated.Isolated) (IsolatedSummary, error) {
+	prepareToArchive(ta, isol)
 	parts, err := ta.partitionDeps(deps, rootDir, blacklist)
 	if err != nil {
 		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
