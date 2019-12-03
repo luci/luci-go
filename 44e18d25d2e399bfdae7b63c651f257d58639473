@@ -1,0 +1,297 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34a42496_9b0af77c",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "golang doe snot like snake_case: bqExports",
+      "range": {
+        "startLine": 213,
+        "startChar": 53,
+        "endLine": 213,
+        "endChar": 63
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "105dacda_9aa24e33",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "all other functions that create mutations do not return an error. I think it would be ok to panic here.\nproto.Marshal is very unlikely to return an error",
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50ad0139_dbebff54",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "note: not sure snappy will help a lot here because payload is not necessarily well-compressible data (unlike user-provided free-form text in SummaryMarkdown), but I don\u0027t have a strong opinion.\n\nAt least .sql file must mention that this is snappy encoded",
+      "range": {
+        "startLine": 239,
+        "startChar": 23,
+        "endLine": 239,
+        "endChar": 29
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f658c439_53ea8a74",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "this is not a hash (or perhaps it is a hash, but a very poor one)",
+      "range": {
+        "startLine": 240,
+        "startChar": 37,
+        "endLine": 240,
+        "endChar": 48
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14aae9b1_06006ec0",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "just processAfter would work here",
+      "range": {
+        "startLine": 241,
+        "startChar": 18,
+        "endLine": 241,
+        "endChar": 58
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df9d24f3_c22b3e7d",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "bqExport1, i.e. no snake_case\n\nsame below",
+      "range": {
+        "startLine": 162,
+        "startChar": 2,
+        "endLine": 162,
+        "endChar": 13
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a3f4835_5992b8f0",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "consider using variadic args:\n\n  insertBQExportingTasks(\"invID\", now, bqExport1, bqExport2)",
+      "range": {
+        "startLine": 180,
+        "startChar": 46,
+        "endLine": 180,
+        "endChar": 63
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c543e41_eca1ebca",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "this isn\u0027t a hash",
+      "range": {
+        "startLine": 189,
+        "startChar": 38,
+        "endLine": 189,
+        "endChar": 50
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ad83317_facef9b8",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "span.InvocationID(\"invID\").Key(payloadHash)",
+      "range": {
+        "startLine": 190,
+        "startChar": 10,
+        "endLine": 190,
+        "endChar": 71
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "016e4256_c2bfda5d",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "i\u0027d rather check that Payload is correct",
+      "range": {
+        "startLine": 193,
+        "startChar": 4,
+        "endLine": 193,
+        "endChar": 31
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3939048f_6233a554",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "if these are two independent tests, then please put them into separate Conveys",
+      "range": {
+        "startLine": 198,
+        "startChar": 2,
+        "endLine": 199,
+        "endChar": 19
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34218c07_b757577b",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "task",
+      "range": {
+        "startLine": 40,
+        "startChar": 48,
+        "endLine": 40,
+        "endChar": 55
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccd5a666_b4c2c28d",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:30:56Z",
+      "side": 1,
+      "message": "an",
+      "range": {
+        "startLine": 43,
+        "startChar": 25,
+        "endLine": 43,
+        "endChar": 28
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
