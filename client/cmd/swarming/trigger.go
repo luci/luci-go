@@ -72,6 +72,21 @@ func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
 	return a
 }
 
+// mapTo converts a stringmapflag.Value into an array of
+// swarming.SwarmingRpcsStringListPair, sorted by key and then value.
+func mapToStringListPairArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringListPair {
+	a := make([]*swarming.SwarmingRpcsStringListPair, 0, len(m))
+
+	// Let mapToArray sorts by Key and Value.
+	for _, v := range mapToArray(m) {
+		a = append(a, &swarming.SwarmingRpcsStringListPair{
+			Key:   v.Key,
+			Value: strings.Split(v.Value, ":"),
+		})
+	}
+	return a
+}
+
 // namePartFromDimensions creates a string from a map of dimensions that can
 // be used as part of the task name.  The dimensions are first sorted as
 // described in mapToArray().
@@ -109,6 +124,7 @@ type triggerRun struct {
 	isolated                  string
 	dimensions                stringmapflag.Value
 	env                       stringmapflag.Value
+	envPrefix                 stringmapflag.Value
 	idempotent                bool
 	lowerPriority             bool
 	containmentType           containmentType
@@ -141,6 +157,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
+	c.Flags.Var(&c.envPrefix, "env-prefix", "Environment prefixes to set.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")
 	c.Flags.BoolVar(&c.lowerPriority, "lower-priority", false, "When set, the task will run with a lower process priority.")
 	c.containmentType = "NONE"
@@ -307,6 +324,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *
 		Command:              commands,
 		Dimensions:           mapToArray(c.dimensions),
 		Env:                  mapToArray(c.env),
+		EnvPrefixes:          mapToStringListPairArray(c.envPrefix),
 		ExecutionTimeoutSecs: c.hardTimeout,
 		ExtraArgs:            extraArgs,
 		GracePeriodSecs:      30,

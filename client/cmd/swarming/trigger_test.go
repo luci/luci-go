@@ -83,6 +83,21 @@ func TestMapToArray(t *testing.T) {
 	})
 }
 
+func TestMapToStringListPairArray(t *testing.T) {
+	Convey(`TestMapToStringListPairArray`, t, func() {
+		input := stringmapflag.Value{
+			"x": "a:b",
+			"y": "c",
+		}
+		expected := []*swarming.SwarmingRpcsStringListPair{
+			{Key: "x", Value: []string{"a", "b"}},
+			{Key: "y", Value: []string{"c"}},
+		}
+
+		So(mapToStringListPairArray(input), ShouldResemble, expected)
+	})
+}
+
 func TestNamePartFromDimensions(t *testing.T) {
 	Convey(`Make sure that a string name can be constructed from dimensions.`, t, func() {
 		type item struct {
