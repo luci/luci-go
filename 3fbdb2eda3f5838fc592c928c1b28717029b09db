@@ -52,6 +52,24 @@
       "revId": "3fbdb2eda3f5838fc592c928c1b28717029b09db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36a7f651_9f8468a0",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-03T19:34:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e2ad374d_8d02fd77",
+      "revId": "3fbdb2eda3f5838fc592c928c1b28717029b09db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
