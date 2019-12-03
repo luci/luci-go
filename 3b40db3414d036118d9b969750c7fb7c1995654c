@@ -22,6 +22,30 @@
       "revId": "3b40db3414d036118d9b969750c7fb7c1995654c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12dea5d6_fa6e0e9a",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T06:47:23Z",
+      "side": 1,
+      "message": "I\u0027m 95% sure no one will touch MkdirAll at this point. Whatever warts it grew are now integral part of its \"interface\". Also, strictly speaking, it\u0027s not a violation of its protocol which is \"MkdirAll creates a directory, along with any necessary parents, and returns nil, or else returns an error. If path is already a directory, MkdirAll does nothing and returns nil.\". They don\u0027t specify what error it returns. EEXIST is also \"an error\".",
+      "parentUuid": "d8097697_b4121269",
+      "range": {
+        "startLine": 292,
+        "startChar": 74,
+        "endLine": 293,
+        "endChar": 44
+      },
+      "revId": "3b40db3414d036118d9b969750c7fb7c1995654c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
