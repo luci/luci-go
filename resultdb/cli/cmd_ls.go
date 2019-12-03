@@ -40,7 +40,7 @@ func cmdLs(p Params) *subcommands.Command {
 
 			If no invocation is specified on the command line, reads them from stdin
 			separated by \n. Example:
-			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
+				bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
