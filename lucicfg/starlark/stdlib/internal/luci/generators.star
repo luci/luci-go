@@ -36,6 +36,8 @@ load('@stdlib//internal/luci/proto.star',
 load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_common_pb='buildbucket.v2')
+
 
 def register():
   """Registers all LUCI config generator callbacks."""
@@ -1020,13 +1022,17 @@ def _notify_notification_pb(node):
     template = templs[0].props.name
   else:
     fail('impossible')
+
   pb = notify_pb.Notification(
+      on_occurrence = node.props.on_occurrence,
+      on_new_status = node.props.on_new_status,
+      template = template,
+
+      # deprecated
       on_change = node.props.on_status_change,
       on_failure = node.props.on_failure,
-      on_infra_failure = node.props.on_infra_failure,
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
-      template = template,
   )
   if node.props.notify_emails:
     pb.email = notify_pb.Notification.Email(recipients=node.props.notify_emails)
