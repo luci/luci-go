@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "15905ba0_522aa7e7",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T09:14:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "216775e5_23910fa1",
+      "range": {
+        "startLine": 107,
+        "startChar": 26,
+        "endLine": 107,
+        "endChar": 43
+      },
+      "revId": "0842efead3750c9c4c0ae8238d89f5a3048bf956",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "100b8b47_18bcce8f",
         "filename": "resultdb/proto/rpc/v1/recorder.proto",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "0842efead3750c9c4c0ae8238d89f5a3048bf956",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cc2657a_de9957f2",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T09:14:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "100b8b47_18bcce8f",
+      "range": {
+        "startLine": 256,
+        "startChar": 8,
+        "endLine": 256,
+        "endChar": 18
+      },
+      "revId": "0842efead3750c9c4c0ae8238d89f5a3048bf956",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
