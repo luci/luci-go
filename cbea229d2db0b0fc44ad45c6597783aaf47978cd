@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1eaf620_665ab8df",
+        "filename": "resultdb/cli/cmd_ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:00:14Z",
+      "side": 1,
+      "message": "read",
+      "range": {
+        "startLine": 41,
+        "startChar": 54,
+        "endLine": 41,
+        "endChar": 59
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f75ae90_27c975c9",
+        "filename": "resultdb/cli/cmd_ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:00:14Z",
+      "side": 1,
+      "message": "\u0027invocation ids are\u0027, to be consistent with \u0027them\u0027 in the later part of this sentence.\n\nI\u0027m not an expert on grammar, but this reads more smooth to me.",
+      "range": {
+        "startLine": 41,
+        "startChar": 9,
+        "endLine": 41,
+        "endChar": 22
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6e6db75_17a7f180",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:00:14Z",
+      "side": 1,
+      "message": "Why do we differentiate invocation names and ids? Is it possible to just use invocation id everywhere?",
+      "range": {
+        "startLine": 78,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 41
+      },
+      "revId": "cbea229d2db0b0fc44ad45c6597783aaf47978cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
