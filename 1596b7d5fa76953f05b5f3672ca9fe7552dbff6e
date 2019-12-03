@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3e3ee6a_09fc8c40",
+        "filename": "common/trace/transport.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T00:17:03Z",
+      "side": 1,
+      "message": "could you elaborate why this is needed? why would a consumer of resp.Body need it to implement io.Writer?",
+      "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec5e5a51_217700cf",
+        "filename": "server/internal/trace.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T00:17:03Z",
+      "side": 1,
+      "message": "this is a shallow copy. I think you want a deep one\nhttps://godoc.org/net/http#Header.Clone",
+      "range": {
+        "startLine": 63,
+        "startChar": 14,
+        "endLine": 63,
+        "endChar": 15
+      },
+      "revId": "1596b7d5fa76953f05b5f3672ca9fe7552dbff6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
