@@ -90,12 +90,12 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	default:
 		return nil, nil, errors.Reason(
-			"unknown swarming state %q", task.State).Tag(grpcutil.InvalidArgumentTag).Err()
+			"unknown swarming state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Populate timestamps if present.
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	finalizeTS := task.CompletedTs
@@ -103,7 +103,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		finalizeTS = task.AbandonedTs
 	}
 	if inv.FinalizeTime, err = convertSwarmingTs(finalizeTS); err != nil {
-		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Fetch outputs, converting if any.
@@ -118,7 +118,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	case mustFetchOutputJSON:
 		// Otherwise we expect output but have none, so fail.
 		return nil, nil, errors.Reason(
-			"missing expected isolated outputs").Tag(grpcutil.InvalidArgumentTag).Err()
+			"missing expected isolated outputs").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Inject base test variant if any.
