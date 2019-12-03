@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76a0c316_0caf345a",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T18:38:58Z",
+      "side": 1,
+      "message": "I\u0027m a little bit concerned about the inconsistency between different services, in text.Doc [1], it actually generates \u0027\\n\u0027 in the end, if \u0027do not end in newlines\u0027 is the desired behavior, should we consider fixing text.Doc instead?",
+      "range": {
+        "startLine": 113,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "838fd5a3338471cb16ad39de5871a05cda8dec2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
