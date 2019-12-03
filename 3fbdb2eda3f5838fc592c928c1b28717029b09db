@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5dc5083_60506dc5",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-03T19:06:16Z",
+      "side": 1,
+      "message": "What\u0027s an example of how this would be used?",
+      "revId": "3fbdb2eda3f5838fc592c928c1b28717029b09db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
