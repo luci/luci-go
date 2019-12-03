@@ -33,11 +33,19 @@ def _to_jsonpb(msg):
   """
 
 
+def _to_wirepb(msg):
+  """Serializes a protobuf message to a string using binary wire encoding.
+
+  Args:
+    msg: a proto message to serialize. Required.
+  """
+
+
 def _from_textpb(ctor, text):
   """Deserializes a protobuf message given its ASCII proto serialization.
 
   Args:
-    ctor: a message constructor function, same one you would normally use to
+    ctor: a message constructor function, the same one you would normally use to
         create a new message. Required.
     text: a string with the serialized message. Required.
 
@@ -50,13 +58,27 @@ def _from_jsonpb(ctor, text):
   """Deserializes a protobuf message given its JSONPB serialization.
 
   Args:
-    ctor: a message constructor function, same one you would normally use to
+    ctor: a message constructor function, the same one you would normally use to
         create a new message. Required.
     text: a string with the serialized message. Required.
 
   Returns:
     Deserialized message constructed via `ctor`.
   """
+
+
+def _from_wirepb(ctor, blob):
+  """Deserializes a protobuf message given its wire serialization.
+
+  Args:
+    ctor: a message constructor function, the same one you would normally use to
+        create a new message. Required.
+    blob: a string with the serialized message. Required.
+
+  Returns:
+    Deserialized message constructed via `ctor`.
+  """
+
 
 def _struct_to_textpb(s):
   """Converts a struct to a text proto string.
@@ -68,10 +90,13 @@ def _struct_to_textpb(s):
     A str containing a text format protocol buffer message.
   """
 
+
 proto = struct(
     to_textpb = _to_textpb,
     to_jsonpb = _to_jsonpb,
+    to_wirepb = _to_wirepb,
     from_textpb = _from_textpb,
     from_jsonpb = _from_jsonpb,
+    from_wirepb = _from_wirepb,
     struct_to_textpb = _struct_to_textpb,
 )
