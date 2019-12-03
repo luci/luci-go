@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -85,6 +86,8 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 // Buffer can convert a value from a Spanner type to a Go type.
 // Supported types:
 //   - string
+//   - InvocationID
+//   - InvocationIDSet
 //   - tspb.Timestamp
 //   - pb.InvocationState
 //   - pb.TestStatus
@@ -132,7 +135,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.nullStr
 	case *InvocationID:
 		spanPtr = &b.nullStr
-	case *[]InvocationID:
+	case *InvocationIDSet:
 		spanPtr = &b.strSlice
 	case **tspb.Timestamp:
 		spanPtr = &b.nullTime
@@ -174,10 +177,10 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			*goPtr = InvocationIDFromRowID(b.nullStr.StringVal)
 		}
 
-	case *[]InvocationID:
-		*goPtr = make([]InvocationID, len(b.strSlice))
-		for i, rowID := range b.strSlice {
-			(*goPtr)[i] = InvocationIDFromRowID(rowID)
+	case *InvocationIDSet:
+		*goPtr = make(InvocationIDSet, len(b.strSlice))
+		for _, rowID := range b.strSlice {
+			goPtr.Add(InvocationIDFromRowID(rowID))
 		}
 
 	case **tspb.Timestamp:
@@ -244,11 +247,12 @@ func ToSpanner(v interface{}) interface{} {
 	case InvocationID:
 		return v.RowID()
 
-	case []InvocationID:
-		ret := make([]string, len(v))
-		for i, id := range v {
-			ret[i] = id.RowID()
+	case InvocationIDSet:
+		ret := make([]string, 0, len(v))
+		for id := range v {
+			ret = append(ret, id.RowID())
 		}
+		sort.Strings(ret)
 		return ret
 
 	case *tspb.Timestamp:

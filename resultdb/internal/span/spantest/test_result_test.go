@@ -39,7 +39,7 @@ func TestQueryTestResults(t *testing.T) {
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
-			InvocationIDs: []span.InvocationID{"inv1"},
+			InvocationIDs: span.NewInvocationIDSet("inv1"),
 		}
 
 		makeTestResults := testutil.MakeTestResults
@@ -101,7 +101,7 @@ func TestQueryTestResults(t *testing.T) {
 				insertTestResults(makeTestResults("inv1", "T4", pb.TestStatus_FAIL)),
 			)...)
 
-			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
+			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
 			q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 			actual, _ := mustRead(q)
 			pbutil.NormalizeTestResultSlice(actual)
@@ -126,7 +126,7 @@ func TestQueryTestResults(t *testing.T) {
 				insertTestResults(makeTestResults("inv1", "2", pb.TestStatus_FAIL)),
 			)...)
 
-			q.InvocationIDs = []span.InvocationID{"inv0", "inv1"}
+			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
 			q.Predicate.TestPathRegexp = "1-.+"
 
 			So(mustReadNames(q), ShouldResemble, []string{

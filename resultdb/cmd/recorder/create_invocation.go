@@ -152,12 +152,10 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			}
 		}
 
-		muts := insertInvocationsByTag(invID, inv.Tags)
-		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
-
-		// TODO(chanli): insert invocation to InvocationsToBeExported.
-
-		return txn.BufferWrite(muts)
+		return txn.BufferWrite([]*spanner.Mutation{
+			insertInvocation(ctx, inv, updateToken, in.RequestId),
+			// TODO(chanli): insert invocation to InvocationsToBeExported.
+		})
 	})
 
 	switch {

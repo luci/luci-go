@@ -139,12 +139,11 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			return nil
 		}
 
-		// Index the invocation by tag.
-		muts := insertInvocationsByTag(invID, inv.Tags)
-		// Insert the invocation.
-		muts = append(muts, insertInvocation(ctx, inv, "", ""))
-
-		return txn.BufferWrite(muts)
+		return txn.BufferWrite([]*spanner.Mutation{
+			// Insert the invocation.
+			insertInvocation(ctx, inv, "", ""),
+			// TODO(jchinlee): insert inclusions.
+		})
 	})
 
 	return inv, err

@@ -89,7 +89,7 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 		return r.done(err)
 	}
 
-	return r.done(r.queryAndPrint(ctx, &pb.InvocationPredicate{Names: invNames}))
+	return r.done(r.queryAndPrint(ctx, invNames))
 }
 
 // deriveInvocations derives invocations from the swarming tasks and returns
