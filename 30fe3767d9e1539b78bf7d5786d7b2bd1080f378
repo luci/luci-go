@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "fddea3d5_6d6cb18b",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-03T23:47:37Z",
+      "side": 1,
+      "message": "You\u0027re not returning any actual error if isValidDiskType is false. I think in Validate you should check \"if !isValidDiskType(d.Type) { c.Errorf(\"...\") }\", and then omit isValidDiskType checks from isXDisk.",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ffe794a2_5ac18998",
         "filename": "gce/api/config/v1/disk.go",
         "patchSetId": 2
