@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc2b2ff9_c0972cd3",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:20:36Z",
+      "side": 1,
+      "message": "Do you mean luci.resultdb.proto?",
+      "range": {
+        "startLine": 52,
+        "startChar": 18,
+        "endLine": 52,
+        "endChar": 31
+      },
+      "revId": "1f432c68779c057d610ded4750fe5f71e0514a2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6427d97e_d2595c66",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:20:36Z",
+      "side": 1,
+      "message": "Do you mean TestExoneration?",
+      "range": {
+        "startLine": 53,
+        "startChar": 44,
+        "endLine": 53,
+        "endChar": 54
+      },
+      "revId": "1f432c68779c057d610ded4750fe5f71e0514a2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dfd6a62_fb137f86",
+        "filename": "resultdb/cli/queryrun.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-03T19:20:36Z",
+      "side": 1,
+      "message": "I wonder if it makes sense to factor this piece of code into a helper function? Especially given that they both need to implement paging.",
+      "range": {
+        "startLine": 184,
+        "startChar": 0,
+        "endLine": 196,
+        "endChar": 12
+      },
+      "revId": "1f432c68779c057d610ded4750fe5f71e0514a2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
