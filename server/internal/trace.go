@@ -17,7 +17,9 @@ package internal
 import (
 	"context"
 	"fmt"
+	"net/http"
 
+	"go.opencensus.io/exporter/stackdriver/propagation"
 	octrace "go.opencensus.io/trace"
 
 	"go.chromium.org/luci/common/trace"
@@ -32,13 +34,43 @@ func EnableOpenCensusTracing() {
 
 type ocTraceBackend struct{}
 
-func (ocTraceBackend) StartSpan(ctx context.Context, name string) (context.Context, trace.Span) {
-	ctx, span := octrace.StartSpan(ctx, name)
+func (ocTraceBackend) StartSpan(ctx context.Context, name string, kind trace.SpanKind) (context.Context, trace.Span) {
+	var ocKind int
+	switch kind {
+	case trace.SpanKindInternal:
+		ocKind = octrace.SpanKindUnspecified
+	case trace.SpanKindClient:
+		ocKind = octrace.SpanKindClient
+	default:
+		ocKind = octrace.SpanKindUnspecified
+	}
+	ctx, span := octrace.StartSpan(ctx, name, octrace.WithSpanKind(ocKind))
 	if span.IsRecordingEvents() {
 		return ctx, ocSpan{span}
 	}
 	return ctx, trace.NullSpan{}
 }
+
+var cloudTraceFormat = propagation.HTTPFormat{}
+
+func (ocTraceBackend) PropagateSpanContext(ctx context.Context, span trace.Span, req *http.Request) *http.Request {
+	// Inject the new context into the request, this also makes a shallow copy.
+	req = req.WithContext(ctx)
+
+	// We are about to set some headers, clone the headers map. No need to do
+	// a deep clone, since we aren't going to add values to existing slices.
+	header := make(http.Header, len(req.Header))
+	for k, v := range req.Header {
+		header[k] = v
+	}
+	req.Header = header
+
+	// Inject X-Cloud-Trace-Context header with the encoded span context.
+	cloudTraceFormat.SpanContextToRequest(span.(ocSpan).span.SpanContext(), req)
+	return req
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 type ocSpan struct {
 	span *octrace.Span
