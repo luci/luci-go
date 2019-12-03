@@ -116,6 +116,25 @@ func TestEnsureDirectory(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(fs.isDir("a/b/c"), ShouldBeTrue)
 	})
+
+	if runtime.GOOS != "windows" {
+		Convey("EnsureDirectory replaces file symlinks with directories", t, func(c C) {
+			fs := tempFileSystem(c)
+			fs.write("target", "xxx")
+			fs.symlink("target", "a")
+			_, err := fs.EnsureDirectory(ctx, fs.join("a"))
+			So(err, ShouldBeNil)
+			So(fs.isDir("a"), ShouldBeTrue)
+		})
+
+		Convey("EnsureDirectory replaces broken symlinks with directories", t, func(c C) {
+			fs := tempFileSystem(c)
+			fs.symlink("broken", "a")
+			_, err := fs.EnsureDirectory(ctx, fs.join("a"))
+			So(err, ShouldBeNil)
+			So(fs.isDir("a"), ShouldBeTrue)
+		})
+	}
 }
 
 func TestEnsureSymlink(t *testing.T) {
@@ -522,6 +541,11 @@ func (f *tempFileSystemImpl) write(rel string, data string) {
 // mkdir creates an empty directory.
 func (f *tempFileSystemImpl) mkdir(rel string) {
 	f.c.So(os.MkdirAll(f.join(rel), 0777), ShouldBeNil)
+}
+
+// symlink creates a symlink.
+func (f *tempFileSystemImpl) symlink(oldname, newname string) {
+	f.c.So(os.Symlink(f.join(oldname), f.join(newname)), ShouldBeNil)
 }
 
 // read reads an existing file at a given slash separated path relative to Root().
