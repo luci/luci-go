@@ -314,7 +314,23 @@ func (o *Options) imageVersion() string {
 	return o.ContainerImageID[idx+1:]
 }
 
+// shouldEnableTracing is true if options indicate we should enable tracing.
+func (o *Options) shouldEnableTracing() bool {
+	switch {
+	case o.CloudProject == "":
+		return false // nowhere to upload traces to
+	case !o.Prod && o.TraceSampling == "":
+		return false // in dev mode don't upload samples by default
+	default:
+		return true
+	}
+}
+
 // Server is responsible for initializing and launching the serving environment.
+//
+// Generally assumed to be a singleton: do not launch multiple Server instances
+// within the same process, use RegisterHTTP instead if you want to expose
+// multiple ports.
 //
 // Doesn't do TLS. Should be sitting behind a load balancer that terminates
 // TLS.
@@ -400,6 +416,13 @@ func New(opts Options) (srv *Server, err error) {
 	ctx := opts.testCtx
 	if ctx == nil {
 		ctx = context.Background()
+	}
+
+	// Do this very early, so that various transports created during the
+	// initialization are already wrapped with tracing. The rest of the tracing
+	// infra (e.g. actual uploads) is initialized later in initTracing.
+	if opts.shouldEnableTracing() {
+		internal.EnableOpenCensusTracing()
 	}
 
 	srv = &Server{
@@ -1391,16 +1414,13 @@ func (s *Server) initTSMon() error {
 
 // initTracing initialized StackDriver opencensus.io trace exporter.
 func (s *Server) initTracing() error {
-	if s.Options.CloudProject == "" {
+	if !s.Options.shouldEnableTracing() {
 		return nil
 	}
 
 	// Parse -trace-sampling spec to get a sampler.
 	sampling := s.Options.TraceSampling
 	if sampling == "" {
-		if !s.Options.Prod {
-			return nil // the default in the dev mode is "don't upload samples"
-		}
 		sampling = "1qps"
 	}
 	logging.Infof(s.Context, "Setting up StackDriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
@@ -1443,9 +1463,6 @@ func (s *Server) initTracing() error {
 	// goroutines we don't control. We'll start top spans ourselves in
 	// startRequestSpan.
 	trace.ApplyConfig(trace.Config{DefaultSampler: trace.NeverSample()})
-
-	// Enable tracing in various LUCI libraries.
-	internal.EnableOpenCensusTracing()
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(exporter.Flush)

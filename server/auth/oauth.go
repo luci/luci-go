@@ -163,13 +163,16 @@ func (m *GoogleOAuth2Method) authenticateAgainstGoogle(c context.Context, cfg *C
 	*User, time.Duration, error) {
 
 	// Use the anonymous transport client for OAuth2 verification.
-	client := cfg.anonymousClient(c)
+	tr, err := GetRPCTransport(c, NoAuth)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	// Fetch an info dict associated with the token.
 	logging.Infof(c, "oauth: Querying tokeninfo endpoint")
 	tokenInfo, err := googleoauth.GetTokenInfo(c, googleoauth.TokenInfoParams{
 		AccessToken: accessToken,
-		Client:      client,
+		Client:      &http.Client{Transport: tr},
 		Endpoint:    m.tokenInfoEndpoint,
 	})
 	if err != nil {

@@ -21,6 +21,7 @@ package trace
 import (
 	"context"
 	"fmt"
+	"net/http"
 )
 
 // Span is in-progress trace span opened by StartSpan.
@@ -46,7 +47,21 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 	if backend == nil {
 		return ctx, NullSpan{}
 	}
-	return backend.StartSpan(ctx, name)
+	return backend.StartSpan(ctx, name, SpanKindInternal)
+}
+
+// InstrumentTransport wraps the transport with tracing.
+//
+// Each outgoing request will result in a span. Additionally, adds headers to
+// propagate the span context to the peer.
+//
+// Uses the context from requests or 'ctx' if requests don't have a
+// non-background context.
+func InstrumentTransport(ctx context.Context, t http.RoundTripper) http.RoundTripper {
+	if backend == nil {
+		return t
+	}
+	return &tracedTransport{ctx, t} // see transport.go
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,10 +69,21 @@ func StartSpan(ctx context.Context, name string) (context.Context, Span) {
 
 var backend Backend
 
+// SpanKind is an enum that defines a flavor of a span.
+type SpanKind int
+
+const (
+	SpanKindInternal SpanKind = 0 // a span internal to the server
+	SpanKindClient   SpanKind = 1 // a span with a client side of an RPC call
+)
+
 // Backend knows how to collect and upload spans.
 type Backend interface {
 	// StartSpan implements public StartSpan function.
-	StartSpan(ctx context.Context, name string) (context.Context, Span)
+	StartSpan(ctx context.Context, name string, kind SpanKind) (context.Context, Span)
+	// PropagateSpanContext returns a shallow copy of http.Request with the span
+	// context (from the given `ctx`) injected into the headers.
+	PropagateSpanContext(ctx context.Context, span Span, req *http.Request) *http.Request
 }
 
 // SetBackend installs the process-global implementation of the span collector.
