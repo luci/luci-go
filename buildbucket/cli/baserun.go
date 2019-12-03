@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -104,6 +106,17 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	// TODO(crbug/1016443): remove AcceptContentSubtype defaulting into binary
 	// protobuf encoding once Buildbucket server becomes faster.
 	rpcOpts.AcceptContentSubtype = "json"
+	// Per crbug/1030156, default of 5 retries isn't good enough.
+	rpcOpts.Retry = func() retry.Iterator {
+		return &retry.ExponentialBackoff{
+			Limited: retry.Limited{
+				Delay:   time.Second,
+				Retries: 10,
+			},
+			Multiplier: 2.0,
+			MaxDelay:   5 * time.Minute,
+		}
+	}
 	r.client = pb.NewBuildsPRPCClient(&prpc.Client{
 		C:       r.httpClient,
 		Host:    r.host,
