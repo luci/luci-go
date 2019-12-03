@@ -129,7 +129,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv 
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
-		logging.Infof(ctx, "Got %d GTest iterations")
+		logging.Infof(ctx, "Got %d GTest iterations", len(r.PerIterationData))
 	}
 
 	// Assume the invocation was not interrupted; if any results are NOTRUN,
