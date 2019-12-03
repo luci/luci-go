@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43adc2cc_3b8f7a2f",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "nit: \"table\", singular, since we are talking about one task here",
+      "range": {
+        "startLine": 187,
+        "startChar": 44,
+        "endLine": 187,
+        "endChar": 52
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59b25484_9efb02ce",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "process yet.",
+      "range": {
+        "startLine": 202,
+        "startChar": 68,
+        "endLine": 202,
+        "endChar": 76
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05eae1fe_1fc89555",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "nit: set\n\nthe word \"reset\" applies to the whole task, not ProcessAfter. ProcessAfter is \"set\"",
+      "range": {
+        "startLine": 204,
+        "startChar": 54,
+        "endLine": 204,
+        "endChar": 59
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a89948e_b1eae18e",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "set",
+      "range": {
+        "startLine": 206,
+        "startChar": 72,
+        "endLine": 206,
+        "endChar": 77
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ad0562_1f7b1b96",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "nit: this could be more readable:\n\n  -- * if ResetOnFinalize is true, ProcessAfter will be reset to the finalization\n  --   time when the invocation is finalized.\n  -- * if a worker has started working on this task, ProcessAfter will be reset to\n  --   a future time to prevent other workers picking up the same task.",
+      "range": {
+        "startLine": 204,
+        "startChar": 5,
+        "endLine": 207,
+        "endChar": 7
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ef5f347_99a6833a",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-03T20:21:10Z",
+      "side": 1,
+      "message": "set",
+      "range": {
+        "startLine": 210,
+        "startChar": 14,
+        "endLine": 210,
+        "endChar": 19
+      },
+      "revId": "7b28d4b6268abc05dd3d1fe2609ba90be2b821e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
