@@ -16,15 +16,12 @@ package chromium
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
@@ -66,16 +63,10 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 
 	// Populate fields we will need in the base invocation.
-	invID, err := GetInvocationID(ctx, task, req)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	inv := &pb.Invocation{
-		Name: invID.Name(),
+		Name: GetInvocationID(task, req).Name(),
 	}
-
-	// Populate timestamps if present.
+	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
 		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
@@ -210,16 +201,9 @@ func GetOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult
 }
 
 // GetInvocationID gets the ID of the invocation associated with a task and swarming service.
-func GetInvocationID(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (span.InvocationID, error) {
-	// Get request information to include in ID.
-	canonicalReq, _ := proto.Clone(req).(*pb.DeriveInvocationRequest)
-	canonicalReq.SwarmingTask.Id = task.RunId
-
-	h := sha256.New()
-	if err := json.NewEncoder(h).Encode(canonicalReq); err != nil {
-		return "", errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
-	}
-	return span.InvocationID("swarming_" + hex.EncodeToString(h.Sum(nil))), nil
+func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) span.InvocationID {
+	escapedHostname := strings.Replace(req.SwarmingTask.Hostname, ".", "_", -1)
+	return span.InvocationID(fmt.Sprintf("swarm:%s:%s", escapedHostname, task.RunId))
 }
 
 type isolatedClient struct {
