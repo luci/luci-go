@@ -48,19 +48,17 @@ type baseCommandRun struct {
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, text.Doc(`
+	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, help(`
 		Host of the resultdb instance.
 	`))
-	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
+	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, help(`
 		Force HTTP, as opposed to HTTPS.
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
 }
 
-func (r *baseCommandRun) RegisterJSONFlag() {
-	r.Flags.BoolVar(&r.json, "json", false, text.Doc(`
-		Print objects in JSON format, one after another (not an array).
-	`))
+func (r *baseCommandRun) RegisterJSONFlag(usage string) {
+	r.Flags.BoolVar(&r.json, "json", false, usage)
 }
 
 // initClients validates -host flag and initializes r.httpClient, r.resultdb
@@ -108,4 +106,10 @@ func (r *baseCommandRun) done(err error) int {
 		return 1
 	}
 	return 0
+}
+
+func help(s string) string {
+	s = text.Doc(s)
+	s = strings.TrimSpace(s)
+	return s
 }
