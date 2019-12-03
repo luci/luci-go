@@ -152,10 +152,15 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			}
 		}
 
-		return txn.BufferWrite([]*spanner.Mutation{
-			insertInvocation(ctx, inv, updateToken, in.RequestId),
-			// TODO(chanli): insert invocation to InvocationTasks.
-		})
+		muts := []*spanner.Mutation{insertInvocation(ctx, inv, updateToken, in.RequestId)}
+
+		inv_task_muts, err := insertBQExportingTasks(invID, in.GetBigqueryExports(), now.Add(eventualInvocationTaskProcessAfter))
+		if err != nil {
+			return err
+		}
+		muts = append(muts, inv_task_muts...)
+
+		return txn.BufferWrite(muts)
 	})
 
 	switch {
