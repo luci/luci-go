@@ -79,7 +79,7 @@ type FileSystem interface {
 	//
 	// Follows symlinks. Does nothing it the path already exists and it is a
 	// directory (or a symlink pointing to a directory). Replaces an existing file
-	// with a directory.
+	// (or a symlink to a file, or a broken symlink) with a directory.
 	//
 	// It takes an absolute path or a path relative to the current working
 	// directory and always returns absolute path.
@@ -288,9 +288,20 @@ func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, erro
 	//
 	// In this scenario IsNotExist is specifically for Windows, which for whatever
 	// reason returns it sometimes instead of ERROR_DIRECTORY.
-	if os.IsNotExist(err) || IsNotDir(err) {
+	//
+	// EEXIST happens when 'path' already exists and it is a broken symlink. This
+	// is due to the internal logic of MkdirAll, which confuses ENOENT from
+	// os.Stat due to a broken symlink with "ah, the directory is missing and we
+	// should create it". It then proceeds to calling `mkdir`, which fails with
+	// EEXIST (because there's the symlink there already). os.MkdirAll then
+	// assumes it is an existing directory, and double checks this with os.Lstat
+	// (NOT os.Stat, who knows why), discovering it is in fact not a directory,
+	// but a symlink. At this point it gives up and returns the error from `mkdir`
+	// (i.e. EEXIST).
+	if os.IsNotExist(err) || IsNotDir(err) || os.IsExist(err) {
 		cur := path
 		for {
+			// Note: this returns nil error for broken symlinks.
 			fi, err := os.Lstat(cur)
 
 			// If 'cur' doesn't exist yet or some of its parent is not a directory, go
