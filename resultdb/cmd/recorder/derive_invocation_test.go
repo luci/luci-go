@@ -52,15 +52,6 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 				},
 			}
 			So(validateDeriveInvocationRequest(req), ShouldBeNil)
-
-			Convey(`with base_test_variant populated`, func() {
-				req.BaseTestVariant = pbutil.Variant(
-					"k1", "v1",
-					"key/k2", "v2",
-					"key/with/part/k3", "v3",
-				)
-				So(validateDeriveInvocationRequest(req), ShouldBeNil)
-			})
 		})
 
 		Convey(`Invalid swarming_task`, func() {
@@ -97,17 +88,6 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 				}
 				So(validateDeriveInvocationRequest(req), ShouldErrLike, "swarming_task.id missing")
 			})
-		})
-
-		Convey(`Invalid base_test_variant`, func() {
-			req := &pb.DeriveInvocationRequest{
-				SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-					Hostname: "swarming-host.appspot.com",
-					Id:       "beeff00d",
-				},
-				BaseTestVariant: pbutil.Variant("1", "b"),
-			}
-			So(validateDeriveInvocationRequest(req), ShouldErrLike, "key: does not match")
 		})
 	})
 }
@@ -186,6 +166,12 @@ func TestDeriveInvocation(t *testing.T) {
 					"namespace": "ns",
 					"isolated": "%s"
 				},
+				"tags": [
+					"bucket:bkt",
+					"buildername:blder",
+					"test_suite:foo_unittests",
+					"gn_target://tests:tests"
+				],
 				"created_ts": "2019-10-14T13:49:16.01",
 				"completed_ts": "2019-10-14T14:49:16.01"
 			}`, isoServer.URL, outputsDigest))
@@ -194,16 +180,10 @@ func TestDeriveInvocation(t *testing.T) {
 
 		// Define base request we'll be using.
 		swarmingHostname := strings.TrimPrefix(swarmingFake.URL, "https://")
-		variant := pbutil.Variant(
-			"bucket", "bkt",
-			"builder", "blder",
-			"test_suite", "foo_unittests",
-		)
 		req := &pb.DeriveInvocationRequest{
 			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
 				Hostname: swarmingHostname,
 			},
-			BaseTestVariant: variant,
 		}
 
 		recorder := &recorderServer{}
@@ -235,7 +215,7 @@ func TestDeriveInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
-			So(trs[0].TestPath, ShouldEqual, "FooTest.DoesBar")
+			So(trs[0].TestPath, ShouldEqual, "gn://tests:tests/FooTest.DoesBar")
 			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
 				"bucket", "bkt",
@@ -244,9 +224,9 @@ func TestDeriveInvocation(t *testing.T) {
 				"param/instantiation", "MyInstantiation",
 				"param/id", "1",
 			))
-			So(trs[1].TestPath, ShouldEqual, "FooTest.TestDoBar")
+			So(trs[1].TestPath, ShouldEqual, "gn://tests:tests/FooTest.TestDoBar")
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
-			So(trs[2].TestPath, ShouldEqual, "FooTest.TestDoBar")
+			So(trs[2].TestPath, ShouldEqual, "gn://tests:tests/FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 		})
 	})
