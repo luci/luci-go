@@ -22,10 +22,32 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// testObjectPredicate is implemented by both *pb.TestResultPredicate
+// and *pb.TestExonerationPredicate.
+type testObjectPredicate interface {
+	GetTestPathRegexp() string
+	GetVariant() *pb.VariantPredicate
+}
+
+// validateTestObjectPredicate returns a non-nil error if p is determined to be
+// invalid.
+func validateTestObjectPredicate(p testObjectPredicate) error {
+	if err := validateRegexp(p.GetTestPathRegexp()); err != nil {
+		return errors.Annotate(err, "test_path_regexp").Err()
+	}
+
+	if p.GetVariant() != nil {
+		if err := ValidateVariantPredicate(p.GetVariant()); err != nil {
+			return errors.Annotate(err, "variant").Err()
+		}
+	}
+	return nil
+}
+
 // ValidateTestResultPredicate returns a non-nil error if p is determined to be
 // invalid.
 func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
-	if err := ValidateEnum(int32(p.Expectancy), pb.TestResultPredicate_Expectancy_name); err != nil {
+	if err := ValidateEnum(int32(p.GetExpectancy()), pb.TestResultPredicate_Expectancy_name); err != nil {
 		return errors.Annotate(err, "expectancy").Err()
 	}
 
@@ -36,30 +58,6 @@ func ValidateTestResultPredicate(p *pb.TestResultPredicate) error {
 // invalid.
 func ValidateTestExonerationPredicate(p *pb.TestExonerationPredicate) error {
 	return validateTestObjectPredicate(p)
-}
-
-// ValidateInvocationPredicate returns a non-nil error if p is determined to be
-// invalid.
-//
-// Requires that p has tags or names.
-func ValidateInvocationPredicate(p *pb.InvocationPredicate) error {
-	if len(p.GetNames()) == 0 && len(p.GetTags()) == 0 {
-		return unspecified()
-	}
-
-	for _, name := range p.GetNames() {
-		if err := ValidateInvocationName(name); err != nil {
-			return errors.Annotate(err, "name %q", name).Err()
-		}
-	}
-
-	for _, tag := range p.GetTags() {
-		if err := ValidateStringPair(tag); err != nil {
-			return errors.Annotate(err, "tag %q", StringPairToString(tag)).Err()
-		}
-	}
-
-	return nil
 }
 
 // validateRegexp returns a non-nil error if re is an invalid regular

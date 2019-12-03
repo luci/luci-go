@@ -29,24 +29,34 @@ import (
 
 func TestValidateQueryRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`invalid max staleness`, t, func() {
-		err := validateQueryRequest(&pb.QueryTestResultsRequest{
-			Predicate: &pb.TestResultPredicate{
-				Invocation: &pb.InvocationPredicate{Names: []string{"invocations/x"}},
-			},
-			MaxStaleness: &durpb.Duration{Seconds: -1},
+	Convey(`TestValidateQueryRequest`, t, func() {
+		Convey(`no invocations`, func() {
+			err := validateQueryRequest(&pb.QueryTestResultsRequest{})
+			So(err, ShouldErrLike, `invocations: unspecified`)
 		})
-		So(err, ShouldErrLike, `max_staleness: must between 0 and 30m, inclusive`)
-	})
 
-	Convey(`invalid page size`, t, func() {
-		err := validateQueryRequest(&pb.QueryTestResultsRequest{
-			Predicate: &pb.TestResultPredicate{
-				Invocation: &pb.InvocationPredicate{Names: []string{"invocations/x"}},
-			},
-			PageSize: -1,
+		Convey(`invalid invocation`, func() {
+			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+				Invocations: []string{"x"},
+			})
+			So(err, ShouldErrLike, `invocations: "x": does not match`)
 		})
-		So(err, ShouldErrLike, `page_size: negative`)
+
+		Convey(`invalid max staleness`, func() {
+			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+				Invocations:  []string{"invocations/x"},
+				MaxStaleness: &durpb.Duration{Seconds: -1},
+			})
+			So(err, ShouldErrLike, `max_staleness: must between 0 and 30m, inclusive`)
+		})
+
+		Convey(`invalid page size`, func() {
+			err := validateQueryRequest(&pb.QueryTestResultsRequest{
+				Invocations: []string{"invocations/x"},
+				PageSize:    -1,
+			})
+			So(err, ShouldErrLike, `page_size: negative`)
+		})
 	})
 }
 
@@ -54,26 +64,18 @@ func TestValidateQueryTestResultsRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`Valid`, t, func() {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
-			Predicate: &pb.TestResultPredicate{
-				Invocation: &pb.InvocationPredicate{
-					Names: []string{"invocations/x"},
-				},
-			},
+			Invocations:  []string{"invocations/x"},
 			PageSize:     50,
 			MaxStaleness: &durpb.Duration{Seconds: 60},
 		})
 		So(err, ShouldBeNil)
 	})
 
-	Convey(`invalid predicate`, t, func() {
+	Convey(`invalid invocation`, t, func() {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
-			Predicate: &pb.TestResultPredicate{
-				Invocation: &pb.InvocationPredicate{
-					Names: []string{"x"},
-				},
-			},
+			Invocations: []string{"x"},
 		})
-		So(err, ShouldErrLike, `predicate: invocation: name "x": does not match`)
+		So(err, ShouldErrLike, `invocations: "x": does not match`)
 	})
 }
 
@@ -93,11 +95,7 @@ func TestQueryTestResults(t *testing.T) {
 
 		srv := &resultDBServer{}
 		res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
-			Predicate: &pb.TestResultPredicate{
-				Invocation: &pb.InvocationPredicate{
-					Names: []string{"invocations/a"},
-				},
-			},
+			Invocations: []string{"invocations/a"},
 		})
 		So(err, ShouldBeNil)
 		So(res.TestResults, ShouldHaveLength, 5)

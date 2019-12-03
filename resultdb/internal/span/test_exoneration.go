@@ -80,7 +80,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 
 // TestExonerationQuery specifies test exonerations to fetch.
 type TestExonerationQuery struct {
-	InvocationIDs []InvocationID
+	InvocationIDs InvocationIDSet
 	Predicate     *pb.TestExonerationPredicate // Predicate.Invocation must be nil.
 	PageSize      int                          // must be positive
 	PageToken     string
@@ -92,8 +92,6 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	switch {
 	case q.PageSize <= 0:
 		panic("PageSize <= 0")
-	case q.Predicate.GetInvocation() != nil:
-		panic("q.Predicate.Invocation != nil")
 	}
 
 	st := spanner.NewStatement(`

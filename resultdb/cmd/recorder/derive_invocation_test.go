@@ -228,7 +228,7 @@ func TestDeriveInvocation(t *testing.T) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()
 			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
-				InvocationIDs: []span.InvocationID{span.MustParseInvocationName(inv.Name + "::batch::0")},
+				InvocationIDs: span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name + "::batch::0")),
 				PageSize:      100,
 			})
 			So(err, ShouldBeNil)
@@ -281,7 +281,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 				txn := span.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
 				actualResults, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
-					InvocationIDs: []span.InvocationID{batchInvocationID(baseID, i)},
+					InvocationIDs: span.NewInvocationIDSet(batchInvocationID(baseID, i)),
 					PageSize:      100,
 				})
 				So(err, ShouldBeNil)

@@ -72,10 +72,10 @@ func (r *queryRun) validate() error {
 }
 
 // queryAndPrint queries results and prints them.
-func (r *queryRun) queryAndPrint(ctx context.Context, inv *pb.InvocationPredicate) error {
+func (r *queryRun) queryAndPrint(ctx context.Context, invocations []string) error {
 	req := &pb.QueryTestResultsRequest{
+		Invocations: invocations,
 		Predicate: &pb.TestResultPredicate{
-			Invocation:     inv,
 			TestPathRegexp: r.testPath,
 			Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
 		},

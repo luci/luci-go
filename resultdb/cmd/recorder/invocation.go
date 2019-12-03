@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 const (
@@ -156,17 +155,6 @@ func readInvocationState(ctx context.Context, txn span.Txn, id span.InvocationID
 	var state pb.Invocation_State
 	err := span.ReadInvocation(ctx, txn, id, map[string]interface{}{"State": &state})
 	return state, err
-}
-
-func insertInvocationsByTag(invID span.InvocationID, tags []*typepb.StringPair) []*spanner.Mutation {
-	muts := make([]*spanner.Mutation, len(tags))
-	for i, tag := range tags {
-		muts[i] = span.InsertMap("InvocationsByTag", map[string]interface{}{
-			"TagId":        span.TagRowID(tag),
-			"InvocationId": invID,
-		})
-	}
-	return muts
 }
 
 func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {

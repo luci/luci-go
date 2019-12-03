@@ -26,18 +26,20 @@ func InclusionKey(including, included InvocationID) spanner.Key {
 }
 
 // ReadIncludedInvocations reads ids of included invocations.
-func ReadIncludedInvocations(ctx context.Context, txn Txn, id InvocationID) ([]InvocationID, error) {
-	var ret []InvocationID
+func ReadIncludedInvocations(ctx context.Context, txn Txn, id InvocationID) (InvocationIDSet, error) {
+	var ret InvocationIDSet
 	var b Buffer
 	err := txn.Read(ctx, "IncludedInvocations", id.Key().AsPrefix(), []string{"IncludedInvocationId"}).Do(func(row *spanner.Row) error {
 		var included InvocationID
 		if err := b.FromSpanner(row, &included); err != nil {
 			return err
 		}
-		ret = append(ret, included)
+		if ret == nil {
+			ret = make(InvocationIDSet)
+		}
+		ret.Add(included)
 		return nil
 	})
-	SortInvocationIDs(ret)
 	if err != nil {
 		return nil, err
 	}

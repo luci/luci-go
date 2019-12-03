@@ -24,20 +24,15 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 // Represents a function TestResult -> bool.
 // Empty message matches all test results.
 //
-// Most clients would get invocation name from another service, e.g.
-// Buildbucket, use it in TestResultPredicate.invocation.name.
-// Also most clients would want to set expected_results to
+// Most clients would want to set expected_results to
 // VARIANTS_WITH_UNEXPECTED_RESULTS.
 message TestResultPredicate {
-  // A test result must belong to an invocation satisfying this predicate.
-  InvocationPredicate invocation = 1;
-
   // A test result must have a test path matching this regular expression
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.
-  string test_path_regexp = 2;
+  string test_path_regexp = 1;
 
   // A test result must have a variant satisfying this predicate.
-  VariantPredicate variant = 3;
+  VariantPredicate variant = 2;
 
   // Filters test results based on TestResult.expected field.
   enum Expectancy {
@@ -63,48 +58,18 @@ message TestResultPredicate {
   // A test result must match this predicate based on TestResult.expected field.
   // Most clients would want to override this field because the default
   // typically causes a large response size.
-  Expectancy expectancy = 4;
+  Expectancy expectancy = 3;
 }
 
 // Represents a function TestExoneration -> bool.
 // Empty message matches all test exonerations.
 message TestExonerationPredicate {
-  // A test exoneration must belong to an invocation satisfying this predicate.
-  InvocationPredicate invocation = 1;
-
   // A test exoneration must have a test path matching this regular expression
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.
-  string test_path_regexp = 2;
+  string test_path_regexp = 1;
 
   // A test exoneration must have a variant satisfying this predicate.
-  VariantPredicate variant = 3;
-}
-
-// Represents a function Invocation -> bool.
-//
-// Note: all components of the predicate are connected with logical OR.
-message InvocationPredicate {
-  // An invocation must have one of these names.
-  //
-  // Compatible with tags: names and tags are connected with a logical OR.
-  repeated string names = 1;
-
-  // An invocation must have *ANY* of these tags.
-  //
-  // WARNING: unlike some of other systems, multiple tags are connected with a
-  // a logical OR. To construct a logical AND, an invocation must have a tag
-  // that represents a conjunction, e.g. "my_combination_tag:<value1>:<value2>".
-  // Unlike other systems, this approach enables generic conditions in the
-  // disjunctive normal form.
-  //
-  // Compatible with names: names and tags are connected with a logical OR.
-  repeated luci.resultdb.type.StringPair tags = 2;
-
-  // If false, an invocation must be reachable from any of roots via path of
-  // Invocation.included_invocations edges, where roots are the invocations
-  // that satisfy the rest of the predicate (names, tag).
-  // If true, do not follow inclusion edges.
-  bool ignore_inclusions = 3;
+  VariantPredicate variant = 2;
 }
 
 // Represents a function Variant -> bool.

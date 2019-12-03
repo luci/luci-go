@@ -150,33 +150,3 @@ func TestReadInvocation(t *testing.T) {
 		})
 	})
 }
-
-func TestWriteInvocationByTags(t *testing.T) {
-	Convey(`getInvocationsByTagMutations`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
-
-		muts := insertInvocationsByTag("inv1", pbutil.StringPairs("k1", "v11", "k1", "v12", "k2", "v2"))
-		muts = append(muts, insertInvocationsByTag("inv2", pbutil.StringPairs("k1", "v11", "k3", "v3"))...)
-		testutil.MustApply(ctx, muts...)
-
-		test := func(invID span.InvocationID, k, v string) {
-			key := spanner.Key{span.TagRowID(pbutil.StringPair(k, v)), invID.RowID()}
-			var throwaway string // we need to read into *something*
-			err := span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationsByTag", key, map[string]interface{}{
-				"InvocationId": &throwaway,
-			})
-			So(err, ShouldBeNil)
-		}
-
-		test("inv1", "k1", "v11")
-
-		// duplicated key in same invocation
-		test("inv1", "k1", "v12")
-
-		// duplicated tag in different invocation
-		test("inv2", "k1", "v11")
-
-		test("inv1", "k2", "v2")
-		test("inv2", "k3", "v3")
-	})
-}

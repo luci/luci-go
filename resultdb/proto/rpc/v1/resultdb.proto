@@ -153,9 +153,16 @@ message ListTestExonerationsResponse {
 
 // A request message for QueryTestResults RPC.
 message QueryTestResultsRequest {
+  // Retrieve test results included in these invocations, directly or indirectly
+  // (via Invocation.included_invocations).
+  //
+  // Specifying multiple invocations is equivalent to querying one invocation
+  // that includes these.
+  repeated string invocations = 1;
+
   // A test result in the response must satisfy this predicate.
   // Field predicate.invocation is required.
-  TestResultPredicate predicate = 1 [ (google.api.field_behavior) = REQUIRED ];
+  TestResultPredicate predicate = 2 [ (google.api.field_behavior) = REQUIRED ];
 
   // The version of the state from which the response draws is allowed to be
   // stale up to this duration.
@@ -163,21 +170,21 @@ message QueryTestResultsRequest {
   // results uploaded 4m ago.
   // Choosing a larger duration may reduce request latency.
   // Must be <=30m.
-  google.protobuf.Duration max_staleness = 2;
+  google.protobuf.Duration max_staleness = 3;
 
   // The maximum number of test results to return.
   //
   // The service may return fewer than this value.
   // If unspecified, at most 100 test results will be returned.
   // The maximum value is 1000; values above 1000 will be coerced to 1000.
-  int32 page_size = 3;
+  int32 page_size = 4;
 
   // A page token, received from a previous `QueryTestResults` call.
   // Provide this to retrieve the subsequent page.
   //
   // When paginating, all other parameters provided to `QueryTestResults` MUST
   // match the call that provided the page token.
-  string page_token = 4;
+  string page_token = 5;
 }
 
 // A response message for QueryTestResults RPC.
@@ -193,9 +200,16 @@ message QueryTestResultsResponse {
 
 // A request message for QueryTestExonerations RPC.
 message QueryTestExonerationsRequest {
+  // Retrieve test exonerations included in these invocations, directly or
+  // indirectly (via Invocation.included_invocations).
+  //
+  // Specifying multiple invocations is equivalent to querying one invocation
+  // that includes these.
+  repeated string invocations = 1;
+
   // A test exoneration in the response must satisfy this predicate.
   // Field predicate.invocation is required.
-  TestExonerationPredicate predicate = 1
+  TestExonerationPredicate predicate = 2
       [ (google.api.field_behavior) = REQUIRED ];
 
   // The version of the state from which the response draws is allowed to be
@@ -204,21 +218,21 @@ message QueryTestExonerationsRequest {
   // results uploaded 4m ago.
   // Choosing a larger duration may reduce request latency.
   // Must be <=30m.
-  google.protobuf.Duration max_staleness = 2;
+  google.protobuf.Duration max_staleness = 3;
 
   // The maximum number of test exonerations to return.
   //
   // The service may return fewer than this value.
   // If unspecified, at most 100 test exonerations will be returned.
   // The maximum value is 1000; values above 1000 will be coerced to 1000.
-  int32 page_size = 3;
+  int32 page_size = 4;
 
   // A page token, received from a previous `QueryTestExonerations` call.
   // Provide this to retrieve the subsequent page.
   //
   // When paginating, all other parameters provided to `QueryTestExonerations`
   // MUST match the call that provided the page token.
-  string page_token = 4;
+  string page_token = 5;
 }
 
 // A response message for QueryTestExonerations RPC.

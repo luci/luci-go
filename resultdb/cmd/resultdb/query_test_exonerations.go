@@ -53,25 +53,18 @@ func (s *resultDBServer) QueryTestExonerations(ctx context.Context, in *pb.Query
 		txn.WithTimestampBound(spanner.MaxStaleness(st))
 	}
 
-	// Query invocations.
-	// TODO(nodir): this could be optimized. It is querying full invocations
-	// although we need only invocation IDs.
-	invs, err := span.QueryInvocations(ctx, txn, in.Predicate.Invocation, maxInvocationGraphSize)
+	// Get the transitive closure.
+	invs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.MustParseInvocationNames(in.Invocations))
 	if err != nil {
 		return nil, err
 	}
-	invIDs := make([]span.InvocationID, 0, len(invs))
-	for id := range invs {
-		invIDs = append(invIDs, id)
-	}
 
 	// Query test results.
-	in.Predicate.Invocation = nil
 	tes, token, err := span.QueryTestExonerations(ctx, txn, span.TestExonerationQuery{
 		Predicate:     in.Predicate,
 		PageSize:      pagination.AdjustPageSize(in.PageSize),
 		PageToken:     in.PageToken,
-		InvocationIDs: invIDs,
+		InvocationIDs: invs,
 	})
 	if err != nil {
 		return nil, err

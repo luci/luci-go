@@ -59,7 +59,6 @@ CREATE TABLE Invocations (
 
   -- List of colon-separated key-value tags.
   -- Corresponds to Invocation.tags in invocation.proto.
-  -- For each tag here, there is a row in the InvocationsByTag table.
   Tags ARRAY<STRING(MAX)>,
 
   -- Value of CreateInvocationRequest.request_id.
@@ -76,15 +75,6 @@ CREATE INDEX InvocationsByInvocationExpiration
 -- Used by a cron job that periodically removes expected test results.
 CREATE NULL_FILTERED INDEX InvocationsByExpectedTestResultsExpiration
   ON Invocations (ShardId DESC, ExpectedTestResultsExpirationTime, InvocationId);
-
--- Index of invocations by a tag.
-CREATE TABLE InvocationsByTag (
-  -- Format: "${sha256_hex(tag)}_${key}:${value}".
-  TagId STRING(MAX) NOT NULL,
-
-  -- FK to Invocations.InvocationId.
-  InvocationId STRING(MAX) NOT NULL
-) PRIMARY KEY (TagId, InvocationId);
 
 -- Stores ids of invocations included in another invocation.
 -- Interleaved in Invocations table.
