@@ -17,6 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys')
+load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_common_pb='buildbucket.v2')
 
 
 def _notifier(
@@ -25,8 +26,11 @@ def _notifier(
       name=None,
 
       # Conditions.
+      on_occurrence=None,
+      on_new_status=None,
+
+      # Deprecated conditions.
       on_failure=None,
-      on_infra_failure=None,
       on_new_failure=None,
       on_status_change=None,
       on_success=None,
@@ -47,8 +51,8 @@ def _notifier(
   A notifier contains a set of conditions specifying what events are considered
   interesting (e.g. a previously green builder has failed), and a set of
   recipients to notify when an interesting event happens. The conditions are
-  specified via `on_*` fields (at least one of which should be set to `True`)
-  and recipients are specified via `notify_*` fields.
+  specified via `on_*` fields, and recipients are specified via `notify_*`
+  fields.
 
   The set of builders that are being observed is defined through `notified_by`
   field here or `notifies` field in luci.builder(...). Whenever a build
@@ -59,16 +63,25 @@ def _notifier(
   Args:
     name: name of this notifier to reference it from other rules. Required.
 
-    on_failure: if True, notify on each build failure. Ignores transient (aka
+    on_occurrence: a list specifying which build statuses to notify for.
+        Notifies for every build status specified. Valid values are string
+        literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+    on_new_status: a list specifying which new build statuses to notify for.
+        Notifies for each build status specified unless the previous build
+        was the same status. Valid values are string literals `SUCCESS`,
+        `FAILURE`, and `INFRA_FAILURE`. Default is None.
+    on_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
+        instead. If True, notify on each build failure. Ignores transient (aka
         "infra") failures. Default is False.
-    on_infra_failure: if True, notify on each transient (aka "infra") failure.
-        Default is False.
-    on_new_failure: if True, notify on a build failure unless the previous build
+    on_new_failure: Deprecated. Please use `on_new_status` or `on_occurrence`
+        instead.  If True, notify on a build failure unless the previous build
         was a failure too. Ignores transient (aka "infra") failures. Default is
         False.
-    on_status_change: if True, notify on each change to a build status (e.g.
+    on_status_change: Deprecated. Please use `on_new_status` or `on_occurrence`
+        instead. If True, notify on each change to a build status (e.g.
         a green build becoming red and vice versa). Default is False.
-    on_success: if True, notify on each build success. Default is False.
+    on_success: Deprecated. Please use `on_new_status` or `on_occurrence`
+        instead. If True, notify on each build success. Default is False.
 
     notify_emails: an optional list of emails to send notifications to.
     notify_blamelist: if True, send notifications to everyone in the computed
@@ -89,12 +102,16 @@ def _notifier(
   """
   name = validate.string('name', name)
 
+  on_occurrence = _buildbucket_status_validate(validate.list('on_occurrence', on_occurrence))
+  on_new_status = _buildbucket_status_validate(validate.list('on_new_status', on_new_status))
+
+  # deprecated
   on_failure = validate.bool('on_failure', on_failure, required=False)
-  on_infra_failure = validate.bool('on_infra_failure', on_infra_failure, required=False)
   on_new_failure = validate.bool('on_new_failure', on_new_failure, required=False)
   on_status_change = validate.bool('on_status_change', on_status_change, required=False)
   on_success = validate.bool('on_success', on_success, required=False)
-  if not(on_failure or on_infra_failure or on_new_failure or on_status_change or on_success):
+
+  if not(on_failure or on_new_failure or on_status_change or on_success or on_occurrence or on_new_status):
     fail('at least one on_... condition is required')
 
   notify_emails = validate.list('notify_emails', notify_emails)
@@ -111,11 +128,14 @@ def _notifier(
   key = keys.notifier(name)
   graph.add_node(key, idempotent = True, props = {
       'name': name,
+      'on_occurrence': on_occurrence,
+      'on_new_status': on_new_status,
+
       'on_failure': on_failure,
-      'on_infra_failure': on_infra_failure,
       'on_new_failure': on_new_failure,
       'on_status_change': on_status_change,
       'on_success': on_success,
+
       'notify_emails': notify_emails,
       'notify_blamelist': notify_blamelist,
       'blamelist_repos_whitelist': blamelist_repos_whitelist,
@@ -133,6 +153,23 @@ def _notifier(
     graph.add_edge(key, keys.notifier_template(template))
 
   return graph.keyset(key)
+
+def _buildbucket_status_validate(status_list):
+  """Validates a list of buildbucket statuses and returns their corresponding
+  identifiers.
+
+  Args:
+    status_list: a list of status strings; i.e. "SUCCESS" or "FAILURE"
+
+  Returns:
+    A list of the enum identifiers corresponding to the given statuses.
+  """
+  for status in status_list:
+    if not hasattr(buildbucket_common_pb, status):
+      fail('%s is not a valid status. Try one of the following %s.' %
+        (status, str(dir(buildbucket_common_pb))))
+
+  return [getattr(buildbucket_common_pb, status) for status in status_list]
 
 
 notifier = lucicfg.rule(impl = _notifier)

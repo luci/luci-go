@@ -21,11 +21,15 @@ import (
 // ShouldNotify is the predicate function for whether a trigger's conditions have been met.
 func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
+
 	case newStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
 		panic("new status must always be valid")
+	case contains(newStatus, n.OnOccurrence):
+	case oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus && contains(newStatus, n.OnNewStatus):
+
+	// deprecated functionality
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
-	case n.OnInfraFailure && newStatus == buildbucketpb.Status_INFRA_FAILURE:
 	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
 	case n.OnNewFailure && newStatus == buildbucketpb.Status_FAILURE && oldStatus != buildbucketpb.Status_FAILURE:
 
@@ -46,4 +50,14 @@ func (n *Notifications) Filter(oldStatus, newStatus buildbucketpb.Status) Notifi
 		}
 	}
 	return Notifications{Notifications: filtered}
+}
+
+// contains checks whether or not a build status is in a list of build statuses.
+func contains(status buildbucketpb.Status, statusList []buildbucketpb.Status) bool {
+	for _, s := range statusList {
+		if status == s {
+			return true
+		}
+	}
+	return false
 }

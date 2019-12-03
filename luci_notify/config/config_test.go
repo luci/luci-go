@@ -45,7 +45,7 @@ func TestConfigIngestion(t *testing.T) {
 					notifiers {
 						name: "chromium-notifier"
 						notifications {
-							on_success: true
+							on_occurrence: SUCCESS
 							email {
 								recipients: "johndoe@chromium.org"
 								recipients: "janedoe@chromium.org"
@@ -66,7 +66,9 @@ func TestConfigIngestion(t *testing.T) {
 					notifiers {
 						name: "v8-notifier"
 						notifications {
-							on_change: true
+							on_new_status: SUCCESS
+							on_new_status: FAILURE
+							on_new_status: INFRA_FAILURE
 							email {
 								recipients: "johndoe@v8.org"
 								recipients: "janedoe@v8.org"
@@ -105,7 +107,9 @@ func TestConfigIngestion(t *testing.T) {
 				Notifications: notifypb.Notifications{
 					Notifications: []*notifypb.Notification{
 						{
-							OnSuccess: true,
+							OnOccurrence: []buildbucketpb.Status{
+								buildbucketpb.Status_SUCCESS,
+							},
 							Email: &notifypb.Notification_Email{
 								Recipients: []string{"johndoe@chromium.org", "janedoe@chromium.org"},
 							},
@@ -119,7 +123,11 @@ func TestConfigIngestion(t *testing.T) {
 				Notifications: notifypb.Notifications{
 					Notifications: []*notifypb.Notification{
 						{
-							OnChange: true,
+							OnNewStatus: []buildbucketpb.Status{
+								buildbucketpb.Status_SUCCESS,
+								buildbucketpb.Status_FAILURE,
+								buildbucketpb.Status_INFRA_FAILURE,
+							},
 							Email: &notifypb.Notification_Email{
 								Recipients: []string{"johndoe@v8.org", "janedoe@v8.org"},
 							},
