@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -68,8 +69,8 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 		defer func() {
 			prepareToArchive = origPrepareToArchive
 		}()
-		prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated) {
-			origPrepareToArchive(ta, isol)
+		prepareToArchive = func(ta *TarringArchiver, isol *isolated.Isolated, fileHashCache *sync.Map) {
+			origPrepareToArchive(ta, isol, fileHashCache)
 			fos := &fakeOS{
 				readFiles: map[string]io.Reader{
 					largeFilePath: strings.NewReader(strings.Repeat("a", largeFileSize)),
@@ -91,8 +92,6 @@ func TestFileHashingSharedAcrossArchives(t *testing.T) {
 		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate1", isol)
 		ta.Archive([]string{largeFilePath}, "/", []string{}, "isolate2", isol)
 
-		// TODO(https://crbug.com/969162): Fix the caching and then change this
-		// assertion to check that numHashCalls == 1.
-		So(numHashCalls, ShouldEqual, 2)
+		So(numHashCalls, ShouldEqual, 1)
 	})
 }
