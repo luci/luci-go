@@ -333,8 +333,9 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				template.HTMLEscapeString(br.Builder.LastFinishedBuildIDLink()),
 				template.HTMLEscapeString(br.Builder.BuilderID),
 			))
-			must(fmt.Fprintf(buffer, `<div class="console-list-builder status-%s"></div>`,
+			must(fmt.Fprintf(buffer, `<div class="console-list-builder status-%s critical-%s"></div>`,
 				template.HTMLEscapeString(br.Builder.LastFinishedStatus.String()),
+				template.HTMLEscapeString(br.Builder.LastFinishedCritical.String()),
 			))
 		} else {
 			must(fmt.Fprintf(buffer, `<a class="console-builder-status" href="/%s" title="%s">`,
