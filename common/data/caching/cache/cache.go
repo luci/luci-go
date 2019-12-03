@@ -19,6 +19,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -373,7 +374,14 @@ func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode
 	//  In short, nobody ain't got time for that.
 	//
 	// - On any other (sane) OS, if dest exists, it is silently overwritten.
-	return os.Link(src, dest)
+	if err := os.Link(src, dest); err != nil {
+		return fmt.Errorf("failed to call os.Link(%s, %s): %v", src, dest, err)
+	}
+
+	if err := os.Chmod(dest, perm); err != nil {
+		return fmt.Errorf("failed to call os.Chmod(%s, %#o): %v", dest, perm, err)
+	}
+	return nil
 }
 
 func (d *disk) GetAdded() []int64 {
