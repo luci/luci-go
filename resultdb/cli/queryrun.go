@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -72,9 +73,13 @@ func (r *queryRun) validate() error {
 }
 
 // queryAndPrint queries results and prints them.
-func (r *queryRun) queryAndPrint(ctx context.Context, invocations []string) error {
+func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
+	invNames := make([]string, len(invIDs))
+	for i, id := range invIDs {
+		invNames[i] = pbutil.InvocationName(id)
+	}
 	req := &pb.QueryTestResultsRequest{
-		Invocations: invocations,
+		Invocations: invNames,
 		Predicate: &pb.TestResultPredicate{
 			TestPathRegexp: r.testPath,
 			Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
