@@ -183,19 +183,6 @@ func TestJSONConversions(t *testing.T) {
 			},
 		}
 
-		req := &pb.DeriveInvocationRequest{
-			SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-				Hostname: "host-swarming",
-				Id:       "123",
-			},
-			TestPathPrefix: "prefix/",
-			BaseTestVariant: pbutil.Variant(
-				"bucket", "bkt",
-				"builder", "blder",
-				"test_suite", "foo_unittests",
-			),
-		}
-
 		isolatedOutputs := map[string]*pb.Artifact{
 			"harness/log.txt":         {Name: "log_0.txt"},
 			"harness/retry_1/log.txt": {Name: "log_1.txt"},
@@ -215,7 +202,7 @@ func TestJSONConversions(t *testing.T) {
 		}
 
 		inv := &pb.Invocation{}
-		testResults, err := results.ToProtos(ctx, req, inv, isolatedOutputs)
+		testResults, err := results.ToProtos(ctx, "gn://tests/", inv, isolatedOutputs)
 		So(err, ShouldBeNil)
 		So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(
@@ -228,7 +215,7 @@ func TestJSONConversions(t *testing.T) {
 		So(testResults, ShouldResembleProto, []*pb.TestResult{
 			// Test 1.
 			{
-				TestPath:        "prefix/c1/c2/t1.html",
+				TestPath:        "gn://tests/c1/c2/t1.html",
 				Status:          pb.TestStatus_PASS,
 				Expected:        true,
 				Duration:        &duration.Duration{Nanos: 3e8},
@@ -236,7 +223,7 @@ func TestJSONConversions(t *testing.T) {
 				OutputArtifacts: []*pb.Artifact{{Name: "log_0.txt"}},
 			},
 			{
-				TestPath:        "prefix/c1/c2/t1.html",
+				TestPath:        "gn://tests/c1/c2/t1.html",
 				Status:          pb.TestStatus_PASS,
 				Expected:        true,
 				Duration:        &duration.Duration{Nanos: 2e8},
@@ -244,7 +231,7 @@ func TestJSONConversions(t *testing.T) {
 				OutputArtifacts: []*pb.Artifact{{Name: "log_1.txt"}},
 			},
 			{
-				TestPath:        "prefix/c1/c2/t1.html",
+				TestPath:        "gn://tests/c1/c2/t1.html",
 				Status:          pb.TestStatus_PASS,
 				Expected:        true,
 				Duration:        &duration.Duration{Nanos: 1e8},
@@ -254,28 +241,28 @@ func TestJSONConversions(t *testing.T) {
 
 			// Test 2.
 			{
-				TestPath: "prefix/c1/c2/t2.html",
+				TestPath: "gn://tests/c1/c2/t2.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
-				TestPath: "prefix/c1/c2/t2.html",
+				TestPath: "gn://tests/c1/c2/t2.html",
 				Status:   pb.TestStatus_FAIL,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
 				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
 			},
 			{
-				TestPath: "prefix/c1/c2/t2.html",
+				TestPath: "gn://tests/c1/c2/t2.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 5e7},
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
-				TestPath: "prefix/c1/c2/t2.html",
+				TestPath: "gn://tests/c1/c2/t2.html",
 				Status:   pb.TestStatus_CRASH,
 				Expected: false,
 				Duration: &duration.Duration{Nanos: 5e7},
@@ -284,7 +271,7 @@ func TestJSONConversions(t *testing.T) {
 
 			// Test 3
 			{
-				TestPath: "prefix/c2/t3.html",
+				TestPath: "gn://tests/c2/t3.html",
 				Status:   pb.TestStatus_FAIL,
 				Expected: false,
 				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
@@ -310,20 +297,20 @@ func TestJSONConversions(t *testing.T) {
 
 			// Test 4
 			{
-				TestPath: "prefix/c2/t4.html",
+				TestPath: "gn://tests/c2/t4.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 3e8},
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
-				TestPath: "prefix/c2/t4.html",
+				TestPath: "gn://tests/c2/t4.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 			},
 			{
-				TestPath: "prefix/c2/t4.html",
+				TestPath: "gn://tests/c2/t4.html",
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
