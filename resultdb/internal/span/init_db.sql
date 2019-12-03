@@ -183,26 +183,24 @@ CREATE TABLE TestExonerations (
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
--- Stores Invocations that need to be processed.
--- E.g. Invocations to be exported to BigQuery table(s).
-CREATE TABLE InvocationsToProcess (
+-- Stores tasks to perform on invocations.
+-- E.g. to export an invocation to BigQuery table(s).
+CREATE TABLE InvocationTasks (
   -- ID of the parent Invocations row.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- Binary-encoded luci.resultdb.internal.ProcessInvocation.
-  -- TODO(chanli): define luci.resultdb.internal.ProcessInvocation.
+  -- Binary-encoded luci.resultdb.internal.InvocationTask.
+  -- TODO(chanli): define luci.resultdb.internal.InvocationTask.
   Payload BYTES(MAX) NOT NULL,
 
   -- A hex-encoded sha256 of payload.
   -- Used to differentiate rows for the same invocation.
   PayloadHash STRING(64) NOT NULL,
 
-  -- If the invocation is ready to be processed.
-  Ready BOOL,
-) PRIMARY KEY (InvocationId, PayloadHash),
-  INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+  -- When to process the invocation.
+  ProcessAfter TIMESTAMP,
 
--- Index of InvocationsToProcess by readiness.
--- It is periodically scanned to perform required processing on invocations.
-CREATE INDEX InvocationsReadyToProcess
-  ON InvocationsToProcess (Ready DESC, InvocationId);
+  -- If true, reset ProcessAfter to NOW when finalizing the invocation;
+  -- otherwise don't reset ProcessAfter.
+  ResetOnFinalize BOOL,
+) PRIMARY KEY (InvocationId, PayloadHash);
