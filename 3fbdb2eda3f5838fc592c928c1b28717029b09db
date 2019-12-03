@@ -34,6 +34,24 @@
       "revId": "3fbdb2eda3f5838fc592c928c1b28717029b09db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2ad374d_8d02fd77",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-03T19:15:57Z",
+      "side": 1,
+      "message": "Ah, OK, so ProcessAfter would be left unpopulated until the invocation has been finalized? If so, maybe add a quick note about that in the comments (for either ProcessAfter or ResetOnFinalize, however you prefer)?",
+      "parentUuid": "5df6203f_7fe1c515",
+      "revId": "3fbdb2eda3f5838fc592c928c1b28717029b09db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
