@@ -46,8 +46,6 @@ func cmdLs(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &lsRun{}
 			r.queryRun.registerFlags(p)
-			// TODO(crbug.com/1021849): add flag -var
-			// TODO(crbug.com/1021849): add flag -watch
 			return r
 		},
 	}

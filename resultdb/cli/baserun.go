@@ -57,10 +57,8 @@ func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
 	r.authFlags.Register(&r.Flags, p.Auth)
 }
 
-func (r *baseCommandRun) RegisterJSONFlag() {
-	r.Flags.BoolVar(&r.json, "json", false, text.Doc(`
-		Print objects in JSON format, one after another (not an array).
-	`))
+func (r *baseCommandRun) RegisterJSONFlag(usage string) {
+	r.Flags.BoolVar(&r.json, "json", false, usage)
 }
 
 // initClients validates -host flag and initializes r.httpClient, r.resultdb
