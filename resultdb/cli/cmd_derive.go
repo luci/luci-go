@@ -44,7 +44,16 @@ func cmdDerive(p Params) *subcommands.Command {
 		`),
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
-			r.queryRun.registerFlags(p)
+			r.queryRun.registerFlags(p, `
+				Print results in JSON format separated by newline.
+				One object takes exactly one line.
+				Object properties:
+					- invocationId: a string, from args or stdin. Unset if -merge is true.
+					- testResult: luci.resultdb.rpc.v1.TestResult message.
+					- testExoneration: luci.resultdb.rpc.v1.TestResult message
+				testResult and testExoneration are mutually exclusive.
+		`)
+
 			// TODO(crbug.com/1021849): add -base-test-variant flag.
 			// TODO(crbug.com/1021849): add -base-test-path-prefix flag.
 			return r
