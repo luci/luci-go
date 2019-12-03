@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2d11c101_8cc854ec",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T03:51:55Z",
+      "side": 1,
+      "message": "It\u0027s proper name in protobuf docs is \"wire-format encoding\".",
+      "parentUuid": "5c6d959e_697fbf14",
+      "range": {
+        "startLine": 7,
+        "startChar": 62,
+        "endLine": 7,
+        "endChar": 66
+      },
+      "revId": "0f4edcb11875e9fd150203eacfaeb32b2393f314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ca89caa_5402c019",
         "filename": "lucicfg/starlark/stdlib/proto_doc.star",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "0f4edcb11875e9fd150203eacfaeb32b2393f314",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4061c571_770cac0e",
+        "filename": "lucicfg/starlark/stdlib/proto_doc.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T03:51:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ca89caa_5402c019",
+      "range": {
+        "startLine": 74,
+        "startChar": 41,
+        "endLine": 74,
+        "endChar": 42
+      },
+      "revId": "0f4edcb11875e9fd150203eacfaeb32b2393f314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +133,30 @@
       "revId": "0f4edcb11875e9fd150203eacfaeb32b2393f314",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaa8b36c_6da1fa7c",
+        "filename": "starlark/starlarkproto/testdata/wire.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-03T03:51:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62c447af_e490f000",
+      "range": {
+        "startLine": 1,
+        "startChar": 12,
+        "endLine": 1,
+        "endChar": 16
+      },
+      "revId": "0f4edcb11875e9fd150203eacfaeb32b2393f314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
