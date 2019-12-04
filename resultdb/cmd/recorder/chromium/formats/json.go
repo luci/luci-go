@@ -342,7 +342,7 @@ func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (art
 
 			// If the name is otherwise understood by ResultDB, process it.
 			// So far, that's only gold_triage_links.
-			if name == "gold_triage_link" {
+			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
 				// We don't expect more than one triage link per test run, but if there is more than one,
 				// suffix the name with index to ensure we retain it too.
 				if i > 0 {
