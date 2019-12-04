@@ -107,8 +107,19 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`finalized`, func() {
+			now := testclock.TestRecentTimeUTC
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "table",
+				TestResults: &pb.BigQueryExport_TestResults{},
+			}
+
 			testutil.MustApply(ctx,
 				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+			)
+			testutil.MustApply(ctx,
+				insertBQExportingTasks("inv", now.Add(2*day), bqExport)...,
 			)
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
