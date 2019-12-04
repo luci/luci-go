@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c3c392a_32d5ecae",
+        "filename": "resultdb/cmd/recorder/create_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T00:47:05Z",
+      "side": 1,
+      "message": "this code is dead. See L118",
+      "revId": "df4b7e4374611a624ca2df406ef383941cefcae8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
