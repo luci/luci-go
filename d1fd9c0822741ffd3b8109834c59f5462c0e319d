@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cd3a749_bba0f70e",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:20:06Z",
+      "side": 1,
+      "message": "it would be much simpler to implement this using UPDATE clause\nhttps://cloud.google.com/spanner/docs/dml-syntax#update-statement",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 194,
+        "endChar": 1
+      },
+      "revId": "d1fd9c0822741ffd3b8109834c59f5462c0e319d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
