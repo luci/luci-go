@@ -507,6 +507,30 @@
     },
     {
       "key": {
+        "uuid": "339c3b44_35a3cf2b",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T00:45:48Z",
+      "side": 1,
+      "message": "i see",
+      "parentUuid": "4347a2aa_d10c7caa",
+      "range": {
+        "startLine": 198,
+        "startChar": 2,
+        "endLine": 199,
+        "endChar": 19
+      },
+      "revId": "44e18d25d2e399bfdae7b63c651f257d58639473",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "34218c07_b757577b",
         "filename": "resultdb/internal/proto/common.proto",
         "patchSetId": 1
