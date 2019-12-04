@@ -43,6 +43,9 @@ var (
 	// Prefixes that may be present in the test name and must be stripped before forming the base path.
 	prefixes = []string{"MANUAL_", "PRE_"}
 
+	// Java base paths aren't actually GTest but use the same launcher output format.
+	javaPathRE = regexp.MustCompile(`^[\w.]+#[\w]+$`)
+
 	// Test base paths look like FooTest.DoesBar: "FooTest" is the suite and "DoesBar" the test name.
 	basePathRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
 
@@ -224,9 +227,16 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 // extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
 func extractGTestParameters(testPath string) (basePath string, params map[string]string, err error) {
 	var suite, name string
-	params = map[string]string{}
+
+	// If this is a JUnit tests, don't try to extract parameters.
+	// TODO: investigate handling parameters for JUnit tests.
+	if match := javaPathRE.FindStringSubmatch(testPath); match != nil {
+		basePath = testPath
+		return
+	}
 
 	// Tests can be only one of type- or value-parametrized, if parametrized at all.
+	params = map[string]string{}
 	if match := typeParamRE.FindStringSubmatch(testPath); match != nil {
 		// Extract type parameter.
 		suite = match[3]

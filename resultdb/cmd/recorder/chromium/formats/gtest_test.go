@@ -256,6 +256,12 @@ func TestGTestConversions(t *testing.T) {
 			So(basePath, ShouldEqual, "FooTest.DoesBar")
 		})
 
+		Convey(`with JUnit tests`, func() {
+			basePath, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub")
+			So(err, ShouldBeNil)
+			So(basePath, ShouldEqual, "org.chromium.tests#testFoo_sub")
+		})
+
 		Convey(`with unrecognized format`, func() {
 			_, _, err := extractGTestParameters("not_gtest_test")
 			So(err, ShouldErrLike, "test path of unknown format")
