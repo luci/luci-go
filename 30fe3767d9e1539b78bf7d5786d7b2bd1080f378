@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9a52f64e_27139d8e",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-12-04T00:51:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8f745ee_36a9650d",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fddea3d5_6d6cb18b",
         "filename": "gce/api/config/v1/disk.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ea5810d_dee9bc0f",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-12-04T00:51:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fddea3d5_6d6cb18b",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "64bc0519_c3da1cf1",
+        "filename": "gce/api/config/v1/disk.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-12-04T00:51:43Z",
+      "side": 1,
+      "message": "I needed to check for an empty string as well.",
+      "parentUuid": "ffe794a2_5ac18998",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e7c5fd8_7564fba0",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 2
@@ -67,6 +121,24 @@
       "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2173a965_985e1477",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1312822
+      },
+      "writtenOn": "2019-12-04T00:51:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e7c5fd8_7564fba0",
+      "revId": "30fe3767d9e1539b78bf7d5786d7b2bd1080f378",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
