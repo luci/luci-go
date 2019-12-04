@@ -154,7 +154,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 		return txn.BufferWrite([]*spanner.Mutation{
 			insertInvocation(ctx, inv, updateToken, in.RequestId),
-			// TODO(chanli): insert invocation to InvocationsToBeExported.
+			// TODO(chanli): insert invocation to InvocationTasks.
 		})
 	})
 
