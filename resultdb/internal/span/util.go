@@ -15,6 +15,7 @@
 package span
 
 import (
+	"bytes"
 	"context"
 	"sort"
 	"time"
@@ -23,7 +24,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/klauspost/compress/snappy"
+	"github.com/klauspost/compress/zstd"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -56,9 +57,9 @@ type Txn interface {
 	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
 }
 
-// Snappy instructs ToSpanner and FromSpanner functions to encode/decode the
-// content with https://godoc.org/github.com/golang/snappy encoding.
-type Snappy []byte
+// Zstd instructs ToSpanner and FromSpanner functions to encode/decode the
+// content with https://godoc.org/github.com/klauspost/compress/zstd encoding.
+type Zstd []byte
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
 	keys = make([]string, 0, len(m))
@@ -94,13 +95,16 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - pb.Artifact
 //   - typepb.Variant
 //   - typepb.StringPair
-//   - Snappy
+//   - Zstd
 type Buffer struct {
 	nullStr   spanner.NullString
 	nullTime  spanner.NullTime
 	i64       int64
 	strSlice  []string
 	byteSlice []byte
+
+	// zstd documentation recomments reusing a decoder.
+	zstdDecoder *zstd.Decoder
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -149,7 +153,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.strSlice
 	case *[]*pb.Artifact:
 		spanPtr = &b.byteSlice
-	case *Snappy:
+	case *Zstd:
 		spanPtr = &b.byteSlice
 	default:
 		spanPtr = goPtr
@@ -218,18 +222,24 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		}
 		*goPtr = container.ArtifactsV1
 
-	case *Snappy:
+	case *Zstd:
 		if len(b.byteSlice) == 0 {
 			// do not set to nil; otherwise we loose the buffer.
 			*goPtr = (*goPtr)[:0]
 		} else {
 			// *goPtr might be pointing to an existing memory buffer.
 			// Try to reuse it for decoding.
-			buf := []byte(*goPtr)
-			buf = buf[:cap(buf)] // use all capacity
-			if *goPtr, err = snappy.Decode(buf, b.byteSlice); err != nil {
-				// If it was written to Spanner, it should have been validated.
-				panic(errors.Annotate(err, "invalid snappy data: %v", b.byteSlice).Err())
+			buf := []byte(*goPtr)[:0]
+			if b.zstdDecoder == nil {
+				b.zstdDecoder, err = zstd.NewReader(bytes.NewReader(b.byteSlice))
+			} else {
+				err = b.zstdDecoder.Reset(bytes.NewReader(b.byteSlice))
+			}
+			if err != nil {
+				return err
+			}
+			if *goPtr, err = b.zstdDecoder.DecodeAll(b.byteSlice, buf); err != nil {
+				return errors.Annotate(err, "failed to decode from zstd").Err()
 			}
 		}
 
@@ -306,12 +316,17 @@ func ToSpanner(v interface{}) interface{} {
 		}
 		return ret
 
-	case Snappy:
+	case Zstd:
 		if len(v) == 0 {
 			// Do not store empty bytes.
 			return []byte(nil)
 		}
-		return snappy.Encode(nil, []byte(v))
+
+		w, err := zstd.NewWriter(nil)
+		if err != nil {
+			panic("impossible: we did not pass any options")
+		}
+		return w.EncodeAll(v, nil)
 
 	default:
 		return v

@@ -121,7 +121,7 @@ CREATE TABLE TestResults (
   -- Test status, see TestStatus in test_result.proto.
   Status INT64 NOT NULL,
 
-  -- Snappy-encoded summary of the test result for humans, in Markdown.
+  -- Zstd-encoded summary of the test result for humans, in Markdown.
   SummaryMarkdown BYTES(MAX),
 
   -- When the test execution started.
@@ -178,7 +178,7 @@ CREATE TABLE TestExonerations (
   -- Used in conjunction with TestResults.VariantHash column.
   VariantHash STRING(64) NOT NULL,
 
-  -- Snappy-encoded explanation of the exoneration for humans, in Markdown.
+  -- Zstd-encoded explanation of the exoneration for humans, in Markdown.
   ExplanationMarkdown BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
