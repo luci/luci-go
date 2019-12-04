@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6228af33_75d4e17d",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "bqExport, no snake_case in go",
+      "range": {
+        "startLine": 214,
+        "startChar": 8,
+        "endLine": 214,
+        "endChar": 17
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5323c945_5e7c6887",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "fmt.Sprintf(\"bqexport:%d\", i)\n\nsee another comment",
+      "range": {
+        "startLine": 219,
+        "startChar": 40,
+        "endLine": 219,
+        "endChar": 41
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2477fafe_f51cfe53",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "nit: now that this is on longer PayloadHash, let\u0027s place it before Payload, since it is a PK",
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b86f3042_bc7a2bb8",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "we are comparing bytes, which are non-deterministic\ninstead please unmarshal payloadRtn to proto and use ShouldResembleProto",
+      "range": {
+        "startLine": 190,
+        "startChar": 34,
+        "endLine": 190,
+        "endChar": 41
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8bbe880_ff58d65d",
+        "filename": "resultdb/internal/proto/common.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "nit: for",
+      "range": {
+        "startLine": 40,
+        "startChar": 31,
+        "endLine": 40,
+        "endChar": 33
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e77eb36_c5d0f4b1",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 5
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "what iteration? at this level of abstraction",
+      "range": {
+        "startLine": 196,
+        "startChar": 4,
+        "endLine": 196,
+        "endChar": 36
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c308f2c_505c5766",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 5
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:13:16Z",
+      "side": 1,
+      "message": "nit: now that it is not PayloadHash, let\u0027s place it before Payload because it is a PK",
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
