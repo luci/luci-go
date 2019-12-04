@@ -13,22 +13,38 @@ import "google/protobuf/timestamp.proto";
 message Attempt {
   // The unique key for this attempt. This should be unique given a set of CLs
   // included, and a trigger time.
-  string attempt_key = 1;
+  string key = 1;
 
-  // Whether the attempt is a dry run or full run. If constituent CLs have
-  // different modes, then the mode is "disagreement".
-  enum Mode {
-    MODE_UNSPECIFIED = 0;
-    DISAGREEMENT = 1;
-    DRY_RUN = 2;
-    FULL_RUN = 3;
-  }
+  // The name of the LUCI project that this attempt belongs to.
+  string project = 2;
 
-  // Time when the attempt started and stopped.
-  // TODO(qyearsley): define more precisely.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp stop = 3;
+  // Time when the attempt started (trigger time) and ended (released by CQ).
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
 
-  Mode mode = 4;
-  bool passed = 5;
+  // Whether the attempt passed all checks and has been marked by CQ as
+  // "passed". This doesn't necessarily mean that all CLs were successfully
+  // submitted.
+  bool ready_to_submit = 5;
+
+  // Build IDs of builds that were checked in this attempt.
+  repeated int64 build_ids = 6;
+
+  // CLs that belong to this attempt.
+  repeated CL cls = 6;
+}
+
+// CL represents one CL in an attempt.
+message CL {
+  // Whether this is a dry run; if false, it is a "full run".
+  bool dry_run;
+
+  // Whether the CL had been successfully submitted.
+  bool submitted;
+
+  // Gerrit hostname, CL number (short change number),
+  // and patchset number (revision).
+  string hostname;
+  int number;
+  int patchset;
 }
