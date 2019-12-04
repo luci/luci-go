@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -50,6 +51,23 @@ const (
 	outputJSONFileName  = "output.json"
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 	maxInlineArtifact   = 1024 // store 1KIb+ artifacts in isolate
+)
+
+var (
+	// Keep track of output files we know we may not process.
+	mayIgnoreOutputFiles = stringset.NewFromSlice(
+		"chromedriver.log",     // chromedriver_py_tests
+		"logcats",              // webrtc
+		"perftest-output.json", // webrtc
+		"system_log",           // fuchsia_x64
+		"wptserve_stderr.txt",  // webdriver_tests_suite
+	)
+
+	// Keep track of output files we know we may not process.
+	mayIgnoreOutputFilePrefixes = []string{
+		"profraw",   // code coverage
+		"test_logs", // webrtc
+	}
 )
 
 // DeriveProtosForWriting derives the protos with the data from the given task and request.
@@ -248,6 +266,13 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputsToProcess); err != nil {
 		return nil, err
 	}
+	// We know we may or will not process some kinds of outputs; if we see them ignore them.
+	for path := range outputsToProcess {
+		if mayIgnoreOutput(path) {
+			delete(outputsToProcess, path)
+		}
+	}
+	// Any outputs remaining we should note in case we're inadvertently not accounting for them.
 	if len(outputsToProcess) > 0 {
 		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
 	}
@@ -392,4 +417,19 @@ func isolateArtifact(ctx context.Context, isoClient isolatedClient, art *pb.Arti
 	art.FetchUrl = util.IsolateFetchURL(isoClient.host, isoClient.namespace, digest)
 	art.ViewUrl = util.IsolateViewURL(isoClient.host, isoClient.namespace, digest)
 	return nil
+}
+
+// mayIgnoreOutput identifies isolated outputs that we know we may not care to process.
+func mayIgnoreOutput(path string) bool {
+	if mayIgnoreOutputFiles.Has(path) {
+		return true
+	}
+
+	for _, ignorePrefix := range mayIgnoreOutputFilePrefixes {
+		if strings.HasPrefix(path, ignorePrefix) {
+			return true
+		}
+	}
+
+	return false
 }
