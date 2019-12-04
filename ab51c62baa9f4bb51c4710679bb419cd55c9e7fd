@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "b7d8d633_833e196d",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T19:58:12Z",
+      "side": 1,
+      "message": "my comment got lost. explained offline",
+      "parentUuid": "d82f2bda_54736b33",
+      "range": {
+        "startLine": 219,
+        "startChar": 40,
+        "endLine": 219,
+        "endChar": 41
+      },
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a1f01ca9_364fef76",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 5

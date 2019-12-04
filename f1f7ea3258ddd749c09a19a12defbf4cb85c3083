@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a55f7579_49d5e167",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T19:58:12Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 225,
+        "startChar": 0,
+        "endLine": 228,
+        "endChar": 4
+      },
+      "revId": "f1f7ea3258ddd749c09a19a12defbf4cb85c3083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01132f5e_6b80feef",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T19:58:12Z",
+      "side": 1,
+      "message": "let\u0027s generalize: proto.Message\n\nsame below",
+      "range": {
+        "startLine": 152,
+        "startChar": 6,
+        "endLine": 152,
+        "endChar": 32
+      },
+      "revId": "f1f7ea3258ddd749c09a19a12defbf4cb85c3083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0e9f228_de740d52",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T19:58:12Z",
+      "side": 1,
+      "message": "if we switch to proto.Message, then we\u0027d require this to be non-nil to begin with",
+      "revId": "f1f7ea3258ddd749c09a19a12defbf4cb85c3083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
