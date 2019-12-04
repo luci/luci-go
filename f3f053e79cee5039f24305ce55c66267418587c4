@@ -16,6 +16,23 @@
       "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbe664cb_0e4de13f",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T15:31:02Z",
+      "side": 1,
+      "message": "this whole thing seems to be equivalent to strings.Contains(testPath, \"#\")\n\nlet\u0027s make not make code more complicated in advance, i.e. let\u0027s use regex when we actually add support for junit params",
+      "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
