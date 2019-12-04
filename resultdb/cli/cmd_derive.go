@@ -42,6 +42,10 @@ func cmdDerive(p Params) *subcommands.Command {
 
 			SWARMING_HOST must be a hostname without a scheme, e.g.
 			chromium-swarm.appspot.com.
+
+			This subcommand is temporary. It exists only to aid transition to
+			ResultDB.
+			TODO(1030191): remove this subcommand.
 		`),
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
