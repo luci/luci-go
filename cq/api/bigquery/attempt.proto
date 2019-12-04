@@ -13,22 +13,14 @@ import "google/protobuf/timestamp.proto";
 message Attempt {
   // The unique key for this attempt. This should be unique given a set of CLs
   // included, and a trigger time.
-  string attempt_key = 1;
-
-  // Whether the attempt is a dry run or full run. If constituent CLs have
-  // different modes, then the mode is "disagreement".
-  enum Mode {
-    MODE_UNSPECIFIED = 0;
-    DISAGREEMENT = 1;
-    DRY_RUN = 2;
-    FULL_RUN = 3;
-  }
+  string key = 1;
 
   // Time when the attempt started and stopped.
-  // TODO(qyearsley): define more precisely.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp stop = 3;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
 
-  Mode mode = 4;
-  bool passed = 5;
+  // Whether the attempt passed all verifiers and has been marked by CQ as
+  // ready to submit.
+  bool ready_to_submit = 5;
+
 }
