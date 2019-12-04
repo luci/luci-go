@@ -69,6 +69,24 @@
       "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91d26ee4_7a1d2d00",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-04T16:06:56Z",
+      "side": 1,
+      "message": "I\u0027m unclear on is that IIRC we don\u0027t validate the test path anywhere previously, so if we just have some path given that is not even ASCII, but happens to have a hash, that will register as a Java path when really it shouldn\u0027t.\n\nAm I missing where we validate the test path previously?",
+      "parentUuid": "f93e1110_787da0b9",
+      "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
