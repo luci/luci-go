@@ -8,27 +8,64 @@ package bigquery;
 
 import "google/protobuf/timestamp.proto";
 
-// Attempt includes the state CQ attempt.
-// Next id: 6
+// Attempt includes the state of one CQ attempt.
+//
+// An attempt involves doing checks for one or more CLs that could
+// potentially be submitted together.
+// Next id: 8
 message Attempt {
   // The unique key for this attempt. This should be unique given a set of CLs
   // included, and a trigger time.
-  string attempt_key = 1;
+  string key = 1;
 
-  // Whether the attempt is a dry run or full run. If constituent CLs have
-  // different modes, then the mode is "disagreement".
-  enum Mode {
-    MODE_UNSPECIFIED = 0;
-    DISAGREEMENT = 1;
-    DRY_RUN = 2;
-    FULL_RUN = 3;
-  }
+  // The name of the LUCI project that this attempt belongs to.
+  string project = 2;
 
-  // Time when the attempt started and stopped.
-  // TODO(qyearsley): define more precisely.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp stop = 3;
+  // Time when the attempt started (trigger time) and ended (released by CQ).
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
 
-  Mode mode = 4;
-  bool passed = 5;
+  // Whether the attempt passed all checks and has been marked by CQ as
+  // "passed". This doesn't necessarily mean that all CLs were successfully
+  // submitted.
+  bool ready_to_submit = 5;
+
+  // CLs that belong to this attempt. This should be non-empty.
+  //
+  // We could potentially add the pre-aggregated fields:
+  //  - all_cls_submitted
+  //  - all_dry_run, or "mode", etc.
+  repeated CL cls = 6;
+
+  // Build IDs of builds that were checked in this attempt.
+  //
+  // To obtain more information about these builds, one can do a join
+  // with the buildbucket raw.completed_builds table.
+  repeated int64 build_ids = 7;
+
+  // Other possible fields to add later:
+  //   - Build IDs for builds that were reused
+  //   - last completed build and time
+  //   - first failed build and time
+  //   - pre-aggregated "all_submitted", "all_dry_run" etc.
+}
+
+// CL represents one patchset of one CL in an Attempt.
+// Next id: 8
+message CL {
+  // Whether this is a dry run; if false, it is a "full run".
+  bool dry_run = 1;
+
+  // Whether the CL had been successfully submitted.
+  bool submitted = 2;
+
+  // Gerrit hostname, CL number (short change number),
+  // and patchset number (revision).
+  string hostname = 3;
+  int32 number = 3;
+  int32 patchset;
+
+  // Other possible fields to add later:
+  //   - earliest equivalent patchset
+  //   - CL description
 }
