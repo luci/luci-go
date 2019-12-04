@@ -149,6 +149,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.strSlice
 	case *[]*pb.Artifact:
 		spanPtr = &b.byteSlice
+	case *internalpb.InvocationTask:
+		spanPtr = &b.byteSlice
 	case *Snappy:
 		spanPtr = &b.byteSlice
 	default:
@@ -217,6 +219,13 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			panic(err)
 		}
 		*goPtr = container.ArtifactsV1
+
+	case *internalpb.InvocationTask:
+		*goPtr = internalpb.InvocationTask{}
+		if err := proto.Unmarshal(b.byteSlice, goPtr); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			panic(err)
+		}
 
 	case *Snappy:
 		if len(b.byteSlice) == 0 {
@@ -287,6 +296,13 @@ func ToSpanner(v interface{}) interface{} {
 
 	case []*pb.Artifact:
 		ret, err := proto.Marshal(&internalpb.Artifacts{ArtifactsV1: v})
+		if err != nil {
+			panic(err)
+		}
+		return ret
+
+	case *internalpb.InvocationTask:
+		ret, err := proto.Marshal(v)
 		if err != nil {
 			panic(err)
 		}

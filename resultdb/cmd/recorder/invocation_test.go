@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -148,5 +149,47 @@ func TestReadInvocation(t *testing.T) {
 				So(inv.IncludedInvocations, ShouldResemble, []string{"invocations/included0", "invocations/included1"})
 			})
 		})
+	})
+}
+
+func TestInsertBQExportingTasks(t *testing.T) {
+	Convey(`insertBQExportingTasks`, t, func() {
+		now := testclock.TestRecentTimeUTC
+		ctx := testutil.SpannerTestContext(t)
+		invID := span.InvocationID("invID")
+
+		bqExport1 := &pb.BigQueryExport{
+			Project:     "project",
+			Dataset:     "dataset",
+			Table:       "table",
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+
+		bqExport2 := &pb.BigQueryExport{
+			Project:     "project",
+			Dataset:     "dataset",
+			Table:       "table2",
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+
+		muts := insertBQExportingTasks(invID, now, bqExport1, bqExport2)
+
+		testutil.MustApply(ctx, muts...)
+
+		test := func(taskID int, bqExport *pb.BigQueryExport) {
+			invTask := &internalpb.InvocationTask{
+				BigqueryExport: bqExport,
+			}
+			key := span.InvocationID("invID").Key(taskID)
+			invTaskRtn := &internalpb.InvocationTask{}
+			err := span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", key, map[string]interface{}{
+				"Payload": invTaskRtn,
+			})
+			So(err, ShouldBeNil)
+			So(invTaskRtn, ShouldResembleProto, invTask)
+		}
+
+		test(0, bqExport1)
+		test(1, bqExport2)
 	})
 }
