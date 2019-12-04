@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c3c5ba46_20f10333",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-04T22:15:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4c09f37_12b6efe6",
+      "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dbe664cb_0e4de13f",
         "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
         "patchSetId": 1
@@ -123,6 +141,24 @@
       "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f7d9b1d_1978a5ba",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-04T22:15:39Z",
+      "side": 1,
+      "message": "Discussed offline",
+      "parentUuid": "8ad9ec62_cfe8d459",
+      "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
