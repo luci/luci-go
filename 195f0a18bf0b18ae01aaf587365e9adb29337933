@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aabaa118_e3052253",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:17:27Z",
+      "side": 1,
+      "message": "we are repeating this code multiple times.\n\nconsider instead extending ToSpanner and FromSpanner to automatically encode/decode proto.Message to/from binary",
+      "range": {
+        "startLine": 278,
+        "startChar": 16,
+        "endLine": 278,
+        "endChar": 26
+      },
+      "revId": "195f0a18bf0b18ae01aaf587365e9adb29337933",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e78c0001_52768549",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:17:27Z",
+      "side": 1,
+      "message": "same here, should be comparing proto messages, not bytes",
+      "range": {
+        "startLine": 281,
+        "startChar": 6,
+        "endLine": 281,
+        "endChar": 16
+      },
+      "revId": "195f0a18bf0b18ae01aaf587365e9adb29337933",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
