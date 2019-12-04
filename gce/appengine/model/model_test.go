@@ -231,13 +231,13 @@ func TestVM(t *testing.T) {
 					Attributes: config.VM{
 						Disk: []*config.Disk{
 							{
-								Type: "pd-ssd",
+								Type: "zones/zone/diskTypes/pd-ssd",
 							},
 							{
-								Type: "local-ssd",
+								Type: "zones/zone/diskTypes/local-ssd",
 							},
 							{
-								Type: "pd-standard",
+								Type: "zones/zone/diskTypes/pd-standard",
 							},
 						},
 					},
