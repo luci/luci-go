@@ -48,6 +48,23 @@
     },
     {
       "key": {
+        "uuid": "a1f01ca9_364fef76",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-04T07:16:56Z",
+      "side": 1,
+      "message": "in the next CL I see you need to unmarshal protobuf after reading a row. and here we marshal before writing to a row.\n\nit would be more generic to extend ToSpanner/FromSpanner functions to automatically encode/decode any proto.Message",
+      "revId": "ab51c62baa9f4bb51c4710679bb419cd55c9e7fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2477fafe_f51cfe53",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 5
