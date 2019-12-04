@@ -20,6 +20,8 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
+	"go.chromium.org/luci/common/trace"
+
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/redisconn"
 )
@@ -34,13 +36,17 @@ var _ caching.BlobCache = (*RedisBlobCache)(nil)
 func (rc *RedisBlobCache) key(k string) string { return rc.Prefix + k }
 
 // Get returns a cached item or ErrCacheMiss if it's not in the cache.
-func (rc *RedisBlobCache) Get(ctx context.Context, key string) ([]byte, error) {
+func (rc *RedisBlobCache) Get(ctx context.Context, key string) (blob []byte, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server.RedisBlobCache.Get")
+	defer func() { span.End(err) }()
+
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
-	blob, err := redis.Bytes(conn.Do("GET", rc.key(key)))
+
+	blob, err = redis.Bytes(conn.Do("GET", rc.key(key)))
 	if err == redis.ErrNil {
 		return nil, caching.ErrCacheMiss
 	}
@@ -50,12 +56,16 @@ func (rc *RedisBlobCache) Get(ctx context.Context, key string) ([]byte, error) {
 // Set unconditionally overwrites an item in the cache.
 //
 // If 'exp' is zero, the item will have no expiration time.
-func (rc *RedisBlobCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) error {
+func (rc *RedisBlobCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) (err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server.RedisBlobCache.Set")
+	defer func() { span.End(err) }()
+
 	conn, err := redisconn.Get(ctx)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
+
 	if exp == 0 {
 		_, err = conn.Do("SET", rc.key(key), value)
 	} else {

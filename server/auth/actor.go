@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/server/caching"
 )
 
@@ -97,7 +98,11 @@ func (c *cachedOAuth2Token) toToken() *oauth2.Token {
 //
 // Recognizes transient errors and marks them, but does not automatically
 // retry. Has internal timeout of 10 sec.
-func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (*oauth2.Token, error) {
+func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessTokenParams) (_ *oauth2.Token, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintAccessTokenForServiceAccount")
+	span.Attribute("cr.dev/account", params.ServiceAccount)
+	defer func() { span.End(err) }()
+
 	report := durationReporter(ctx, mintAccessTokenDuration)
 
 	cfg := getConfig(ctx)
@@ -151,9 +156,9 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			client := &iam.Client{Client: &http.Client{Transport: asSelf}}
 			tok, err := client.GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, nil, 0)
 
-			// iam.GenerateAccessToken returns googleapi.Error
-			// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
-			// (stuff like connection timeouts, deadlines, etc) are transient errors.
+			// iam.GenerateAccessToken returns googleapi.Error on HTTP-level
+			// responses. Recognize fatal HTTP errors. Everything else (stuff like
+			// connection timeouts, deadlines, etc) are transient errors.
 			if err != nil {
 				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code < 500 {
 					return nil, err, fmt.Sprintf("ERROR_MINTING_HTTP_%d", apiErr.Code)

@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/caching"
@@ -52,7 +53,6 @@ type scopedTokenMinterClient interface {
 
 // ProjectTokenParams defines the parameters to create project scoped service account OAuth2 tokens.
 type ProjectTokenParams struct {
-
 	// LuciProject is the name of the LUCI project for which a token will be obtained.
 	LuciProject string
 
@@ -88,8 +88,13 @@ var scopedTokenCache = newTokenCache(tokenCacheConfig{
 //
 // It protects against accidental cross-project resource access. A token
 // is targeted to some single specific LUCI project. The token is cached
-// internally. Same token may be returned by multiple calls, if its lifetime allows.
-func MintProjectToken(ctx context.Context, p ProjectTokenParams) (*oauth2.Token, error) {
+// internally. Same token may be returned by multiple calls, if its lifetime
+// allows.
+func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Token, err error) {
+	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server/auth.MintProjectToken")
+	span.Attribute("cr.dev/project", p.LuciProject)
+	defer func() { span.End(err) }()
+
 	report := durationReporter(ctx, mintProjectTokenDuration)
 
 	// Validate TTL is sane.
