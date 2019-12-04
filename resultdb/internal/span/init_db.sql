@@ -190,7 +190,6 @@ CREATE TABLE InvocationTasks (
   InvocationId STRING(MAX) NOT NULL,
 
   -- Binary-encoded luci.resultdb.internal.InvocationTask.
-  -- TODO(chanli): define luci.resultdb.internal.InvocationTask.
   Payload BYTES(MAX) NOT NULL,
 
   -- A hex-encoded sha256 of payload.

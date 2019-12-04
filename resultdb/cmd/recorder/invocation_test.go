@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -148,5 +150,48 @@ func TestReadInvocation(t *testing.T) {
 				So(inv.IncludedInvocations, ShouldResemble, []string{"invocations/included0", "invocations/included1"})
 			})
 		})
+	})
+}
+
+func TestInsertBQExportingTasks(t *testing.T) {
+	Convey(`insertBQExportingTasks`, t, func() {
+		now := testclock.TestRecentTimeUTC
+		ctx := testutil.SpannerTestContext(t)
+		invID := span.InvocationID("invID")
+
+		bqExports1 := &pb.BigQueryExport{
+			Project:     "project",
+			Dataset:     "dataset",
+			Table:       "table",
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+
+		bqExports2 := &pb.BigQueryExport{
+			Project:     "project",
+			Dataset:     "dataset",
+			Table:       "table2",
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+
+		muts := insertBQExportingTasks(invID, now, bqExports1, bqExports2)
+
+		testutil.MustApply(ctx, muts...)
+
+		test := func(bqExports *pb.BigQueryExport) {
+			payload, _ := proto.Marshal(&internalpb.InvocationTask{
+				BigqueryExport: bqExports,
+			})
+			payloadHash := payloadHash(payload)
+			key := span.InvocationID("invID").Key(payloadHash)
+			var payloadRtn []byte
+			err := span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", key, map[string]interface{}{
+				"Payload": &payloadRtn,
+			})
+			So(err, ShouldBeNil)
+			So(payloadRtn, ShouldResemble, payload)
+		}
+
+		test(bqExports1)
+		test(bqExports2)
 	})
 }

@@ -16,9 +16,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
 
@@ -28,6 +31,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -45,6 +49,9 @@ const (
 	// By default, interrupt the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
+
+	// To make sure an invocation_task can be performed eventually.
+	eventualInvocationTaskProcessAfter = 2 * day
 )
 
 // updateTokenMetadataKey is the metadata.MD key for the secret update token
@@ -201,4 +208,39 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	return span.InsertOrUpdateMap(
 		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
+}
+
+// insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
+func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
+	muts := make([]*spanner.Mutation, len(bqExports))
+	for i, bq_export := range bqExports {
+		invTask := &internalpb.InvocationTask{
+			BigqueryExport: bq_export,
+		}
+
+		muts[i] = insertInvocationTask(invID, invTask, processAfter, true)
+	}
+	return muts
+}
+
+// insertInvocationTask inserts one row to InvocationTasks.
+func insertInvocationTask(invID span.InvocationID, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
+	payload, err := proto.Marshal(invTask)
+	if err != nil {
+		panic(err)
+	}
+
+	return span.InsertMap("InvocationTasks", map[string]interface{}{
+		"InvocationId":    invID,
+		"Payload":         payload,
+		"PayloadHash":     payloadHash(payload),
+		"ProcessAfter":    processAfter,
+		"ResetOnFinalize": resetOnFinalize,
+	})
+}
+
+func payloadHash(payload []byte) string {
+	h := sha256.New()
+	h.Write(payload)
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
