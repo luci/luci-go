@@ -92,7 +92,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			retErr = errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, id, true, pbutil.MustTimestampProto(deadline))
+			return finalizeInvocation(ctx, txn, id, true, pbutil.MustTimestampProto(deadline))
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -129,19 +129,68 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime *tspb.Timestamp) error {
+func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime *tspb.Timestamp) error {
 	state := pb.Invocation_COMPLETED
 	if interrupted {
 		state = pb.Invocation_INTERRUPTED
 	}
 
-	return txn.BufferWrite([]*spanner.Mutation{
+	muts := []*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
 			"State":        state,
 			"FinalizeTime": finalizeTime,
 		}),
+	}
+
+	invTaskMuts, err := resetInvocationTasks(ctx, txn, id, finalizeTime)
+	if err != nil {
+		return err
+	}
+	muts = append(muts, invTaskMuts...)
+
+	return txn.BufferWrite(muts)
+}
+
+// resetInvocationTasks sets ProcessAfter of the tasks to finalizeTime.
+func resetInvocationTasks(ctx context.Context, txn span.Txn, id span.InvocationID, finalizeTime *tspb.Timestamp) ([]*spanner.Mutation, error) {
+	taskIds, err := readInvocationTasksToReset(ctx, txn, id)
+	if err != nil {
+		return nil, err
+	}
+
+	muts := make([]*spanner.Mutation, 0, len(taskIds))
+	for _, taskId := range taskIds {
+		muts = append(muts, span.UpdateMap("InvocationTasks", map[string]interface{}{
+			"InvocationId": id,
+			"TaskId":       taskId,
+			"ProcessAfter": finalizeTime,
+		}))
+	}
+	return muts, nil
+}
+
+// readInvocationTasks returns taskIds for the tasks to be reset.
+func readInvocationTasksToReset(ctx context.Context, txn span.Txn, id span.InvocationID) ([]int64, error) {
+	var taskIds []int64
+	var b span.Buffer
+	err := txn.Read(ctx, "InvocationTasks", id.Key().AsPrefix(), []string{"TaskId", "ResetOnFinalize"}).Do(func(row *spanner.Row) error {
+		var taskID int64
+		var shouldReset bool
+		if err := b.FromSpanner(row, &taskID, &shouldReset); err != nil {
+			return err
+		}
+
+		if shouldReset {
+			taskIds = append(taskIds, taskID)
+		}
+		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+	return taskIds, nil
 }
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
@@ -209,27 +258,27 @@ func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateTok
 }
 
 // insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
-func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
+func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(bqExports))
 	for i, bq_export := range bqExports {
 		invTask := &internalpb.InvocationTask{
 			BigqueryExport: bq_export,
 		}
 
-		muts[i] = insertInvocationTask(invID, i, invTask, processAfter, true)
+		muts[i] = insertInvocationTask(id, i, invTask, processAfter, true)
 	}
 	return muts
 }
 
 // insertInvocationTask inserts one row to InvocationTasks.
-func insertInvocationTask(invID span.InvocationID, taskID int, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
+func insertInvocationTask(id span.InvocationID, taskID int, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
 	payload, err := proto.Marshal(invTask)
 	if err != nil {
 		panic(err)
 	}
 
 	return span.InsertMap("InvocationTasks", map[string]interface{}{
-		"InvocationId":    invID,
+		"InvocationId":    id,
 		"Payload":         payload,
 		"TaskID":          taskID,
 		"ProcessAfter":    processAfter,

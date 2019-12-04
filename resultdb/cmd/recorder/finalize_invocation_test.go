@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
@@ -107,8 +108,20 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`finalized`, func() {
+			now := testclock.TestRecentTimeUTC
+			invID := span.InvocationID("inv")
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "table",
+				TestResults: &pb.BigQueryExport_TestResults{},
+			}
+
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct),
+			)
+			testutil.MustApply(ctx,
+				insertBQExportingTasks(invID, now.Add(2*day), bqExport)...,
 			)
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
@@ -122,7 +135,16 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err = span.ReadInvocationFull(ctx, txn, "inv")
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
-			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+			So(inv.FinalizeTime, ShouldResemble, now)
+
+			// Read InvocationTask to confirm it's reset.
+			key := invID.Key(0)
+			var processAfter *tspb.Timestamp
+			err = span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", key, map[string]interface{}{
+				"ProcessAfter": &processAfter,
+			})
+			So(err, ShouldBeNil)
+			So(processAfter, ShouldResemble, now)
 		})
 	})
 }
