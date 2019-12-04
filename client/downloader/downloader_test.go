@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -219,7 +220,7 @@ func genTar(t *testing.T) []byte {
 
 func TestDownloaderWithCache(t *testing.T) {
 	t.Parallel()
-	Convey(`TestDownloaderWithCache`, t, func() {
+	Convey(`TestDownloaderWithCache`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
 		ctx := context.Background()
 
 		miss := []byte("cache miss")
@@ -250,20 +251,26 @@ func TestDownloaderWithCache(t *testing.T) {
 		defer ts.Close()
 		client := isolatedclient.New(nil, nil, ts.URL, namespace, nil, nil)
 
-		tmpDir, err := ioutil.TempDir("", "isolated")
-		So(err, ShouldBeNil)
-		defer func() {
-			So(os.RemoveAll(tmpDir), ShouldBeNil)
-		}()
-
 		mu := sync.Mutex{}
 		var files []string
 		policy := cache.Policies{
 			MaxSize:  1024,
 			MaxItems: 1024,
 		}
-		memcache := cache.NewMemory(policy, namespace)
-		So(memcache.Add(hithash, bytes.NewReader(hit)), ShouldBeNil)
+		var cacheObj cache.Cache
+		Convey("memcache", func() {
+			cacheObj = cache.NewMemory(policy, namespace)
+		})
+
+		Convey("diskcache", func() {
+			cacheDir := filepath.Join(tmpDir, "cache")
+			So(os.MkdirAll(cacheDir, os.ModePerm), ShouldBeNil)
+			var err error
+			cacheObj, err = cache.NewDisk(policy, cacheDir, namespace)
+			So(err, ShouldBeNil)
+		})
+
+		So(cacheObj.Add(hithash, bytes.NewReader(hit)), ShouldBeNil)
 
 		d := New(ctx, client, isolated1hash, tmpDir, &Options{
 			FileCallback: func(name string, _ *isolated.File) {
@@ -271,13 +278,13 @@ func TestDownloaderWithCache(t *testing.T) {
 				files = append(files, name)
 				mu.Unlock()
 			},
-			Cache: memcache,
+			Cache: cacheObj,
 		})
 		So(d.Wait(), ShouldBeNil)
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
-		So(memcache.Touch(misshash), ShouldBeTrue)
-	})
+		So(cacheObj.Touch(misshash), ShouldBeTrue)
+	}))
 }
 
 func TestFetchAndMap(t *testing.T) {

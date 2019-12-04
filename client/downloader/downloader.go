@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"os"
@@ -441,7 +442,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 
 		err := d.options.Cache.Hardlink(details.Digest, filename, os.FileMode(mode))
 		if err != nil {
-			if !os.IsNotExist(err) {
+			if !stderrors.Is(err, os.ErrNotExist) {
 				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache, but file exists").Err())
 				return
 			}
