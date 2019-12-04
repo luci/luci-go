@@ -33,6 +33,24 @@
       "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee356fa3_4a5e82f9",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-04T15:51:27Z",
+      "side": 1,
+      "message": "Using strings.Contains seems much less restrictive than the RE that constrains the character set allowed on each side of the hash?",
+      "parentUuid": "dbe664cb_0e4de13f",
+      "revId": "f3f053e79cee5039f24305ce55c66267418587c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
