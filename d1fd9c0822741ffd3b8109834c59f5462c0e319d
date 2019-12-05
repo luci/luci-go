@@ -22,6 +22,30 @@
       "revId": "d1fd9c0822741ffd3b8109834c59f5462c0e319d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c20661e7_95338580",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T06:43:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5cd3a749_bba0f70e",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 194,
+        "endChar": 1
+      },
+      "revId": "d1fd9c0822741ffd3b8109834c59f5462c0e319d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
