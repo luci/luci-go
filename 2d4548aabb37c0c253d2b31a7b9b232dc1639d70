@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f8ad37e_d8d4c1ef",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:15:29Z",
+      "side": 1,
+      "message": "i think this test is not comprehensive. It is marshaling an empty message, which is marshaled to empty bytes. *any* protobuf message can be read from empty bytes.\n\nplease init at least one field",
+      "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67654e76_b598dbb3",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:15:29Z",
+      "side": 1,
+      "message": "testutil.MustReadRow",
+      "range": {
+        "startLine": 277,
+        "startChar": 3,
+        "endLine": 277,
+        "endChar": 54
+      },
+      "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
