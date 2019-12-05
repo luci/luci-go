@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1c07ade_685b35d6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-05T03:05:43Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be in some readme about LUCI GKE services?",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 69
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cee05a1_ad7a0759",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-05T03:05:43Z",
+      "side": 1,
+      "message": "why restart the Pod?",
+      "range": {
+        "startLine": 21,
+        "startChar": 53,
+        "endLine": 21,
+        "endChar": 68
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd7a5eb0_82dddded",
+        "filename": "server/internal/pprof.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-05T03:05:43Z",
+      "side": 1,
+      "message": "10 doesn\u0027t look like Fraction",
+      "range": {
+        "startLine": 30,
+        "startChar": 13,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
