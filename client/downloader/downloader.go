@@ -528,29 +528,33 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 				d.addError(tarType, string(hash)+":"+filename, err)
 				continue
 			}
-			f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
-			if err != nil {
-				d.addError(tarType, string(hash)+":"+filename, err)
-				continue
-			}
-			defer f.Close()
-			n, err := io.Copy(f, tf)
-			if err != nil {
-				d.addError(tarType, string(hash)+":"+filename, err)
-				continue
-			}
-			if n != hdr.Size {
-				d.addError(tarType, string(hash)+":"+filename,
-					errors.New("failed to copy entire file"))
-				continue
-			}
-			// Fake a File entry for the subfile. Also call startfile so that the
-			// started/completed file numbers balance.
-			d.startFile(nil)
-			d.completeFile(name, &isolated.File{
-				Mode: &mode,
-				Size: &hdr.Size,
-			})
+
+			// This is to close |f| as early as possible.
+			func() {
+				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
+				if err != nil {
+					d.addError(tarType, string(hash)+":"+filename, err)
+					return
+				}
+				defer f.Close()
+				n, err := io.Copy(f, tf)
+				if err != nil {
+					d.addError(tarType, string(hash)+":"+filename, err)
+					return
+				}
+				if n != hdr.Size {
+					d.addError(tarType, string(hash)+":"+filename,
+						errors.New("failed to copy entire file"))
+					return
+				}
+				// Fake a File entry for the subfile. Also call startfile so that the
+				// started/completed file numbers balance.
+				d.startFile(nil)
+				d.completeFile(name, &isolated.File{
+					Mode: &mode,
+					Size: &hdr.Size,
+				})
+			}()
 		}
 
 		// Also issue a callback for the overall tarball.
