@@ -98,7 +98,7 @@ func insertTestExoneration(ctx context.Context, invID span.InvocationID, request
 		"ExonerationId":       exonerationID,
 		"Variant":             ret.Variant,
 		"VariantHash":         pbutil.VariantHash(ret.Variant),
-		"ExplanationMarkdown": span.Snappy(ret.ExplanationMarkdown),
+		"ExplanationMarkdown": span.Compressed(ret.ExplanationMarkdown),
 	}))
 	return
 }

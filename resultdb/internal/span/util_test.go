@@ -119,12 +119,14 @@ func TestTypeConversion(t *testing.T) {
 		test(arts.ArtifactsV1, expected)
 	})
 
-	Convey(`Snappy`, t, func() {
+	Convey(`Compressed`, t, func() {
 		Convey(`Empty`, func() {
-			test(Snappy(nil), []byte(nil))
+			test(Compressed(nil), []byte(nil))
 		})
 		Convey(`non-Empty`, func() {
-			test(Snappy("aaaaaaaaaaaaaaaaaaaa"), []byte{20, 0, 97, 74, 1, 0})
+			test(
+				Compressed("aaaaaaaaaaaaaaaaaaaa"),
+				[]byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 96, 69, 0, 0, 8, 97, 1, 84, 1, 2, 16, 4, 247, 175, 71, 227})
 		})
 	})
 

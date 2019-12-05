@@ -57,7 +57,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 
 	// Populate fields from TestExonerations table.
-	var explanationMarkdown Snappy
+	var explanationMarkdown Compressed
 	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
 		"Variant":             &ret.Variant,
 		"ExplanationMarkdown": &explanationMarkdown,
@@ -122,7 +122,7 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
-	var explanationMarkdown Snappy
+	var explanationMarkdown Compressed
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
