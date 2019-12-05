@@ -15,6 +15,7 @@
 package span
 
 import (
+	"bytes"
 	"context"
 	"reflect"
 	"sort"
@@ -24,7 +25,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/klauspost/compress/snappy"
+	"github.com/klauspost/compress/zstd"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -57,9 +58,11 @@ type Txn interface {
 	Query(ctx context.Context, statement spanner.Statement) *spanner.RowIterator
 }
 
-// Snappy instructs ToSpanner and FromSpanner functions to encode/decode the
-// content with https://godoc.org/github.com/golang/snappy encoding.
-type Snappy []byte
+// Compressed instructs ToSpanner and FromSpanner functions to compress the
+// content with https://godoc.org/github.com/klauspost/compress/zstd encoding.
+type Compressed []byte
+
+var zstdHeader = []byte("ztd\n")
 
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
 	keys = make([]string, 0, len(m))
@@ -95,7 +98,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - pb.Artifact
 //   - typepb.Variant
 //   - typepb.StringPair
-//   - Snappy
+//   - Compressed
 //   - proto.Message
 type Buffer struct {
 	nullStr   spanner.NullString
@@ -103,6 +106,9 @@ type Buffer struct {
 	i64       int64
 	strSlice  []string
 	byteSlice []byte
+
+	// zstd documentation recomments reusing a decoder.
+	zstdDecoder *zstd.Decoder
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -153,7 +159,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.byteSlice
 	case proto.Message:
 		spanPtr = &b.byteSlice
-	case *Snappy:
+	case *Compressed:
 		spanPtr = &b.byteSlice
 	default:
 		spanPtr = goPtr
@@ -231,19 +237,31 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			panic(err)
 		}
 
-	case *Snappy:
+	case *Compressed:
 		if len(b.byteSlice) == 0 {
-			// do not set to nil; otherwise we loose the buffer.
+			// do not set to nil; otherwise we lose the buffer.
 			*goPtr = (*goPtr)[:0]
 		} else {
+			if !bytes.HasPrefix(b.byteSlice, zstdHeader) {
+				return errors.Reason("expected ztd header").Err()
+			}
+			toDecompress := bytes.NewReader(b.byteSlice[len(zstdHeader):])
+			if b.zstdDecoder == nil {
+				b.zstdDecoder, err = zstd.NewReader(toDecompress)
+			} else {
+				err = b.zstdDecoder.Reset(toDecompress)
+			}
+			if err != nil {
+				return err
+			}
+
 			// *goPtr might be pointing to an existing memory buffer.
 			// Try to reuse it for decoding.
-			buf := []byte(*goPtr)
-			buf = buf[:cap(buf)] // use all capacity
-			if *goPtr, err = snappy.Decode(buf, b.byteSlice); err != nil {
-				// If it was written to Spanner, it should have been validated.
-				panic(errors.Annotate(err, "invalid snappy data: %v", b.byteSlice).Err())
+			bufW := bytes.NewBuffer((*goPtr)[:0])
+			if _, err := bufW.ReadFrom(b.zstdDecoder); err != nil {
+				return errors.Annotate(err, "failed to decode from zstd").Err()
 			}
+			*goPtr = bufW.Bytes()
 		}
 
 	default:
@@ -326,12 +344,27 @@ func ToSpanner(v interface{}) interface{} {
 		}
 		return ret
 
-	case Snappy:
+	case Compressed:
 		if len(v) == 0 {
 			// Do not store empty bytes.
 			return []byte(nil)
 		}
-		return snappy.Encode(nil, []byte(v))
+
+		buf := &bytes.Buffer{}
+		buf.Grow(len(v) / 2) // hope for at least 2x compression
+		if _, err := buf.Write(zstdHeader); err != nil {
+			panic(err)
+		}
+		w, err := zstd.NewWriter(buf)
+		if err == nil {
+			if _, err := w.Write(v); err == nil {
+				err = w.Close()
+			}
+		}
+		if err != nil {
+			panic("failed to compress with zstd")
+		}
+		return buf.Bytes()
 
 	default:
 		return v
