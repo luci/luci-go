@@ -270,7 +270,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.TraceSampling,
 		"trace-sampling",
 		o.TraceSampling,
-		"What portion of traces to upload to StackDriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Default is 1qps.",
+		"What portion of traces to upload to StackDriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Default is 0.1qps.",
 	)
 	f.StringVar(
 		&o.TsMonAccount,
@@ -1424,7 +1424,7 @@ func (s *Server) initTracing() error {
 	// Parse -trace-sampling spec to get a sampler.
 	sampling := s.Options.TraceSampling
 	if sampling == "" {
-		sampling = "1qps"
+		sampling = "0.1qps"
 	}
 	logging.Infof(s.Context, "Setting up StackDriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
 	var err error
