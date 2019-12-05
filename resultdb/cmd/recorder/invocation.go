@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -45,6 +47,9 @@ const (
 	// By default, interrupt the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
+
+	// To make sure an invocation_task can be performed eventually.
+	eventualInvocationTaskProcessAfter = 2 * day
 )
 
 // updateTokenMetadataKey is the metadata.MD key for the secret update token
@@ -52,6 +57,9 @@ const (
 // It is returned by CreateInvocation RPC in response header metadata,
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
+
+// BigQuery export task type.
+const taskTypeBqExport = "bqExport"
 
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
@@ -201,4 +209,32 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	return span.InsertOrUpdateMap(
 		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
+}
+
+// insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
+func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
+	muts := make([]*spanner.Mutation, len(bqExports))
+	for i, bqExport := range bqExports {
+		invTask := &internalpb.InvocationTask{
+			BigqueryExport: bqExport,
+		}
+
+		muts[i] = insertInvocationTask(invID, taskID(taskTypeBqExport, i), invTask, processAfter, true)
+	}
+	return muts
+}
+
+// insertInvocationTask inserts one row to InvocationTasks.
+func insertInvocationTask(invID span.InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
+	return span.InsertMap("InvocationTasks", map[string]interface{}{
+		"InvocationId":    invID,
+		"TaskID":          taskID,
+		"Payload":         invTask,
+		"ProcessAfter":    processAfter,
+		"ResetOnFinalize": resetOnFinalize,
+	})
+}
+
+func taskID(taskType string, suffix interface{}) string {
+	return fmt.Sprintf("%s:%v", taskType, suffix)
 }

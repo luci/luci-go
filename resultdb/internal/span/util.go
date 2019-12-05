@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"reflect"
 	"sort"
 	"time"
 
@@ -95,6 +96,7 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - typepb.Variant
 //   - typepb.StringPair
 //   - Snappy
+//   - proto.Message
 type Buffer struct {
 	nullStr   spanner.NullString
 	nullTime  spanner.NullTime
@@ -148,6 +150,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 	case *[]*typepb.StringPair:
 		spanPtr = &b.strSlice
 	case *[]*pb.Artifact:
+		spanPtr = &b.byteSlice
+	case proto.Message:
 		spanPtr = &b.byteSlice
 	case *Snappy:
 		spanPtr = &b.byteSlice
@@ -218,6 +222,15 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		}
 		*goPtr = container.ArtifactsV1
 
+	case proto.Message:
+		if reflect.ValueOf(goPtr).IsNil() {
+			return errors.Reason("nil pointer encountered").Err()
+		}
+		if err := proto.Unmarshal(b.byteSlice, goPtr); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			panic(err)
+		}
+
 	case *Snappy:
 		if len(b.byteSlice) == 0 {
 			// do not set to nil; otherwise we loose the buffer.
@@ -287,6 +300,13 @@ func ToSpanner(v interface{}) interface{} {
 
 	case []*pb.Artifact:
 		ret, err := proto.Marshal(&internalpb.Artifacts{ArtifactsV1: v})
+		if err != nil {
+			panic(err)
+		}
+		return ret
+
+	case proto.Message:
+		ret, err := proto.Marshal(v)
 		if err != nil {
 			panic(err)
 		}

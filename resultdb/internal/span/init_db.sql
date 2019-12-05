@@ -189,13 +189,12 @@ CREATE TABLE InvocationTasks (
   -- ID of the parent Invocations row.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- Binary-encoded luci.resultdb.internal.InvocationTask.
-  -- TODO(chanli): define luci.resultdb.internal.InvocationTask.
-  Payload BYTES(MAX) NOT NULL,
+  -- Id of the task in the format of "<task_type>:<suffix>".
+  -- Should be unique per invocation.
+  TaskId STRING(MAX) NOT NULL,
 
-  -- A hex-encoded sha256 of payload.
-  -- Used to differentiate rows for the same invocation.
-  PayloadHash STRING(64) NOT NULL,
+  -- Binary-encoded luci.resultdb.internal.InvocationTask.
+  Payload BYTES(MAX) NOT NULL,
 
   -- When to process the invocation.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
@@ -210,4 +209,4 @@ CREATE TABLE InvocationTasks (
   -- If true, set ProcessAfter to NOW when finalizing the invocation,
   -- otherwise don't set it.
   ResetOnFinalize BOOL,
-) PRIMARY KEY (InvocationId, PayloadHash);
+) PRIMARY KEY (InvocationId, TaskId);
