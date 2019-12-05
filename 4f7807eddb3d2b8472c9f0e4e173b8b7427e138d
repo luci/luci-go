@@ -1,0 +1,124 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72636189_f0f89ad2",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "suffix interface{}\n\nI am not sure other callsites will have an integer to provide, and doubt it will be an index\n\nprotip: use #v for interface{}",
+      "range": {
+        "startLine": 238,
+        "startChar": 29,
+        "endLine": 238,
+        "endChar": 38
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14393717_e2f70a06",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "nit:\n- InvocatoinTask is not something a resultdb\u0027s client provides, so more-or-less obvious that it is not client-generatted\n- not necessarily numeric",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f089828c_f5ee92a1",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "golang error message rules:\n- message starts with a lower case letter, because we often wrappers errors (\"foo: bar: baz\")\n- do not end with a punctuation mark\n\ngolint would tell you that if you used fmt.Errorf",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f7b6bf1_68b23b74",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "intentional?",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a59c412_6ca26866",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "initializing these fields do not make the test better, since the code under the test is not specific to BigqueryExport. let\u0027s omit these lines",
+      "range": {
+        "startLine": 152,
+        "startChar": 4,
+        "endLine": 155,
+        "endChar": 50
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0dc246b_e174cf89",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "why test() func above didn\u0027t work?",
+      "range": {
+        "startLine": 158,
+        "startChar": 2,
+        "endLine": 176,
+        "endChar": 4
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

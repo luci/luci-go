@@ -128,6 +128,24 @@
       "revId": "f1f7ea3258ddd749c09a19a12defbf4cb85c3083",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ac681dd_67ba268e",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:13:23Z",
+      "side": 1,
+      "message": "its correct",
+      "parentUuid": "2fb5a12b_75991dbd",
+      "revId": "f1f7ea3258ddd749c09a19a12defbf4cb85c3083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
