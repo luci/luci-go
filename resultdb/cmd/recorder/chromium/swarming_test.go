@@ -205,7 +205,7 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "missing expected output output.json in isolated outputs")
+				So(err, ShouldErrLike, "missing expected output in isolated outputs")
 			})
 
 			Convey(`and do`, func() {
