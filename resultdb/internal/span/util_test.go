@@ -44,6 +44,7 @@ func TestTypeConversion(t *testing.T) {
 		// FromSpanner
 		row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
 		So(err, ShouldBeNil)
+
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
 		So(err, ShouldBeNil)
@@ -143,5 +144,35 @@ func TestTypeConversion(t *testing.T) {
 		// ToSpanner
 		spValues := ToSpannerSlice(varIntA, varIntB, varState)
 		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(2)})
+	})
+
+	Convey(`proto.Message`, t, func() {
+		invTask := &internalpb.InvocationTask{
+			BigqueryExport: &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "table",
+				TestResults: &pb.BigQueryExport_TestResults{},
+			},
+		}
+		expected, err := proto.Marshal(invTask)
+		So(err, ShouldBeNil)
+		So(ToSpanner(invTask), ShouldResemble, expected)
+
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{expected})
+		So(err, ShouldBeNil)
+
+		Convey(`success`, func() {
+			expectedPtr := &internalpb.InvocationTask{}
+			err = b.FromSpanner(row, expectedPtr)
+			So(err, ShouldBeNil)
+			So(expectedPtr, ShouldResembleProto, invTask)
+		})
+
+		Convey(`Passing nil pointer to fromSpanner`, func() {
+			var expectedPtr *internalpb.InvocationTask
+			err = b.FromSpanner(row, expectedPtr)
+			So(err, ShouldErrLike, "Nil pointer encountered.")
+		})
 	})
 }
