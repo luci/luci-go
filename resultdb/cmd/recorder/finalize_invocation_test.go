@@ -15,14 +15,17 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -107,8 +110,32 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`finalized`, func() {
+			now := testclock.TestRecentTimeUTC
+			nowTimestamp := pbutil.MustTimestampProto(now)
+			oriProcessAfter := now.Add(2 * day)
+
+			invID := span.InvocationID("inv")
+			invTask1 := &internalpb.InvocationTask{
+				BigqueryExport: &pb.BigQueryExport{
+					Project:     "project",
+					Dataset:     "dataset",
+					Table:       "table",
+					TestResults: &pb.BigQueryExport_TestResults{},
+				}}
+
+			invTask2 := &internalpb.InvocationTask{
+				BigqueryExport: &pb.BigQueryExport{
+					Project:     "project",
+					Dataset:     "dataset",
+					Table:       "table2",
+					TestResults: &pb.BigQueryExport_TestResults{},
+				}}
+
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct),
+				insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask1, oriProcessAfter, true),
+				// For test purpose only, tasks for BigQuery Export should be reset on finalization.
+				insertInvocationTask(invID, taskID(taskTypeBqExport, 1), invTask2, oriProcessAfter, false),
 			)
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
@@ -122,7 +149,23 @@ func TestFinalizeInvocation(t *testing.T) {
 			inv, err = span.ReadInvocationFull(ctx, txn, "inv")
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
-			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+			So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
+
+			// Read InvocationTask to confirm it's reset.
+			test := func(index int, expProcessAfter *tspb.Timestamp) {
+				key := invID.Key(taskID(taskTypeBqExport, index))
+				var processAfter *tspb.Timestamp
+				err = span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", key, map[string]interface{}{
+					"ProcessAfter": &processAfter,
+				})
+				So(err, ShouldBeNil)
+				fmt.Println(processAfter)
+				fmt.Println(expProcessAfter)
+				fmt.Println()
+				So(processAfter, ShouldResemble, expProcessAfter)
+			}
+			test(0, nowTimestamp)
+			test(1, pbutil.MustTimestampProto(oriProcessAfter))
 		})
 	})
 }
