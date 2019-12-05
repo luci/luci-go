@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2a7f8cd_e268f771",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-12-05T10:54:58Z",
+      "side": 1,
+      "message": "How about extracting a function? It would probably call defer at the end of function at each iteration.",
+      "revId": "c7706eb77f0a99a3f3a4d86bab7ceb48dca79909",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
