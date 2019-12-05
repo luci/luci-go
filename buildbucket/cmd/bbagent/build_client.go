@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/buildbucket"
+	// "go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"golang.org/x/time/rate"
 	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/grpc/metadata"
+	// "google.golang.org/grpc/metadata"
 )
 
 // options for the dispatcher.Channel
@@ -87,10 +87,11 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 		}
 
 		var secrets *bbpb.BuildSecrets
-		secrets, err = readBuildSecrets(ctx)
-		if err != nil {
-			return
-		}
+		// secrets, err = readBuildSecrets(ctx)
+		// if err != nil {
+		// 	return
+		// }
+		secrets = nil
 
 		prpcClient.C, err = auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 			MonitorAs: "bbagent/buildbucket",
@@ -114,7 +115,7 @@ func newBuildsClient(ctx context.Context, infraOpts *bbpb.BuildInfra_Buildbucket
 
 func mkSendFn(ctx context.Context, secrets *bbpb.BuildSecrets, client bbpb.BuildsClient) dispatcher.SendFn {
 	return func(b *buffer.Batch) error {
-		ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
+		// ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(buildbucket.BuildTokenHeader, secrets.BuildToken))
 
 		var req *bbpb.UpdateBuildRequest
 		var final bool

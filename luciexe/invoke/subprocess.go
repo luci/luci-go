@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // Subprocess represents a running luciexe.
@@ -60,12 +62,15 @@ type Subprocess struct {
 // Build state, and send that (e.g. using `exe.BuildSender`). Otherwise this
 // luciexe's steps will not show up in the Build.
 func Start(ctx context.Context, luciexePath string, input *bbpb.Build, opts *Options) (*Subprocess, error) {
+	ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Info)
 	inputData, err := proto.Marshal(input)
 	if err != nil {
 		return nil, errors.Annotate(err, "marshalling input Build").Err()
 	}
 
 	launchOpts, _, err := opts.rationalize(ctx)
+	logging.Infof(ctx, "---launchOpts.step---")
+	logging.Infof(ctx, launchOpts.step.String())
 	if err != nil {
 		return nil, errors.Annotate(err, "normalizing options").Err()
 	}

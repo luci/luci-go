@@ -40,6 +40,8 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // Options represents settings to use when Start'ing a luciexe.
@@ -146,6 +148,8 @@ type launchOptions struct {
 }
 
 func (o *Options) prepNamespace(ctx context.Context, lo *launchOptions) error {
+	ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Info)
+	logging.Infof(ctx, "Namespace: %q", o.Namespace)
 	if o.Namespace == "" {
 		return nil
 	}

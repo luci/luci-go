@@ -52,6 +52,9 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
 	"golang.org/x/time/rate"
+
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 )
 
 // CalcURLFn is a stateless function which can calculate the absolute url and
@@ -276,6 +279,7 @@ func (a *Agent) snapStates() map[string]*buildStateTracker {
 }
 
 func (a *Agent) sendMerge(_ *buffer.Batch) error {
+	ctx := logging.SetLevel(gologger.StdConfig.Use(context.Background()), logging.Info)
 	trackers := a.snapStates()
 
 	validStates := make(map[string]*buildState, len(trackers))
@@ -297,10 +301,19 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 	insertSteps = func(stepNS []string, streamURL string) *bbpb.Build {
 		state, ok := validStates[streamURL]
 		if !ok {
+			logging.Infof(ctx, streamURL)
+			for k, _ := range validStates {
+				logging.Infof(ctx, k)
+			}
 			return nil
+		}
+		logging.Infof(ctx, "---check state.build---")
+		if state.build == nil {
+			logging.Infof(ctx, "state.build is nil")
 		}
 		for _, step := range state.build.Steps {
 			isMergeStep := luciexe.IsMergeStep(step)
+			logging.Infof(ctx, "--isMergeStep: %t", isMergeStep)
 			if isMergeStep || len(stepNS) > 0 {
 				// make a shallow copy, much cheaper than proto.Clone
 				stepVal := *step
@@ -313,10 +326,29 @@ func (a *Agent) sendMerge(_ *buffer.Batch) error {
 
 			base.Steps = append(base.Steps, step)
 
+			logging.Infof(ctx, "---base.Steps---")
+			for _, s := range base.Steps {
+				logging.Infof(ctx, s.String())
+			}
+
 			if isMergeStep {
+				for _, s := range stepNS {
+					logging.Infof(ctx, s)
+				}
+				logging.Infof(ctx, baseName)
 				subBuild := insertSteps(append(stepNS, baseName), step.Logs[0].Url)
+				if subBuild == nil {
+					logging.Infof(ctx, "subBuild is nil")
+				}
+				if step == nil {
+					logging.Infof(ctx, "step is nil")
+				}
 				updateStepFromBuild(step, subBuild)
 			}
+		}
+		logging.Infof(ctx, "---check state.build before return---")
+		if state.build == nil {
+			logging.Infof(ctx, "state.build is nil before return")
 		}
 		return state.build
 	}

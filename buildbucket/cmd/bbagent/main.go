@@ -28,6 +28,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"math/rand"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/errors"
@@ -88,10 +90,12 @@ func mainImpl() int {
 
 	opts := &host.Options{
 		BaseBuild:      input.Build,
-		ButlerLogLevel: logging.Warning,
+		ButlerLogLevel: logging.Info,
 		ViewerURL: fmt.Sprintf("https://%s/build/%d",
 			input.Build.Infra.Buildbucket.Hostname, input.Build.Id),
 	}
+	rand.Seed(time.Now().UnixNano())
+	input.Build.Infra.Logdog.Prefix = fmt.Sprintf("atyfto_%d", rand.Intn(10000))
 	opts.LogdogOutput, err = mkLogdogOutput(sctx, input.Build.Infra.Logdog)
 	check(err)
 	cwd, err := os.Getwd()
