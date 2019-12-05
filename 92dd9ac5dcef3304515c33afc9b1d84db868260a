@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "62a760e0_c15d6573",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T22:00:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b71defd_bfd8f52e",
+      "range": {
+        "startLine": 107,
+        "startChar": 61,
+        "endLine": 107,
+        "endChar": 64
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7fa172e9_ca14c4dd",
         "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2019-12-05T21:06:10Z",
       "side": 1,
       "message": "still think that if this test had one invTask, it would be as good, but shorter",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "666d1fd5_8a9263a6",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T22:00:55Z",
+      "side": 1,
+      "message": "The second task is to test InvocationTask with false ResetOnFinalization will not be updated.\n\nBroke this test case into 2 to make it more obvious.",
+      "parentUuid": "7fa172e9_ca14c4dd",
       "range": {
         "startLine": 120,
         "startChar": 3,
@@ -68,6 +116,30 @@
       "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ff0683c_5b433ec5",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T22:00:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b1a3dcd_e0120948",
+      "range": {
+        "startLine": 26,
+        "startChar": 35,
+        "endLine": 26,
+        "endChar": 53
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
