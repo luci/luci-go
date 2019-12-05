@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "bcf11534_36c2902e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T03:31:50Z",
+      "side": 1,
+      "message": "This is a hint it is ok to leave this on if you plan to redeploy stuff. It will be reset when the pod restarts.",
+      "parentUuid": "3cee05a1_ad7a0759",
+      "range": {
+        "startLine": 21,
+        "startChar": 53,
+        "endLine": 21,
+        "endChar": 68
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d102b59a_1b42c509",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T03:31:50Z",
+      "side": 1,
+      "message": "1. There\u0027s no such readme.\n2. It is kind of common sense.",
+      "parentUuid": "b1c07ade_685b35d6",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 69
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd7a5eb0_82dddded",
         "filename": "server/internal/pprof.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44c9e6c0_ef12ebaa",
+        "filename": "server/internal/pprof.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T03:31:50Z",
+      "side": 1,
+      "message": "Renamed to \"rate\". But send your complains to authors of SetMutexProfileFraction that named it so instead of SetMutexProfileRate.",
+      "parentUuid": "bd7a5eb0_82dddded",
+      "range": {
+        "startLine": 30,
+        "startChar": 13,
+        "endLine": 30,
+        "endChar": 21
+      },
+      "revId": "1b9ae38d93df0cd621edad81810eb95ba9c84f7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
