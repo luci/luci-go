@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5f43e8fa_1ef374dc",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:06:10Z",
+      "side": 1,
+      "message": "oh, i see\n\ni am not an english expert, but i think usually an abbreviation ends with a consonant. I\u0027d be totally fine with origProcessAfter. I\u0027ve seen orig many times.",
+      "parentUuid": "769aa6bd_1842e152",
+      "range": {
+        "startLine": 115,
+        "startChar": 3,
+        "endLine": 115,
+        "endChar": 6
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d744176d_d27c6a6f",
         "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
         "patchSetId": 5

@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b71defd_bfd8f52e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:06:10Z",
+      "side": 1,
+      "message": "incorrect in case L92\n\neither parse FinalizeTime, or use now in L92",
+      "range": {
+        "startLine": 107,
+        "startChar": 61,
+        "endLine": 107,
+        "endChar": 64
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fa172e9_ca14c4dd",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:06:10Z",
+      "side": 1,
+      "message": "still think that if this test had one invTask, it would be as good, but shorter",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b1a3dcd_e0120948",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:06:10Z",
+      "side": 1,
+      "message": "finalizeInvocation is\n1) private\n2) lives in a different package.\n\nfinalization is done only in recorder. It appears that this func will be used only there? if so, let\u0027s move it to finalize_invocation.go",
+      "range": {
+        "startLine": 26,
+        "startChar": 35,
+        "endLine": 26,
+        "endChar": 53
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
