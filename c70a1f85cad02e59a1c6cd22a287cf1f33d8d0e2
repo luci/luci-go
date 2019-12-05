@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a704be2_4ff67331",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T21:47:02Z",
+      "side": 1,
+      "message": "nit: b.byteSlice[len(zstdHeader):] \n\nSince you already checked the prefix. It will be tiny bit faster, and also less to type.",
+      "range": {
+        "startLine": 235,
+        "startChar": 35,
+        "endLine": 235,
+        "endChar": 76
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57dcfe47_927567bb",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T21:47:02Z",
+      "side": 1,
+      "message": "consider keeping these in a sync.Pool to reduce GC thrashing (same for various temporary buffers like the one below)",
+      "range": {
+        "startLine": 236,
+        "startChar": 3,
+        "endLine": 240,
+        "endChar": 4
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0b87187_4018395a",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T21:47:02Z",
+      "side": 1,
+      "message": "err... should it be / 2?",
+      "range": {
+        "startLine": 334,
+        "startChar": 18,
+        "endLine": 334,
+        "endChar": 21
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
