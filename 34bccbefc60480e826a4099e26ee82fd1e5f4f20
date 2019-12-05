@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "769aa6bd_1842e152",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Original. Updated the variable name since it\u0027s not intuitive.",
+      "parentUuid": "f4a4ebd5_4759121e",
+      "range": {
+        "startLine": 115,
+        "startChar": 3,
+        "endLine": 115,
+        "endChar": 6
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d744176d_d27c6a6f",
         "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "106a8e9a_1e7c0f04",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d744176d_d27c6a6f",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 6
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "65d21dd3_267f30fc",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41c409b2_0c0b06e7",
+      "range": {
+        "startLine": 158,
+        "startChar": 4,
+        "endLine": 158,
+        "endChar": 55
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bfcb6ba4_b8ac0331",
         "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6c68a6c_54d8f45a",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Those are my debug messages. Accidentally left them here. Removed.",
+      "parentUuid": "bfcb6ba4_b8ac0331",
+      "range": {
+        "startLine": 162,
+        "startChar": 4,
+        "endLine": 164,
+        "endChar": 17
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "42af7b1d_51ef06d3",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9726cf08_30120e84",
+      "range": {
+        "startLine": 98,
+        "startChar": 49,
+        "endLine": 98,
+        "endChar": 85
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1834f5b_5e83e554",
         "filename": "resultdb/internal/span/invocation_task.go",
         "patchSetId": 5
@@ -137,6 +257,30 @@
       "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcc5a2a7_6c1aa01d",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1834f5b_5e83e554",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 25
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "5c7dc759_b872ba2e",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe4476ea_989fa299",
+      "range": {
+        "startLine": 29,
+        "startChar": 21,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a2b40e0_b03053f5",
         "filename": "resultdb/internal/span/invocation_task.go",
         "patchSetId": 5
@@ -183,6 +351,30 @@
       "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e0c8f4e_363dc6b5",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T20:53:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a2b40e0_b03053f5",
+      "range": {
+        "startLine": 40,
+        "startChar": 61,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
