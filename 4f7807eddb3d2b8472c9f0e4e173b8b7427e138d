@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "4fcc82c2_b93bbabf",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:16:07Z",
+      "side": 1,
+      "message": "testutil.MustReadRow",
+      "range": {
+        "startLine": 185,
+        "startChar": 3,
+        "endLine": 185,
+        "endChar": 55
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "14393717_e2f70a06",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 7
