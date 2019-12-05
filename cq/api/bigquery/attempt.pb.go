@@ -21,78 +21,32 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Whether the attempt is a dry run or full run. If constituent CLs have
-// different modes, then the mode is disagreement.
-type Attempt_Mode int32
-
-const (
-	Attempt_DISAGREEMENT Attempt_Mode = 0
-	Attempt_DRY_RUN      Attempt_Mode = 1
-	Attempt_FULL_RUN     Attempt_Mode = 2
-)
-
-var Attempt_Mode_name = map[int32]string{
-	0: "DISAGREEMENT",
-	1: "DRY_RUN",
-	2: "FULL_RUN",
-}
-
-var Attempt_Mode_value = map[string]int32{
-	"DISAGREEMENT": 0,
-	"DRY_RUN":      1,
-	"FULL_RUN":     2,
-}
-
-func (x Attempt_Mode) String() string {
-	return proto.EnumName(Attempt_Mode_name, int32(x))
-}
-
-func (Attempt_Mode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_8792fe122a6ce934, []int{0, 0}
-}
-
-// Pass or fail state of the attempt. Pending attempts shouldn't be included
-// in the completed attempts table.
-type Attempt_SubmitState int32
-
-const (
-	Attempt_QUEUED    Attempt_SubmitState = 0
-	Attempt_FAILED    Attempt_SubmitState = 1
-	Attempt_SUBMITTED Attempt_SubmitState = 2
-)
-
-var Attempt_SubmitState_name = map[int32]string{
-	0: "QUEUED",
-	1: "FAILED",
-	2: "SUBMITTED",
-}
-
-var Attempt_SubmitState_value = map[string]int32{
-	"QUEUED":    0,
-	"FAILED":    1,
-	"SUBMITTED": 2,
-}
-
-func (x Attempt_SubmitState) String() string {
-	return proto.EnumName(Attempt_SubmitState_name, int32(x))
-}
-
-func (Attempt_SubmitState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_8792fe122a6ce934, []int{0, 1}
-}
-
-// Attempt includes the state CQ attempt.
-// For thecompleted
+// Attempt includes the state of one CQ attempt.
+//
+// An attempt involves doing checks for one or more CLs that could
+// potentially be submitted together.
 type Attempt struct {
-	// Time when the attempt started and stopped (TODO: define more precisely)
-	Start                *timestamp.Timestamp `protobuf:"bytes,1,opt,name=start,proto3" json:"start,omitempty"`
-	Stop                 *timestamp.Timestamp `protobuf:"bytes,2,opt,name=stop,proto3" json:"stop,omitempty"`
-	Mode                 Attempt_Mode         `protobuf:"varint,3,opt,name=mode,proto3,enum=bigquery.Attempt_Mode" json:"mode,omitempty"`
-	State                Attempt_SubmitState  `protobuf:"varint,4,opt,name=state,proto3,enum=bigquery.Attempt_SubmitState" json:"state,omitempty"`
-	AttemptKey           string               `protobuf:"bytes,5,opt,name=attempt_key,json=attemptKey,proto3" json:"attempt_key,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
-	XXX_unrecognized     []byte               `json:"-"`
-	XXX_sizecache        int32                `json:"-"`
+	// The key for this attempt, unique given set of CLs and trigger time.
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// The LUCI project that this attempt belongs to.
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	// Time when the attempt started (trigger time of the last CL triggered)
+	// and ended (released by CQ).
+	StartTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime   *timestamp.Timestamp `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	// Gerrit CL revisions in this attempt; there should be one or more.
+	GerritCls []*GerritChange `protobuf:"bytes,5,rep,name=gerrit_cls,json=gerritCls,proto3" json:"gerrit_cls,omitempty"`
+	// An opaque key that is unique for a given set of Gerrit change patchsets
+	// (or, equivalently, buildsets). The same cl_group_key will be used if
+	// another attempt is made for the same set of changes at a different time.
+	ClGroupKey string `protobuf:"bytes,6,opt,name=cl_group_key,json=clGroupKey,proto3" json:"cl_group_key,omitempty"`
+	// Builds checked as part of this attempt.
+	Builds []*Build `protobuf:"bytes,7,rep,name=builds,proto3" json:"builds,omitempty"`
+	// True if CQ determines that all CLs are OK to submit.
+	ReadyToSubmit        bool     `protobuf:"varint,8,opt,name=ready_to_submit,json=readyToSubmit,proto3" json:"ready_to_submit,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Attempt) Reset()         { *m = Attempt{} }
@@ -120,45 +74,250 @@ func (m *Attempt) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Attempt proto.InternalMessageInfo
 
-func (m *Attempt) GetStart() *timestamp.Timestamp {
+func (m *Attempt) GetKey() string {
 	if m != nil {
-		return m.Start
-	}
-	return nil
-}
-
-func (m *Attempt) GetStop() *timestamp.Timestamp {
-	if m != nil {
-		return m.Stop
-	}
-	return nil
-}
-
-func (m *Attempt) GetMode() Attempt_Mode {
-	if m != nil {
-		return m.Mode
-	}
-	return Attempt_DISAGREEMENT
-}
-
-func (m *Attempt) GetState() Attempt_SubmitState {
-	if m != nil {
-		return m.State
-	}
-	return Attempt_QUEUED
-}
-
-func (m *Attempt) GetAttemptKey() string {
-	if m != nil {
-		return m.AttemptKey
+		return m.Key
 	}
 	return ""
 }
 
+func (m *Attempt) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *Attempt) GetStartTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.StartTime
+	}
+	return nil
+}
+
+func (m *Attempt) GetEndTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.EndTime
+	}
+	return nil
+}
+
+func (m *Attempt) GetGerritCls() []*GerritChange {
+	if m != nil {
+		return m.GerritCls
+	}
+	return nil
+}
+
+func (m *Attempt) GetClGroupKey() string {
+	if m != nil {
+		return m.ClGroupKey
+	}
+	return ""
+}
+
+func (m *Attempt) GetBuilds() []*Build {
+	if m != nil {
+		return m.Builds
+	}
+	return nil
+}
+
+func (m *Attempt) GetReadyToSubmit() bool {
+	if m != nil {
+		return m.ReadyToSubmit
+	}
+	return false
+}
+
+// GerritChange represents one revision of one Gerrit change
+// in an attempt.
+//
+// This is similar to GerritChange in buildbucket/proto/common.proto,
+// but with additional fields specific to CQ.
+type GerritChange struct {
+	// Gerrit hostname, e.g. "chromium-review.googlesource.com".
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
+	// Gerrit project, e.g. "chromium/src".
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	// Change number, e.g. 12345.
+	Change int64 `protobuf:"varint,3,opt,name=change,proto3" json:"change,omitempty"`
+	// Patch set number, e.g. 1.
+	Patchset int64 `protobuf:"varint,4,opt,name=patchset,proto3" json:"patchset,omitempty"`
+	// The earliest patchset of the CL that is considered
+	// equivalent to the patchset above.
+	EarliestEquivalentPatchset int64 `protobuf:"varint,5,opt,name=earliest_equivalent_patchset,json=earliestEquivalentPatchset,proto3" json:"earliest_equivalent_patchset,omitempty"`
+	// The time that the CQ was triggered for this CL in this attempt.
+	TriggerTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=trigger_time,json=triggerTime,proto3" json:"trigger_time,omitempty"`
+	// True if we just want to run tests without submitting.
+	DryRun bool `protobuf:"varint,7,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	// True if this CL was successfully submitted. Even if the Attempt is
+	// considered ready to submit overall, it's possible that a failure could
+	// occur when submitting some changes.
+	Submitted            bool     `protobuf:"varint,8,opt,name=submitted,proto3" json:"submitted,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GerritChange) Reset()         { *m = GerritChange{} }
+func (m *GerritChange) String() string { return proto.CompactTextString(m) }
+func (*GerritChange) ProtoMessage()    {}
+func (*GerritChange) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8792fe122a6ce934, []int{1}
+}
+
+func (m *GerritChange) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GerritChange.Unmarshal(m, b)
+}
+func (m *GerritChange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GerritChange.Marshal(b, m, deterministic)
+}
+func (m *GerritChange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GerritChange.Merge(m, src)
+}
+func (m *GerritChange) XXX_Size() int {
+	return xxx_messageInfo_GerritChange.Size(m)
+}
+func (m *GerritChange) XXX_DiscardUnknown() {
+	xxx_messageInfo_GerritChange.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GerritChange proto.InternalMessageInfo
+
+func (m *GerritChange) GetHost() string {
+	if m != nil {
+		return m.Host
+	}
+	return ""
+}
+
+func (m *GerritChange) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *GerritChange) GetChange() int64 {
+	if m != nil {
+		return m.Change
+	}
+	return 0
+}
+
+func (m *GerritChange) GetPatchset() int64 {
+	if m != nil {
+		return m.Patchset
+	}
+	return 0
+}
+
+func (m *GerritChange) GetEarliestEquivalentPatchset() int64 {
+	if m != nil {
+		return m.EarliestEquivalentPatchset
+	}
+	return 0
+}
+
+func (m *GerritChange) GetTriggerTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.TriggerTime
+	}
+	return nil
+}
+
+func (m *GerritChange) GetDryRun() bool {
+	if m != nil {
+		return m.DryRun
+	}
+	return false
+}
+
+func (m *GerritChange) GetSubmitted() bool {
+	if m != nil {
+		return m.Submitted
+	}
+	return false
+}
+
+// Build represents one tryjob in an attempt, which is one Buildbucket build.
+//
+// This is similar to Build in buildbucket/proto/build.proto, but with
+// CQ-specific information.
+type Build struct {
+	// Buildbucket build ID, unique per Buildbucket instance.
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	// True if this build was pre-existing, or false if it was triggered as
+	// part of this CQ attempt.
+	Reused bool `protobuf:"varint,3,opt,name=reused,proto3" json:"reused,omitempty"`
+	// True if this build must pass in order for the CLs to be considered
+	// ready to submit.
+	Blocking             bool     `protobuf:"varint,4,opt,name=blocking,proto3" json:"blocking,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Build) Reset()         { *m = Build{} }
+func (m *Build) String() string { return proto.CompactTextString(m) }
+func (*Build) ProtoMessage()    {}
+func (*Build) Descriptor() ([]byte, []int) {
+	return fileDescriptor_8792fe122a6ce934, []int{2}
+}
+
+func (m *Build) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Build.Unmarshal(m, b)
+}
+func (m *Build) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Build.Marshal(b, m, deterministic)
+}
+func (m *Build) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Build.Merge(m, src)
+}
+func (m *Build) XXX_Size() int {
+	return xxx_messageInfo_Build.Size(m)
+}
+func (m *Build) XXX_DiscardUnknown() {
+	xxx_messageInfo_Build.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Build proto.InternalMessageInfo
+
+func (m *Build) GetId() int64 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *Build) GetHost() string {
+	if m != nil {
+		return m.Host
+	}
+	return ""
+}
+
+func (m *Build) GetReused() bool {
+	if m != nil {
+		return m.Reused
+	}
+	return false
+}
+
+func (m *Build) GetBlocking() bool {
+	if m != nil {
+		return m.Blocking
+	}
+	return false
+}
+
 func init() {
-	proto.RegisterEnum("bigquery.Attempt_Mode", Attempt_Mode_name, Attempt_Mode_value)
-	proto.RegisterEnum("bigquery.Attempt_SubmitState", Attempt_SubmitState_name, Attempt_SubmitState_value)
 	proto.RegisterType((*Attempt)(nil), "bigquery.Attempt")
+	proto.RegisterType((*GerritChange)(nil), "bigquery.GerritChange")
+	proto.RegisterType((*Build)(nil), "bigquery.Build")
 }
 
 func init() {
@@ -166,25 +325,35 @@ func init() {
 }
 
 var fileDescriptor_8792fe122a6ce934 = []byte{
-	// 317 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x90, 0x4f, 0x6b, 0xfa, 0x30,
-	0x1c, 0xc6, 0x6d, 0x7f, 0xf5, 0xdf, 0xb7, 0xfe, 0x46, 0xc9, 0x61, 0x14, 0x61, 0x28, 0x9e, 0x64,
-	0x87, 0x64, 0xe8, 0xde, 0x80, 0xa3, 0x71, 0xc8, 0x54, 0x58, 0xda, 0x1e, 0x76, 0x92, 0x56, 0xb3,
-	0x2e, 0xcc, 0x90, 0x5a, 0xd3, 0x83, 0xef, 0x74, 0x2f, 0x67, 0x98, 0xb6, 0x30, 0xd8, 0x61, 0xb7,
-	0xe4, 0xe1, 0xf3, 0xe1, 0xfb, 0xf0, 0xc0, 0x2c, 0x53, 0x78, 0xff, 0x51, 0x28, 0x29, 0x4a, 0x89,
-	0x55, 0x91, 0x91, 0x63, 0xb9, 0x17, 0x64, 0x7f, 0x22, 0x49, 0x2e, 0x48, 0x2a, 0xb2, 0x53, 0xc9,
-	0x8b, 0x0b, 0x49, 0xb4, 0xe6, 0x32, 0xd7, 0x38, 0x2f, 0x94, 0x56, 0xa8, 0xd7, 0xe4, 0xc3, 0x51,
-	0xa6, 0x54, 0x76, 0xe4, 0xc4, 0xe4, 0x69, 0xf9, 0x4e, 0xb4, 0x90, 0xfc, 0xac, 0x13, 0x99, 0x57,
-	0xe8, 0xe4, 0xcb, 0x86, 0xee, 0xa2, 0x92, 0xd1, 0x03, 0xb4, 0xcf, 0x3a, 0x29, 0xb4, 0x6f, 0x8d,
-	0xad, 0xa9, 0x3b, 0x1b, 0xe2, 0x4a, 0xc6, 0x8d, 0x8c, 0xa3, 0x46, 0x66, 0x15, 0x88, 0x30, 0x38,
-	0x67, 0xad, 0x72, 0xdf, 0xfe, 0x53, 0x30, 0x1c, 0xba, 0x07, 0x47, 0xaa, 0x03, 0xf7, 0xff, 0x8d,
-	0xad, 0xe9, 0xcd, 0xec, 0x16, 0x37, 0x3d, 0x71, 0x5d, 0x01, 0x6f, 0xd4, 0x81, 0x33, 0xc3, 0xa0,
-	0xb9, 0x69, 0xa3, 0xb9, 0xef, 0x18, 0xf8, 0xee, 0x37, 0x1c, 0x96, 0xa9, 0x14, 0x3a, 0xbc, 0x42,
-	0xac, 0x62, 0xd1, 0x08, 0xdc, 0x7a, 0x8a, 0xdd, 0x27, 0xbf, 0xf8, 0xed, 0xb1, 0x35, 0xed, 0x33,
-	0xa8, 0xa3, 0x17, 0x7e, 0x99, 0xcc, 0xc1, 0xb9, 0xde, 0x40, 0x1e, 0x0c, 0x82, 0x55, 0xb8, 0x78,
-	0x66, 0x94, 0x6e, 0xe8, 0x36, 0xf2, 0x5a, 0xc8, 0x85, 0x6e, 0xc0, 0xde, 0x76, 0x2c, 0xde, 0x7a,
-	0x16, 0x1a, 0x40, 0x6f, 0x19, 0xaf, 0xd7, 0xe6, 0x67, 0x4f, 0x1e, 0xc1, 0xfd, 0x71, 0x0b, 0x01,
-	0x74, 0x5e, 0x63, 0x1a, 0xd3, 0xc0, 0x6b, 0x5d, 0xdf, 0xcb, 0xc5, 0x6a, 0x4d, 0x03, 0xcf, 0x42,
-	0xff, 0xa1, 0x1f, 0xc6, 0x4f, 0x9b, 0x55, 0x14, 0xd1, 0xc0, 0xb3, 0xd3, 0x8e, 0x99, 0x61, 0xfe,
-	0x1d, 0x00, 0x00, 0xff, 0xff, 0xfa, 0xc7, 0x3f, 0x5c, 0xc2, 0x01, 0x00, 0x00,
+	// 474 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x91, 0x4d, 0x8f, 0xd3, 0x3e,
+	0x10, 0xc6, 0xd5, 0x64, 0x9b, 0xa4, 0xd3, 0xfe, 0xff, 0x8b, 0x7c, 0x28, 0x51, 0xb5, 0x12, 0x55,
+	0x0f, 0xd0, 0x53, 0x22, 0x15, 0x71, 0xe0, 0x80, 0x04, 0xac, 0xd0, 0x1e, 0xb8, 0x20, 0xb3, 0xf7,
+	0x28, 0x2f, 0x83, 0x6b, 0x36, 0x89, 0x53, 0xc7, 0x46, 0xca, 0x37, 0xe2, 0xeb, 0xf0, 0x8d, 0x50,
+	0x26, 0x2f, 0xbb, 0x27, 0xf6, 0xe6, 0xe7, 0xf1, 0x33, 0x63, 0xcf, 0x6f, 0xe0, 0x24, 0x54, 0x94,
+	0x9f, 0xb5, 0xaa, 0xa4, 0xad, 0x22, 0xa5, 0x45, 0x5c, 0xda, 0x5c, 0xc6, 0xf9, 0x25, 0x4e, 0x1b,
+	0x19, 0x67, 0x52, 0x5c, 0x2c, 0xea, 0x2e, 0x4e, 0x8d, 0xc1, 0xaa, 0x31, 0x51, 0xa3, 0x95, 0x51,
+	0x2c, 0x98, 0xfc, 0xdd, 0x2b, 0xa1, 0x94, 0x28, 0x31, 0x26, 0x3f, 0xb3, 0x3f, 0x62, 0x23, 0x2b,
+	0x6c, 0x4d, 0x5a, 0x35, 0x43, 0xf4, 0xf0, 0xc7, 0x01, 0xff, 0xd3, 0x50, 0xcc, 0x5e, 0x80, 0xfb,
+	0x80, 0x5d, 0xb8, 0xd8, 0x2f, 0x8e, 0x2b, 0xde, 0x1f, 0x59, 0x08, 0x7e, 0xa3, 0xd5, 0x4f, 0xcc,
+	0x4d, 0xe8, 0x90, 0x3b, 0x49, 0xf6, 0x1e, 0xa0, 0x35, 0xa9, 0x36, 0x49, 0xdf, 0x30, 0x74, 0xf7,
+	0x8b, 0xe3, 0xfa, 0xb4, 0x8b, 0x86, 0xd7, 0xa2, 0xe9, 0xb5, 0xe8, 0x7e, 0x7a, 0x8d, 0xaf, 0x28,
+	0xdd, 0x6b, 0xf6, 0x0e, 0x02, 0xac, 0x8b, 0xa1, 0xf0, 0xea, 0xd9, 0x42, 0x1f, 0xeb, 0x62, 0x2c,
+	0x03, 0x81, 0x5a, 0x4b, 0x93, 0xe4, 0x65, 0x1b, 0x2e, 0xf7, 0xee, 0x71, 0x7d, 0xda, 0x46, 0xd3,
+	0xa4, 0xd1, 0x1d, 0xdd, 0xdd, 0x9e, 0xd3, 0x5a, 0x20, 0x5f, 0x0d, 0xc9, 0xdb, 0xb2, 0x65, 0x7b,
+	0xd8, 0xe4, 0x65, 0x22, 0xb4, 0xb2, 0x4d, 0xd2, 0x4f, 0xe7, 0xd1, 0x1c, 0x90, 0x97, 0x77, 0xbd,
+	0xf5, 0x15, 0x3b, 0xf6, 0x06, 0xbc, 0xcc, 0xca, 0xb2, 0x68, 0x43, 0x9f, 0x9a, 0x5e, 0x3f, 0x36,
+	0xfd, 0xdc, 0xfb, 0x7c, 0xbc, 0x66, 0xaf, 0xe1, 0x5a, 0x63, 0x5a, 0x74, 0x89, 0x51, 0x49, 0x6b,
+	0xb3, 0x4a, 0x9a, 0x30, 0xd8, 0x2f, 0x8e, 0x01, 0xff, 0x8f, 0xec, 0x7b, 0xf5, 0x9d, 0xcc, 0xc3,
+	0x6f, 0x07, 0x36, 0x4f, 0xbf, 0xc3, 0x18, 0x5c, 0x9d, 0x55, 0x6b, 0x46, 0xb2, 0x74, 0xfe, 0x07,
+	0xda, 0x2d, 0x78, 0x39, 0xd5, 0x11, 0x56, 0x97, 0x8f, 0x8a, 0xed, 0x20, 0x68, 0x52, 0x93, 0x9f,
+	0x5b, 0x34, 0xc4, 0xcd, 0xe5, 0xb3, 0x66, 0x1f, 0xe1, 0x06, 0x53, 0x5d, 0x4a, 0x6c, 0x4d, 0x82,
+	0x17, 0x2b, 0x7f, 0xa5, 0x25, 0xd6, 0x26, 0x99, 0xf3, 0x4b, 0xca, 0xef, 0xa6, 0xcc, 0x97, 0x39,
+	0xf2, 0x6d, 0xea, 0xf0, 0x01, 0x36, 0x46, 0x4b, 0x21, 0x50, 0x0f, 0x9b, 0xf1, 0x9e, 0xdd, 0xcc,
+	0x7a, 0xcc, 0xd3, 0x76, 0x5e, 0x82, 0x5f, 0xe8, 0x2e, 0xd1, 0xb6, 0x0e, 0x7d, 0x62, 0xe2, 0x15,
+	0xba, 0xe3, 0xb6, 0x66, 0x37, 0xb0, 0x1a, 0x58, 0x19, 0x2c, 0x46, 0x5c, 0x8f, 0xc6, 0x21, 0x81,
+	0x25, 0x31, 0x66, 0xff, 0x83, 0x23, 0x0b, 0x02, 0xe4, 0x72, 0x47, 0x16, 0x33, 0x32, 0xe7, 0x09,
+	0xb2, 0x2d, 0x78, 0x1a, 0x6d, 0x8b, 0x05, 0x81, 0x09, 0xf8, 0xa8, 0x7a, 0x30, 0x59, 0xa9, 0xf2,
+	0x07, 0x59, 0x0b, 0x02, 0x13, 0xf0, 0x59, 0x67, 0x1e, 0x7d, 0xfc, 0xed, 0xdf, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x48, 0x83, 0xe4, 0xee, 0x47, 0x03, 0x00, 0x00,
 }
