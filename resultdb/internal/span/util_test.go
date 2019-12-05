@@ -144,4 +144,29 @@ func TestTypeConversion(t *testing.T) {
 		spValues := ToSpannerSlice(varIntA, varIntB, varState)
 		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(2)})
 	})
+
+	Convey(`proto.Message`, t, func() {
+		invTask := &internalpb.InvocationTask{
+			BigqueryExport: &pb.BigQueryExport{},
+		}
+		expected, err := proto.Marshal(invTask)
+		So(err, ShouldBeNil)
+		So(ToSpanner(invTask), ShouldResemble, expected)
+
+		row, err := spanner.NewRow([]string{"a"}, []interface{}{expected})
+		So(err, ShouldBeNil)
+
+		Convey(`success`, func() {
+			expectedPtr := &internalpb.InvocationTask{}
+			err = b.FromSpanner(row, expectedPtr)
+			So(err, ShouldBeNil)
+			So(expectedPtr, ShouldResembleProto, invTask)
+		})
+
+		Convey(`Passing nil pointer to fromSpanner`, func() {
+			var expectedPtr *internalpb.InvocationTask
+			err = b.FromSpanner(row, expectedPtr)
+			So(err, ShouldErrLike, "nil pointer encountered")
+		})
+	})
 }
