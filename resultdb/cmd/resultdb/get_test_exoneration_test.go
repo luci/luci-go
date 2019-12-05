@@ -61,7 +61,7 @@ func TestGetTestExoneration(t *testing.T) {
 				"ExonerationId":       "id",
 				"Variant":             pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":         "deadbeef",
-				"ExplanationMarkdown": span.Snappy("broken"),
+				"ExplanationMarkdown": span.Compressed("broken"),
 			}))
 
 		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}

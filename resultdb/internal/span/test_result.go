@@ -59,7 +59,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
-	var summaryMarkdown Snappy
+	var summaryMarkdown Compressed
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
 		"IsUnexpected":    &maybeUnexpected,
@@ -173,7 +173,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	var summaryMarkdown Snappy
+	var summaryMarkdown Compressed
 	var b Buffer
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
