@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "a8dbf235_2c25a77d",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T22:28:25Z",
+      "side": 1,
+      "message": "yes, i understand, it is never read back. we check only processTime, so it does not matter what is in the task def.\n\nbesides, these task defs are equivalent (the literals are same)\n\nwhat you did is ok too",
+      "parentUuid": "666d1fd5_8a9263a6",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "92dd9ac5dcef3304515c33afc9b1d84db868260a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b1a3dcd_e0120948",
         "filename": "resultdb/internal/span/invocation_task.go",
         "patchSetId": 6
