@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a8c36a3_296670df",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:40:06Z",
+      "side": 1,
+      "message": "is this TODO going to be resolved before we start sending data?\n\nonce we start sending data, changing the schema might much more difficult then before",
+      "range": {
+        "startLine": 25,
+        "startChar": 5,
+        "endLine": 25,
+        "endChar": 9
+      },
+      "revId": "caf7b9d8316a9fa0aeb6f1d4d53ada4eb71fd43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b07f2a9_08f01733",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:40:06Z",
+      "side": 1,
+      "message": "all proto fields should have comments\n\nsame below",
+      "range": {
+        "startLine": 31,
+        "startChar": 9,
+        "endLine": 31,
+        "endChar": 21
+      },
+      "revId": "caf7b9d8316a9fa0aeb6f1d4d53ada4eb71fd43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f22bce4_29c1c421",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:40:06Z",
+      "side": 1,
+      "message": "can different gerrit changes have different value of submitted?",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "caf7b9d8316a9fa0aeb6f1d4d53ada4eb71fd43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e076dac_f50b3514",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:40:06Z",
+      "side": 1,
+      "message": "bq storage is pretty cheap. Also BQ is very good at compressing equivalent values, so IMO adding host here would be OK",
+      "revId": "caf7b9d8316a9fa0aeb6f1d4d53ada4eb71fd43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
