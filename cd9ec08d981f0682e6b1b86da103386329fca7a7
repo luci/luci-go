@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57f1e79d_896a79e9",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:27:29Z",
+      "side": 1,
+      "message": "isn\u0027t this \u003d\u003d (outputFile !\u003d nil)",
+      "range": {
+        "startLine": 315,
+        "startChar": 2,
+        "endLine": 315,
+        "endChar": 9
+      },
+      "revId": "cd9ec08d981f0682e6b1b86da103386329fca7a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
