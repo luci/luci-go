@@ -86,7 +86,7 @@ func TestServer(t *testing.T) {
 			})
 
 			srv.ServeInBackground()
-			resp, err := srv.Get("/test", map[string]string{
+			resp, err := srv.GetMain("/test", map[string]string{
 				"User-Agent":      "Test-user-agent",
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
@@ -117,7 +117,7 @@ func TestServer(t *testing.T) {
 					Message:  "Info log",
 					Time:     "1454472306.7",
 					Operation: &gkelogger.Operation{
-						ID: "81855ad8681d0d86d1e91e00167939cb",
+						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
 				{
@@ -125,7 +125,7 @@ func TestServer(t *testing.T) {
 					Message:  "Warn log",
 					Time:     "1454472307.7",
 					Operation: &gkelogger.Operation{
-						ID: "81855ad8681d0d86d1e91e00167939cb",
+						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
 			})
@@ -139,7 +139,7 @@ func TestServer(t *testing.T) {
 				}
 			})
 			srv.ServeInBackground()
-			_, err := srv.Get("/request", nil)
+			_, err := srv.GetMain("/request", nil)
 			So(err, ShouldBeNil)
 		})
 
@@ -195,7 +195,7 @@ func TestServer(t *testing.T) {
 			})
 
 			call := func(scope string) string {
-				resp, err := srv.Get("/client-auth", map[string]string{"Ask-Scope": scope})
+				resp, err := srv.GetMain("/client-auth", map[string]string{"Ask-Scope": scope})
 				So(err, ShouldBeNil)
 				// If something is really-really broken, the test can theoretically
 				// pick up *real* LUCI_CONTEXT auth and somehow see real tokens. This
@@ -239,7 +239,7 @@ func TestServer(t *testing.T) {
 				c.So(yes, ShouldBeTrue)
 			})
 			srv.ServeInBackground()
-			_, err := srv.Get("/auth-state", map[string]string{
+			_, err := srv.GetMain("/auth-state", map[string]string{
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
 			So(err, ShouldBeNil)
@@ -400,7 +400,9 @@ type testServer struct {
 
 	tokens clientauthtest.FakeTokenGenerator
 
-	mainAddr string
+	mainAddr  string
+	adminAddr string
+
 	cleanup  func()
 	serveErr errorEvent
 	serving  int32
@@ -501,14 +503,23 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	mainPort := srv.Options.testListeners["main_addr"].Addr().(*net.TCPAddr).Port
 	srv.mainAddr = fmt.Sprintf("http://127.0.0.1:%d", mainPort)
 
+	adminPort := srv.Options.testListeners["admin_addr"].Addr().(*net.TCPAddr).Port
+	srv.adminAddr = fmt.Sprintf("http://127.0.0.1:%d", adminPort)
+
 	return srv, nil
 }
 
 func (s *testServer) ServeInBackground() {
 	go func() { s.serveErr.Set(s.ListenAndServe()) }()
-	if _, err := s.Get(healthEndpoint, nil); err != nil {
+
+	// Wait until both HTTP endpoints are serving before returning.
+	if _, err := s.GetMain(healthEndpoint, nil); err != nil {
 		panic(err)
 	}
+	if _, err := s.GetAdmin(healthEndpoint, nil); err != nil {
+		panic(err)
+	}
+
 	atomic.StoreInt32(&s.serving, 1)
 }
 
@@ -520,13 +531,25 @@ func (s *testServer) StopBackgroundServing() error {
 	return nil
 }
 
-// Get makes a blocking request, aborting it if the server dies.
-func (s *testServer) Get(uri string, headers map[string]string) (resp string, err error) {
+// GetMain makes a blocking request to the main serving port, aborting it if
+// the server dies.
+func (s *testServer) GetMain(uri string, headers map[string]string) (string, error) {
+	return s.get(s.mainAddr+uri, headers)
+}
+
+// GetAdmin makes a blocking request to the admin port, aborting it if
+// the server dies.
+func (s *testServer) GetAdmin(uri string, headers map[string]string) (string, error) {
+	return s.get(s.adminAddr+uri, headers)
+}
+
+// get makes a blocking request, aborting it if the server dies.
+func (s *testServer) get(uri string, headers map[string]string) (resp string, err error) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		var req *http.Request
-		if req, err = http.NewRequest("GET", s.mainAddr+uri, nil); err != nil {
+		if req, err = http.NewRequest("GET", uri, nil); err != nil {
 			return
 		}
 		for k, v := range headers {
@@ -572,7 +595,7 @@ func testRequestHandler(o *Options, handler func(rc *router.Context)) {
 	defer srv.StopBackgroundServing()
 
 	srv.Routes.GET("/test", router.MiddlewareChain{}, handler)
-	_, err = srv.Get("/test", nil)
+	_, err = srv.GetMain("/test", nil)
 	So(err, ShouldBeNil)
 }
 
