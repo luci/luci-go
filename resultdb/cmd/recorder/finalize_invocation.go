@@ -76,6 +76,8 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"Tags":         &ret.Tags,
 		})
 
+		finalizeTime := now
+		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
 		case err != nil:
 			return err
@@ -87,9 +89,10 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		case ret.State != pb.Invocation_ACTIVE:
 			return getUnmatchedStateError(invID)
 
-		case pbutil.MustTimestamp(ret.Deadline).Before(now):
+		case deadline.Before(now):
 			ret.State = pb.Invocation_INTERRUPTED
 			ret.FinalizeTime = ret.Deadline
+			finalizeTime = deadline
 
 			if !in.Interrupted {
 				retErr = getUnmatchedStateError(invID)
@@ -104,7 +107,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return err
 		}
 
-		return finalizeInvocation(txn, invID, in.Interrupted, ret.FinalizeTime)
+		return finalizeInvocation(ctx, txn, invID, in.Interrupted, finalizeTime)
 	})
 
 	if err != nil {
