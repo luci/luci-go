@@ -261,7 +261,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 			logging.Warningf(ctx, "Could not process artifact %q", path)
 		}
 
-		outputsToProcess[path] = art
+		outputsToProcess[util.NormalizeIsolatedPath(path)] = art
 	}
 
 	// Convert the output JSON.
