@@ -18,11 +18,13 @@ import (
 	"testing"
 	"time"
 
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -107,22 +109,48 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`finalized`, func() {
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
-			)
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
-			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+			now := testclock.TestRecentTimeUTC
+			nowTimestamp := pbutil.MustTimestampProto(now)
+			origProcessAfter := now.Add(2 * day)
 
-			// Read the invocation from spanner to confirm it's really finalized.
-			txn := span.Client(ctx).ReadOnlyTransaction()
-			defer txn.Close()
+			invID := span.InvocationID("inv")
+			invTask := &internalpb.InvocationTask{
+				BigqueryExport: &pb.BigQueryExport{}}
 
-			inv, err = span.ReadInvocationFull(ctx, txn, "inv")
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
-			So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
+				testutil.MustApply(ctx,
+					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct),
+					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
+				)
+				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+				So(err, ShouldBeNil)
+				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
+				// Read the invocation from spanner to confirm it's really finalized.
+				txn := span.Client(ctx).ReadOnlyTransaction()
+				defer txn.Close()
+
+				inv, err = span.ReadInvocationFull(ctx, txn, "inv")
+				So(err, ShouldBeNil)
+				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
+
+				// Read InvocationTask to confirm it's reset.
+				key := invID.Key(taskID(taskTypeBqExport, 0))
+				var processAfter *tspb.Timestamp
+				testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+					"ProcessAfter": &processAfter,
+				})
+				So(processAfter, ShouldResemble, expected)
+			}
+
+			Convey(`finalized and reset InvocationTasks`, func() {
+				test(true, nowTimestamp)
+			})
+
+			Convey(`finalized and not reset InvocationTasks`, func() {
+				test(false, pbutil.MustTimestampProto(origProcessAfter))
+			})
 		})
 	})
 }
