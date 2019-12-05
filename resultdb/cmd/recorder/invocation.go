@@ -95,7 +95,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			retErr = errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, id, true, pbutil.MustTimestampProto(deadline))
+			return finalizeInvocation(ctx, txn, id, true, pbutil.MustTimestampProto(deadline))
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -132,10 +132,14 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime *tspb.Timestamp) error {
+func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime *tspb.Timestamp) error {
 	state := pb.Invocation_COMPLETED
 	if interrupted {
 		state = pb.Invocation_INTERRUPTED
+	}
+
+	if err := span.ResetInvocationTasks(ctx, txn, id, finalizeTime); err != nil {
+		return err
 	}
 
 	return txn.BufferWrite([]*spanner.Mutation{
@@ -212,14 +216,14 @@ func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateTok
 }
 
 // insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
-func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
+func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(bqExports))
 	for i, bqExport := range bqExports {
 		invTask := &internalpb.InvocationTask{
 			BigqueryExport: bqExport,
 		}
 
-		muts[i] = insertInvocationTask(invID, taskID(taskTypeBqExport, i), invTask, processAfter, true)
+		muts[i] = insertInvocationTask(id, taskID(taskTypeBqExport, i), invTask, processAfter, true)
 	}
 	return muts
 }
