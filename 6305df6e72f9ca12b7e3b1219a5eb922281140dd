@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e88b045_645c6cb8",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T20:58:01Z",
+      "side": 1,
+      "message": "nit: it would be more consistent with the rest of the codebase to use errors.Reason\n\none benefit is that errors.Reason() captures current stack trace. fmt.Errorf doesn\u0027t",
+      "revId": "6305df6e72f9ca12b7e3b1219a5eb922281140dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
