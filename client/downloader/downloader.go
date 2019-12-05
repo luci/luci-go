@@ -533,8 +533,8 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 				d.addError(tarType, string(hash)+":"+filename, err)
 				continue
 			}
-			defer f.Close()
 			n, err := io.Copy(f, tf)
+			f.Close()
 			if err != nil {
 				d.addError(tarType, string(hash)+":"+filename, err)
 				continue
