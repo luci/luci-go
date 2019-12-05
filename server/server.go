@@ -1554,8 +1554,11 @@ func (s *Server) initAdminPort() error {
 	// may leak internal information. Also note that pprof handlers rely on
 	// routing structure not supported by our router, so we do a bit of manual
 	// routing.
+	//
+	// See also internal/pprof.go for more profiling goodies exposed through the
+	// admin portal.
 	admin.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
-		switch c.Params.ByName("path") {
+		switch strings.TrimPrefix(c.Params.ByName("path"), "/") {
 		case "cmdline":
 			pprof.Cmdline(c.Writer, c.Request)
 		case "profile":
