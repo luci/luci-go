@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f4a4ebd5_4759121e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "what is ori?",
+      "range": {
+        "startLine": 115,
+        "startChar": 3,
+        "endLine": 115,
+        "endChar": 6
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d744176d_d27c6a6f",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "this test does not check any of this, so let\u0027s use simplest message possible, equal for both tasks:\n\n  invTask :\u003d \u0026internalpb.InvocationTask{}",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 6
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41c409b2_0c0b06e7",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "testutil.MustReadRow",
+      "range": {
+        "startLine": 158,
+        "startChar": 4,
+        "endLine": 158,
+        "endChar": 55
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfcb6ba4_b8ac0331",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "please remove\n\nwe should not have println\u0027s in committed code",
+      "range": {
+        "startLine": 162,
+        "startChar": 4,
+        "endLine": 164,
+        "endChar": 17
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9726cf08_30120e84",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "this converts from time.Time to timestamp and finalizeInvocation converts from timestamp to time.Time\n\nlet\u0027s remove both conversions",
+      "range": {
+        "startLine": 98,
+        "startChar": 49,
+        "endLine": 98,
+        "endChar": 85
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1834f5b_5e83e554",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "please add doc because it is a public func.\n\nThe doc should mention things that are not obvious from the name, e.g. this actually applies only tsaks with ResetOnFinalize, i.e. this is actually specific to finalization",
+      "range": {
+        "startLine": 26,
+        "startChar": 5,
+        "endLine": 26,
+        "endChar": 25
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe4476ea_989fa299",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "why these parens are needed? this is currently inconsistent with other queries",
+      "range": {
+        "startLine": 29,
+        "startChar": 21,
+        "endLine": 29,
+        "endChar": 22
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a2b40e0_b03053f5",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T16:25:39Z",
+      "side": 1,
+      "message": "nit: omit",
+      "range": {
+        "startLine": 40,
+        "startChar": 61,
+        "endLine": 40,
+        "endChar": 62
+      },
+      "revId": "34bccbefc60480e826a4099e26ee82fd1e5f4f20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
