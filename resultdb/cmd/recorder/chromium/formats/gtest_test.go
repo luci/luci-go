@@ -257,9 +257,9 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey(`with JUnit tests`, func() {
-			basePath, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub")
+			basePath, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub__param=val")
 			So(err, ShouldBeNil)
-			So(basePath, ShouldEqual, "org.chromium.tests#testFoo_sub")
+			So(basePath, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
 		})
 
 		Convey(`with unrecognized format`, func() {
