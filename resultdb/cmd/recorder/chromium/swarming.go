@@ -48,12 +48,14 @@ import (
 )
 
 const (
-	outputJSONFileName  = "output.json"
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
 	maxInlineArtifact   = 1024 // store 1KIb+ artifacts in isolate
 )
 
 var (
+	// Look for the output JSON trying the below possibilities in the given order.
+	outputJSONFileNames = []string{"output.json", "full_results.json"}
+
 	// Keep track of output files we know we may not process.
 	mayIgnoreOutputFiles = stringset.NewFromSlice(
 		"chromedriver.log",     // chromedriver_py_tests
@@ -306,11 +308,20 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 // FetchOutputJSON fetches the output.json given the outputs map, updating it in-place to mark the
 // file as processed.
 func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outputsToProcess map[string]isolated.File) ([]byte, error) {
-	outputFile, ok := outputsToProcess[outputJSONFileName]
-	if !ok {
+	// Check the different possibilities for the output JSON name.
+	var outputJSONFileName string
+	var outputFile *isolated.File
+	for _, outputJSONFileName = range outputJSONFileNames {
+		if file, ok := outputsToProcess[outputJSONFileName]; ok {
+			outputFile = &file
+			break
+		}
+	}
+
+	if outputFile == nil {
 		return nil, errors.Reason(
-			"missing expected output %s in isolated outputs",
-			outputJSONFileName).Tag(grpcutil.FailedPreconditionTag).Err()
+			"missing expected output in isolated outputs, tried {%s}",
+			strings.Join(outputJSONFileNames, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Now fetch (from the same server and namespace) the output file by digest.
