@@ -44,7 +44,7 @@ var (
 	prefixes = []string{"MANUAL_", "PRE_"}
 
 	// Java base paths aren't actually GTest but use the same launcher output format.
-	javaPathRE = regexp.MustCompile(`^[\w.]+#[\w]+$`)
+	javaPathRE = regexp.MustCompile(`^[\w.]+#`)
 
 	// Test base paths look like FooTest.DoesBar: "FooTest" is the suite and "DoesBar" the test name.
 	basePathRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
