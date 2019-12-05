@@ -485,63 +485,12 @@ func New(opts Options) (srv *Server, err error) {
 	if err := srv.initCloudContext(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize cloud context").Err()
 	}
-
-	srv.Routes = srv.RegisterHTTP(opts.HTTPAddr)
-
-	// Health check/readiness probe endpoint on the main serving port.
-	srv.Routes.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
-		c.Writer.Write([]byte(srv.healthResponse(c.Context)))
-	})
-
-	// Expose public pRPC endpoints (see also ListenAndServe where we put the
-	// final interceptors).
-	srv.PRPC = &prpc.Server{
-		Authenticator: &auth.Authenticator{
-			Methods: []auth.Method{
-				&auth.GoogleOAuth2Method{
-					Scopes: []string{clientauth.OAuthScopeEmail},
-				},
-			},
-		},
+	if err := srv.initMainPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
 	}
-	discovery.Enable(srv.PRPC)
-	srv.PRPC.InstallHandlers(srv.Routes, router.MiddlewareChain{})
-
-	// Install RPCExplorer web app at "/rpcexplorer/".
-	rpcexplorer.Install(srv.Routes)
-
-	// Install endpoints accessible through admin port.
-	admin := srv.RegisterHTTP(opts.AdminAddr)
-	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
-	})
-	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
-
-	// Health check/readiness probe endpoint on the admin port.
-	admin.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
-		c.Writer.Write([]byte(srv.healthResponse(c.Context)))
-	})
-
-	// Install pprof endpoints on the admin port. Note that they must not be
-	// exposed via the main serving port, since they do no authentication and
-	// may leak internal information. Also note that pprof handlers rely on
-	// routing structure not supported by our router, so we do a bit of manual
-	// routing.
-	admin.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
-		switch c.Params.ByName("path") {
-		case "cmdline":
-			pprof.Cmdline(c.Writer, c.Request)
-		case "profile":
-			pprof.Profile(c.Writer, c.Request)
-		case "symbol":
-			pprof.Symbol(c.Writer, c.Request)
-		case "trace":
-			pprof.Trace(c.Writer, c.Request)
-		default:
-			pprof.Index(c.Writer, c.Request)
-		}
-	})
-
+	if err := srv.initAdminPort(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
+	}
 	return srv, nil
 }
 
@@ -570,6 +519,11 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 	// Setup middleware chain used by ALL requests.
 	r := router.New()
 	r.Use(mw)
+
+	// Mandatory health check/readiness probe endpoint.
+	r.GET(healthEndpoint, router.MiddlewareChain{}, func(c *router.Context) {
+		c.Writer.Write([]byte(s.healthResponse(c.Context)))
+	})
 
 	// Add NotFound handler wrapped in our middlewares so that unrecognized
 	// requests are at least logged. If we don't do that they'll be handled
@@ -1545,6 +1499,60 @@ func (s *Server) initCloudContext() error {
 		ProjectID: s.Options.CloudProject,
 		DS:        s.dsClient,
 	}).Use(s.Context)
+	return nil
+}
+
+// initMainPort initializes the server on options.HTTPAddr port.
+func (s *Server) initMainPort() error {
+	s.Routes = s.RegisterHTTP(s.Options.HTTPAddr)
+
+	// Expose public pRPC endpoints (see also ListenAndServe where we put the
+	// final interceptors).
+	s.PRPC = &prpc.Server{
+		Authenticator: &auth.Authenticator{
+			Methods: []auth.Method{
+				&auth.GoogleOAuth2Method{
+					Scopes: []string{clientauth.OAuthScopeEmail},
+				},
+			},
+		},
+	}
+	discovery.Enable(s.PRPC)
+	s.PRPC.InstallHandlers(s.Routes, router.MiddlewareChain{})
+
+	// Install RPCExplorer web app at "/rpcexplorer/".
+	rpcexplorer.Install(s.Routes)
+	return nil
+}
+
+// initAdminPort initializes the server on options.AdminAddr port.
+func (s *Server) initAdminPort() error {
+	// Install endpoints accessible through the admin port only.
+	admin := s.RegisterHTTP(s.Options.AdminAddr)
+	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
+	})
+	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
+
+	// Install pprof endpoints on the admin port. Note that they must not be
+	// exposed via the main serving port, since they do no authentication and
+	// may leak internal information. Also note that pprof handlers rely on
+	// routing structure not supported by our router, so we do a bit of manual
+	// routing.
+	admin.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
+		switch c.Params.ByName("path") {
+		case "cmdline":
+			pprof.Cmdline(c.Writer, c.Request)
+		case "profile":
+			pprof.Profile(c.Writer, c.Request)
+		case "symbol":
+			pprof.Symbol(c.Writer, c.Request)
+		case "trace":
+			pprof.Trace(c.Writer, c.Request)
+		default:
+			pprof.Index(c.Writer, c.Request)
+		}
+	})
 	return nil
 }
 
