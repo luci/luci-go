@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "eefc6a30_408db26c",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T20:58:53Z",
+      "side": 1,
+      "message": "misread the code. this code lgtm",
+      "parentUuid": "1a956386_54c036bb",
+      "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67654e76_b598dbb3",
         "filename": "resultdb/cmd/recorder/create_invocation_test.go",
         "patchSetId": 5
