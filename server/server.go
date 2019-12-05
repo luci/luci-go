@@ -1527,12 +1527,27 @@ func (s *Server) initMainPort() error {
 
 // initAdminPort initializes the server on options.AdminAddr port.
 func (s *Server) initAdminPort() error {
+	// Admin portal uses XSRF tokens that require a secret key. We generate this
+	// key randomly during process startup (i.e. now). It means XSRF tokens in
+	// admin HTML pages rendered by a server process are understood only by the
+	// exact same process. This is OK for admin pages (they are not behind load
+	// balancers and we don't care that a server restart invalidates all tokens).
+	secret := make([]byte, 20)
+	if _, err := cryptorand.Read(secret); err != nil {
+		return err
+	}
+	store := secrets.NewDerivedStore(secrets.Secret{Current: secret})
+	withAdminSecret := router.NewMiddlewareChain(func(c *router.Context, next router.Handler) {
+		c.Context = secrets.Set(c.Context, store)
+		next(c)
+	})
+
 	// Install endpoints accessible through the admin port only.
 	admin := s.RegisterHTTP(s.Options.AdminAddr)
 	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
-	portal.InstallHandlers(admin, router.MiddlewareChain{}, portal.AssumeTrustedPort)
+	portal.InstallHandlers(admin, withAdminSecret, portal.AssumeTrustedPort)
 
 	// Install pprof endpoints on the admin port. Note that they must not be
 	// exposed via the main serving port, since they do no authentication and
