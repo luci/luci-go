@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "1a956386_54c036bb",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:47:14Z",
+      "side": 1,
+      "message": "I don\u0027t understand, invTaskRtn is for accepting the payload when read the row. Why do I need to init it?",
+      "parentUuid": "0f8ad37e_d8d4c1ef",
+      "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "67654e76_b598dbb3",
         "filename": "resultdb/cmd/recorder/create_invocation_test.go",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51cfa4fc_4d798dd4",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:47:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67654e76_b598dbb3",
+      "range": {
+        "startLine": 277,
+        "startChar": 3,
+        "endLine": 277,
+        "endChar": 54
+      },
+      "revId": "2d4548aabb37c0c253d2b31a7b9b232dc1639d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
