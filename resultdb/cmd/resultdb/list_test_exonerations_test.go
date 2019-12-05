@@ -64,7 +64,7 @@ func TestListTestExonerations(t *testing.T) {
 				"ExonerationId":       "0",
 				"Variant":             var0,
 				"VariantHash":         "deadbeef",
-				"ExplanationMarkdown": span.Snappy("broken"),
+				"ExplanationMarkdown": span.Compressed("broken"),
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
