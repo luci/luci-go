@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a436041d_5a68ed89",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72636189_f0f89ad2",
+      "range": {
+        "startLine": 238,
+        "startChar": 29,
+        "endLine": 238,
+        "endChar": 38
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4fcc82c2_b93bbabf",
         "filename": "resultdb/cmd/recorder/invocation_test.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "48d62e97_2a37ca55",
+        "filename": "resultdb/cmd/recorder/invocation_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4fcc82c2_b93bbabf",
+      "range": {
+        "startLine": 185,
+        "startChar": 3,
+        "endLine": 185,
+        "endChar": 55
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14393717_e2f70a06",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 7
@@ -62,6 +110,24 @@
       "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dda2c86_42d7a795",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 7
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14393717_e2f70a06",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "0073fbf6_d47967b1",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f089828c_f5ee92a1",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f7b6bf1_68b23b74",
         "filename": "resultdb/internal/span/util_test.go",
         "patchSetId": 7
@@ -93,6 +177,24 @@
       "writtenOn": "2019-12-05T16:13:23Z",
       "side": 1,
       "message": "intentional?",
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a2b52c8_4dd3f4c7",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "No, removed.",
+      "parentUuid": "1f7b6bf1_68b23b74",
       "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -122,6 +224,30 @@
     },
     {
       "key": {
+        "uuid": "38ea37d4_43f1e879",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a59c412_6ca26866",
+      "range": {
+        "startLine": 152,
+        "startChar": 4,
+        "endLine": 155,
+        "endChar": 50
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0dc246b_e174cf89",
         "filename": "resultdb/internal/span/util_test.go",
         "patchSetId": 7
@@ -133,6 +259,30 @@
       "writtenOn": "2019-12-05T16:13:23Z",
       "side": 1,
       "message": "why test() func above didn\u0027t work?",
+      "range": {
+        "startLine": 158,
+        "startChar": 2,
+        "endLine": 176,
+        "endChar": 4
+      },
+      "revId": "4f7807eddb3d2b8472c9f0e4e173b8b7427e138d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c476dd5_f6c368f1",
+        "filename": "resultdb/internal/span/util_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-05T18:42:48Z",
+      "side": 1,
+      "message": "Two reasons:\n\n1. I want to test err message in the nil pointer case;\n2. In this case proto.Message is passed into both ToSpanner and FromSpanner. \nAnd in test() when testing FromSpanner, a pointer of proto.Message is used.",
+      "parentUuid": "e0dc246b_e174cf89",
       "range": {
         "startLine": 158,
         "startChar": 2,
