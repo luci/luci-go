@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "aaa64915_4d8192ba",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:55:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a704be2_4ff67331",
+      "range": {
+        "startLine": 235,
+        "startChar": 35,
+        "endLine": 235,
+        "endChar": 76
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57dcfe47_927567bb",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2019-12-05T21:47:02Z",
       "side": 1,
       "message": "consider keeping these in a sync.Pool to reduce GC thrashing (same for various temporary buffers like the one below)",
+      "range": {
+        "startLine": 236,
+        "startChar": 3,
+        "endLine": 240,
+        "endChar": 4
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "029baaac_b9012d03",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:55:45Z",
+      "side": 1,
+      "message": "hmm, idk about this. Isn\u0027t Go memory manager should do a better job than sync.pool?\n\nanyway, this is outside of this CL. Note that this code is in a generic part of the code. This type is called Buffer. Here is a typical example of usage: https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/testutil/spantest.go;l\u003d299?q\u003dBuffer%20f:resultdb\u0026ss\u003dchromium\n\nit is reused across rows. If we really need to reuse memory, I\u0027d rather put Buffer into pool. WDYT?",
+      "parentUuid": "57dcfe47_927567bb",
       "range": {
         "startLine": 236,
         "startChar": 3,
@@ -68,6 +116,30 @@
       "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b187a43_294ad929",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T21:55:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0b87187_4018395a",
+      "range": {
+        "startLine": 334,
+        "startChar": 18,
+        "endLine": 334,
+        "endChar": 21
+      },
+      "revId": "c70a1f85cad02e59a1c6cd22a287cf1f33d8d0e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
