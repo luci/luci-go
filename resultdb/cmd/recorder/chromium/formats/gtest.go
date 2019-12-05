@@ -217,6 +217,9 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 		return pb.TestStatus_FAIL, nil
 	case "NOTRUN":
 		return pb.TestStatus_SKIP, nil
+	case "UNKNOWN":
+		// TODO(jchinlee): Confirm this is reasonable.
+		return pb.TestStatus_ABORT, nil
 	default:
 		// This would only happen if the set of possible GTest result statuses change and resultsdb has
 		// not been updated to match.
