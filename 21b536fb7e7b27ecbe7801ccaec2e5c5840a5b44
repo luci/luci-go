@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f106a8ea_95dd9865",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T23:18:29Z",
+      "side": 1,
+      "message": "nit: \"occurred\"\n\n\"could\" is redundant with \"possible\"",
+      "range": {
+        "startLine": 72,
+        "startChar": 70,
+        "endLine": 73,
+        "endChar": 10
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d5e3015_0061621f",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T23:18:29Z",
+      "side": 1,
+      "message": "buildbucket already has a term that, I think, equivalent to this: \"critical\"\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d185?q\u003dbuild.proto\u0026ss\u003dchromium\n\nif this is equivalent, then i think we should have one word for the same thing\n\nAndrii, WDYT?",
+      "range": {
+        "startLine": 94,
+        "startChar": 7,
+        "endLine": 94,
+        "endChar": 15
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
