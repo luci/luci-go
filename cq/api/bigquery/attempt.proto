@@ -8,27 +8,88 @@ package bigquery;
 
 import "google/protobuf/timestamp.proto";
 
-// Attempt includes the state CQ attempt.
-// Next id: 6
+// Attempt includes the state of one CQ attempt.
+//
+// An attempt involves doing checks for one or more CLs that could
+// potentially be submitted together.
 message Attempt {
-  // The unique key for this attempt. This should be unique given a set of CLs
-  // included, and a trigger time.
-  string attempt_key = 1;
+  // The key for this attempt, unique given set of CLs and trigger time.
+  string key = 1;
 
-  // Whether the attempt is a dry run or full run. If constituent CLs have
-  // different modes, then the mode is "disagreement".
-  enum Mode {
-    MODE_UNSPECIFIED = 0;
-    DISAGREEMENT = 1;
-    DRY_RUN = 2;
-    FULL_RUN = 3;
-  }
+  // The LUCI project that this attempt belongs to.
+  string project = 2;
 
-  // Time when the attempt started and stopped.
-  // TODO(qyearsley): define more precisely.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp stop = 3;
+  // Time when the attempt started (trigger time of the last CL triggered)
+  // and ended (released by CQ).
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
 
-  Mode mode = 4;
-  bool passed = 5;
+  // Gerrit CL revisions in this attempt; there should be one or more.
+  repeated GerritChange gerrit_cls = 5;
+
+  // An opaque key that is unique for a given set of Gerrit change patchsets
+  // (or, equivalently, buildsets). The same cl_group_key will be used if
+  // another attempt is made for the same set of changes at a different time.
+  string cl_group_key = 6;
+
+  // Builds checked as part of this attempt.
+  repeated Build builds = 7;
+
+  // True if CQ determines that all CLs are OK to submit.
+  bool ready_to_submit = 8;
+}
+
+
+// GerritChange represents one revision of one Gerrit change
+// in an attempt.
+//
+// This is similar to GerritChange in buildbucket/proto/common.proto,
+// but with additional fields specific to CQ.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+
+  // Gerrit project, e.g. "chromium/src".
+  string project = 2;
+
+  // Change number, e.g. 12345.
+  int64 change = 3;
+
+  // Patch set number, e.g. 1.
+  int64 patchset = 4;
+
+  // The earliest patchset of the CL that is considered
+  // equivalent to the patchset above.
+  int64 earliest_equivalent_patchset = 5;
+
+  // The time that the CQ was triggered for this CL in this attempt.
+  google.protobuf.Timestamp trigger_time = 6;
+
+  // True if we just want to run tests without submitting.
+  bool dry_run = 7;
+
+  // True if this CL was successfully submitted. Even if the Attempt is
+  // considered ready to submit overall, it's possible that a failure could
+  // occur when submitting some changes.
+  bool submitted = 8;
+}
+
+// Build represents one tryjob in an attempt, which is one Buildbucket build.
+//
+// This is similar to Build in buildbucket/proto/build.proto, but with
+// CQ-specific information.
+message Build {
+  // Buildbucket build ID, unique per Buildbucket instance.
+  int64 id = 1;
+
+  // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+  string host = 2;
+
+  // True if this build was pre-existing, or false if it was triggered as
+  // part of this CQ attempt.
+  bool reused = 3;
+
+  // True if this build must pass in order for the CLs to be considered
+  // ready to submit.
+  bool blocking = 4;
 }
