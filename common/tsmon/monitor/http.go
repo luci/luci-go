@@ -110,7 +110,6 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		return fmt.Errorf("bad response status %d from endpoint %s", status, m.endpoint)
 	}
 
-	logging.Debugf(ctx, "Sent %d tsmon cells to %s", len(cells), m.endpoint)
 	return nil
 }
 

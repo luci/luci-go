@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/monitor"
@@ -185,14 +186,13 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 		return nil
 	}
 
-	logging.Debugf(ctx, "Starting tsmon flush: %d cells", len(cells))
-	defer logging.Debugf(ctx, "Finished tsmon flush")
-
 	// Split up the payload into chunks if there are too many cells.
 	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
 		chunkSize = len(cells)
 	}
+
+	startedAt := time.Now()
 
 	var nSent int
 	var lastErr error
@@ -208,8 +208,9 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 		}
 		nSent += e - s
 	}
-	logging.Debugf(ctx, "Sent %d/%d cells", nSent, len(cells))
 	s.resetGlobalCallbackMetrics(ctx)
+
+	logging.Debugf(ctx, "tsmon: sent %d/%d cells in %s", nSent, len(cells), time.Since(startedAt))
 	return lastErr
 }
 

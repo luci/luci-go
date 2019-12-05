@@ -265,7 +265,6 @@ func (f *Fetcher) fetchFromGCS(ctx context.Context, client *http.Client, rel str
 		storageURL = f.testStorageURL
 	}
 	url := fmt.Sprintf("%s/%s/%s", storageURL, f.StorageDumpPath, rel)
-	logging.Debugf(ctx, "GET %s", url)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	resp, err := client.Do(req.WithContext(ctx))

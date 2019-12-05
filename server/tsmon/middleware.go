@@ -333,7 +333,7 @@ func (s *State) flushIfNeededImpl(c context.Context, state *tsmon.State, setting
 		if err == ErrNoTaskNumber {
 			logging.Warningf(c, "Skipping the tsmon flush: no task number assigned yet")
 		} else {
-			logging.WithError(err).Errorf(c, "Failed to flush tsmon metrics")
+			logging.WithError(err).Errorf(c, "Failed to flush tsmon metrics (tried to act as %q)", settings.ProdXAccount)
 		}
 		if sinceLastFlush := now.Sub(lastFlush); sinceLastFlush > noFlushErrorThreshold {
 			logging.Errorf(c, "No successful tsmon flush for %s", sinceLastFlush)
@@ -397,7 +397,6 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Setting
 	} else if s.IsDevMode || settings.ProdXAccount == "" {
 		mon = monitor.NewDebugMonitor("")
 	} else {
-		logging.Infof(c, "Sending metrics to ProdX using %s", settings.ProdXAccount)
 		transport, err := auth.GetRPCTransport(
 			c,
 			auth.AsActor,
