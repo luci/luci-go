@@ -34,6 +34,24 @@
       "revId": "9178609cf4bda37eac17eb6ff9b5ad5444b50042",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c468dc2_ed0e0e68",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-05T01:27:04Z",
+      "side": 1,
+      "message": "i think I understand very little here, so I\u0027ll shut up and defer to you and nodir :)",
+      "parentUuid": "367401f3_bdbffc46",
+      "revId": "9178609cf4bda37eac17eb6ff9b5ad5444b50042",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
