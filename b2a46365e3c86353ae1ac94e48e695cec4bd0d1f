@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12e7cf97_b50deb10",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-05T23:50:36Z",
+      "side": 1,
+      "message": "shouldn\u0027t we normalize path in https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats/json.go;l\u003d337?q\u003d%22for%20name,%20paths%20:%3D%20range%20f.Artifacts%20%7B%22\ntoo?",
+      "revId": "b2a46365e3c86353ae1ac94e48e695cec4bd0d1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
