@@ -16,6 +16,24 @@
       "revId": "9178609cf4bda37eac17eb6ff9b5ad5444b50042",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "367401f3_bdbffc46",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-05T00:10:37Z",
+      "side": 1,
+      "message": "To what %? There\u0027s no good default % that works for both low and high load servers. QPS-based rate behaves better in this regards (and that\u0027s why I chose it).",
+      "parentUuid": "628ee3d5_2c4972e5",
+      "revId": "9178609cf4bda37eac17eb6ff9b5ad5444b50042",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
