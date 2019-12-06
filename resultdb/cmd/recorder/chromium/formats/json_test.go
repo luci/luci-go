@@ -320,6 +320,8 @@ func TestJSONConversions(t *testing.T) {
 }
 
 func TestArtifactUtils(t *testing.T) {
+	t.Parallel()
+
 	Convey(`Logging`, t, func() {
 		arts := map[string][]string{
 			"stdout": {"log_0.txt", "log_1.txt"},
@@ -327,5 +329,32 @@ func TestArtifactUtils(t *testing.T) {
 		}
 		So(artifactsToString(arts), ShouldEqual,
 			"links\n\thttps://linklink.com\nstdout\n\tlog_0.txt\n\tlog_1.txt\n")
+	})
+
+	Convey(`Checking subdirs`, t, func() {
+		outputsToProcess := map[string]*pb.Artifact{
+			"artifacts/a/stdout.txt":           {Name: "artifacts/a/stdout.txt"},
+			"artifacts/a/stderr.txt":           {Name: "artifacts/a/stderr.txt"},
+			"layout-test-results/b/stderr.txt": {Name: "layout-test-results/b/stderr.txt"},
+			"c/stderr.txt":                     {Name: "c/stderr.txt"},
+		}
+		f := &TestFields{Artifacts: map[string][]string{
+			"a": {"a/stdout.txt", "a\\stderr.txt"},
+			"b": {"b/stderr.txt"},
+			"c": {"c/stderr.txt"},
+		}}
+
+		artifactsPerRun, unresolved := f.getArtifacts(outputsToProcess)
+		So(artifactsPerRun, ShouldHaveLength, 1)
+
+		pbutil.NormalizeArtifactSlice(artifactsPerRun[0])
+		So(artifactsPerRun[0], ShouldResemble, []*pb.Artifact{
+			{Name: "artifacts/a/stderr.txt"},
+			{Name: "artifacts/a/stdout.txt"},
+			{Name: "c/stderr.txt"},
+			{Name: "layout-test-results/b/stderr.txt"},
+		})
+		So(unresolved, ShouldBeEmpty)
+		So(outputsToProcess, ShouldBeEmpty)
 	})
 }

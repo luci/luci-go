@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -38,7 +39,16 @@ import (
 
 const testNamePrefixKey = "test_name_prefix"
 
-var testRunSubdirRe = regexp.MustCompile("/retry_([0-9]+)/")
+var (
+	// Subdirectory of isolated outputs root identifying run index.
+	testRunSubdirRe = regexp.MustCompile("retry_([0-9]+)/")
+
+	// Known subdirectories of the isolated outputs root where artifacts might be located.
+	artifactDirectories = []string{
+		"artifacts",
+		"layout-test-results",
+	}
+)
 
 // JSONTestResults represents the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
@@ -338,9 +348,9 @@ func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (art
 			}
 
 			// Look for the path in isolated outputs.
-			if art, ok := outputsToProcess[normPath]; ok {
+			if key, art := checkIsolatedOutputs(outputsToProcess, normPath); art != nil {
 				artifacts[runID] = append(artifacts[runID], art)
-				delete(outputsToProcess, normPath)
+				delete(outputsToProcess, key)
 				continue
 			}
 
@@ -394,4 +404,24 @@ func artifactsToString(arts map[string][]string) string {
 		w.Level--
 	}
 	return msg.String()
+}
+
+// checkIsolatedOutputs looks for the given output path in the isolated output directory.
+// Checks the root directory as well as known possible subdirectories.
+func checkIsolatedOutputs(outputsToProcess map[string]*pb.Artifact, normPath string) (string, *pb.Artifact) {
+	// Check root.
+	if art, ok := outputsToProcess[normPath]; ok {
+		return normPath, art
+	}
+
+	// Check known candidate subdirectories.
+	// TODO(1027708,1031296): Remove.
+	for _, dir := range artifactDirectories {
+		key := path.Join(dir, normPath)
+		if art, ok := outputsToProcess[key]; ok {
+			return key, art
+		}
+	}
+
+	return "", nil
 }
