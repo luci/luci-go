@@ -25,10 +25,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
@@ -49,7 +47,6 @@ import (
 
 const (
 	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
-	maxInlineArtifact   = 1024 // store 1KIb+ artifacts in isolate
 )
 
 var (
@@ -226,29 +223,20 @@ func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInv
 	return span.InvocationID(fmt.Sprintf("swarm:%s:%s", escapedHostname, task.RunId))
 }
 
-type isolatedClient struct {
-	*isolatedclient.Client
-	host      string
-	namespace string
-}
-
 // processOutputs fetches the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
 func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testPathPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
-	isoClient := isolatedClient{
-		Client:    isolatedclient.New(nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil),
-		host:      strings.TrimPrefix(strings.TrimPrefix(outputsRef.Isolatedserver, "https://"), "http://"),
-		namespace: outputsRef.Namespace,
-	}
+		isoClient := isolatedclient.New(
+		nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil)
 
 	// Get the isolated outputs.
-	outputs, err := GetOutputs(ctx, isoClient.Client, outputsRef)
+	outputs, err := GetOutputs(ctx, isoClient, outputsRef)
 	if err != nil {
 		return nil, err
 	}
 
 	// Fetch the output.json file itself and convert it.
-	outputJSON, err := FetchOutputJSON(ctx, isoClient.Client, outputs)
+	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +244,8 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	// Convert the isolated.File outputs to pb.Artifacts for later processing.
 	outputsToProcess := make(map[string]*pb.Artifact, len(outputs))
 	for path, f := range outputs {
-		art := util.IsolatedFileToArtifact(isoClient.host, outputsRef.Namespace, path, &f)
+		art := util.IsolatedFileToArtifact(
+			outputsRef.Isolatedserver, outputsRef.Namespace, path, &f)
 		if art == nil {
 			logging.Warningf(ctx, "Could not process artifact %q", path)
 		}
@@ -277,11 +266,6 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	// Any outputs remaining we should note in case we're inadvertently not accounting for them.
 	if len(outputsToProcess) > 0 {
 		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
-	}
-
-	// If some artifacts are large, store them in isolate.
-	if err := isolateArtifacts(ctx, isoClient, results); err != nil {
-		return nil, err
 	}
 
 	return results, nil
@@ -382,52 +366,6 @@ func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
 		return nil, errors.Annotate(err, "converting timestamp string %q", ts).Err()
 	}
 	return ptypes.TimestampProto(t)
-}
-
-// isolateArtifacts isolates contents of large artifacts and replaces them with
-// a link to isolate.
-func isolateArtifacts(ctx context.Context, isoClient isolatedClient, results []*pb.TestResult) error {
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, r := range results {
-		for _, art := range r.OutputArtifacts {
-			if len(art.Contents) > maxInlineArtifact {
-				art := art
-				eg.Go(func() error {
-					return isolateArtifact(ctx, isoClient, art)
-				})
-			}
-		}
-	}
-
-	return eg.Wait()
-}
-
-func isolateArtifact(ctx context.Context, isoClient isolatedClient, art *pb.Artifact) error {
-	hash := isolated.GetHash(isoClient.namespace)
-	digest := string(isolated.HashBytes(hash, art.Contents))
-
-	states, err := isoClient.Contains(ctx, []*isolateservice.HandlersEndpointsV1Digest{
-		{
-			Digest: digest,
-			Size:   int64(len(art.Contents)),
-		},
-	})
-	if err != nil {
-		return err
-	}
-	pushState := states[0]
-	// Contains returns a nil state for items that do not exist.
-	if pushState != nil {
-		if err := isoClient.Push(ctx, pushState, isolatedclient.NewBytesSource(art.Contents)); err != nil {
-			return errors.Annotate(err, "failed to isolate the artifact").Err()
-		}
-	}
-
-	// Make art just a pointer.
-	art.Contents = nil
-	art.FetchUrl = util.IsolateFetchURL(isoClient.host, isoClient.namespace, digest)
-	art.ViewUrl = util.IsolateViewURL(isoClient.host, isoClient.namespace, digest)
-	return nil
 }
 
 // mayIgnoreOutput identifies isolated outputs that we know we may not care to process.
