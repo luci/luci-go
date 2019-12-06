@@ -117,6 +117,30 @@
       "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46d6fd96_10f6f41a",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Alright -- Now, maybe to be consistent with Buildbucket\u0027s `critical`, this could potentially be a buildbucket `Trinary` value. In luci/cq/api/config/v2/cq.proto there\u0027s also an equivalent `Toggle` value.\n\nAnd for a message type like Trinary (or Toggle...), it seems like maybe that\u0027s something that could be in luci/common/proto/...\n\nBut actually, I think Trinary may be unnecessary here. I can see how for a config, you may want to have an \"unset\" value, which allows us to change the default behavior for projects that haven\u0027t explicitly specified a value, but for a specific CQ tryjob, it seems like the tryjob is either blocking or not, there\u0027s not really meaning for \"UNSET\". So plain old-fashioned bool here may be OK?",
+      "parentUuid": "d55f11da_5370ae7c",
+      "range": {
+        "startLine": 94,
+        "startChar": 7,
+        "endLine": 94,
+        "endChar": 15
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

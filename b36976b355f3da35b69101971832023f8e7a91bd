@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "6bcc362f_e16cfcdf",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "436045ea_f9f74647",
+      "range": {
+        "startLine": 16,
+        "startChar": 9,
+        "endLine": 16,
+        "endChar": 72
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85998a28_0f7cf652",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "In buildbucket common.proto, there\u0027s TimeRange, which contains start_time and end_time. Potentially such a message could also be used here, although I don\u0027t feel strongly about this.",
+      "range": {
+        "startLine": 23,
+        "startChar": 0,
+        "endLine": 24,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40a8564b_55532999",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -36,6 +83,30 @@
       "writtenOn": "2019-12-06T19:23:37Z",
       "side": 1,
       "message": "nit: just CLs",
+      "range": {
+        "startLine": 26,
+        "startChar": 12,
+        "endLine": 26,
+        "endChar": 24
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff13b68c_316f8724",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "I agree that \"CL revisions\" is awkward, but I dont\u0027 feel that \"CLs\" is accurate, since the GerritChange message has a specific patchset.\n\nMaybe:\n\n - Gerrit CLs with specific patchsets in this attempt; ...\n - Patchsets of Gerrit changes in this attempt...\n\nWDYT?\n\n\nAlso: In buildbucket build proto, the field name is gerrit_changes. I\u0027ll change the field name here too.",
+      "parentUuid": "40a8564b_55532999",
       "range": {
         "startLine": 26,
         "startChar": 12,
@@ -82,6 +153,24 @@
     },
     {
       "key": {
+        "uuid": "ddb1d230_168b1724",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03c861ac_1f65018b",
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10f1f688_731e7d4c",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -102,6 +191,30 @@
       "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf4929d_fb3e8594",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10f1f688_731e7d4c",
+      "range": {
+        "startLine": 34,
+        "startChar": 12,
+        "endLine": 34,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +241,30 @@
     },
     {
       "key": {
+        "uuid": "1ea2517b_cb6a591c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b0d9476_019fddd8",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 57
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc315f6e_d258c43f",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -151,6 +288,30 @@
     },
     {
       "key": {
+        "uuid": "a0d8b74b_01020b2a",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc315f6e_d258c43f",
+      "range": {
+        "startLine": 38,
+        "startChar": 2,
+        "endLine": 38,
+        "endChar": 15
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9258b3e3_99d0f0a9",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -162,6 +323,30 @@
       "writtenOn": "2019-12-06T19:23:37Z",
       "side": 1,
       "message": "wdyt: \" beyond control of the CQ\"?",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b571e562_62d25c4b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "What about when CQ cancels a build (e.g. due to new patchset upload)? That\u0027s technically within control of CQ, triggered by external event...",
+      "parentUuid": "9258b3e3_99d0f0a9",
       "range": {
         "startLine": 45,
         "startChar": 40,
@@ -197,6 +382,30 @@
     },
     {
       "key": {
+        "uuid": "1f32442a_6c38b761",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e717b3e9_b693b809",
+      "range": {
+        "startLine": 59,
+        "startChar": 27,
+        "endLine": 59,
+        "endChar": 39
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf625ea8_fc3bc0de",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -208,6 +417,30 @@
       "writtenOn": "2019-12-06T19:23:37Z",
       "side": 1,
       "message": "sorry, I\u0027ve just realized that we probably don\u0027t want to commit to dry_run as a boolean either.\nHow about Mode enum like https://source.corp.google.com/chromium_infra_internal/infra_internal/services/cq/pending_manager/base.py;cl\u003dmaster;l\u003d221?q\u003dinfra_internal%20services%20cq%20pending_manager%20base\n\n\nIt\u0027ll cost a bit more in storage (since bqschemaupdater creates string enums), but it\u0027ll provide for future evolution of CQ.",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42d73d7d_6fed0515",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Are you thinking about potentially expanding to different types of runs or \"dry runs\", e.g. \"retry only failed\"?\n\nAt the moment we only have full run and dry run, right?",
+      "parentUuid": "cf625ea8_fc3bc0de",
       "range": {
         "startLine": 78,
         "startChar": 1,
@@ -243,6 +476,30 @@
     },
     {
       "key": {
+        "uuid": "87e7f8cf_dc1f9ba1",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdb54051_34d3ebd0",
+      "range": {
+        "startLine": 80,
+        "startChar": 28,
+        "endLine": 80,
+        "endChar": 34
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d6a5413_7b2e01ea",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -263,6 +520,30 @@
       "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5330848b_640c8de5",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T22:19:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d6a5413_7b2e01ea",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 56
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
