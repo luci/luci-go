@@ -64,5 +64,12 @@ func TestIsolatedUtils(t *testing.T) {
 			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", ".\\b\\..\\a\\foo.txt", f),
 				ShouldResembleProto, expectedArt)
 		})
+
+		Convey(`with backslashes`, func() {
+			expectedArt.Name = "a/foo.txt"
+			expectedArt.ContentType = "plain/text"
+			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", "a\\foo.txt", f),
+				ShouldResembleProto, expectedArt)
+		})
 	})
 }
