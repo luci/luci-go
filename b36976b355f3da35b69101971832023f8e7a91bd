@@ -128,6 +128,29 @@
     },
     {
       "key": {
+        "uuid": "dc315f6e_d258c43f",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:26:09Z",
+      "side": 1,
+      "message": "also, please make it top-level. Eventually, we\u0027ll move it to some \"common.proto\" like buildbucket.",
+      "range": {
+        "startLine": 38,
+        "startChar": 2,
+        "endLine": 38,
+        "endChar": 15
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9258b3e3_99d0f0a9",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
