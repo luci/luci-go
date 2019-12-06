@@ -8,27 +8,109 @@ package bigquery;
 
 import "google/protobuf/timestamp.proto";
 
-// Attempt includes the state CQ attempt.
-// Next id: 6
+
+// Attempt includes the state of one CQ attempt.
+//
+// An attempt involves doing checks for one or more CLs that could
+// potentially be submitted together.
 message Attempt {
-  // The unique key for this attempt. This should be unique given a set of CLs
-  // included, and a trigger time.
-  string attempt_key = 1;
+  // The opaque key unique to this Attempt.
+  string key = 1;
+  // The LUCI project that this attempt belongs to.
+  string project = 2;
 
-  // Whether the attempt is a dry run or full run. If constituent CLs have
-  // different modes, then the mode is "disagreement".
-  enum Mode {
-    MODE_UNSPECIFIED = 0;
-    DISAGREEMENT = 1;
-    DRY_RUN = 2;
-    FULL_RUN = 3;
-  }
+  // An opaque key that is unique for a given set of Gerrit change patchsets
+  // (or, equivalently, buildsets). The same cl_group_key will be used if
+  // another attempt is made for the same set of changes at a different time.
+  string cl_group_key = 6;
 
-  // Time when the attempt started and stopped.
-  // TODO(qyearsley): define more precisely.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp stop = 3;
+  // Time when the attempt started (trigger time of the last CL triggered)
+  // and ended (released by CQ).
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
 
-  Mode mode = 4;
-  bool passed = 5;
+  // Gerrit changes, with specific patchsets, in this Attempt.
+  // There should be one or more.
+  repeated GerritChange gerrit_changes = 5;
+
+  // Builds checked as part of this attempt, whether triggered or reused.
+  repeated Build builds = 7;
+
+  // Final status of the Attempt.
+  AttemptStatus status = 8;
+}
+
+
+// GerritChange represents one revision (patchset) of one Gerrit change
+// in an attempt.
+//
+// See also: GerritChange in buildbucket/proto/common.proto.
+message GerritChange {
+  // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+  string host = 1;
+  // Gerrit project, e.g. "chromium/src".
+  string project = 2;
+  // Change number, e.g. 12345.
+  int64 change = 3;
+  // Patch set number, e.g. 1.
+  int64 patchset = 4;
+  // The earliest patchset of the CL that is considered
+  // equivalent to the patchset above.
+  int64 earliest_equivalent_patchset = 5;
+
+  // The time that the CQ was triggered for this CL in this attempt.
+  google.protobuf.Timestamp trigger_time = 6;
+  // CQ Mode for this CL, e.g. dry run or full run.
+  Mode mode = 7;
+  // True if the change was submitted.
+  //
+  // That is, the status of the change in Gerrit was changed to "merged".
+  // Submission of Gerrit CLs in an Attempt is not an atomic operation,
+  // so it's possible that only some of the GerritChanges are submitted.
+  bool submitted = 8;
+}
+
+enum Mode {
+  // Default, never set.
+  MODE_UNSPECIFIED = 0;
+  // Run all tests but do not submit.
+  DRY_RUN = 1;
+  // Run all tests and potentially submit.
+  FULL_RUN = 2;
+}
+
+// Build represents one tryjob Buildbucket build.
+//
+// See also: Build in buildbucket/proto/build.proto.
+message Build {
+  // Buildbucket build ID, unique per Buildbucket instance.
+  int64 id = 1;
+  // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
+  string host = 2;
+
+  // True if this build was pre-existing, or false if it was triggered as
+  // part of this CQ attempt.
+  bool reused = 3;
+  // YES if this build must pass in order for the CLs to be considered
+  // ready to submit; NO if the build status should not be used to assess
+  // correctness the CLs in the Attempt.
+  bool critical = 4;
+}
+
+enum AttemptStatus {
+  // Default, never set.
+  STATUS_UNSPECIFIED = 0;
+  // Started but not completed. Used by CQ API, TBD.
+  STARTED = 1;
+  // Ready to submit, all checks passed.
+  SUCCESS = 2;
+  // Attempt stopped before completion, due to some external event and not
+  // a failure of the CLs to pass all tests. For example, this may happen
+  // when a new patchset is uploaded, a CL is deleted, etc.
+  ABORTED = 3;
+  // Completed and failed some check. This may happen when a build failed,
+  // footer syntax was incorrect, or CL was not approved.
+  FAILURE = 4;
+  // Failure in CQ itself caused the Attempt to be dropped.
+  INFRA_FAILURE = 5;
 }
