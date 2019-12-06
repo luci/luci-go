@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "4d8f8805_b0241e82",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-06T06:33:25Z",
+      "side": 1,
+      "message": "nit: taskNameBlacklist",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 21
+      },
+      "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bde1f63_d461c0eb",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-06T06:33:25Z",
+      "side": 1,
+      "message": "name :\u003d strpair.ParseMap(task.Tags).Get(\"name\")\n\nalternatively, consider generalizing this CL to any tag key, i.e. `tagBlacklist :\u003d stringset....`",
+      "range": {
+        "startLine": 385,
+        "startChar": 1,
+        "endLine": 391,
+        "endChar": 2
+      },
+      "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7be7a238_5904c211",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -16,6 +62,24 @@
       "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "719f8009_e3806f25",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-06T06:33:25Z",
+      "side": 1,
+      "message": "we should never panic on user input",
+      "parentUuid": "7be7a238_5904c211",
+      "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
