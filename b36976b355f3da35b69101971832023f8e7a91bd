@@ -359,6 +359,30 @@
     },
     {
       "key": {
+        "uuid": "df4e78b6_45242147",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T23:26:11Z",
+      "side": 1,
+      "message": "by this very technical definition, each attempt\u0027s final status is a CQ\u0027s own decision.\n\nFrom perspective of someone writing a query, I think what is truly important is whether failure can be attributed to\n* CQ\u0027s own issue\n* quality of CL and/or flakiness of testing\n* User actions, like uploading new patchset\n\nOur team will optimize for reduction of INFRA_FAILURE.\nBubblesort team will optimize for reduction of false-\"FAILURE\" (ie FAILURE followed by SUCCESS)\n\nAnd ABORTED can probably be mostly ignored, as it\u0027s not something we can directly affect, unless it\u0027s due to Gerrit issues.",
+      "parentUuid": "b571e562_62d25c4b",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e717b3e9_b693b809",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -441,6 +465,30 @@
       "side": 1,
       "message": "Are you thinking about potentially expanding to different types of runs or \"dry runs\", e.g. \"retry only failed\"?\n\nAt the moment we only have full run and dry run, right?",
       "parentUuid": "cf625ea8_fc3bc0de",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fbc9638_13f5fb21",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T23:26:11Z",
+      "side": 1,
+      "message": "correct. Even \"dry runs\" can be different",
+      "parentUuid": "42d73d7d_6fed0515",
       "range": {
         "startLine": 78,
         "startChar": 1,
