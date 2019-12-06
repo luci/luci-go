@@ -50,6 +50,16 @@ const (
 )
 
 var (
+	// Ignore swarming tasks with any of the below values for the given tag keys.
+	tagBlacklist = stringset.NewFromSlice(
+		// Not currently in test-results-hrd and use an "isolated script test output"/"simplified JSON"
+		// format.
+		"name:angle_perftests",
+		"name:components_perftests",
+		"name:content_shell_crash_test",
+		"name:views_perftests",
+	)
+
 	// Look for the output JSON trying the below possibilities in the given order.
 	outputJSONFileNames = []string{"output.json", "full_results.json"}
 
@@ -73,6 +83,10 @@ var (
 //
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
+	if isBlacklisted(task) {
+		return nil, nil, errors.Reason("blacklisted task").Tag(grpcutil.FailedPreconditionTag).Err()
+	}
+
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		// Tasks not yet completed should not be requested to be processed by the recorder.
 		return nil, nil, errors.Reason(
@@ -348,6 +362,16 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix s
 	// Conversion with either format failed, but this code is meant specifically for them.
 	return nil, errors.Annotate(
 		errors.NewMultiError(jsonErr, gtestErr), "").Tag(grpcutil.InternalTag).Err()
+}
+
+// isBlacklisted returns whether the given task is blacklisted from being processed.
+func isBlacklisted(task *swarmingAPI.SwarmingRpcsTaskResult) bool {
+	for _, t := range task.Tags {
+		if tagBlacklist.Has(t) {
+			return true
+		}
+	}
+	return false
 }
 
 // convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.

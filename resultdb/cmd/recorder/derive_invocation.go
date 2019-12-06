@@ -106,7 +106,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
 		return nil, errors.Annotate(err,
-			"task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
+			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, task.Name).Err()
 	}
 	if inv.FinalizeTime == nil {
 		panic("missing inv.FinalizeTime")
