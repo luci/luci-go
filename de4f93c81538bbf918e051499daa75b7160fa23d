@@ -34,6 +34,24 @@
       "revId": "de4f93c81538bbf918e051499daa75b7160fa23d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "56a1cdf8_23e57a03",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-06T00:04:42Z",
+      "side": 0,
+      "message": "(FWIW THIS was my main concern)",
+      "parentUuid": "3aad3858_e7d1fead",
+      "revId": "de4f93c81538bbf918e051499daa75b7160fa23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
