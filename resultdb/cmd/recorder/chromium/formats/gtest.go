@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/net/context"
 
@@ -309,11 +310,8 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name str
 			// convert a summary.
 			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
 		} else {
-			rpb.OutputArtifacts = append(rpb.OutputArtifacts, &pb.Artifact{
-				Name:        "gtest_snippet.txt",
-				ContentType: "text/plain",
-				Contents:    outputBytes,
-			})
+			// TODO(jchinlee): Escape Markdown.
+			rpb.SummaryMarkdown = strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError))
 		}
 	}
 

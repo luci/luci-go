@@ -96,7 +96,6 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	case err != nil:
 		return nil, err
 	case !doWrite:
-		logging.Infof(ctx, "Found existing invocation: %s", invID)
 		readTxn := client.ReadOnlyTransaction()
 		defer readTxn.Close()
 		return span.ReadInvocationFull(ctx, readTxn, invID)
@@ -104,7 +103,6 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// Otherwise, get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
-	logging.Infof(ctx, "Invocation ID: %s", invID)
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
 	if err != nil {
 		return nil, errors.Annotate(err,
