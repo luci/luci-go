@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -326,17 +327,20 @@ func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (art
 
 	for name, paths := range f.Artifacts {
 		for i, path := range paths {
+			// We don't use the normalized path everywhere, e.g. if "path" is actually a URL.
+			normPath := util.NormalizeIsolatedPath(path)
+
 			// Get the run ID of the artifact. Defaults to 0 (i.e. assumes there is only one run).
-			runID, err := artifactRunID(path)
+			runID, err := artifactRunID(normPath)
 			if err != nil {
 				unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
 				continue
 			}
 
 			// Look for the path in isolated outputs.
-			if art, ok := outputsToProcess[path]; ok {
+			if art, ok := outputsToProcess[normPath]; ok {
 				artifacts[runID] = append(artifacts[runID], art)
-				delete(outputsToProcess, path)
+				delete(outputsToProcess, normPath)
 				continue
 			}
 
