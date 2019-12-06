@@ -93,6 +93,30 @@
       "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d55f11da_5370ae7c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "Right, Nodir! Let\u0027s use \"critical\" *for now*.\n\nI\u0027m certain we\u0027ll need to review Build\u0027s fields because just \"reuse\" and \"critical\" aren\u0027t sufficient. Let\u0027s do the discussion on design doc, but land this CL in the mean time.",
+      "parentUuid": "fa2dc216_3ec22e21",
+      "range": {
+        "startLine": 94,
+        "startChar": 7,
+        "endLine": 94,
+        "endChar": 15
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

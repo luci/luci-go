@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "436045ea_f9f74647",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "i like cl_group_key description. Let\u0027s not commit ourselve to \"set of CLs and trigger time\" and instead say:\n\"The opaque key uniquely representing the attempt\"",
+      "range": {
+        "startLine": 16,
+        "startChar": 9,
+        "endLine": 16,
+        "endChar": 72
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40a8564b_55532999",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: just CLs",
+      "range": {
+        "startLine": 26,
+        "startChar": 12,
+        "endLine": 26,
+        "endChar": 24
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1116168_684019c0",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03c861ac_1f65018b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: this field will be very frequently used in queries. I\u0027d move it right below `project` field for user\u0027s convenience.",
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10f1f688_731e7d4c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: maybe \", whether triggered or reused\"",
+      "range": {
+        "startLine": 34,
+        "startChar": 12,
+        "endLine": 34,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b0d9476_019fddd8",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 57
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9258b3e3_99d0f0a9",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "wdyt: \" beyond control of the CQ\"?",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e717b3e9_b693b809",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: \"one revision (patchset)\"\n\n(I think most readers of this will know patchset, but not revision)",
+      "range": {
+        "startLine": 59,
+        "startChar": 27,
+        "endLine": 59,
+        "endChar": 39
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf625ea8_fc3bc0de",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "sorry, I\u0027ve just realized that we probably don\u0027t want to commit to dry_run as a boolean either.\nHow about Mode enum like https://source.corp.google.com/chromium_infra_internal/infra_internal/services/cq/pending_manager/base.py;cl\u003dmaster;l\u003d221?q\u003dinfra_internal%20services%20cq%20pending_manager%20base\n\n\nIt\u0027ll cost a bit more in storage (since bqschemaupdater creates string enums), but it\u0027ll provide for future evolution of CQ.",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdb54051_34d3ebd0",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: submitted\n\n(merged is also correct, but I think submitted is clearest. You can also clarify with a sentence below)",
+      "range": {
+        "startLine": 80,
+        "startChar": 28,
+        "endLine": 80,
+        "endChar": 34
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d6a5413_7b2e01ea",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-06T19:23:37Z",
+      "side": 1,
+      "message": "nit: the most important here is \"some\". So, maybe say:\n\nSubmission of Gerrit CLs in an attempt is not an atomic operation, thus it\u0027s possible that only some of GerritChanges are submitted.",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 56
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
