@@ -43,7 +43,7 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 
 	// Otherwise, populate the artifact fields.
 	a := &pb.Artifact{
-		Name:     path.Clean(strings.ReplaceAll(relPath, "\\", "/")),
+		Name:     NormalizeIsolatedPath(relPath),
 		FetchUrl: IsolateFetchURL(host, ns, string(f.Digest)),
 		ViewUrl:  IsolateViewURL(host, ns, string(f.Digest)),
 	}
@@ -70,4 +70,9 @@ func IsolateFetchURL(host, ns, digest string) string {
 // IsolateViewURL returns a view URL for an isolated object.
 func IsolateViewURL(host, ns, digest string) string {
 	return fmt.Sprintf("https://%s/browse?namespace=%s&digest=%s", host, ns, digest)
+}
+
+// NormalizeIsolatedPath converts the isolated path to the canonical form.
+func NormalizeIsolatedPath(p string) string {
+	return path.Clean(strings.ReplaceAll(p, "\\", "/"))
 }
