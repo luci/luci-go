@@ -22,6 +22,30 @@
       "revId": "13cc17b8b2a555dc92e415ece64de8d4ae676887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815745c9_c66e3621",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-06T20:34:10Z",
+      "side": 1,
+      "message": "Sure, updated tagBlacklist",
+      "parentUuid": "161190ce_4b7abd79",
+      "range": {
+        "startLine": 387,
+        "startChar": 1,
+        "endLine": 394,
+        "endChar": 2
+      },
+      "revId": "13cc17b8b2a555dc92e415ece64de8d4ae676887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
