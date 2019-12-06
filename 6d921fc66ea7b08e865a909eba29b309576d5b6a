@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "0f99e2d3_044605ac",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-06T20:16:56Z",
+      "side": 1,
+      "message": "PTAL",
+      "parentUuid": "4bde1f63_d461c0eb",
+      "range": {
+        "startLine": 385,
+        "startChar": 1,
+        "endLine": 391,
+        "endChar": 2
+      },
+      "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7be7a238_5904c211",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 1
@@ -77,6 +101,24 @@
       "side": 1,
       "message": "we should never panic on user input",
       "parentUuid": "7be7a238_5904c211",
+      "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc1fd222_4d05532c",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-06T20:16:56Z",
+      "side": 1,
+      "message": "Ah yeah. OK, I guess it\u0027s fine if we don\u0027t see the name tag either. Thanks!",
+      "parentUuid": "719f8009_e3806f25",
       "revId": "6d921fc66ea7b08e865a909eba29b309576d5b6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
