@@ -16,6 +16,24 @@
       "revId": "de4f93c81538bbf918e051499daa75b7160fa23d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3aad3858_e7d1fead",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-06T00:01:36Z",
+      "side": 0,
+      "message": "Yes, this we did --- the concern was the key for mapping though because that\u0027s how we actually /locate/ the artifacts in the isolated outputs dir",
+      "parentUuid": "d5e0c8eb_d120e590",
+      "revId": "de4f93c81538bbf918e051499daa75b7160fa23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
