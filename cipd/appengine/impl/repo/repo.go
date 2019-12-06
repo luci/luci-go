@@ -302,9 +302,13 @@ func (impl *repoImpl) checkRole(c context.Context, prefix string, role api.Role)
 // exist or the caller has no access to it. This is generic error message that
 // should not give away prefix presence to non-readers.
 func noAccessErr(c context.Context, prefix string) error {
+	hint = ""
+	if auth.CurrentIdentity(c) == "anonymous:anonymous" {
+		hint = ". Run cipd auth-login to authenticate"
+	}
 	return status.Errorf(
-		codes.PermissionDenied, "prefix %q doesn't exist or %q is not allowed to see it",
-		prefix, auth.CurrentIdentity(c))
+		codes.PermissionDenied, "prefix %q doesn't exist or %q is not allowed to see it%q",
+		prefix, auth.CurrentIdentity(c), hint)
 }
 
 // noMetadataErr produces a grpc error saying that the given prefix doesn't have
