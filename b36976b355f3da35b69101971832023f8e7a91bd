@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "441e16e8_848fbe55",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T23:34:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd02854f_65d48d81",
+      "range": {
+        "startLine": 26,
+        "startChar": 12,
+        "endLine": 26,
+        "endChar": 24
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1116168_684019c0",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -407,6 +431,30 @@
     },
     {
       "key": {
+        "uuid": "22e6fb72_0d59a7d2",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T23:34:08Z",
+      "side": 1,
+      "message": "Makes sense. For the comment, I\u0027ll add something to try to clarify this:\n\n    Attempt stopped before completion, due to some external event\n    and not a failure of the CLs to pass all tests...",
+      "parentUuid": "df4e78b6_45242147",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e717b3e9_b693b809",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
@@ -522,6 +570,30 @@
       "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83984652_eab17724",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T23:34:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fbc9638_13f5fb21",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 19
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
