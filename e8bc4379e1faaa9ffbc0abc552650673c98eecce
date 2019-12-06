@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb4c471e_64cd4581",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-06T06:37:29Z",
+      "side": 1,
+      "message": "this key is not present in the map\n\nI think L351-363 can be refactored to 1) reduce duplication 2) prevent errors like this\nby separating concerns: 1) find the key in the dict 2) act on it",
+      "range": {
+        "startLine": 361,
+        "startChar": 29,
+        "endLine": 361,
+        "endChar": 37
+      },
+      "revId": "e8bc4379e1faaa9ffbc0abc552650673c98eecce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
