@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "053c18dc_6effb21a",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T18:35:08Z",
+      "side": 1,
+      "message": "Thanks; removed \"it\u0027s possible that\"",
+      "parentUuid": "f106a8ea_95dd9865",
+      "range": {
+        "startLine": 72,
+        "startChar": 70,
+        "endLine": 73,
+        "endChar": 10
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d5e3015_0061621f",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 10
@@ -36,6 +60,30 @@
       "writtenOn": "2019-12-05T23:18:29Z",
       "side": 1,
       "message": "buildbucket already has a term that, I think, equivalent to this: \"critical\"\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.proto;l\u003d185?q\u003dbuild.proto\u0026ss\u003dchromium\n\nif this is equivalent, then i think we should have one word for the same thing\n\nAndrii, WDYT?",
+      "range": {
+        "startLine": 94,
+        "startChar": 7,
+        "endLine": 94,
+        "endChar": 15
+      },
+      "revId": "21b536fb7e7b27ecbe7801ccaec2e5c5840a5b44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa2dc216_3ec22e21",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T18:35:08Z",
+      "side": 1,
+      "message": "I\u0027m in favor of using one term for one thing, in general...\n\nAs a minor nit about this, I do find the term \"blocking\" or \"required\" a little clearer than \"critical\", and I\u0027m not sure a trinary value is required here.\n\nI\u0027d be OK with switching to \"critical\" for consistency with buildbucket, and if there\u0027s a compelling reason to use a trinary type then I\u0027d be OK with that too.",
+      "parentUuid": "5d5e3015_0061621f",
       "range": {
         "startLine": 94,
         "startChar": 7,

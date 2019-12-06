@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "edffede5_71a8058b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 8
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-06T18:35:08Z",
+      "side": 1,
+      "message": "Marking resolved.",
+      "parentUuid": "27dad6f3_368f095f",
+      "range": {
+        "startLine": 56,
+        "startChar": 7,
+        "endLine": 56,
+        "endChar": 16
+      },
+      "revId": "caf7b9d8316a9fa0aeb6f1d4d53ada4eb71fd43f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e076dac_f50b3514",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 8
