@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -38,7 +39,16 @@ import (
 
 const testNamePrefixKey = "test_name_prefix"
 
-var testRunSubdirRe = regexp.MustCompile("/retry_([0-9]+)/")
+var (
+	// Subdirectory of isolated outputs root identifying run index.
+	testRunSubdirRe = regexp.MustCompile("/retry_([0-9]+)/")
+
+	// Known subdirectories of the isolated outputs root where artifacts might be located.
+	artifactDirectories = []string{
+		"artifacts",
+		"layout-test-results",
+	}
+)
 
 // JSONTestResults represents the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
@@ -344,6 +354,14 @@ func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (art
 				continue
 			}
 
+			// Look for the path under any of the candidate artifact directories.
+			// TODO(1027708,1031296): Remove.
+			if art := checkArtifactDirectories(outputsToProcess, normPath); art != nil {
+				artifacts[runID] = append(artifacts[runID], art)
+				delete(outputsToProcess, normPath)
+				continue
+			}
+
 			// If the name is otherwise understood by ResultDB, process it.
 			// So far, that's only gold_triage_links.
 			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
@@ -394,4 +412,16 @@ func artifactsToString(arts map[string][]string) string {
 		w.Level--
 	}
 	return msg.String()
+}
+
+// checkArtifactDirectories looks for the given output path in the known possible subdirectories of
+// the isolated output directory.
+// TODO(1027708,1031296): Remove.
+func checkArtifactDirectories(outputsToProcess map[string]*pb.Artifact, relPath string) *pb.Artifact {
+	for _, dir := range artifactDirectories {
+		if art, ok := outputsToProcess[path.Join(dir, relPath)]; ok {
+			return art
+		}
+	}
+	return nil
 }
