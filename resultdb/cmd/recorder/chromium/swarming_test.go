@@ -129,6 +129,10 @@ func TestSwarming(t *testing.T) {
 				resp.State = "BOT_DIED"
 				hasCompletion = false
 
+			case fmt.Sprintf("/%stask/blacklisted-task/result", swarmingAPIEndpoint):
+				resp.State = "COMPLETED"
+				resp.Tags = []string{"name:content_shell_crash_test"}
+
 			default:
 				resp.State = "INVALID"
 			}
@@ -215,6 +219,14 @@ func TestSwarming(t *testing.T) {
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
 			})
+		})
+
+		Convey(`that are blacklisted`, func() {
+			task, err := swarmSvc.Task.Result("blacklisted-task").Context(ctx).Do()
+			So(err, ShouldBeNil)
+
+			_, _, err = DeriveProtosForWriting(ctx, task, req)
+			So(err, ShouldErrLike, "blacklisted task")
 		})
 
 		Convey(`that are invalid`, func() {
