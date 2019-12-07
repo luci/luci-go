@@ -455,6 +455,30 @@
     },
     {
       "key": {
+        "uuid": "3e84785b_d80bd535",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-07T00:22:13Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "22e6fb72_0d59a7d2",
+      "range": {
+        "startLine": 45,
+        "startChar": 40,
+        "endLine": 45,
+        "endChar": 41
+      },
+      "revId": "b36976b355f3da35b69101971832023f8e7a91bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e717b3e9_b693b809",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 12
