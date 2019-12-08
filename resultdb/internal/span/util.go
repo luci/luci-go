@@ -64,6 +64,26 @@ type Compressed []byte
 
 var zstdHeader = []byte("ztd\n")
 
+// Globally shared zstd encoder and decoder. We use only their EncodeAll and
+// DecodeAll methods which are allowed to be used concurrently. Internally, both
+// the encode and the decoder have worker pools (limited by GOMAXPROCS) and each
+// concurrent EncodeAll/DecodeAll call temporary consumes one worker (so overall
+// we do not run more jobs that we have cores for).
+var (
+	zstdEncoder *zstd.Encoder
+	zstdDecoder *zstd.Decoder
+)
+
+func init() {
+	var err error
+	if zstdEncoder, err = zstd.NewWriter(nil); err != nil {
+		panic(err) // this is impossible
+	}
+	if zstdDecoder, err = zstd.NewReader(nil); err != nil {
+		panic(err) // this is impossible
+	}
+}
+
 func slices(m map[string]interface{}) (keys []string, values []interface{}) {
 	keys = make([]string, 0, len(m))
 	values = make([]interface{}, 0, len(m))
@@ -106,9 +126,6 @@ type Buffer struct {
 	i64       int64
 	strSlice  []string
 	byteSlice []byte
-
-	// zstd documentation recomments reusing a decoder.
-	zstdDecoder *zstd.Decoder
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -245,23 +262,12 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			if !bytes.HasPrefix(b.byteSlice, zstdHeader) {
 				return errors.Reason("expected ztd header").Err()
 			}
-			toDecompress := bytes.NewReader(b.byteSlice[len(zstdHeader):])
-			if b.zstdDecoder == nil {
-				b.zstdDecoder, err = zstd.NewReader(toDecompress)
-			} else {
-				err = b.zstdDecoder.Reset(toDecompress)
-			}
-			if err != nil {
-				return err
-			}
-
 			// *goPtr might be pointing to an existing memory buffer.
 			// Try to reuse it for decoding.
-			bufW := bytes.NewBuffer((*goPtr)[:0])
-			if _, err := bufW.ReadFrom(b.zstdDecoder); err != nil {
+			*goPtr, err = zstdDecoder.DecodeAll(b.byteSlice[len(zstdHeader):], (*goPtr)[:0])
+			if err != nil {
 				return errors.Annotate(err, "failed to decode from zstd").Err()
 			}
-			*goPtr = bufW.Bytes()
 		}
 
 	default:
@@ -349,22 +355,9 @@ func ToSpanner(v interface{}) interface{} {
 			// Do not store empty bytes.
 			return []byte(nil)
 		}
-
-		buf := &bytes.Buffer{}
-		buf.Grow(len(v) / 2) // hope for at least 2x compression
-		if _, err := buf.Write(zstdHeader); err != nil {
-			panic(err)
-		}
-		w, err := zstd.NewWriter(buf)
-		if err == nil {
-			if _, err := w.Write(v); err == nil {
-				err = w.Close()
-			}
-		}
-		if err != nil {
-			panic("failed to compress with zstd")
-		}
-		return buf.Bytes()
+		out := make([]byte, 0, len(v)/2+len(zstdHeader)) // hope for at least 2x compression
+		out = append(out, zstdHeader...)
+		return zstdEncoder.EncodeAll([]byte(v), out)
 
 	default:
 		return v
