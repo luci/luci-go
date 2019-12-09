@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7f1dbda_d82092e0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-09T17:56:36Z",
+      "side": 1,
+      "message": "I may make sense from an API\u0027s perspective, but I\u0027m not sure it\u0027s user friendly, if the most common use case is to see unexpected results, shouldn\u0027t we optimize for that?",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 70
+      },
+      "revId": "ab6451c73fea052b44f8bad01dd380bbc6888413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
