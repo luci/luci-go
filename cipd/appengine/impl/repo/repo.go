@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -302,9 +303,13 @@ func (impl *repoImpl) checkRole(c context.Context, prefix string, role api.Role)
 // exist or the caller has no access to it. This is generic error message that
 // should not give away prefix presence to non-readers.
 func noAccessErr(c context.Context, prefix string) error {
-	return status.Errorf(
-		codes.PermissionDenied, "prefix %q doesn't exist or %q is not allowed to see it",
-		prefix, auth.CurrentIdentity(c))
+	var msg string
+	if ident := auth.CurrentIdentity(c); ident.Kind() == identity.Anonymous {
+		msg = "not visible to unauthenticated callers"
+	} else {
+		msg = fmt.Sprintf("%q is not allowed to see it", ident)
+	}
+	return status.Errorf(codes.PermissionDenied, "prefix %q doesn't exist or %s", prefix, msg)
 }
 
 // noMetadataErr produces a grpc error saying that the given prefix doesn't have
