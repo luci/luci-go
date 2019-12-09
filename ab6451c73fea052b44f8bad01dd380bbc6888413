@@ -22,6 +22,30 @@
       "revId": "ab6451c73fea052b44f8bad01dd380bbc6888413",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e91daa6_4a426c8f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-09T18:22:34Z",
+      "side": 1,
+      "message": "upon further discussion in go/resultdb-cli, it turned out that it is not accurate. Another use case is to find all result of a specific test path. Before this CL this is \n\n  rdb ls -ignore-expectations -test-path gn://foobar/.\n\nafter:\n\n  rdb ls -test-path gn://foobar/.\n\nanother example if fetching everything with a specific tag:\n\n  rdb ls -t cpu:x86-64\n\nin these case, filtering by unexpected results may be in the way, or least confusing. By default, a result is filtered out and it is unclear to the user whether they are using the tool wrong, or there are not results.\n\nwith this change, the use case of fetching only variants with failed results was not hurt too much: adding -u is just 3 key strokes",
+      "parentUuid": "d7f1dbda_d82092e0",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 70
+      },
+      "revId": "ab6451c73fea052b44f8bad01dd380bbc6888413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
