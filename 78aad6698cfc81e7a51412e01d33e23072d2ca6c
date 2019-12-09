@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a691b124_f65140cc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-09T20:27:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74e67371_d7f30474",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 71
+      },
+      "revId": "78aad6698cfc81e7a51412e01d33e23072d2ca6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75baaf04_aee46522",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "78aad6698cfc81e7a51412e01d33e23072d2ca6c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4b6cd86_acd0b089",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-09T20:27:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75baaf04_aee46522",
+      "range": {
+        "startLine": 336,
+        "startChar": 28,
+        "endLine": 336,
+        "endChar": 30
+      },
+      "revId": "78aad6698cfc81e7a51412e01d33e23072d2ca6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
