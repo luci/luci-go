@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d532b73b_346c5d8d",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-09T22:51:31Z",
+      "side": 1,
+      "message": "strictly speaking, we should call NormalizeTestResults before comparing. This test will become flaky if someone adds a new link",
+      "revId": "71176dbda5082f71261be0a292cbfa286c2c4fdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
