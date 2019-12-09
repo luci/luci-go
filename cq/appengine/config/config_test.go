@@ -424,14 +424,20 @@ func TestTryjobValidation(t *testing.T) {
 		}
 
 		So(validate(``), ShouldErrLike, "at least 1 builder required")
+		So(validate(`includable_builders {name: "one/includable/is-ok"}`), ShouldBeNil)
+		So(validate(`builders {name: "one/normal/is-ok"}`), ShouldBeNil)
 
 		Convey("builder name", func() {
 			So(validate(`builders {}`), ShouldErrLike, "name is required")
 			So(validate(`builders {name: ""}`), ShouldErrLike, "name is required")
+
 			So(validate(`builders {name: "a"}`), ShouldErrLike,
 				`name "a" doesn't match required format`)
 			So(validate(`builders {name: "a/b/c" equivalent_to {name: "z"}}`), ShouldErrLike,
 				`name "z" doesn't match required format`)
+			So(validate(`includable_builders {name: "a/b"}`), ShouldErrLike,
+				`name "a/b" doesn't match required format`)
+
 			So(validate(`builders {name: "b/luci.b.try/c"}`), ShouldErrLike,
 				`name "b/luci.b.try/c" is highly likely malformed;`)
 
@@ -583,6 +589,23 @@ func TestTryjobValidation(t *testing.T) {
 					builders {name: "l/oo/p2" triggered_by: "l/oo/p1"}
 				`), ShouldErrLike, `triggered_by must refer to an existing builder without`)
 			})
+		})
+
+		Convey("includable builders", func() {
+			So(validate(`
+				includable_builders {name: "x/y/z"}
+				includable_builders {name: "x/y/z"}
+			`), ShouldErrLike, "duplicate")
+
+			So(validate(`
+				builders {name: "a/b/c"}
+				includable_builders {name: "a/b/c"}
+			`), ShouldErrLike, "is already in `builders`")
+
+			So(validate(`
+				builders {name: "a/b/c"}
+				includable_builders {name: "x/y/z"}
+			`), ShouldBeNil)
 		})
 	})
 }
