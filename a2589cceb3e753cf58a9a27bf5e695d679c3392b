@@ -75,6 +75,24 @@
       "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe0f523d_133b827c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-09T20:22:33Z",
+      "side": 1,
+      "message": "Thanks for trying. Yes, I agree about the rest -- I\u0027m proud to say I\u0027ve figured it out from code *before* I posted the above comment :)",
+      "parentUuid": "3760643d_90e22a79",
+      "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
