@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55f4eff2_742c036e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-09T20:05:53Z",
+      "side": 1,
+      "message": "😄",
+      "range": {
+        "startLine": 9,
+        "startChar": 10,
+        "endLine": 9,
+        "endChar": 45
+      },
+      "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0f63e2b8_22927c8e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-09T20:05:53Z",
+      "side": 1,
+      "message": "I find this confusing if user has already authenticated. Can you avoid printing this if current identity !\u003d anonymous?",
+      "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
