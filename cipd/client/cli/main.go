@@ -199,14 +199,23 @@ func (c *cipdSubcommand) printError(err error) {
 	}
 
 	if merr, _ := err.(errors.MultiError); len(merr) != 0 {
+		isPermErr := false
 		fmt.Fprintln(os.Stderr, "Errors:")
 		for _, err := range merr {
 			fmt.Fprintf(os.Stderr, "  %s\n", err)
+			isPermErr = isPermErr || cipd.IsPermissionError(err)
+		}
+		if isPermErr {
+			fmt.Fprintln(os.Stderr, "Run `cipd auth-login` to authenticate.")
 		}
 		return
 	}
 
-	fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
+	if cipd.IsPermissionError(err) {
+		fmt.Fprintf(os.Stderr, "Error: %s. Run `cipd auth-login` to authenticate.\n", err)
+	} else {
+		fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
+	}
 }
 
 // writeJSONOutput writes result to JSON output file. It returns original error

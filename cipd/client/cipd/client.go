@@ -65,6 +65,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -131,7 +132,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.3.1"
+	UserAgent = "cipd 2.3.2"
 )
 
 func init() {
@@ -1664,6 +1665,12 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 ////////////////////////////////////////////////////////////////////////////////
 // pRPC error handling.
 
+// IsPermissionError returns true if the given error is "access denied" which
+// may be fixed by logging in.
+func IsPermissionError(err error) bool {
+	return grpcutil.Code(err) == codes.PermissionDenied
+}
+
 // gRPC errors that may be returned by api.RepositoryClient that we recognize
 // and handle ourselves. They will not be logged by the pRPC library.
 var expectedCodes = prpc.ExpectedCode(
@@ -1681,7 +1688,7 @@ var expectedCodes = prpc.ExpectedCode(
 func humanErr(err error) error {
 	if err != nil {
 		if status, ok := status.FromError(err); ok {
-			return errors.New(status.Message())
+			return errors.New(status.Message(), grpcutil.Tag.With(grpc.Code(err)))
 		}
 	}
 	return err
