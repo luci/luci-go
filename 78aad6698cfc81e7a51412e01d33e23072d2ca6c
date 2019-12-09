@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74e67371_d7f30474",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-09T20:25:28Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 71
+      },
+      "revId": "78aad6698cfc81e7a51412e01d33e23072d2ca6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75baaf04_aee46522",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-09T20:25:28Z",
+      "side": 1,
+      "message": "9",
+      "range": {
+        "startLine": 336,
+        "startChar": 28,
+        "endLine": 336,
+        "endChar": 30
+      },
+      "revId": "78aad6698cfc81e7a51412e01d33e23072d2ca6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
