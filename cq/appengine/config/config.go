@@ -359,7 +359,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		validateTryjobRetry(ctx, v.RetryConfig)
 		ctx.Exit()
 	}
-	if len(v.Builders) == 0 {
+	if len(v.Builders)+len(v.IncludableBuilders) == 0 {
 		ctx.Errorf("at least 1 builder required")
 		return
 	}
@@ -475,6 +475,9 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 				b.TriggeredBy)
 		}
 	})
+
+	// Finally, avoid overlap with IncludableBuilders.
+	validateIncludableBuilders(ctx, v.IncludableBuilders, names)
 }
 
 func validateBuilderName(ctx *validation.Context, name string, knownNames stringset.Set) {
@@ -523,6 +526,22 @@ func validateLocationRegexp(ctx *validation.Context, field string, values []stri
 		} else if !valid.Add(v) {
 			ctx.Errorf("duplicate %s: %q", field, v)
 		}
+	}
+}
+
+func validateIncludableBuilders(ctx *validation.Context, includable []*v2.Verifiers_Tryjob_IncludableBuilder, names stringset.Set) {
+	includableNames := stringset.Set{}
+	for i, b := range includable {
+		if b.Name != "" {
+			ctx.Enter("includable_builders #%d", i+1)
+		} else {
+			ctx.Enter("includable_builders %s", b.Name)
+		}
+		validateBuilderName(ctx, b.Name, includableNames)
+		if names.Has(b.Name) {
+			ctx.Errorf("the same builder is already in `builders`; please remove it from `includable_builders`")
+		}
+		ctx.Exit()
 	}
 }
 
