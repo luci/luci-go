@@ -53,6 +53,11 @@ type Cache interface {
 	// Add reads data from src and stores it in cache.
 	Add(digest isolated.HexDigest, src io.Reader) error
 
+	// AddWithHardlink reads data from src and stores it in cache and hardlink file.
+	// This is to avoid file removal by shrink in Add().
+	// But does not call Hardlink when dest is empty.
+	AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error
+
 	// Read returns contents of the cached item.
 	Read(digest isolated.HexDigest) (io.ReadCloser, error)
 
@@ -188,6 +193,10 @@ func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
+	return m.AddWithHardlink(digest, src, "", 0)
+}
+
+func (m *memory) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
 	if !digest.Validate(m.h) {
 		return os.ErrInvalid
 	}
@@ -202,12 +211,22 @@ func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
 	if units.Size(len(content)) > m.policies.MaxSize {
 		return errors.New("item too large")
 	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.added = append(m.added, int64(len(content)))
+	defer m.respectPolicies()
 	m.data[digest] = content
+	m.added = append(m.added, int64(len(content)))
 	m.lru.pushFront(digest, units.Size(len(content)))
-	m.respectPolicies()
+
+	if dest != "" {
+		m.mu.Unlock()
+		defer m.mu.Lock()
+		if err := m.Hardlink(digest, dest, perm); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -319,6 +338,10 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 }
 
 func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
+	return d.AddWithHardlink(digest, src, "", 0)
+}
+
+func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -344,6 +367,12 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 	if units.Size(size) > d.policies.MaxSize {
 		_ = os.Remove(p)
 		return errors.New("item too large")
+	}
+
+	if dest != "" {
+		if err := d.Hardlink(digest, dest, perm); err != nil {
+			return fmt.Errorf("failed to call Hardlink(%s, %s): %w", digest, dest, err)
+		}
 	}
 
 	d.mu.Lock()
