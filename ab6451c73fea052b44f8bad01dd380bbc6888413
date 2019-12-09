@@ -46,6 +46,30 @@
       "revId": "ab6451c73fea052b44f8bad01dd380bbc6888413",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15fd1ba3_f4b4adb2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1164104
+      },
+      "writtenOn": "2019-12-09T18:48:40Z",
+      "side": 1,
+      "message": "That makes sense.\n\n\u003e\u003e not hurt too much: adding -u is just 3 key strokes\nI\u0027m not concerned about the actual typing, which is trivial, what I\u0027m more concerned about is the recognition load: the process to discover and understand that they\u0027d need to use -u can be time-consuming and frustrating.\n\nI understand there has to be a trade-off to make, but I wonder if there is a way to make things easier such as updating the help message of \u0027rdb ls\u0027 to highlight the \u0027-u\u0027 option?",
+      "parentUuid": "7e91daa6_4a426c8f",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 70
+      },
+      "revId": "ab6451c73fea052b44f8bad01dd380bbc6888413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
