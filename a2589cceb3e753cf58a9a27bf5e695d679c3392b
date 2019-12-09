@@ -39,6 +39,24 @@
       "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d439b157_7db7492d",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-09T20:16:17Z",
+      "side": 1,
+      "message": "Oops. Didn\u0027t notice this comment.\n\nAnyhow, I tried, it is hard. This function here doesn\u0027t know about auth.Authenticator, and piping this knowledge through main.go guts is non-trivial. So I decided not to bother for now.",
+      "parentUuid": "0f63e2b8_22927c8e",
+      "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
