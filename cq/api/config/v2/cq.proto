@@ -308,6 +308,9 @@ message Verifiers {
 
   message Tryjob {
     // Builders on which tryjobs should be triggered.
+    //
+    // TODO(937080): CQ won't allow adding any builder not in this list via
+    // `CQ-Include-Trybots:` in CL description.
     repeated Builder builders = 1;
 
     // Optional, defaulting to no retries whatsoever.
@@ -319,7 +322,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3;
 
     message Builder {
-      // Next field number: 9
+      // Next field number: 10
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -327,6 +330,13 @@ message Verifiers {
       //   "chromium/try/linux-tester"
       //   "other-project/try/shared-try-builder"
       string name = 1;
+
+      // If true, this builder won't be triggered by CQ **unless** it's specified
+      // via `Cq-Include-Trybots:` (and its variants) in CL description.
+      //
+      // All builders specified with and without this option may be included via
+      // `Cq-Include-Trybots`.
+      bool only_via_cl_description = 9;
 
       // Optional. If true, a fresh build will be required for each CQ attempt.
       //
