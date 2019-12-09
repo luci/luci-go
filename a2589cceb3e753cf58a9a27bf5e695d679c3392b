@@ -57,6 +57,24 @@
       "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3760643d_90e22a79",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-09T20:18:31Z",
+      "side": 1,
+      "message": "Also, on real permission errors the full error message would be \"Prefix X doesn\u0027t exist of \"user:blah@...\" isn\u0027t allowed to see it. Run `cipd auth-login` to authentication.\", which is clanky, but have all necessary clues. (E.g. if I login as @chromium.org and try to access @google.com package, the instruction to run `cipd auth-login` is still correct, since this is how I can relogin as @google.com).",
+      "parentUuid": "d439b157_7db7492d",
+      "revId": "a2589cceb3e753cf58a9a27bf5e695d679c3392b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
