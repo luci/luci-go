@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16852330_d7e47178",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-12-09T14:46:59Z",
+      "side": 1,
+      "message": "Why not an error if dst \u003d\u003d \"\"?\n\nOtherwise, why not replace Hardlink()? I don\u0027t see why keep two functions that do intersecting things.",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
