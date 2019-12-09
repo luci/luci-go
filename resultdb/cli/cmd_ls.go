@@ -39,6 +39,10 @@ func cmdLs(p Params) *subcommands.Command {
 		LongDesc: text.Doc(`
 			Query results.
 
+			Most users will be interested only in results of test variants that had
+			unexpected results. This can be achieved by passing -u flag.
+			This significantly reduces output size and latency.
+
 			If no invocation ids are specified on the command line, read them from
 			stdin separated by newline. Example:
 			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
