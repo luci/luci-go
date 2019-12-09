@@ -357,7 +357,7 @@ func ToSpanner(v interface{}) interface{} {
 		}
 		out := make([]byte, 0, len(v)/2+len(zstdHeader)) // hope for at least 2x compression
 		out = append(out, zstdHeader...)
-		return zstdEncoder.EncodeAll([]byte(v), out)
+		return zstdEncoder.EncodeAll(v, out)
 
 	default:
 		return v
