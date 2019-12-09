@@ -421,6 +421,9 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 				}
 			}
 		}
+		if b.OnlyViaClDescription {
+			specialities = append(specialities, "only_via_cl_description")
+		}
 
 		switch len(specialities) {
 		case 1:

@@ -553,6 +553,15 @@ func TestTryjobValidation(t *testing.T) {
 				builders { name: "c/d/e" } `),
 				ShouldErrLike,
 				"combining [triggered_by location_regexp[_exclude]] features not yet allowed")
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					only_via_cl_description: true
+					owner_whitelist_group: "owners"
+				} `),
+				ShouldErrLike,
+				"combining [owner_whitelist_group only_via_cl_description] features not yet allowed")
 		})
 
 		Convey("triggered_by", func() {
