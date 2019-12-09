@@ -35,10 +35,10 @@ import (
 // queryRun is a base subcommandRun for subcommands ls and derive.
 type queryRun struct {
 	baseCommandRun
-	limit              int
-	ignoreExpectations bool
-	testPath           string
-	merge              bool
+	limit      int
+	unexpected bool
+	testPath   string
+	merge      bool
 
 	// TODO(crbug.com/1021849): add flag -artifact-dir
 	// TODO(crbug.com/1021849): add flag -artifact-name
@@ -60,14 +60,11 @@ func (r *queryRun) registerFlags(p Params) {
 		Print up to n results of each result type. If 0, then unlimited.
 	`))
 
-	r.Flags.BoolVar(&r.ignoreExpectations, "ignore-expectations", false, text.Doc(`
-		Do not filter based on whether the result was expected.
-		Note that this may significantly increase output size and latency.
-
-		If false (default), print only results of test variants that have unexpected
-		results.
+	r.Flags.BoolVar(&r.unexpected, "u", false, text.Doc(`
+		Print only test results of test variants that have unexpected results.
 		For example, if a test variant expected PASS and had results FAIL, FAIL,
 		PASS, then print all of them.
+		This signficantly reduces output size and latency.
 	`))
 
 	r.Flags.StringVar(&r.testPath, "test-path", "", text.Doc(`
@@ -149,14 +146,11 @@ func (r *queryRun) fetch(ctx context.Context, invIDs []string, dest chan<- resul
 	eg.Go(func() error {
 		req := &pb.QueryTestResultsRequest{
 			Invocations: invNames,
-			Predicate: &pb.TestResultPredicate{
-				TestPathRegexp: r.testPath,
-				Expectancy:     pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS,
-			},
-			PageSize: int32(r.limit),
+			Predicate:   &pb.TestResultPredicate{TestPathRegexp: r.testPath},
+			PageSize:    int32(r.limit),
 		}
-		if r.ignoreExpectations {
-			req.Predicate.Expectancy = pb.TestResultPredicate_ALL
+		if r.unexpected {
+			req.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 		}
 		// TODO(crbug.com/1021849): implement paging.
 		res, err := r.resultdb.QueryTestResults(ctx, req)
