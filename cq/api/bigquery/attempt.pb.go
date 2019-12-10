@@ -61,9 +61,8 @@ const (
 	AttemptStatus_STARTED AttemptStatus = 1
 	// Ready to submit, all checks passed.
 	AttemptStatus_SUCCESS AttemptStatus = 2
-	// Attempt stopped before completion, due to some external event and not
-	// a failure of the CLs to pass all tests. For example, this may happen
-	// when a new patchset is uploaded, a CL is deleted, etc.
+	// Attempt stopped before completion. This may happen when CQ vote
+	// is removed, a new patchset is uploaded, a CL is deleted, etc.
 	AttemptStatus_ABORTED AttemptStatus = 3
 	// Completed and failed some check. This may happen when a build failed,
 	// footer syntax was incorrect, or CL was not approved.

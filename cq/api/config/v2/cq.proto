@@ -306,23 +306,9 @@ message Verifiers {
     string url = 1;
   }
 
-  // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).
-  //
-  // TODO(crbug/937080): CQ won't allow adding any builder via `CQ-Include-Trybots:`
-  // in CL description except those in already in `builders` or
-  // `includeable_builders`.
   message Tryjob {
-    // Next field number: 5
-
     // Builders on which tryjobs should be triggered.
     repeated Builder builders = 1;
-
-    // Builders which may be added via `CQ-Include-Trybots:` in CL description.
-    // If not included in CL description, CQ won't trigger or require these
-    // builders.
-    //
-    // Must not overlap with those in `builders`.
-    repeated IncludableBuilder includable_builders = 4;
 
     // Optional, defaulting to no retries whatsoever.
     RetryConfig retry_config = 2;
@@ -492,14 +478,6 @@ message Verifiers {
       float percentage = 2;
       // If specified, limits the builder to CL owners in this group.
       string owner_whitelist_group = 3;
-    }
-
-    // Builder which can be included via `CQ-Include-Trybots:` in CL
-    // description.
-    message IncludableBuilder {
-      // Required. Name of this builder.
-      // Format is the same in the same format as Builder.name.
-      string name = 1;
     }
 
     // Collection of parameters for deciding whether to retry a single build.
