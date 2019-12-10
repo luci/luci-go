@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56c0a05c_ba409146",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-10T07:29:21Z",
+      "side": 1,
+      "message": "an example here would be nice, so that I don\u0027t have to look for it in the logs. Without it, it is hard to assess this CL",
+      "revId": "8bb921fda9078d77e602564245fc7e6e6f4c0764",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc9d4bea_f99ec7b7",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-10T07:29:21Z",
+      "side": 1,
+      "message": "n",
+      "range": {
+        "startLine": 108,
+        "startChar": 23,
+        "endLine": 108,
+        "endChar": 24
+      },
+      "revId": "8bb921fda9078d77e602564245fc7e6e6f4c0764",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
