@@ -555,6 +555,36 @@ func TestTryjobValidation(t *testing.T) {
 				"combining [triggered_by location_regexp[_exclude]] features not yet allowed")
 		})
 
+		Convey("includable_only", func() {
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					experiment_percentage: 1
+					includable_only: true
+				}`),
+				ShouldErrLike,
+				"includable_only is not combinable with experiment_percentage")
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					location_regexp_exclude: ".+\\.cpp"
+					includable_only: true
+				}`),
+				ShouldErrLike,
+				"includable_only is not combinable with location_regexp[_exclude]")
+			So(validate(`
+				builders {name: "pa/re/nt"}
+				builders {
+					name: "a/b/c"
+					triggered_by: "pa/re/nt"
+					includable_only: true
+				}`),
+				ShouldErrLike,
+				"includable_only is not combinable with triggered_by")
+
+			So(validate(`builders {name: "one/is/enough" includable_only: true}`), ShouldBeNil)
+		})
+
 		Convey("triggered_by", func() {
 			So(validate(`
 				builders {name: "a/b/0" }

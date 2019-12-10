@@ -395,6 +395,9 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			// Don't validate TriggeredBy as builder name, it should just match
 			// another main builder name, which will be validated anyway.
 			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
+			if b.IncludableOnly {
+				ctx.Errorf("includable_only is not combinable with triggered_by")
+			}
 		}
 		if b.EquivalentTo != nil {
 			specialities = append(specialities, "equivalent_to")
@@ -405,11 +408,17 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 			if b.ExperimentPercentage < 0.0 || b.ExperimentPercentage > 100.0 {
 				ctx.Errorf("experiment_percentage must between 0 and 100 (%f given)", b.ExperimentPercentage)
 			}
+			if b.IncludableOnly {
+				ctx.Errorf("includable_only is not combinable with experiment_percentage")
+			}
 		}
 		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
 			specialities = append(specialities, "location_regexp[_exclude]")
 			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
 			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
+			if b.IncludableOnly {
+				ctx.Errorf("includable_only is not combinable with location_regexp[_exclude]")
+			}
 		}
 		if len(b.OwnerWhitelistGroup) > 0 {
 			specialities = append(specialities, "owner_whitelist_group")
