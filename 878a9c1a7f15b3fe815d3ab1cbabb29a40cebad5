@@ -106,6 +106,24 @@
       "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c0f84290_6db57f27",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-12-10T00:33:53Z",
+      "side": 1,
+      "message": "AddWithHardlink works as Add(without hardlink) when dest \u003d\u003d \"\"?\nWhen it needs different behavior, I prefer to have different dedicated functions sharing common codes.",
+      "parentUuid": "f51c5b00_b4ef76f1",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
