@@ -104,10 +104,14 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	// Otherwise, get the protos and prepare to write them to Spanner.
 	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
 	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
+	if len(results) == 0 {
+		err = errors.Reason("No results from conversion").Tag(grpcutil.FailedPreconditionTag).Err()
+	}
 	if err != nil {
 		return nil, errors.Annotate(err,
 			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, task.Name).Err()
 	}
+
 	if inv.FinalizeTime == nil {
 		panic("missing inv.FinalizeTime")
 	}
