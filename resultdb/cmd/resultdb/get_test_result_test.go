@@ -36,7 +36,7 @@ func TestValidateGetTestResultRequest(t *testing.T) {
 	t.Parallel()
 	Convey(`ValidateGetTestResultRequest`, t, func() {
 		Convey(`Valid`, func() {
-			req := &pb.GetTestResultRequest{Name: "invocations/a/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"}
+			req := &pb.GetTestResultRequest{Name: "invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"}
 			So(validateGetTestResultRequest(req), ShouldBeNil)
 		})
 
@@ -74,7 +74,7 @@ func TestGetTestResult(t *testing.T) {
 			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", now),
 			span.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
-				"TestPath":        "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				"TestPath":        "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_0",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
@@ -85,10 +85,10 @@ func TestGetTestResult(t *testing.T) {
 			}))
 
 		// Fetch back the TestResult.
-		test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
+		test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
 			&pb.TestResult{
-				Name:     "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
-				TestPath: "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				Name:     "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_0",
+				TestPath: "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				ResultId: "result_id_within_inv_0",
 				Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
 				Expected: false,
@@ -100,7 +100,7 @@ func TestGetTestResult(t *testing.T) {
 		Convey(`works with expected result`, func() {
 			testutil.MustApply(ctx, span.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
-				"TestPath":        "gn://chrome/test:foo_tests/BarTest.DoBaz",
+				"TestPath":        "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_1",
 				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
 				"VariantHash":     "deadbeef",
@@ -110,10 +110,10 @@ func TestGetTestResult(t *testing.T) {
 			}))
 
 			// Fetch back the TestResult.
-			test(ctx, "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
+			test(ctx, "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
 				&pb.TestResult{
-					Name:     "invocations/inv_0/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
-					TestPath: "gn://chrome/test:foo_tests/BarTest.DoBaz",
+					Name:     "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_1",
+					TestPath: "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 					ResultId: "result_id_within_inv_1",
 					Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
 					Expected: true,

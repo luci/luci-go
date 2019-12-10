@@ -26,17 +26,17 @@ func TestTestResultName(t *testing.T) {
 	Convey("ParseTestResultName", t, func() {
 		Convey("Parse", func() {
 			invID, testPath, resultID, err := ParseTestResultName(
-				"invocations/a/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
 			So(err, ShouldBeNil)
 			So(invID, ShouldEqual, "a")
-			So(testPath, ShouldEqual, "gn://chrome/test:foo_tests/BarTest.DoBaz")
+			So(testPath, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
 			So(resultID, ShouldEqual, "result5")
 		})
 
 		Convey("Invalid", func() {
 			Convey(`has slashes`, func() {
 				_, _, _, err := ParseTestResultName(
-					"invocations/inv/tests/gn://test/results/result1")
+					"invocations/inv/tests/ninja://test/results/result1")
 				So(err, ShouldErrLike, "does not match")
 			})
 
@@ -54,9 +54,9 @@ func TestTestResultName(t *testing.T) {
 		})
 
 		Convey("Format", func() {
-			So(TestResultName("a", "gn://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
+			So(TestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
 				ShouldEqual,
-				"invocations/a/tests/gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
 		})
 	})
 }
