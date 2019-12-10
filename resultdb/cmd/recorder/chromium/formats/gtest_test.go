@@ -307,13 +307,13 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			testResults, err := results.ToProtos(ctx, "gn://tests/", inv)
+			testResults, err := results.ToProtos(ctx, "ninja/tests/", inv)
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair(OriginalFormatTagKey, FormatGTest)), ShouldBeTrue)
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
-					TestPath: "gn://tests/BazTest.DoesQux",
+					TestPath: "ninja/tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -322,7 +322,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/BazTest.DoesQux",
+					TestPath: "ninja/tests/BazTest.DoesQux",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -330,7 +330,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/FooTest.DoesBar",
+					TestPath: "ninja/tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
@@ -338,7 +338,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/FooTest.DoesBar",
+					TestPath: "ninja/tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -348,7 +348,7 @@ func TestGTestConversions(t *testing.T) {
 
 				// Iteration 2.
 				{
-					TestPath: "gn://tests/BazTest.DoesQux",
+					TestPath: "ninja/tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -357,7 +357,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/BazTest.DoesQux",
+					TestPath: "ninja/tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -366,7 +366,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/FooTest.DoesBar",
+					TestPath: "ninja/tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
@@ -374,7 +374,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "gn://tests/FooTest.DoesBar",
+					TestPath: "ninja/tests/FooTest.DoesBar",
 					Status:   pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
@@ -396,7 +396,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			_, err := results.ToProtos(ctx, "gn://tests/", inv)
+			_, err := results.ToProtos(ctx, "ninja/tests/", inv)
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag1")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(inv.Tags, pbutil.StringPair("gtest_global_tag", "tag2")), ShouldBeTrue)
@@ -411,7 +411,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 			}
 
-			_, err := results.ToProtos(ctx, "gn://tests/", inv)
+			_, err := results.ToProtos(ctx, "ninja/tests/", inv)
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
 		})
