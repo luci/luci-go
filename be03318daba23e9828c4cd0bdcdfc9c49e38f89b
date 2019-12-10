@@ -16,6 +16,24 @@
       "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5befe5bf_77f6138e",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-10T09:22:41Z",
+      "side": 0,
+      "message": "It does. Were we not going to block deriving simple JSON formatted results at the recipe level...?\n\nIf not, there doesn\u0027t really seem to be a good way to guarantee we\u0027re reading a GTest/test_launcher-formatted output file --- maybe check whether the output contains the \"all_tests\" string, for instance.",
+      "parentUuid": "a2fea85a_d87ff284",
+      "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
