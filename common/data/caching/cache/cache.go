@@ -53,6 +53,10 @@ type Cache interface {
 	// Add reads data from src and stores it in cache.
 	Add(digest isolated.HexDigest, src io.Reader) error
 
+	// AddWithHardlink reads data from src and stores it in cache and hardlink file.
+	// This is to avoid file removal by shrink in Add().
+	AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error
+
 	// Read returns contents of the cached item.
 	Read(digest isolated.HexDigest) (io.ReadCloser, error)
 
@@ -187,28 +191,43 @@ func (m *memory) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	return ioutil.NopCloser(bytes.NewBuffer(content)), nil
 }
 
-func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
+func (m *memory) add(digest isolated.HexDigest, src io.Reader) ([]byte, error) {
 	if !digest.Validate(m.h) {
-		return os.ErrInvalid
+		return nil, os.ErrInvalid
 	}
 	// TODO(maruel): Use a LimitedReader flavor that fails when reaching limit.
 	content, err := ioutil.ReadAll(src)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if isolated.HashBytes(m.h, content) != digest {
-		return errors.New("invalid hash")
+		return nil, errors.New("invalid hash")
 	}
 	if units.Size(len(content)) > m.policies.MaxSize {
-		return errors.New("item too large")
+		return nil, errors.New("item too large")
 	}
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.added = append(m.added, int64(len(content)))
 	m.data[digest] = content
 	m.lru.pushFront(digest, units.Size(len(content)))
 	m.respectPolicies()
-	return nil
+	return content, nil
+}
+
+func (m *memory) Add(digest isolated.HexDigest, src io.Reader) error {
+	_, err := m.add(digest, src)
+	return err
+}
+
+func (m *memory) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
+	content, err := m.add(digest, src)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(dest, content, perm)
 }
 
 func (m *memory) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
@@ -318,7 +337,7 @@ func (d *disk) Read(digest isolated.HexDigest) (io.ReadCloser, error) {
 	return f, nil
 }
 
-func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
+func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) error {
 	if !digest.Validate(d.h) {
 		return os.ErrInvalid
 	}
@@ -346,12 +365,32 @@ func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
 		return errors.New("item too large")
 	}
 
+	if cb != nil {
+		if err := cb(); err != nil {
+			return err
+		}
+	}
+
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.lru.pushFront(digest, units.Size(size))
 	d.respectPolicies()
 	d.added = append(d.added, size)
 	return nil
+}
+
+func (d *disk) Add(digest isolated.HexDigest, src io.Reader) error {
+	return d.add(digest, src, nil)
+}
+
+func (d *disk) AddWithHardlink(digest isolated.HexDigest, src io.Reader, dest string, perm os.FileMode) error {
+	return d.add(digest, src, func() error {
+		if err := d.Hardlink(digest, dest, perm); err != nil {
+			_ = os.Remove(d.itemPath(digest))
+			return fmt.Errorf("failed to call Hardlink(%s, %s): %w", digest, dest, err)
+		}
+		return nil
+	})
 }
 
 func (d *disk) Hardlink(digest isolated.HexDigest, dest string, perm os.FileMode) error {
