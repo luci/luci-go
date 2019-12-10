@@ -52,6 +52,24 @@
       "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "696ab06a_e1dddb99",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-10T18:25:59Z",
+      "side": 0,
+      "message": "\u003e \u003e It does. Were we not going to block deriving simple JSON formatted results at the recipe level...?\n\u003e \n\u003e two negatives in this sentence. \n\u003e \n(Reads the same as \"weren\u0027t we going to block\")\n\n\u003e recipes will not call DeriveInvocation for tasks which DeriveInvocation does not support.\n\u003e But it still not OK to return OK code and derive an empty invocation on formats we don\u0027t support.\n\u003e FWIU after this CL, DeriveInvocation returns OK for *any valid JSON* in output.json.\n\u003e \nYes, it\u0027s not great, but I don\u0027t see any way to *guarantee* we\u0027re reading a GTest output file (aside from the below suggestion of reading the output for string comparison). Another possibility that anecdotally seems to fit is checking `global_tags`, since that seems to be populated even if there are no tests. That\u0027s also not necessarily intrinsic to the JSON though.\n\n\u003e Let me trying something. I just got into the chromium recipes for integration purposes and I see two specific places where we will call DeriveInvocation. I can make it so tasks produces by those specific areas of code have a certain tag, e.g. \"result_format:chromium_gtest\" or \"result_format:chromium_jtr\". Then we can modify this CL to whitelist these two tags. Then 1) we don\u0027t have to blacklist tags 2) we don\u0027t have to guess the format.\n\u003e \nYes, that should work. Do you want to put this on hold then until that\u0027s done?\n\n\u003e \u003e \n\u003e \u003e If not, there doesn\u0027t really seem to be a good way to guarantee we\u0027re reading a GTest/test_launcher-formatted output file --- maybe check whether the output contains the \"all_tests\" string, for instance.",
+      "parentUuid": "a0b30333_d3003057",
+      "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
