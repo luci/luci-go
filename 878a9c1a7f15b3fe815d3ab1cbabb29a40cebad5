@@ -124,6 +124,24 @@
       "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c50be6e7_7d85ca32",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-10T02:23:32Z",
+      "side": 1,
+      "message": "OK, updated the function.\nBut let me make AddWithHardlink fails implicitly for empty |dest| as Hardlink does.",
+      "parentUuid": "c0f84290_6db57f27",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
