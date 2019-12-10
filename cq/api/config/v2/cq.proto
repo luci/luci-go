@@ -306,8 +306,14 @@ message Verifiers {
     string url = 1;
   }
 
+  // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).
   message Tryjob {
+    // Next field number: 4
+
     // Builders on which tryjobs should be triggered.
+    //
+    // TODO(crbug/937080): CQ won't allow adding any builder via `CQ-Include-Trybots:`
+    // in CL description except those in this list.
     repeated Builder builders = 1;
 
     // Optional, defaulting to no retries whatsoever.
@@ -319,7 +325,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3;
 
     message Builder {
-      // Next field number: 9
+      // Next field number: 10
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -327,6 +333,20 @@ message Verifiers {
       //   "chromium/try/linux-tester"
       //   "other-project/try/shared-try-builder"
       string name = 1;
+
+      // If true, this builder will only be used if specified via
+      // `CQ-Include-Trybots:` on CL description.
+      //
+      // This is useful if you want individual CLs to opt-in to this builder,
+      // e.g.:
+      //  builder {name: "win-release"}                      # required for all.
+      //  builder {name: "win-debug" includable_only: true}  # opt in only.
+      //
+      // Not combinable with:
+      //   * location_regexp[_exclude]
+      //   * experiment_percentage
+      //   * triggered_by
+      bool includable_only = 9;
 
       // Optional. If true, a fresh build will be required for each CQ attempt.
       //
@@ -478,6 +498,14 @@ message Verifiers {
       float percentage = 2;
       // If specified, limits the builder to CL owners in this group.
       string owner_whitelist_group = 3;
+    }
+
+    // Builder which can be included via `CQ-Include-Trybots:` in CL
+    // description.
+    message IncludableBuilder {
+      // Required. Name of this builder.
+      // Format is the same in the same format as Builder.name.
+      string name = 1;
     }
 
     // Collection of parameters for deciding whether to retry a single build.
