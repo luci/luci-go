@@ -256,7 +256,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	}
 
 	// Convert the isolated.File outputs to pb.Artifacts for later processing.
-	outputsToProcess := make(map[string]*pb.Artifact, len(outputs))
+	outputArtifacts := make(map[string]*pb.Artifact, len(outputs))
 	for path, f := range outputs {
 		art := util.IsolatedFileToArtifact(
 			outputsRef.Isolatedserver, outputsRef.Namespace, path, &f)
@@ -264,22 +264,19 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 			logging.Warningf(ctx, "Could not process artifact %q", path)
 		}
 
-		outputsToProcess[util.NormalizeIsolatedPath(path)] = art
+		outputArtifacts[util.NormalizeIsolatedPath(path)] = art
 	}
 
 	// Convert the output JSON.
-	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputsToProcess); err != nil {
+	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputArtifacts); err != nil {
 		return nil, err
 	}
 	// We know we may or will not process some kinds of outputs; if we see them ignore them.
-	for path := range outputsToProcess {
+	// TODO(crbug/1032779): Mark artifacts that have been processed.
+	for path := range outputArtifacts {
 		if mayIgnoreOutput(path) {
-			delete(outputsToProcess, path)
+			delete(outputArtifacts, path)
 		}
-	}
-	// Any outputs remaining we should note in case we're inadvertently not accounting for them.
-	if len(outputsToProcess) > 0 {
-		logging.Warningf(ctx, "Unprocessed files:\n%s", util.IsolatedFilesToString(outputsToProcess))
 	}
 
 	return results, nil
@@ -305,12 +302,12 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 
 // FetchOutputJSON fetches the output.json given the outputs map, updating it in-place to mark the
 // file as processed.
-func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outputsToProcess map[string]isolated.File) ([]byte, error) {
+func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outputs map[string]isolated.File) ([]byte, error) {
 	// Check the different possibilities for the output JSON name.
 	var outputJSONFileName string
 	var outputFile *isolated.File
 	for _, outputJSONFileName = range outputJSONFileNames {
-		if file, ok := outputsToProcess[outputJSONFileName]; ok {
+		if file, ok := outputs[outputJSONFileName]; ok {
 			outputFile = &file
 			break
 		}
@@ -329,19 +326,18 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 			"%s digest %q", outputJSONFileName, outputFile.Digest).Err()
 	}
 
-	delete(outputsToProcess, outputJSONFileName)
 	return buf.Bytes(), nil
 }
 
 // ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix string, data []byte, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix string, data []byte, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, testPathPrefix, inv, outputsToProcess)
+		results, err := jsonFormat.ToProtos(ctx, testPathPrefix, inv, outputs)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
