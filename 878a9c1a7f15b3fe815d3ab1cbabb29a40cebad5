@@ -34,6 +34,24 @@
       "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b353a414_613840a8",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2019-12-10T00:21:27Z",
+      "side": 1,
+      "message": "Then what about removing Add()?",
+      "parentUuid": "ab24311f_24d316fd",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
