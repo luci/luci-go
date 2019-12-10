@@ -65,7 +65,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -132,7 +131,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.3.2"
+	UserAgent = "cipd 2.3.3"
 )
 
 func init() {
@@ -353,6 +352,9 @@ type ClientOptions struct {
 	//
 	// Default is UserAgent const.
 	UserAgent string
+
+	// LoginInstructions is appended to "permission denied" error messages.
+	LoginInstructions string
 
 	// Mocks used by tests.
 	casMock     api.StorageClient
@@ -622,7 +624,7 @@ func (client *clientImpl) FetchACL(ctx context.Context, prefix string) ([]Packag
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	return prefixMetadataToACLs(resp), nil
@@ -638,7 +640,7 @@ func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes 
 		Prefix: prefix,
 	}, expectedCodes)
 	if code := grpc.Code(err); code != codes.OK && code != codes.NotFound {
-		return humanErr(err)
+		return client.humanErr(err)
 	}
 
 	// Construct new empty metadata for codes.NotFound.
@@ -653,7 +655,7 @@ func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes 
 
 	// Store the new metadata. This call will check meta.Fingerprint.
 	_, err = client.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
-	return humanErr(err)
+	return client.humanErr(err)
 }
 
 func (client *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, error) {
@@ -665,7 +667,7 @@ func (client *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]stri
 		Prefix: prefix,
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	out := make([]string, len(resp.Roles))
@@ -686,7 +688,7 @@ func (client *clientImpl) ListPackages(ctx context.Context, prefix string, recur
 		IncludeHidden: includeHidden,
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	listing := resp.Packages
@@ -739,7 +741,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 		Version: version,
 	}, expectedCodes)
 	if err != nil {
-		return common.Pin{}, humanErr(err)
+		return common.Pin{}, client.humanErr(err)
 	}
 	pin := common.Pin{
 		PackageName: packageName,
@@ -944,7 +946,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, 
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		}, expectedCodes)
 		if err != nil {
-			return nil, humanErr(err)
+			return nil, client.humanErr(err)
 		}
 		switch resp.Status {
 		case api.RegistrationStatus_REGISTERED:
@@ -1012,7 +1014,7 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 		case err == context.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case err != nil:
-			return humanErr(err)
+			return client.humanErr(err)
 		case op.Status == api.UploadStatus_PUBLISHED:
 			return nil // verified!
 		case op.Status == api.UploadStatus_ERRORED:
@@ -1046,7 +1048,7 @@ func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, 
 		DescribeTags: opts.DescribeTags,
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	return apiDescToInfo(resp), nil
@@ -1062,7 +1064,7 @@ func (client *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	return apiClientDescToInfo(resp), nil
@@ -1077,7 +1079,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	}
 	logging.Infof(ctx, "cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
 
-	err := retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
+	err := client.retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
 		_, err := client.repo.CreateRef(ctx, &api.Ref{
 			Name:     ref,
 			Package:  pin.PackageName,
@@ -1114,7 +1116,7 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		logging.Infof(ctx, "cipd: attaching tag %s", t)
 	}
 
-	err := retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
+	err := client.retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
 		_, err := client.repo.AttachTags(ctx, &api.AttachTagsRequest{
 			Package:  pin.PackageName,
 			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -1140,7 +1142,7 @@ const retryDelay = 5 * time.Second
 // retryUntilReady calls the callback and retries on FailedPrecondition errors,
 // which indicate that the instance is not ready yet (still being processed by
 // the backend).
-func retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context.Context) error) error {
+func (client *clientImpl) retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context.Context) error) error {
 	ctx, cancel := clock.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -1157,12 +1159,12 @@ func retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context
 		case err == context.DeadlineExceeded:
 			continue // this may be short RPC deadline, try again
 		case grpc.Code(err) == codes.FailedPrecondition: // the instance is not ready
-			logging.Warningf(ctx, "cipd: %s", humanErr(err))
+			logging.Warningf(ctx, "cipd: %s", client.humanErr(err))
 			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
 				return ErrProcessingTimeout
 			}
 		default:
-			return humanErr(err)
+			return client.humanErr(err)
 		}
 	}
 }
@@ -1192,7 +1194,7 @@ func (client *clientImpl) SearchInstances(ctx context.Context, packageName strin
 	case status.Code(err) == codes.NotFound: // no such package => no instances
 		return nil, nil
 	case err != nil:
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	out := make(common.PinSlice, len(resp.Instances))
@@ -1217,7 +1219,7 @@ func (client *clientImpl) ListInstances(ctx context.Context, packageName string)
 				PageToken: cursor,
 			}, expectedCodes)
 			if err != nil {
-				return nil, "", humanErr(err)
+				return nil, "", client.humanErr(err)
 			}
 			instances := make([]InstanceInfo, len(resp.Instances))
 			for i, inst := range resp.Instances {
@@ -1237,7 +1239,7 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 		Package: packageName,
 	}, expectedCodes)
 	if err != nil {
-		return nil, humanErr(err)
+		return nil, client.humanErr(err)
 	}
 
 	refs := make([]RefInfo, len(resp.Refs))
@@ -1388,7 +1390,7 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 		Instance: objRef,
 	}, expectedCodes)
 	if err != nil {
-		return humanErr(err)
+		return client.humanErr(err)
 	}
 
 	hash := common.MustNewHash(objRef.HashAlgo)
@@ -1665,12 +1667,6 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 ////////////////////////////////////////////////////////////////////////////////
 // pRPC error handling.
 
-// IsPermissionError returns true if the given error is "access denied" which
-// may be fixed by logging in.
-func IsPermissionError(err error) bool {
-	return grpcutil.Code(err) == codes.PermissionDenied
-}
-
 // gRPC errors that may be returned by api.RepositoryClient that we recognize
 // and handle ourselves. They will not be logged by the pRPC library.
 var expectedCodes = prpc.ExpectedCode(
@@ -1685,10 +1681,13 @@ var expectedCodes = prpc.ExpectedCode(
 // presented in the CLI.
 //
 // It basically strips scary looking gRPC framing around the error message.
-func humanErr(err error) error {
+func (client *clientImpl) humanErr(err error) error {
 	if err != nil {
 		if status, ok := status.FromError(err); ok {
-			return errors.New(status.Message(), grpcutil.Tag.With(grpc.Code(err)))
+			if status.Code() == codes.PermissionDenied && client.LoginInstructions != "" {
+				return errors.Reason("%s, %s", status.Message(), client.LoginInstructions).Err()
+			}
+			return errors.New(status.Message())
 		}
 	}
 	return err

@@ -199,23 +199,14 @@ func (c *cipdSubcommand) printError(err error) {
 	}
 
 	if merr, _ := err.(errors.MultiError); len(merr) != 0 {
-		isPermErr := false
 		fmt.Fprintln(os.Stderr, "Errors:")
 		for _, err := range merr {
 			fmt.Fprintf(os.Stderr, "  %s\n", err)
-			isPermErr = isPermErr || cipd.IsPermissionError(err)
-		}
-		if isPermErr {
-			fmt.Fprintln(os.Stderr, "Run `cipd auth-login` to authenticate.")
 		}
 		return
 	}
 
-	if cipd.IsPermissionError(err) {
-		fmt.Fprintf(os.Stderr, "Error: %s. Run `cipd auth-login` to authenticate.\n", err)
-	} else {
-		fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
-	}
+	fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
 }
 
 // writeJSONOutput writes result to JSON output file. It returns original error
@@ -372,6 +363,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		Versions:            opts.versions,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
+		LoginInstructions:   "run `cipd auth-login` to login or relogin",
 	}
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
 		return cipd.ClientOptions{}, err
