@@ -52,6 +52,24 @@
       "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2fc12166_10d65cce",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-10T00:22:57Z",
+      "side": 1,
+      "message": "So you are suggesting to replace all call site to use AddHardlink everywhere?",
+      "parentUuid": "b353a414_613840a8",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
