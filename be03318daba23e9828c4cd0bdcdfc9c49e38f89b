@@ -88,6 +88,24 @@
       "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6b5fd4c_1f845c17",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-10T19:47:43Z",
+      "side": 0,
+      "message": "OK. If it\u0027ll change significantly should it just be considered a separate CL for followup later?\n\nI\u0027d like to do /something/ in the meantime to identify these cases as \"don\u0027t worry about them\" just to make sure they\u0027re not hiding other 5xx, hence the question.",
+      "parentUuid": "c7025aea_a89e5651",
+      "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
