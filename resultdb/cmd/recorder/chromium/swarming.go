@@ -338,6 +338,8 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 // It tries to convert to JSON Test Results format, then GTest format.
 func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix string, data []byte, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
+	// We try the JSON Test Results Format first because it has a known field ("version") that
+	// identifies itself, unlike the GTest format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
