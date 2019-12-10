@@ -70,6 +70,24 @@
       "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7025aea_a89e5651",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-10T19:44:14Z",
+      "side": 0,
+      "message": "yeah i this CL will change significantly when we have those tags.",
+      "parentUuid": "696ab06a_e1dddb99",
+      "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
