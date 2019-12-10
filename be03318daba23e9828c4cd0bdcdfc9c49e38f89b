@@ -34,6 +34,24 @@
       "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0b30333_d3003057",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-10T16:48:12Z",
+      "side": 0,
+      "message": "\u003e It does. Were we not going to block deriving simple JSON formatted results at the recipe level...?\n\ntwo negatives in this sentence. \n\nrecipes will not call DeriveInvocation for tasks which DeriveInvocation does not support.\nBut it still not OK to return OK code and derive an empty invocation on formats we don\u0027t support.\nFWIU after this CL, DeriveInvocation returns OK for *any valid JSON* in output.json.\n\nLet me trying something. I just got into the chromium recipes for integration purposes and I see two specific places where we will call DeriveInvocation. I can make it so tasks produces by those specific areas of code have a certain tag, e.g. \"result_format:chromium_gtest\" or \"result_format:chromium_jtr\". Then we can modify this CL to whitelist these two tags. Then 1) we don\u0027t have to blacklist tags 2) we don\u0027t have to guess the format.\n\n\u003e \n\u003e If not, there doesn\u0027t really seem to be a good way to guarantee we\u0027re reading a GTest/test_launcher-formatted output file --- maybe check whether the output contains the \"all_tests\" string, for instance.",
+      "parentUuid": "5befe5bf_77f6138e",
+      "revId": "be03318daba23e9828c4cd0bdcdfc9c49e38f89b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
