@@ -170,7 +170,7 @@ func TestDeriveInvocation(t *testing.T) {
 					"bucket:bkt",
 					"buildername:blder",
 					"test_suite:foo_unittests",
-					"gn_target://tests:tests"
+					"ninja_target://tests:tests"
 				],
 				"created_ts": "2019-10-14T13:49:16.01",
 				"completed_ts": "2019-10-14T14:49:16.01"
@@ -215,7 +215,7 @@ func TestDeriveInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
-			So(trs[0].TestPath, ShouldEqual, "gn://tests:tests/FooTest.DoesBar")
+			So(trs[0].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
 			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
 				"bucket", "bkt",
@@ -224,9 +224,9 @@ func TestDeriveInvocation(t *testing.T) {
 				"param/instantiation", "MyInstantiation",
 				"param/id", "1",
 			))
-			So(trs[1].TestPath, ShouldEqual, "gn://tests:tests/FooTest.TestDoBar")
+			So(trs[1].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
-			So(trs[2].TestPath, ShouldEqual, "gn://tests:tests/FooTest.TestDoBar")
+			So(trs[2].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 		})
 	})
