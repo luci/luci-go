@@ -459,20 +459,14 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 			})
 
 			wg.Go(func() error {
-				err := d.options.Cache.Add(details.Digest, pr)
+				err := d.options.Cache.AddWithHardlink(details.Digest, pr, filename, os.FileMode(mode))
 				if perr := pr.CloseWithError(err); perr != nil {
 					return errors.Annotate(perr, "failed to close pipe reader").Err()
 				}
 				return err
 			})
-
 			if err = wg.Wait(); err != nil {
 				d.addError(fileType, name, errors.Annotate(err, "failed to read from cache").Err())
-				return
-			}
-
-			if err = d.options.Cache.Hardlink(details.Digest, filename, os.FileMode(mode)); err != nil {
-				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache").Err())
 				return
 			}
 		}

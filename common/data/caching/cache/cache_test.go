@@ -49,6 +49,8 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 		file1Digest := isolated.HashBytes(h, file1Content)
 		file2Content := []byte("foo bar")
 		file2Digest := isolated.HashBytes(h, file2Content)
+		hardlinkContent := []byte("hardlink")
+		hardlinkDigest := isolated.HashBytes(h, hardlinkContent)
 		largeContent := bytes.Repeat([]byte("A"), 1023)
 		largeDigest := isolated.HashBytes(h, largeContent)
 		tooLargeContent := bytes.Repeat([]byte("A"), 1025)
@@ -107,6 +109,16 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 		actual, err = ioutil.ReadFile(dest)
 		So(err, ShouldBeNil)
 		So(actual, ShouldResemble, file2Content)
+
+		dest = filepath.Join(td, "hardlink")
+		So(c.AddWithHardlink(hardlinkDigest, bytes.NewBuffer(hardlinkContent), dest, os.ModePerm),
+			ShouldBeNil)
+		actual, err = ioutil.ReadFile(dest)
+		So(err, ShouldBeNil)
+		So(actual, ShouldResemble, hardlinkContent)
+
+		// |emptyDigest| is evicted.
+		expected = isolated.HexDigests{hardlinkDigest, file2Digest}
 
 		So(c.Close(), ShouldBeNil)
 	})
