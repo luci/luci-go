@@ -77,7 +77,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					{
 						Invocation: "invocations/x",
 						TestExoneration: &pb.TestExoneration{
-							TestPath: "gn://ab/cd.ef",
+							TestPath: "ninja/a/b.c",
 						},
 					},
 				},
@@ -93,7 +93,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					{
 						RequestId: "req2",
 						TestExoneration: &pb.TestExoneration{
-							TestPath: "gn://ab/cd.ef",
+							TestPath: "ninja/a/b.c",
 						},
 					},
 				},
@@ -107,12 +107,12 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 				Requests: []*pb.CreateTestExonerationRequest{
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestPath: "gn://ab/cd.ef",
+							TestPath: "ninja/a/b.c",
 						},
 					},
 					{
 						TestExoneration: &pb.TestExoneration{
-							TestPath: "gn://ab/cd.ef",
+							TestPath: "ninja/a/b.c",
 							Variant:  pbutil.Variant("a/b", "1", "c", "2"),
 						},
 					},

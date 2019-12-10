@@ -66,7 +66,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "gn://ab/cd.ef",
+					TestPath: "ninja/a/b.c",
 					Variant: pbutil.Variant(
 						"a/b", "1",
 						"c", "2",

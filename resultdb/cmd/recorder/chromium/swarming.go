@@ -130,10 +130,13 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 
 	// Parse swarming tags.
-	baseVariant, gnTarget := parseSwarmingTags(task)
+	baseVariant, target := parseSwarmingTags(task)
+	if strings.Contains(target, "/") {
+		return nil, nil, errors.Reason(`invalid ninja target %q: must not have a slash`, target).Tag(grpcutil.FailedPreconditionTag).Err()
+	}
 	testPathPrefix := ""
-	if gnTarget != "" {
-		testPathPrefix = fmt.Sprintf("gn:%s/", gnTarget)
+	if target != "" {
+		testPathPrefix = fmt.Sprintf("ninja/%s/", target)
 	}
 
 	// Fetch outputs, converting if any.
@@ -169,7 +172,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	return inv, results, nil
 }
 
-func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, gnTarget string) {
+func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, ninjaTarget string) {
 	baseVariant = &typepb.Variant{Def: make(map[string]string, 3)}
 	for _, t := range task.Tags {
 		switch k, v := strpair.Parse(t); k {
@@ -179,8 +182,8 @@ func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *t
 			baseVariant.Def["builder"] = v
 		case "test_suite":
 			baseVariant.Def["test_suite"] = v
-		case "gn_target":
-			gnTarget = v
+		case "ninja_target":
+			ninjaTarget = v
 		}
 	}
 	return
@@ -240,7 +243,7 @@ func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInv
 // processOutputs fetches the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
 func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testPathPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
-		isoClient := isolatedclient.New(
+	isoClient := isolatedclient.New(
 		nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil)
 
 	// Get the isolated outputs.
