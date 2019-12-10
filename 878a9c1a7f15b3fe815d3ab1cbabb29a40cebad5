@@ -70,6 +70,24 @@
       "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f51c5b00_b4ef76f1",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2019-12-10T00:24:36Z",
+      "side": 1,
+      "message": "s/AddHardlink/AddWithHardlink/\n\nI prefer to use Add where hardlink is not actually necessary.\ne.g. fetch without cache",
+      "parentUuid": "2fc12166_10d65cce",
+      "revId": "878a9c1a7f15b3fe815d3ab1cbabb29a40cebad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
