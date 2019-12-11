@@ -634,6 +634,25 @@ type ReviewInput struct {
 	WorkInProgress bool `json:"work_in_progress,omitempty"`
 }
 
+// SubmitInput contains information for submitting a change.
+type SubmitInput struct {
+	// Notify is an enum specifying whom to send notifications to.
+	//
+	// Valid values are NONE, OWNER, OWNER_REVIEWERS, and ALL.
+	//
+	// Optional. The default is ALL.
+	Notify string `json:"notify,omitempty"`
+
+	// OnBehalfOf is an account-id which the review should be posted on behalf of.
+	//
+	// To use this option the caller must have granted labelAs-NAME permission for all keys
+	// of labels.
+	//
+	// More information on account-id may be found here:
+	// https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-id
+	OnBehalfOf string `json:"on_behalf_of,omitempty"`
+}
+
 // ReviewerInfo contains information about a reviewer and their votes on a change.
 //
 // It has the same fields as AccountInfo, except the AccountID is optional if an unregistered reviewer
@@ -706,6 +725,24 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 	var resp ReviewResult
 	path := fmt.Sprintf("a/changes/%s/revisions/%s/review", url.PathEscape(changeID), url.PathEscape(revisionID))
 	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// Submit submits a change to the repository. It bypasses the Commit Queue.
+//
+// Returns a Change.
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) Submit(ctx context.Context, changeID string, si *SubmitInput) (*Change, error) {
+	var resp Change
+	path := fmt.Sprintf("a/changes/%s/submit", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, si, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

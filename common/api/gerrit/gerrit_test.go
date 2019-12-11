@@ -540,6 +540,33 @@ func TestSetReview(t *testing.T) {
 	})
 }
 
+func TestSubmit(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("Submit", t, func(c C) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			var si SubmitInput
+			err := json.NewDecoder(r.Body).Decode(&si)
+			c.So(err, ShouldBeNil)
+			var cr Change
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			var buffer bytes.Buffer
+			err = json.NewEncoder(&buffer).Encode(&cr)
+			c.So(err, ShouldBeNil)
+			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
+		})
+		defer srv.Close()
+
+		Convey("Submit", func() {
+			_, err := client.Submit(ctx, "629279", &SubmitInput{})
+			So(err, ShouldBeNil)
+		})
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var (
