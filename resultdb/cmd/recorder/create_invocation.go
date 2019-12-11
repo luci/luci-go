@@ -103,6 +103,21 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	if !s.forUnitTest {
+		luciProject, err := pbutil.LuciProject(in.Invocation.GetRealm())
+		if err != nil {
+			return nil, errors.Annotate(err, "bad request: invocation: realm").Tag(grpcutil.InvalidArgumentTag).Err()
+		}
+
+		for i, bqExport := range in.GetBigqueryExports() {
+			if err := pbutil.CheckBQTableExistence(ctx, luciProject, bqExport); err != nil {
+				return nil, errors.Annotate(err, "bad request: bigquery_export[%d]", i).Tag(grpcutil.InvalidArgumentTag).Err()
+			}
+
+			// TODO(crbug.com/1033123): Check the write access to this table.
+		}
+	}
+
 	invID := span.InvocationID(in.InvocationId)
 
 	// Return update token to the client.
