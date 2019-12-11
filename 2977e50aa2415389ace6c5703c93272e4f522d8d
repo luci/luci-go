@@ -16,6 +16,46 @@
       "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "066b37d0_e391cd2d",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-11T22:57:45Z",
+      "side": 1,
+      "message": "realm_id",
+      "range": {
+        "startLine": 108,
+        "startChar": 22,
+        "endLine": 108,
+        "endChar": 32
+      },
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5789e8da_e0fb4c2a",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-11T22:57:45Z",
+      "side": 1,
+      "message": "if we are adding this field, we also must validate it in CreateInvocation RPC.\nThis increases the size of this CL and combines two things (the check and adding support for realms) into one CL. \n\nPlease split the realm aspect to another CL and rebase this one on the new CL",
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
