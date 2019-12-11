@@ -38,6 +38,7 @@ def _builder(
       # Scheduling parameters.
       dimensions=None,
       priority=None,
+      swarming_host=None,
       swarming_tags=None,
       expiration_timeout=None,
 
@@ -134,6 +135,9 @@ def _builder(
     priority: int [1-255] or None, indicating swarming task priority, lower is
         more important. If None, defer the decision to Buildbucket service.
         Supports the module-scoped default.
+    swarming_host: appspot hostname of a Swarming service to use for this
+        builder instead of the default specified in luci.project(...). Use with
+        great caution. Supports the module-scoped default.
     swarming_tags: a list of tags (`k:v` strings) to assign to the Swarming task
         that runs the builder. Each tag will also end up in `swarming_tag`
         Buildbucket tag, for example `swarming_tag:builder:release`. Supports
@@ -200,6 +204,7 @@ def _builder(
       'execution_timeout': validate.duration('execution_timeout', execution_timeout, required=False),
       'dimensions': swarming.validate_dimensions('dimensions', dimensions, allow_none=True),
       'priority': validate.int('priority', priority, min=1, max=255, required=False),
+      'swarming_host': validate.string('swarming_host', swarming_host, required=False),
       'swarming_tags': swarming.validate_tags('swarming_tags', swarming_tags),
       'expiration_timeout': validate.duration('expiration_timeout', expiration_timeout, required=False),
       'schedule': validate.string('schedule', schedule, required=False),
@@ -289,6 +294,7 @@ builder = lucicfg.rule(
         'execution_timeout': validate.duration,
         'dimensions': swarming.validate_dimensions,
         'priority': lambda attr, val: validate.int(attr, val, min=1, max=255),
+        'swarming_host': validate.string,
         'swarming_tags': swarming.validate_tags,
         'expiration_timeout': validate.duration,
         'triggering_policy': schedulerimpl.validate_policy,
