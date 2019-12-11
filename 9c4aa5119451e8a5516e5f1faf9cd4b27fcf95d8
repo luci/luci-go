@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "0785413e_e6c18275",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 451,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2019-12-11T07:51:18Z",
+      "side": 1,
+      "message": "Are you ok with default settings?\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/retry/defaults.go?g\u003d0\u0026l\u003d29",
+      "revId": "9c4aa5119451e8a5516e5f1faf9cd4b27fcf95d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "91207a71_e664d3ae",
         "filename": "client/downloader/downloader.go",
         "patchSetId": 3
