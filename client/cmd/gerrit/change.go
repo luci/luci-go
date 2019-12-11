@@ -344,6 +344,36 @@ https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-r
 	}
 }
 
+func cmdSubmit(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
+		si, _ := input.JSONInput.(*gerrit.SubmitInput)
+		result, err := client.Submit(ctx, input.ChangeID, si)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+	return &subcommands.Command{
+		UsageLine: "submit <options>",
+		ShortDesc: "submit a change",
+		LongDesc: `Submit a change.
+
+Input should contain a change ID, e.g.
+{
+  "change-id": <change-id>,
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:  true,
+				jsonInput: &gerrit.SubmitInput{},
+			}, runner)
+		},
+	}
+}
+
 func cmdRestore(authOpts auth.Options) *subcommands.Command {
 	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (interface{}, error) {
 		ri, _ := input.JSONInput.(*gerrit.RestoreInput)

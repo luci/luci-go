@@ -31,7 +31,7 @@ import (
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.2"
+const version = "0.3"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, gitiles.OAuthScope}
@@ -46,6 +46,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			cmdChangeQuery(defaultAuthOpts),
 			cmdChangesSubmittedTogether(defaultAuthOpts),
 			cmdSetReview(defaultAuthOpts),
+			cmdSubmit(defaultAuthOpts),
 			cmdRestore(defaultAuthOpts),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
