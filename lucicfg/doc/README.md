@@ -881,7 +881,7 @@ There should be exactly one such definition in the top-level config file.
 * **milo**: appspot hostname of a Milo service to use (if any).
 * **notify**: appspot hostname of a LUCI Notify service to use (if any).
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
-* **swarming**: appspot hostname of a Swarming service to use (if any).
+* **swarming**: appspot hostname of a Swarming service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets.
 
 
@@ -1028,6 +1028,7 @@ luci.builder(
     execution_timeout = None,
     dimensions = None,
     priority = None,
+    swarming_host = None,
     swarming_tags = None,
     expiration_timeout = None,
     schedule = None,
@@ -1100,6 +1101,7 @@ Buildbucket.
 * **execution_timeout**: how long to wait for a running build to finish before forcefully aborting it and marking the build as timed out. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **dimensions**: a dict with swarming dimensions, indicating requirements for a bot to execute the build. Keys are strings (e.g. `os`), and values are either strings (e.g. `Linux`), [swarming.dimension(...)](#swarming.dimension) objects (for defining expiring dimensions) or lists of thereof. Supports the module-scoped defaults. They are merged (non-recursively) with the explicitly passed dimensions.
 * **priority**: int [1-255] or None, indicating swarming task priority, lower is more important. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
+* **swarming_host**: appspot hostname of a Swarming service to use for this builder instead of the default specified in [luci.project(...)](#luci.project). Use with great caution. Supports the module-scoped default.
 * **swarming_tags**: a list of tags (`k:v` strings) to assign to the Swarming task that runs the builder. Each tag will also end up in `swarming_tag` Buildbucket tag, for example `swarming_tag:builder:release`. Supports the module-scoped defaults. They are joined with the explicitly passed tags.
 * **expiration_timeout**: how long to wait for a build to be picked up by a matching bot (based on `dimensions`) before canceling the build and marking it as expired. If None, defer the decision to Buildbucket service. Supports the module-scoped default.
 * **schedule**: string with a cron schedule that describes when to run this builder. See [Defining cron schedules](#schedules_doc) for the expected format of this field. If None, the builder will not be running periodically.
@@ -1556,20 +1558,17 @@ luci.notifier(
     name,
 
     # Optional arguments.
-    on_new_status = None,
     on_occurrence = None,
+    on_new_status = None,
+    on_failure = None,
+    on_new_failure = None,
+    on_status_change = None,
+    on_success = None,
     notify_emails = None,
     notify_blamelist = None,
     blamelist_repos_whitelist = None,
     template = None,
     notified_by = None,
-
-    # Deprecated arguments
-    on_failure = None,
-    on_new_failure = None,
-    on_status_change = None,
-    on_success = None,
-
 )
 ```
 
@@ -1580,8 +1579,8 @@ Defines a notifier that sends notifications on events from builders.
 A notifier contains a set of conditions specifying what events are considered
 interesting (e.g. a previously green builder has failed), and a set of
 recipients to notify when an interesting event happens. The conditions are
-specified via `on_*` fields (at least one of which should be set to `True`)
-and recipients are specified via `notify_*` fields.
+specified via `on_*` fields, and recipients are specified via `notify_*`
+fields.
 
 The set of builders that are being observed is defined through `notified_by`
 field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
@@ -1592,18 +1591,18 @@ recipients.
 #### Arguments {#luci.notifier-args}
 
 * **name**: name of this notifier to reference it from other rules. Required.
-* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
 * **on_occurrence**: a list specifying which build statuses to notify for. Notifies for every build status specified. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead.  If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
+* **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
+* **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
 * **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template named `default` is defined in the project somewhere, it is used implicitly by the notifier.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
-* **on_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
-* **on_new_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
-* **on_status_change**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
-* **on_success**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build success. Default is False.
 
 
 

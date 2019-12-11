@@ -51,7 +51,7 @@ def _project(
     milo: appspot hostname of a Milo service to use (if any).
     notify: appspot hostname of a LUCI Notify service to use (if any).
     scheduler: appspot hostname of a LUCI Scheduler service to use (if any).
-    swarming: appspot hostname of a Swarming service to use (if any).
+    swarming: appspot hostname of a Swarming service to use by default (if any).
     acls: list of acl.entry(...) objects, will be inherited by all buckets.
   """
   key = keys.project()

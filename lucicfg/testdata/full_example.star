@@ -170,6 +170,13 @@ luci.builder(
     repo = 'https://cron.repo.example.com',
 )
 
+luci.builder(
+    name = 'builder with custom swarming host',
+    bucket = 'ci',
+    executable = 'main/recipe',
+    swarming_host = 'another-swarming.appspot.com',
+)
+
 
 # Try bucket.
 
@@ -524,6 +531,15 @@ lucicfg.emit(
 #     group: "all"
 #   >
 #   swarming: <
+#     builders: <
+#       name: "builder with custom swarming host"
+#       swarming_host: "another-swarming.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
 #     builders: <
 #       name: "cron builder"
 #       swarming_host: "chromium-swarm.appspot.com"

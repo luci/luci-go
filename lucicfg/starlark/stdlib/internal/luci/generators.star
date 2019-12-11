@@ -36,8 +36,6 @@ load('@stdlib//internal/luci/proto.star',
 load('@proto//google/protobuf/duration.proto', duration_pb='google.protobuf')
 load('@proto//google/protobuf/wrappers.proto', wrappers_pb='google.protobuf')
 
-load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_common_pb='buildbucket.v2')
-
 
 def register():
   """Registers all LUCI config generator callbacks."""
@@ -259,7 +257,7 @@ def _buildbucket_builders(bucket, swarming_host):
     exe, recipe, properties = _handle_executable(node)
     out.append(buildbucket_pb.Builder(
         name = node.props.name,
-        swarming_host = swarming_host,
+        swarming_host = node.props.swarming_host or swarming_host,
         exe = exe,
         recipe = recipe,
         properties = properties,
