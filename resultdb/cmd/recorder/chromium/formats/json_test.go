@@ -355,6 +355,5 @@ func TestArtifactUtils(t *testing.T) {
 			{Name: "layout-test-results/b/stderr.txt"},
 		})
 		So(unresolved, ShouldBeEmpty)
-		So(outputsToProcess, ShouldBeEmpty)
 	})
 }
