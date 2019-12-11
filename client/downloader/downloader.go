@@ -39,6 +39,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/retry"
 )
 
 // Downloader is a high level interface to an isolatedclient.Client.
@@ -446,26 +447,29 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 				d.addError(fileType, name, errors.Annotate(err, "failed to link from cache, but file exists").Err())
 				return
 			}
-			// cache miss case
-			pr, pw := io.Pipe()
 
-			wg, ctx := errgroup.WithContext(d.ctx)
-			wg.Go(func() error {
-				err := d.c.Fetch(ctx, details.Digest, d.track(pw))
-				if perr := pw.CloseWithError(err); perr != nil {
-					return errors.Annotate(perr, "failed to close pipe writer").Err()
-				}
-				return err
-			})
+			if err := retry.Retry(d.ctx, retry.Default, func() error {
+				// cache miss case
+				pr, pw := io.Pipe()
 
-			wg.Go(func() error {
-				err := d.options.Cache.AddWithHardlink(details.Digest, pr, filename, os.FileMode(mode))
-				if perr := pr.CloseWithError(err); perr != nil {
-					return errors.Annotate(perr, "failed to close pipe reader").Err()
-				}
-				return err
-			})
-			if err = wg.Wait(); err != nil {
+				wg, ctx := errgroup.WithContext(d.ctx)
+				wg.Go(func() error {
+					err := d.c.Fetch(ctx, details.Digest, d.track(pw))
+					if perr := pw.CloseWithError(err); perr != nil {
+						return errors.Annotate(perr, "failed to close pipe writer").Err()
+					}
+					return err
+				})
+
+				wg.Go(func() error {
+					err := d.options.Cache.AddWithHardlink(details.Digest, pr, filename, os.FileMode(mode))
+					if perr := pr.CloseWithError(err); perr != nil {
+						return errors.Annotate(perr, "failed to close pipe reader").Err()
+					}
+					return err
+				})
+				return wg.Wait()
+			}, nil); err != nil {
 				d.addError(fileType, name, errors.Annotate(err, "failed to read from cache").Err())
 				return
 			}
