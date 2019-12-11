@@ -86,6 +86,14 @@ func TestGetChange(t *testing.T) {
 						},
 					},
 				},
+				Labels: map[string]*gerritpb.LabelInfo{
+					"Code-Review": {
+						Approved: &gerritpb.AccountInfo{
+							Name:  "Rubber Stamper",
+							Email: "rubberstamper@example.com",
+						},
+					},
+				},
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +122,14 @@ func TestGetChange(t *testing.T) {
 									"size_delta": -567,
 									"size": 11984
 								}
+							}
+						}
+					},
+					"labels": {
+						"Code-Review": {
+							"approved": {
+								"name": "Rubber Stamper",
+								"email": "rubberstamper@example.com"
 							}
 						}
 					}

@@ -103,8 +103,9 @@ type changeInfo struct {
 	// json.Unmarshal cannot convert enum string to value
 	Status string `json:"status"`
 
-	CurrentRevision string                   `json:"current_revision"`
-	Revisions       map[string]*revisionInfo `json:"revisions"`
+	CurrentRevision string                         `json:"current_revision"`
+	Revisions       map[string]*revisionInfo       `json:"revisions"`
+	Labels          map[string]*gerritpb.LabelInfo `json:"labels"`
 }
 
 type fileInfo struct {
@@ -165,6 +166,12 @@ func (ci *changeInfo) ToProto() *gerritpb.ChangeInfo {
 		ret.Revisions = make(map[string]*gerritpb.RevisionInfo, len(ci.Revisions))
 		for rev, info := range ci.Revisions {
 			ret.Revisions[rev] = info.ToProto()
+		}
+	}
+	if ci.Labels != nil {
+		ret.Labels = make(map[string]*gerritpb.LabelInfo, len(ci.Labels))
+		for label, info := range ci.Labels {
+			ret.Labels[label] = info
 		}
 	}
 	return ret
@@ -329,7 +336,7 @@ func (c *client) ListFiles(ctx context.Context, req *gerritpb.ListFilesRequest, 
 		return nil, errors.Annotate(err, "list files").Err()
 	}
 	lfr := &gerritpb.ListFilesResponse{
-		Files:  make(map[string]*gerritpb.FileInfo, len(resp)),
+		Files: make(map[string]*gerritpb.FileInfo, len(resp)),
 	}
 	for k, v := range resp {
 		lfr.Files[k] = v.ToProto()

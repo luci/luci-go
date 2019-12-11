@@ -228,6 +228,11 @@ message ChangeInfo {
   //
   // Only set if revision information is requested.
   map<string, RevisionInfo> revisions = 7;
+
+  // A map of label names to LabelInfos.
+  //
+  // Only set if label info is requested.
+  map<string, LabelInfo> labels = 8;
 }
 
 // Information about a patch set.
@@ -259,6 +264,35 @@ message RevisionInfo {
   //
   // Only set if file information is requested.
   map<string, FileInfo> files = 6;
+}
+
+// Information about a Label.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#label-info
+message LabelInfo {
+  // Whether the label is optional.
+  bool optional = 1;
+
+  // One user who approved this label on the change.
+  AccountInfo approved = 2;
+
+  // One user who rejected this label on the change.
+  AccountInfo rejected = 3;
+
+  // One user who recommended this label on the change.
+  AccountInfo recommended = 4;
+
+  // One user who disliked this label on the change.
+  AccountInfo disliked = 5;
+
+  // If true, the label blocks submit operation.
+  bool blocking = 6;
+
+  // The voting value of the user who recommended/disliked this label on the
+  // change if it is not "+1"/"-1".
+  int32 value = 7;
+
+  // The default voting value for the label.
+  int32 default_value = 8;
 }
 
 // Information about a file in a patch set.
