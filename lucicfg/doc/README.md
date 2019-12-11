@@ -1556,20 +1556,17 @@ luci.notifier(
     name,
 
     # Optional arguments.
-    on_new_status = None,
     on_occurrence = None,
+    on_new_status = None,
+    on_failure = None,
+    on_new_failure = None,
+    on_status_change = None,
+    on_success = None,
     notify_emails = None,
     notify_blamelist = None,
     blamelist_repos_whitelist = None,
     template = None,
     notified_by = None,
-
-    # Deprecated arguments
-    on_failure = None,
-    on_new_failure = None,
-    on_status_change = None,
-    on_success = None,
-
 )
 ```
 
@@ -1580,8 +1577,8 @@ Defines a notifier that sends notifications on events from builders.
 A notifier contains a set of conditions specifying what events are considered
 interesting (e.g. a previously green builder has failed), and a set of
 recipients to notify when an interesting event happens. The conditions are
-specified via `on_*` fields (at least one of which should be set to `True`)
-and recipients are specified via `notify_*` fields.
+specified via `on_*` fields, and recipients are specified via `notify_*`
+fields.
 
 The set of builders that are being observed is defined through `notified_by`
 field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
@@ -1592,18 +1589,18 @@ recipients.
 #### Arguments {#luci.notifier-args}
 
 * **name**: name of this notifier to reference it from other rules. Required.
-* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
 * **on_occurrence**: a list specifying which build statuses to notify for. Notifies for every build status specified. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_new_status**: a list specifying which new build statuses to notify for. Notifies for each build status specified unless the previous build was the same status. Valid values are string literals `SUCCESS`, `FAILURE`, and `INFRA_FAILURE`. Default is None.
+* **on_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
+* **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead.  If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
+* **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
+* **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
 * **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template named `default` is defined in the project somewhere, it is used implicitly by the notifier.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
-* **on_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build failure. Ignores transient (aka "infra") failures. Default is False.
-* **on_new_failure**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
-* **on_status_change**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
-* **on_success**: Deprecated. Please use `on_occurrence` or `on_new_status`. If True, notify on each build success. Default is False.
 
 
 
@@ -1803,6 +1800,7 @@ luci.cq_tryjob_verifier(
 
     # Optional arguments.
     cq_group = None,
+    includable_only = None,
     disable_reuse = None,
     experiment_percentage = None,
     location_regexp = None,
@@ -1888,6 +1886,21 @@ repository **or** belongs to any other Gerrit server. Note, in this case
         location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
     )
 
+#### Per-CL opt-in only builders
+
+For builders which may be useful only for some CLs, predeclare them using
+`includable_only=True` flag. Such builders won't be triggered by CQ, unless
+a CL opts in via `CQ-Include-Trybots: <builder>` in its description.
+
+For example, default verifiers may include only fast builders which skip low
+level assertions, but for coverage of such assertions one may add slower
+"debug" level builders into which CL authors opt-in as needed:
+
+      # triggered & required for all CLs.
+      luci.cq_tryjob_verifier(builder="win")
+      # triggered & required if only if CL opts in via `CQ-Include-Trybots:`.
+      luci.cq_tryjob_verifier(builder="win-debug", includable_only=True)
+
 #### Declaring verifiers
 
 `cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq_group) declarations to
@@ -1920,7 +1933,8 @@ For example:
 #### Arguments {#luci.cq_tryjob_verifier-args}
 
 * **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
-* **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
+* **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
+* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
