@@ -398,6 +398,7 @@ luci.cq_group(
         'another-project:try/yyy',
         luci.cq_tryjob_verifier(
             builder = 'another-project:try/zzz',
+            includable_only = True,
             owner_whitelist = ['another-project-committers'],
         ),
     ],
@@ -479,6 +480,7 @@ lucicfg.emit(
 #       >
 #       builders: <
 #         name: "another-project/try/zzz"
+#         includable_only: true
 #         owner_whitelist_group: "another-project-committers"
 #       >
 #       builders: <

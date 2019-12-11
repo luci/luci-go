@@ -1802,6 +1802,7 @@ luci.cq_tryjob_verifier(
 
     # Optional arguments.
     cq_group = None,
+    includable_only = None,
     disable_reuse = None,
     experiment_percentage = None,
     location_regexp = None,
@@ -1887,6 +1888,22 @@ repository **or** belongs to any other Gerrit server. Note, in this case
         location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
     )
 
+#### Per-CL opt-in only builders
+
+For builders which may be useful only for some CLs, predeclare them using
+`includable_only=True` flag. Such builders will be triggered by CQ if and only
+if a CL opts in via `CQ-Include-Trybots: <builder>` in its description.
+
+For example, default verifiers may include only fast builders which skip low
+level assertions, but for coverage of such assertions one may add slower
+"debug" level builders into which CL authors opt-in as needed:
+
+      # triggered & required for all CLs.
+      luci.cq_tryjob_verifier(builder="win")
+      # triggered & required if only if CL opts in via
+      # `CQ-Include-Trybots: project/try/win-debug`.
+      luci.cq_tryjob_verifier(builder="win-debug", includable_only=True)
+
 #### Declaring verifiers
 
 `cq_tryjob_verifier` is used inline in [luci.cq_group(...)](#luci.cq_group) declarations to
@@ -1920,6 +1937,7 @@ For example:
 
 * **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
+* **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.

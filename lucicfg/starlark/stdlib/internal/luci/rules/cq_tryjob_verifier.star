@@ -24,6 +24,7 @@ def _cq_tryjob_verifier(
       builder=None,
       *,
       cq_group=None,
+      includable_only=None,
       disable_reuse=None,
       experiment_percentage=None,
       location_regexp=None,
@@ -105,6 +106,22 @@ def _cq_tryjob_verifier(
           location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
       )
 
+  #### Per-CL opt-in only builders
+
+  For builders which may be useful only for some CLs, predeclare them using
+  `includable_only=True` flag. Such builders will be triggered by CQ if and only
+  if a CL opts in via `CQ-Include-Trybots: <builder>` in its description.
+
+  For example, default verifiers may include only fast builders which skip low
+  level assertions, but for coverage of such assertions one may add slower
+  "debug" level builders into which CL authors opt-in as needed:
+
+        # triggered & required for all CLs.
+        luci.cq_tryjob_verifier(builder="win")
+        # triggered & required if only if CL opts in via
+        # `CQ-Include-Trybots: project/try/win-debug`.
+        luci.cq_tryjob_verifier(builder="win-debug", includable_only=True)
+
   #### Declaring verifiers
 
   `cq_tryjob_verifier` is used inline in luci.cq_group(...) declarations to
@@ -143,6 +160,13 @@ def _cq_tryjob_verifier(
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
         declaration.
+    includable_only: if True, this builder will only be triggered by CQ if it is
+        also specified via `CQ-Include-Trybots:` on CL description. Default is
+        False. See the explanation above for all details.
+        For builders with `experiment_percentage` or `location_regexp` or
+        `location_regexp_exclude`, don't specify `includable_only`. Such
+        builders can already be forcefully added via `CQ-Include-Trybots:` in CL
+        description.
     disable_reuse: if True, a fresh build will be required for each CQ attempt.
         Default is False, meaning the CQ may re-use a successful build triggered
         before the current CQ attempt started. This option is typically used for
@@ -223,12 +247,21 @@ def _cq_tryjob_verifier(
     if equivalent_builder_whitelist != None:
       fail('"equivalent_builder_whitelist" can be used only together with "equivalent_builder"')
 
+  if includable_only:
+    if location_regexp:
+      fail('"includable_only" can not be used together with "location_regexp"')
+    if location_regexp_exclude:
+      fail('"includable_only" can not be used together with "location_regexp"')
+    if experiment_percentage:
+      fail('"includable_only" can not be used together with "experiment_percentage"')
+
   # Note: name of this node is important only for error messages. It isn't
   # showing up in any generated files and by construction it can't accidentally
   # collide with some other name.
   key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
   graph.add_node(key, props = {
       'disable_reuse': validate.bool('disable_reuse', disable_reuse, required=False),
+      'includable_only': validate.bool('includable_only', includable_only, required=False),
       'experiment_percentage': validate.float(
           'experiment_percentage',
           experiment_percentage,
