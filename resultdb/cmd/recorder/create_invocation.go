@@ -103,6 +103,19 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	if !s.forUnitTest {
+		for i, bqExport := range in.GetBigqueryExports() {
+			luciProject, err := pbutil.LuciProject(in.Invocation.GetRealm())
+			if err != nil {
+				return nil, errors.Annotate(err, "bad request: bigquery_export[%d]", i).Tag(grpcutil.InvalidArgumentTag).Err()
+			}
+
+			if err := pbutil.CheckBQTableExistence(ctx, luciProject, bqExport); err != nil {
+				return nil, errors.Annotate(err, "bad request: bigquery_export[%d]", i).Tag(grpcutil.InvalidArgumentTag).Err()
+			}
+		}
+	}
+
 	invID := span.InvocationID(in.InvocationId)
 
 	// Return update token to the client.

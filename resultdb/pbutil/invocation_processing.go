@@ -15,32 +15,70 @@
 package pbutil
 
 import (
+	"context"
+	"net/http"
+
+	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// ValidateBigQueryExport returns a non-nil error if bq_export is determined to
+// ValidateBigQueryExport returns a non-nil error if bqExport is determined to
 // be invalid.
-func ValidateBigQueryExport(bq_export *pb.BigQueryExport) error {
+func ValidateBigQueryExport(bqExport *pb.BigQueryExport) error {
 	switch {
-	case bq_export.Project == "":
+	case bqExport.Project == "":
 		return errors.Annotate(unspecified(), "project").Err()
-	case bq_export.Dataset == "":
+	case bqExport.Dataset == "":
 		return errors.Annotate(unspecified(), "dataset").Err()
-	case bq_export.Table == "":
+	case bqExport.Table == "":
 		return errors.Annotate(unspecified(), "table").Err()
-	case bq_export.GetTestResults() == nil:
+	case bqExport.GetTestResults() == nil:
 		return errors.Annotate(unspecified(), "test_results").Err()
 	}
 
-	if bq_export.TestResults.GetPredicate() == nil {
+	if bqExport.TestResults.GetPredicate() == nil {
 		return nil
 	}
 
-	if err := ValidateTestResultPredicate(bq_export.TestResults.Predicate); err != nil {
+	if err := ValidateTestResultPredicate(bqExport.TestResults.Predicate); err != nil {
 		return errors.Annotate(err, "test_results: predicate").Err()
 	}
 
+	return nil
+}
+
+// CheckBQTableExistence checks if the BQ table exists.
+func CheckBQTableExistence(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) error {
+	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(bigquery.Scope))
+	if err != nil {
+		return err
+	}
+
+	client, err := bigquery.NewClient(ctx, bqExport.Project, option.WithHTTPClient(&http.Client{
+		Transport: tr,
+	}))
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	d := client.Dataset(bqExport.Dataset)
+	// Check the existence of table.
+	_, err = d.Table(bqExport.Table).Metadata(ctx)
+	if ae, ok := err.(*googleapi.Error); ok && ae.Code == http.StatusNotFound {
+		// Table doesn't exist.
+		return errors.Reason("BigQuery table %s/%s/%s not exist", bqExport.Project, bqExport.Dataset, bqExport.Table).Err()
+	}
+	if err != nil {
+		return err
+	}
+
+	// TODO(1033123): Check the write access.
 	return nil
 }
