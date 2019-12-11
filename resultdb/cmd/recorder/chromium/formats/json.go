@@ -110,10 +110,10 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
-// Takes outputsToProcess, the isolated outputs associated with the task, to use to populate
-// artifacts, and deletes any that are successfully processed.
+// Uses outputs, the isolated outputs associated with the task, to populate
+// artifacts.
 // Does not populate TestResult.Name; that happens server-side on RPC response.
-func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation, outputsToProcess map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -130,7 +130,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, i
 		testPath := testPathPrefix + name
 
 		// Populate protos.
-		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testPath, outputsToProcess)
+		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testPath, outputs)
 		if err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
@@ -264,9 +264,8 @@ type testArtifactsPerRun map[int][]*pb.Artifact
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 //
-// Any artifacts that could not be processed are returned.
-// TODO(jchinlee): once we've curated the artifacts to process, make unprocessed artifacts error.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testPath string, outputsToProcess map[string]*pb.Artifact) (map[string][]string, error) {
+// TODO(crbug/1032779): Track artifacts that did not get processed.
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testPath string, outputs map[string]*pb.Artifact) (map[string][]string, error) {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -292,7 +291,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 	// should match the number of actual runs. Because the arts are a map from run index to
 	// *pb.Artifacts slice, we will not error if artifacts are missing for a run, but log a warning
 	// in case the number of runs do not match each other for further investigation.
-	arts, unresolved := f.getArtifacts(outputsToProcess)
+	arts, unresolved := f.getArtifacts(outputs)
 	if len(arts) > 0 && len(actualStatuses) != len(arts) {
 		logging.Infof(ctx,
 			"Test %s generated %d statuses (%v); does not match number of runs generated from artifacts (%d)",
@@ -331,7 +330,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 //   - look for them in the isolated outputs represented as pb.Artifacts
 //   - check if they're a known special case
 //   - fail to process and mark them as `unresolvedArtifacts`
-func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (artifacts testArtifactsPerRun, unresolvedArtifacts map[string][]string) {
+func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts testArtifactsPerRun, unresolvedArtifacts map[string][]string) {
 	artifacts = testArtifactsPerRun{}
 	unresolvedArtifacts = map[string][]string{}
 
@@ -348,9 +347,9 @@ func (f *TestFields) getArtifacts(outputsToProcess map[string]*pb.Artifact) (art
 			}
 
 			// Look for the path in isolated outputs.
-			if key, art := checkIsolatedOutputs(outputsToProcess, normPath); art != nil {
+			// TODO(crbug/1032779): Track outputs that were processed.
+			if _, art := checkIsolatedOutputs(outputs, normPath); art != nil {
 				artifacts[runID] = append(artifacts[runID], art)
-				delete(outputsToProcess, key)
 				continue
 			}
 
@@ -408,9 +407,9 @@ func artifactsToString(arts map[string][]string) string {
 
 // checkIsolatedOutputs looks for the given output path in the isolated output directory.
 // Checks the root directory as well as known possible subdirectories.
-func checkIsolatedOutputs(outputsToProcess map[string]*pb.Artifact, normPath string) (string, *pb.Artifact) {
+func checkIsolatedOutputs(outputs map[string]*pb.Artifact, normPath string) (string, *pb.Artifact) {
 	// Check root.
-	if art, ok := outputsToProcess[normPath]; ok {
+	if art, ok := outputs[normPath]; ok {
 		return normPath, art
 	}
 
@@ -418,7 +417,7 @@ func checkIsolatedOutputs(outputsToProcess map[string]*pb.Artifact, normPath str
 	// TODO(1027708,1031296): Remove.
 	for _, dir := range artifactDirectories {
 		key := path.Join(dir, normPath)
-		if art, ok := outputsToProcess[key]; ok {
+		if art, ok := outputs[key]; ok {
 			return key, art
 		}
 	}
