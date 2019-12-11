@@ -82,3 +82,24 @@ func TestInvocationUtils(t *testing.T) {
 		})
 	})
 }
+
+func TestRealm(t *testing.T) {
+	t.Parallel()
+	Convey("LuciProject", t, func() {
+		Convey("Parse", func() {
+			project, err := LuciProject("chromium/public")
+			So(err, ShouldBeNil)
+			So(project, ShouldEqual, "chromium")
+		})
+
+		Convey("Invalid", func() {
+			_, err := LuciProject("chromium")
+			So(err, ShouldErrLike, `does not match ^([a-z]*)/([a-z]*)$`)
+		})
+
+		Convey("Empty", func() {
+			_, err := LuciProject("")
+			So(err, ShouldErrLike, `unspecified`)
+		})
+	})
+}

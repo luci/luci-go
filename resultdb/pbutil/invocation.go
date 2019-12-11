@@ -22,6 +22,7 @@ const invocationIDPattern = `[a-z][a-z0-9_\-:]*`
 
 var invocationIDRe = regexpf("^%s$", invocationIDPattern)
 var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
+var realmRe = regexpf("^([a-z]*)/([a-z]*)$")
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
@@ -72,4 +73,17 @@ func IsFinalized(state pb.Invocation_State) bool {
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)
+}
+
+// LuciProject returns luci project from realm.
+func LuciProject(realm string) (project string, err error) {
+	if realm == "" {
+		return "", unspecified()
+	}
+
+	m := realmRe.FindStringSubmatch(realm)
+	if m == nil {
+		return "", doesNotMatch(realmRe)
+	}
+	return m[1], nil
 }
