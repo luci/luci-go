@@ -103,6 +103,14 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
+	if !s.forUnitTest {
+		for i, bqExport := range in.GetBigqueryExports() {
+			if err := pbutil.CheckBQTableExistence(ctx, in.Invocation.Realm, bqExport); err != nil {
+				return nil, errors.Annotate(err, "bad request: bigquery_export[%d]", i).Tag(grpcutil.InvalidArgumentTag).Err()
+			}
+		}
+	}
+
 	invID := span.InvocationID(in.InvocationId)
 
 	// Return update token to the client.
