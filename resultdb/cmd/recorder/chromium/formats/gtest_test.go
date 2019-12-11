@@ -66,7 +66,10 @@ func TestGTestConversions(t *testing.T) {
 							"elapsed_time_ms": 856,
 							"losless_snippet": false,
 							"output_snippet_base64": "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
-							"status": "SUCCESS"
+							"status": "SUCCESS",
+							"links": {
+								"logcat": "https://luci-logdog.appspot.com/v/?s=logcat"
+							}
 						}
 					]
 				}],
@@ -113,6 +116,9 @@ func TestGTestConversions(t *testing.T) {
 						Status:              "SUCCESS",
 						ElapsedTimeMs:       856,
 						OutputSnippetBase64: "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
+						Links:               map[string]string{
+							"logcat": "https://luci-logdog.appspot.com/v/?s=logcat",
+						},
 					},
 				},
 			},
@@ -189,6 +195,22 @@ func TestGTestConversions(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_line", "54")), ShouldBeTrue)
+		})
+
+		Convey("links", func() {
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				Status:             "SUCCESS",
+				LosslessSnippet:     true,
+				OutputSnippetBase64: "invalid base64",
+				Links:               map[string]string{
+					"logcat": "https://luci-logdog.appspot.com/v/?s=logcat",
+				},
+			})
+			pbutil.NormalizeTestResult(tr)
+			So(err, ShouldBeNil)
+			So(tr.OutputArtifacts, ShouldResemble, []*pb.Artifact{
+				{Name: "logcat", ViewUrl: "https://luci-logdog.appspot.com/v/?s=logcat"},
+			})
 		})
 	})
 
