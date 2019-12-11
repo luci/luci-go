@@ -56,6 +56,24 @@
       "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92a19535_d57702d9",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-11T23:02:54Z",
+      "side": 1,
+      "message": "alternatively let\u0027s not add this field for now. See what DeriveInvocation does: it uses hardcoded realm in chromium/common.go, so we could hardcode project as well",
+      "parentUuid": "5789e8da_e0fb4c2a",
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
