@@ -294,9 +294,9 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 	// in case the number of runs do not match each other for further investigation.
 	arts, unresolved := f.getArtifacts(outputsToProcess)
 	if len(arts) > 0 && len(actualStatuses) != len(arts) {
-		logging.Warningf(ctx,
-			"Number of runs of test %s (%d) does not match number of runs generated from artifacts (%d)",
-			len(actualStatuses), len(arts), testPath)
+		logging.Infof(ctx,
+			"Test %s generated %d statuses (%v); does not match number of runs generated from artifacts (%d)",
+			testPath, len(actualStatuses), actualStatuses, len(arts))
 	}
 
 	// Populate protos.
