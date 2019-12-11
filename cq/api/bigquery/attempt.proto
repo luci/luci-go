@@ -22,22 +22,27 @@ message Attempt {
   // An opaque key that is unique for a given set of Gerrit change patchsets
   // (or, equivalently, buildsets). The same cl_group_key will be used if
   // another attempt is made for the same set of changes at a different time.
-  string cl_group_key = 6;
+  string cl_group_key = 3;
+
+  // Similar to cl_group_key, except the key will be the same as long as
+  // the earliest_equivalent_patchset values are the same, even if the patchset
+  // values are different, e.g. when a new "trivial" patchset is uploaded.
+  string equivalent_cl_group_key = 4;
 
   // Time when the attempt started (trigger time of the last CL triggered)
   // and ended (released by CQ).
-  google.protobuf.Timestamp start_time = 3;
-  google.protobuf.Timestamp end_time = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
 
   // Gerrit changes, with specific patchsets, in this Attempt.
   // There should be one or more.
-  repeated GerritChange gerrit_changes = 5;
+  repeated GerritChange gerrit_changes = 7;
 
   // Builds checked as part of this attempt, whether triggered or reused.
-  repeated Build builds = 7;
+  repeated Build builds = 8;
 
   // Final status of the Attempt.
-  AttemptStatus status = 8;
+  AttemptStatus status = 9;
 }
 
 
