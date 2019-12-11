@@ -70,7 +70,7 @@ func (r *queryRun) registerFlags(p Params) {
 	r.Flags.StringVar(&r.testPath, "test-path", "", text.Doc(`
 		A regular expression for test path. Implicitly wrapped with ^ and $.
 
-		Example: gn://chrome/test:browser_tests/.+
+		Example: ninja://chrome/test:browser_tests/.+
 	`))
 
 	r.Flags.BoolVar(&r.merge, "merge", false, text.Doc(`

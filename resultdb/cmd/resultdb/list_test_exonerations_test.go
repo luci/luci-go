@@ -54,7 +54,7 @@ func TestListTestExonerations(t *testing.T) {
 
 		// Insert some TestExonerations.
 		invID := span.InvocationID("inv")
-		testPath := "gn://chrome/test:foo_tests/BarTest.DoBaz"
+		testPath := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now),

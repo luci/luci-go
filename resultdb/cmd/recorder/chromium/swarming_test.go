@@ -82,7 +82,7 @@ func TestSwarming(t *testing.T) {
 					"bucket:bkt",
 					"builder:blder",
 					"test_suite:foo_unittests",
-					"gn_target:chrome/tests:browser_tests",
+					"ninja_target:chrome/tests:browser_tests",
 				},
 			}
 			hasCompletion := true

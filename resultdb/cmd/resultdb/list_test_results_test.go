@@ -101,7 +101,7 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 	muts := make([]*spanner.Mutation, len(statuses))
 
 	for i, status := range statuses {
-		testPath := "gn:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
+		testPath := "ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
 		trs[i] = &pb.TestResult{
