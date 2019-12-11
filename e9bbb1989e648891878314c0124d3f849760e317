@@ -46,6 +46,30 @@
       "revId": "e9bbb1989e648891878314c0124d3f849760e317",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3661de2b_2cefb895",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-11T22:38:23Z",
+      "side": 1,
+      "message": "Alright -- I think this is a difficult thing to name, and can\u0027t really be given a clear short name, so users of the API will have to read the description anyway. \"equivalent_patchset_cl_group_key\" is a little awkward because it\u0027s long, and it\u0027s still not clear anyway.\n\nDone, changed to equivalent_cl_group_key.",
+      "parentUuid": "565bdbb3_1db1da2c",
+      "range": {
+        "startLine": 30,
+        "startChar": 9,
+        "endLine": 30,
+        "endChar": 41
+      },
+      "revId": "e9bbb1989e648891878314c0124d3f849760e317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
