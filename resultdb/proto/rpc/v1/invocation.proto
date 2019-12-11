@@ -103,4 +103,9 @@ message Invocation {
   // Use Recorder.Include RPC to modify this field.
   repeated string included_invocations = 7
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // Security realm this invocation belongs to, in the format of
+  // "<luci_project>/<extra_info>".
+  // Used to enforce ACLs.
+  string realm = 8;
 }
