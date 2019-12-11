@@ -16,6 +16,24 @@
       "revId": "6de031b7d18c5557740759e4d181192e7eef2813",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6be25f0f_1b6d8fd8",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 645,
+      "author": {
+        "id": 1207055
+      },
+      "writtenOn": "2019-12-11T00:06:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5529ce02_38ac37d0",
+      "revId": "6de031b7d18c5557740759e4d181192e7eef2813",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
