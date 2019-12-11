@@ -22,6 +22,30 @@
       "revId": "e9bbb1989e648891878314c0124d3f849760e317",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "565bdbb3_1db1da2c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-11T22:27:44Z",
+      "side": 1,
+      "message": "actually, definitely just \"equivalent_cl_group_key\" since it gives us flexibility in what CQ considers equivalent in the future. It suspect it won\u0027t be just about patchsets.",
+      "parentUuid": "36909c88_45ce9f28",
+      "range": {
+        "startLine": 30,
+        "startChar": 9,
+        "endLine": 30,
+        "endChar": 41
+      },
+      "revId": "e9bbb1989e648891878314c0124d3f849760e317",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
