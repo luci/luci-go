@@ -16,6 +16,24 @@
       "revId": "71176dbda5082f71261be0a292cbfa286c2c4fdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0733bc3_383f3ae4",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-11T01:41:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d532b73b_346c5d8d",
+      "revId": "71176dbda5082f71261be0a292cbfa286c2c4fdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
