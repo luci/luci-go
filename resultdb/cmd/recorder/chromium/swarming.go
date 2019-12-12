@@ -300,6 +300,10 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 			strings.Join(outputJSONFileNames, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
+	if *outputFile.Size == 0 {
+		return nil, errors.Reason("empty output file").Tag(grpcutil.FailedPreconditionTag).Err()
+	}
+
 	// Now fetch (from the same server and namespace) the output file by digest.
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, outputFile.Digest, buf); err != nil {
