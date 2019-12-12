@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -43,11 +42,10 @@ func TestDeleteBot(t *testing.T) {
 	Convey("deleteBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		swr, err := swarming.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -194,11 +192,10 @@ func TestManageBot(t *testing.T) {
 	Convey("manageBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		swr, err := swarming.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -512,11 +509,10 @@ func TestTerminateBot(t *testing.T) {
 	Convey("terminateBot", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		swr, err := swarming.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withSwarming(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), swr)
+		c := withSwarming(withDispatcher(memory.Use(context.Background()), dsp), swr)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
