@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4939b9af_51f26a4f",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T17:13:54Z",
+      "side": 1,
+      "message": "does this mean that first attempt has an artifact named \"gold_triage_link\" and the second test results has  \"gold_triage_link_2\"? this is incorrect.\n\nif the goal of the L362-364 is to ensure artifact names are unique in a given test result, let\u0027s do that after output.json-\u003eprotos conversion",
+      "revId": "113148674d9f1c0ca79beb8c47c64e6c0ec5c20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
