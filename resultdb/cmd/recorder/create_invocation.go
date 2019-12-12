@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -101,6 +102,17 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	if err := validateCreateInvocationRequest(in, now); err != nil {
 		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	if !s.forUnitTest {
+		for i, bqExport := range in.GetBigqueryExports() {
+			// TODO(crbug.com/1013316): get luci project from realm after it's added in invocation proto.
+			if err := pbutil.CheckBQTableExistence(ctx, chromium.LuciProject, bqExport); err != nil {
+				return nil, errors.Annotate(err, "bad request: bigquery_export[%d]", i).Tag(grpcutil.InvalidArgumentTag).Err()
+			}
+
+			// TODO(crbug.com/1033123): Check the write access to this table.
+		}
 	}
 
 	invID := span.InvocationID(in.InvocationId)

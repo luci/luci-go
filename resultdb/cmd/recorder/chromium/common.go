@@ -16,3 +16,4 @@ package chromium
 
 // TODO: remove when Realms are implemented.
 const Realm = "chromium/public"
+const LuciProject = "chromium"
