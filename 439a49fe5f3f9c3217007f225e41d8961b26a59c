@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b7ce697_319f5ebf",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-12T02:46:29Z",
+      "side": 1,
+      "message": "please group this next to current_amount for ease of reading protos by its intended users.",
+      "range": {
+        "startLine": 186,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 22
+      },
+      "revId": "439a49fe5f3f9c3217007f225e41d8961b26a59c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
