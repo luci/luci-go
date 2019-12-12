@@ -3,16 +3,23 @@
 
 package config
 
-import prpc "go.chromium.org/luci/grpc/prpc"
-
 import (
+	prpc "go.chromium.org/luci/grpc/prpc"
+
 	context "context"
+
 	fmt "fmt"
+
 	proto "github.com/golang/protobuf/proto"
+
 	empty "github.com/golang/protobuf/ptypes/empty"
+
 	grpc "google.golang.org/grpc"
+
 	codes "google.golang.org/grpc/codes"
+
 	status "google.golang.org/grpc/status"
+
 	math "math"
 )
 
