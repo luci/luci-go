@@ -30,7 +30,7 @@ import (
 func TestAmount(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAmount", t, func() {
+	Convey("getAmount", t, func() {
 		now := time.Time{}
 		So(now.Weekday(), ShouldEqual, time.Monday)
 		So(now.Hour(), ShouldEqual, 0)
@@ -39,9 +39,59 @@ func TestAmount(t *testing.T) {
 			a := &Amount{
 				Default: 1,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(2, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
+		})
+
+		Convey("adjustable", func() {
+			Convey("min", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 1,
+						Max: 3,
+					},
+				}
+				n, err := a.getAmount(0, now)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 1)
+			})
+
+			Convey("default", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 1,
+						Max: 3,
+					},
+				}
+				n, err := a.getAmount(2, now)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 2)
+			})
+
+			Convey("max", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 1,
+						Max: 3,
+					},
+				}
+				n, err := a.getAmount(4, now)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 3)
+			})
+
+			Convey("equal", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 2,
+						Max: 2,
+					},
+				}
+				n, err := a.getAmount(2, now)
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 2)
+			})
 		})
 
 		Convey("schedule", func() {
@@ -62,23 +112,23 @@ func TestAmount(t *testing.T) {
 				},
 				Default: 1,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(5, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			n, err = a.getAmount(5, now.Add(time.Minute*59))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Hour))
+			n, err = a.getAmount(5, now.Add(time.Hour))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 
-			n, err = a.GetAmount(now.Add(time.Hour * -1))
+			n, err = a.getAmount(5, now.Add(time.Hour*-1))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * -61))
+			n, err = a.getAmount(5, now.Add(time.Minute*-61))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 		})
@@ -113,19 +163,19 @@ func TestAmount(t *testing.T) {
 				},
 				Default: 1,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(5, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			n, err = a.getAmount(5, now.Add(time.Minute*59))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Hour))
+			n, err = a.getAmount(5, now.Add(time.Hour))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 3)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 61))
+			n, err = a.getAmount(5, now.Add(time.Minute*61))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 		})
@@ -142,6 +192,31 @@ func TestAmount(t *testing.T) {
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "default amount must be non-negative")
+			})
+
+			Convey("adjustable", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 1,
+						Max: 2,
+					},
+					Change: []*Schedule{
+						{
+							Length: &TimePeriod{
+								Time: &TimePeriod_Duration{
+									Duration: "2h",
+								},
+							},
+							Start: &TimeOfDay{
+								Day:  dayofweek.DayOfWeek_WEDNESDAY,
+								Time: "1:00",
+							},
+						},
+					},
+				}
+				a.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "amount changes and adjustable amounts are mutually exclusive")
 			})
 
 			Convey("schedule", func() {
@@ -270,6 +345,16 @@ func TestAmount(t *testing.T) {
 				So(c.Finalize(), ShouldBeNil)
 			})
 
+			Convey("adjustable", func() {
+				a := &Amount{
+					Adjustable: &Adjustable{
+						Min: 1,
+						Max: 2,
+					},
+				}
+				a.Validate(c)
+				So(c.Finalize(), ShouldBeNil)
+			})
 			Convey("schedule", func() {
 				Convey("empty", func() {
 					a := &Amount{

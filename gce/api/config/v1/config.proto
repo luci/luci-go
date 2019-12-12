@@ -30,13 +30,6 @@ enum AccessConfigType {
   ONE_TO_ONE_NAT = 0;
 }
 
-// A disk interface.
-// GCE's default is "SCSI".
-enum DiskInterface {
-  SCSI = 0;
-  NVME = 1;
-}
-
 // A description of a network access config.
 message AccessConfig {
   // The type of config this is.
@@ -52,6 +45,13 @@ message NetworkInterface {
   // The name of a network to use for this interface.
   // https://cloud.google.com/compute/docs/reference/rest/v1/networks/list.
   string network = 2;
+}
+
+// A disk interface.
+// GCE's default is "SCSI".
+enum DiskInterface {
+  SCSI = 0;
+  NVME = 1;
 }
 
 // A description of a disk.
@@ -160,13 +160,31 @@ message Schedule {
   TimeOfDay start = 3;
 }
 
+// An amount of VMs which can be set via RPC.
+message Adjustable {
+  // The minimum amount of VMs allowed.
+  int32 min = 1;
+
+  // The maximum amount of VMs allowed.
+  int32 max = 2;
+
+  // The names of Chrome Infra Auth groups allowed to set this amount.
+  repeated string group = 3;
+}
+
 // An amount of VMs.
+// Scheduled changes an external amounts are mutually exclusive. Schedules can
+// be used to vary the amount of VMs based on a time of day, while external can
+// be used to allow the amount to be varied by an RPC at any time.
 message Amount {
   // The default amount to use outside scheduled hours.
   int32 default = 1;
 
   // The amount of VMs to have at a particular time.
   repeated Schedule change = 2;
+
+  // The parameters for an amount of VMs which can be set via RPC.
+  Adjustable adjustable = 3;
 }
 
 // A config for one type of VM.
@@ -195,7 +213,8 @@ message Config {
   // Should only be set by the server. The revision of this config.
   string revision = 5;
 
-  // Should only be set by the server. The current amount of these VMs.
+  // Should only be set by the server. The current amount of VMs the server is
+  // trying to create.
   int32 current_amount = 8;
 }
 

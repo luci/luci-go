@@ -22,10 +22,18 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// GetAmount returns the amount to use at the given time. Returns the first
-// matching amount, which should be the only match if this *Amount has been
-// validated.
-func (a *Amount) GetAmount(now time.Time) (int32, error) {
+// getAmount returns the amount to use given the proposed amount and time.
+// Behavior is undefined if this amount has not been validated.
+func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
+	if a.GetAdjustable().isSpecified() {
+		if proposed < a.Adjustable.Min {
+			return a.Adjustable.Min, nil
+		}
+		if proposed > a.Adjustable.Max {
+			return a.Adjustable.Max, nil
+		}
+		return proposed, nil
+	}
 	for _, s := range a.GetChange() {
 		start, err := s.mostRecentStart(now)
 		if err != nil {
@@ -45,6 +53,25 @@ func (a *Amount) GetAmount(now time.Time) (int32, error) {
 	return a.GetDefault(), nil
 }
 
+// Validate validates this amount.
+func (a *Amount) Validate(c *validation.Context) {
+	if a.GetDefault() < 0 {
+		c.Errorf("default amount must be non-negative")
+	}
+	a.validateAdjustable(c)
+	a.validateSchedules(c)
+}
+
+// validateAdjustable validates the adjustable parameters of this amount.
+func (a *Amount) validateAdjustable(c *validation.Context) {
+	if a.GetAdjustable().isSpecified() && len(a.GetChange()) > 0 {
+		c.Errorf("amount changes and adjustable amounts are mutually exclusive")
+	}
+	c.Enter("adjustable")
+	a.GetAdjustable().Validate(c)
+	c.Exit()
+}
+
 // indexedSchedule encapsulates *Schedules for sorting.
 type indexedSchedule struct {
 	*Schedule
@@ -54,11 +81,8 @@ type indexedSchedule struct {
 	sortKey time.Time
 }
 
-// Validate validates this amount.
-func (a *Amount) Validate(c *validation.Context) {
-	if a.GetDefault() < 0 {
-		c.Errorf("default amount must be non-negative")
-	}
+// validateSchedules validates the schedules in this amount.
+func (a *Amount) validateSchedules(c *validation.Context) {
 	// The algorithm works with any time 7 days greater than the zero time.
 	now := time.Date(2018, 1, 1, 12, 0, 0, 0, time.UTC)
 	schs := make([]indexedSchedule, len(a.GetChange()))

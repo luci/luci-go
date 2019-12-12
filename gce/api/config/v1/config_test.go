@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/config/validation"
 
@@ -24,10 +25,21 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	Convey("ComputeAmount", t, func() {
+		cfg := &Config{
+			Amount: &Amount{
+				Default: 2,
+			},
+		}
+		amt, err := cfg.ComputeAmount(time.Time{})
+		So(err, ShouldBeNil)
+		So(amt, ShouldEqual, 2)
+	})
+
+	Convey("Validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
