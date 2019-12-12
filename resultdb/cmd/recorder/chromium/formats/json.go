@@ -358,11 +358,12 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
 				// We don't expect more than one triage link per test run, but if there is more than one,
 				// suffix the name with index to ensure we retain it too.
+				artName := name
 				if i > 0 {
-					name = fmt.Sprintf("%s_%d", name, i)
+					artName = fmt.Sprintf("%s_%d", name, i)
 				}
 
-				artifacts[runID] = append(artifacts[runID], &pb.Artifact{Name: name, ViewUrl: path})
+				artifacts[runID] = append(artifacts[runID], &pb.Artifact{Name: artName, ViewUrl: path})
 				continue
 			}
 
