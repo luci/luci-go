@@ -125,7 +125,7 @@ func TestDeriveInvocation(t *testing.T) {
 		defer isoServer.Close()
 
 		// Inject isolated objects.
-		fileDigest := isoFake.Inject("ns", []byte(`{
+		testJSON := []byte(`{
 			"all_tests": [
 				"FooTest.TestDoBar",
 				"FooTest.DoesBar"
@@ -148,9 +148,11 @@ func TestDeriveInvocation(t *testing.T) {
 					}
 				]
 			}]
-		}`))
+		}`)
+		size := int64(len(testJSON))
+		fileDigest := isoFake.Inject("ns", testJSON)
 		isoOut := isolated.Isolated{
-			Files: map[string]isolated.File{"output.json": {Digest: fileDigest}},
+			Files: map[string]isolated.File{"output.json": {Digest: fileDigest, Size: &size}},
 		}
 		isoOutBytes, err := json.Marshal(isoOut)
 		So(err, ShouldBeNil)
