@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6416582a_93211488",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-12T02:07:12Z",
+      "side": 1,
+      "message": "stack is fine here, it doesn\u0027t escape the func.",
+      "range": {
+        "startLine": 219,
+        "startChar": 8,
+        "endLine": 219,
+        "endChar": 9
+      },
+      "revId": "97c56a93013fe29a4405a661cedca969b31cb0c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
