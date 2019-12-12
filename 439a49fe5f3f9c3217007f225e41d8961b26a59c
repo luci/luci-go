@@ -70,6 +70,30 @@
       "revId": "439a49fe5f3f9c3217007f225e41d8961b26a59c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b742de6_4f86bbff",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-12T03:37:36Z",
+      "side": 1,
+      "message": "I know but I don\u0027t like it because it means two places to update every time.",
+      "parentUuid": "7a320d3c_98f2b233",
+      "range": {
+        "startLine": 186,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 22
+      },
+      "revId": "439a49fe5f3f9c3217007f225e41d8961b26a59c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
