@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -217,12 +216,14 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	cfg, err := getConfig(c).Get(c, &config.GetRequest{Id: task.Id})
-	if err != nil {
+	cfg := &model.Config{
+		ID: task.Id,
+	}
+	if err := datastore.Get(c, cfg); err != nil {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
 	now := clock.Now(c)
-	amt, err := cfg.Amount.GetAmount(now)
+	amt, err := cfg.Config.Amount.GetAmount(now)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse amount").Err()
 	}
@@ -230,18 +231,18 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	for i := int32(0); i < amt; i++ {
 		t[i] = &tq.Task{
 			Payload: &tasks.CreateVM{
-				Id:         fmt.Sprintf("%s-%d", cfg.Prefix, i),
-				Attributes: cfg.Attributes,
+				Id:         fmt.Sprintf("%s-%d", cfg.Config.Prefix, i),
+				Attributes: cfg.Config.Attributes,
 				Config:     task.Id,
 				Created: &timestamp.Timestamp{
 					Seconds: now.Unix(),
 				},
 				Index:    i,
-				Lifetime: cfg.Lifetime.GetSeconds(),
-				Prefix:   cfg.Prefix,
-				Revision: cfg.Revision,
-				Swarming: cfg.Swarming,
-				Timeout:  cfg.Timeout.GetSeconds(),
+				Lifetime: cfg.Config.Lifetime.GetSeconds(),
+				Prefix:   cfg.Config.Prefix,
+				Revision: cfg.Config.Revision,
+				Swarming: cfg.Config.Swarming,
+				Timeout:  cfg.Config.Timeout.GetSeconds(),
 			},
 		}
 	}

@@ -35,7 +35,6 @@ import (
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -48,11 +47,10 @@ func TestQueues(t *testing.T) {
 	Convey("queues", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
+		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), gce)
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
@@ -481,15 +479,15 @@ func TestQueues(t *testing.T) {
 
 			Convey("valid", func() {
 				Convey("none", func() {
-					srv.Ensure(c, &config.EnsureRequest{
-						Id: "id",
-						Config: &config.Config{
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
 							Prefix: "prefix",
 						},
-					})
+					}), ShouldBeNil)
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
@@ -498,9 +496,9 @@ func TestQueues(t *testing.T) {
 				})
 
 				Convey("default", func() {
-					srv.Ensure(c, &config.EnsureRequest{
-						Id: "id",
-						Config: &config.Config{
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -509,7 +507,7 @@ func TestQueues(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					})
+					}), ShouldBeNil)
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
@@ -518,9 +516,9 @@ func TestQueues(t *testing.T) {
 				})
 
 				Convey("schedule", func() {
-					srv.Ensure(c, &config.EnsureRequest{
-						Id: "id",
-						Config: &config.Config{
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
 							Attributes: &config.VM{
 								Project: "project",
 							},
@@ -543,7 +541,7 @@ func TestQueues(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					})
+					}), ShouldBeNil)
 
 					Convey("default", func() {
 						now := time.Time{}

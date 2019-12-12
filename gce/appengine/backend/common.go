@@ -27,9 +27,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
-	"go.chromium.org/luci/gce/appengine/rpc"
 )
 
 // dspKey is the key to a *tq.Dispatcher in the context.
@@ -56,19 +54,6 @@ func registerTasks(dsp *tq.Dispatcher) {
 	dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
 	dsp.RegisterTask(&tasks.ReportQuota{}, reportQuota, reportQuotaQueue, nil)
 	dsp.RegisterTask(&tasks.TerminateBot{}, terminateBot, terminateBotQueue, nil)
-}
-
-// cfgKey is the key to a config.ConfigurationServer in the context.
-var cfgKey = "cfg"
-
-// withConfig returns a new context with the given config.ConfigurationServer installed.
-func withConfig(c context.Context, cfg config.ConfigurationServer) context.Context {
-	return context.WithValue(c, &cfgKey, cfg)
-}
-
-// getConfig returns the config.ConfigurationServer installed in the current context.
-func getConfig(c context.Context) config.ConfigurationServer {
-	return c.Value(&cfgKey).(config.ConfigurationServer)
 }
 
 // gceKey is the key to a *compute.Service in the context.
@@ -134,7 +119,6 @@ func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
 		c.Context, cancel = context.WithTimeout(c.Context, 30*time.Second)
 		defer cancel()
 		c.Context = withDispatcher(c.Context, dsp)
-		c.Context = withConfig(c.Context, &rpc.Config{})
 		c.Context = withCompute(c.Context, newCompute(c.Context))
 		c.Context = withSwarming(c.Context, newSwarming(c.Context))
 		next(c)

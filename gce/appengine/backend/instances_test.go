@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,11 +41,10 @@ func TestCreate(t *testing.T) {
 	Convey("createInstance", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
+		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), gce)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -282,11 +280,10 @@ func TestDestroyInstance(t *testing.T) {
 	Convey("destroyInstance", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
-		srv := &rpc.Config{}
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
-		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
+		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), gce)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
