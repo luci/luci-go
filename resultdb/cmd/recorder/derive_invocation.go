@@ -75,16 +75,16 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	swarmingURL := "https://" + in.SwarmingTask.Hostname
 	swarmSvc, err := chromium.GetSwarmSvc(internal.HTTPClient(ctx), swarmingURL)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "swarming service").Err()
 	}
 
 	// Get the swarming task, deduping if necessary.
 	task, err := chromium.GetSwarmingTask(ctx, in.SwarmingTask.Id, swarmSvc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "swarming service").Err()
 	}
 	if task, err = chromium.GetOriginTask(ctx, task, swarmSvc); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "swarming service").Err()
 	}
 	invID := chromium.GetInvocationID(task, in)
 
