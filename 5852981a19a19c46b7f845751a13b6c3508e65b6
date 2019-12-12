@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6e0dc395_e4659df3",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-12T23:21:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5dfd7ca6_f88b3d13",
+      "revId": "5852981a19a19c46b7f845751a13b6c3508e65b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "893d1544_57c0cacc",
         "filename": "resultdb/cmd/recorder/chromium/swarming.go",
         "patchSetId": 5
