@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f364c0a5_18565d93",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-12T02:13:28Z",
+      "side": 1,
+      "message": "shamecube: i\u0027ve modified this in a wrong checkout :( \n\nactual bump: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1963451",
+      "revId": "12cef209215344a2db2173e831fb4e596bd1735f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
