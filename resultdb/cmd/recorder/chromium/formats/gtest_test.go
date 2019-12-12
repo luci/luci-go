@@ -116,7 +116,7 @@ func TestGTestConversions(t *testing.T) {
 						Status:              "SUCCESS",
 						ElapsedTimeMs:       856,
 						OutputSnippetBase64: "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
-						Links:               map[string]string{
+						Links: map[string]string{
 							"logcat": "https://luci-logdog.appspot.com/v/?s=logcat",
 						},
 					},
@@ -199,10 +199,10 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey("links", func() {
 			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
-				Status:             "SUCCESS",
+				Status:              "SUCCESS",
 				LosslessSnippet:     true,
 				OutputSnippetBase64: "invalid base64",
-				Links:               map[string]string{
+				Links: map[string]string{
 					"logcat": "https://luci-logdog.appspot.com/v/?s=logcat",
 				},
 			})

@@ -125,7 +125,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 				},
 				BigqueryExports: []*pb.BigQueryExport{
-					&pb.BigQueryExport{
+					{
 						Project: "project",
 					},
 				},
