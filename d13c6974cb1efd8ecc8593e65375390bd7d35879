@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2035a799_bbb55b81",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T23:42:38Z",
+      "side": 1,
+      "message": "seems stale. it no longer accepts an annotator. how about \"annotates the error\"",
+      "range": {
+        "startLine": 335,
+        "startChar": 23,
+        "endLine": 335,
+        "endChar": 50
+      },
+      "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14f5c4ad_db2f5ce2",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T23:42:38Z",
+      "side": 1,
+      "message": "nit: input is inconsistent with output. we accept an error and return an annotator. it was consistent is ps6.\n\nlet\u0027s just return error",
+      "range": {
+        "startLine": 336,
+        "startChar": 49,
+        "endLine": 336,
+        "endChar": 67
+      },
+      "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "258be5c7_9fad3e54",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T23:42:38Z",
+      "side": 1,
+      "message": "all 3 annotations look alike and do not help distinguishing among 3 cases. Usually the annotation give context, e.g. \"creating swarming client\", \"fetching task %s\", \"getting origin task\", etc",
+      "range": {
+        "startLine": 87,
+        "startChar": 36,
+        "endLine": 87,
+        "endChar": 52
+      },
+      "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
