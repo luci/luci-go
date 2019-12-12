@@ -22,6 +22,30 @@
       "revId": "439a49fe5f3f9c3217007f225e41d8961b26a59c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f91614b_c3c5aa67",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-12T02:53:16Z",
+      "side": 1,
+      "message": "Makes it harder to write when you can\u0027t figure out the next field number though. Theoretically we can change the field numbers since this is stored in plain text in the datastore.\n\nAnyways, done for now.",
+      "parentUuid": "2b7ce697_319f5ebf",
+      "range": {
+        "startLine": 186,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 22
+      },
+      "revId": "439a49fe5f3f9c3217007f225e41d8961b26a59c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
