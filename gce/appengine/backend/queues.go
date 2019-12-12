@@ -204,6 +204,28 @@ func createVM(c context.Context, payload proto.Message) error {
 	}, nil)
 }
 
+// setCurrent sets the current amount of VMs to create from this config in the
+// datastore.
+func setCurrent(c context.Context, id string, amt int32) error {
+	cfg := &model.Config{
+		ID: id,
+	}
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		switch err := datastore.Get(c, cfg); {
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch config").Err()
+		case cfg.Config.CurrentAmount == amt:
+			return nil
+		}
+		cfg.Config.CurrentAmount = amt
+		if err := datastore.Put(c, cfg); err != nil {
+			return errors.Annotate(err, "failed to store config").Err()
+		}
+		return nil
+	}, nil)
+	return err
+}
+
 // expandConfigQueue is the name of the expand config task handler queue.
 const expandConfigQueue = "expand-config"
 
@@ -226,6 +248,9 @@ func expandConfig(c context.Context, payload proto.Message) error {
 	amt, err := cfg.Config.Amount.GetAmount(now)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse amount").Err()
+	}
+	if cfg.Config.CurrentAmount != amt {
+		setCurrent(c, task.Id, amt)
 	}
 	t := make([]*tq.Task, amt)
 	for i := int32(0); i < amt; i++ {

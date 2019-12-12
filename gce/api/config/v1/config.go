@@ -45,6 +45,9 @@ func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("attributes")
 	cfg.GetAttributes().Validate(c)
 	c.Exit()
+	if cfg.GetCurrentAmount() != 0 {
+		c.Errorf("current amount must not be specified")
+	}
 	c.Enter("lifetime")
 	cfg.GetLifetime().Validate(c)
 	switch n, err := cfg.Lifetime.ToSeconds(); {

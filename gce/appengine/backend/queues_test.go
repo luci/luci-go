@@ -474,6 +474,10 @@ func TestQueues(t *testing.T) {
 					})
 					So(err, ShouldErrLike, "failed to fetch config")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					cfg := &model.Config{
+						ID: "id",
+					}
+					So(datastore.Get(c, cfg), ShouldEqual, datastore.ErrNoSuchEntity)
 				})
 			})
 
@@ -493,6 +497,11 @@ func TestQueues(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					cfg := &model.Config{
+						ID: "id",
+					}
+					So(datastore.Get(c, cfg), ShouldBeNil)
+					So(cfg.Config.CurrentAmount, ShouldEqual, 0)
 				})
 
 				Convey("default", func() {
@@ -513,6 +522,11 @@ func TestQueues(t *testing.T) {
 					})
 					So(err, ShouldBeNil)
 					So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+					cfg := &model.Config{
+						ID: "id",
+					}
+					So(datastore.Get(c, cfg), ShouldBeNil)
+					So(cfg.Config.CurrentAmount, ShouldEqual, 3)
 				})
 
 				Convey("schedule", func() {
@@ -552,6 +566,11 @@ func TestQueues(t *testing.T) {
 						})
 						So(err, ShouldBeNil)
 						So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+						cfg := &model.Config{
+							ID: "id",
+						}
+						So(datastore.Get(c, cfg), ShouldBeNil)
+						So(cfg.Config.CurrentAmount, ShouldEqual, 2)
 					})
 
 					Convey("scheduled", func() {
@@ -564,6 +583,11 @@ func TestQueues(t *testing.T) {
 						})
 						So(err, ShouldBeNil)
 						So(tqt.GetScheduledTasks(), ShouldHaveLength, 5)
+						cfg := &model.Config{
+							ID: "id",
+						}
+						So(datastore.Get(c, cfg), ShouldBeNil)
+						So(cfg.Config.CurrentAmount, ShouldEqual, 5)
 					})
 				})
 			})
