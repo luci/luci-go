@@ -22,6 +22,30 @@
       "revId": "97c56a93013fe29a4405a661cedca969b31cb0c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9cda9bd_35b6231d",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-12T02:08:25Z",
+      "side": 1,
+      "message": "I heap allocate elsewhere too, I usually do it by default. This is more \"consistent\".",
+      "parentUuid": "6416582a_93211488",
+      "range": {
+        "startLine": 219,
+        "startChar": 8,
+        "endLine": 219,
+        "endChar": 9
+      },
+      "revId": "97c56a93013fe29a4405a661cedca969b31cb0c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
