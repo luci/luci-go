@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -268,9 +269,16 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 	// Fetch the isolate.
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
-		// TODO(jchinlee): handle error codes from here. Nonexisting isolates should not result in
-		// INTERNAL or UNKNOWN.
-		return nil, err
+		annotator := errors.Annotate(err, "isolate service")
+		switch status, ok := lhttp.IsHTTPError(err); {
+		case !ok:
+			break
+		case status >= 500:
+			annotator.Tag(grpcutil.InternalTag)
+		case status >= 400:
+			annotator.Tag(grpcutil.FailedPreconditionTag)
+		}
+		return nil, annotator.Err()
 	}
 
 	// Get the files.
