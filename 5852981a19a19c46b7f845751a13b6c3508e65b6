@@ -33,6 +33,24 @@
       "revId": "5852981a19a19c46b7f845751a13b6c3508e65b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f301d3ff_4f6b1066",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-12T22:58:00Z",
+      "side": 1,
+      "message": "The difficulty is that sometimes err is not a *googleapi.Error (which is why for isolated we use lhttp.IsHTTPError instead of casting)",
+      "parentUuid": "893d1544_57c0cacc",
+      "revId": "5852981a19a19c46b7f845751a13b6c3508e65b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
