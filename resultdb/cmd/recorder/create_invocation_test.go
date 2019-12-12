@@ -162,7 +162,7 @@ func TestCreateInvocation(t *testing.T) {
 			err = grpcutil.GRPCifyAndLogErr(ctx, err)
 			return res, err
 		}
-		pb.RegisterRecorderServer(server, &recorderServer{})
+		pb.RegisterRecorderServer(server, &recorderServer{forUnitTest: true})
 		server.Start(ctx)
 		defer server.Close()
 		client, err := server.NewClient()

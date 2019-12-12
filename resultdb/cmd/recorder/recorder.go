@@ -27,6 +27,7 @@ import (
 //
 // It does not return gRPC-native errors. NewRecorder takes care of that.
 type recorderServer struct {
+	forUnitTest bool
 }
 
 // NewRecorderServer creates an implementation of RecorderServer.
