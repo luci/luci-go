@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5dfd7ca6_f88b3d13",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T22:54:44Z",
+      "side": 1,
+      "message": "this entire function is about isolate, i.e. the caller knows that this is about isolate.\nthis should be in L225\n\nsame above",
+      "revId": "5852981a19a19c46b7f845751a13b6c3508e65b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "893d1544_57c0cacc",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-12T22:54:44Z",
+      "side": 1,
+      "message": "i think\n\n  annotateHTTPError(err error) error\n\nwould be simpler and we\u0027d have \n\n    if err, ok :\u003d err.(*googleapi.Error); ok {\n\ncheck in one place, here, rather than duplicated in callsites",
+      "revId": "5852981a19a19c46b7f845751a13b6c3508e65b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
