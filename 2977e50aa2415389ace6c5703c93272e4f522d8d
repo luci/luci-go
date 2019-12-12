@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "abf4389a_a85b3c2a",
+        "filename": "resultdb/pbutil/invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-12T00:29:55Z",
+      "side": 1,
+      "message": "obsolete",
+      "parentUuid": "a7d14c18_6fe4e75c",
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "066b37d0_e391cd2d",
         "filename": "resultdb/proto/rpc/v1/invocation.proto",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e50f8152_192a92e8",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-12T00:29:55Z",
+      "side": 1,
+      "message": "realm is removed for now.",
+      "parentUuid": "066b37d0_e391cd2d",
+      "range": {
+        "startLine": 108,
+        "startChar": 22,
+        "endLine": 108,
+        "endChar": 32
+      },
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -74,6 +116,24 @@
       "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a5721b5_ae3f63ad",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-12T00:29:55Z",
+      "side": 1,
+      "message": "realm is removed for now.",
+      "parentUuid": "92a19535_d57702d9",
+      "revId": "2977e50aa2415389ace6c5703c93272e4f522d8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
