@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "7cb63937_0bad7a2b",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-13T03:00:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14f5c4ad_db2f5ce2",
+      "range": {
+        "startLine": 336,
+        "startChar": 49,
+        "endLine": 336,
+        "endChar": 67
+      },
+      "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "258be5c7_9fad3e54",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 7
@@ -68,6 +92,30 @@
       "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a25be06_0cfbd48c",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-13T03:00:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "258be5c7_9fad3e54",
+      "range": {
+        "startLine": 87,
+        "startChar": 36,
+        "endLine": 87,
+        "endChar": 52
+      },
+      "revId": "d13c6974cb1efd8ecc8593e65375390bd7d35879",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
