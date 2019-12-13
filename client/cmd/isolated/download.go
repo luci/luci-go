@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -157,8 +158,11 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 			MaxItems:     c.maxItems,
 			MinFreeSpace: units.Size(c.minFreeSpace),
 		}, c.cacheDir, c.isolatedFlags.Namespace)
+		if err != nil && diskCache == nil {
+			return errors.Annotate(err, "failed to initialize disk cache in %s", c.cacheDir).Err()
+		}
 		if err != nil {
-			return err
+			logging.WithError(err).Warningf(ctx, "There is (ignorable?) error when initializing disk cache in %s", c.cacheDir)
 		}
 		defer diskCache.Close()
 	}
