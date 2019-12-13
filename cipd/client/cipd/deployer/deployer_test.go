@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -1250,43 +1251,47 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 		}, pkg.InstallModeCopy)
 		pkgWithSym.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
-		Convey("Replace directory with symlink", func() {
-			_, err := New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithDir, 0)
-			So(err, ShouldBeNil)
-			_, err = New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithSym, 0)
-			So(err, ShouldBeNil)
+		for _, subDir := range []string{"", "sub", "sub/dir"} {
+			subDirAbsPath := filepath.Join(tempDir, filepath.FromSlash(subDir))
 
-			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
-				"some/another/a/b/file3",
-				"some/another/a/file2",
-				"some/another/a/file4",
-				"some/another/file1",
-				"some/path:another",
+			Convey(fmt.Sprintf("Replace directory with symlink (subdir %q)", subDir), func() {
+				_, err := New(tempDir).DeployInstance(ctx, subDir, pkgWithDir, 0)
+				So(err, ShouldBeNil)
+				_, err = New(tempDir).DeployInstance(ctx, subDir, pkgWithSym, 0)
+				So(err, ShouldBeNil)
+
+				So(scanDirAndSkipGuts(subDirAbsPath), ShouldResemble, []string{
+					"some/another/a/b/file3",
+					"some/another/a/file2",
+					"some/another/a/file4",
+					"some/another/file1",
+					"some/path:another",
+				})
+
+				So(readFile(tempDir, path.Join(subDir, "some/path/file1")), ShouldEqual, "new data 1")
+				So(readFile(tempDir, path.Join(subDir, "some/path/a/file2")), ShouldEqual, "new data 2")
+
+				So(loggerWarnings(ctx), ShouldResemble, []string(nil))
 			})
 
-			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "new data 1")
-			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "new data 2")
+			Convey(fmt.Sprintf("Replace symlink with directory (subdir %q)", subDir), func() {
+				_, err := New(tempDir).DeployInstance(ctx, subDir, pkgWithSym, 0)
+				So(err, ShouldBeNil)
+				_, err = New(tempDir).DeployInstance(ctx, subDir, pkgWithDir, 0)
+				So(err, ShouldBeNil)
 
-			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
-		})
+				So(scanDirAndSkipGuts(subDirAbsPath), ShouldResemble, []string{
+					"some/path/a/b/file3",
+					"some/path/a/file2",
+					"some/path/file1",
+				})
 
-		Convey("Replace symlink with directory", func() {
-			_, err := New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithSym, 0)
-			So(err, ShouldBeNil)
-			_, err = New(tempDir).DeployInstance(ctx, "sub/dir", pkgWithDir, 0)
-			So(err, ShouldBeNil)
+				So(readFile(tempDir, path.Join(subDir, "some/path/file1")), ShouldEqual, "old data 1")
+				So(readFile(tempDir, path.Join(subDir, "some/path/a/file2")), ShouldEqual, "old data 2")
 
-			So(scanDir(filepath.Join(tempDir, "sub", "dir")), ShouldResemble, []string{
-				"some/path/a/b/file3",
-				"some/path/a/file2",
-				"some/path/file1",
+				So(loggerWarnings(ctx), ShouldResemble, []string(nil))
 			})
-
-			So(readFile(tempDir, "sub/dir/some/path/file1"), ShouldEqual, "old data 1")
-			So(readFile(tempDir, "sub/dir/some/path/a/file2"), ShouldEqual, "old data 2")
-
-			So(loggerWarnings(ctx), ShouldResemble, []string(nil))
-		})
+		}
 
 		Convey("Sub_lk is a symlink and it shouldn't be deleted", func() {
 			caseSensitiveFS, err := New(tempDir).(*deployerImpl).fs.CaseSensitive()
@@ -2328,6 +2333,16 @@ func scanDir(root string) (out []string) {
 	})
 	if err != nil {
 		panic(fmt.Sprintf("Failed to walk a directory: %s", err))
+	}
+	return
+}
+
+// scanDirAndSkipGuts is like scanDir, but it omits .cipd/* from the output.
+func scanDirAndSkipGuts(root string) (out []string) {
+	for _, p := range scanDir(root) {
+		if !strings.HasPrefix(p, ".cipd/") {
+			out = append(out, p)
+		}
 	}
 	return
 }
