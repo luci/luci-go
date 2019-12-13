@@ -1455,14 +1455,22 @@ func (p *pathTree) visitIntermediatesBF(subdir string, cb func(string) bool) {
 	if p == nil {
 		return
 	}
-	// Normalize the subdir to be used for strings.HasPrefix(...) check.
+
+	// Normalize the subdir to be used for strings.HasPrefix(...) check. Note that
+	// if 'subdir' is "" or "." (e.g. when installing a package into the site
+	// root), filepath.Clean(...) returns ".", which screws up HasPrefix checks
+	// below (since paths we are checking do not have leading "./"). Convert "."
+	// to "" to handle this.
 	subdir = filepath.Clean(subdir)
-	if !p.caseSensitive {
-		subdir = strings.ToLower(subdir)
-	}
-	if subdir != "" {
+	if subdir == "." {
+		subdir = ""
+	} else {
 		subdir += string(filepath.Separator)
+		if !p.caseSensitive {
+			subdir = strings.ToLower(subdir)
+		}
 	}
+
 	nodes := p.nodes.ToSlice()
 	sort.Strings(nodes)
 	for _, path := range nodes {
