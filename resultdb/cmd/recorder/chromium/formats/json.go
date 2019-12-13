@@ -83,7 +83,10 @@ type TestFields struct {
 	Actual   string `json:"actual"`
 	Expected string `json:"expected"`
 
-	Artifacts map[string][]string `json:"artifacts"`
+	// TODO(crbug/1034021): Support only map[string][]string, as spec'd by the JSON Test Results
+	// Format.
+	ArtifactsRaw map[string]json.RawMessage `json:"artifacts"`
+	Artifacts    map[string][]string
 
 	Time  float64   `json:"time"`
 	Times []float64 `json:"times"`
@@ -203,6 +206,11 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		maybeFields := &TestFields{}
 		json.Unmarshal(value, maybeFields)
 		if maybeFields.Actual != "" && maybeFields.Expected != "" {
+			if err := maybeFields.convertArtifacts(); err != nil {
+				return errors.Annotate(err,
+					"artifacts neither map[string][]string nor map[string]string").Err()
+			}
+
 			if r.Tests == nil {
 				r.Tests = make(map[string]*TestFields)
 			}
@@ -215,6 +223,39 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 			return errors.Annotate(err, "error attempting conversion of %q as intermediated node", value).Err()
 		}
 	}
+	return nil
+}
+
+// convertArtifacts converts the raw artifacts into either the supported
+// map[string][]string representation, or the map[string]string representation
+// used by WPT results.
+// TODO(crbug/1034021): Remove and support only map[string][]string.
+func (f *TestFields) convertArtifacts() error {
+	for name, arts := range f.ArtifactsRaw {
+		var asPathsErr, asStringErr error
+
+		// Try interpreting the artifacts as both formats in turn.
+		// Store only the ones that are in the expected map[string][]string format.
+		var maybePaths []string
+		if asPathsErr = json.Unmarshal(arts, &maybePaths); asPathsErr == nil {
+			if f.Artifacts == nil {
+				f.Artifacts = map[string][]string{}
+			}
+			f.Artifacts[name] = maybePaths
+			continue
+		}
+
+		var maybeString string
+		if asStringErr = json.Unmarshal(arts, &maybeString); asStringErr == nil {
+			continue
+		}
+
+		if asPathsErr != nil || asStringErr != nil {
+			return errors.Annotate(errors.NewMultiError(asPathsErr, asStringErr),
+				"converting artifacts for %s", name).Err()
+		}
+	}
+
 	return nil
 }
 
