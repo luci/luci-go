@@ -119,6 +119,12 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	if err == nil {
 		defer f.Close()
 		err = json.NewDecoder(f).Decode(&d.lru)
+		if err != nil {
+			if err := os.RemoveAll(path); err != nil {
+				return nil, err
+			}
+			d.lru = makeLRUDict(namespace)
+		}
 	} else if os.IsNotExist(err) {
 		// The fact that the cache is new is not an error.
 		err = nil
