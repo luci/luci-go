@@ -119,6 +119,15 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	if err == nil {
 		defer f.Close()
 		err = json.NewDecoder(f).Decode(&d.lru)
+		if err != nil {
+			if err := os.RemoveAll(path); err != nil {
+				return nil, fmt.Errorf("failed to call os.RemoveAll(%s): %w", path, err)
+			}
+			if err := os.Mkdir(path, os.ModePerm); err != nil {
+				return nil, fmt.Errorf("failed to call os.Mkdir(%s, %#o): %w", path, os.ModePerm, err)
+			}
+			d.lru = makeLRUDict(namespace)
+		}
 	} else if os.IsNotExist(err) {
 		// The fact that the cache is new is not an error.
 		err = nil
