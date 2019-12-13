@@ -23,6 +23,8 @@ import (
 
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -155,4 +157,28 @@ func TestNewDisk(t *testing.T) {
 		So(c, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 	})
+
+	Convey(`invalid state.json`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+		state := filepath.Join(dir, "state.json")
+		invalid := filepath.Join(dir, "invalid file")
+		So(ioutil.WriteFile(state, []byte("invalid"), os.ModePerm), ShouldBeNil)
+		So(ioutil.WriteFile(invalid, []byte("invalid"), os.ModePerm), ShouldBeNil)
+
+		c, err := NewDisk(Policies{}, dir, isolatedclient.DefaultNamespace)
+		So(err, ShouldNotBeNil)
+		if c == nil {
+			t.Errorf("c should not be nil: %v", err)
+		}
+		So(c, ShouldNotBeNil)
+
+		d := c.(*disk)
+		So(d.statePath(), ShouldEqual, state)
+
+		// invalid files should be removed.
+		empty, err := filesystem.IsEmptyDir(dir)
+		So(err, ShouldBeNil)
+		So(empty, ShouldBeTrue)
+
+		So(c.Close(), ShouldBeNil)
+	}))
 }
