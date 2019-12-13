@@ -24,6 +24,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
@@ -118,6 +119,14 @@ func TestSwarming(t *testing.T) {
 
 			case fmt.Sprintf("/%stask/completed-no-outputs-task/result", swarmingAPIEndpoint):
 				resp.State = "COMPLETED"
+
+			case fmt.Sprintf("/%stask/completed-outputs-hash-missing-task/result", swarmingAPIEndpoint):
+				resp.State = "COMPLETED"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       fmt.Sprintf("%s%s", string(outputsDigest), string(badOutputsDigest)),
+				}
 
 			case fmt.Sprintf("/%stask/completed-no-output-file-task/result", swarmingAPIEndpoint):
 				resp.State = "COMPLETED"
@@ -220,6 +229,16 @@ func TestSwarming(t *testing.T) {
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "missing expected isolated outputs")
+			})
+
+			Convey(`and do but the hash cannot be fetched`, func() {
+				task, err := swarmSvc.Task.Result("completed-outputs-hash-missing-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
+				defer cancel()
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
+				So(err, ShouldErrLike, "getting isolated outputs")
 			})
 
 			Convey(`and does but outputs don't have expected file`, func() {

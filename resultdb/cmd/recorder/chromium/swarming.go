@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -123,11 +124,13 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	// Fetch outputs, converting if any.
 	var results []*pb.TestResult
+	ref := task.OutputsRef
 	switch {
-	case task.OutputsRef != nil && task.OutputsRef.Isolated != "":
+	case ref != nil && ref.Isolated != "":
 		// If we have output, try to process it regardless.
-		if results, err = processOutputs(ctx, task.OutputsRef, testPathPrefix, inv, req); err != nil {
-			return nil, nil, err
+		if results, err = processOutputs(ctx, ref, testPathPrefix, inv, req); err != nil {
+			return nil, nil, errors.Annotate(err, "isolated outputs at %q in %q, %q",
+				ref.Isolated, ref.Isolatedserver, ref.Namespace).Err()
 		}
 
 	case mustFetchOutputJSON:
@@ -186,20 +189,9 @@ func GetSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, err
 func GetSwarmingTask(ctx context.Context, taskID string, swarmSvc *swarmingAPI.Service) (*swarmingAPI.SwarmingRpcsTaskResult, error) {
 	task, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
 	if err, ok := err.(*googleapi.Error); ok {
-		switch {
-		case err.Code == http.StatusUnauthorized:
-			return nil, errors.Annotate(err, "").Tag(grpcutil.UnauthenticatedTag).Err()
-		case err.Code == http.StatusForbidden:
-			return nil, errors.Annotate(err, "").Tag(grpcutil.PermissionDeniedTag).Err()
-		case err.Code == http.StatusNotFound:
-			return nil, errors.Annotate(err, "swarming task not found").Tag(grpcutil.NotFoundTag).Err()
-		case err.Code >= 500:
-			return nil, errors.Annotate(err, "swarming unavailable").Tag(
-				transient.Tag, grpcutil.InternalTag).Err()
-		}
+		return nil, annotateErrWithGRPC(err, err.Code)
 	}
-
-	return task, errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
+	return task, err
 }
 
 // GetOriginTask gets the swarming task of which the given task is a dupe, or itself if it isn't.
@@ -231,13 +223,13 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	// Get the isolated outputs.
 	outputs, err := GetOutputs(ctx, isoClient, outputsRef)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "getting isolated outputs").Err()
 	}
 
 	// Fetch the output.json file itself and convert it.
 	outputJSON, err := FetchOutputJSON(ctx, isoClient, outputs)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "getting output JSON file").Err()
 	}
 
 	// Convert the isolated.File outputs to pb.Artifacts for later processing.
@@ -268,8 +260,9 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 	// Fetch the isolate.
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
-		// TODO(jchinlee): handle error codes from here. Nonexisting isolates should not result in
-		// INTERNAL or UNKNOWN.
+		if status, ok := lhttp.IsHTTPError(err); ok {
+			return nil, annotateErrWithGRPC(err, status)
+		}
 		return nil, err
 	}
 
@@ -344,6 +337,21 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix s
 	// Conversion with either format failed, but this code is meant specifically for them.
 	return nil, errors.Annotate(
 		errors.NewMultiError(jsonErr, gtestErr), "").Tag(grpcutil.InternalTag).Err()
+}
+
+// annotateErrWithGRPC updates the error with appropriate gRPC tags given the HTTP code.
+func annotateErrWithGRPC(err error, httpCode int) error {
+	switch {
+	case httpCode == http.StatusUnauthorized:
+		return errors.Annotate(err, "").Tag(grpcutil.UnauthenticatedTag).Err()
+	case httpCode == http.StatusForbidden:
+		return errors.Annotate(err, "").Tag(grpcutil.PermissionDeniedTag).Err()
+	case httpCode == http.StatusNotFound:
+		return errors.Annotate(err, "").Tag(grpcutil.NotFoundTag).Err()
+	case httpCode >= 500:
+		return errors.Annotate(err, "").Tag(transient.Tag, grpcutil.InternalTag).Err()
+	}
+	return err
 }
 
 // isBlacklisted returns whether the given task is blacklisted from being processed.
