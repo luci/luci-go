@@ -57,10 +57,12 @@ func TestSwarming(t *testing.T) {
 	defer isoServer.Close()
 
 	Convey(`deriveProtosForWriting correctly handles tasks`, t, func(c C) {
+		sizePointer := func(n int64) *int64 { return &n }
+
 		// Inject isolated objects.
 		fileDigest := isoFake.Inject("ns", []byte(`"f00df00d"`))
 		isoOut := isolated.Isolated{
-			Files: map[string]isolated.File{"output.json": {Digest: fileDigest}},
+			Files: map[string]isolated.File{"output.json": {Digest: fileDigest, Size: sizePointer(8)}},
 		}
 		isoOutBytes, err := json.Marshal(isoOut)
 		So(err, ShouldBeNil)
@@ -68,11 +70,19 @@ func TestSwarming(t *testing.T) {
 
 		badDigest := isoFake.Inject("ns", []byte("baadf00d"))
 		isoOut = isolated.Isolated{
-			Files: map[string]isolated.File{"artifact": {Digest: badDigest}},
+			Files: map[string]isolated.File{"artifact": {Digest: badDigest, Size: sizePointer(8)}},
 		}
 		isoOutBytes, err = json.Marshal(isoOut)
 		So(err, ShouldBeNil)
 		badOutputsDigest := isoFake.Inject("ns", isoOutBytes)
+
+		eofDigest := isoFake.Inject("eof", []byte(``))
+		isoOut = isolated.Isolated{
+			Files: map[string]isolated.File{"output.json": {Digest: eofDigest, Size: sizePointer(0)}},
+		}
+		isoOutBytes, err = json.Marshal(isoOut)
+		So(err, ShouldBeNil)
+		eofOutputsDigest := isoFake.Inject("eof", isoOutBytes)
 
 		// Set up fake swarming service.
 		swarmingFake := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -115,6 +125,14 @@ func TestSwarming(t *testing.T) {
 					Isolatedserver: isoServer.URL,
 					Namespace:      "ns",
 					Isolated:       string(badOutputsDigest),
+				}
+
+			case fmt.Sprintf("/%stask/completed-empty-output-file-task/result", swarmingAPIEndpoint):
+				resp.State = "COMPLETED"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "eof",
+					Isolated:       string(eofOutputsDigest),
 				}
 
 			case fmt.Sprintf("/%stask/completed-outputs-task/result", swarmingAPIEndpoint):
@@ -210,6 +228,14 @@ func TestSwarming(t *testing.T) {
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "missing expected output in isolated outputs")
+			})
+
+			Convey(`and does but output file is empty`, func() {
+				task, err := swarmSvc.Task.Result("completed-empty-output-file-task").Context(ctx).Do()
+				So(err, ShouldBeNil)
+
+				_, _, err = DeriveProtosForWriting(ctx, task, req)
+				So(err, ShouldErrLike, "empty output file")
 			})
 
 			Convey(`and do`, func() {
