@@ -202,7 +202,8 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		// be populated.
 		maybeFields := &TestFields{}
 		json.Unmarshal(value, maybeFields)
-		if maybeFields.Actual != "" && maybeFields.Expected != "" {
+		// TODO(crbug/1034025): Check maybeFields.Expected is populated.
+		if maybeFields.Actual != "" {
 			if r.Tests == nil {
 				r.Tests = make(map[string]*TestFields)
 			}
@@ -269,6 +270,11 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
+
+	// TODO(crbug/1034025): Remove.
+	if len(expectedSet) == 0 {
+		expectedSet.Add("PASS")
+	}
 
 	// Process times.
 	// Time and Times are both optional, but if Times is present, its length should match the number
