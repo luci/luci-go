@@ -338,6 +338,23 @@ func TestSwarming(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.Tags, ShouldResembleProto, pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatJTR))
+
+			Convey(`and errors if it is malformed`, func() {
+				buf := []byte(
+					`{
+						"version": 3,
+						"tests": {
+							"test": {
+								"actual": "PASS PASS PASS",
+								"expected": ""
+							}
+						}
+					}`)
+				inv := &pb.Invocation{}
+				_, err := ConvertOutputJSON(ctx, inv, "", buf, nil)
+				So(err, ShouldErrLike, "appears malformed")
+				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			})
 		})
 
 		Convey(`chooses GTest format correctly`, func() {

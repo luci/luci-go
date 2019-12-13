@@ -320,9 +320,13 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix s
 	if jsonErr == nil {
 		results, err := jsonFormat.ToProtos(ctx, testPathPrefix, inv, outputs)
 		if err != nil {
-			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
+			return nil, errors.Annotate(err, "converting to protos as JSON Test Results Format").Err()
 		}
 		return results, nil
+	}
+	if formats.BadJSONTestResultsTag.In(jsonErr) {
+		return nil, errors.Annotate(jsonErr, "converting from JSON as JSON Test Results Format").
+			Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// Try to convert the buffer treating its format as that of GTests.

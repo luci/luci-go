@@ -131,6 +131,22 @@ func TestJSONConversions(t *testing.T) {
 					"prefix.c3/time/time-t1.html",
 				})
 			})
+
+			Convey(`and fails with malformed JSON Test Results format`, func() {
+				buf := []byte(
+					`{
+							"version": 3,
+							"tests": {
+								"c1": {
+									"actual": "PASS FAIL",
+									"expected": ""
+								}
+							}
+						}`)
+				results := &JSONTestResults{}
+				err := results.ConvertFromJSON(ctx, bytes.NewReader(buf))
+				So(err, ShouldErrLike, "appears malformed")
+			})
 		})
 	})
 

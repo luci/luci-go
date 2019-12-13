@@ -50,6 +50,12 @@ var (
 	}
 )
 
+// BadJSONTestResultsTag tags errors for input appearing to be malformed JSON
+// Test Results Format.
+var BadJSONTestResultsTag = errors.BoolTag{
+	Key: errors.NewTagKey("malformed JSON Test Results Format"),
+}
+
 // JSONTestResults represents the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
 //
@@ -202,7 +208,12 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 		// be populated.
 		maybeFields := &TestFields{}
 		json.Unmarshal(value, maybeFields)
-		if maybeFields.Actual != "" && maybeFields.Expected != "" {
+		if maybeFields.Actual != "" {
+			if maybeFields.Expected == "" {
+				return errors.Reason("%q appears malformed JSON Test Results Format", value).
+					Tag(BadJSONTestResultsTag).Err()
+			}
+
 			if r.Tests == nil {
 				r.Tests = make(map[string]*TestFields)
 			}
