@@ -92,21 +92,21 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	// Decide how to continue based on task state.
 	mustFetchOutputJSON := false
+	inv.State = pb.Invocation_COMPLETED
 	switch task.State {
 	// Tasks that got interrupted for which we expect no output just need to set the correct
 	// Invocation state and are done.
 	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED":
-		inv.State = pb.Invocation_INTERRUPTED
+		inv.Interrupted = true
 		return inv, nil, nil
 
 	// Tasks that got interrupted for which we may get output need to set the correct Invocation state
 	// but further processing may be needed.
 	case "TIMED_OUT":
-		inv.State = pb.Invocation_INTERRUPTED
+		inv.Interrupted = true
 
 	// For COMPLETED state, we expect normal completion and output.
 	case "COMPLETED":
-		inv.State = pb.Invocation_COMPLETED
 		mustFetchOutputJSON = true
 
 	default:

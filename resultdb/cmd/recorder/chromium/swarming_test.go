@@ -172,7 +172,8 @@ func TestSwarming(t *testing.T) {
 			inv, _, err := DeriveProtosForWriting(ctx, task, req)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+			So(state, ShouldEqual, pb.Invocation_COMPLETED)
+			So(interrupted, ShouldEqual, true)
 		})
 
 		Convey(`that are finalized and may or may not contain isolated outputs`, func() {
@@ -183,7 +184,8 @@ func TestSwarming(t *testing.T) {
 				inv, _, err := DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldBeNil)
 				So(inv, ShouldNotBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.Interrupted, ShouldEqual, true)
 			})
 
 			Convey(`and do`, func() {

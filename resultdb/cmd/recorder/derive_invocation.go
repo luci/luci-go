@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -158,7 +157,7 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 	case err != nil:
 		return false, err
 
-	case !pbutil.IsFinalized(state):
+	case state != pb.Invocation_COMPLETED:
 		return false, errors.Reason(
 			"attempting to derive an existing non-finalized invocation").Err()
 	}

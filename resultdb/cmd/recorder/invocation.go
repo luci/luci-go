@@ -134,9 +134,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 
 func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
 	state := pb.Invocation_COMPLETED
-	if interrupted {
-		state = pb.Invocation_INTERRUPTED
-	}
 
 	if err := resetInvocationTasks(ctx, txn, id, finalizeTime); err != nil {
 		return err
@@ -147,6 +144,7 @@ func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, 
 			"InvocationId": id,
 			"State":        state,
 			"FinalizeTime": finalizeTime,
+			"Interrupted":  interrupted,
 		}),
 	})
 }

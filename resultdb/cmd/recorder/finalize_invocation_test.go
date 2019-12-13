@@ -61,15 +61,6 @@ func TestFinalizeInvocation(t *testing.T) {
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
-		Convey(`finalized failed`, func() {
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_INTERRUPTED, token, ct),
-			)
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different state`)
-			So(inv, ShouldBeNil)
-		})
-
 		Convey(`complete expired invocation failed`, func() {
 			testutil.MustApply(ctx,
 				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
@@ -91,7 +82,8 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv", Interrupted: true})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.Interrupted, ShouldEqual, true)
 		})
 
 		Convey(`idempotent`, func() {
