@@ -254,7 +254,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 
 	// Convert the output JSON.
 	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputArtifacts); err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "converting output").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
 	// TODO(crbug/1032779): Mark artifacts we know we may not process.
@@ -336,9 +336,8 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix s
 		return results, nil
 	}
 
-	// Conversion with either format failed, but this code is meant specifically for them.
-	return nil, errors.Annotate(
-		errors.NewMultiError(jsonErr, gtestErr), "").Tag(grpcutil.InternalTag).Err()
+	// Conversion with either format failed, but we don't support other formats.
+	return nil, errors.NewMultiError(jsonErr, gtestErr)
 }
 
 // isBlacklisted returns whether the given task is blacklisted from being processed.
