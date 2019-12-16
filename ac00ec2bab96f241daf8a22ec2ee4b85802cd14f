@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b74b347f_320d0dc1",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-16T19:30:32Z",
+      "side": 1,
+      "message": "Agreed that it\u0027s ugly :/\n\nOut of curiosity, do you mean that this is uglier than e.g. TestsRaw in L62?",
+      "parentUuid": "10b9ab08_5f0f218d",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3f2f8c1_52e643a0",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -30,6 +48,24 @@
       "writtenOn": "2019-12-16T16:42:05Z",
       "side": 1,
       "message": "did you mean to do something with maybeString?",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b82f043_8010210f",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-16T19:30:32Z",
+      "side": 1,
+      "message": "I considered it but actually no: the reasoning behind throwing out string artifacts is to avoid supporting (at least up front) something that we don\u0027t and shouldn\u0027t officially support, since the JSON Test Results Format actually doesn\u0027t support strings.\n\nIf it turns out that it\u0027s too difficult to output anything than strings for us to consume, then we can add storing the artifacts as strings (and that\u0027s really straightforward).\n\nThoughts?",
+      "parentUuid": "e3f2f8c1_52e643a0",
       "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
