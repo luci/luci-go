@@ -93,6 +93,30 @@
       "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c708f1a_9c7fc863",
+        "filename": "cipd/client/cipd/storage_mock_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-12-16T21:14:33Z",
+      "side": 1,
+      "message": "er... I knew that.\n\n#derp",
+      "parentUuid": "fafd177f_076085fc",
+      "range": {
+        "startLine": 34,
+        "startChar": 15,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
