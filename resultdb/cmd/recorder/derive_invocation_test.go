@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -96,6 +97,8 @@ func TestDeriveInvocation(t *testing.T) {
 	Convey(`TestDeriveInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
+		derivedInvBQTable := "project/dataset/table"
+		derivedInvBQTablePtr = &derivedInvBQTable
 
 		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_COMPLETED, "", ct))
 
@@ -230,6 +233,22 @@ func TestDeriveInvocation(t *testing.T) {
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
 			So(trs[2].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
+
+			// Check invocationTask is inserted.
+			invTask := &internalpb.InvocationTask{
+				BigqueryExport: &pb.BigQueryExport{
+					Project:     "project",
+					Dataset:     "dataset",
+					Table:       "table",
+					TestResults: &pb.BigQueryExport_TestResults{},
+				},
+			}
+			key := span.InvocationID(span.MustParseInvocationName(inv.Name)).Key(taskID(taskTypeBqExport, 0))
+			invTaskRtn := &internalpb.InvocationTask{}
+			testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+				"Payload": invTaskRtn,
+			})
+			So(invTaskRtn, ShouldResembleProto, invTask)
 		})
 	})
 }

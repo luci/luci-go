@@ -25,6 +25,7 @@ import (
 )
 
 func main() {
+	registerDerivedInvBQTable()
 	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
