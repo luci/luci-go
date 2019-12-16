@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "89140594_8b2cc723",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-16T20:44:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e87945a0_fd1df408",
+      "range": {
+        "startLine": 596,
+        "startChar": 0,
+        "endLine": 596,
+        "endChar": 13
+      },
+      "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7d364db_b21795f9",
         "filename": "cipd/client/cipd/storage_mock_test.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fafd177f_076085fc",
+        "filename": "cipd/client/cipd/storage_mock_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-16T20:44:44Z",
+      "side": 1,
+      "message": "This struct is called \"mockedStorage\" and it resides in _test.go file. Everything here is only for tests :)",
+      "parentUuid": "e7d364db_b21795f9",
+      "range": {
+        "startLine": 34,
+        "startChar": 15,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
