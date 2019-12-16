@@ -403,6 +403,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		return nil, err
 	}
 	link, err := getBugLink(ctx, b)
+	user := auth.GetState(ctx.Context).User();
 	logging.Infof(c, "Got all the things")
 	return &ui.BuildPage{
 		Build: ui.Build{
@@ -414,6 +415,7 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
+		IsAnonymous: user.Identity.Kind() == identity.Anonymous,
 	}, err
 }
 
