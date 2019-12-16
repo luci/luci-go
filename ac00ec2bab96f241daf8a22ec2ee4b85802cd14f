@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "10b9ab08_5f0f218d",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-16T16:42:05Z",
+      "side": 1,
+      "message": "fwiw this design is conflates data parsed from the json and our intermediate representation, and this is confusing. It would be simpler if all the derivative state was transient, represented by local variables and parameters.\n\nbut its ok for now since hopefully we will remove this code",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3f2f8c1_52e643a0",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-16T16:42:05Z",
+      "side": 1,
+      "message": "did you mean to do something with maybeString?",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
