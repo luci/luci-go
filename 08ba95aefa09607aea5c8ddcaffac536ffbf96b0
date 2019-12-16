@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e87945a0_fd1df408",
+        "filename": "cipd/client/cipd/reader/reader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 596,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-12-16T20:28:30Z",
+      "side": 1,
+      "message": "this is confusing to read :D. Maybe `_, isFlateCorruption :\u003d ...`?",
+      "range": {
+        "startLine": 596,
+        "startChar": 0,
+        "endLine": 596,
+        "endChar": 13
+      },
+      "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7d364db_b21795f9",
+        "filename": "cipd/client/cipd/storage_mock_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2019-12-16T20:28:30Z",
+      "side": 1,
+      "message": "maybe comment \u0027only for tests\u0027",
+      "range": {
+        "startLine": 34,
+        "startChar": 15,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "08ba95aefa09607aea5c8ddcaffac536ffbf96b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
