@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e24490f7_90660e2b",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-16T08:33:13Z",
+      "side": 1,
+      "message": "nit: can you make it a link?\n\nlike this  https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/frontend/appengine/templates/includes/base.html?sq\u003dpackage:chromium\u0026dr\u0026q\u003dlogin+file:%5Einfra/go/src/go%5C.chromium%5C.org/luci/milo/frontend/appengine/templates/+package:%5Echromium$\u0026g\u003d0\u0026l\u003d40",
+      "range": {
+        "startLine": 169,
+        "startChar": 8,
+        "endLine": 169,
+        "endChar": 13
+      },
+      "revId": "d3da33610edb038abafbf30ae65c327cf15d8f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c707c7f_474dfd2e",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-16T08:33:13Z",
+      "side": 1,
+      "message": "read permission !\u003d cancel/retry permission.\n\u003d\u003e \nbetter to check permissions of Buildbucket, see https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/common/acl.go?type\u003dcs\u0026q\u003dluci/milo+BucketPermissions\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d113",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 14
+      },
+      "revId": "d3da33610edb038abafbf30ae65c327cf15d8f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
