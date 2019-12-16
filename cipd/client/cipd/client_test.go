@@ -19,8 +19,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -930,7 +932,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		Convey("Resolves tag (with tag cache)", func() {
-			setupTagCache(client, "", c)
+			setupTagCache(client, c)
 
 			// Only one RPC, even though we did two ResolveVersion calls.
 			repo.expect(rpcCall{
@@ -984,7 +986,75 @@ func TestResolveVersion(t *testing.T) {
 func TestFetchInstance(t *testing.T) {
 	t.Parallel()
 
-	// TODO
+	// Generate a pretty big and random file to be put into the test package, so
+	// we have enough bytes to corrupt to trigger flate errors later in the test.
+	buf := strings.Builder{}
+	src := rand.NewSource(42)
+	for i := 0; i < 1000; i++ {
+		fmt.Fprintf(&buf, "%d\n", src.Int63())
+	}
+	testFileBody := buf.String()
+
+	Convey("With mocks", t, func(c C) {
+		ctx := makeTestContext()
+		client, _, repo, storage := mockedCipdClient(c)
+
+		body, pin := buildTestInstance("pkg", map[string]string{"test_name": testFileBody})
+		setupRemoteInstance(body, pin, repo, storage)
+
+		Convey("FetchAndDeployInstance works", func() {
+			err := client.FetchAndDeployInstance(ctx, "", pin, 0)
+			So(err, ShouldBeNil)
+
+			body, err = ioutil.ReadFile(filepath.Join(client.Root, "test_name"))
+			So(err, ShouldBeNil)
+			So(string(body), ShouldEqual, testFileBody)
+		})
+
+		Convey("FetchAndDeployInstance uses instance cache", func() {
+			cacheDir := setupInstanceCache(client, c)
+
+			// The initial fetch.
+			err := client.FetchAndDeployInstance(ctx, "1", pin, 0)
+			So(err, ShouldBeNil)
+			So(storage.downloads(), ShouldEqual, 1)
+
+			// The file is in the cache now.
+			_, err = os.Stat(filepath.Join(cacheDir, pin.InstanceID))
+			So(err, ShouldBeNil)
+
+			// The second fetch should use the instance cache (and thus make no
+			// additional RPCs).
+			err = client.FetchAndDeployInstance(ctx, "2", pin, 0)
+			So(err, ShouldBeNil)
+			So(storage.downloads(), ShouldEqual, 1)
+		})
+
+		Convey("FetchAndDeployInstance handles cache corruption", func() {
+			cacheDir := setupInstanceCache(client, c)
+
+			// The initial fetch.
+			err := client.FetchAndDeployInstance(ctx, "1", pin, 0)
+			So(err, ShouldBeNil)
+			So(storage.downloads(), ShouldEqual, 1)
+
+			// The file is in the cache now. Corrupt it by writing a bunch of zeros
+			// in the middle.
+			f, err := os.OpenFile(filepath.Join(cacheDir, pin.InstanceID), os.O_RDWR, 0644)
+			So(err, ShouldBeNil)
+			off, _ := f.Seek(1000, 0)
+			So(off, ShouldEqual, 1000)
+			_, err = f.Write(bytes.Repeat([]byte{0}, 100))
+			So(err, ShouldBeNil)
+			So(f.Close(), ShouldBeNil)
+
+			// The second fetch should discard the cache and redownload the package.
+			setupRemoteInstance(body, pin, repo, storage)
+			err = client.FetchAndDeployInstance(ctx, "2", pin, 0)
+			So(err, ShouldBeNil)
+			So(storage.downloads(), ShouldEqual, 2)
+		})
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1275,6 +1345,31 @@ func fakeIID(letter string) string {
 	return common.ObjectRefToInstanceID(fakeObjectRef(letter))
 }
 
+func buildTestInstance(pkg string, blobs map[string]string) ([]byte, common.Pin) {
+	keys := make([]string, 0, len(blobs))
+	for k := range blobs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	files := make([]fs.File, 0, len(keys))
+	for _, k := range keys {
+		files = append(files, fs.NewTestFile(k, blobs[k], fs.TestFileOpts{}))
+	}
+
+	out := bytes.Buffer{}
+	pin, err := builder.BuildInstance(context.Background(), builder.Options{
+		Input:            files,
+		Output:           &out,
+		PackageName:      pkg,
+		CompressionLevel: 5,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return out.Bytes(), pin
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
@@ -1291,8 +1386,13 @@ func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClie
 
 	storage := &mockedStorage{}
 
+	siteRoot, err := ioutil.TempDir("", "cipd_site_root")
+	c.So(err, ShouldBeNil)
+	c.Reset(func() { os.RemoveAll(siteRoot) })
+
 	return ClientOptions{
 		ServiceURL:  "https://service.example.com",
+		Root:        siteRoot,
 		casMock:     cas,
 		repoMock:    repo,
 		storageMock: storage,
@@ -1307,15 +1407,36 @@ func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient
 	return impl, cas, repo, storage
 }
 
-func setupTagCache(cl *clientImpl, tempDir string, c C) {
-	So(cl.tagCache, ShouldBeNil)
-	if tempDir == "" {
-		var err error
-		tempDir, err = ioutil.TempDir("", "cipd_tag_cache")
-		c.So(err, ShouldBeNil)
-		c.Reset(func() {
-			os.RemoveAll(tempDir)
-		})
-	}
+func setupTagCache(cl *clientImpl, c C) string {
+	c.So(cl.tagCache, ShouldBeNil)
+	tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
+	c.So(err, ShouldBeNil)
+	c.Reset(func() { os.RemoveAll(tempDir) })
 	cl.tagCache = internal.NewTagCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
+	return tempDir
+}
+
+func setupInstanceCache(cl *clientImpl, c C) string {
+	c.So(cl.instanceCache, ShouldBeNil)
+	tempDir, err := ioutil.TempDir("", "cipd_instance_cache")
+	c.So(err, ShouldBeNil)
+	c.Reset(func() { os.RemoveAll(tempDir) })
+	cl.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(tempDir, ""))
+	return tempDir
+}
+
+func setupRemoteInstance(body []byte, pin common.Pin, repo *mockedRepoClient, storage *mockedStorage) {
+	// "Plant" the package into the storage mock.
+	pkgURL := fmt.Sprintf("https://example.com/fake/%s/%s", pin.PackageName, pin.InstanceID)
+	storage.putStored(pkgURL, string(body))
+
+	// Make the planted package discoverable.
+	repo.expect(rpcCall{
+		method: "GetInstanceURL",
+		in: &api.GetInstanceURLRequest{
+			Package:  pin.PackageName,
+			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		},
+		out: &api.ObjectURL{SignedUrl: pkgURL},
+	})
 }
