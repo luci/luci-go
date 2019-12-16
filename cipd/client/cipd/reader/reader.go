@@ -18,9 +18,9 @@ package reader
 import (
 	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
@@ -586,11 +587,15 @@ func (inst *packageInstance) Close(ctx context.Context, corrupt bool) error {
 
 // IsCorruptionError returns true iff err indicates corruption.
 func IsCorruptionError(err error) bool {
-	switch err {
-	case io.ErrUnexpectedEOF, zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, ErrHashMismatch:
-		return true
-	}
-	return false
+	return errors.Any(err, func(err error) bool {
+		switch err {
+		case io.ErrUnexpectedEOF, zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, ErrHashMismatch:
+			return true
+		default:
+			_, flateCorrupt := err.(flate.CorruptInputError)
+			return flateCorrupt
+		}
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

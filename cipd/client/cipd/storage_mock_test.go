@@ -21,15 +21,17 @@ import (
 	"io/ioutil"
 	"os"
 	"sync"
+	"sync/atomic"
 )
 
 // This file has no tests, but contains definition of a mock for 'storage'
 // interface used to upload and download files from Google Storage.
 
 type mockedStorage struct {
-	l     sync.RWMutex
-	store map[string]string // URL -> data
-	err   error
+	l             sync.RWMutex
+	store         map[string]string // URL -> data
+	err           error
+	downloadCount int64
 }
 
 func (s *mockedStorage) getStored(url string) string {
@@ -45,6 +47,10 @@ func (s *mockedStorage) putStored(url, data string) {
 		s.store = make(map[string]string, 1)
 	}
 	s.store[url] = data
+}
+
+func (s *mockedStorage) downloads() int {
+	return int(atomic.LoadInt64(&s.downloadCount))
 }
 
 func (s *mockedStorage) returnErr(err error) {
@@ -70,6 +76,8 @@ func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeek
 }
 
 func (s *mockedStorage) download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error {
+	atomic.AddInt64(&s.downloadCount, 1)
+
 	// Mimic the real storage behavioral patterns.
 	h.Reset()
 	if _, err := output.Seek(0, os.SEEK_SET); err != nil {
