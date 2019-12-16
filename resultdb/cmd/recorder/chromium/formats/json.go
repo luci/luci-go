@@ -213,7 +213,7 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 
 		// Otherwise, try to process it as an intermediate node.
 		if err := r.convertTests(testPath, value); err != nil {
-			return errors.Annotate(err, "error attempting conversion of %q as intermediated node", value).Err()
+			return errors.Annotate(err, "error attempting conversion of %q as intermediate node", value).Err()
 		}
 	}
 	return nil

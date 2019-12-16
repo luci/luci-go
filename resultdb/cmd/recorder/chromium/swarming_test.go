@@ -219,6 +219,10 @@ func TestSwarming(t *testing.T) {
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
+
+				Convey(`and errors with FailedPrecondition for malformed output`, func() {
+					So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+				})
 			})
 		})
 
