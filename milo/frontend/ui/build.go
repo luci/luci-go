@@ -141,6 +141,9 @@ type BuildPage struct {
 
 	// ForcedBlamelist indicates that the user forced a blamelist load.
 	ForcedBlamelist bool
+
+	// IsAnonymous indicates whether user has logged in.
+	IsAnonymous bool
 }
 
 // RelatedBuildsTable represents a related builds table on Milo.
