@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cf4a6fdf_ab88cc6b",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-17T20:43:45Z",
+      "side": 1,
+      "message": "This is the second sentence of the comment, do we still need to start it with symbol name?\n\nThough I don\u0027t need this comment any more, removed.",
+      "parentUuid": "76ae3ad1_e87c087e",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 7
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29e8d2ce_5cb3d441",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9aef6eb_b480ee38",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-17T20:43:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29e8d2ce_5cb3d441",
+      "range": {
+        "startLine": 53,
+        "startChar": 10,
+        "endLine": 53,
+        "endChar": 16
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "2257a55f_6d4a6d5c",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-17T20:43:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "331e6702_983c4a64",
+      "range": {
+        "startLine": 56,
+        "startChar": 18,
+        "endLine": 56,
+        "endChar": 20
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6cd40240_14352298",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 3
@@ -109,6 +181,24 @@
       "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "795775eb_c1603848",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-17T20:43:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cd40240_14352298",
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -132,6 +222,30 @@
       "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd91c33a_020f9547",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-17T20:43:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5bcdf97_1f6cb050",
+      "range": {
+        "startLine": 63,
+        "startChar": 66,
+        "endLine": 63,
+        "endChar": 68
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
