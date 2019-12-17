@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "bb0e42f2_eba2ea4d",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-17T04:45:36Z",
+      "side": 1,
+      "message": "Not sure I follow. In order to unmarshal the test fields JSON, we need to read out the \"artifacts\" entry into a map[string]json.RawMessage somewhere, yes? Is there a way to do that conversion without either knowing the order in which fields will be outputted, or defining a struct that holds the desired fields?",
+      "parentUuid": "b33c4879_4bb4c2d7",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3f2f8c1_52e643a0",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -102,6 +120,24 @@
       "side": 1,
       "message": "that\u0027s fine.\n\nthe problem is what you wrote is not obvious from reading the code. Instead it looks like a bug.\n\nPlease add a comment",
       "parentUuid": "5b82f043_8010210f",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84810935_eaabd7be",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-17T04:45:36Z",
+      "side": 1,
+      "message": "\"Store only the ones that are in the expected map[string][]string format\" was meant to convey that the \"only\" was explicit. Added a comment for the string conversion, PTAL at wording",
+      "parentUuid": "68655f35_513b89ec",
       "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
