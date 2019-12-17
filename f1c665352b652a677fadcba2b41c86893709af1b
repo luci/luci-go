@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8358323a_11650201",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T21:35:19Z",
+      "side": 1,
+      "message": "in golang, errors should not end with a punctuation mark\n\nsame below",
+      "range": {
+        "startLine": 52,
+        "startChar": 43,
+        "endLine": 52,
+        "endChar": 44
+      },
+      "revId": "f1c665352b652a677fadcba2b41c86893709af1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0e897af_cf20f391",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T21:35:19Z",
+      "side": 1,
+      "message": "this is empty. What is the point of specifying it?\n\nconsider\n\n  -derive-bigquery-table is required",
+      "range": {
+        "startLine": 52,
+        "startChar": 47,
+        "endLine": 52,
+        "endChar": 65
+      },
+      "revId": "f1c665352b652a677fadcba2b41c86893709af1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fed09a08_fee39ddb",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T21:35:19Z",
+      "side": 1,
+      "message": "in golang, errors should not start with a capital letter\n\nsame below",
+      "range": {
+        "startLine": 52,
+        "startChar": 24,
+        "endLine": 52,
+        "endChar": 25
+      },
+      "revId": "f1c665352b652a677fadcba2b41c86893709af1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bcba246_bd94f536",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T21:35:19Z",
+      "side": 1,
+      "message": "in this func, it is not obvious that getBQTableInfo parses *derivedInvBQTable that we just checked above. It would be cleaner if we explicitly passed *derivedInvBQTable as a param.\n\nthen getBQTableInfo becomes more general: parseBQTable",
+      "range": {
+        "startLine": 55,
+        "startChar": 15,
+        "endLine": 55,
+        "endChar": 29
+      },
+      "revId": "f1c665352b652a677fadcba2b41c86893709af1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
