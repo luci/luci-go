@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "331e6702_983c4a64",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T19:38:51Z",
+      "side": 1,
+      "message": "good point, golang actually prefers BQ here",
+      "parentUuid": "4996e4eb_f99f5c75",
+      "range": {
+        "startLine": 56,
+        "startChar": 18,
+        "endLine": 56,
+        "endChar": 20
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6cd40240_14352298",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 3
