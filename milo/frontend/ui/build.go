@@ -141,6 +141,14 @@ type BuildPage struct {
 
 	// ForcedBlamelist indicates that the user forced a blamelist load.
 	ForcedBlamelist bool
+
+	LoginURL string
+
+	IsAnonymous bool
+
+	// Whether the user is able to perform certain actions on this build
+	CanCancel bool
+	CanRetry bool
 }
 
 // RelatedBuildsTable represents a related builds table on Milo.
