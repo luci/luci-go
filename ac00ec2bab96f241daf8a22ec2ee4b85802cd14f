@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "960f9c7a_af8fddf2",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T07:02:07Z",
+      "side": 1,
+      "message": "let\u0027s talk offline",
+      "parentUuid": "bb0e42f2_eba2ea4d",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e3f2f8c1_52e643a0",
         "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
         "patchSetId": 4
@@ -141,6 +159,24 @@
       "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22b3690b_259e8078",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T07:02:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84810935_eaabd7be",
+      "revId": "ac00ec2bab96f241daf8a22ec2ee4b85802cd14f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
