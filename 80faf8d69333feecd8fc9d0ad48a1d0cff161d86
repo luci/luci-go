@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "658b6909_18596847",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "nit: comments for symbols should start with the symbol name\n\nalso space after //",
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e48c15e_9c087372",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "let\u0027s use period as delimited, to be consistent with Google SQL",
+      "range": {
+        "startLine": 45,
+        "startChar": 30,
+        "endLine": 45,
+        "endChar": 31
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5f0b332_b187e655",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "let\u0027s omit. This is inconsistent with the codebase: https://osscs.corp.google.com/search?q\u003dflag%5C.String\u0026sq\u003d\u0026ss\u003dchromium",
+      "range": {
+        "startLine": 46,
+        "startChar": 21,
+        "endLine": 46,
+        "endChar": 24
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e902dbe4_69e4cdd8",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "this reads as we are registering a table, but we registering a flag\n\nregisterDerivedInvBQTableFlag",
+      "range": {
+        "startLine": 48,
+        "startChar": 5,
+        "endLine": 48,
+        "endChar": 30
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c084aaf_3f1372ea",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "that\u0027s where we need to document \"\u003cproject\u003e.\u003cdataset\u003e.\u003ctable\u003e\" format\n\nalso consider using text.Doc, it makes writing nice docs easier\n\nhttps://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cli/queryrun.go;l\u003d59?q\u003dtext%5C.Doc\u0026ss\u003dchromium",
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c85b55f_182d3a6f",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "this isn\u0027t a good func signature if it requires the callsite to further parse it. let\u0027s retrurn\n\nfunc getBqTableInfo() (project, dataset, table string)",
+      "range": {
+        "startLine": 75,
+        "startChar": 22,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90be071a_91f873cb",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "generally comparing slices to nil is avoided in Go because what the intention is usually to check if the slice is empty. if so, len should be used, because both nil and []string{} have length 0, but one of them is not nil",
+      "range": {
+        "startLine": 157,
+        "startChar": 4,
+        "endLine": 157,
+        "endChar": 23
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f1d28c4_b0b7d654",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "this will spam all DeriveInvocation calls if the flag was not passed. let\u0027s not do that.\nif we want to log or halt, we should do it during server initialization in main()",
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09d81396_c1944145",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T06:54:42Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 167,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 13
+      },
+      "revId": "80faf8d69333feecd8fc9d0ad48a1d0cff161d86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
