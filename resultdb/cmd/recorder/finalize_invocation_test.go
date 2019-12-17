@@ -120,7 +120,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
 				testutil.MustApply(ctx,
 					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct),
-					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
+					insertInvocationTask(invID, taskID(taskTypeBQExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
@@ -136,7 +136,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
 
 				// Read InvocationTask to confirm it's reset.
-				key := invID.Key(taskID(taskTypeBqExport, 0))
+				key := invID.Key(taskID(taskTypeBQExport, 0))
 				var processAfter *tspb.Timestamp
 				testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
 					"ProcessAfter": &processAfter,
