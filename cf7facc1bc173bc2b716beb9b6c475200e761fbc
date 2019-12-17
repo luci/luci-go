@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76ae3ad1_e87c087e",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T19:24:14Z",
+      "side": 1,
+      "message": "doc must start with symbol name",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 7
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29e8d2ce_5cb3d441",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T19:24:14Z",
+      "side": 1,
+      "message": "nobody will notice these errors in the flood of logs.\nlet\u0027s either crash (return error in this func) or print a warning",
+      "range": {
+        "startLine": 53,
+        "startChar": 10,
+        "endLine": 53,
+        "endChar": 16
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6cd40240_14352298",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T19:24:14Z",
+      "side": 1,
+      "message": "this should be fatal, i.e. return an error",
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5bcdf97_1f6cb050",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-17T19:24:14Z",
+      "side": 1,
+      "message": "let\u0027s use ` like in the examples i gave",
+      "range": {
+        "startLine": 63,
+        "startChar": 66,
+        "endLine": 63,
+        "endChar": 68
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
