@@ -62,7 +62,10 @@ func TestJSONConversions(t *testing.T) {
 						"c2": {
 							"t3.html": {
 								"actual": "FAIL",
-								"expected": "PASS"
+								"expected": "PASS",
+								"artifacts": {
+									"log": [ "relative/path/to/log" ]
+								}
 							}
 						},
 						"c3": {
@@ -70,7 +73,10 @@ func TestJSONConversions(t *testing.T) {
 								"time-t1.html": {
 									"actual": "PASS",
 									"expected": "PASS",
-									"time": 0.4
+									"time": 0.4,
+									"artifacts": {
+										"reason": "inlined string"
+									}
 								}
 							}
 						}
@@ -102,11 +108,20 @@ func TestJSONConversions(t *testing.T) {
 				"prefix.c2::t3.html": {
 					Actual:   "FAIL",
 					Expected: "PASS",
+					ArtifactsRaw: map[string]json.RawMessage{
+						"log": json.RawMessage(`[ "relative/path/to/log" ]`),
+					},
+					Artifacts: map[string][]string{
+						"log": {"relative/path/to/log"},
+					},
 				},
 				"prefix.c3::time::time-t1.html": {
 					Actual:   "PASS",
 					Expected: "PASS",
 					Time:     0.4,
+					ArtifactsRaw: map[string]json.RawMessage{
+						"reason": json.RawMessage(`"inlined string"`),
+					},
 				},
 			})
 
