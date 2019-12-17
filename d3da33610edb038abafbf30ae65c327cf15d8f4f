@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2ce5d7ae_b4d124b7",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-12-17T23:34:23Z",
+      "side": 1,
+      "message": "changed to disabling each button individually based on ACL instead.",
+      "parentUuid": "e24490f7_90660e2b",
+      "range": {
+        "startLine": 169,
+        "startChar": 8,
+        "endLine": 169,
+        "endChar": 13
+      },
+      "revId": "d3da33610edb038abafbf30ae65c327cf15d8f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c707c7f_474dfd2e",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "d3da33610edb038abafbf30ae65c327cf15d8f4f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "631675c0_1f0ba7b3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-12-17T23:34:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c707c7f_474dfd2e",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 14
+      },
+      "revId": "d3da33610edb038abafbf30ae65c327cf15d8f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

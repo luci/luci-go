@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f6517c2_1cec1efd",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-12-17T23:34:23Z",
+      "side": 1,
+      "message": "Is there a canonical method to get bucketId from Builder?",
+      "range": {
+        "startLine": 414,
+        "startChar": 1,
+        "endLine": 414,
+        "endChar": 55
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
