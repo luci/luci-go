@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "45ba7138_de9c55b3",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T06:32:58Z",
+      "side": 1,
+      "message": "oops nvm",
+      "parentUuid": "cf4a6fdf_ab88cc6b",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 50,
+        "endChar": 7
+      },
+      "revId": "cf7facc1bc173bc2b716beb9b6c475200e761fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29e8d2ce_5cb3d441",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 3
