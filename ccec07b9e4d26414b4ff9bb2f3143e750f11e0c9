@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54e711b2_7b7dc7cc",
+        "filename": "resultdb/proto/bq/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:44:12Z",
+      "side": 1,
+      "message": "let\u0027s omit this. it doesn\u0027t help",
+      "range": {
+        "startLine": 34,
+        "startChar": 7,
+        "endLine": 34,
+        "endChar": 16
+      },
+      "revId": "ccec07b9e4d26414b4ff9bb2f3143e750f11e0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56b8dc2d_b6106d16",
+        "filename": "resultdb/proto/bq/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:44:12Z",
+      "side": 1,
+      "message": "did you mean \"interrupted\" with lower-case i? since we are going to make it bool.\n\notherwise please add a TODO to make it so",
+      "range": {
+        "startLine": 35,
+        "startChar": 66,
+        "endLine": 35,
+        "endChar": 77
+      },
+      "revId": "ccec07b9e4d26414b4ff9bb2f3143e750f11e0c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
