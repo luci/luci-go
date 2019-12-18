@@ -164,9 +164,18 @@
       {{ end }}
     </div>
 
-      <h2>Actions</h2>
-      <input id="retry-build-button" type="button" value="Retry Build"{{if not .BuildPage.EndTime}} disabled title="this build is still running"{{end}}>
-      <input id="cancel-build-button" type="button" value="Cancel Build"{{if .BuildPage.EndTime}} disabled title="this build has already ended"{{end}}><br>
+    <h2>Actions</h2>
+    <input id="retry-build-button" type="button" value="Retry Build"
+      {{if not .BuildPage.EndTime}} disabled title="this build is still running"
+      {{else if not .BuildPage.CanRetry}} disabled title="unauthorized to retry the build"
+      {{end}}
+    >
+    <input id="cancel-build-button" type="button" value="Cancel Build"
+      {{if .BuildPage.EndTime}} disabled title="this build has already ended"
+      {{else if not .BuildPage.CanCancel}} disabled title="unauthorized to cancel the build"
+      {{end}}
+    >
+    <br>
 
     {{ with .BuildPage.Input }}
       <h2>Input</h2>
