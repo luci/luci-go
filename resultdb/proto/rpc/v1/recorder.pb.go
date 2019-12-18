@@ -159,8 +159,7 @@ type FinalizeInvocationRequest struct {
 	// Name of the invocation to finalize.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Flag to indicate if the invocation is interrupted.
-	// If true, Invocation.state will be set to INTERRUPTED; otherwise COMPLETED.
-	// Refer to Invocation.state for the meaning of each state.
+	// If true, Invocation.interrupted will be set to true; otherwise false.
 	Interrupted          bool     `protobuf:"varint,2,opt,name=interrupted,proto3" json:"interrupted,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -658,12 +657,12 @@ type DeriveInvocationRequest_SwarmingTask struct {
 	// ID of swarming task to process and insert.
 	//
 	// The task should have tags:
-	//  gn_target: the GN target used to compile the test binary used in the
-	//    task
+	//  ninja_target: the fully-qualified ninja target used to compile the test
+	//    binary used in the task, e.g. "//chrome/test:browser_tests".
 	//  bucket: the LUCI bucket of the parent build
 	//  buildername: the LUCI builder of the parent build.
-	//  test_suite: a name from
-	//    https://chromium.googlesource.com/chromium/src/+/master/testing/buildbot/test_suites.pyl
+	//  test_suite: a value of "test" property in any of the JSON files in
+	//    https://chromium.googlesource.com/chromium/src/+/master/testing/buildbot/
 	//    used to create the swarming task.
 	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

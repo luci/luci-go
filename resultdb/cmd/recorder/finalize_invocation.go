@@ -55,9 +55,6 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	invID := span.MustParseInvocationName(in.Name)
 	requestState := pb.Invocation_COMPLETED
-	if in.Interrupted {
-		requestState = pb.Invocation_INTERRUPTED
-	}
 
 	ret := &pb.Invocation{Name: in.Name}
 	var retErr error
@@ -86,12 +83,10 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			// Idempotent.
 			return nil
 
-		case ret.State != pb.Invocation_ACTIVE:
-			return getUnmatchedStateError(invID)
-
 		case deadline.Before(now):
-			ret.State = pb.Invocation_INTERRUPTED
+			ret.State = requestState
 			ret.FinalizeTime = ret.Deadline
+			ret.Interrupted = true
 			finalizeTime = deadline
 
 			if !in.Interrupted {
@@ -101,6 +96,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			// Finalize as requested.
 			ret.State = requestState
 			ret.FinalizeTime = pbutil.MustTimestampProto(now)
+			ret.Interrupted = in.Interrupted
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {

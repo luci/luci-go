@@ -211,7 +211,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
 	}
-	if pbutil.IsFinalized(state) {
+	if state == pb.Invocation_COMPLETED {
 		values["FinalizeTime"] = ct.Add(time.Hour)
 	}
 	return span.InsertMap("Invocations", values)
