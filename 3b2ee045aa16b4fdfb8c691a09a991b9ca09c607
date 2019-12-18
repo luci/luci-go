@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "27ec9dea_46f89508",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-18T23:25:19Z",
+      "side": 1,
+      "message": "so, this CL should anyhow.\n\nAs for your question,\nthe Split() func works on luci-milo.cfg builder names which are now only the form of \"buildbucket/\u003clegacy long bucket name\u003e/\u003cbuilder name\u003e\". This is only place you really have to parse long bucket names.\n\nHowever, FYI, commit-queue.cfg migrated in early 2019 to  uses \"\u003cproject\u003e/\u003cbucket\u003e/\u003cbuilder\u003e\". You could do ask the users to do the same, actually, since by now the only supported backend is \"buildbucket\", so specifying it every time is redundant.\n\nBuckets are already always associated with a project. So, updating `BucketPermissions` to (project, bucket) is, I think, still worthwhile.",
+      "parentUuid": "81ed5554_95b54f20",
+      "range": {
+        "startLine": 414,
+        "startChar": 1,
+        "endLine": 414,
+        "endChar": 55
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b7fd10d7_c1fed642",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 3
