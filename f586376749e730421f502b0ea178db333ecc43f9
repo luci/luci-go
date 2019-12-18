@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39053acb_e226fc68",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:52:40Z",
+      "side": 1,
+      "message": "please do it in L84",
+      "revId": "f586376749e730421f502b0ea178db333ecc43f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84297744_f30e0720",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:52:40Z",
+      "side": 1,
+      "message": "nit: let\u0027s place this closer to \"State\" in 194, since they are related",
+      "revId": "f586376749e730421f502b0ea178db333ecc43f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "708f1208_6191ca52",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:52:40Z",
+      "side": 1,
+      "message": "note that this will become incorrect once we introduce FINALIZING. More correct would be \"FINALIZING or FINALIZED\", \"inactive\", or something like that.",
+      "range": {
+        "startLine": 65,
+        "startChar": 31,
+        "endLine": 65,
+        "endChar": 40
+      },
+      "revId": "f586376749e730421f502b0ea178db333ecc43f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7abc6fcc_2aa4c655",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-18T22:52:40Z",
+      "side": 1,
+      "message": "FINALIZING or FINALIZED",
+      "range": {
+        "startLine": 73,
+        "startChar": 25,
+        "endLine": 73,
+        "endChar": 34
+      },
+      "revId": "f586376749e730421f502b0ea178db333ecc43f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
