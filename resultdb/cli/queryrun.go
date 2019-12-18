@@ -48,12 +48,11 @@ func (r *queryRun) registerFlags(p Params) {
 	r.RegisterGlobalFlags(p)
 	r.RegisterJSONFlag(text.Doc(`
 		Print results in JSON format separated by newline.
-		One result takes exactly one line. Result object properties:
-		  - invocationId: a string. Unset if -merge is true.
-		  - testResult: luci.resultdb.rpc.v1.TestResult message.
-		  - testExoneration: luci.resultdb.rpc.v1.TestExoneration message.
-
-		testResult and testExoneration properties are mutually exclusive.
+		One result takes exactly one line. Result object properties are invocationId
+		and one of
+		  testResult: luci.resultdb.rpc.v1.TestResult message.
+			testExoneration: luci.resultdb.rpc.v1.TestExoneration message.
+			invocation: luci.resultdb.rpc.v1.Invocation message.
 	`))
 
 	r.Flags.IntVar(&r.limit, "n", 0, text.Doc(`
@@ -91,30 +90,34 @@ func (r *queryRun) validate() error {
 }
 
 type resultItem struct {
-	invocationIDs []string
-	result        proto.Message
+	invocationID string
+	result       proto.Message
 }
 
 // queryAndPrint queries results and prints them.
 func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
-	var invIDGroups [][]string
-	if r.merge {
-		invIDGroups = [][]string{invIDs}
-	} else {
-		invIDGroups = make([][]string, len(invIDs))
-		for i, id := range invIDs {
-			invIDGroups[i] = []string{id}
-		}
+	eg, ctx := errgroup.WithContext(ctx)
+	resultC := make(chan resultItem)
+
+	for _, id := range invIDs {
+		id := id
+		eg.Go(func() error {
+			return r.fetchInvocation(ctx, id, resultC)
+		})
 	}
 
-	// Fetch results into resultC.
-	resultC := make(chan resultItem)
-	eg, ctx := errgroup.WithContext(ctx)
-	for _, ids := range invIDGroups {
-		ids := ids
+	// Fetch items into resultC.
+	if r.merge {
 		eg.Go(func() error {
-			return r.fetch(ctx, ids, resultC)
+			return r.fetchItems(ctx, invIDs, resultItem{}, resultC)
 		})
+	} else {
+		for _, id := range invIDs {
+			tmpl := resultItem{invocationID: id}
+			eg.Go(func() error {
+				return r.fetchItems(ctx, []string{id}, tmpl, resultC)
+			})
+		}
 	}
 
 	// Wait for fetchers to finish and close resultC.
@@ -133,8 +136,18 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 	return errors.Reason("-json required; human output is not implemented yet").Err()
 }
 
-// fetch fetches test results and exonerations from the specified invocations.
-func (r *queryRun) fetch(ctx context.Context, invIDs []string, dest chan<- resultItem) error {
+// fetchInvocation fetches an invocation.
+func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<- resultItem) error {
+	res, err := r.resultdb.GetInvocation(ctx, &pb.GetInvocationRequest{Name: pbutil.InvocationName(invID)})
+	if err != nil {
+		return err
+	}
+	dest <- resultItem{invocationID: invID, result: res}
+	return nil
+}
+
+// fetchItems fetches test results and exonerations from the specified invocations.
+func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTemplate resultItem, dest chan<- resultItem) error {
 	invNames := make([]string, len(invIDs))
 	for i, id := range invIDs {
 		invNames[i] = pbutil.InvocationName(id)
@@ -158,8 +171,10 @@ func (r *queryRun) fetch(ctx context.Context, invIDs []string, dest chan<- resul
 			return err
 		}
 		for _, tr := range res.TestResults {
+			item := resultItemTemplate
+			item.result = tr
 			select {
-			case dest <- resultItem{invocationIDs: invIDs, result: tr}:
+			case dest <- item:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -182,8 +197,10 @@ func (r *queryRun) fetch(ctx context.Context, invIDs []string, dest chan<- resul
 			return err
 		}
 		for _, te := range res.TestExonerations {
+			item := resultItemTemplate
+			item.result = te
 			select {
-			case dest <- resultItem{invocationIDs: invIDs, result: te}:
+			case dest <- item:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -207,6 +224,8 @@ func (r *queryRun) printJSON(resultC <-chan resultItem) {
 			key = "testResult"
 		case *pb.TestExoneration:
 			key = "testExoneration"
+		case *pb.Invocation:
+			key = "invocation"
 		default:
 			panic(fmt.Sprintf("unexpected result type %T", res.result))
 		}
@@ -215,10 +234,7 @@ func (r *queryRun) printJSON(resultC <-chan resultItem) {
 			key: json.RawMessage(msgToJSON(res.result)),
 		}
 		if !r.merge {
-			if len(res.invocationIDs) != 1 {
-				panic("impossible")
-			}
-			obj["invocationId"] = res.invocationIDs[0]
+			obj["invocationId"] = res.invocationID
 		}
 		enc.Encode(obj) // prints \n in the end
 	}
