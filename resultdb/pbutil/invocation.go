@@ -59,16 +59,6 @@ func InvocationName(id string) string {
 	return "invocations/" + id
 }
 
-// IsFinalized returns whether the given invocation state is final, indicating immutability.
-func IsFinalized(state pb.Invocation_State) bool {
-	switch state {
-	case pb.Invocation_COMPLETED, pb.Invocation_INTERRUPTED:
-		return true
-	default:
-		return false
-	}
-}
-
 // NormalizeInvocation converts inv to the canonical form.
 func NormalizeInvocation(inv *pb.Invocation) {
 	sortStringPairs(inv.Tags)

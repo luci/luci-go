@@ -97,7 +97,7 @@ func TestDeriveInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_COMPLETED, "", ct))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_COMPLETED, "", ct, false))
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {

@@ -38,8 +38,8 @@ func validateFinalizeInvocationRequest(req *pb.FinalizeInvocationRequest) error 
 	return nil
 }
 
-func getUnmatchedStateError(invID span.InvocationID) error {
-	return errors.Reason("%q has already been finalized with different state", invID.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
+func getUnmatchedInterruptedFlagError(invID span.InvocationID) error {
+	return errors.Reason("%q has already been finalized with different interrupted flag", invID.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
 }
 
 // FinalizeInvocation implements pb.RecorderServer.
@@ -55,9 +55,6 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	invID := span.MustParseInvocationName(in.Name)
 	requestState := pb.Invocation_COMPLETED
-	if in.Interrupted {
-		requestState = pb.Invocation_INTERRUPTED
-	}
 
 	ret := &pb.Invocation{Name: in.Name}
 	var retErr error
@@ -74,6 +71,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"FinalizeTime": &ret.FinalizeTime,
 			"Deadline":     &ret.Deadline,
 			"Tags":         &ret.Tags,
+			"Interrupted":  &ret.Interrupted,
 		})
 
 		finalizeTime := now
@@ -82,25 +80,25 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		case err != nil:
 			return err
 
-		case ret.State == requestState:
+		case ret.State == requestState && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
-
-		case ret.State != pb.Invocation_ACTIVE:
-			return getUnmatchedStateError(invID)
-
+		case ret.State == requestState && ret.Interrupted != in.Interrupted:
+			return getUnmatchedInterruptedFlagError(invID)
 		case deadline.Before(now):
-			ret.State = pb.Invocation_INTERRUPTED
+			ret.State = requestState
 			ret.FinalizeTime = ret.Deadline
+			ret.Interrupted = true
 			finalizeTime = deadline
 
 			if !in.Interrupted {
-				retErr = getUnmatchedStateError(invID)
+				retErr = getUnmatchedInterruptedFlagError(invID)
 			}
 		default:
 			// Finalize as requested.
 			ret.State = requestState
 			ret.FinalizeTime = pbutil.MustTimestampProto(now)
+			ret.Interrupted = in.Interrupted
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {

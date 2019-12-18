@@ -64,6 +64,10 @@ CREATE TABLE Invocations (
   -- Value of CreateInvocationRequest.request_id.
   -- Used to dedup invocation creation requests.
   CreateRequestId STRING(MAX),
+
+  -- Flag for if the invocation is interrupted.
+  -- Corresponds to Invocation.interrupted in invocation.proto.
+  Interrupted BOOL,
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.

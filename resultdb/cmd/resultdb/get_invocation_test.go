@@ -75,6 +75,7 @@ func TestGetInvocation(t *testing.T) {
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(now),
 			Deadline:            pbutil.MustTimestampProto(now.Add(time.Hour)),
+			Interrupted:         false,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})
 	})
