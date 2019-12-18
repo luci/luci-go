@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "81ed5554_95b54f20",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-12-18T23:16:54Z",
+      "side": 1,
+      "message": "From https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/milo/buildsource/builder.go;l\u003d35?q\u003dbuildsource%2Fbuilder.go\nThe 2nd token, which contains no \u0027/\u0027, is passed to common.BucketPermissions.\nIt seems like the long bucket name is still being used?\nIn that case, we can\u0027t really just change the signature of common.BucketPermissions now, am I right?",
+      "parentUuid": "294ac673_61fcb6a1",
+      "range": {
+        "startLine": 414,
+        "startChar": 1,
+        "endLine": 414,
+        "endChar": 55
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b7fd10d7_c1fed642",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 3
@@ -69,6 +93,30 @@
       "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c4241a_74a59b84",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2019-12-18T23:16:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7fd10d7_c1fed642",
+      "range": {
+        "startLine": 145,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 17
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
