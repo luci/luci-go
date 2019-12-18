@@ -130,7 +130,7 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 		return <-errC
 	}
 
-	return errors.Reason("unimplemented").Err()
+	return errors.Reason("-json required; human output is not implemented yet").Err()
 }
 
 // fetch fetches test results and exonerations from the specified invocations.
