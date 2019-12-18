@@ -272,7 +272,7 @@ func TestCreateInvocation(t *testing.T) {
 			invTask := &internalpb.InvocationTask{
 				BigqueryExport: bqExport,
 			}
-			key := span.InvocationID("u:inv").Key(taskID(taskTypeBqExport, 0))
+			key := span.InvocationID("u:inv").Key(taskID(taskTypeBQExport, 0))
 			invTaskRtn := &internalpb.InvocationTask{}
 			testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
 				"Payload": invTaskRtn,

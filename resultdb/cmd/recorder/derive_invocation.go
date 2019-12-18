@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"strings"
 
@@ -23,6 +24,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -38,6 +41,28 @@ import (
 const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
+
+// derivedInvBQTable is the BigQuery table that the derived invocations
+// should be exported to.
+var derivedInvBQTable *string
+
+// validateDerivedInvBQTableFlag validates derivedInvBQTable.
+func validateDerivedInvBQTableFlag() error {
+	if *derivedInvBQTable == "" {
+		return errors.Reason("-derive-bigquery-table is missing").Err()
+	}
+
+	if p, d, t := parseBQTable(*derivedInvBQTable); p == "" || d == "" || t == "" {
+		return errors.Reason("invalid bq table %s", *derivedInvBQTable).Err()
+	}
+
+	return nil
+}
+
+func registerDerivedInvBQTableFlag() {
+	derivedInvBQTable = flag.String("derive-bigquery-table", "", text.Doc(
+		`Name of the bigquery table for result export. In the format of "<project>.<dataset>.<table>".`))
+}
 
 // validateDeriveInvocationRequest returns an error if req is invalid.
 func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
@@ -60,6 +85,14 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 	}
 
 	return nil
+}
+
+func parseBQTable(bqTable string) (project, dataset, table string) {
+	bqTableInfo := strings.Split(bqTable, ".")
+	if len(bqTableInfo) != 3 {
+		return "", "", ""
+	}
+	return bqTableInfo[0], bqTableInfo[1], bqTableInfo[2]
 }
 
 // DeriveInvocation derives the invocation associated with the given swarming task.
@@ -133,6 +166,17 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			"InvocationId":         invID,
 			"IncludedInvocationId": includedID,
 		}))
+	}
+
+	project, dataset, table := parseBQTable(*derivedInvBQTable)
+	if project != "" && dataset != "" && table != "" {
+		bqExport := &pb.BigQueryExport{
+			Project:     project,
+			Dataset:     dataset,
+			Table:       table,
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+		ms = append(ms, insertBQExportingTasks(invID, clock.Now(ctx), bqExport)...)
 	}
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
