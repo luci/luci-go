@@ -22,6 +22,53 @@
       "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "294ac673_61fcb6a1",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 414,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-18T19:54:31Z",
+      "side": 1,
+      "message": "good question, but what should happen instead is common.BucketPermissions should accept project and (short) bucket name.\n\nWhen common.BucketPermissions was originally written, we used long bucket names which were supposed to included a project name, e.g. luci.infra.try for what will now be called (project\u003dinfra, bucket\u003dtry).",
+      "parentUuid": "4f6517c2_1cec1efd",
+      "range": {
+        "startLine": 414,
+        "startChar": 1,
+        "endLine": 414,
+        "endChar": 55
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7fd10d7_c1fed642",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-18T19:54:31Z",
+      "side": 1,
+      "message": "no longer used.",
+      "range": {
+        "startLine": 145,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 17
+      },
+      "revId": "3b2ee045aa16b4fdfb8c691a09a991b9ca09c607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
