@@ -31,9 +31,14 @@ message TestResultRow {
     // immediate parent invocation, but the including invocation.
     string id = 1;
 
+    // Whether the invocation is interrupted or not.
+    // For more details, refer to luci.resultdb.rpc.v1.Invocation.interrupted
+    // in ../../rpc/v1/invocation.proto.
+    bool interrupted = 2;
+
     // Invocation-level string key-value pairs.
     // A key can be repeated.
-    repeated luci.resultdb.type.StringPair tags = 2;
+    repeated luci.resultdb.type.StringPair tags = 3;
   }
 
   // Invocation level information.
