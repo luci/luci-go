@@ -100,6 +100,7 @@ steps of build 54 go here`)
 			Convey("error", func() {
 				_, body := bundle.GenerateEmail("bad", input)
 				So(body, ShouldContainSubstring, "spartan")
+				So(body, ShouldContainSubstring, "buildbucket.example.com")
 			})
 		})
 	})

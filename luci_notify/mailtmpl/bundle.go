@@ -162,10 +162,11 @@ func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateI
 	subject = fmt.Sprintf(`[Build Status] Builder %q`, protoutil.FormatBuilderID(input.Build.Builder))
 
 	errorTemplateInput := map[string]interface{}{
-		"Build":        input.Build,
-		"TemplateName": templateName,
-		"TemplateURL":  "",
-		"Error":        err.Error(),
+		"Build":               input.Build,
+		"BuildbucketHostname": input.BuildbucketHostname,
+		"TemplateName":        templateName,
+		"TemplateURL":         "",
+		"Error":               err.Error(),
 	}
 	if t := b.templates[templateName]; t != nil {
 		errorTemplateInput["TemplateURL"] = t.DefinitionURL
