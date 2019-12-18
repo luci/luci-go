@@ -16,14 +16,21 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -51,6 +58,10 @@ func cmdDerive(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
 			r.queryRun.registerFlags(p)
+			r.Flags.BoolVar(&r.wait, "wait", false, text.Doc(`
+				Wait for the tasks to complete.
+				Without waiting, if the task is incomplete, exits with an error.
+			`))
 			return r
 		},
 	}
@@ -60,6 +71,7 @@ type deriveRun struct {
 	queryRun
 	swarmingHost string
 	taskIDs      []string
+	wait         bool
 }
 
 func (r *deriveRun) parseArgs(args []string) error {
@@ -105,12 +117,7 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 		i := i
 		tid := tid
 		eg.Go(func() error {
-			res, err := r.recorder.DeriveInvocation(ctx, &pb.DeriveInvocationRequest{
-				SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-					Hostname: r.swarmingHost,
-					Id:       tid,
-				},
-			})
+			res, err := r.deriveInvocation(ctx, tid)
 			if err != nil {
 				return err
 			}
@@ -120,4 +127,51 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 		})
 	}
 	return ret, eg.Wait()
+}
+
+// deriveInvocation derives an invocation from a task.
+func (r *deriveRun) deriveInvocation(ctx context.Context, taskID string) (*pb.Invocation, error) {
+	task := &pb.DeriveInvocationRequest_SwarmingTask{
+		Hostname: r.swarmingHost,
+		Id:       taskID,
+	}
+	if r.wait {
+		if err := r.waitForTaskToComplete(ctx, task); err != nil {
+			return nil, err
+		}
+	}
+
+	return r.recorder.DeriveInvocation(ctx, &pb.DeriveInvocationRequest{
+		SwarmingTask: task,
+	})
+}
+
+func (r *deriveRun) waitForTaskToComplete(ctx context.Context, task *pb.DeriveInvocationRequest_SwarmingTask) error {
+	svc, err := swarming.New(r.http)
+	if err != nil {
+		return err
+	}
+	svc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", task.Hostname)
+
+	return retry.Retry(ctx, newPollingIter, func() error {
+		res, err := svc.Task.Result(task.Id).Context(ctx).Do()
+		if err, ok := err.(*googleapi.Error); ok && err.Code >= 500 {
+			return transient.Tag.Apply(err)
+		}
+		if err != nil {
+			return err
+		}
+
+		if res.State == "PENDING" || res.State == "RUNNING" {
+			return errors.Reason("incomplete task").Tag(notReady).Err()
+		}
+
+		return nil
+	}, func(err error, d time.Duration) {
+		if notReady.In(err) {
+			logging.Infof(ctx, "task %s is incomplete; will wait for %s", task.Id, d)
+		} else {
+			logging.Warningf(ctx, "transient error while fetching task %s: %s; will wait for %s", task.Id, err, d)
+		}
+	})
 }
