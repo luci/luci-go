@@ -46,10 +46,6 @@ import (
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
-const (
-	swarmingAPIEndpoint = "_ah/api/swarming/v1/"
-)
-
 var (
 	// Ignore swarming tasks with any of the below values for the given tag keys.
 	tagBlacklist = stringset.NewFromSlice(
@@ -181,7 +177,7 @@ func GetSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, err
 		return nil, err
 	}
 
-	swarmSvc.BasePath = fmt.Sprintf("%s/%s", swarmingURL, swarmingAPIEndpoint)
+	swarmSvc.BasePath = fmt.Sprintf("%s/_ah/api/swarming/v1/", swarmingURL)
 	return swarmSvc, nil
 }
 
