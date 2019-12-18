@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/buildbucket/access"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
@@ -403,6 +404,14 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		return nil, err
 	}
 	link, err := getBugLink(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+	bucketID := b.Builder.Project + "/" + b.Builder.Bucket
+	permissions, err := common.BucketPermissions(c, bucketID)
+	if err != nil {
+		return nil, err
+	}
 	logging.Infof(c, "Got all the things")
 	return &ui.BuildPage{
 		Build: ui.Build{
@@ -414,7 +423,9 @@ func GetBuildPage(ctx *router.Context, br buildbucketpb.GetBuildRequest, forceBl
 		BuildbucketHost: host,
 		BlamelistError:  blameErr,
 		ForcedBlamelist: forceBlamelist,
-	}, err
+		CanCancel:       permissions.Can(bucketID, access.CancelBuild),
+		CanRetry:        permissions.Can(bucketID, access.AddBuild),
+	}, nil
 }
 
 // GetRelatedBuildsTable fetches all the related builds of the given build from Buildbucket.
