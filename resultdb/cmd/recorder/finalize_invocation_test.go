@@ -63,40 +63,41 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`finalized failed`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_INTERRUPTED, token, ct),
+				testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, true),
 			)
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different state`)
+			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different interrupted flag`)
 			So(inv, ShouldBeNil)
 		})
 
 		Convey(`complete expired invocation failed`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different state`)
+			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different interrupted flag`)
 			So(inv, ShouldBeNil)
 		})
 
 		Convey(`interrupt expired invocation passed`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv", Interrupted: true})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.Interrupted, ShouldEqual, true)
 		})
 
 		Convey(`idempotent`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct),
+				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
 			)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
@@ -119,7 +120,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct),
+					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct, false),
 					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})

@@ -133,11 +133,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 }
 
 func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
-	state := pb.Invocation_COMPLETED
-	if interrupted {
-		state = pb.Invocation_INTERRUPTED
-	}
-
 	if err := resetInvocationTasks(ctx, txn, id, finalizeTime); err != nil {
 		return err
 	}
@@ -145,8 +140,9 @@ func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, 
 	return txn.BufferWrite([]*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
-			"State":        state,
+			"State":        pb.Invocation_COMPLETED,
 			"FinalizeTime": finalizeTime,
+			"Interrupted":  interrupted,
 		}),
 	})
 }
@@ -206,7 +202,8 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		"CreateTime": inv.CreateTime,
 		"Deadline":   inv.Deadline,
 
-		"Tags": inv.Tags,
+		"Tags":        inv.Tags,
+		"Interrupted": inv.Interrupted,
 	}
 
 	if inv.FinalizeTime != nil {
