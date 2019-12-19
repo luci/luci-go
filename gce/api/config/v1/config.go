@@ -15,6 +15,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
@@ -37,6 +39,12 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(proto.MarshalTextString(cfg), datastore.NoIndex)
 }
 
+// ComputeAmount returns the amount to use at the given time. Assumes this
+// config has been validated.
+func (cfg *Config) ComputeAmount(now time.Time) (int32, error) {
+	return cfg.GetAmount().getAmount(cfg.CurrentAmount, now)
+}
+
 // Validate validates this config.
 func (cfg *Config) Validate(c *validation.Context) {
 	c.Enter("amount")
@@ -57,6 +65,9 @@ func (cfg *Config) Validate(c *validation.Context) {
 		c.Errorf("duration or seconds is required")
 	}
 	c.Exit()
+	if cfg.GetCurrentAmount() != 0 {
+		c.Errorf("current amount must not be specified")
+	}
 	if cfg.GetPrefix() == "" {
 		c.Errorf("prefix is required")
 	}

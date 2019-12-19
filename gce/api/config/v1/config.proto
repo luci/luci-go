@@ -30,13 +30,6 @@ enum AccessConfigType {
   ONE_TO_ONE_NAT = 0;
 }
 
-// A disk interface.
-// GCE's default is "SCSI".
-enum DiskInterface {
-  SCSI = 0;
-  NVME = 1;
-}
-
 // A description of a network access config.
 message AccessConfig {
   // The type of config this is.
@@ -52,6 +45,13 @@ message NetworkInterface {
   // The name of a network to use for this interface.
   // https://cloud.google.com/compute/docs/reference/rest/v1/networks/list.
   string network = 2;
+}
+
+// A disk interface.
+// GCE's default is "SCSI".
+enum DiskInterface {
+  SCSI = 0;
+  NVME = 1;
 }
 
 // A description of a disk.
@@ -148,7 +148,9 @@ message TimeOfDay {
 
 // An amount of VMs for particular days of the week.
 message Schedule {
-  // The amount of VMs.
+  // The amount of VMs. Deprecated, prefer min and max. If specified, overrides
+  // min/max.
+  // TODO(crbug/1033250): Migrate all amounts to min/max.
   int32 amount = 1;
 
   // The length of time the amount is in effect.
@@ -158,15 +160,28 @@ message Schedule {
 
   // The start times when this amount goes into effect.
   TimeOfDay start = 3;
+
+  // The minimum amount of VMs allowed.
+  int32 min = 4;
+
+  // The maximum amount of VMs allowed.
+  int32 max = 5;
 }
 
 // An amount of VMs.
 message Amount {
-  // The default amount to use outside scheduled hours.
+  // The default amount to use outside scheduled hours. Deprecated, prefer min
+  // and max. If specified, overrides min/max.
   int32 default = 1;
 
   // The amount of VMs to have at a particular time.
   repeated Schedule change = 2;
+
+  // The minimum amount of VMs allowed, and the amount of VMs to initialize to.
+  int32 min = 3;
+
+  // The maximum amount of VMs allowed.
+  int32 max = 4;
 }
 
 // A config for one type of VM.
@@ -192,10 +207,16 @@ message Config {
   // the VM is deleted and replaced.
   TimePeriod timeout = 7;
 
+  // Chrome Infra Auth groups considered to own this config.
+  repeated string owners = 9;
+
+  // Fields below should only be set by the server.
+
   // Should only be set by the server. The revision of this config.
   string revision = 5;
 
-  // Should only be set by the server. The current amount of these VMs.
+  // Should only be set by the server. The current amount of VMs the server is
+  // trying to create.
   int32 current_amount = 8;
 }
 

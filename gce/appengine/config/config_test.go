@@ -236,6 +236,23 @@ func TestNormalize(t *testing.T) {
 			So(cfg.VMs.GetVms()[0].Amount.Change[0].Length.GetSeconds(), ShouldEqual, 3600)
 		})
 
+		Convey("current amount", func() {
+			cfg := &Config{
+				VMs: &gce.Configs{
+					Vms: []*gce.Config{
+						{
+							Amount: &gce.Amount{
+								Max: 2,
+								Min: 2,
+							},
+						},
+					},
+				},
+			}
+			So(normalize(c, cfg), ShouldBeNil)
+			So(cfg.VMs.GetVms()[0].CurrentAmount, ShouldEqual, 2)
+		})
+
 		Convey("lifetime", func() {
 			cfg := &Config{
 				VMs: &gce.Configs{

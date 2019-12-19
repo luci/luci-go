@@ -67,6 +67,15 @@ func (s *Schedule) Validate(c *validation.Context) {
 	if s.GetAmount() < 0 {
 		c.Errorf("amount must be non-negative")
 	}
+	if s.GetMin() < 0 {
+		c.Errorf("minimum amount must be non-negative")
+	}
+	if s.GetMax() < 0 {
+		c.Errorf("maximum amount must be non-negative")
+	}
+	if s.GetMin() > s.GetMax() {
+		c.Errorf("minimum amount must not exceed maximum amount")
+	}
 	c.Enter("length")
 	s.GetLength().Validate(c)
 	switch n, err := s.Length.ToSeconds(); {

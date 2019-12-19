@@ -30,25 +30,59 @@ import (
 func TestAmount(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetAmount", t, func() {
+	Convey("getAmount", t, func() {
 		now := time.Time{}
 		So(now.Weekday(), ShouldEqual, time.Monday)
 		So(now.Hour(), ShouldEqual, 0)
 
-		Convey("default", func() {
+		Convey("min", func() {
 			a := &Amount{
-				Default: 1,
+				Min: 1,
+				Max: 3,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(0, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 		})
 
+		Convey("max", func() {
+			a := &Amount{
+				Min: 1,
+				Max: 3,
+			}
+			n, err := a.getAmount(4, now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 3)
+		})
+
+		Convey("proposed", func() {
+			a := &Amount{
+				Min: 1,
+				Max: 3,
+			}
+			n, err := a.getAmount(2, now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
+		})
+
+		Convey("equal", func() {
+			a := &Amount{
+				Min: 2,
+				Max: 2,
+			}
+			n, err := a.getAmount(2, now)
+			So(err, ShouldBeNil)
+			So(n, ShouldEqual, 2)
+		})
+
 		Convey("schedule", func() {
 			a := &Amount{
+				Min: 1,
+				Max: 1,
 				Change: []*Schedule{
 					{
-						Amount: 2,
+						Min: 2,
+						Max: 2,
 						Length: &TimePeriod{
 							Time: &TimePeriod_Duration{
 								Duration: "2h",
@@ -60,34 +94,36 @@ func TestAmount(t *testing.T) {
 						},
 					},
 				},
-				Default: 1,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(5, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			n, err = a.getAmount(5, now.Add(time.Minute*59))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Hour))
+			n, err = a.getAmount(5, now.Add(time.Hour))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 
-			n, err = a.GetAmount(now.Add(time.Hour * -1))
+			n, err = a.getAmount(5, now.Add(time.Hour*-1))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * -61))
+			n, err = a.getAmount(5, now.Add(time.Minute*-61))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 		})
 
 		Convey("schedules", func() {
 			a := &Amount{
+				Min: 1,
+				Max: 1,
 				Change: []*Schedule{
 					{
-						Amount: 2,
+						Min: 2,
+						Max: 2,
 						Length: &TimePeriod{
 							Time: &TimePeriod_Duration{
 								Duration: "2h",
@@ -99,7 +135,8 @@ func TestAmount(t *testing.T) {
 						},
 					},
 					{
-						Amount: 3,
+						Min: 3,
+						Max: 3,
 						Length: &TimePeriod{
 							Time: &TimePeriod_Duration{
 								Duration: "1m",
@@ -111,21 +148,20 @@ func TestAmount(t *testing.T) {
 						},
 					},
 				},
-				Default: 1,
 			}
-			n, err := a.GetAmount(now)
+			n, err := a.getAmount(5, now)
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 59))
+			n, err = a.getAmount(5, now.Add(time.Minute*59))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 2)
 
-			n, err = a.GetAmount(now.Add(time.Hour))
+			n, err = a.getAmount(5, now.Add(time.Hour))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 3)
 
-			n, err = a.GetAmount(now.Add(time.Minute * 61))
+			n, err = a.getAmount(5, now.Add(time.Minute*61))
 			So(err, ShouldBeNil)
 			So(n, ShouldEqual, 1)
 		})
@@ -142,6 +178,34 @@ func TestAmount(t *testing.T) {
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "default amount must be non-negative")
+			})
+
+			Convey("min", func() {
+				a := &Amount{
+					Min: -1,
+				}
+				a.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "minimum amount must be non-negative")
+			})
+
+			Convey("max", func() {
+				a := &Amount{
+					Max: -1,
+				}
+				a.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "maximum amount must be non-negative")
+			})
+
+			Convey("min > max", func() {
+				a := &Amount{
+					Min: 2,
+					Max: 1,
+				}
+				a.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "minimum amount must not exceed maximum amount")
 			})
 
 			Convey("schedule", func() {
@@ -262,9 +326,10 @@ func TestAmount(t *testing.T) {
 				So(c.Finalize(), ShouldBeNil)
 			})
 
-			Convey("default", func() {
+			Convey("non-empty", func() {
 				a := &Amount{
-					Default: 1,
+					Min: 1,
+					Max: 1,
 				}
 				a.Validate(c)
 				So(c.Finalize(), ShouldBeNil)

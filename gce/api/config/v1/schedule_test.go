@@ -173,11 +173,40 @@ func TestSchedule(t *testing.T) {
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "amount must be non-negative")
 			})
+
+			Convey("min", func() {
+				s := &Schedule{
+					Min: -1,
+				}
+				s.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "minimum amount must be non-negative")
+			})
+
+			Convey("max", func() {
+				s := &Schedule{
+					Max: -1,
+				}
+				s.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "maximum amount must be non-negative")
+			})
+
+			Convey("min > max", func() {
+				s := &Schedule{
+					Min: 2,
+					Max: 1,
+				}
+				s.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "minimum amount must not exceed maximum amount")
+			})
 		})
 
 		Convey("valid", func() {
 			s := &Schedule{
-				Amount: 1,
+				Min: 1,
+				Max: 2,
 				Length: &TimePeriod{
 					Time: &TimePeriod_Duration{
 						Duration: "1h",

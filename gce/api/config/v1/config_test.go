@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/config/validation"
 
@@ -24,10 +25,23 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	Convey("ComputeAmount", t, func() {
+		cfg := &Config{
+			Amount: &Amount{
+				Min: 1,
+				Max: 3,
+			},
+			CurrentAmount: 2,
+		}
+		amt, err := cfg.ComputeAmount(time.Time{})
+		So(err, ShouldBeNil)
+		So(amt, ShouldEqual, 2)
+	})
+
+	Convey("Validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
@@ -49,6 +63,15 @@ func TestValidateConfig(t *testing.T) {
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
 				So(errs, ShouldContainErr, "default amount must be non-negative")
+			})
+
+			Convey("current amount", func() {
+				cfg := &Config{
+					CurrentAmount: 1,
+				}
+				cfg.Validate(c)
+				errs := c.Finalize().(*validation.Error).Errors
+				So(errs, ShouldContainErr, "current amount must not be specified")
 			})
 
 			Convey("revision", func() {

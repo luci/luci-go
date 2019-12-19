@@ -22,10 +22,9 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
-// GetAmount returns the amount to use at the given time. Returns the first
-// matching amount, which should be the only match if this *Amount has been
-// validated.
-func (a *Amount) GetAmount(now time.Time) (int32, error) {
+// getAmount returns the amount to use given the proposed amount and time.
+// Assumes this amount has been validated.
+func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
 	for _, s := range a.GetChange() {
 		start, err := s.mostRecentStart(now)
 		if err != nil {
@@ -38,11 +37,48 @@ func (a *Amount) GetAmount(now time.Time) (int32, error) {
 			}
 			end := start.Add(time.Second * time.Duration(sec))
 			if now.Before(end) {
-				return s.Amount, nil
+				// TODO(crbug/1033250): Convert amount to min/max.
+				if s.Amount > 0 {
+					return s.Amount, nil
+				}
+				if proposed < s.Min {
+					return s.Min, nil
+				}
+				if proposed > s.Max {
+					return s.Max, nil
+				}
+				return proposed, nil
 			}
 		}
 	}
-	return a.GetDefault(), nil
+	// TODO(crbug/1033250): Convert default to min/max.
+	if a.GetDefault() > 0 {
+		return a.Default, nil
+	}
+	if proposed < a.GetMin() {
+		return a.GetMin(), nil
+	}
+	if proposed > a.GetMax() {
+		return a.GetMax(), nil
+	}
+	return proposed, nil
+}
+
+// Validate validates this amount.
+func (a *Amount) Validate(c *validation.Context) {
+	if a.GetDefault() < 0 {
+		c.Errorf("default amount must be non-negative")
+	}
+	if a.GetMin() < 0 {
+		c.Errorf("minimum amount must be non-negative")
+	}
+	if a.GetMax() < 0 {
+		c.Errorf("maximum amount must be non-negative")
+	}
+	if a.GetMin() > a.GetMax() {
+		c.Errorf("minimum amount must not exceed maximum amount")
+	}
+	a.validateSchedules(c)
 }
 
 // indexedSchedule encapsulates *Schedules for sorting.
@@ -54,11 +90,8 @@ type indexedSchedule struct {
 	sortKey time.Time
 }
 
-// Validate validates this amount.
-func (a *Amount) Validate(c *validation.Context) {
-	if a.GetDefault() < 0 {
-		c.Errorf("default amount must be non-negative")
-	}
+// validateSchedules validates the schedules in this amount.
+func (a *Amount) validateSchedules(c *validation.Context) {
 	// The algorithm works with any time 7 days greater than the zero time.
 	now := time.Date(2018, 1, 1, 12, 0, 0, 0, time.UTC)
 	schs := make([]indexedSchedule, len(a.GetChange()))
