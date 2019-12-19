@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "29771b82_fcfd8b94",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-19T03:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "451d28eb_dde36bb7",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "901fbbd2_c975da86",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "aa54337a158c5381a139e65ee45938301f5176db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67a59bfa_261911d3",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-19T03:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "901fbbd2_c975da86",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "eb951479_238ba7c3",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-19T03:36:47Z",
+      "side": 1,
+      "message": "Leftover from the patchset 1 design. Removed all of it.",
+      "parentUuid": "163b8a79_757c0867",
+      "range": {
+        "startLine": 172,
+        "startChar": 67,
+        "endLine": 172,
+        "endChar": 75
+      },
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7c4b1788_02bb6ebb",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 2
@@ -73,6 +133,24 @@
       "revId": "aa54337a158c5381a139e65ee45938301f5176db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "856faa17_13e42930",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-19T03:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c4b1788_02bb6ebb",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -107,6 +185,24 @@
       "revId": "aa54337a158c5381a139e65ee45938301f5176db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87967c5b_801a05f5",
+        "filename": "gce/api/config/v1/schedule.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-19T03:36:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7020912_c2f7a771",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
