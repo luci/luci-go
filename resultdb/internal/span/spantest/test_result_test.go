@@ -35,7 +35,7 @@ func TestQueryTestResults(t *testing.T) {
 
 		now := clock.Now(ctx)
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now, false))
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
@@ -77,8 +77,8 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_FAIL,
 			)
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now),
-				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now),
+				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false),
+				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now, false),
 			)
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
@@ -91,7 +91,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
@@ -117,7 +117,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test path filter`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),

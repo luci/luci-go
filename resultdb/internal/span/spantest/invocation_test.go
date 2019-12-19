@@ -40,9 +40,9 @@ func TestReadInvocationFull(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now),
-			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", now),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now, false),
+			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", now, false),
+			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", now, false),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -165,9 +165,9 @@ func TestQueryInvocations(t *testing.T) {
 		now := clock.Now(ctx)
 
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now),
+			testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now, false),
+			testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now, false),
+			testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now, false),
 		)
 
 		txn := span.Client(ctx).ReadOnlyTransaction()

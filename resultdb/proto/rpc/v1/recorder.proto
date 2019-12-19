@@ -123,8 +123,7 @@ message FinalizeInvocationRequest {
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // Flag to indicate if the invocation is interrupted.
-  // If true, Invocation.state will be set to INTERRUPTED; otherwise COMPLETED.
-  // Refer to Invocation.state for the meaning of each state.
+  // If true, Invocation.interrupted will be set to true; otherwise false.
   bool interrupted = 2;
 }
 

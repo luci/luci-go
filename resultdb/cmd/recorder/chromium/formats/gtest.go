@@ -141,7 +141,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv 
 
 	// Assume the invocation was not interrupted; if any results are NOTRUN,
 	// we'll mark as otherwise.
-	interrupted := false
+	inv.Interrupted = false
 
 	var ret []*pb.TestResult
 	var testNames []string
@@ -178,7 +178,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv 
 				// results indicates the task was incomplete.
 				// TODO(jchinlee): Check how unexpected SKIPPED tests should be handled.
 				if result.Status == "NOTRUN" {
-					interrupted = true
+					inv.Interrupted = true
 				}
 
 				ret = append(ret, rpb)
@@ -188,10 +188,6 @@ func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv 
 
 	// The code below does not return errors, so it is safe to make in-place
 	// modifications of inv.
-
-	if interrupted {
-		inv.State = pb.Invocation_INTERRUPTED
-	}
 
 	// Populate the tags.
 	for _, tag := range r.GlobalTags {

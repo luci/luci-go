@@ -64,7 +64,7 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 		switch includedState, err := readInvocationState(ctx, txn, included); {
 		case err != nil:
 			return err
-		case !pbutil.IsFinalized(includedState):
+		case includedState != pb.Invocation_COMPLETED:
 			return errors.Reason("%q is not finalized", in.IncludedInvocation).Tag(grpcutil.FailedPreconditionTag).Err()
 		}
 

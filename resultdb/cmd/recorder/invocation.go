@@ -133,11 +133,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 }
 
 func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
-	state := pb.Invocation_COMPLETED
-	if interrupted {
-		state = pb.Invocation_INTERRUPTED
-	}
-
 	if err := resetInvocationTasks(ctx, txn, id, finalizeTime); err != nil {
 		return err
 	}
@@ -145,7 +140,8 @@ func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, 
 	return txn.BufferWrite([]*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
-			"State":        state,
+			"State":        pb.Invocation_COMPLETED,
+			"Interrupted":  interrupted,
 			"FinalizeTime": finalizeTime,
 		}),
 	})
@@ -196,6 +192,7 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
 		"State":        inv.State,
+		"Interrupted":  inv.Interrupted,
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
 
 		"InvocationExpirationTime":          createTime.Add(invocationExpirationDuration),

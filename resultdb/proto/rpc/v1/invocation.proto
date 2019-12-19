@@ -43,47 +43,60 @@ message Invocation {
     // The invocation was created and accepts new results.
     ACTIVE = 1;
 
-    // The invocation is finalized and contains all the results that the
-    // associated computation was expected to compute; unlike INTERRUPTED state.
-    //
-    // The invocation is immutable and no longer accepts new results.
+    // The invocation is finalized.
+    // The invocation is immutable and no longer accepts new results nor
+    // inclusions directly or indirectly.
     COMPLETED = 2;
 
     // The invocation is finalized and does NOT contain all the results that the
     // associated computation was expected to compute.
-    // The computation was interrupted prematurely.
     //
-    // Such invocation should be discarded.
-    // Often the associated computation is retried.
+    // This state has been DEPRECATED. To describe such invocation, please set
+    // the invocation's state to COMPLETED and set interrupted to true.
     //
-    // The invocation is immutable and no longer accepts new results.
+    // TODO(chanli): remove this state when all the existing invocations have
+    // been updated.
     INTERRUPTED = 3;
   }
 
   // Current state of the invocation.
   State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
+  // True if the invocation is COMPLETED and does NOT contain all the results
+  // that the associated computation was expected to compute.
+  //  * The computation was interrupted prematurely.
+  //  * Such invocation should be discarded.
+  //  * Often the associated computation is retried.
+  //
+  // False could mean 2 things:
+  // * the invocation is still ACTIVE;
+  // * the invocation is COMPLETED and contains all the results that the
+  //   associated computation was expected to compute.
+  //
+  // Use this field with state above.
+  bool interrupted = 3 [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
   // When the invocation was created.
-  google.protobuf.Timestamp create_time = 3 [
+  google.protobuf.Timestamp create_time = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
 
   // Invocation-level string key-value pairs.
   // A key can be repeated.
-  repeated luci.resultdb.type.StringPair tags = 4;
+  repeated luci.resultdb.type.StringPair tags = 5;
 
   // == Finalization ===========================================================
 
   // When the invocation was finalized, i.e. transitioned to COMPLETED or
   // INTERRUPTED state.
   // If this field is set, implies that the invocation is finalized.
-  google.protobuf.Timestamp finalize_time = 5
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  google.protobuf.Timestamp finalize_time = 6
+  [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Timestamp when the invocation will be forcefully finalized.
   // Can be extended with UpdateInvocation until finalized.
-  google.protobuf.Timestamp deadline = 6;
+  google.protobuf.Timestamp deadline = 7;
 
   // Names of invocations included into this one. Overall results of this
   // invocation is a UNION of results directly included into this invocation
@@ -101,6 +114,6 @@ message Invocation {
   // invocations.
   //
   // Use Recorder.Include RPC to modify this field.
-  repeated string included_invocations = 7
-      [ (google.api.field_behavior) = OUTPUT_ONLY ];
+  repeated string included_invocations = 8
+  [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }

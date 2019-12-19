@@ -54,7 +54,7 @@ func TestGetTestExoneration(t *testing.T) {
 		invID := span.InvocationID("inv_0")
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", now),
+			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", now, false),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":        invID,
 				"TestPath":            "ninja://chrome/test:foo_tests/BarTest.DoBaz",

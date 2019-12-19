@@ -58,9 +58,9 @@ func TestGetInvocation(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now),
-			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", now),
-			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", now),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now, false),
+			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", now, false),
+			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", now, false),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -75,6 +75,7 @@ func TestGetInvocation(t *testing.T) {
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(now),
 			Deadline:            pbutil.MustTimestampProto(now.Add(time.Hour)),
+			Interrupted:         false,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})
 	})
