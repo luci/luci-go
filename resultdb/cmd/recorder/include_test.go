@@ -104,7 +104,7 @@ func TestInclude(t *testing.T) {
 
 		Convey(`no included invocation`, func() {
 			testutil.MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct),
+				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldErrLike, `"invocations/included" not found`)
@@ -113,8 +113,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`included invocation is active`, func() {
 			testutil.MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct),
-				insInv("included", pb.Invocation_ACTIVE, "", ct),
+				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
+				insInv("included", pb.Invocation_ACTIVE, "", ct, false),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldErrLike, `"invocations/included" is not finalized`)
@@ -123,8 +123,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`idempotent`, func() {
 			testutil.MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct),
-				insInv("included", pb.Invocation_COMPLETED, "", ct),
+				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
+				insInv("included", pb.Invocation_COMPLETED, "", ct, false),
 			)
 
 			_, err := recorder.Include(ctx, req)
@@ -136,8 +136,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`success`, func() {
 			testutil.MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct),
-				insInv("included", pb.Invocation_COMPLETED, "", ct),
+				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
+				insInv("included", pb.Invocation_COMPLETED, "", ct, false),
 			)
 
 			_, err := recorder.Include(ctx, req)
