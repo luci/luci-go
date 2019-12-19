@@ -148,10 +148,7 @@ message TimeOfDay {
 
 // An amount of VMs for particular days of the week.
 message Schedule {
-  // The amount of VMs. Deprecated, prefer min and max. If specified, overrides
-  // min/max.
-  // TODO(crbug/1033250): Migrate all amounts to min/max.
-  int32 amount = 1;
+  reserved 1; // amount
 
   // The length of time the amount is in effect.
   // With start, this creates a half-open interval.
@@ -170,9 +167,7 @@ message Schedule {
 
 // An amount of VMs.
 message Amount {
-  // The default amount to use outside scheduled hours. Deprecated, prefer min
-  // and max. If specified, overrides min/max.
-  int32 default = 1;
+  reserved 1; // default
 
   // The amount of VMs to have at a particular time.
   repeated Schedule change = 2;

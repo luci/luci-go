@@ -171,15 +171,6 @@ func TestAmount(t *testing.T) {
 		c := &validation.Context{Context: context.Background()}
 
 		Convey("invalid", func() {
-			Convey("default", func() {
-				a := &Amount{
-					Default: -1,
-				}
-				a.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "default amount must be non-negative")
-			})
-
 			Convey("min", func() {
 				a := &Amount{
 					Min: -1,
@@ -219,19 +210,6 @@ func TestAmount(t *testing.T) {
 					errs := c.Finalize().(*validation.Error).Errors
 					So(errs, ShouldContainErr, "duration or seconds is required")
 					So(errs, ShouldContainErr, "time must match regex")
-				})
-
-				Convey("negative", func() {
-					a := &Amount{
-						Change: []*Schedule{
-							{
-								Amount: -1,
-							},
-						},
-					}
-					a.Validate(c)
-					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "amount must be non-negative")
 				})
 
 				Convey("conflict", func() {
