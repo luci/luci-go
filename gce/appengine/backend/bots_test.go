@@ -215,9 +215,7 @@ func TestManageBot(t *testing.T) {
 			datastore.Put(c, &model.Config{
 				ID: "config",
 				Config: config.Config{
-					Amount: &config.Amount{
-						Default: 1,
-					},
+					CurrentAmount: 1,
 				},
 			})
 

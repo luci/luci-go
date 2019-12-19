@@ -62,11 +62,7 @@ func countVMs(c context.Context, payload proto.Message) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	default:
-		amt, err := cfg.Config.Amount.GetAmount(clock.Now(c))
-		if err != nil {
-			return errors.Annotate(err, "failed to parse amount").Err()
-		}
-		vms.AddConfigured(int(amt), cfg.Config.Attributes.Project)
+		vms.AddConfigured(int(cfg.Config.CurrentAmount), cfg.Config.Attributes.Project)
 	}
 
 	// Get the actual (connected, created) counts.
@@ -112,14 +108,10 @@ func drainVM(c context.Context, vm *model.VM) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
-	switch amt, err := cfg.Config.Amount.GetAmount(clock.Now(c)); {
-	case err != nil:
-		return errors.Annotate(err, "failed to parse amount").Err()
-	case amt > vm.Index:
+	if cfg.Config.CurrentAmount > vm.Index {
 		return nil
-	default:
-		logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, amt)
 	}
+	logging.Debugf(c, "config %q only specifies %d VMs", cfg.ID, cfg.Config.CurrentAmount)
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, vm); {
 		case err == datastore.ErrNoSuchEntity:
@@ -245,7 +237,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
 	now := clock.Now(c)
-	amt, err := cfg.Config.Amount.GetAmount(now)
+	amt, err := cfg.Config.ComputeAmount(now)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse amount").Err()
 	}

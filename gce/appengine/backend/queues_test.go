@@ -256,9 +256,7 @@ func TestQueues(t *testing.T) {
 						datastore.Put(c, &model.Config{
 							ID: "config",
 							Config: config.Config{
-								Amount: &config.Amount{
-									Default: 2,
-								},
+								CurrentAmount: 2,
 							},
 						})
 						v := &model.VM{
@@ -306,9 +304,7 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: &config.Amount{
-										Default: 1,
-									},
+									CurrentAmount: 1,
 								},
 							})
 							v := &model.VM{
@@ -327,9 +323,7 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: &config.Amount{
-										Default: 2,
-									},
+									CurrentAmount: 2,
 								},
 							})
 							v := &model.VM{
@@ -348,9 +342,7 @@ func TestQueues(t *testing.T) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: config.Config{
-									Amount: &config.Amount{
-										Default: 3,
-									},
+									CurrentAmount: 3,
 								},
 							})
 							v := &model.VM{
@@ -363,81 +355,6 @@ func TestQueues(t *testing.T) {
 							So(v.Drained, ShouldBeFalse)
 							So(datastore.Get(c, v), ShouldBeNil)
 							So(v.Drained, ShouldBeFalse)
-						})
-
-						Convey("schedule", func() {
-							datastore.Put(c, &model.Config{
-								ID: "config",
-								Config: config.Config{
-									Amount: &config.Amount{
-										Default: 2,
-										Change: []*config.Schedule{
-											{
-												Amount: 3,
-												Length: &config.TimePeriod{
-													Time: &config.TimePeriod_Duration{
-														Duration: "1h",
-													},
-												},
-												Start: &config.TimeOfDay{
-													Day:  dayofweek.DayOfWeek_MONDAY,
-													Time: "1:00",
-												},
-											},
-										},
-									},
-								},
-							})
-
-							Convey("lesser", func() {
-								now := time.Time{}.Add(time.Hour)
-								So(now.Weekday(), ShouldEqual, time.Monday)
-								So(now.Hour(), ShouldEqual, 1)
-								c, _ = testclock.UseTime(c, now)
-								v := &model.VM{
-									ID:     "id",
-									Config: "config",
-									Index:  4,
-								}
-								So(datastore.Put(c, v), ShouldBeNil)
-								So(drainVM(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeTrue)
-								So(datastore.Get(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeTrue)
-							})
-
-							Convey("equal", func() {
-								now := time.Time{}
-								So(now.Weekday(), ShouldEqual, time.Monday)
-								c, _ = testclock.UseTime(c, now)
-								v := &model.VM{
-									ID:     "id",
-									Config: "config",
-									Index:  3,
-								}
-								So(datastore.Put(c, v), ShouldBeNil)
-								So(drainVM(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeTrue)
-								So(datastore.Get(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeTrue)
-							})
-
-							Convey("greater", func() {
-								now := time.Time{}.Add(time.Hour)
-								So(now.Weekday(), ShouldEqual, time.Monday)
-								So(now.Hour(), ShouldEqual, 1)
-								c, _ = testclock.UseTime(c, now)
-								v := &model.VM{
-									ID:     "id",
-									Config: "config",
-									Index:  2,
-								}
-								So(datastore.Put(c, v), ShouldBeNil)
-								So(drainVM(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeFalse)
-								So(datastore.Get(c, v), ShouldBeNil)
-								So(v.Drained, ShouldBeFalse)
-							})
 						})
 					})
 				})
@@ -512,7 +429,8 @@ func TestQueues(t *testing.T) {
 								Project: "project",
 							},
 							Amount: &config.Amount{
-								Default: 3,
+								Min: 3,
+								Max: 3,
 							},
 							Prefix: "prefix",
 						},
@@ -537,10 +455,12 @@ func TestQueues(t *testing.T) {
 								Project: "project",
 							},
 							Amount: &config.Amount{
-								Default: 2,
+								Min: 2,
+								Max: 2,
 								Change: []*config.Schedule{
 									{
-										Amount: 5,
+										Min: 5,
+										Max: 5,
 										Length: &config.TimePeriod{
 											Time: &config.TimePeriod_Duration{
 												Duration: "1h",
