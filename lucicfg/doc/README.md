@@ -1713,7 +1713,7 @@ failure.
 
 #### Arguments {#luci.notifier_template-args}
 
-* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) rules. A template named `default` is used by all notifiers that do not explicitly specify another template. Required.
+* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) rules. Must match the regex `^[a-z][a-z0-9\_]*$`. A template named `default` is used by all notifiers that do not explicitly specify another template. Required.
 * **body**: string with the template body. Use [io.read_file(...)](#io.read_file) to load it from an external file, if necessary. Required.
 
 

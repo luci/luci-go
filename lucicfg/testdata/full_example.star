@@ -334,7 +334,7 @@ luci.notifier(
     on_new_status = ['FAILURE'],
     notify_emails = ['someone@example,com'],
     notify_blamelist = True,
-    template = 'notifier-template',
+    template = 'notifier_template',
     notified_by = [
         'linux ci builder',
         'cron builder',
@@ -342,12 +342,12 @@ luci.notifier(
 )
 
 luci.notifier_template(
-    name = 'notifier-template',
+    name = 'notifier_template',
     body = 'Hello\n\nHi\n',
 )
 
 luci.notifier_template(
-    name = 'another-template',
+    name = 'another_template',
     body = 'Boo!\n',
 )
 
@@ -812,7 +812,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
-#     template: "notifier-template"
+#     template: "notifier_template"
 #     notify_blamelist: <>
 #   >
 #   builders: <
@@ -827,7 +827,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
-#     template: "notifier-template"
+#     template: "notifier_template"
 #     notify_blamelist: <>
 #   >
 #   builders: <
@@ -842,7 +842,7 @@ lucicfg.emit(
 #     email: <
 #       recipients: "someone@example,com"
 #     >
-#     template: "notifier-template"
+#     template: "notifier_template"
 #     notify_blamelist: <>
 #   >
 #   builders: <
@@ -853,11 +853,11 @@ lucicfg.emit(
 # >
 # ===
 #
-# === luci-notify/email-templates/another-template.template
+# === luci-notify/email-templates/another_template.template
 # Boo!
 # ===
 #
-# === luci-notify/email-templates/notifier-template.template
+# === luci-notify/email-templates/notifier_template.template
 # Hello
 #
 # Hi
