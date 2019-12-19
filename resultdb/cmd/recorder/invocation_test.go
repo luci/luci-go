@@ -65,21 +65,21 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct))
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false))
 				err := mayMutate()
 				So(err, ShouldErrLike, `"invocations/inv" is not active`)
 				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct))
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct, false))
 				err := mayMutate()
 				So(err, ShouldErrLike, `invalid update token`)
 				So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
 			})
 
 			Convey(`with exceeded deadline`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct))
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
 
 				// Mock now to be after deadline.
 				clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
@@ -91,17 +91,20 @@ func TestMutateInvocation(t *testing.T) {
 				// Confirm the invocation has been updated.
 				var state pb.Invocation_State
 				var ft time.Time
+				var interrupted bool
 				inv := span.InvocationID("inv")
 				testutil.MustReadRow(ctx, "Invocations", inv.Key(), map[string]interface{}{
 					"State":        &state,
+					"Interrupted":  &interrupted,
 					"FinalizeTime": &ft,
 				})
-				So(state, ShouldEqual, pb.Invocation_INTERRUPTED)
+				So(state, ShouldEqual, pb.Invocation_COMPLETED)
+				So(interrupted, ShouldEqual, true)
 				So(ft, ShouldEqual, ct.Add(time.Hour))
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct))
+				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
@@ -125,7 +128,7 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`completed`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct))
+			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false))
 
 			inv := readInv()
 			expected := &pb.Invocation{
@@ -139,8 +142,8 @@ func TestReadInvocation(t *testing.T) {
 
 			Convey(`with included invocations`, func() {
 				testutil.MustApply(ctx,
-					testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct),
-					testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct),
+					testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false),
+					testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false),
 					testutil.InsertInclusion("inv", "included0"),
 					testutil.InsertInclusion("inv", "included1"),
 				)

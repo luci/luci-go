@@ -182,7 +182,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				testutil.InsertInvocation("u:inv", 1, "", testclock.TestRecentTimeUTC),
+				testutil.InsertInvocation("u:inv", 1, "", testclock.TestRecentTimeUTC, false),
 			})
 			So(err, ShouldBeNil)
 

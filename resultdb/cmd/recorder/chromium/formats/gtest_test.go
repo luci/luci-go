@@ -435,7 +435,7 @@ func TestGTestConversions(t *testing.T) {
 
 			_, err := results.ToProtos(ctx, "ninja://tests/", inv)
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_INTERRUPTED)
+			So(inv.Interrupted, ShouldEqual, true)
 		})
 	})
 }

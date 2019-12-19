@@ -81,7 +81,8 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	// Populate fields we will need in the base invocation.
 	inv := &pb.Invocation{
-		Name: GetInvocationID(task, req).Name(),
+		Name:  GetInvocationID(task, req).Name(),
+		State: pb.Invocation_COMPLETED,
 	}
 	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
@@ -97,17 +98,16 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	// Tasks that got interrupted for which we expect no output just need to set the correct
 	// Invocation state and are done.
 	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED":
-		inv.State = pb.Invocation_INTERRUPTED
+		inv.Interrupted = true
 		return inv, nil, nil
 
 	// Tasks that got interrupted for which we may get output need to set the correct Invocation state
 	// but further processing may be needed.
 	case "TIMED_OUT":
-		inv.State = pb.Invocation_INTERRUPTED
+		inv.Interrupted = true
 
 	// For COMPLETED state, we expect normal completion and output.
 	case "COMPLETED":
-		inv.State = pb.Invocation_COMPLETED
 		mustFetchOutputJSON = true
 
 	default:
