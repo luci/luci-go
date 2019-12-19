@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "451d28eb_dde36bb7",
+        "filename": "gce/api/config/v1/amount.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "less or equal",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "901fbbd2_c975da86",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "// If specified, min \u0026 max are ignored.",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "163b8a79_757c0867",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "external what?",
+      "range": {
+        "startLine": 172,
+        "startChar": 67,
+        "endLine": 172,
+        "endChar": 75
+      },
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c4b1788_02bb6ebb",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "// If specified, min \u0026 max are ignored.",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3e9546c_cdb675ed",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "thanks :)",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d7020912_c2f7a771",
+        "filename": "gce/api/config/v1/schedule.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-19T03:32:33Z",
+      "side": 1,
+      "message": "ditto, wrong message",
+      "revId": "aa54337a158c5381a139e65ee45938301f5176db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
