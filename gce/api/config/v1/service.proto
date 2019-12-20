@@ -7,6 +7,7 @@ syntax = "proto3";
 package config;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
 // A request to delete a config.
@@ -19,6 +20,7 @@ message DeleteRequest {
 message EnsureRequest {
   // The id of the config to ensure.
   string id = 1;
+
   // The config.
   Config config = 2;
 }
@@ -49,6 +51,18 @@ message ListResponse {
   string next_page_token = 2;
 }
 
+// A request to update an existing config.
+message UpdateRequest {
+  // The id of the config to update.
+  string id = 1;
+
+  // The config.
+  Config config = 2;
+
+  // The fields to update. Only config.current_amount may be updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
 // A service for manipulating configs.
 service Configuration {
   // Delete deletes a config.
@@ -62,4 +76,6 @@ service Configuration {
   rpc Get(GetRequest) returns (Config);
   // List returns existing configs.
   rpc List(ListRequest) returns (ListResponse);
+  // Update updates a config.
+  rpc Update(UpdateRequest) returns (Config);
 }

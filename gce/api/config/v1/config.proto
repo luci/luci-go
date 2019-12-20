@@ -203,7 +203,7 @@ message Config {
   TimePeriod timeout = 7;
 
   // Chrome Infra Auth groups considered to own this config.
-  repeated string owners = 9;
+  repeated string owner = 9;
 
   // Fields below should only be set by the server.
 

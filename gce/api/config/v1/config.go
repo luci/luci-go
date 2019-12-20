@@ -39,10 +39,10 @@ func (cfg *Config) ToProperty() (datastore.Property, error) {
 	return p, p.SetValue(proto.MarshalTextString(cfg), datastore.NoIndex)
 }
 
-// ComputeAmount returns the amount to use at the given time. Assumes this
-// config has been validated.
-func (cfg *Config) ComputeAmount(now time.Time) (int32, error) {
-	return cfg.GetAmount().getAmount(cfg.CurrentAmount, now)
+// ComputeAmount returns the amount to use given the proposed amount and time.
+// Assumes this config has been validated.
+func (cfg *Config) ComputeAmount(proposed int32, now time.Time) (int32, error) {
+	return cfg.GetAmount().getAmount(proposed, now)
 }
 
 // Validate validates this config.
