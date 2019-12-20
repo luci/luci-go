@@ -16,6 +16,24 @@
       "revId": "b2bccc280e3fa9828395a5420eb7340a0e197f26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28907952_656f44c6",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2019-12-20T22:50:29Z",
+      "side": 0,
+      "message": "Agreed about code, but this is primarily entered through text proto where being singular makes more sense.\nowner: \"group1\"\nowner: \"group2\"\nvs.\nowners: \"group1\"\nowners: \"group2\"\n\nMade similar decisions elsewhere (e.g. \"change\" not \"changes\").",
+      "parentUuid": "0389fb00_5b2e6338",
+      "revId": "b2bccc280e3fa9828395a5420eb7340a0e197f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
