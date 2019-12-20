@@ -67,12 +67,39 @@ message GerritChange {
   google.protobuf.Timestamp trigger_time = 6;
   // CQ Mode for this CL, e.g. dry run or full run.
   Mode mode = 7;
-  // True if the change was submitted.
-  //
-  // That is, the status of the change in Gerrit was changed to "merged".
-  // Submission of Gerrit CLs in an Attempt is not an atomic operation,
-  // so it's possible that only some of the GerritChanges are submitted.
-  bool submitted = 8;
+
+  enum SubmitStatus {
+    // Default value.
+    SUBMIT_STATUS_UNSPECIFIED = 0;
+
+    // CQ didn't try submitting this CL.
+    //
+    // Includes a case where CQ tried submitting the CL, but submission failed
+    // due to transient error leaving CL as is, and CQ didn't try again.
+    PENDING = 1;
+
+    // CQ tried to submit, but got presumably transient errors and couldn't
+    // ascertain whether submission was successful.
+    //
+    // It's possible that change was actually submitted, but CQ didn't receive
+    // a confirmation from Gerrit and follow up checks of the change status
+    // failed, too.
+    UNKNOWN = 2;
+
+    // CQ tried to submit, but Gerrit rejected the submission because this
+    // Change can't be submitted.
+    // Typically, this is because a rebase conflict needs to be resolved,
+    // or rarely because the change needs some kind of approval.
+    FAILURE = 3;
+
+    // CQ submitted this change (aka "merged" in Gerrit jargon).
+    //
+    // Submission of Gerrit CLs in an Attempt is not an atomic operation,
+    // so it's possible that only some of the GerritChanges are submitted.
+    SUCCESS = 4;
+  }
+  // Whether CQ tried to submit this change and the result of the operation.
+  SubmitStatus submit_status = 8;
 }
 
 enum Mode {
@@ -104,7 +131,7 @@ message Build {
 
 enum AttemptStatus {
   // Default, never set.
-  STATUS_UNSPECIFIED = 0;
+  ATTEMPT_STATUS_UNSPECIFIED = 0;
   // Started but not completed. Used by CQ API, TBD.
   STARTED = 1;
   // Ready to submit, all checks passed.
