@@ -360,7 +360,8 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 			}
 
 			// If the name is otherwise understood by ResultDB, process it.
-			// So far, that's only gold_triage_links.
+
+			// Accept Gold triage links.
 			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
 				// We don't expect more than one triage link per test run, but if there is more than one,
 				// suffix the name with index to ensure we retain it too.
@@ -370,6 +371,13 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 				}
 
 				artifacts[runID] = append(artifacts[runID], &pb.Artifact{Name: artName, ViewUrl: path})
+				continue
+			}
+
+			// Accept about:blank references.
+			if strings.Contains(path, "about:blank") {
+				artifacts[runID] = append(
+					artifacts[runID], &pb.Artifact{Name: name, ViewUrl: "about:blank"})
 				continue
 			}
 

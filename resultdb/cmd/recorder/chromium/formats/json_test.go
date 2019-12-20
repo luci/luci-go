@@ -154,6 +154,9 @@ func TestJSONConversions(t *testing.T) {
 							"harness/retry_2/log.txt",
 							"harness/retry_wat/log.txt",
 						},
+						"ref_mismatch": {
+							"relative/path/to/retry_2/about:blank",
+						},
 					},
 				},
 				"c1/c2/t2.html": {
@@ -236,7 +239,10 @@ func TestJSONConversions(t *testing.T) {
 				Expected:        true,
 				Duration:        &duration.Duration{Nanos: 1e8},
 				Tags:            pbutil.StringPairs("json_format_status", "PASS"),
-				OutputArtifacts: []*pb.Artifact{{Name: "log_2.txt"}},
+				OutputArtifacts: []*pb.Artifact{
+					{Name: "log_2.txt"},
+					{Name: "ref_mismatch", ViewUrl: "about:blank"},
+				},
 			},
 
 			// Test 2.
