@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3ea96c8e_83b846c1",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "if CQ doesn\u0027t know result, then yes. \nBut if CQ knows the submission didn\u0027t succeed nor permanently fail (e.g. Gerrit raised 429 out of quota), then this status is used.\n\nSuggestions for rephrasing the above comment?",
+      "parentUuid": "96fb08fe_ba2484d1",
+      "range": {
+        "startLine": 72,
+        "startChar": 35,
+        "endLine": 72,
+        "endChar": 73
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8360cc8c_2cabe3ee",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4c86fb8c_9f77d99b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "i think that\u0027s too long for attempt status, queries will be very cumbersome.",
+      "parentUuid": "8360cc8c_2cabe3ee",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6792179_90160010",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2019-12-20T18:18:10Z",
       "side": 1,
       "message": "Subtle spelling difference: \"ascertain\"\n\nPhrasing nit: Maybe \"presumably translated\" could be rephrased as \"possibly transient\"?",
+      "range": {
+        "startLine": 78,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 16
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50c4c438_24ecfc37",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "spelling fixed.\n\nphrasing: I want to emphasize that this is mostly due to transient errors from network or Gerrit and that this is unlikely to hide true permanent (aka SUBMIT_FAILURE) error. Hence, I find \"possibly transient\" not as good. WDYT?",
+      "parentUuid": "b6792179_90160010",
       "range": {
         "startLine": 78,
         "startChar": 7,
@@ -88,6 +160,24 @@
     },
     {
       "key": {
+        "uuid": "4fa88ebd_a65ffdcb",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "took second and evolved it.",
+      "parentUuid": "2e08758c_3ed73eb3",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f8957144_5617b54f",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "fcd96541_2b56d5a0",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8957144_5617b54f",
+      "range": {
+        "startLine": 87,
+        "startChar": 7,
+        "endLine": 87,
+        "endChar": 13
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0680c0fe_02fbee1c",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -122,6 +236,24 @@
       "writtenOn": "2019-12-20T18:18:10Z",
       "side": 1,
       "message": "Since these names are within a SubmitStatus enum within GerritChange, I think that the SUBMIT part of the name is redundant -- the names could also be:\n\n SUBMIT_STATUS_UNSPECIFIED (submit never tried)\n UNKNOWN\n FAILURE\n SCUCESS\n\nwhat do you think?\n\nAnother possibility, is that we could add a NOT_TRIED value, and then we would never (intentionally) send a  UNSPECIFIED value.",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af299880_eafe9441",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 1,
+      "message": "Yep, you are right!  I\u0027ve tested generated cpp protobufs and indeed these are properly namespaces.\n\nSimplified. Also chose NOT_TRIED.",
+      "parentUuid": "0680c0fe_02fbee1c",
       "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

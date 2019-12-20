@@ -16,6 +16,24 @@
       "revId": "5b27d8cc40075290312c50312e3d5ccc775ea703",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03cf46df_f238cd21",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T19:38:30Z",
+      "side": 0,
+      "message": "dropping table is also fine, but I intended to do option #2 in the doc you\u0027ve referenced. I also want to change tryjobs structure.",
+      "parentUuid": "ff6651ca_1bf6a7fb",
+      "revId": "5b27d8cc40075290312c50312e3d5ccc775ea703",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
