@@ -117,11 +117,6 @@ func TestCron(t *testing.T) {
 			Convey("one", func() {
 				datastore.Put(c, &model.Config{
 					ID: "id",
-					Config: config.Config{
-						Amount: &config.Amount{
-							Default: 1,
-						},
-					},
 				})
 				So(expandConfigsAsync(c), ShouldBeNil)
 				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
@@ -131,11 +126,6 @@ func TestCron(t *testing.T) {
 				for i := 0; i < 100; i++ {
 					datastore.Put(c, &model.Config{
 						ID: fmt.Sprintf("id-%d", i),
-						Config: config.Config{
-							Amount: &config.Amount{
-								Default: 1,
-							},
-						},
 					})
 				}
 				So(expandConfigsAsync(c), ShouldBeNil)

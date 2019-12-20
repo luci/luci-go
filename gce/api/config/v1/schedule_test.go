@@ -165,15 +165,6 @@ func TestSchedule(t *testing.T) {
 				So(errs, ShouldContainErr, "time must match regex")
 			})
 
-			Convey("amount", func() {
-				s := &Schedule{
-					Amount: -1,
-				}
-				s.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "amount must be non-negative")
-			})
-
 			Convey("min", func() {
 				s := &Schedule{
 					Min: -1,

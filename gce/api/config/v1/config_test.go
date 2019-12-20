@@ -54,17 +54,6 @@ func TestConfig(t *testing.T) {
 				So(errs, ShouldContainErr, "duration or seconds is required")
 			})
 
-			Convey("amount", func() {
-				cfg := &Config{
-					Amount: &Amount{
-						Default: -1,
-					},
-				}
-				cfg.Validate(c)
-				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "default amount must be non-negative")
-			})
-
 			Convey("current amount", func() {
 				cfg := &Config{
 					CurrentAmount: 1,

@@ -421,7 +421,8 @@ func TestSyncVMs(t *testing.T) {
 				Id: "prefix",
 				Config: &gce.Config{
 					Amount: &gce.Amount{
-						Default: 1,
+						Min: 1,
+						Max: 2,
 					},
 					Prefix:   "prefix",
 					Revision: "revision-1",
@@ -430,7 +431,8 @@ func TestSyncVMs(t *testing.T) {
 			vms := []*gce.Config{
 				{
 					Amount: &gce.Amount{
-						Default: 2,
+						Min: 2,
+						Max: 3,
 					},
 					Prefix:   "prefix",
 					Revision: "revision-2",
@@ -442,7 +444,8 @@ func TestSyncVMs(t *testing.T) {
 			So(rsp.Configs, ShouldHaveLength, 1)
 			So(rsp.Configs, ShouldContain, &gce.Config{
 				Amount: &gce.Amount{
-					Default: 2,
+					Min: 2,
+					Max: 3,
 				},
 				Prefix:   "prefix",
 				Revision: "revision-2",
