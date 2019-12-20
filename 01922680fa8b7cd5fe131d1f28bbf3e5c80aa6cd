@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a4969422_6523ffb6",
+        "filename": "gce/api/config/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "document which fields are allowed or which aren\u0027t allowed.",
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a6c18bb_539d830d",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "please move these to a separate package, s.t. you access these via \"constants.Admins\" or smth like that\nOR \nmaybe s/admins/serviceAdminsGroup/g\n\notherwise reading `readOnlyAuthPrelude` is very hard.\n\nAlso, there should be a TODO to move these to service side settings instead of hardcoding these here.",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 7
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69ab45d4_9ab7010f",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "remove. And `return \u0026cfg.Config` would still need a copy anyhow.",
+      "range": {
+        "startLine": 115,
+        "startChar": 8,
+        "endLine": 115,
+        "endChar": 9
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0f3893a_7b0b5e1a",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "this is information leak. The error for no entity and no access should be the same.",
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fd6c500_7a3416fd",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "I think you are missing validation. If req.Config.CurrentAmount \u003c0 we should return InvalidArgument to assist in debugging external autoscale service/recipe",
+      "range": {
+        "startLine": 131,
+        "startChar": 42,
+        "endLine": 131,
+        "endChar": 68
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ec12d24_89586831",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "why is this necessary? If you have such an API method, then it\u0027s effectively useless and might as well not exist.",
+      "range": {
+        "startLine": 160,
+        "startChar": 1,
+        "endLine": 162,
+        "endChar": 2
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c46f205_5c741594",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "Check for before L163, since it doesn\u0027t need to worry about admin/writers/readers membership,\nso it definitely shouldn\u0027t fail if IsMember does (currently, never happens, I know, but we may need to change that at some point with LUCI Realms).",
+      "range": {
+        "startLine": 166,
+        "startChar": 12,
+        "endLine": 166,
+        "endChar": 34
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb66c586_89a92864",
+        "filename": "gce/appengine/rpc/instances.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 1,
+      "message": "where are these vars from?\nupdate: i see. left comment above.",
+      "range": {
+        "startLine": 246,
+        "startChar": 20,
+        "endLine": 246,
+        "endChar": 35
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

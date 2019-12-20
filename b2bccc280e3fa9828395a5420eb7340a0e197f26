@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0389fb00_5b2e6338",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T04:22:18Z",
+      "side": 0,
+      "message": "why? does some guidance say to use singular? \n\nI find reading code more cumbersome when var name is singular but is actually a repeated field.",
+      "revId": "b2bccc280e3fa9828395a5420eb7340a0e197f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
