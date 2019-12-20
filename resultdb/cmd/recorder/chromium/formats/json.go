@@ -359,6 +359,12 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 				continue
 			}
 
+			// Support GCS artifacts.
+			if art := util.AsGCSOutput(name, path); art != nil {
+				artifacts[runID] = append(artifacts[runID], art)
+				continue
+			}
+
 			// If the name is otherwise understood by ResultDB, process it.
 			// So far, that's only gold_triage_links.
 			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
