@@ -34,9 +34,8 @@ func TestConfig(t *testing.T) {
 				Min: 1,
 				Max: 3,
 			},
-			CurrentAmount: 2,
 		}
-		amt, err := cfg.ComputeAmount(time.Time{})
+		amt, err := cfg.ComputeAmount(2, time.Time{})
 		So(err, ShouldBeNil)
 		So(amt, ShouldEqual, 2)
 	})

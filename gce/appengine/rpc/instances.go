@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
@@ -27,7 +28,9 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/paged"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/gce/api/instances/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -237,10 +240,33 @@ func (*Instances) List(c context.Context, req *instances.ListRequest) (*instance
 	return rsp, nil
 }
 
+// instancesPrelude ensures the user is authorized to use the instances API. VMs
+// have limited access to Get.
+func instancesPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	groups := []string{admins, writers}
+	if isReadOnly(methodName) {
+		groups = append(groups, readers)
+	}
+	switch is, err := auth.IsMember(c, groups...); {
+	case err != nil:
+		return c, err
+	case is:
+		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
+		// Remove the VM token if the caller also has OAuth2-based access.
+		// This is because VMs have additional restrictions when using the API.
+		return vmtoken.Clear(c), nil
+	case methodName == "Get" && vmtoken.Has(c):
+		// Get applies additional restrictions when the caller is a VM.
+		logging.Debugf(c, "%s called %q:\n%s", vmtoken.CurrentIdentity(c), methodName, req)
+		return c, nil
+	}
+	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+}
+
 // NewInstancesServer returns a new instances server.
 func NewInstancesServer() instances.InstancesServer {
 	return &instances.DecoratedInstances{
-		Prelude:  vmAccessPrelude,
+		Prelude:  instancesPrelude,
 		Service:  &Instances{},
 		Postlude: gRPCifyAndLogErr,
 	}

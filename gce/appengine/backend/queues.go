@@ -237,7 +237,7 @@ func expandConfig(c context.Context, payload proto.Message) error {
 		return errors.Annotate(err, "failed to fetch config").Err()
 	}
 	now := clock.Now(c)
-	amt, err := cfg.Config.ComputeAmount(now)
+	amt, err := cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, now)
 	if err != nil {
 		return errors.Annotate(err, "failed to parse amount").Err()
 	}
