@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "e514d09d_a87dffec",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T22:12:10Z",
+      "side": 1,
+      "message": "What about calling it \"PENDING\"? In both case (1) not tried at all yet, and (2) tried once, and then removed before retry for other reasons, you could say it\u0027s \"pending\" a submit try.\n\nI think you\u0027d want to still keep the comment as-is, though.",
+      "parentUuid": "0205f642_bdbfc228",
+      "range": {
+        "startLine": 72,
+        "startChar": 35,
+        "endLine": 72,
+        "endChar": 73
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8360cc8c_2cabe3ee",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -189,6 +213,30 @@
       "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5ea72f9_5526ab5b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T22:12:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "425716f4_32c79e06",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
