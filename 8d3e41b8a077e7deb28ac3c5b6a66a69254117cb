@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "a94ce51e_c2b5fcae",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T20:05:52Z",
+      "side": 1,
+      "message": "The thing that\u0027s unclear to me is: if it \"didn\u0027t permanently fail\" and Gerrit rejected it, e.g. due to the CQ being out of quota, does this mean the submission is going to be retried?\n\nThese values are sent went an attempt is removed, and so everything is the final state. It seems to me like if CQ tried and knows the submission was not successful, and the attempt is being removed, then it could just be FAILURE?\n\nAre we trying to separate \"failure because Gerrit rejected the submission because the change can\u0027t be submitted\", and \"failure even though the change should be submittable there was a quota error etc.\"? -- Would it be overkill to add more values here, like some kind of INFRA_FAILURE, or QUOTA_FAILURE?",
+      "parentUuid": "3ea96c8e_83b846c1",
+      "range": {
+        "startLine": 72,
+        "startChar": 35,
+        "endLine": 72,
+        "endChar": 73
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8360cc8c_2cabe3ee",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -93,6 +117,30 @@
       "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9278374f_bb46e25b",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T20:05:52Z",
+      "side": 1,
+      "message": "I agree that SUBMIT_STATUS_UNSPECIFIED is very long and cumbersome, and would make queries longer if used in queries. But if it\u0027s just the default value that\u0027s never explicitly used, then queries in general won\u0027t need to use this value, right?\n\nhttps://cloud.google.com/apis/design/naming_convention#enum_names suggests that the default value \"should\" be ..._UNSPECIFIED and would be used when a value is not specified... so it could be used as a value meaning \"CQ unexpectedly didn\u0027t fill in a value for the data, even though it should have filled in a value\".\n\n(This is just a suggestion though)",
+      "parentUuid": "4c86fb8c_9f77d99b",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -143,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "08a08f06_f16b2f7d",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T20:05:52Z",
+      "side": 1,
+      "message": "Makes sense.\n\nTo me, at first, \"presumably\" sort of sounds like \"we don\u0027t know, but we\u0027re assuming...\" and indeed in many cases you don\u0027t know whether errors are transient or not. Another alternative might be \"probably transient\", but \"presumably\" is at least as good.",
+      "parentUuid": "50c4c438_24ecfc37",
+      "range": {
+        "startLine": 78,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 16
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e08758c_3ed73eb3",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -175,6 +247,24 @@
       "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ea03499_7a334b79",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T20:05:52Z",
+      "side": 1,
+      "message": "Much clearer, thanks",
+      "parentUuid": "4fa88ebd_a65ffdcb",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -257,6 +347,24 @@
       "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "954e39e9_8375cd03",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T20:05:52Z",
+      "side": 1,
+      "message": "LGTM",
+      "parentUuid": "af299880_eafe9441",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
