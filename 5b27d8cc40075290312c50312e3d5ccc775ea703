@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff6651ca_1bf6a7fb",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 0,
+      "message": "Note: I believe that deleting a column via bqschemaupdater (or web UI, gcloud CLI etc) is not supported and this means that we will have to re-create the table in order to deploy this.\n\nThis is OK, right? If this was later on, and people were already depending on the tables, then we\u0027d probably have to keep this field, but mark it as redundant and equivalent to submit_status \u003d\u003d SUBMIT_SUCCEEDED... but as-is, we\u0027ll likely recreate the table in January?\n\nhttps://cloud.google.com/bigquery/docs/manually-changing-schemas#deleting_a_column_from_a_table_schema",
+      "revId": "5b27d8cc40075290312c50312e3d5ccc775ea703",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

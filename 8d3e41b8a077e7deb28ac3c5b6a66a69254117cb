@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96fb08fe_ba2484d1",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "since there\u0027s a UNKNOWN value below, if submission was tried at all but we don\u0027t know the final result, maybe UNKNOWN should be used?",
+      "range": {
+        "startLine": 72,
+        "startChar": 35,
+        "endLine": 72,
+        "endChar": 73
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8360cc8c_2cabe3ee",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "Naming nit: Optionally, this could be named SUBMIT_STATUS_UNSPECIFIED, if we want to go with a general pattern of making default enum values start with the full enum name. If we do this, then STATUS_UNSPECIFIED below could be renamed to ATTEMPT_STATUS_UNSPECIFIED. This would be longer, but maybe more predictable?",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6792179_90160010",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "Subtle spelling difference: \"ascertain\"\n\nPhrasing nit: Maybe \"presumably translated\" could be rephrased as \"possibly transient\"?",
+      "range": {
+        "startLine": 78,
+        "startChar": 7,
+        "endLine": 78,
+        "endChar": 16
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e08758c_3ed73eb3",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "Other alternative phrasing:\n  \"It is unknown to CQ whether the change was submitted.\" OR\n  \"It\u0027s possible that the change was submitted but CQ was not informed.\"",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8957144_5617b54f",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "\"or rarely because the change ...\"",
+      "range": {
+        "startLine": 87,
+        "startChar": 7,
+        "endLine": 87,
+        "endChar": 13
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0680c0fe_02fbee1c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-20T18:18:10Z",
+      "side": 1,
+      "message": "Since these names are within a SubmitStatus enum within GerritChange, I think that the SUBMIT part of the name is redundant -- the names could also be:\n\n SUBMIT_STATUS_UNSPECIFIED (submit never tried)\n UNKNOWN\n FAILURE\n SCUCESS\n\nwhat do you think?\n\nAnother possibility, is that we could add a NOT_TRIED value, and then we would never (intentionally) send a  UNSPECIFIED value.",
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
