@@ -67,12 +67,34 @@ message GerritChange {
   google.protobuf.Timestamp trigger_time = 6;
   // CQ Mode for this CL, e.g. dry run or full run.
   Mode mode = 7;
-  // True if the change was submitted.
-  //
-  // That is, the status of the change in Gerrit was changed to "merged".
-  // Submission of Gerrit CLs in an Attempt is not an atomic operation,
-  // so it's possible that only some of the GerritChanges are submitted.
-  bool submitted = 8;
+
+  enum SubmitStatus {
+    // CQ didn't try submitting or submission failed due to non-permanent
+    // reason, e.g. CQ is over quota, and wasn't retried.
+    // Default value.
+    SUBMIT_UNSPECIFIED = 0;
+
+    // CQ tried to submit, but got presumably transient errors and couldn't
+    // assertain whether submission was successful.
+    //
+    // It's possible that change was actually submitted, but CQ didn't
+    // realize about this.
+    SUBMIT_UNKNOWN_RESULT = 1;
+
+    // CQ tried to submit, but Gerrit rejected the submission because this
+    // Change can't be submitted.
+    // Typically, this is because a rebase conflict needs to be resolved,
+    // rarely change needs some kind of approval.
+    SUBMIT_FAILED = 2;
+
+    // CQ submitted this change (aka "merged" in Gerrit jargon).
+    //
+    // Submission of Gerrit CLs in an Attempt is not an atomic operation,
+    // so it's possible that only some of the GerritChanges are submitted.
+    SUBMIT_SUCCEEDED = 3;
+  }
+  // Whether CQ tried to submit this change and the result of the operation.
+  SubmitStatus submit_status = 8;
 }
 
 enum Mode {
