@@ -64,9 +64,6 @@ func (s *Schedule) mostRecentStart(now time.Time) (time.Time, error) {
 
 // Validate validates this schedule.
 func (s *Schedule) Validate(c *validation.Context) {
-	if s.GetAmount() < 0 {
-		c.Errorf("amount must be non-negative")
-	}
 	if s.GetMin() < 0 {
 		c.Errorf("minimum amount must be non-negative")
 	}

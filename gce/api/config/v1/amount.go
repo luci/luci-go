@@ -37,10 +37,6 @@ func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
 			}
 			end := start.Add(time.Second * time.Duration(sec))
 			if now.Before(end) {
-				// TODO(crbug/1033250): Convert amount to min/max.
-				if s.Amount > 0 {
-					return s.Amount, nil
-				}
 				if proposed < s.Min {
 					return s.Min, nil
 				}
@@ -50,10 +46,6 @@ func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
 				return proposed, nil
 			}
 		}
-	}
-	// TODO(crbug/1033250): Convert default to min/max.
-	if a.GetDefault() > 0 {
-		return a.Default, nil
 	}
 	if proposed < a.GetMin() {
 		return a.GetMin(), nil
@@ -66,9 +58,6 @@ func (a *Amount) getAmount(proposed int32, now time.Time) (int32, error) {
 
 // Validate validates this amount.
 func (a *Amount) Validate(c *validation.Context) {
-	if a.GetDefault() < 0 {
-		c.Errorf("default amount must be non-negative")
-	}
 	if a.GetMin() < 0 {
 		c.Errorf("minimum amount must be non-negative")
 	}
