@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "0205f642_bdbfc228",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T20:32:49Z",
+      "side": 1,
+      "message": "Good thinking. The actual case when this happens is:\n\n1. Attempt passed all verifiers, it\u0027s added to _ready_attempts.\n2. Submitter thread starts working on it, tries to submit first CL, but during each of 5 tries gets:\n  a) 500 for submit but is able to refresh change status and verify it wasn\u0027t submitted\n  b) 429 quota error\n3. Submitter thread stops working on it, for now, leaving attempt in _ready_attempts and taking some other attempt (it\u0027s random) from the the _ready_attempts.\n4. Meanwhile, something changes s.t. CQ decides to stop working on this CL entirely; for example:\n  a) ABORTED case: user removes CQ+2\n  b) FAILED case: reviewer removes CR+1, gerrit_cqability verifier fails attempt.\n  c) FAILED case: user loses membership in committers group, gerrit_cqability verifier fails attempt.\n  etc\n5. CQ removes attempt from consideration and from submitter\u0027s thread _ready_attempts.\n\n\nThe 12a34a5 actually happened, and 4a/4b are quire frequent on their own, too.\n\nNote, however, that from perspective of someone querying attempts table and checking CL submit status all that matters is that they can treat \n\n  status\u003d\u0027UNSPECIFIED\u0027 as if CQ never tried submitting in the first place.\n\nIf it helps, I\u0027d rather get rid of this confusing addition entirely - but I think you could perhaps suggest less confusing phrasing?",
+      "parentUuid": "a94ce51e_c2b5fcae",
+      "range": {
+        "startLine": 72,
+        "startChar": 35,
+        "endLine": 72,
+        "endChar": 73
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8360cc8c_2cabe3ee",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 2
@@ -132,6 +156,30 @@
       "side": 1,
       "message": "I agree that SUBMIT_STATUS_UNSPECIFIED is very long and cumbersome, and would make queries longer if used in queries. But if it\u0027s just the default value that\u0027s never explicitly used, then queries in general won\u0027t need to use this value, right?\n\nhttps://cloud.google.com/apis/design/naming_convention#enum_names suggests that the default value \"should\" be ..._UNSPECIFIED and would be used when a value is not specified... so it could be used as a value meaning \"CQ unexpectedly didn\u0027t fill in a value for the data, even though it should have filled in a value\".\n\n(This is just a suggestion though)",
       "parentUuid": "4c86fb8c_9f77d99b",
+      "range": {
+        "startLine": 75,
+        "startChar": 4,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "8d3e41b8a077e7deb28ac3c5b6a66a69254117cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "425716f4_32c79e06",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-20T20:32:49Z",
+      "side": 1,
+      "message": "OK, convincing enough! Changed.",
+      "parentUuid": "9278374f_bb46e25b",
       "range": {
         "startLine": 75,
         "startChar": 4,
