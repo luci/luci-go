@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2f281a7_27f5aa3f",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-21T04:31:08Z",
+      "side": 1,
+      "message": "to avoid regressions via later edits to human readable message, consider sticking this into a func called from here and L131.",
+      "range": {
+        "startLine": 123,
+        "startChar": 14,
+        "endLine": 123,
+        "endChar": 102
+      },
+      "revId": "daded9f9ac1c6f7694e5901dace887de57bb76df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

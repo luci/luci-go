@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "74ec8774_da8836e4",
+        "filename": "gce/api/config/v1/service.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-21T04:31:08Z",
+      "side": 1,
+      "message": "yeah,this is unfortunate :( but expecting users to reverse engineer is also not good 😞",
+      "parentUuid": "6c995a7e_546d711a",
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a6c18bb_539d830d",
         "filename": "gce/appengine/rpc/common.go",
         "patchSetId": 2
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "That\u0027s a general complaint with go, identifiers may live in other files. Such is life. I can move all preludes back here if you want, it\u0027s just that they are no longer \"common\" since there are three services and three preludes. The references to \"Update\" in the new prelude suggest they should live closer to where they\u0027re used.",
       "parentUuid": "6a6c18bb_539d830d",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 7
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31581012_a0f6918d",
+        "filename": "gce/appengine/rpc/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-21T04:31:08Z",
+      "side": 1,
+      "message": "my primary complainted is that \"writers\" looks like local variable in scope, but it\u0027s not. Making the name serviceAdminsGroup would have give more intuition it\u0027s a constant.",
+      "parentUuid": "58cb3a93_e9a7e08e",
       "range": {
         "startLine": 27,
         "startChar": 1,
@@ -201,6 +243,30 @@
       "side": 1,
       "message": "ComputeAmount will increase it to min which is guaranteed to be non-negative.",
       "parentUuid": "9fd6c500_7a3416fd",
+      "range": {
+        "startLine": 131,
+        "startChar": 42,
+        "endLine": 131,
+        "endChar": 68
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d7e013b_8c8f0c36",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-21T04:31:08Z",
+      "side": 1,
+      "message": "I agree about correctness. I\u0027m appealing to UX. InvalidArgument would be very helpful for users with buggy autoscaling code.",
+      "parentUuid": "db8ee686_47cc7184",
       "range": {
         "startLine": 131,
         "startChar": 42,
