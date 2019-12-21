@@ -114,16 +114,15 @@ func TestFinalizeInvocation(t *testing.T) {
 			nowTimestamp := pbutil.MustTimestampProto(now)
 			origProcessAfter := now.Add(2 * day)
 
-			invID := span.InvocationID("inv")
-			invTask := &internalpb.InvocationTask{
-				BigqueryExport: &pb.BigQueryExport{}}
-
-			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
+			test := func(invIDStr string, resetOnFinalize bool, expected *tspb.Timestamp) {
+				invID := span.InvocationID(invIDStr)
+				invTask := &internalpb.InvocationTask{
+					BigqueryExport: &pb.BigQueryExport{}}
 				testutil.MustApply(ctx,
 					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct, false),
 					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
-				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: pbutil.InvocationName(invIDStr)})
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 				So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
@@ -131,7 +130,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				txn := span.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
 
-				inv, err = span.ReadInvocationFull(ctx, txn, "inv")
+				inv, err = span.ReadInvocationFull(ctx, txn, invID)
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
@@ -146,11 +145,11 @@ func TestFinalizeInvocation(t *testing.T) {
 			}
 
 			Convey(`finalized and reset InvocationTasks`, func() {
-				test(true, nowTimestamp)
+				test("inv_reset", true, nowTimestamp)
 			})
 
 			Convey(`finalized and not reset InvocationTasks`, func() {
-				test(false, pbutil.MustTimestampProto(origProcessAfter))
+				test("inv_not_reset", false, pbutil.MustTimestampProto(origProcessAfter))
 			})
 		})
 	})
