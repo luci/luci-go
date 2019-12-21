@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9850f6a_84686ee5",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T00:07:52Z",
+      "side": 1,
+      "message": "[^/]+",
+      "range": {
+        "startLine": 24,
+        "startChar": 43,
+        "endLine": 24,
+        "endChar": 55
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d16e7769_577c0056",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T00:07:52Z",
+      "side": 1,
+      "message": "$\n\n?",
+      "range": {
+        "startLine": 24,
+        "startChar": 61,
+        "endLine": 24,
+        "endChar": 62
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efe277b3_0a616dab",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T00:07:52Z",
+      "side": 1,
+      "message": "+",
+      "range": {
+        "startLine": 24,
+        "startChar": 59,
+        "endLine": 24,
+        "endChar": 60
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbf5b05e_f45545ef",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T00:07:52Z",
+      "side": 1,
+      "message": "nit: AsGCSArtifact",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb51db2f_e0944572",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T00:07:52Z",
+      "side": 1,
+      "message": "nit: url",
+      "range": {
+        "startLine": 27,
+        "startChar": 23,
+        "endLine": 27,
+        "endChar": 27
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
