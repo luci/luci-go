@@ -310,7 +310,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name str
 			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
 		} else {
 			// TODO(jchinlee): Escape Markdown.
-			rpb.SummaryMarkdown = strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError))
+			rpb.SummaryHtml = strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError))
 		}
 	}
 

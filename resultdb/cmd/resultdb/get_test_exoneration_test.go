@@ -56,23 +56,23 @@ func TestGetTestExoneration(t *testing.T) {
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, "", now, false),
 			span.InsertMap("TestExonerations", map[string]interface{}{
-				"InvocationId":        invID,
-				"TestPath":            "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-				"ExonerationId":       "id",
-				"Variant":             pbutil.Variant("k1", "v1", "k2", "v2"),
-				"VariantHash":         "deadbeef",
-				"ExplanationMarkdown": span.Compressed("broken"),
+				"InvocationId":    invID,
+				"TestPath":        "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+				"ExonerationId":   "id",
+				"Variant":         pbutil.Variant("k1", "v1", "k2", "v2"),
+				"VariantHash":     "deadbeef",
+				"ExplanationHTML": span.Compressed("broken"),
 			}))
 
 		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}
 		tr, err := srv.GetTestExoneration(ctx, req)
 		So(err, ShouldBeNil)
 		So(tr, ShouldResembleProto, &pb.TestExoneration{
-			Name:                "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
-			ExonerationId:       "id",
-			TestPath:            "ninja://chrome/test:foo_tests/BarTest.DoBaz",
-			Variant:             pbutil.Variant("k1", "v1", "k2", "v2"),
-			ExplanationMarkdown: "broken",
+			Name:            "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
+			ExonerationId:   "id",
+			TestPath:        "ninja://chrome/test:foo_tests/BarTest.DoBaz",
+			Variant:         pbutil.Variant("k1", "v1", "k2", "v2"),
+			ExplanationHtml: "broken",
 		})
 	})
 }

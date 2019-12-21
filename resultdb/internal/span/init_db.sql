@@ -125,9 +125,9 @@ CREATE TABLE TestResults (
   -- Test status, see TestStatus in test_result.proto.
   Status INT64 NOT NULL,
 
-  -- Compressed summary of the test result for humans, in Markdown.
+  -- Compressed summary of the test result for humans, in HTML.
   -- See span.Compress type for details of compression.
-  SummaryMarkdown BYTES(MAX),
+  SummaryHTML BYTES(MAX),
 
   -- When the test execution started.
   StartTime TIMESTAMP,
@@ -183,9 +183,9 @@ CREATE TABLE TestExonerations (
   -- Used in conjunction with TestResults.VariantHash column.
   VariantHash STRING(64) NOT NULL,
 
-  -- Compressed explanation of the exoneration for humans, in Markdown.
+  -- Compressed explanation of the exoneration for humans, in HTML.
   -- See span.Compress type for details of compression.
-  ExplanationMarkdown BYTES(MAX)
+  ExplanationHTML BYTES(MAX)
 ) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 

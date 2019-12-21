@@ -41,8 +41,8 @@ message TestResult {
   // Equivalent of luci.resultpb.TestResult.status.
   TestStatus status = 5;
 
-  // Equivalent of luci.resultpb.TestResult.summary_markdown.
-  string summary_markdown = 6;
+  // Equivalent of luci.resultpb.TestResult.summary_html.
+  string summary_html = 6;
 
   // Equivalent of luci.resultpb.TestResult.start_time.
   google.protobuf.Timestamp start_time = 7;

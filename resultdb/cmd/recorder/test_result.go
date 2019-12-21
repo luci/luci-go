@@ -36,7 +36,7 @@ func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int)
 		"CommitTimestamp": spanner.CommitTimestamp,
 
 		"Status":          tr.Status,
-		"SummaryMarkdown": span.Compressed([]byte(tr.SummaryMarkdown)),
+		"SummaryHTML":     span.Compressed([]byte(tr.SummaryHtml)),
 		"StartTime":       tr.StartTime,
 		"RunDurationUsec": span.ToMicros(tr.Duration),
 		"Tags":            tr.Tags,

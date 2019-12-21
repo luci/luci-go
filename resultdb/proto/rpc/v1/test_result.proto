@@ -86,9 +86,9 @@ message TestResult {
   // MUST NOT be STATUS_UNSPECIFIED.
   TestStatus status = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 
-  // Human-readable explanation of the result.
-  // Markdown spec: https://spec.commonmark.org/0.29/
-  string summary_markdown = 7 [ (google.api.field_behavior) = IMMUTABLE ];
+  // Human-readable explanation of the result, in HTML.
+  // MUST be sanitized before rendering in the browser.
+  string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
   google.protobuf.Timestamp start_time = 8
@@ -211,7 +211,7 @@ message TestExoneration {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Reasoning behind the exoneration, in markdown.
-  // Markdown spec: https://spec.commonmark.org/0.29/
-  string explanation_markdown = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+  // Reasoning behind the exoneration, in HTML.
+  // MUST be sanitized before rendering in the browser.
+  string explanation_html = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 }
