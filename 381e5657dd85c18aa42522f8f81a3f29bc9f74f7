@@ -71,6 +71,78 @@
     },
     {
       "key": {
+        "uuid": "e7a43e8c_1070d8ac",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-21T03:24:58Z",
+      "side": 1,
+      "message": "Done\n\nWouldn\u0027t the match greedily consume everything until the end of the string?",
+      "parentUuid": "d16e7769_577c0056",
+      "range": {
+        "startLine": 24,
+        "startChar": 61,
+        "endLine": 24,
+        "endChar": 62
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb1d3c9b_346b6da2",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-21T03:24:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "efe277b3_0a616dab",
+      "range": {
+        "startLine": 24,
+        "startChar": 59,
+        "endLine": 24,
+        "endChar": 60
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95936cd3_66b9c1a1",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-21T03:24:58Z",
+      "side": 1,
+      "message": "This can include slash",
+      "parentUuid": "c9850f6a_84686ee5",
+      "range": {
+        "startLine": 24,
+        "startChar": 43,
+        "endLine": 24,
+        "endChar": 55
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbf5b05e_f45545ef",
         "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
         "patchSetId": 3
@@ -114,6 +186,54 @@
       "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b67f9271_e8bdf6b0",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-21T03:24:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bbf5b05e_f45545ef",
+      "range": {
+        "startLine": 27,
+        "startChar": 5,
+        "endLine": 27,
+        "endChar": 16
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "80e4dc4e_6e5a30e3",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-21T03:24:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb51db2f_e0944572",
+      "range": {
+        "startLine": 27,
+        "startChar": 23,
+        "endLine": 27,
+        "endChar": 27
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
