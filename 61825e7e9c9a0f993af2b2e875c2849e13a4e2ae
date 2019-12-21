@@ -46,6 +46,30 @@
       "revId": "61825e7e9c9a0f993af2b2e875c2849e13a4e2ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc2bde5e_c9aef56c",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-21T01:05:57Z",
+      "side": 1,
+      "message": "HasSuffix(path, \"\\\\about:blank\") sgtm",
+      "parentUuid": "4fba850e_1b05ca78",
+      "range": {
+        "startLine": 378,
+        "startChar": 14,
+        "endLine": 378,
+        "endChar": 22
+      },
+      "revId": "61825e7e9c9a0f993af2b2e875c2849e13a4e2ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
