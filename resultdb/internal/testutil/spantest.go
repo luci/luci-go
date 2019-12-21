@@ -265,12 +265,12 @@ func InsertTestExonerations(invID span.InvocationID, testPath string, variant *t
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
 		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
-			"InvocationId":        invID,
-			"TestPath":            testPath,
-			"ExonerationId":       strconv.Itoa(i),
-			"Variant":             variant,
-			"VariantHash":         pbutil.VariantHash(variant),
-			"ExplanationMarkdown": span.Compressed(fmt.Sprintf("explanation %d", i)),
+			"InvocationId":    invID,
+			"TestPath":        testPath,
+			"ExonerationId":   strconv.Itoa(i),
+			"Variant":         variant,
+			"VariantHash":     pbutil.VariantHash(variant),
+			"ExplanationHTML": span.Compressed(fmt.Sprintf("explanation %d", i)),
 		})
 	}
 	return ms

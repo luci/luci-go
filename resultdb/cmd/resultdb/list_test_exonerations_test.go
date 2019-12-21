@@ -59,12 +59,12 @@ func TestListTestExonerations(t *testing.T) {
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now, false),
 			span.InsertMap("TestExonerations", map[string]interface{}{
-				"InvocationId":        invID,
-				"TestPath":            testPath,
-				"ExonerationId":       "0",
-				"Variant":             var0,
-				"VariantHash":         "deadbeef",
-				"ExplanationMarkdown": span.Compressed("broken"),
+				"InvocationId":    invID,
+				"TestPath":        testPath,
+				"ExonerationId":   "0",
+				"Variant":         var0,
+				"VariantHash":     "deadbeef",
+				"ExplanationHTML": span.Compressed("broken"),
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
@@ -84,11 +84,11 @@ func TestListTestExonerations(t *testing.T) {
 
 		all := []*pb.TestExoneration{
 			{
-				Name:                pbutil.TestExonerationName("inv", testPath, "0"),
-				TestPath:            testPath,
-				Variant:             var0,
-				ExonerationId:       "0",
-				ExplanationMarkdown: "broken",
+				Name:            pbutil.TestExonerationName("inv", testPath, "0"),
+				TestPath:        testPath,
+				Variant:         var0,
+				ExonerationId:   "0",
+				ExplanationHtml: "broken",
 			},
 			{
 				Name:          pbutil.TestExonerationName("inv", testPath, "1"),

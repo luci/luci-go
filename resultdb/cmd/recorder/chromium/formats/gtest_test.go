@@ -166,7 +166,7 @@ func TestGTestConversions(t *testing.T) {
 					OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMCBtcyk=",
 				})
 				So(err, ShouldBeNil)
-				So(tr.SummaryMarkdown, ShouldEqual, "[ RUN      ] FooTest.TestDoBar\n(10 ms)")
+				So(tr.SummaryHtml, ShouldEqual, "[ RUN      ] FooTest.TestDoBar\n(10 ms)")
 			})
 
 			Convey("invalid does not cause a fatal error", func() {
@@ -176,7 +176,7 @@ func TestGTestConversions(t *testing.T) {
 					OutputSnippetBase64: "invalid base64",
 				})
 				So(err, ShouldBeNil)
-				So(tr.SummaryMarkdown, ShouldEqual, "")
+				So(tr.SummaryHtml, ShouldEqual, "")
 			})
 		})
 

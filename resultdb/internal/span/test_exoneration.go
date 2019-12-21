@@ -57,10 +57,10 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	}
 
 	// Populate fields from TestExonerations table.
-	var explanationMarkdown Compressed
+	var explanationHTML Compressed
 	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
-		"Variant":             &ret.Variant,
-		"ExplanationMarkdown": &explanationMarkdown,
+		"Variant":         &ret.Variant,
+		"ExplanationHTML": &explanationHTML,
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
@@ -73,7 +73,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()
 
 	default:
-		ret.ExplanationMarkdown = string(explanationMarkdown)
+		ret.ExplanationHtml = string(explanationHTML)
 		return ret, nil
 	}
 }
@@ -95,7 +95,7 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	}
 
 	st := spanner.NewStatement(`
-		SELECT InvocationId, TestPath, ExonerationId, Variant, ExplanationMarkdown
+		SELECT InvocationId, TestPath, ExonerationId, Variant,ExplanationHtml
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
@@ -122,16 +122,16 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
-	var explanationMarkdown Compressed
+	var explanationHTML Compressed
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &explanationMarkdown)
+		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &explanationHTML)
 		if err != nil {
 			return err
 		}
 		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestPath, ex.ExonerationId)
-		ex.ExplanationMarkdown = string(explanationMarkdown)
+		ex.ExplanationHtml = string(explanationHTML)
 		tes = append(tes, ex)
 		return nil
 	})

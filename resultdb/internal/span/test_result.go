@@ -59,12 +59,12 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
-	var summaryMarkdown Compressed
+	var summaryHTML Compressed
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
 		"IsUnexpected":    &maybeUnexpected,
 		"Status":          &tr.Status,
-		"SummaryMarkdown": &summaryMarkdown,
+		"SummaryHTML":     &summaryHTML,
 		"StartTime":       &tr.StartTime,
 		"RunDurationUsec": &micros,
 		"Tags":            &tr.Tags,
@@ -81,7 +81,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	}
 
-	tr.SummaryMarkdown = string(summaryMarkdown)
+	tr.SummaryHtml = string(summaryHTML)
 	populateExpectedField(tr, maybeUnexpected)
 	populateDurationField(tr, micros)
 	return tr, nil
@@ -132,7 +132,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			tr.Variant,
 			tr.IsUnexpected,
 			tr.Status,
-			tr.SummaryMarkdown,
+			tr.SummaryHtml,
 			tr.StartTime,
 			tr.RunDurationUsec,
 			tr.Tags,
@@ -173,7 +173,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	var summaryMarkdown Compressed
+	var summaryHTML Compressed
 	var b Buffer
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
@@ -187,7 +187,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&tr.Variant,
 			&maybeUnexpected,
 			&tr.Status,
-			&summaryMarkdown,
+			&summaryHTML,
 			&tr.StartTime,
 			&micros,
 			&tr.Tags,
@@ -199,7 +199,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		}
 
 		tr.Name = pbutil.TestResultName(string(invID), tr.TestPath, tr.ResultId)
-		tr.SummaryMarkdown = string(summaryMarkdown)
+		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 

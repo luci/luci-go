@@ -196,7 +196,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), actual.Name)
 				So(err, ShouldBeNil)
 				So(row.Variant, ShouldResembleProto, expected.Variant)
-				So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
+				So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
 			}
 
 			if withRequestID {
