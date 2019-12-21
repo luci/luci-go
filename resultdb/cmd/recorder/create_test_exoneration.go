@@ -86,19 +86,19 @@ func insertTestExoneration(ctx context.Context, invID span.InvocationID, request
 
 	exonerationID := fmt.Sprintf("%s:%s", pbutil.VariantHash(body.Variant), exonerationIDSuffix)
 	ret = &pb.TestExoneration{
-		Name:                pbutil.TestExonerationName(string(invID), body.TestPath, exonerationID),
-		TestPath:            body.TestPath,
-		Variant:             body.Variant,
-		ExonerationId:       exonerationID,
-		ExplanationMarkdown: body.ExplanationMarkdown,
+		Name:            pbutil.TestExonerationName(string(invID), body.TestPath, exonerationID),
+		TestPath:        body.TestPath,
+		Variant:         body.Variant,
+		ExonerationId:   exonerationID,
+		ExplanationHtml: body.ExplanationHtml,
 	}
 	mutation = mutFn("TestExonerations", span.ToSpannerMap(map[string]interface{}{
-		"InvocationId":        invID,
-		"TestPath":            ret.TestPath,
-		"ExonerationId":       exonerationID,
-		"Variant":             ret.Variant,
-		"VariantHash":         pbutil.VariantHash(ret.Variant),
-		"ExplanationMarkdown": span.Compressed(ret.ExplanationMarkdown),
+		"InvocationId":    invID,
+		"TestPath":        ret.TestPath,
+		"ExonerationId":   exonerationID,
+		"Variant":         ret.Variant,
+		"VariantHash":     pbutil.VariantHash(ret.Variant),
+		"ExplanationHTML": span.Compressed(ret.ExplanationHtml),
 	}))
 	return
 }

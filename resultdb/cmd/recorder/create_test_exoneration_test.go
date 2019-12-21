@@ -146,7 +146,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			row, err := span.ReadTestExonerationFull(ctx, span.Client(ctx).Single(), res.Name)
 			So(err, ShouldBeNil)
 			So(row.Variant, ShouldResembleProto, expected.Variant)
-			So(row.ExplanationMarkdown, ShouldEqual, expected.ExplanationMarkdown)
+			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
 
 			// Check variant hash.
 			key := span.InvocationID("inv").Key(res.TestPath, res.ExonerationId)
