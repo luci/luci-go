@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -62,49 +63,57 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
 		Convey(`finalized failed`, func() {
+			invID := "f_f"
+			invName := pbutil.InvocationName(invID)
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, true),
+				testutil.InsertInvocation(span.InvocationID(invID), pb.Invocation_COMPLETED, token, ct, true),
 			)
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different interrupted flag`)
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: invName})
+			So(err, ShouldErrLike, fmt.Sprintf(`"%s" has already been finalized with different interrupted flag`, invName))
 			So(inv, ShouldBeNil)
 		})
 
 		Convey(`complete expired invocation failed`, func() {
+			invID := "e_f"
+			invName := pbutil.InvocationName(invID)
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
+				testutil.InsertInvocation(span.InvocationID(invID), pb.Invocation_ACTIVE, token, ct, false),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldErrLike, `"invocations/inv" has already been finalized with different interrupted flag`)
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: invName})
+			So(err, ShouldErrLike, fmt.Sprintf(`"%s" has already been finalized with different interrupted flag`, invName))
 			So(inv, ShouldBeNil)
 		})
 
 		Convey(`interrupt expired invocation passed`, func() {
+			invID := "ie_p"
+			invName := pbutil.InvocationName(invID)
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
+				testutil.InsertInvocation(span.InvocationID(invID), pb.Invocation_ACTIVE, token, ct, false),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv", Interrupted: true})
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: invName, Interrupted: true})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 			So(inv.Interrupted, ShouldEqual, true)
 		})
 
 		Convey(`idempotent`, func() {
+			invID := "idempotent"
+			invName := pbutil.InvocationName(invID)
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false),
+				testutil.InsertInvocation(span.InvocationID(invID), pb.Invocation_ACTIVE, token, ct, false),
 			)
 
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: invName})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 
-			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: invName})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 		})
@@ -114,16 +123,15 @@ func TestFinalizeInvocation(t *testing.T) {
 			nowTimestamp := pbutil.MustTimestampProto(now)
 			origProcessAfter := now.Add(2 * day)
 
-			invID := span.InvocationID("inv")
-			invTask := &internalpb.InvocationTask{
-				BigqueryExport: &pb.BigQueryExport{}}
-
-			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
+			test := func(invIDStr string, resetOnFinalize bool, expected *tspb.Timestamp) {
+				invID := span.InvocationID(invIDStr)
+				invTask := &internalpb.InvocationTask{
+					BigqueryExport: &pb.BigQueryExport{}}
 				testutil.MustApply(ctx,
 					testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct, false),
 					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
-				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: pbutil.InvocationName(invIDStr)})
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 				So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
@@ -131,7 +139,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				txn := span.Client(ctx).ReadOnlyTransaction()
 				defer txn.Close()
 
-				inv, err = span.ReadInvocationFull(ctx, txn, "inv")
+				inv, err = span.ReadInvocationFull(ctx, txn, invID)
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
@@ -146,11 +154,11 @@ func TestFinalizeInvocation(t *testing.T) {
 			}
 
 			Convey(`finalized and reset InvocationTasks`, func() {
-				test(true, nowTimestamp)
+				test("inv_reset", true, nowTimestamp)
 			})
 
 			Convey(`finalized and not reset InvocationTasks`, func() {
-				test(false, pbutil.MustTimestampProto(origProcessAfter))
+				test("inv_not_reset", false, pbutil.MustTimestampProto(origProcessAfter))
 			})
 		})
 	})

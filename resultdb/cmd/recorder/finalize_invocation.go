@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 
@@ -73,9 +74,9 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"Deadline":     &ret.Deadline,
 			"Tags":         &ret.Tags,
 		})
+		fmt.Println(fmt.Sprintf("finalize_invocation: %s", invID))
 
 		finalizeTime := now
-		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
 		case err != nil:
 			return err
@@ -85,11 +86,11 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return nil
 		case ret.State == requestState && ret.Interrupted != in.Interrupted:
 			return getUnmatchedInterruptedFlagError(invID)
-		case deadline.Before(now):
+		case pbutil.MustTimestamp(ret.Deadline).Before(now):
 			ret.State = requestState
 			ret.FinalizeTime = ret.Deadline
 			ret.Interrupted = true
-			finalizeTime = deadline
+			finalizeTime = pbutil.MustTimestamp(ret.Deadline)
 
 			if !in.Interrupted {
 				retErr = getUnmatchedInterruptedFlagError(invID)
