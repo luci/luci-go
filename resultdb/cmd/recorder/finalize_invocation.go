@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 
@@ -73,7 +74,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"Deadline":     &ret.Deadline,
 			"Tags":         &ret.Tags,
 		})
-
+		fmt.Println(invID)
 		finalizeTime := now
 		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
