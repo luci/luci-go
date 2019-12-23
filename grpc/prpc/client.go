@@ -48,6 +48,12 @@ const (
 	// A pRPC server must always specify it.
 	HeaderGRPCCode = "X-Prpc-Grpc-Code"
 
+	// HeaderStatusDetail is a name of the HTTP header that contains
+	// elements of google.rpc.Status.details field, one value per element,
+	// in the same order.
+	// The header value is a base64 string of the serialized google.protobuf.Any.
+	HeaderStatusDetail = "X-Prpc-Status-Details-Bin"
+
 	// HeaderTimeout is HTTP header used to set pRPC request timeout.
 	// The single value should match regexp `\d+[HMSmun]`.
 	HeaderTimeout = "X-Prpc-Grpc-Timeout"
