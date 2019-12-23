@@ -43,10 +43,9 @@ func HTTPClient(ctx context.Context) *http.Client {
 
 // CommonPrelude must be used as a prelude in all ResultDB services.
 // Verifies access.
-func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (retCtx context.Context, err error) {
-	defer func() {
-		err = grpcutil.GRPCifyAndLogErr(ctx, err)
-	}()
+func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	// Do not GRPCify the returned error, because CommonPostlude does it
+	// and it treats generic GRPC errors as internal.
 
 	// TODO(crbug.com/1013316): replace this with project-identified transport.
 	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf)
