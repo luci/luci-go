@@ -179,6 +179,12 @@ func TestJSONConversions(t *testing.T) {
 					Actual:   "PASS PASS PASS",
 					Expected: "PASS",
 					Time:     0.3,
+					Artifacts: map[string][]string{
+						"gcs_objects": {
+							"gs://bucket/path/to/retry_0/blob_0",
+							"gs://bucket/path/to/retry_2/blob_1",
+						},
+					},
 				},
 			},
 		}
@@ -302,6 +308,11 @@ func TestJSONConversions(t *testing.T) {
 				Expected: true,
 				Duration: &duration.Duration{Nanos: 3e8},
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				OutputArtifacts: []*pb.Artifact{{
+					Name:     "gcs_objects",
+					FetchUrl: "gs://bucket/path/to/retry_0/blob_0",
+					ViewUrl:  "https://console.developers.google.com/m/cloudstorage/b/bucket/o/path/to/retry_0/blob_0",
+				}},
 			},
 			{
 				TestPath: "ninja://tests/c2/t4.html",
@@ -314,6 +325,11 @@ func TestJSONConversions(t *testing.T) {
 				Status:   pb.TestStatus_PASS,
 				Expected: true,
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
+				OutputArtifacts: []*pb.Artifact{{
+					Name:     "gcs_objects",
+					FetchUrl: "gs://bucket/path/to/retry_2/blob_1",
+					ViewUrl:  "https://console.developers.google.com/m/cloudstorage/b/bucket/o/path/to/retry_2/blob_1",
+				}},
 			},
 		})
 	})
