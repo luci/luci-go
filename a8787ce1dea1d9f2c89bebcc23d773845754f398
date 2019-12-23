@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85b41fc6_7f109552",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:05:29Z",
+      "side": 1,
+      "message": "I think the code would be simpler if this case is dealt separate before doing status.FromError. Otherwise the \u0027switch\u0027 statement is hard to follow.\n\nif perr, yes :\u003d err.(*protocolError); yes {\n  // do stuff\n  ...\n  return\n}\n\n// And here we can forget protocolError exists.",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 0
+      },
+      "revId": "a8787ce1dea1d9f2c89bebcc23d773845754f398",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
