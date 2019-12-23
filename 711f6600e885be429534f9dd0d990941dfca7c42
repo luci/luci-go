@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d2490c9a_368ec281",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7e80947_64767a95",
+      "range": {
+        "startLine": 51,
+        "startChar": 20,
+        "endLine": 51,
+        "endChar": 76
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "80e927e1_04ff5e64",
         "filename": "grpc/prpc/encoding.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa9b322f_dfb24c1e",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "fine",
+      "parentUuid": "80e927e1_04ff5e64",
+      "range": {
+        "startLine": 84,
+        "startChar": 54,
+        "endLine": 84,
+        "endChar": 72
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "57e9d976_f0dafa73",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "i looked at proto.Size briefly, but cannot easily tell if the Size computation would be reused.\n\nanyway, i removed it. \n\nif this is slow, then how does one use proto.BuffeR.Marshal?...",
+      "parentUuid": "1d431ca1_a33d9d73",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "303492df_a482a377",
         "filename": "grpc/prpc/encoding.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55a8b269_ad5ade2e",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "fixed. PTAL",
+      "parentUuid": "303492df_a482a377",
+      "range": {
+        "startLine": 199,
+        "startChar": 45,
+        "endLine": 199,
+        "endChar": 72
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "ed9f677e_e33bdd4b",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "hm... that\u0027s true. should we add another header?..",
+      "parentUuid": "12302fb2_6850fc5e",
+      "range": {
+        "startLine": 218,
+        "startChar": 35,
+        "endLine": 218,
+        "endChar": 47
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d16d3ece_4b129bc3",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 3
@@ -128,6 +248,30 @@
       "writtenOn": "2019-12-23T22:22:45Z",
       "side": 1,
       "message": "This shows authentication should have been implemented as an interceptor on grpc level :(",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 3
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9dc93f34_76faeb33",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T22:36:25Z",
+      "side": 1,
+      "message": "but then, how would we enforce a default authenticator like we do here?",
+      "parentUuid": "d16d3ece_4b129bc3",
       "range": {
         "startLine": 144,
         "startChar": 2,
