@@ -190,6 +190,29 @@
     },
     {
       "key": {
+        "uuid": "ed1bea6b_c1e814cf",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T23:13:57Z",
+      "side": 1,
+      "message": "unrelated: we should also add X-Content-Type-Options: nosniff, otherwise this implementation is not matching prpc 1.1 doc.",
+      "range": {
+        "startLine": 217,
+        "startChar": 1,
+        "endLine": 217,
+        "endChar": 11
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "12302fb2_6850fc5e",
         "filename": "grpc/prpc/encoding.go",
         "patchSetId": 3
@@ -237,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "36433231_1723a5cb",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T23:13:57Z",
+      "side": 1,
+      "message": "I\u0027m not sure. It would be not great... Can we document that the encoding is the same as the first \u0027Accept\u0027 request header and otherwise (if there\u0027s no Accept header) it is wire protobuf?",
+      "parentUuid": "ed9f677e_e33bdd4b",
+      "range": {
+        "startLine": 218,
+        "startChar": 35,
+        "endLine": 218,
+        "endChar": 47
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d16d3ece_4b129bc3",
         "filename": "grpc/prpc/server.go",
         "patchSetId": 3
@@ -272,6 +319,30 @@
       "side": 1,
       "message": "but then, how would we enforce a default authenticator like we do here?",
       "parentUuid": "d16d3ece_4b129bc3",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 3
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1bc42b14_ffebce9f",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T23:13:57Z",
+      "side": 1,
+      "message": "We wouldn\u0027t. Each server would have to setup the interceptor. IIUC, this is common in grpc. But the ship has sailed...",
+      "parentUuid": "9dc93f34_76faeb33",
       "range": {
         "startLine": 144,
         "startChar": 2,
