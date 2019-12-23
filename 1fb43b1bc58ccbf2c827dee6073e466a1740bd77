@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d199879_a769f526",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T23:51:49Z",
+      "side": 1,
+      "message": "unrelated: I think we may need to recognize HTTP 500 and HTTP 503 as codes.Internal and especially codes.Unavailable, since they may happen before the request reaches the server. \"no gRPC code\" is not exactly correct response. From logging and monitoring point of view it is better to preserve original HTTP 500/503 error codes.",
+      "range": {
+        "startLine": 379,
+        "startChar": 4,
+        "endLine": 379,
+        "endChar": 20
+      },
+      "revId": "1fb43b1bc58ccbf2c827dee6073e466a1740bd77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
