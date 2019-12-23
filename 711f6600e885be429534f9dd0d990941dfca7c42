@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b7e80947_64767a95",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "serialized using what encoding?",
+      "range": {
+        "startLine": 51,
+        "startChar": 20,
+        "endLine": 51,
+        "endChar": 76
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80e927e1_04ff5e64",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "IMHO this is unnecessary complication. It is reused only when marshaling more than one error detail. This will be happening extremely rare.",
+      "range": {
+        "startLine": 84,
+        "startChar": 54,
+        "endLine": 84,
+        "endChar": 72
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d431ca1_a33d9d73",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "This worries me (proto.Size in particular). Are you sure this is as fast as calling proto.Marshal directly? This is the hottest path in the code. If it slow just to accommodate very rare resuse of pbuf when marshalling errors, then it\u0027s a bad trade off.",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 44
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "303492df_a482a377",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "what does this mean?",
+      "range": {
+        "startLine": 199,
+        "startChar": 45,
+        "endLine": 199,
+        "endChar": 72
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12302fb2_6850fc5e",
+        "filename": "grpc/prpc/encoding.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "the client side wouldn\u0027t know what decoding to use for error details :(",
+      "range": {
+        "startLine": 218,
+        "startChar": 35,
+        "endLine": 218,
+        "endChar": 47
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d16d3ece_4b129bc3",
+        "filename": "grpc/prpc/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-23T22:22:45Z",
+      "side": 1,
+      "message": "This shows authentication should have been implemented as an interceptor on grpc level :(",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 3
+      },
+      "revId": "711f6600e885be429534f9dd0d990941dfca7c42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
