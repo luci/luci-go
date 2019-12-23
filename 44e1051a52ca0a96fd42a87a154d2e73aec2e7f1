@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d90b4a0_2c87849d",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T06:06:06Z",
+      "side": 1,
+      "message": "nit: please move this line after the if statement",
+      "revId": "44e1051a52ca0a96fd42a87a154d2e73aec2e7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4373303_a2d27cfb",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-23T06:06:06Z",
+      "side": 1,
+      "message": "this file got more complex without a good reason. These changes do not make these tests less flaky. please undo them.",
+      "revId": "44e1051a52ca0a96fd42a87a154d2e73aec2e7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
