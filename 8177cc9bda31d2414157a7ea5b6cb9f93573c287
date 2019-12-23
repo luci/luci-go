@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89b14f44_db542dcf",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-23T18:02:43Z",
+      "side": 1,
+      "message": "I like this name and this set of named options, I\u0027m glad you came up with a good name for it.",
+      "range": {
+        "startLine": 123,
+        "startChar": 2,
+        "endLine": 123,
+        "endChar": 13
+      },
+      "revId": "8177cc9bda31d2414157a7ea5b6cb9f93573c287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3e31561d_0f932dc1",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-23T18:02:43Z",
+      "side": 1,
+      "message": "Nit:\n\n  1. formatting, the lines could be wrapped at around 80 columns\n  2. \"re-used\" or \"reused\"? It seems like \"reused\" is more common.",
+      "range": {
+        "startLine": 127,
+        "startChar": 0,
+        "endLine": 131,
+        "endChar": 77
+      },
+      "revId": "8177cc9bda31d2414157a7ea5b6cb9f93573c287",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
