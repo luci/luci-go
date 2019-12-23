@@ -28,7 +28,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -122,45 +121,51 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 	}
 }
 
-// errorCode returns a most appropriate gRPC code for an error
-func errorCode(err error) codes.Code {
-	switch errors.Unwrap(err) {
-	case context.DeadlineExceeded:
-		return codes.DeadlineExceeded
+func errorStatus(err error) (st *status.Status, httpStatus int) {
+	if err == nil {
+		panic("err is nil")
+	}
 
-	case context.Canceled:
-		return codes.Canceled
+	if perr, ok := err.(*protocolError); ok {
+		st = status.New(codes.InvalidArgument, perr.err.Error())
+		httpStatus = perr.status
+		return
+	}
+
+	err = errors.Unwrap(err)
+	st, ok := status.FromError(err)
+	switch {
+	case ok:
+	// great.
+
+	case err == context.Canceled:
+		st = status.New(codes.Canceled, "canceled")
+
+	case err == context.DeadlineExceeded:
+		st = status.New(codes.DeadlineExceeded, "deadline exceeded")
 
 	default:
-		return grpc.Code(err)
+		// st is non-nil because err is non-nil.
 	}
+
+	httpStatus = grpcutil.CodeStatus(st.Code())
+	return
 }
 
 // writeError writes err to w and logs it.
 func writeError(c context.Context, w http.ResponseWriter, err error) {
-	var code codes.Code
-	var httpStatus int
-	var msg string
-	if perr, ok := err.(*protocolError); ok {
-		code = codes.InvalidArgument
-		msg = perr.err.Error()
-		httpStatus = perr.status
-	} else {
-		code = errorCode(err)
-		msg = grpc.ErrorDesc(err)
-		httpStatus = grpcutil.CodeStatus(code)
-	}
+	st, httpStatus := errorStatus(err)
 
-	body := msg
+	body := st.Message()
 	level := logging.Warning
 	if httpStatus >= 500 {
 		level = logging.Error
 		// Hide potential implementation details from the user.
 		body = http.StatusText(httpStatus)
 	}
-	logging.Logf(c, level, "prpc: responding with %s error: %s", code, msg)
+	logging.Logf(c, level, "prpc: responding with %s error: %s", st.Code(), st.Message())
 
-	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
+	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
 	w.Header().Set(headerContentType, "text/plain")
 	w.WriteHeader(httpStatus)
 	if _, err := io.WriteString(w, body); err != nil {
