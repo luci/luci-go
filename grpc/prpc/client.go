@@ -281,35 +281,10 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 				*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
 			}
 
-			codeHeader := res.Header.Get(HeaderGRPCCode)
-			if codeHeader == "" {
-				// Not a valid pRPC response.
-				body := buf.String()
-				bodySize := c.ErrBodySize
-				if bodySize <= 0 {
-					bodySize = 256
-				}
-				if len(body) > bodySize {
-					body = body[:bodySize] + "..."
-				}
-				err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", res.StatusCode, body)
-
-				// Some HTTP codes are returned directly by hosting platforms (e.g.,
-				// AppEngine), and should be automatically retried even if a gRPC code
-				// header is not supplied.
-				if res.StatusCode >= http.StatusInternalServerError {
-					err = transient.Tag.Apply(err)
-				}
+			code, err := c.readStatusCode(res, buf)
+			if err != nil {
 				return err
 			}
-
-			codeInt, err := strconv.Atoi(codeHeader)
-			if err != nil {
-				// Not a valid pRPC response.
-				return fmt.Errorf("invalid grpc code %q: %s", codeHeader, err)
-			}
-
-			code := codes.Code(codeInt)
 			if code != codes.OK {
 				desc := strings.TrimSuffix(buf.String(), "\n")
 				err := grpcutil.Errf(code, "%s", desc)
@@ -398,6 +373,41 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 	}
 
 	return nil
+}
+
+// readStatusCode retrieves the status code from the response.
+func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.Code, error) {
+	codeHeader := r.Header.Get(HeaderGRPCCode)
+	if codeHeader == "" {
+		// Not a valid pRPC response.
+		body := bodyBuf.String()
+
+		// Limit the body size.
+		bodySize := c.ErrBodySize
+		if bodySize <= 0 {
+			bodySize = 256
+		}
+		if len(body) > bodySize {
+			body = body[:bodySize] + "..."
+		}
+		err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, body)
+
+		// Some HTTP codes are returned directly by hosting platforms (e.g.,
+		// AppEngine), and should be automatically retried even if a gRPC code
+		// header is not supplied.
+		if r.StatusCode >= http.StatusInternalServerError {
+			err = transient.Tag.Apply(err)
+		}
+		return 0, err
+	}
+
+	codeInt, err := strconv.Atoi(codeHeader)
+	if err != nil {
+		// Not a valid pRPC response.
+		return 0, fmt.Errorf("invalid grpc code %q: %s", codeHeader, err)
+	}
+
+	return codes.Code(codeInt), nil
 }
 
 // prepareRequest creates an HTTP request for an RPC,
