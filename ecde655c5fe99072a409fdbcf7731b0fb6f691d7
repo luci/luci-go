@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cd8d91e_685b19ac",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-23T17:48:44Z",
+      "side": 1,
+      "message": "Ah, another edge case. I hadn\u0027t thought of this one.",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 18
+      },
+      "revId": "ecde655c5fe99072a409fdbcf7731b0fb6f691d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "70011ebd_0b67caf9",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2019-12-23T17:48:44Z",
+      "side": 1,
+      "message": "For consistency with the above bullets, this could be phrased as:\n\n    * builds triggered as part of this attempt that failed and were retried.",
+      "range": {
+        "startLine": 55,
+        "startChar": 9,
+        "endLine": 55,
+        "endChar": 78
+      },
+      "revId": "ecde655c5fe99072a409fdbcf7731b0fb6f691d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
