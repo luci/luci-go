@@ -533,6 +533,11 @@ func Annotate(err error, reason string, args ...interface{}) *Annotator {
 	}}
 }
 
+// Tag applies tags to err.
+func Tag(err error, tags ...TagValueGenerator) error {
+	return Annotate(err, "").Tag(tags...).Err()
+}
+
 // Reason builds a new Annotator starting with reason. This allows you to use
 // all the formatting directives you would normally use with Annotate, in case
 // your originating error needs tags or an internal reason.

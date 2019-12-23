@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -185,9 +186,34 @@ func Code(err error) codes.Code {
 	return grpc.Code(errors.Unwrap(err))
 }
 
-// ToGRPCErr is a shorthand for Errf(Code(err), "%s", err)
+var okStatus = status.New(codes.OK, "")
+
+// ToStatus converts err to a Status.
+// Respects the gRPC code tag and status details added using WithDetails
+// If status details marshaling fails, returns the marshaling error.
+func ToStatus(err error) (*status.Status, error) {
+	if err == nil {
+		return okStatus, nil
+	}
+
+	st := status.New(Code(err), err.Error())
+	if ds := Details(err); len(ds) != 0 {
+		var derr error
+		if st, derr = st.WithDetails(ds...); derr != nil {
+			return nil, derr
+		}
+	}
+	return st, nil
+}
+
+// ToGRPCErr is a shortcut for ToStatus(err).Err(), except if ToStatus fails
+// it returns that error instead.
 func ToGRPCErr(err error) error {
-	return Errf(Code(err), "%s", err)
+	st, err := ToStatus(err)
+	if err != nil {
+		return err
+	}
+	return st.Err()
 }
 
 // IsTransientCode returns true if a given gRPC code is associated with a
@@ -228,4 +254,53 @@ func GRPCifyAndLogErr(c context.Context, err error) error {
 		errors.Log(c, err)
 	}
 	return grpcErr
+}
+
+var statusDetailsTagKey = errors.NewTagKey("a singly-linked list of status details")
+
+type detailNode struct {
+	details []proto.Message
+	prev    *detailNode
+}
+
+// WithDetails appends gRPC status details to the error.
+// See also https://godoc.org/google.golang.org/grpc/status#Status.WithDetails
+func WithDetails(err error, details ...proto.Message) error {
+	node := &detailNode{
+		details: make([]proto.Message, len(details)),
+	}
+	for i, d := range details {
+		node.details[i] = proto.Clone(d)
+	}
+
+	if v, ok := errors.TagValueIn(statusDetailsTagKey, err); ok {
+		node.prev = v.(*detailNode)
+	}
+
+	return errors.Tag(err, errors.TagValue{
+		Key:   statusDetailsTagKey,
+		Value: node,
+	})
+}
+
+// Details returns copies of the status details added to the err using
+// WithDetails.
+func Details(err error) []proto.Message {
+	v, ok := errors.TagValueIn(statusDetailsTagKey, err)
+	if !ok {
+		return nil
+	}
+
+	var ret []proto.Message
+	var walk func(n *detailNode)
+	walk = func(n *detailNode) {
+		if n.prev != nil {
+			walk(n.prev)
+		}
+		for _, d := range n.details {
+			ret = append(ret, proto.Clone(d))
+		}
+	}
+	walk(v.(*detailNode))
+	return ret
 }
