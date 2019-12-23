@@ -138,29 +138,31 @@ func errorCode(err error) codes.Code {
 
 // writeError writes err to w and logs it.
 func writeError(c context.Context, w http.ResponseWriter, err error) {
-	var code codes.Code
 	var httpStatus int
-	var msg string
-	if perr, ok := err.(*protocolError); ok {
-		code = codes.InvalidArgument
-		msg = perr.err.Error()
-		httpStatus = perr.status
-	} else {
-		code = errorCode(err)
-		msg = grpc.ErrorDesc(err)
-		httpStatus = grpcutil.CodeStatus(code)
+	st, ok := status.FromError(errors.Unwrap(err))
+	if !ok {
+		if perr, ok := err.(*protocolError); ok {
+			st = status.New(codes.InvalidArgument, perr.err.Error())
+			httpStatus = perr.status
+		} else if errors.Unwrap(err) == context.Canceled {
+			st = status.New(codes.Canceled, "canceled")
+		}
 	}
 
-	body := msg
+	if httpStatus == 0 {
+		httpStatus = grpcutil.CodeStatus(st.Code())
+	}
+
+	body := st.Message()
 	level := logging.Warning
 	if httpStatus >= 500 {
 		level = logging.Error
 		// Hide potential implementation details from the user.
 		body = http.StatusText(httpStatus)
 	}
-	logging.Logf(c, level, "prpc: responding with %s error: %s", code, msg)
+	logging.Logf(c, level, "prpc: responding with %s error: %s", st.Code(), st.Message())
 
-	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
+	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(st.Code())))
 	w.Header().Set(headerContentType, "text/plain")
 	w.WriteHeader(httpStatus)
 	if _, err := io.WriteString(w, body); err != nil {
