@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -146,6 +147,30 @@ func TestEncoding(t *testing.T) {
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
 			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error: errmsg")
+		})
+
+		Convey("status details", func() {
+			st := status.New(codes.InvalidArgument, "invalid argument")
+
+			st, err := st.WithDetails(&errdetails.BadRequest{
+				FieldViolations: []*errdetails.BadRequest_FieldViolation{
+					{Field: "a"},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			st, err = st.WithDetails(&errdetails.Help{
+				Links: []*errdetails.Help_Link{
+					{Url: "https://example.com"},
+				},
+			})
+			So(err, ShouldBeNil)
+
+			writeError(c, rec, st.Err())
+			So(rec.Header()[HeaderStatusDetail], ShouldResemble, []string{
+				"MgopdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUucnBjLkJhZFJlcXVlc3QSBQoDCgE=",
+				"PgojdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUucnBjLkhlbHASFwoVEhNodHRwczovL2V4YW1wbGUuY28=",
+			})
 		})
 	})
 }

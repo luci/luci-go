@@ -19,6 +19,7 @@ package prpc
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -153,9 +155,35 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	return
 }
 
+func statusDetailsToHeaderValues(details []*any.Any) ([]string, error) {
+	ret := make([]string, len(details))
+
+	var buf proto.Buffer
+	for i, det := range details {
+		buf.Reset()
+		if err := buf.EncodeMessage(det); err != nil {
+			return nil, err
+		}
+		msgBytes := buf.Bytes()[:proto.Size(det)]
+		ret[i] = base64.StdEncoding.EncodeToString(msgBytes)
+	}
+
+	return ret, nil
+}
+
 // writeError writes err to w and logs it.
 func writeError(c context.Context, w http.ResponseWriter, err error) {
 	st, httpStatus := errorStatus(err)
+
+	// use st.Proto instead of st.Details to avoid unnecessary unmarshaling of
+	// google.protobuf.Any underlying messages. With Any protos themselves.
+	detailHeader, err := statusDetailsToHeaderValues(st.Proto().Details)
+	if err != nil {
+		st = status.New(codes.Internal, "prpc: failed to write status details")
+		httpStatus = http.StatusInternalServerError
+	} else {
+		w.Header()[HeaderStatusDetail] = detailHeader
+	}
 
 	body := st.Message()
 	level := logging.Warning
