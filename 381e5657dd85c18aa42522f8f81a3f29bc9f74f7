@@ -263,6 +263,30 @@
     },
     {
       "key": {
+        "uuid": "062389d1_010e011a",
+        "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-23T19:42:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16c45b8e_b5527a8b",
+      "range": {
+        "startLine": 24,
+        "startChar": 43,
+        "endLine": 24,
+        "endChar": 55
+      },
+      "revId": "381e5657dd85c18aa42522f8f81a3f29bc9f74f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbf5b05e_f45545ef",
         "filename": "resultdb/cmd/recorder/chromium/util/gcs.go",
         "patchSetId": 3
