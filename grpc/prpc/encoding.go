@@ -19,6 +19,7 @@ package prpc
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -75,6 +77,45 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 	return formats[0].Format, nil
 }
 
+// marshalMessage marshals msg in the given format.
+//
+// If wrap is true and format is JSON, then prepends JSONPBPrefix and appends
+// \n.
+func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error) {
+	if msg == nil {
+		panic("msg is nil")
+	}
+
+	var buf bytes.Buffer
+	switch format {
+
+	case FormatBinary:
+		return proto.Marshal(msg)
+
+	case FormatJSONPB:
+		if wrap {
+			buf.WriteString(JSONPBPrefix)
+		}
+		m := jsonpb.Marshaler{}
+		if err := m.Marshal(&buf, msg); err != nil {
+			return nil, err
+		}
+		if wrap {
+			buf.WriteRune('\n')
+		}
+		return buf.Bytes(), nil
+
+	case FormatText:
+		if err := proto.MarshalText(&buf, msg); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+
+	default:
+		panic(fmt.Errorf("impossible: invalid format %d", format))
+	}
+}
+
 // writeMessage writes msg to w in the specified format.
 // c is used to log errors.
 // panics if msg is nil.
@@ -83,33 +124,9 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 		panic("msg is nil")
 	}
 
-	var body []byte
-	var err error
-	switch format {
-	case FormatBinary:
-		body, err = proto.Marshal(msg)
-
-	case FormatJSONPB:
-		var buf bytes.Buffer
-		buf.WriteString(JSONPBPrefix)
-		m := jsonpb.Marshaler{}
-		err = m.Marshal(&buf, msg)
-		if err == nil {
-			_, err = buf.WriteRune('\n')
-		}
-		body = buf.Bytes()
-
-	case FormatText:
-		var buf bytes.Buffer
-		err = proto.MarshalText(&buf, msg)
-		body = buf.Bytes()
-
-	default:
-		panic(fmt.Errorf("impossible: invalid format %d", format))
-
-	}
+	body, err := marshalMessage(msg, format, true)
 	if err != nil {
-		writeError(c, w, withCode(err, codes.Internal))
+		writeError(c, w, withCode(err, codes.Internal), format)
 		return
 	}
 
@@ -152,9 +169,34 @@ func errorStatus(err error) (st *status.Status, httpStatus int) {
 	return
 }
 
+func statusDetailsToHeaderValues(details []*any.Any, format Format) ([]string, error) {
+	ret := make([]string, len(details))
+
+	for i, det := range details {
+		msgBytes, err := marshalMessage(det, format, false)
+		if err != nil {
+			return nil, err
+		}
+
+		ret[i] = base64.StdEncoding.EncodeToString(msgBytes)
+	}
+
+	return ret, nil
+}
+
 // writeError writes err to w and logs it.
-func writeError(c context.Context, w http.ResponseWriter, err error) {
+func writeError(c context.Context, w http.ResponseWriter, err error, format Format) {
 	st, httpStatus := errorStatus(err)
+
+	// use st.Proto instead of st.Details to avoid unnecessary unmarshaling of
+	// google.protobuf.Any underlying messages. We need Any protos themselves.
+	detailHeader, err := statusDetailsToHeaderValues(st.Proto().Details, format)
+	if err != nil {
+		st = status.New(codes.Internal, "prpc: failed to write status details")
+		httpStatus = http.StatusInternalServerError
+	} else {
+		w.Header()[HeaderStatusDetail] = detailHeader
+	}
 
 	body := st.Message()
 	level := logging.Warning
