@@ -41,9 +41,20 @@
 //
 // Protocol
 //
+// ## v.1.2
+//
+// v1.2 is small, backward-compatible amendment to v1.1 that adds support for
+// error details.
+//
+// Response header "X-Prpc-Status-Details-Bin" contains elements of
+// google.rpc.Status.details field, one value per element, in the same order.
+// The header value is a base64 string of the encoded google.protobuf.Any,
+// where the message encoding is the same as the response message encoding,
+// i.e. depends on Accept request header.
+//
 // ## v1.1
 //
-// v1.1 is small, backward-compatible amendment to the protocol to address a
+// v1.1 is small, backward-compatible amendment to v1.0 to address a
 // security issue. Since it is backward compatible, it does not introduce
 // a formal protocol version header at this time.
 //
