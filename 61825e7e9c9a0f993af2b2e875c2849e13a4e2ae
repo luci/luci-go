@@ -70,6 +70,30 @@
       "revId": "61825e7e9c9a0f993af2b2e875c2849e13a4e2ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f446be3c_7d5adfce",
+        "filename": "resultdb/cmd/recorder/chromium/formats/json.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2019-12-23T08:36:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc2bde5e_c9aef56c",
+      "range": {
+        "startLine": 378,
+        "startChar": 14,
+        "endLine": 378,
+        "endChar": 22
+      },
+      "revId": "61825e7e9c9a0f993af2b2e875c2849e13a4e2ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
