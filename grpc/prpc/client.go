@@ -284,7 +284,7 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 				return err
 			}
 			if code != codes.OK {
-				desc := strings.TrimSuffix(buf.String(), "\n")
+				desc := strings.TrimSuffix(c.readErrorMessage(buf), "\n")
 				err := grpcutil.Errf(code, "%s", desc)
 				if grpcutil.IsTransientCode(code) {
 					err = transient.Tag.Apply(err)
@@ -378,17 +378,7 @@ func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
 		// Not a valid pRPC response.
-		body := bodyBuf.String()
-
-		// Limit the body size.
-		bodySize := c.ErrBodySize
-		if bodySize <= 0 {
-			bodySize = 256
-		}
-		if len(body) > bodySize {
-			body = body[:bodySize] + "..."
-		}
-		err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, body)
+		err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, c.readErrorMessage(bodyBuf))
 
 		// Some HTTP codes are returned directly by hosting platforms (e.g.,
 		// AppEngine), and should be automatically retried even if a gRPC code
@@ -406,6 +396,26 @@ func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.
 	}
 
 	return codes.Code(codeInt), nil
+}
+
+// readErrorMessage reads an error message from a body buffer.
+// Respects c.ErrBodySize.
+// If the error message is too long, trims it and appends "...".
+func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
+	// Not a valid pRPC response.
+
+	ret := bodyBuf.String()
+
+	// Limit the body size.
+	limit := c.ErrBodySize
+	if limit <= 0 {
+		limit = 256
+	}
+	if len(ret) > limit {
+		ret = ret[:limit] + "..."
+	}
+
+	return ret
 }
 
 // prepareRequest creates an HTTP request for an RPC,
