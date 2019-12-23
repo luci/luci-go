@@ -73,13 +73,13 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			"Deadline":     &ret.Deadline,
 			"Tags":         &ret.Tags,
 		})
+		if err != nil {
+			return err
+		}
 
 		finalizeTime := now
 		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
-		case err != nil:
-			return err
-
 		case ret.State == requestState && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
