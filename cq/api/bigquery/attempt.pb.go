@@ -212,7 +212,22 @@ type Attempt struct {
 	// Gerrit changes, with specific patchsets, in this Attempt.
 	// There should be one or more.
 	GerritChanges []*GerritChange `protobuf:"bytes,7,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
-	// Builds checked as part of this attempt, whether triggered or reused.
+	// Relevant builds at of this Attempt's end time.
+	//
+	// While Attempt is processed, CQ may consider more builds than included here.
+	//
+	// For example, the following builds will be not be included:
+	//   * builds triggered before this attempt started, considered temporarily by
+	//     CQ, but then ignored because they ultimately failed such that CQ had to
+	//     trigger new builds instead.
+	//   * successful builds which were fresh enough at the attempt start time,
+	//     but which were ignored after they became too old for consideration such
+	//     that CQ had to trigger new builds instead.
+	//   * builds triggered as part of this attempt, which were later removed from
+	//     project CQ config and hence were no longer required by CQ by attempt's
+	//     end time.
+	//   * builds triggered as part of this attempt that failed and were retried.
+	//     The latest retried build will be included, however.
 	Builds []*Build `protobuf:"bytes,8,rep,name=builds,proto3" json:"builds,omitempty"`
 	// Final status of the Attempt.
 	Status               AttemptStatus `protobuf:"varint,9,opt,name=status,proto3,enum=bigquery.AttemptStatus" json:"status,omitempty"`
