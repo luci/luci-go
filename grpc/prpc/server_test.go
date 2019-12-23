@@ -22,22 +22,33 @@ import (
 	"strconv"
 	"testing"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/server/router"
 
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 type greeterService struct {
-	headerMD metadata.MD
+	headerMD   metadata.MD
+	errDetails []proto.Message
 }
 
 func (s *greeterService) SayHello(c context.Context, req *HelloRequest) (*HelloReply, error) {
 	if req.Name == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
+	}
+
+	if len(s.errDetails) > 0 {
+		st, err := status.New(codes.Unknown, "").WithDetails(s.errDetails...)
+		if err == nil {
+			err = st.Err()
+		}
+		return nil, err
 	}
 
 	if s.headerMD != nil {
@@ -106,6 +117,14 @@ func TestServer(t *testing.T) {
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Header()["A"], ShouldResemble, []string{"1"})
 				So(res.Header()["B"], ShouldResemble, []string{"2"})
+			})
+
+			Convey("Status details", func() {
+				greeterSvc.errDetails = []proto.Message{&errdetails.DebugInfo{Detail: "x"}}
+				r.ServeHTTP(res, req)
+				So(res.Header()[HeaderStatusDetail], ShouldResemble, []string{
+					"Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRGVidWdJbmZvEgMSAXg=",
+				})
 			})
 
 			Convey("Invalid Accept header", func() {
