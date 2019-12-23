@@ -133,14 +133,22 @@ func (s *Server) authenticate() router.Middleware {
 	}
 
 	return func(c *router.Context, next router.Handler) {
-		switch ctx, err := a.Authenticate(c.Context, c.Request); {
-		case transient.Tag.In(err):
-			writeError(c.Context, c.Writer, withCode(err, codes.Internal))
-		case err != nil:
-			writeError(c.Context, c.Writer, withCode(err, codes.Unauthenticated))
-		default:
+
+		ctx, err := a.Authenticate(c.Context, c.Request)
+		if err == nil {
 			c.Context = ctx
 			next(c)
+			return
+		}
+
+		format, perr := responseFormat(c.Request.Header.Get(headerAccept))
+		switch {
+		case perr != nil:
+			writeError(c.Context, c.Writer, perr, FormatBinary)
+		case transient.Tag.In(err):
+			writeError(c.Context, c.Writer, withCode(err, codes.Internal), format)
+		default:
+			writeError(c.Context, c.Writer, withCode(err, codes.Unauthenticated), format)
 		}
 	}
 }
@@ -172,7 +180,7 @@ func (s *Server) handlePOST(c *router.Context) {
 	s.setAccessControlHeaders(c, false)
 	res := s.call(c, serviceName, methodName)
 	if res.err != nil {
-		writeError(c.Context, c.Writer, res.err)
+		writeError(c.Context, c.Writer, res.err, res.fmt)
 		return
 	}
 	writeMessage(c.Context, c.Writer, res.out, res.fmt)

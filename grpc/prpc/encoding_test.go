@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -122,7 +123,7 @@ func TestEncoding(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		Convey("client error", func() {
-			writeError(c, rec, status.Error(codes.NotFound, "not found"))
+			writeError(c, rec, status.Error(codes.NotFound, "not found"), FormatBinary)
 			So(rec.Code, ShouldEqual, http.StatusNotFound)
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "5")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
@@ -131,7 +132,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		Convey("internal error", func() {
-			writeError(c, rec, status.Error(codes.Internal, "errmsg"))
+			writeError(c, rec, status.Error(codes.Internal, "errmsg"), FormatBinary)
 			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
@@ -140,12 +141,56 @@ func TestEncoding(t *testing.T) {
 		})
 
 		Convey("unknown error", func() {
-			writeError(c, rec, status.Error(codes.Unknown, "errmsg"))
+			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), FormatBinary)
 			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
 			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
 			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain")
 			So(rec.Body.String(), ShouldEqual, "Internal Server Error\n")
 			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error: errmsg")
+		})
+
+		Convey("status details", func() {
+			testStatusDetails := func(format Format, expected []string) {
+				st := status.New(codes.InvalidArgument, "invalid argument")
+
+				st, err := st.WithDetails(&errdetails.BadRequest{
+					FieldViolations: []*errdetails.BadRequest_FieldViolation{
+						{Field: "a"},
+					},
+				})
+				So(err, ShouldBeNil)
+
+				st, err = st.WithDetails(&errdetails.Help{
+					Links: []*errdetails.Help_Link{
+						{Url: "https://example.com"},
+					},
+				})
+				So(err, ShouldBeNil)
+
+				writeError(c, rec, st.Err(), format)
+				So(rec.Header()[HeaderStatusDetail], ShouldResemble, expected)
+			}
+
+			Convey("binary", func() {
+				testStatusDetails(FormatBinary, []string{
+					"Cil0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdBIFCgMKAWE=",
+					"CiN0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscBIXChUSE2h0dHBzOi8vZXhhbXBsZS5jb20=",
+				})
+			})
+
+			Convey("json", func() {
+				testStatusDetails(FormatJSONPB, []string{
+					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwiZmllbGRWaW9sYXRpb25zIjpbeyJmaWVsZCI6ImEifV19",
+					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwibGlua3MiOlt7InVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifV19",
+				})
+			})
+
+			Convey("text", func() {
+				testStatusDetails(FormatText, []string{
+					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdCIKdmFsdWU6ICJcblwwMDNcblwwMDFhIgo=",
+					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscCIKdmFsdWU6ICJcblwwMjVcMDIyXDAyM2h0dHBzOi8vZXhhbXBsZS5jb20iCg==",
+				})
+			})
 		})
 	})
 }
