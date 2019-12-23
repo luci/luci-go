@@ -69,7 +69,7 @@ message GerritChange {
   Mode mode = 7;
 
   enum SubmitStatus {
-    // Default value.
+    // Default. Never set.
     SUBMIT_STATUS_UNSPECIFIED = 0;
 
     // CQ didn't try submitting this CL.
@@ -120,9 +120,21 @@ message Build {
   // Buildbucket host, e.g. "cr-buildbucket.appspot.com".
   string host = 2;
 
-  // True if this build was pre-existing, or false if it was triggered as
-  // part of this CQ attempt.
-  bool reused = 3;
+  enum Origin {
+    // Default. Never set.
+    ORIGIN_UNSPECIFIED = 0;
+
+    // Build was triggered as part of this attempt
+    // because reuse was disabled for its builder.
+    NOT_REUSABLE = 1;
+    // Build was triggered as part of this attempt,
+    // but if there was an already existing build it would have been reused.
+    NOT_REUSED = 2;
+    // Build was reused.
+    REUSED = 3;
+  }
+  Origin origin = 3;
+
   // YES if this build must pass in order for the CLs to be considered
   // ready to submit; NO if the build status should not be used to assess
   // correctness the CLs in the Attempt.
