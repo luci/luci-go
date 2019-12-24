@@ -23,13 +23,13 @@ var testExonerationNameRe = regexpf(`^invocations/(%s)/tests/([^/]+)/exoneration
 
 // TestExonerationName synthesizes a test exoneration name.
 // Assumes invocation and exoneration IDs are valid.
-func TestExonerationName(invocationID, testPath, exonerationID string) string {
-	return fmt.Sprintf("invocations/%s/tests/%s/exonerations/%s", invocationID, url.PathEscape(testPath), exonerationID)
+func TestExonerationName(invocationID, testID, exonerationID string) string {
+	return fmt.Sprintf("invocations/%s/tests/%s/exonerations/%s", invocationID, url.PathEscape(testID), exonerationID)
 }
 
-// ParseTestExonerationName extracts invocation, test path and exoneration IDs
+// ParseTestExonerationName extracts invocation, test id and exoneration IDs
 // from the name.
-func ParseTestExonerationName(name string) (invocationID, testPath, exonerationID string, err error) {
+func ParseTestExonerationName(name string) (invocationID, testID, exonerationID string, err error) {
 	if name == "" {
 		return "", "", "", unspecified()
 	}
@@ -38,7 +38,7 @@ func ParseTestExonerationName(name string) (invocationID, testPath, exonerationI
 		return "", "", "", doesNotMatch(testExonerationNameRe)
 	}
 	invocationID = m[1]
-	if testPath, err = url.PathUnescape(m[2]); err != nil {
+	if testID, err = url.PathUnescape(m[2]); err != nil {
 		return "", "", "", err
 	}
 	exonerationID = m[3]

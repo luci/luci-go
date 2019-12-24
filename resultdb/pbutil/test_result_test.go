@@ -25,11 +25,11 @@ func TestTestResultName(t *testing.T) {
 	t.Parallel()
 	Convey("ParseTestResultName", t, func() {
 		Convey("Parse", func() {
-			invID, testPath, resultID, err := ParseTestResultName(
+			invID, testID, resultID, err := ParseTestResultName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
 			So(err, ShouldBeNil)
 			So(invID, ShouldEqual, "a")
-			So(testPath, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
+			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
 			So(resultID, ShouldEqual, "result5")
 		})
 
@@ -43,7 +43,7 @@ func TestTestResultName(t *testing.T) {
 			Convey(`bad unescape`, func() {
 				_, _, _, err := ParseTestResultName(
 					"invocations/a/tests/bad_hex_%gg/results/result1")
-				So(err, ShouldErrLike, "test path")
+				So(err, ShouldErrLike, "test id")
 			})
 
 			Convey(`unescaped unprintable`, func() {
