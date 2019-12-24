@@ -108,6 +108,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusOK)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
+				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
 				So(res.Body.String(), ShouldEqual, "message: \"Hello Lucy\"\n")
 			})
 
@@ -146,6 +147,7 @@ func TestServer(t *testing.T) {
 				r.ServeHTTP(res, req)
 				So(res.Code, ShouldEqual, http.StatusBadRequest)
 				So(res.Header().Get(HeaderGRPCCode), ShouldEqual, invalidArgument)
+				So(res.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
 			})
 
 			Convey("Invalid request message", func() {
