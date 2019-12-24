@@ -27,9 +27,9 @@ option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
 // Most clients would want to set expected_results to
 // VARIANTS_WITH_UNEXPECTED_RESULTS.
 message TestResultPredicate {
-  // A test result must have a test path matching this regular expression
+  // A test result must have a test id matching this regular expression
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.
-  string test_path_regexp = 1;
+  string test_id_regexp = 1;
 
   // A test result must have a variant satisfying this predicate.
   VariantPredicate variant = 2;
@@ -64,9 +64,9 @@ message TestResultPredicate {
 // Represents a function TestExoneration -> bool.
 // Empty message matches all test exonerations.
 message TestExonerationPredicate {
-  // A test exoneration must have a test path matching this regular expression
+  // A test exoneration must have a test id matching this regular expression
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.
-  string test_path_regexp = 1;
+  string test_id_regexp = 1;
 
   // A test exoneration must have a variant satisfying this predicate.
   VariantPredicate variant = 2;

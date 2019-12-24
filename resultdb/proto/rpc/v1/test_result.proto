@@ -27,24 +27,24 @@ import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 // and the same test suite can be executed in different variants
 // (OS, GPU, compile flags, etc).
 //
-// This message does not specify the test path.
+// This message does not specify the test id.
 // It should be available in the message that embeds this message.
 message TestResult {
   // Can be used to refer to this test result, e.g. in ResultDB.GetTestResult
   // RPC.
   // Format:
-  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/results/{RESULT_ID}".
-  // URL_ESCAPED_TEST_PATH is test_path escaped with
+  // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}".
+  // URL_ESCAPED_TEST_ID is test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Test path, a unique identifier of the test in a LUCI project.
+  // Test id, a unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]+$.
   //
-  // If two tests have a common test path prefix that ends with a
+  // If two tests have a common test id prefix that ends with a
   // non-alphanumeric character, they considered a part of a group. Examples:
   // - "a/b/c"
   // - "a/b/d"
@@ -58,10 +58,10 @@ message TestResult {
   // - Within that group, "a/b/e:x" and "a/b/e:y" form a sub-group because of
   //   the common prefix "a/b/e:".
   // This can be used in UI.
-  // LUCI does not interpret test paths in any other way.
-  string test_path = 2 [ (google.api.field_behavior) = IMMUTABLE ];
+  // LUCI does not interpret test ids in any other way.
+  string test_id = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
-  // Identifies a test result in a given invocation and test path.
+  // Identifies a test result in a given invocation and test id.
   // Regex: ^[[:ascii:]]{1,32}$.
   string result_id = 3 [
     (google.api.field_behavior) = IMMUTABLE,
@@ -188,23 +188,23 @@ message TestExoneration {
   // Can be used to refer to this test exoneration, e.g. in
   // ResultDB.GetTestExoneration RPC.
   // Format:
-  // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_PATH}/exonerations/{EXONERATION_ID}.
-  // URL_ESCAPED_TEST_PATH is test_variant.test_path escaped with
+  // invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/exonerations/{EXONERATION_ID}.
+  // URL_ESCAPED_TEST_ID is test_variant.test_id escaped with
   // https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
   string name = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Test identifier, see TestResult.test_path.
-  string test_path = 2;
+  // Test identifier, see TestResult.test_id.
+  string test_id = 2;
 
   // Description of the variant of the test, see Variant type.
   // Unlike TestResult.extra_variant_pairs, this one must be a full definition
   // of the variant, i.e. it is not combined with Invocation.base_test_variant.
   luci.resultdb.type.Variant variant = 3;
 
-  // Identifies an exoneration in a given invocation and test path.
+  // Identifies an exoneration in a given invocation and test id.
   // It is server-generated.
   string exoneration_id = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,

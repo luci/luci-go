@@ -217,7 +217,7 @@ func TestDeriveInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(trs, ShouldHaveLength, 3)
-			So(trs[0].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
+			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
 			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
 			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
 				"bucket", "bkt",
@@ -226,9 +226,9 @@ func TestDeriveInvocation(t *testing.T) {
 				"param/instantiation", "MyInstantiation",
 				"param/id", "1",
 			))
-			So(trs[1].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
-			So(trs[2].TestPath, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 		})
 	})
@@ -246,9 +246,9 @@ func TestBatchInsertTestResults(t *testing.T) {
 			Deadline:     now,
 		}
 		results := []*pb.TestResult{
-			{TestPath: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS},
-			{TestPath: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
-			{TestPath: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
+			{TestId: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS},
+			{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
+			{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
 		}
 
 		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*pb.TestResult) {
@@ -272,7 +272,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 				So(actualResults, ShouldHaveLength, len(expectedBatch))
 
 				for k, expectedResult := range expectedBatch {
-					So(actualResults[k].TestPath, ShouldEqual, expectedResult.TestPath)
+					So(actualResults[k].TestId, ShouldEqual, expectedResult.TestId)
 					So(actualResults[k].ResultId, ShouldEqual, strconv.Itoa(k))
 					So(actualResults[k].Status, ShouldEqual, expectedResult.Status)
 				}

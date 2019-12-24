@@ -59,8 +59,8 @@ type ServerConfig struct {
 	// UpdateToken is the token that allows writes to Invocation.
 	UpdateToken string
 
-	// TestPathPrefix will be prepended to the test_path of each TestResult.
-	TestPathPrefix string
+	// TestIDPrefix will be prepended to the test_id of each TestResult.
+	TestIDPrefix string
 }
 
 // Server contains state relevant to the server itself.
