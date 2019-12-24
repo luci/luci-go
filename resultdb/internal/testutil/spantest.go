@@ -240,10 +240,10 @@ func InsertInclusion(including, included span.InvocationID) *spanner.Mutation {
 func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testPath, resultID := span.MustParseTestResultName(tr.Name)
+		invID, testID, resultID := span.MustParseTestResultName(tr.Name)
 		mutMap := map[string]interface{}{
 			"InvocationId":    invID,
-			"TestPath":        testPath,
+			"TestId":          testID,
 			"ResultId":        resultID,
 			"Variant":         trs[i].Variant,
 			"VariantHash":     pbutil.VariantHash(trs[i].Variant),
@@ -261,12 +261,12 @@ func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
 }
 
 // InsertTestExonerations returns spanner mutations to insert test exonerations.
-func InsertTestExonerations(invID span.InvocationID, testPath string, variant *typepb.Variant, count int) []*spanner.Mutation {
+func InsertTestExonerations(invID span.InvocationID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
 		ms[i] = span.InsertMap("TestExonerations", map[string]interface{}{
 			"InvocationId":    invID,
-			"TestPath":        testPath,
+			"TestId":          testID,
 			"ExonerationId":   strconv.Itoa(i),
 			"Variant":         variant,
 			"VariantHash":     pbutil.VariantHash(variant),
@@ -277,13 +277,13 @@ func InsertTestExonerations(invID span.InvocationID, testPath string, variant *t
 }
 
 // MakeTestResults creates test results.
-func MakeTestResults(invID, testPath string, statuses ...pb.TestStatus) []*pb.TestResult {
+func MakeTestResults(invID, testID string, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(invID, testPath, resultID),
-			TestPath: testPath,
+			Name:     pbutil.TestResultName(invID, testID, resultID),
+			TestId:   testID,
 			ResultId: resultID,
 			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
 			Expected: status == pb.TestStatus_PASS,

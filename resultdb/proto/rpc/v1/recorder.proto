@@ -147,8 +147,8 @@ message CreateTestResultRequest {
   string invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
 
   // The test result to create.
-  // Test path and result id are used to dedup requests, i.e.
-  // if a test result with the same test path and result id already exists in
+  // Test id and result id are used to dedupe requests, i.e.
+  // if a test result with the same test id and result id already exists in
   // the invocation, then the requests succeeds as opposed to returns with
   // ALREADY_EXISTS error.
   TestResult test_result = 2 [ (google.api.field_behavior) = REQUIRED ];

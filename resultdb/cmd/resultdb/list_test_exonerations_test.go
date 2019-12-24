@@ -54,13 +54,13 @@ func TestListTestExonerations(t *testing.T) {
 
 		// Insert some TestExonerations.
 		invID := span.InvocationID("inv")
-		testPath := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
+		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now, false),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
-				"TestPath":        testPath,
+				"TestId":          testID,
 				"ExonerationId":   "0",
 				"Variant":         var0,
 				"VariantHash":     "deadbeef",
@@ -68,14 +68,14 @@ func TestListTestExonerations(t *testing.T) {
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
-				"TestPath":      testPath,
+				"TestId":        testID,
 				"ExonerationId": "1",
 				"Variant":       pbutil.Variant(),
 				"VariantHash":   "deadbeef",
 			}),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":  invID,
-				"TestPath":      testPath,
+				"TestId":        testID,
 				"ExonerationId": "2",
 				"Variant":       pbutil.Variant(),
 				"VariantHash":   "deadbeef",
@@ -84,20 +84,20 @@ func TestListTestExonerations(t *testing.T) {
 
 		all := []*pb.TestExoneration{
 			{
-				Name:            pbutil.TestExonerationName("inv", testPath, "0"),
-				TestPath:        testPath,
+				Name:            pbutil.TestExonerationName("inv", testID, "0"),
+				TestId:          testID,
 				Variant:         var0,
 				ExonerationId:   "0",
 				ExplanationHtml: "broken",
 			},
 			{
-				Name:          pbutil.TestExonerationName("inv", testPath, "1"),
-				TestPath:      testPath,
+				Name:          pbutil.TestExonerationName("inv", testID, "1"),
+				TestId:        testID,
 				ExonerationId: "1",
 			},
 			{
-				Name:          pbutil.TestExonerationName("inv", testPath, "2"),
-				TestPath:      testPath,
+				Name:          pbutil.TestExonerationName("inv", testID, "2"),
+				TestId:        testID,
 				ExonerationId: "2",
 			},
 		}

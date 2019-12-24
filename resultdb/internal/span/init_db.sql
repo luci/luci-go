@@ -97,10 +97,10 @@ CREATE TABLE TestResults (
   InvocationId STRING(MAX) NOT NULL,
 
   -- Unique identifier of the test,
-  -- see also TestResult.test_path in test_result.proto.
-  TestPath STRING(MAX) NOT NULL,
+  -- see also TestResult.test_id in test_result.proto.
+  TestId STRING(MAX) NOT NULL,
 
-  -- A suffix for PK to allow multiple test results for the same test path in
+  -- A suffix for PK to allow multiple test results for the same test id in
   -- a given invocation.
   -- Generated on the server.
   ResultId STRING(MAX) NOT NULL,
@@ -146,16 +146,16 @@ CREATE TABLE TestResults (
   -- Output artifacts, see also TestResult.output_artifacts in test_result.proto.
   -- Encoded as luci.resultdb.internal.Artifacts message.
   OutputArtifacts BYTES(MAX)
-) PRIMARY KEY (InvocationId, TestPath, ResultId),
+) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
 -- Unexpected test results for each invocation.
 -- It is significantly smaller (<2%) than TestResult table and should be used
 -- for most queries.
--- It includes TestPath to be able to find all unexpected test result with a
--- given test path or a test path prefix.
+-- It includes TestId to be able to find all unexpected test result with a
+-- given test id or a test id prefix.
 CREATE NULL_FILTERED INDEX UnexpectedTestResults
-  ON TestResults (InvocationId, TestPath, IsUnexpected) STORING (VariantHash),
+  ON TestResults (InvocationId, TestId, IsUnexpected) STORING (VariantHash),
   INTERLEAVE IN Invocations;
 
 
@@ -164,9 +164,9 @@ CREATE TABLE TestExonerations (
   -- ID of the parent Invocations row.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- The exoneration applies only to test results with this exact test path.
-  -- This is a foreign key to TestResults.TestPath column.
-  TestPath STRING(MAX) NOT NULL,
+  -- The exoneration applies only to test results with this exact test id.
+  -- This is a foreign key to TestResults.TestId column.
+  TestId STRING(MAX) NOT NULL,
 
   -- Server-generated exoneration ID.
   -- Uniquely identifies a test exoneration within an invocation.
@@ -186,7 +186,7 @@ CREATE TABLE TestExonerations (
   -- Compressed explanation of the exoneration for humans, in HTML.
   -- See span.Compress type for details of compression.
   ExplanationHTML BYTES(MAX)
-) PRIMARY KEY (InvocationId, TestPath, ExonerationId),
+) PRIMARY KEY (InvocationId, TestId, ExonerationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
 -- Stores tasks to perform on invocations.
