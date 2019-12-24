@@ -208,7 +208,7 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 	})
 
 	// Send the request in a retry loop.
-	var buf bytes.Buffer
+	buf := &bytes.Buffer{}
 	var contentType string
 	err := retry.Retry(
 		ctx,
@@ -273,36 +273,8 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 
 			// Read the response body.
 			buf.Reset()
-			var body io.Reader = res.Body
-
-			limit := c.MaxContentLength
-			if limit <= 0 {
-				limit = DefaultMaxContentLength
-			}
-			if l := res.ContentLength; l > 0 {
-				if l > int64(limit) {
-					logging.Fields{
-						"contentLength": l,
-						"limit":         limit,
-					}.Errorf(ctx, "ContentLength header exceeds soft response body limit.")
-					return ErrResponseTooBig
-				}
-				limit = int(l)
-				buf.Grow(limit)
-			}
-			body = io.LimitReader(body, int64(limit))
-			if _, err = buf.ReadFrom(body); err != nil {
-				return fmt.Errorf("failed to read response body: %s", err)
-			}
-
-			// If there is more data in the body Reader, it means that the response
-			// size has exceeded our limit.
-			var probeB [1]byte
-			if amt, err := body.Read(probeB[:]); amt > 0 || err != io.EOF {
-				logging.Fields{
-					"limit": limit,
-				}.Errorf(ctx, "Soft response body limit exceeded.")
-				return ErrResponseTooBig
+			if err := c.readResponseBody(ctx, buf, res); err != nil {
+				return err
 			}
 
 			if options.resTrailerMetadata != nil {
@@ -392,6 +364,40 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 		out = bytes.TrimPrefix(out, bytesJSONPBPrefix)
 	}
 	return out, nil
+}
+
+// readResponseBody reads the response body to dest.
+// If the response body size exceeds the limits or the declared size, returns
+// a non-nil error.
+func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *http.Response) error {
+	limit := c.MaxContentLength
+	if limit <= 0 {
+		limit = DefaultMaxContentLength
+	}
+
+	if l := r.ContentLength; l > 0 {
+		if l > int64(limit) {
+			logging.Errorf(ctx, "ContentLength header exceeds soft response body limit: %d > %d.", l, limit)
+			return ErrResponseTooBig
+		}
+		limit = int(l)
+		dest.Grow(limit)
+	}
+
+	limitedBody := io.LimitReader(r.Body, int64(limit))
+	if _, err := dest.ReadFrom(limitedBody); err != nil {
+		return fmt.Errorf("failed to read response body: %s", err)
+	}
+
+	// If there is more data in the body Reader, it means that the response
+	// size has exceeded our limit.
+	var probeB [1]byte
+	if n, err := r.Body.Read(probeB[:]); n > 0 || err != io.EOF {
+		logging.Errorf(ctx, "Soft response body limit %d exceeded.", limit)
+		return ErrResponseTooBig
+	}
+
+	return nil
 }
 
 // prepareRequest creates an HTTP request for an RPC,
