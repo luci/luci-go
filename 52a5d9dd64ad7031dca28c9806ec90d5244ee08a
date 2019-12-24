@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4822cf8b_efa8e3a6",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-24T00:01:47Z",
+      "side": 1,
+      "message": "I\u0027m wondering if this tag should happen within WithDetails.\n\nOtherwise it\u0027s not prevented to do things like:\nerr :\u003d errors.Reason(\"\").Tag(grpcutil.FailedPreconditionTag).Err()\nerr \u003d grpcutil.WithDetails(err, \u0026errdetails.BadRequest{})\n\nWDYT?",
+      "range": {
+        "startLine": 80,
+        "startChar": 51,
+        "endLine": 80,
+        "endChar": 86
+      },
+      "revId": "52a5d9dd64ad7031dca28c9806ec90d5244ee08a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b36153c_3b604dfd",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2019-12-24T00:01:47Z",
+      "side": 1,
+      "message": "nit: remove this empty line?",
+      "revId": "52a5d9dd64ad7031dca28c9806ec90d5244ee08a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
