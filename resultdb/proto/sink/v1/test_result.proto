@@ -26,8 +26,8 @@ option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
 // in ../../rpc/v1/test_result.proto.
 // See its comments for details.
 message TestResult {
-  // Equivalent of luci.resultpb.TestResult.TestPath.
-  string test_path = 1;
+  // Equivalent of luci.resultpb.TestResult.TestId.
+  string test_id = 1;
 
   // Equivalent of luci.resultpb.TestResult.result_id.
   string result_id = 2;

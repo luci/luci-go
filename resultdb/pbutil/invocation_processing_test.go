@@ -75,7 +75,7 @@ func TestValidateBigQueryExport(t *testing.T) {
 				Table:   "table",
 				TestResults: &pb.BigQueryExport_TestResults{
 					Predicate: &pb.TestResultPredicate{
-						TestPathRegexp: "(",
+						TestIdRegexp: "(",
 					},
 				},
 			})

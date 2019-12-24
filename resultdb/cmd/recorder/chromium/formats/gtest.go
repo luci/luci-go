@@ -41,14 +41,14 @@ const (
 )
 
 var (
-	// Prefixes that may be present in the test name and must be stripped before forming the base path.
+	// Prefixes that may be present in the test name and must be stripped before forming the base id.
 	prefixes = []string{"MANUAL_", "PRE_"}
 
-	// Java base paths aren't actually GTest but use the same launcher output format.
-	javaPathRE = regexp.MustCompile(`^[\w.]+#`)
+	// Java base ids aren't actually GTest but use the same launcher output format.
+	javaIDRe = regexp.MustCompile(`^[\w.]+#`)
 
-	// Test base paths look like FooTest.DoesBar: "FooTest" is the suite and "DoesBar" the test name.
-	basePathRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
+	// Test base ids look like FooTest.DoesBar: "FooTest" is the suite and "DoesBar" the test name.
+	baseIDRE = regexp.MustCompile(`^(\w+)\.(\w+)$`)
 
 	// Type parametrized test examples:
 	// - MyInstantiation/FooTest/1.DoesBar
@@ -132,7 +132,7 @@ func (r *GTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader) er
 // If an error is returned, inv is left unchanged.
 //
 // Does not populate TestResult.Name.
-func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation) ([]*pb.TestResult, error) {
+func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation) ([]*pb.TestResult, error) {
 	// In theory, we can have multiple iterations. This seems rare in practice, so log if we do see
 	// more than one to confirm and track.
 	if len(r.PerIterationData) > 1 {
@@ -160,11 +160,11 @@ func (r *GTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv 
 					"failed to extract test base name and parameters from %q", name).Err()
 			}
 
-			testPath := testPathPrefix + baseName
+			testID := testIDPrefix + baseName
 
 			for i, result := range data[name] {
 				// Store the processed test result into the correct part of the overall map.
-				rpb, err := r.convertTestResult(ctx, testPath, name, result)
+				rpb, err := r.convertTestResult(ctx, testID, name, result)
 				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
@@ -227,38 +227,39 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
-// extractGTestParameters extracts parameters from a test path as a mapping with "param/" keys.
-func extractGTestParameters(testPath string) (basePath string, params map[string]string, err error) {
+// extractGTestParameters extracts parameters from a test id as a mapping with "param/" keys.
+func extractGTestParameters(testID string) (baseID string, params map[string]string, err error) {
 	var suite, name string
 
 	// If this is a JUnit tests, don't try to extract parameters.
 	// TODO: investigate handling parameters for JUnit tests.
-	if match := javaPathRE.FindStringSubmatch(testPath); match != nil {
-		basePath = testPath
+	if match := javaIDRe.FindStringSubmatch(testID); match != nil {
+		baseID = testID
 		return
 	}
 
 	// Tests can be only one of type- or value-parametrized, if parametrized at all.
 	params = map[string]string{}
-	if match := typeParamRE.FindStringSubmatch(testPath); match != nil {
+	if match := typeParamRE.FindStringSubmatch(testID); match != nil {
 		// Extract type parameter.
 		suite = match[3]
 		name = match[5]
 		params[testInstantiationKey] = match[2]
 		params[testParameterKey] = match[4]
-	} else if match := valueParamRE.FindStringSubmatch(testPath); match != nil {
+	} else if match := valueParamRE.FindStringSubmatch(testID); match != nil {
 		// Extract value parameter.
 		suite = match[3]
 		name = match[4]
 		params[testInstantiationKey] = match[2]
 		params[testParameterKey] = match[5]
-	} else if match := basePathRE.FindStringSubmatch(testPath); match != nil {
-		// Otherwise our testPath should not be parametrized, so extract the suite and name.
+	} else if match := baseIDRE.FindStringSubmatch(testID); match != nil {
+		// Otherwise our test id should not be parametrized, so extract the suite
+		// and name.
 		suite = match[1]
 		name = match[2]
 	} else {
-		// Otherwise testPath format is unrecognized.
-		err = errors.Reason("test path of unknown format").Err()
+		// Otherwise test id format is unrecognized.
+		err = errors.Reason("test id of unknown format").Err()
 		return
 	}
 
@@ -273,19 +274,19 @@ func extractGTestParameters(testPath string) (basePath string, params map[string
 		}
 		name = strippedName
 	}
-	basePath = fmt.Sprintf("%s.%s", suite, name)
+	baseID = fmt.Sprintf("%s.%s", suite, name)
 
 	return
 }
 
-func (r *GTestResults) convertTestResult(ctx context.Context, testPath, name string, result *GTestRunResult) (*pb.TestResult, error) {
+func (r *GTestResults) convertTestResult(ctx context.Context, testID, name string, result *GTestRunResult) (*pb.TestResult, error) {
 	status, err := fromGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
 	rpb := &pb.TestResult{
-		TestPath: testPath,
+		TestId:   testID,
 		Expected: status == pb.TestStatus_PASS,
 		Status:   status,
 		Tags: pbutil.StringPairs(

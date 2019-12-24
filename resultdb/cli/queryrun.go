@@ -37,7 +37,7 @@ type queryRun struct {
 	baseCommandRun
 	limit      int
 	unexpected bool
-	testPath   string
+	testID     string
 	merge      bool
 
 	// TODO(crbug.com/1021849): add flag -artifact-dir
@@ -66,8 +66,8 @@ func (r *queryRun) registerFlags(p Params) {
 		This signficantly reduces output size and latency.
 	`))
 
-	r.Flags.StringVar(&r.testPath, "test-path", "", text.Doc(`
-		A regular expression for test path. Implicitly wrapped with ^ and $.
+	r.Flags.StringVar(&r.testID, "test", "", text.Doc(`
+		A regular expression for test id. Implicitly wrapped with ^ and $.
 
 		Example: ninja://chrome/test:browser_tests/.+
 	`))
@@ -159,7 +159,7 @@ func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTe
 	eg.Go(func() error {
 		req := &pb.QueryTestResultsRequest{
 			Invocations: invNames,
-			Predicate:   &pb.TestResultPredicate{TestPathRegexp: r.testPath},
+			Predicate:   &pb.TestResultPredicate{TestIdRegexp: r.testID},
 			PageSize:    int32(r.limit),
 		}
 		if r.unexpected {
@@ -187,7 +187,7 @@ func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTe
 		req := &pb.QueryTestExonerationsRequest{
 			Invocations: invNames,
 			Predicate: &pb.TestExonerationPredicate{
-				TestPathRegexp: r.testPath,
+				TestIdRegexp: r.testID,
 			},
 			PageSize: int32(r.limit),
 		}
