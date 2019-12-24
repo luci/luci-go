@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ac0b47fb_ae186f34",
+        "filename": "common/errors/annotate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 538,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-24T00:40:41Z",
+      "side": 1,
+      "message": "does it still render the final error message correctly?",
+      "range": {
+        "startLine": 538,
+        "startChar": 20,
+        "endLine": 538,
+        "endChar": 24
+      },
+      "revId": "248f37ed3b82d43eef12b0c8b3a1391c915c7c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c523ed76_5a30c8da",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-24T00:40:41Z",
+      "side": 1,
+      "message": "Does this have to be public API? Can we keep only ToStatus?\n\nThe concern is that this call looks quite similar to Code(err). Code(err) may be understood as status.FromError(err).Code(), but Details(err) is NOT status.FromError(err).Details().",
+      "range": {
+        "startLine": 289,
+        "startChar": 5,
+        "endLine": 289,
+        "endChar": 12
+      },
+      "revId": "248f37ed3b82d43eef12b0c8b3a1391c915c7c94",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
