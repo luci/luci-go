@@ -131,7 +131,7 @@ func TestGTestConversions(t *testing.T) {
 
 	Convey("convertTestResult", t, func() {
 		Convey("EXCESSIVE_OUTPUT", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 				Status: "EXCESSIVE_OUTPUT",
 			})
 			So(err, ShouldBeNil)
@@ -140,7 +140,7 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey("NOTRUN", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 				Status: "NOTRUN",
 			})
 			So(err, ShouldBeNil)
@@ -149,7 +149,7 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey("Duration", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 				Status:        "SUCCESS",
 				ElapsedTimeMs: 1e6,
 			})
@@ -160,7 +160,7 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey("snippet", func() {
 			Convey("valid", func() {
-				tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 					Status:              "SUCCESS",
 					LosslessSnippet:     true,
 					OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMCBtcyk=",
@@ -170,7 +170,7 @@ func TestGTestConversions(t *testing.T) {
 			})
 
 			Convey("invalid does not cause a fatal error", func() {
-				tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+				tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 					Status:              "SUCCESS",
 					LosslessSnippet:     true,
 					OutputSnippetBase64: "invalid base64",
@@ -189,7 +189,7 @@ func TestGTestConversions(t *testing.T) {
 					},
 				},
 			}
-			tr, err := results.convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+			tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 				Status: "SUCCESS",
 			})
 			So(err, ShouldBeNil)
@@ -198,7 +198,7 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey("links", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testPath", "TestName", &GTestRunResult{
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
 				Status:              "SUCCESS",
 				LosslessSnippet:     true,
 				OutputSnippetBase64: "invalid base64",
@@ -217,9 +217,9 @@ func TestGTestConversions(t *testing.T) {
 	Convey(`extractGTestParameters`, t, func() {
 		Convey(`type parametrized`, func() {
 			Convey(`with instantiation`, func() {
-				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
+				baseID, params, err := extractGTestParameters("MyInstantiation/FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
-				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(baseID, ShouldEqual, "FooTest.DoesBar")
 				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "MyInstantiation",
 					"param/id":            "1",
@@ -227,9 +227,9 @@ func TestGTestConversions(t *testing.T) {
 			})
 
 			Convey(`without instantiation`, func() {
-				basePath, params, err := extractGTestParameters("FooTest/1.DoesBar")
+				baseID, params, err := extractGTestParameters("FooTest/1.DoesBar")
 				So(err, ShouldBeNil)
-				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(baseID, ShouldEqual, "FooTest.DoesBar")
 				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "",
 					"param/id":            "1",
@@ -239,9 +239,9 @@ func TestGTestConversions(t *testing.T) {
 
 		Convey(`value parametrized`, func() {
 			Convey(`with instantiation`, func() {
-				basePath, params, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
+				baseID, params, err := extractGTestParameters("MyInstantiation/FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
-				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(baseID, ShouldEqual, "FooTest.DoesBar")
 				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "MyInstantiation",
 					"param/id":            "1",
@@ -249,9 +249,9 @@ func TestGTestConversions(t *testing.T) {
 			})
 
 			Convey(`without instantiation`, func() {
-				basePath, params, err := extractGTestParameters("FooTest.DoesBar/1")
+				baseID, params, err := extractGTestParameters("FooTest.DoesBar/1")
 				So(err, ShouldBeNil)
-				So(basePath, ShouldEqual, "FooTest.DoesBar")
+				So(baseID, ShouldEqual, "FooTest.DoesBar")
 				So(params, ShouldResemble, map[string]string{
 					"param/instantiation": "",
 					"param/id":            "1",
@@ -260,27 +260,27 @@ func TestGTestConversions(t *testing.T) {
 		})
 
 		Convey(`not parametrized`, func() {
-			basePath, params, err := extractGTestParameters("FooTest.DoesBar")
+			baseID, params, err := extractGTestParameters("FooTest.DoesBar")
 			So(err, ShouldBeNil)
-			So(basePath, ShouldEqual, "FooTest.DoesBar")
+			So(baseID, ShouldEqual, "FooTest.DoesBar")
 			So(params, ShouldResemble, map[string]string{})
 		})
 
 		Convey(`with magic prefixes`, func() {
-			basePath, _, err := extractGTestParameters("FooTest.PRE_PRE_MANUAL_DoesBar")
+			baseID, _, err := extractGTestParameters("FooTest.PRE_PRE_MANUAL_DoesBar")
 			So(err, ShouldBeNil)
-			So(basePath, ShouldEqual, "FooTest.DoesBar")
+			So(baseID, ShouldEqual, "FooTest.DoesBar")
 		})
 
 		Convey(`with JUnit tests`, func() {
-			basePath, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub__param=val")
+			baseID, _, err := extractGTestParameters("org.chromium.tests#testFoo_sub__param=val")
 			So(err, ShouldBeNil)
-			So(basePath, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
+			So(baseID, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
 		})
 
 		Convey(`with unrecognized format`, func() {
 			_, _, err := extractGTestParameters("not_gtest_test")
-			So(err, ShouldErrLike, "test path of unknown format")
+			So(err, ShouldErrLike, "test id of unknown format")
 		})
 	})
 
@@ -335,7 +335,7 @@ func TestGTestConversions(t *testing.T) {
 			So(testResults, ShouldResembleProto, []*pb.TestResult{
 				// Iteration 1.
 				{
-					TestPath: "ninja://tests/BazTest.DoesQux",
+					TestId:   "ninja://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -344,24 +344,24 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "ninja://tests/BazTest.DoesQux",
-					Status:   pb.TestStatus_FAIL,
+					TestId: "ninja://tests/BazTest.DoesQux",
+					Status: pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
 					),
 				},
 				{
-					TestPath: "ninja://tests/FooTest.DoesBar",
-					Status:   pb.TestStatus_FAIL,
+					TestId: "ninja://tests/FooTest.DoesBar",
+					Status: pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "EXCESSIVE_OUTPUT",
 						"lossless_snippet", "false",
 					),
 				},
 				{
-					TestPath: "ninja://tests/FooTest.DoesBar",
-					Status:   pb.TestStatus_FAIL,
+					TestId: "ninja://tests/FooTest.DoesBar",
+					Status: pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",
@@ -370,7 +370,7 @@ func TestGTestConversions(t *testing.T) {
 
 				// Iteration 2.
 				{
-					TestPath: "ninja://tests/BazTest.DoesQux",
+					TestId:   "ninja://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -379,7 +379,7 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "ninja://tests/BazTest.DoesQux",
+					TestId:   "ninja://tests/BazTest.DoesQux",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 					Tags: pbutil.StringPairs(
@@ -388,16 +388,16 @@ func TestGTestConversions(t *testing.T) {
 					),
 				},
 				{
-					TestPath: "ninja://tests/FooTest.DoesBar",
-					Status:   pb.TestStatus_FAIL,
+					TestId: "ninja://tests/FooTest.DoesBar",
+					Status: pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE",
 						"lossless_snippet", "false",
 					),
 				},
 				{
-					TestPath: "ninja://tests/FooTest.DoesBar",
-					Status:   pb.TestStatus_FAIL,
+					TestId: "ninja://tests/FooTest.DoesBar",
+					Status: pb.TestStatus_FAIL,
 					Tags: pbutil.StringPairs(
 						"gtest_status", "FAILURE_ON_EXIT",
 						"lossless_snippet", "false",

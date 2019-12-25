@@ -42,7 +42,7 @@ type wrapperArgs struct {
 	invocationIDFile            string
 	logFile                     string
 	resultFiles                 strpair.Map
-	testPathPrefix              string
+	testIDPrefix                string
 	invocationTags              strpair.Map
 	baseTestVariant             map[string]string
 	completeInvocationExitCodes []int
@@ -67,8 +67,8 @@ func parseArgs() (wrapperArgs, error) {
 	flag.Var(luciflag.StringPairs(args.resultFiles), "result-file",
 		"Files to read and upload after running the subprocess, of form format:path, may be set more than once. Valid formats are luci, chromium_jtr, and chromium_gtest")
 
-	flag.StringVar(&args.testPathPrefix, "test-path-prefix", "",
-		"Prefix to prepepend before the test path of every test result")
+	flag.StringVar(&args.testIDPrefix, "test-id-prefix", "",
+		"Prefix to prepepend before the test id of every test result")
 
 	flag.Var(luciflag.StringPairs(args.invocationTags), "invocation-tag",
 		"Tag to add to the Invocation, of form key:value, may be set more than once")

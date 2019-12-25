@@ -117,9 +117,9 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	// Parse swarming tags.
 	baseVariant, ninjaTarget := parseSwarmingTags(task)
-	testPathPrefix := ""
+	testIDPrefix := ""
 	if ninjaTarget != "" {
-		testPathPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
+		testIDPrefix = fmt.Sprintf("ninja:%s/", ninjaTarget)
 	}
 
 	// Fetch outputs, converting if any.
@@ -128,7 +128,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	switch {
 	case ref != nil && ref.Isolated != "":
 		// If we have output, try to process it regardless.
-		if results, err = processOutputs(ctx, ref, testPathPrefix, inv, req); err != nil {
+		if results, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
 			return nil, nil, errors.Annotate(err, "isolated outputs at %q in %q, %q",
 				ref.Isolated, ref.Isolatedserver, ref.Namespace).Err()
 		}
@@ -216,7 +216,7 @@ func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInv
 
 // processOutputs fetches the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
-func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testPathPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
+func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
 	isoClient := isolatedclient.New(
 		nil, internal.HTTPClient(ctx), outputsRef.Isolatedserver, outputsRef.Namespace, nil, nil)
 
@@ -245,7 +245,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	}
 
 	// Convert the output JSON.
-	if results, err = ConvertOutputJSON(ctx, inv, testPathPrefix, outputJSON, outputArtifacts); err != nil {
+	if results, err = ConvertOutputJSON(ctx, inv, testIDPrefix, outputJSON, outputArtifacts); err != nil {
 		return nil, errors.Annotate(err, "converting output").Tag(grpcutil.FailedPreconditionTag).Err()
 	}
 
@@ -311,12 +311,12 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 // ConvertOutputJSON updates in-place the Invocation with the given data and extracts TestResults.
 //
 // It tries to convert to JSON Test Results format, then GTest format.
-func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix string, data []byte, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix string, data []byte, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	// Try to convert the buffer treating its format as the JSON Test Results Format.
 	jsonFormat := &formats.JSONTestResults{}
 	jsonErr := jsonFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if jsonErr == nil {
-		results, err := jsonFormat.ToProtos(ctx, testPathPrefix, inv, outputs)
+		results, err := jsonFormat.ToProtos(ctx, testIDPrefix, inv, outputs)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as JSON Test Results Format").Err()
 		}
@@ -327,7 +327,7 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testPathPrefix s
 	gtestFormat := &formats.GTestResults{}
 	gtestErr := gtestFormat.ConvertFromJSON(ctx, bytes.NewReader(data))
 	if gtestErr == nil {
-		results, err := gtestFormat.ToProtos(ctx, testPathPrefix, inv)
+		results, err := gtestFormat.ToProtos(ctx, testIDPrefix, inv)
 		if err != nil {
 			return nil, errors.Annotate(err, "converting as GTest results format").Err()
 		}

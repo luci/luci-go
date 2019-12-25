@@ -73,21 +73,21 @@ func TestQueryTestExonerations(t *testing.T) {
 		So(actual, ShouldResembleProto, []*pb.TestExoneration{
 			{
 				Name:            "invocations/a/tests/A/exonerations/0",
-				TestPath:        "A",
+				TestId:          "A",
 				Variant:         pbutil.Variant("v", "a"),
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",
 			},
 			{
 				Name:            "invocations/a/tests/A/exonerations/1",
-				TestPath:        "A",
+				TestId:          "A",
 				Variant:         pbutil.Variant("v", "a"),
 				ExonerationId:   "1",
 				ExplanationHtml: "explanation 1",
 			},
 			{
 				Name:            "invocations/c/tests/C/exonerations/0",
-				TestPath:        "C",
+				TestId:          "C",
 				Variant:         pbutil.Variant("v", "c"),
 				ExonerationId:   "0",
 				ExplanationHtml: "explanation 0",

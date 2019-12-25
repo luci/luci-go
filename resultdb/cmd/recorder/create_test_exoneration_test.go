@@ -41,22 +41,22 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: unspecified`)
 		})
 
-		Convey(`NUL in test path`, func() {
+		Convey(`NUL in test id`, func() {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "\x01",
+					TestId: "\x01",
 				},
 			}, true)
-			So(err, ShouldErrLike, "test_path: does not match")
+			So(err, ShouldErrLike, "test_id: does not match")
 		})
 
 		Convey(`Invalid variant`, func() {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "a",
-					Variant:  pbutil.Variant("", ""),
+					TestId:  "a",
+					Variant: pbutil.Variant("", ""),
 				},
 			}, true)
 			So(err, ShouldErrLike, `variant: "":"": key: does not match`)
@@ -66,7 +66,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 			err := validateCreateTestExonerationRequest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "ninja://ab/cd.ef",
+					TestId: "ninja://ab/cd.ef",
 					Variant: pbutil.Variant(
 						"a/b", "1",
 						"c", "2",
@@ -91,11 +91,11 @@ func TestCreateTestExoneration(t *testing.T) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "\x01",
+					TestId: "\x01",
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldErrLike, `bad request: test_exoneration: test_path: does not match`)
+			So(err, ShouldErrLike, `bad request: test_exoneration: test_id: does not match`)
 			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
 		})
 
@@ -103,7 +103,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "a",
+					TestId: "a",
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
@@ -118,8 +118,8 @@ func TestCreateTestExoneration(t *testing.T) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
-					TestPath: "a",
-					Variant:  pbutil.Variant("a", "1", "b", "2"),
+					TestId:  "a",
+					Variant: pbutil.Variant("a", "1", "b", "2"),
 				},
 			}
 
@@ -149,7 +149,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
 
 			// Check variant hash.
-			key := span.InvocationID("inv").Key(res.TestPath, res.ExonerationId)
+			key := span.InvocationID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
 			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
 				"VariantHash": &variantHash,

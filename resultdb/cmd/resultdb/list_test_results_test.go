@@ -101,12 +101,12 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 	muts := make([]*spanner.Mutation, len(statuses))
 
 	for i, status := range statuses {
-		testPath := "ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
+		testID := "ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest." + testName
 		resultID := "result_id_within_inv" + strconv.Itoa(startID+i)
 
 		trs[i] = &pb.TestResult{
-			Name:     pbutil.TestResultName(string(invID), testPath, resultID),
-			TestPath: testPath,
+			Name:     pbutil.TestResultName(string(invID), testID, resultID),
+			TestId:   testID,
 			ResultId: resultID,
 			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
 			Expected: status == pb.TestStatus_PASS,
@@ -116,7 +116,7 @@ func insertTestResults(ctx context.Context, invID span.InvocationID, testName st
 
 		mutMap := map[string]interface{}{
 			"InvocationId":    invID,
-			"TestPath":        testPath,
+			"TestId":          testID,
 			"ResultId":        resultID,
 			"Variant":         trs[i].Variant,
 			"VariantHash":     pbutil.VariantHash(trs[i].Variant),

@@ -25,15 +25,15 @@ import (
 // testObjectPredicate is implemented by both *pb.TestResultPredicate
 // and *pb.TestExonerationPredicate.
 type testObjectPredicate interface {
-	GetTestPathRegexp() string
+	GetTestIdRegexp() string
 	GetVariant() *pb.VariantPredicate
 }
 
 // validateTestObjectPredicate returns a non-nil error if p is determined to be
 // invalid.
 func validateTestObjectPredicate(p testObjectPredicate) error {
-	if err := validateRegexp(p.GetTestPathRegexp()); err != nil {
-		return errors.Annotate(err, "test_path_regexp").Err()
+	if err := validateRegexp(p.GetTestIdRegexp()); err != nil {
+		return errors.Annotate(err, "test_id_regexp").Err()
 	}
 
 	if p.GetVariant() != nil {

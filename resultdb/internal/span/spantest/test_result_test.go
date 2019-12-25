@@ -116,7 +116,7 @@ func TestQueryTestResults(t *testing.T) {
 			})
 		})
 
-		Convey(`Test path filter`, func() {
+		Convey(`Test id filter`, func() {
 			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
 			testutil.MustApply(ctx, testutil.CombineMutations(
 				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
@@ -127,7 +127,7 @@ func TestQueryTestResults(t *testing.T) {
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
-			q.Predicate.TestPathRegexp = "1-.+"
+			q.Predicate.TestIdRegexp = "1-.+"
 
 			So(mustReadNames(q), ShouldResemble, []string{
 				"invocations/inv0/tests/1-1/results/0",

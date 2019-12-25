@@ -28,11 +28,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// MustParseTestExonerationName extracts invocation, test path and exoneration
+// MustParseTestExonerationName extracts invocation, test id and exoneration
 // IDs from the name.
 // Panics on failure.
-func MustParseTestExonerationName(name string) (invID InvocationID, testPath, exonerationID string) {
-	invIDStr, testPath, exonerationID, err := pbutil.ParseTestExonerationName(name)
+func MustParseTestExonerationName(name string) (invID InvocationID, testID, exonerationID string) {
+	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func MustParseTestExonerationName(name string) (invID InvocationID, testPath, ex
 // If it does not exist, the returned error is annotated with NotFound GRPC
 // code.
 func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.TestExoneration, error) {
-	invIDStr, testPath, exonerationID, err := pbutil.ParseTestExonerationName(name)
+	invIDStr, testID, exonerationID, err := pbutil.ParseTestExonerationName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +52,13 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 
 	ret := &pb.TestExoneration{
 		Name:          name,
-		TestPath:      testPath,
+		TestId:        testID,
 		ExonerationId: exonerationID,
 	}
 
 	// Populate fields from TestExonerations table.
 	var explanationHTML Compressed
-	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testPath, exonerationID), map[string]interface{}{
+	err = ReadRow(ctx, txn, "TestExonerations", invID.Key(testID, exonerationID), map[string]interface{}{
 		"Variant":         &ret.Variant,
 		"ExplanationHTML": &explanationHTML,
 	})
@@ -95,29 +95,29 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	}
 
 	st := spanner.NewStatement(`
-		SELECT InvocationId, TestPath, ExonerationId, Variant,ExplanationHtml
+		SELECT InvocationId, TestId, ExonerationId, Variant,ExplanationHtml
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
 			AND (
-				(InvocationId > @afterInvocationID) OR
-				(InvocationId = @afterInvocationID AND TestPath > @afterTestPath) OR
-				(InvocationId = @afterInvocationID AND TestPath = @afterTestPath AND ExonerationID > @afterExonerationID)
+				(InvocationId > @afterInvocationId) OR
+				(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
+				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ExonerationID > @afterExonerationID)
 		  )
-		ORDER BY InvocationId, TestPath, ExonerationId
+		ORDER BY InvocationId, TestId, ExonerationId
 		LIMIT @limit
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["afterInvocationId"],
-		st.Params["afterTestPath"],
+		st.Params["afterTestId"],
 		st.Params["afterExonerationID"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
 		return
 	}
 
-	// TODO(nodir): add support for q.Predicate.TestPath.
+	// TODO(nodir): add support for q.Predicate.TestId.
 	// TODO(nodir): add support for q.Predicate.Variant.
 
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
@@ -126,11 +126,11 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
-		err := b.FromSpanner(row, &invID, &ex.TestPath, &ex.ExonerationId, &ex.Variant, &explanationHTML)
+		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)
 		if err != nil {
 			return err
 		}
-		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestPath, ex.ExonerationId)
+		ex.Name = pbutil.TestExonerationName(string(invID), ex.TestId, ex.ExonerationId)
 		ex.ExplanationHtml = string(explanationHTML)
 		tes = append(tes, ex)
 		return nil
@@ -144,8 +144,8 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	// need to return the next page token.
 	if len(tes) == q.PageSize {
 		last := tes[q.PageSize-1]
-		invID, testPath, exID := MustParseTestExonerationName(last.Name)
-		nextPageToken = pagination.Token(string(invID), testPath, exID)
+		invID, testID, exID := MustParseTestExonerationName(last.Name)
+		nextPageToken = pagination.Token(string(invID), testID, exID)
 	}
 	return
 }

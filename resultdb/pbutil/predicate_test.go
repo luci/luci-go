@@ -30,10 +30,10 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey(`TestPath`, func() {
-			validate := func(testPathRegexp string) error {
+		Convey(`TestID`, func() {
+			validate := func(TestIdRegexp string) error {
 				return validateTestObjectPredicate(&pb.TestResultPredicate{
-					TestPathRegexp: testPathRegexp,
+					TestIdRegexp: TestIdRegexp,
 				})
 			}
 
@@ -46,7 +46,7 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 			})
 
 			Convey(`invalid`, func() {
-				So(validate(")"), ShouldErrLike, "test_path_regexp: error parsing regex")
+				So(validate(")"), ShouldErrLike, "test_id_regexp: error parsing regex")
 			})
 		})
 

@@ -27,7 +27,7 @@ import (
 func insertOrUpdateTestResult(invID span.InvocationID, tr *pb.TestResult, i int) *spanner.Mutation {
 	trMap := map[string]interface{}{
 		"InvocationId": invID,
-		"TestPath":     tr.TestPath,
+		"TestId":       tr.TestId,
 		"ResultId":     strconv.Itoa(i),
 
 		"Variant":     tr.Variant,

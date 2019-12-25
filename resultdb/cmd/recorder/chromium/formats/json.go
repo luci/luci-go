@@ -73,7 +73,7 @@ type JSONTestResults struct {
 	BuilderName string `json:"builder_name"`
 
 	// Metadata associated with results, which may include a list of expectation_files, or
-	// test_name_prefix e.g. in GPU tests (distinct from test_path_prefix passed in the recorder API
+	// test_name_prefix e.g. in GPU tests (distinct from test_id_prefix passed in the recorder API
 	// request).
 	Metadata map[string]json.RawMessage `json:"metadata"`
 }
@@ -119,7 +119,7 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 // Uses outputs, the isolated outputs associated with the task, to populate
 // artifacts.
 // Does not populate TestResult.Name; that happens server-side on RPC response.
-func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, inv *pb.Invocation, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
+func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *pb.Invocation, outputs map[string]*pb.Artifact) ([]*pb.TestResult, error) {
 	if r.Version != 3 {
 		return nil, errors.Reason("unknown JSON Test Results version %d", r.Version).Err()
 	}
@@ -133,10 +133,10 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, i
 
 	ret := make([]*pb.TestResult, 0, len(r.Tests))
 	for _, name := range testNames {
-		testPath := testPathPrefix + name
+		testID := testIDPrefix + name
 
 		// Populate protos.
-		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testPath, outputs)
+		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testID, outputs)
 		if err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
@@ -145,7 +145,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testPathPrefix string, i
 		if len(unresolvedOutputs) > 0 {
 			logging.Errorf(ctx,
 				"Test %s could not generate artifact protos for the following:\n%s",
-				testPath,
+				testID,
 				artifactsToString(unresolvedOutputs))
 		}
 	}
@@ -182,22 +182,22 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 
 	// Convert the tree.
 	for key, value := range maybeNode {
-		// Set up test path.
+		// Set up test id.
 		delim := "/"
-		testPath := key
+		testID := key
 		if r.PathDelimiter != "" {
 			delim = r.PathDelimiter
 		}
 
 		if curPath != "" {
-			testPath = fmt.Sprintf("%s%s%s", curPath, delim, key)
+			testID = fmt.Sprintf("%s%s%s", curPath, delim, key)
 		} else {
 			if prefixJSON, ok := r.Metadata[testNamePrefixKey]; ok {
 				var prefix string
 				if err := json.Unmarshal(prefixJSON, &prefix); err != nil {
 					return errors.Annotate(err, "%s not string, got %q", testNamePrefixKey, prefixJSON).Err()
 				}
-				testPath = prefix + key
+				testID = prefix + key
 			}
 		}
 
@@ -215,12 +215,12 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 			if r.Tests == nil {
 				r.Tests = make(map[string]*TestFields)
 			}
-			r.Tests[testPath] = maybeFields
+			r.Tests[testID] = maybeFields
 			continue
 		}
 
 		// Otherwise, try to process it as an intermediate node.
-		if err := r.convertTests(testPath, value); err != nil {
+		if err := r.convertTests(testID, value); err != nil {
 			return errors.Annotate(err, "error attempting conversion of %q as intermediate node", value).Err()
 		}
 	}
@@ -310,7 +310,7 @@ type testArtifactsPerRun map[int][]*pb.Artifact
 // appends them to dest.
 //
 // TODO(crbug/1032779): Track artifacts that did not get processed.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testPath string, outputs map[string]*pb.Artifact) (map[string][]string, error) {
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testID string, outputs map[string]*pb.Artifact) (map[string][]string, error) {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -345,7 +345,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 	if len(arts) > 0 && len(actualStatuses) != len(arts) {
 		logging.Infof(ctx,
 			"Test %s generated %d statuses (%v); does not match number of runs generated from artifacts (%d)",
-			testPath, len(actualStatuses), actualStatuses, len(arts))
+			testID, len(actualStatuses), actualStatuses, len(arts))
 	}
 
 	// Populate protos.
@@ -356,7 +356,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testP
 		}
 
 		tr := &pb.TestResult{
-			TestPath:        testPath,
+			TestId:          testID,
 			Expected:        expectedSet.Has(runStatus),
 			Status:          status,
 			Tags:            pbutil.StringPairs("json_format_status", runStatus),

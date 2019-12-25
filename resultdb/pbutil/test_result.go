@@ -32,15 +32,15 @@ const resultIDPattern = `[[:ascii:]]{1,32}`
 
 var testResultNameRe = regexpf("^invocations/(%s)/tests/([^/]+)/results/(%s)$",
 	invocationIDPattern, resultIDPattern)
-var testPathRe = regexp.MustCompile(`^[[:print:]]+$`)
+var testIDRe = regexp.MustCompile(`^[[:print:]]+$`)
 
-// ValidateTestPath returns a non-nil error if testPath is invalid.
-func ValidateTestPath(testPath string) error {
-	if testPath == "" {
+// ValidateTestID returns a non-nil error if testID is invalid.
+func ValidateTestID(testID string) error {
+	if testID == "" {
 		return unspecified()
 	}
-	if !testPathRe.MatchString(testPath) {
-		return doesNotMatch(testPathRe)
+	if !testIDRe.MatchString(testID) {
+		return doesNotMatch(testIDRe)
 	}
 	return nil
 }
@@ -51,9 +51,9 @@ func ValidateTestResultName(name string) error {
 	return err
 }
 
-// ParseTestResultName extracts the invocation ID, unescaped test path, and
+// ParseTestResultName extracts the invocation ID, unescaped test id, and
 // result ID.
-func ParseTestResultName(name string) (invID, testPath, resultID string, err error) {
+func ParseTestResultName(name string) (invID, testID, resultID string, err error) {
 	if name == "" {
 		err = unspecified()
 		return
@@ -64,25 +64,25 @@ func ParseTestResultName(name string) (invID, testPath, resultID string, err err
 		err = doesNotMatch(testResultNameRe)
 		return
 	}
-	unescapedTestPath, err := url.PathUnescape(m[2])
+	unescapedTestID, err := url.PathUnescape(m[2])
 	if err != nil {
-		err = errors.Annotate(err, "test path %q", m[2]).Err()
+		err = errors.Annotate(err, "test id %q", m[2]).Err()
 		return
 	}
 
-	if !testPathRe.MatchString(unescapedTestPath) {
+	if !testIDRe.MatchString(unescapedTestID) {
 		err = errors.Annotate(
-			doesNotMatch(testPathRe), "test path %q", unescapedTestPath).Err()
+			doesNotMatch(testIDRe), "test id %q", unescapedTestID).Err()
 		return
 	}
-	return m[1], unescapedTestPath, m[3], nil
+	return m[1], unescapedTestID, m[3], nil
 }
 
 // TestResultName synthesizes a test result name from its parts.
 // Does not validate parts; use ValidateTestResultName.
-func TestResultName(invID, testPath, resultID string) string {
+func TestResultName(invID, testID, resultID string) string {
 	return fmt.Sprintf("invocations/%s/tests/%s/results/%s",
-		invID, url.PathEscape(testPath), resultID)
+		invID, url.PathEscape(testID), resultID)
 }
 
 // NormalizeTestResult converts inv to the canonical form.
@@ -100,8 +100,8 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 	sort.Slice(trs, func(i, j int) bool {
 		a := trs[i]
 		b := trs[j]
-		if a.TestPath != b.TestPath {
-			return a.TestPath < b.TestPath
+		if a.TestId != b.TestId {
+			return a.TestId < b.TestId
 		}
 		return a.Name < b.Name
 	})

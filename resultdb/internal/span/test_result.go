@@ -32,12 +32,12 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// MustParseTestResultName retrieves the invocation ID, unescaped test path, and
+// MustParseTestResultName retrieves the invocation ID, unescaped test id, and
 // result ID.
 // Panics if the name is invalid. Useful for situations when name was already
 // validated.
-func MustParseTestResultName(name string) (invID InvocationID, testPath, resultID string) {
-	invIDStr, testPath, resultID, err := pbutil.ParseTestResultName(name)
+func MustParseTestResultName(name string) (invID InvocationID, testID, resultID string) {
+	invIDStr, testID, resultID, err := pbutil.ParseTestResultName(name)
 	if err != nil {
 		panic(err)
 	}
@@ -49,10 +49,10 @@ func MustParseTestResultName(name string) (invID InvocationID, testPath, resultI
 // If the TestResult does not exist, the returned error is annotated with
 // NotFound GRPC code.
 func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, error) {
-	invID, testPath, resultID := MustParseTestResultName(name)
+	invID, testID, resultID := MustParseTestResultName(name)
 	tr := &pb.TestResult{
 		Name:     name,
-		TestPath: testPath,
+		TestId:   testID,
 		ResultId: resultID,
 		Expected: true,
 	}
@@ -60,7 +60,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	var maybeUnexpected spanner.NullBool
 	var micros int64
 	var summaryHTML Compressed
-	err := ReadRow(ctx, txn, "TestResults", invID.Key(testPath, resultID), map[string]interface{}{
+	err := ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
 		"IsUnexpected":    &maybeUnexpected,
 		"Status":          &tr.Status,
@@ -113,7 +113,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		from = `
 			VariantsWithUnexpectedResults vur
 			JOIN@{FORCE_JOIN_ORDER=TRUE} TestResults tr
-				ON vur.TestPath = tr.TestPath AND vur.VariantHash = tr.VariantHash
+				ON vur.TestId = tr.TestId AND vur.VariantHash = tr.VariantHash
 		`
 	}
 
@@ -121,13 +121,13 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		WITH VariantsWithUnexpectedResults AS (
 			# Note: this query is not executed if it ends up not used in the top-level
 			# query.
-			SELECT DISTINCT TestPath, VariantHash
+			SELECT DISTINCT TestId, VariantHash
 			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
 			WHERE IsUnexpected AND InvocationId IN UNNEST(@invIDs)
 		)
 		SELECT
 			tr.InvocationId,
-			tr.TestPath,
+			tr.TestId,
 			tr.ResultId,
 			tr.Variant,
 			tr.IsUnexpected,
@@ -142,25 +142,25 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
-				(tr.InvocationId > @afterInvocationID) OR
-				(tr.InvocationId = @afterInvocationID AND tr.TestPath > @afterTestPath) OR
-				(tr.InvocationId = @afterInvocationID AND tr.TestPath = @afterTestPath AND tr.ResultId > @afterResultId)
+				(tr.InvocationId > @afterInvocationId) OR
+				(tr.InvocationId = @afterInvocationId AND tr.TestId > @afterTestId) OR
+				(tr.InvocationId = @afterInvocationId AND tr.TestId = @afterTestId AND tr.ResultId > @afterResultId)
 			)
-			AND REGEXP_CONTAINS(tr.TestPath, @testPathRegexp)
-		ORDER BY tr.InvocationId, tr.TestPath, tr.ResultId
+			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
+		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
 		LIMIT @limit
 	`, from))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 
-	testPathRegexp := q.Predicate.GetTestPathRegexp()
-	if testPathRegexp == "" {
-		testPathRegexp = ".*"
+	testIDRegexp := q.Predicate.GetTestIdRegexp()
+	if testIDRegexp == "" {
+		testIDRegexp = ".*"
 	}
-	st.Params["testPathRegexp"] = fmt.Sprintf("^%s$", testPathRegexp)
+	st.Params["TestIdRegexp"] = fmt.Sprintf("^%s$", testIDRegexp)
 
 	st.Params["afterInvocationId"],
-		st.Params["afterTestPath"],
+		st.Params["afterTestId"],
 		st.Params["afterResultId"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
@@ -182,7 +182,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		tr := &pb.TestResult{}
 		err = b.FromSpanner(row,
 			&invID,
-			&tr.TestPath,
+			&tr.TestId,
 			&tr.ResultId,
 			&tr.Variant,
 			&maybeUnexpected,
@@ -198,7 +198,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			return err
 		}
 
-		tr.Name = pbutil.TestResultName(string(invID), tr.TestPath, tr.ResultId)
+		tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
 		tr.SummaryHtml = string(summaryHTML)
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
@@ -215,8 +215,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	// need to return the next page token.
 	if len(trs) == q.PageSize {
 		last := trs[q.PageSize-1]
-		invID, testPath, resultID := MustParseTestResultName(last.Name)
-		nextPageToken = pagination.Token(string(invID), testPath, resultID)
+		invID, testID, resultID := MustParseTestResultName(last.Name)
+		nextPageToken = pagination.Token(string(invID), testID, resultID)
 	}
 	return
 }
@@ -242,9 +242,9 @@ func FromMicros(micros int64) *durpb.Duration {
 	return ptypes.DurationProto(time.Duration(1e3 * micros))
 }
 
-// parseTestObjectPageToken parses the page token into invocation ID, test path
+// parseTestObjectPageToken parses the page token into invocation ID, test id
 // and a test object id.
-func parseTestObjectPageToken(pageToken string) (inv InvocationID, testPath, objID string, err error) {
+func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID string, err error) {
 	switch pos, tokErr := pagination.ParseToken(pageToken); {
 	case tokErr != nil:
 		err = encapsulatePageTokenError(tokErr)
@@ -256,7 +256,7 @@ func parseTestObjectPageToken(pageToken string) (inv InvocationID, testPath, obj
 
 	default:
 		inv = InvocationID(pos[0])
-		testPath = pos[1]
+		testID = pos[1]
 		objID = pos[2]
 	}
 

@@ -156,7 +156,7 @@ func Test(t *testing.T) {
 
 		Convey("Message-processing check", func() {
 			badInput := `blah`
-			goodInput := `{"testResult":{"testPath":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryHtml":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testPath":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryHtml":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
+			goodInput := `{"testResult":{"testId":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryHtml":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testId":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryHtml":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
 			Convey("Garbage data", func() {
 				dc := json.NewDecoder(strings.NewReader(badInput))
 				err := processMessages(dc)
