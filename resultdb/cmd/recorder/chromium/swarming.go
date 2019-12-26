@@ -211,7 +211,7 @@ func GetOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult
 // GetInvocationID gets the ID of the invocation associated with a task and swarming service.
 func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) span.InvocationID {
 	escapedHostname := strings.Replace(req.SwarmingTask.Hostname, ".", "_", -1)
-	return span.InvocationID(fmt.Sprintf("swarm:%s:%s", escapedHostname, task.RunId))
+	return span.InvocationID(fmt.Sprintf("task:%s:%s", escapedHostname, task.RunId))
 }
 
 // processOutputs fetches the output.json from the given task and processes it using whichever
