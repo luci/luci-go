@@ -179,6 +179,9 @@ func (s *Server) handlePOST(c *router.Context) {
 	methodName := c.Params.ByName("method")
 	s.setAccessControlHeaders(c, false)
 	res := s.call(c, serviceName, methodName)
+
+	c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+
 	if res.err != nil {
 		writeError(c.Context, c.Writer, res.err, res.fmt)
 		return

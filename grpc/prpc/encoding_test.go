@@ -102,7 +102,6 @@ func TestEncoding(t *testing.T) {
 				So(rec.Code, ShouldEqual, http.StatusOK)
 				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
-				So(rec.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
 				So(rec.Body.Bytes(), ShouldResemble, body)
 			})
 		}
