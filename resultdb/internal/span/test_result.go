@@ -246,6 +246,23 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
+func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(invID InvocationID, tr *pb.TestResult) error) (err error) {
+	var b Buffer
+	var summaryHTML Compressed
+	err = queryTestResults(ctx, txn, q, func(row *spanner.Row) error {
+		invID, tr, err := fromSpanner(row, b, summaryHTML)
+		if err != nil {
+			return err
+		}
+
+		if err = f(invID, tr); err != nil {
+			return err
+		}
+		return nil
+	})
+	return nil
+}
+
 func populateDurationField(tr *pb.TestResult, micros int64) {
 	tr.Duration = FromMicros(micros)
 }
