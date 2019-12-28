@@ -96,7 +96,8 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, adminAuth au
 	rr.GET("", router.MiddlewareChain{}, indexPage)
 	rr.GET("/:PageKey", router.MiddlewareChain{}, portalPageGET)
 	rr.POST("/:PageKey", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalPagePOST)
-	rr.POST("/:PageKey/:ActionID", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalActionPOST)
+	rr.GET("/:PageKey/:ActionID", router.MiddlewareChain{}, portalActionGETPOST)
+	rr.POST("/:PageKey/:ActionID", router.NewMiddlewareChain(xsrf.WithTokenCheck), portalActionGETPOST)
 }
 
 // replyError sends HTML error page with status 500 on transient errors or 400

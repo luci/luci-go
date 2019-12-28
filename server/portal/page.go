@@ -40,7 +40,8 @@ type Page interface {
 	// Actions is additional list of actions to present on the page.
 	//
 	// Each action is essentially a clickable button that triggers a parameterless
-	// callback.
+	// callback that either does some state change or (if marked as NoSideEffects)
+	// just returns some information that is displayed on a separate page.
 	Actions(c context.Context) ([]Action, error)
 
 	// ReadSettings returns a map "field ID => field value to display".
@@ -88,16 +89,19 @@ func (f *Field) IsEditable() bool {
 
 // Action corresponds to a button that triggers a parameterless callback.
 type Action struct {
-	ID           string        // page-unique ID
-	Title        string        // what's displayed on the button
-	Help         template.HTML // optional help text
-	Confirmation string        // optional text for "Are you sure?" confirmation prompt
+	ID            string        // page-unique ID
+	Title         string        // what's displayed on the button
+	Help          template.HTML // optional help text
+	Confirmation  string        // optional text for "Are you sure?" confirmation prompt
+	NoSideEffects bool          // if true, the callback just returns some data
 
-	// Callback is executed on click.
+	// Callback is executed on click on the action button.
 	//
-	// The context is derived through the base middleware in the router. The
-	// return values is presented to the user as is.
-	Callback func(c context.Context) (template.HTML, error)
+	// Usually it will execute some state change and return the confirmation text
+	// (along with its title). If NoSideEffects is true, it may just fetch and
+	// return some data (which is either too big or too costly to fetch on the
+	// main page).
+	Callback func(c context.Context) (title string, body template.HTML, err error)
 }
 
 // BasePage can be embedded into Page implementers to provide default

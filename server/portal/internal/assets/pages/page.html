@@ -80,6 +80,7 @@
         {{else}}
         class="btn btn-default btn-block action-button"
         {{end}}
+        data-action-no-side-effects="{{$action.NoSideEffects}}"
         data-action-id="{{$action.ID}}"
         data-confirmation="{{$action.Confirmation}}">{{$action.Title}}</button>
     </div>
@@ -103,7 +104,7 @@
 </div>
 
 {{if .Actions}}
-<form id="form-action" method="POST" style="display:none" action="./{{.ID}}/">
+<form id="form-action" method="POST" style="display:none">
   {{.XsrfTokenField}}
 </form>
 
@@ -113,11 +114,20 @@ window.onload = function () {
 
   let actionLaunched = false;
 
-  function launchAction(actionID) {
-    if (!actionLaunched) {
-      actionLaunched = true;
+  function launchAction(actionID, noSideEffects) {
+    if (actionLaunched) {
+      return
+    }
+    actionLaunched = true;
+
+    const actionRef = './{{.ID}}/' + actionID;
+    if (noSideEffects) {
+      // Just go to the action page directly, no need to involve forms.
+      window.location.href = actionRef;
+    } else {
+      // Navigate through a POST form with the XSRF token.
       const form = document.getElementById('form-action');
-      form.setAttribute('action', form.getAttribute('action') + actionID);
+      form.setAttribute('action', actionRef);
       form.submit();
     }
   }
@@ -126,15 +136,16 @@ window.onload = function () {
     btn.onclick = function() {
       const actionID = this.getAttribute('data-action-id');
       const confirmation = this.getAttribute('data-confirmation');
+      const noSideEffects = this.getAttribute('data-action-no-side-effects') == 'true';
       if (confirmation) {
         const dialog = Modal.confirm('Are you sure?', {content: confirmation});
         dialog.show().once('dismiss', (modal, ev, button) => {
           if (button && button.value) {
-            launchAction(actionID);
+            launchAction(actionID, noSideEffects);
           }
         });
       } else {
-        launchAction(actionID);
+        launchAction(actionID, noSideEffects);
       }
     }
   }
