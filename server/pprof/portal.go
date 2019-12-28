@@ -60,12 +60,12 @@ func (portalPage) Actions(c context.Context) ([]portal.Action, error) {
 		{
 			ID:    "GeneratePprofToken",
 			Title: "Generate pprof token",
-			Callback: func(c context.Context) (template.HTML, error) {
+			Callback: func(c context.Context) (string, template.HTML, error) {
 				tok, err := generateToken(c)
 				if err != nil {
-					return "", err
+					return "", "", err
 				}
-				return template.HTML(fmt.Sprintf(
+				return "Done", template.HTML(fmt.Sprintf(
 					`<p>The generated pprof token is:</p><pre>%s</pre>`+
 						`<p>It is valid for 12 hours. Pass it a pprof endpoint via `+
 						`<code>?tok=...</code> URL parameter, e.g</p>`+
