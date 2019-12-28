@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7fd24c6_406fe943",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-28T00:23:31Z",
+      "side": 1,
+      "message": "This part is a bit hacky, but it affects only this admin UI that no one other than me cares about, so...",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "051b1693badf8465b4f8c5f3abf83c4438b5089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
