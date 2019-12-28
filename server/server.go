@@ -1324,15 +1324,11 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 
 // initTSMon initializes time series monitoring state if tsmon is enabled.
 func (s *Server) initTSMon() error {
-	switch {
-	case s.Options.TsMonAccount == "":
-		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-account is not set")
-		return nil
-	case s.Options.TsMonServiceName == "":
-		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-service-name is not set")
-		return nil
-	case s.Options.TsMonJobName == "":
-		logging.Infof(s.Context, "Disabling tsmon, -ts-mon-job-name is not set")
+	if s.Options.TsMonAccount == "" || s.Options.TsMonServiceName == "" || s.Options.TsMonJobName == "" {
+		logging.Infof(s.Context, "Disabling tsmon: provide -ts-mon-account, -ts-mon-service-name and -ts-mon-job-name flags to enable")
+		tsmon.PortalPage.SetReadOnlySettings(&tsmon.Settings{},
+			"Settings are controlled through -ts-mon-* command line flags. Metrics "+
+				"collection is disabled because they weren't provided.")
 		return nil
 	}
 
@@ -1358,6 +1354,8 @@ func (s *Server) initTSMon() error {
 			}
 		},
 	}
+	tsmon.PortalPage.SetReadOnlySettings(s.tsmon.Settings,
+		"Settings are controlled through -ts-mon-* command line flags.")
 
 	// Report our image version as a metric, useful to monitor rollouts.
 	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {

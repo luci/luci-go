@@ -50,7 +50,8 @@ type Page interface {
 
 	// WriteSettings saves settings described as a map "field ID => field value".
 	//
-	// All values are validated using field validators first.
+	// Only values of editable, not read only fields are passed here. All values
+	// are also validated using field's validators before this call.
 	WriteSettings(c context.Context, values map[string]string, who, why string) error
 }
 
@@ -61,6 +62,7 @@ type Field struct {
 	ID             string             // page unique ID
 	Title          string             // human friendly name
 	Type           FieldType          // how the field is displayed and behaves
+	ReadOnly       bool               // if true, display the field as immutable
 	Placeholder    string             // optional placeholder value
 	Validator      func(string) error // optional value validation
 	Help           template.HTML      // optional help text
@@ -80,8 +82,8 @@ const (
 )
 
 // IsEditable returns true for fields that can be edited.
-func (f FieldType) IsEditable() bool {
-	return f != FieldStatic
+func (f *Field) IsEditable() bool {
+	return f.Type != FieldStatic && !f.ReadOnly
 }
 
 // Action corresponds to a button that triggers a parameterless callback.
