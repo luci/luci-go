@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4986cfea_b878502b",
+        "filename": "server/portal/settings.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-28T02:07:25Z",
+      "side": 1,
+      "message": "I didn\u0027t expect less from you 😊",
+      "range": {
+        "startLine": 190,
+        "startChar": 2,
+        "endLine": 203,
+        "endChar": 3
+      },
+      "revId": "6db21be9f69ebc23bb32897ae471a8088cc9d333",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
