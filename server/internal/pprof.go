@@ -112,18 +112,18 @@ func (pprofPage) Actions(ctx context.Context) ([]portal.Action, error) {
 		profilingAction = portal.Action{
 			ID:    "EnableProfiling",
 			Title: "Enable contention profiling",
-			Callback: func(ctx context.Context) (template.HTML, error) {
+			Callback: func(ctx context.Context) (string, template.HTML, error) {
 				setProfilingEnabled(ctx, true)
-				return `<p>Contention profiling is now enabled.</p>`, nil
+				return "Done", `<p>Contention profiling is now enabled.</p>`, nil
 			},
 		}
 	} else {
 		profilingAction = portal.Action{
 			ID:    "DisableProfiling",
 			Title: "Disable contention profiling",
-			Callback: func(ctx context.Context) (template.HTML, error) {
+			Callback: func(ctx context.Context) (string, template.HTML, error) {
 				setProfilingEnabled(ctx, false)
-				return `<p>Contention profiling is now disabled.</p>`, nil
+				return "Done", `<p>Contention profiling is now disabled.</p>`, nil
 			},
 		}
 	}

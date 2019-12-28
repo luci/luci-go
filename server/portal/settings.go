@@ -16,6 +16,7 @@ package portal
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -157,7 +158,7 @@ func portalPagePOST(ctx *router.Context) {
 	})
 }
 
-func portalActionPOST(ctx *router.Context) {
+func portalActionGETPOST(ctx *router.Context) {
 	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
 	actionID := p.ByName("ActionID")
 
@@ -186,7 +187,22 @@ func portalActionPOST(ctx *router.Context) {
 			return nil
 		}
 
-		result, err := action.Callback(c)
+		// Make sure side effect free actions are always executed through GET, and
+		// ones with side effects are through POST. This is important, since only
+		// POST route is protected with XSRF check.
+		expectedMethod := "POST"
+		if action.NoSideEffects {
+			expectedMethod = "GET"
+		}
+		if ctx.Request.Method != expectedMethod {
+			rw.WriteHeader(http.StatusBadRequest)
+			templates.MustRender(c, rw, "pages/error.html", templates.Args{
+				"Error": fmt.Sprintf("Expecting HTTP method %s, but got %s.", expectedMethod, ctx.Request.Method),
+			})
+			return nil
+		}
+
+		resultTitle, result, err := action.Callback(c)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			templates.MustRender(c, rw, "pages/error.html", templates.Args{
@@ -196,9 +212,10 @@ func portalActionPOST(ctx *router.Context) {
 		}
 
 		templates.MustRender(c, rw, "pages/action_done.html", templates.Args{
-			"ID":     id,
-			"Title":  title,
-			"Result": result,
+			"ID":          id,
+			"Title":       title,
+			"ResultTitle": resultTitle,
+			"Result":      result,
 		})
 		return nil
 	})
