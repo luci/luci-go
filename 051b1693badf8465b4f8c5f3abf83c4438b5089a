@@ -22,6 +22,30 @@
       "revId": "051b1693badf8465b4f8c5f3abf83c4438b5089a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac7ee013_c836e9b9",
+        "filename": "server/tsmon/settings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-28T01:46:44Z",
+      "side": 1,
+      "message": "I spent 10 minutes grokking why this is needed and now I see it\u0027s indeed hacky, but the most cost effective way I can think of. Fine :)",
+      "parentUuid": "a7fd24c6_406fe943",
+      "range": {
+        "startLine": 105,
+        "startChar": 0,
+        "endLine": 117,
+        "endChar": 1
+      },
+      "revId": "051b1693badf8465b4f8c5f3abf83c4438b5089a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
