@@ -21,6 +21,8 @@ import (
 	"html"
 	"html/template"
 	"strconv"
+	"strings"
+	"sync"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server/auth"
@@ -94,13 +96,47 @@ func fetchCachedSettings(c context.Context) Settings {
 
 type settingsPage struct {
 	portal.BasePage
+
+	m        sync.Mutex
+	readOnly *Settings
+	banner   string // displayed on top if readOnly != nil
 }
 
-func (settingsPage) Title(c context.Context) (string, error) {
-	return "Time series monitoring settings", nil
+// Make some aspects of the UI configurable by external packages.
+var PortalPage interface {
+	// SetReadOnlySettings switches the portal page to always display the given
+	// settings instead of attempting to fetch them from the settings store.
+	SetReadOnlySettings(s *Settings, banner string)
+} = &settingsPage{}
+
+func (p *settingsPage) SetReadOnlySettings(s *Settings, banner string) {
+	p.m.Lock()
+	defer p.m.Unlock()
+	p.readOnly = s
+	p.banner = banner
 }
 
-func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
+func (p *settingsPage) Title(c context.Context) (string, error) {
+	return "Time series monitoring", nil
+}
+
+func (p *settingsPage) Overview(c context.Context) (template.HTML, error) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
+	buf := strings.Builder{}
+	buf.WriteString("<p>")
+	buf.WriteString("This page displays settings of the time series metrics collection library (aka tsmon).")
+	if p.readOnly != nil {
+		buf.WriteString(" Note that this page is <b>read only</b>. ")
+		buf.WriteString(template.HTMLEscapeString(p.banner))
+	}
+	buf.WriteString("</p>")
+
+	return template.HTML(buf.String()), nil
+}
+
+func (p *settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	serviceAcc := "<unknown>"
 	if signer := auth.GetSigner(c); signer != nil {
 		info, err := signer.ServiceInfo(c)
@@ -110,10 +146,15 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 		serviceAcc = info.ServiceAccountName
 	}
 
+	p.m.Lock()
+	ro := p.readOnly != nil
+	p.m.Unlock()
+
 	return []portal.Field{
 		portal.YesOrNoField(portal.Field{
-			ID:    "Enabled",
-			Title: "Enabled",
+			ID:       "Enabled",
+			Title:    "Enabled",
+			ReadOnly: ro,
 			Help: `If not enabled, all metrics manipulations are ignored and the ` +
 				`monitoring has zero runtime overhead. If enabled, will keep track of metrics ` +
 				`values in memory and will periodically flush them to tsmon backends (if the flush method ` +
@@ -122,9 +163,10 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				`<a href="https://godoc.org/go.chromium.org/luci/appengine/tsmon">the tsmon doc</a> for more information.`,
 		}),
 		{
-			ID:    "ProdXAccount",
-			Title: "ProdX Service Account",
-			Type:  portal.FieldText,
+			ID:       "ProdXAccount",
+			Title:    "ProdX Service Account",
+			Type:     portal.FieldText,
+			ReadOnly: ro,
 			Help: template.HTML(fmt.Sprintf(
 				`Name of a properly configured service account inside a ProdX-enabled `+
 					`Cloud Project to use for sending metrics. "Google Identity and Access `+
@@ -134,9 +176,10 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				html.EscapeString(serviceAcc))),
 		},
 		{
-			ID:    "FlushIntervalSec",
-			Title: "Flush interval, sec",
-			Type:  portal.FieldText,
+			ID:       "FlushIntervalSec",
+			Title:    "Flush interval, sec",
+			Type:     portal.FieldText,
+			ReadOnly: ro,
 			Validator: func(v string) error {
 				if i, err := strconv.Atoi(v); err != nil || i < 10 {
 					return errors.New("expecting an integer larger than 9")
@@ -147,8 +190,9 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 				"is highly recommended. Change it only if you know what you are doing.",
 		},
 		portal.YesOrNoField(portal.Field{
-			ID:    "ReportRuntimeStats",
-			Title: "Report runtime stats",
+			ID:       "ReportRuntimeStats",
+			Title:    "Report runtime stats",
+			ReadOnly: ro,
 			Help: "If enabled, Go runtime state (e.g. memory allocator statistics) " +
 				"will be collected at each flush and sent to the monitoring as a bunch " +
 				"of go/* metrics.",
@@ -156,14 +200,22 @@ func (settingsPage) Fields(c context.Context) ([]portal.Field, error) {
 	}, nil
 }
 
-func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
+func (p *settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
+	p.m.Lock()
+	defer p.m.Unlock()
+
 	s := Settings{}
-	switch err := settings.GetUncached(c, settingsKey, &s); {
-	case err == settings.ErrNoSettings:
-		s = defaultSettings
-	case err != nil:
-		return nil, err
+	if p.readOnly == nil {
+		switch err := settings.GetUncached(c, settingsKey, &s); {
+		case err == settings.ErrNoSettings:
+			s = defaultSettings
+		case err != nil:
+			return nil, err
+		}
+	} else {
+		s = *p.readOnly
 	}
+
 	return map[string]string{
 		"Enabled":            s.Enabled.String(),
 		"ProdXAccount":       s.ProdXAccount,
@@ -172,7 +224,14 @@ func (settingsPage) ReadSettings(c context.Context) (map[string]string, error) {
 	}, nil
 }
 
-func (settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+func (p *settingsPage) WriteSettings(c context.Context, values map[string]string, who, why string) error {
+	p.m.Lock()
+	ro := p.readOnly != nil
+	p.m.Unlock()
+	if ro {
+		return fmt.Errorf("Can't modify read-only settings")
+	}
+
 	modified := Settings{}
 	modified.ProdXAccount = values["ProdXAccount"]
 	if err := modified.Enabled.Set(values["Enabled"]); err != nil {
@@ -211,5 +270,5 @@ func canActAsProdX(c context.Context, account string) error {
 }
 
 func init() {
-	portal.RegisterPage(settingsKey, settingsPage{})
+	portal.RegisterPage(settingsKey, PortalPage.(*settingsPage))
 }

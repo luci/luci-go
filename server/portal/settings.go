@@ -16,7 +16,6 @@ package portal
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -24,7 +23,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/templates"
 )
 
@@ -59,11 +57,6 @@ func withPage(c context.Context, rw http.ResponseWriter, p httprouter.Params, cb
 func portalPageGET(ctx *router.Context) {
 	c, rw, p := ctx.Context, ctx.Writer, ctx.Params
 
-	mutable := false
-	if s := settings.GetSettings(c); s != nil {
-		mutable = s.IsMutable()
-	}
-
 	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
 		if err != nil {
@@ -87,11 +80,13 @@ func portalPageGET(ctx *router.Context) {
 		}
 
 		withValues := make([]fieldWithValue, len(fields))
+		hasEditable := false
 		for i, f := range fields {
 			withValues[i] = fieldWithValue{
 				Field: f,
 				Value: values[f.ID],
 			}
+			hasEditable = hasEditable || f.IsEditable()
 		}
 
 		templates.MustRender(c, rw, "pages/page.html", templates.Args{
@@ -101,7 +96,7 @@ func portalPageGET(ctx *router.Context) {
 			"Fields":         withValues,
 			"Actions":        actions,
 			"XsrfTokenField": xsrf.TokenField(c),
-			"Mutable":        mutable,
+			"ShowSaveButton": hasEditable,
 		})
 		return nil
 	})
@@ -109,11 +104,6 @@ func portalPageGET(ctx *router.Context) {
 
 func portalPagePOST(ctx *router.Context) {
 	c, rw, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
-
-	if s := settings.GetSettings(c); s == nil && !s.IsMutable() {
-		replyError(c, rw, fmt.Errorf("the settings are read only"))
-		return
-	}
 
 	withPage(c, rw, p, func(id string, page Page) error {
 		title, err := page.Title(c)
@@ -129,7 +119,7 @@ func portalPagePOST(ctx *router.Context) {
 		values := make(map[string]string, len(fields))
 		validationErrors := []validationError{}
 		for _, f := range fields {
-			if !f.Type.IsEditable() {
+			if !f.IsEditable() {
 				continue
 			}
 			val := r.PostFormValue(f.ID)
