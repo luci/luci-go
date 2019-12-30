@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a2c25fb_65bb9245",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1330,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T19:43:16Z",
+      "side": 1,
+      "message": "del\n\nor \"but flush to /dev/null\"",
+      "range": {
+        "startLine": 1330,
+        "startChar": 22,
+        "endLine": 1330,
+        "endChar": 29
+      },
+      "revId": "4ea05d997b565944edfdb5dd7a5376171ed254f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba3ae626_f2d8a5e1",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T19:43:16Z",
+      "side": 1,
+      "message": "doc-nit\n\nnil \u003d\u003e auto-instantiate\n   is counter intuitive. \n\nI guess there is a reason we can\u0027t instantiate it immediately, so maybe worth giving a hint e.g.\n\n... on the fly (\u003creason\u003e)\n\n\nupdate: after reading Flush() code, is the reason for delay is to be able to load newest configuration settings?\nIf so, then maybe name var as \"customMonitor\" or \"overrideMonitor\" to indicate optionality?",
+      "revId": "4ea05d997b565944edfdb5dd7a5376171ed254f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
