@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -60,7 +60,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
 	if err := validateUpdateInvocationRequest(in, clock.Now(ctx)); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	invID := span.MustParseInvocationName(in.Invocation.Name)

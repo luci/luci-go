@@ -22,15 +22,14 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
@@ -80,7 +79,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 
 func TestCreateTestExoneration(t *testing.T) {
 	Convey(`TestCreateTestExoneration`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 
 		recorder := &recorderServer{}
 
@@ -95,8 +94,7 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldErrLike, `bad request: test_exoneration: test_id: does not match`)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: test_exoneration: test_id: does not match`)
 		})
 
 		Convey(`No invocation`, func() {
@@ -107,12 +105,11 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldErrLike, `"invocations/inv" not found`)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.CreateTestExonerationRequest{
@@ -151,7 +148,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			// Check variant hash.
 			key := span.InvocationID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
-			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
+			MustReadRow(ctx, "TestExonerations", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
 			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))

@@ -18,8 +18,8 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -41,7 +41,7 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 // ListTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
 	if err := validateListTestResultsRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
