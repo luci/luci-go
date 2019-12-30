@@ -32,7 +32,6 @@ import (
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
@@ -41,6 +40,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestSwarming(t *testing.T) {
@@ -223,7 +223,7 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
 
 				Convey(`and errors with FailedPrecondition for malformed output`, func() {
-					So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+					So(err, ShouldHaveAppStatus, codes.FailedPrecondition)
 				})
 			})
 		})
@@ -277,7 +277,7 @@ func TestSwarming(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			_, _, err = DeriveProtosForWriting(ctx, task, req)
-			So(err, ShouldErrLike, "blacklisted task")
+			So(err, ShouldErrLike, "invalid task: blacklisted")
 		})
 
 		Convey(`that are invalid`, func() {
@@ -315,14 +315,7 @@ func TestSwarming(t *testing.T) {
 
 		Convey(`tags with gRPC NotFound for 404`, func() {
 			_, err := GetSwarmingTask(ctx, "404-task", swarmSvc)
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
-		})
-
-		Convey(`tags with gRPC Internal for 5xx`, func() {
-			_, err := GetSwarmingTask(ctx, "5xx-task", swarmSvc)
-			So(err, ShouldNotBeNil)
-			So(grpcutil.Code(err), ShouldEqual, codes.Internal)
+			So(err, ShouldHaveAppStatus, codes.NotFound)
 		})
 	})
 

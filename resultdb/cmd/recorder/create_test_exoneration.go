@@ -24,9 +24,9 @@ import (
 	"github.com/google/uuid"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -57,7 +57,7 @@ func validateCreateTestExonerationRequest(req *pb.CreateTestExonerationRequest, 
 // CreateTestExoneration implements pb.RecorderServer.
 func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {
 	if err := validateCreateTestExonerationRequest(in, true); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 	invID := span.MustParseInvocationName(in.Invocation)
 

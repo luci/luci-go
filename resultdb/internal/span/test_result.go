@@ -25,9 +25,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -73,10 +73,8 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, errors.Reason("%q not found", name).
-			InternalReason("%s", err).
-			Tag(grpcutil.NotFoundTag).
-			Err()
+		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
+
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	}
@@ -169,7 +167,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
-		return nil, "", grpcutil.Unimplemented
+		return nil, "", appstatus.Errf(codes.Unimplemented, "filtering by variant is not implemented yet")
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
@@ -267,5 +265,5 @@ func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID
 // is invalid and records err as an internal error.
 // The returned error is anontated with INVALID_ARUGMENT code.
 func encapsulatePageTokenError(err error) error {
-	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
+	return errors.Annotate(appstatus.Errf(codes.InvalidArgument, "invalid page_token"), "").InternalReason("%s", err).Err()
 }
