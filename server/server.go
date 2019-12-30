@@ -331,8 +331,8 @@ func (o *Options) shouldEnableTracing() bool {
 // Server is responsible for initializing and launching the serving environment.
 //
 // Generally assumed to be a singleton: do not launch multiple Server instances
-// within the same process, use RegisterHTTP instead if you want to expose
-// multiple ports.
+// within the same process, use AddPort instead if you want to expose multiple
+// ports.
 //
 // Doesn't do TLS. Should be sitting behind a load balancer that terminates
 // TLS.
@@ -390,6 +390,14 @@ type Server struct {
 
 	redisPool *redis.Pool       // nil if redis is not used
 	dsClient  *datastore.Client // nil if datastore is not used
+}
+
+// Port describes options of a single serving HTTP port.
+//
+// See AddPort.
+type Port struct {
+	ListenAddr     string // local address to bind to
+	DisableMetrics bool   // do not collect HTTP metrics for requests on this port
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -495,14 +503,14 @@ func New(opts Options) (srv *Server, err error) {
 	return srv, nil
 }
 
-// RegisterHTTP prepares an additional HTTP server.
+// AddPort prepares an additional serving HTTP port.
 //
 // Can be used to open more listening HTTP ports (in addition to opts.HTTPAddr
 // and opts.AdminAddr). Returns a router that should be populated with routes
-// exposed through the added server.
+// exposed through the added port.
 //
 // Should be called before ListenAndServe (panics otherwise).
-func (s *Server) RegisterHTTP(addr string) *router.Router {
+func (s *Server) AddPort(port Port) *router.Router {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.started {
@@ -513,7 +521,7 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 		s.rootMiddleware,            // prepares the per-request context
 		middleware.WithPanicCatcher, // transforms panics into HTTP 500
 	)
-	if s.tsmon != nil {
+	if s.tsmon != nil && !port.DisableMetrics {
 		mw = mw.Extend(s.tsmon.Middleware) // collect HTTP requests metrics
 	}
 
@@ -534,7 +542,7 @@ func (s *Server) RegisterHTTP(addr string) *router.Router {
 	})
 
 	s.httpSrv = append(s.httpSrv, &http.Server{
-		Addr:     addr,
+		Addr:     port.ListenAddr,
 		Handler:  r,
 		ErrorLog: nil, // TODO(vadimsh): Log via 'logging' package.
 	})
@@ -1510,7 +1518,9 @@ func (s *Server) initCloudContext() error {
 
 // initMainPort initializes the server on options.HTTPAddr port.
 func (s *Server) initMainPort() error {
-	s.Routes = s.RegisterHTTP(s.Options.HTTPAddr)
+	s.Routes = s.AddPort(Port{
+		ListenAddr: s.Options.HTTPAddr,
+	})
 
 	// Expose public pRPC endpoints (see also ListenAndServe where we put the
 	// final interceptors).
@@ -1549,7 +1559,10 @@ func (s *Server) initAdminPort() error {
 	})
 
 	// Install endpoints accessible through the admin port only.
-	admin := s.RegisterHTTP(s.Options.AdminAddr)
+	admin := s.AddPort(Port{
+		ListenAddr:     s.Options.AdminAddr,
+		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
+	})
 	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
