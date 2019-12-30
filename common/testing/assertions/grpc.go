@@ -17,11 +17,17 @@ package assertions
 import (
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/smartystreets/assertions"
 	"github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+var okStatus = status.New(codes.OK, "ok")
 
 // ShouldHaveRPCCode is a goconvey assertion, asserting that the supplied
 // "actual" value has a gRPC code value and, optionally, errors like a supplied
@@ -174,4 +180,93 @@ func prepend(c codes.Code, exp []interface{}) []interface{} {
 	args[0] = c
 	copy(args[1:], exp)
 	return args
+}
+
+// ShouldBeStatusLike assertions that *status.Status `actual` has code
+// `expected[0]`, that the actual message has a substring `expected[1]` and
+// that the status details in expected[2:] as present in the actual status.
+//
+// len(expected) must be at least 1.
+//
+// Example:
+//   // err must have a NotFound status
+//   So(st, ShouldBeStatusLike, codes.NotFound)
+//
+//   // and its message must contain "item not found"
+//   So(st, ShouldBeStatusLike, codes.NotFound, "item not found")
+//
+//   // and it must have a DebugInfo detail.
+//   So(st, ShouldBeStatusLike, codes.NotFound, "item not found", &errdetails.DebugInfo{Details: "x"})
+func ShouldBeStatusLike(actual interface{}, expected []interface{}) string {
+	if ret := assertions.ShouldHaveSameTypeAs(actual, (*status.Status)(nil)); ret != "" {
+		return ret
+	}
+
+	if ret := assertions.ShouldNotBeEmpty(expected); ret != "" {
+		return ret
+	}
+
+	actualStatus := actual.(*status.Status)
+
+	if ret := assertions.ShouldEqual(actualStatus.Code(), expected[0].(codes.Code)); ret != "" {
+		return ret
+	}
+
+	if len(expected) == 1 {
+		return ""
+	}
+
+	if ret := assertions.ShouldHaveSameTypeAs(expected[1], ""); ret != "" {
+		return ret
+	}
+	if ret := assertions.ShouldContainSubstring(actualStatus.Message(), expected[1]); ret != "" {
+		return ret
+	}
+
+	if len(expected) == 2 {
+		return ""
+	}
+
+	// Serialize actual detalis to strings as compact text proto.
+	actualDetails := actualStatus.Details()
+	presentDetalis := stringset.New(len(actualDetails))
+	for _, d := range actualDetails {
+		presentDetalis.Add(proto.CompactTextString(d.(proto.Message)))
+	}
+
+	// Then assert presence of each expected detail.
+	for _, d := range expected[2:] {
+		if ret := assertions.ShouldHaveSameTypeAs(d, proto.Message(nil)); ret != "" {
+			return ret
+		}
+		eTxt := proto.CompactTextString(d.(proto.Message))
+		if !presentDetalis.Has(eTxt) {
+			return fmt.Sprintf("expected presence of status detail %q, got %q", eTxt, presentDetalis.ToSlice())
+		}
+	}
+
+	return ""
+}
+
+// ShouldHaveGRPCStatus assertions that error `actual` has a GRPC status and it
+// matches the expectations.
+// See ShouldBeStatusLike for the format of `expected`.
+// The status is extracted using status.FromError.
+func ShouldHaveGRPCStatus(actual interface{}, expected ...interface{}) string {
+	// Special case for OK code.
+	if len(expected) > 0 {
+		if code, ok := expected[0].(codes.Code); ok && code == codes.OK {
+			return assertions.ShouldBeNil(actual)
+		}
+	}
+
+	if ret := assertions.ShouldImplement(actual, (*error)(nil)); ret != "" {
+		return ret
+	}
+	actualStatus, ok := status.FromError(actual.(error))
+	if !ok {
+		return fmt.Sprintf("expected error %q to have a GRPC status", actual)
+	}
+
+	return ShouldBeStatusLike(actualStatus, expected)
 }
