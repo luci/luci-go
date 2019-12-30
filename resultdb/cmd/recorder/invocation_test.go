@@ -25,21 +25,20 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
 		mayMutate := func() error {
@@ -50,8 +49,7 @@ func TestMutateInvocation(t *testing.T) {
 
 		Convey("no token", func() {
 			err := mayMutate()
-			So(err, ShouldErrLike, `missing "update-token" metadata value`)
-			So(grpcutil.Code(err), ShouldEqual, codes.Unauthenticated)
+			So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token metadata value`)
 		})
 
 		Convey("with token", func() {
@@ -60,40 +58,36 @@ func TestMutateInvocation(t *testing.T) {
 
 			Convey(`no invocation`, func() {
 				err := mayMutate()
-				So(err, ShouldErrLike, `"invocations/inv" not found`)
-				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 			})
 
 			Convey(`with finalized invocation`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false))
 				err := mayMutate()
-				So(err, ShouldErrLike, `"invocations/inv" is not active`)
-				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct, false))
 				err := mayMutate()
-				So(err, ShouldErrLike, `invalid update token`)
-				So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with exceeded deadline`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
 
 				// Mock now to be after deadline.
 				clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
 				err := mayMutate()
-				So(err, ShouldErrLike, `"invocations/inv" is not active`)
-				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 
 				// Confirm the invocation has been updated.
 				var state pb.Invocation_State
 				var ft time.Time
 				var interrupted bool
 				inv := span.InvocationID("inv")
-				testutil.MustReadRow(ctx, "Invocations", inv.Key(), map[string]interface{}{
+				MustReadRow(ctx, "Invocations", inv.Key(), map[string]interface{}{
 					"State":        &state,
 					"Interrupted":  &interrupted,
 					"FinalizeTime": &ft,
@@ -104,7 +98,7 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
@@ -115,7 +109,7 @@ func TestMutateInvocation(t *testing.T) {
 
 func TestReadInvocation(t *testing.T) {
 	Convey(`ReadInvocationFull`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
 		readInv := func() *pb.Invocation {
@@ -128,7 +122,7 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`completed`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false))
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false))
 
 			inv := readInv()
 			expected := &pb.Invocation{
@@ -141,11 +135,11 @@ func TestReadInvocation(t *testing.T) {
 			So(inv, ShouldResembleProto, expected)
 
 			Convey(`with included invocations`, func() {
-				testutil.MustApply(ctx,
-					testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false),
-					testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false),
-					testutil.InsertInclusion("inv", "included0"),
-					testutil.InsertInclusion("inv", "included1"),
+				MustApply(ctx,
+					InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false),
+					InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false),
+					InsertInclusion("inv", "included0"),
+					InsertInclusion("inv", "included1"),
 				)
 
 				inv := readInv()
@@ -158,7 +152,7 @@ func TestReadInvocation(t *testing.T) {
 func TestInsertBQExportingTasks(t *testing.T) {
 	Convey(`insertBQExportingTasks`, t, func() {
 		now := testclock.TestRecentTimeUTC
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 		invID := span.InvocationID("invID")
 
 		bqExport1 := &pb.BigQueryExport{
@@ -177,7 +171,7 @@ func TestInsertBQExportingTasks(t *testing.T) {
 
 		muts := insertBQExportingTasks(invID, now, bqExport1, bqExport2)
 
-		testutil.MustApply(ctx, muts...)
+		MustApply(ctx, muts...)
 
 		test := func(index int, bqExport *pb.BigQueryExport) {
 			invTask := &internalpb.InvocationTask{
@@ -185,7 +179,7 @@ func TestInsertBQExportingTasks(t *testing.T) {
 			}
 			key := span.InvocationID("invID").Key(taskID(taskTypeBqExport, index))
 			invTaskRtn := &internalpb.InvocationTask{}
-			testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+			MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
 				"Payload": invTaskRtn,
 			})
 			So(invTaskRtn, ShouldResembleProto, invTask)
