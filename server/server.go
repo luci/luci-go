@@ -88,6 +88,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
@@ -1324,16 +1325,27 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 
 // initTSMon initializes time series monitoring state if tsmon is enabled.
 func (s *Server) initTSMon() error {
+	// In production, if tsmon flags aren't set, completely bypass all tsmon
+	// machinery to avoid wasting CPU on it. Keep it always enabled in the
+	// development mode (perhaps flushing to /dev/null) so that tsmon's in-process
+	// store is populated, and metrics there can be examined without actually
+	// sending them anywhere. This is useful when developing/debugging tsmon
+	// metrics locally.
+	var mon monitor.Monitor
 	if s.Options.TsMonAccount == "" || s.Options.TsMonServiceName == "" || s.Options.TsMonJobName == "" {
-		logging.Infof(s.Context, "Disabling tsmon: provide -ts-mon-account, -ts-mon-service-name and -ts-mon-job-name flags to enable")
-		tsmon.PortalPage.SetReadOnlySettings(&tsmon.Settings{},
-			"Settings are controlled through -ts-mon-* command line flags. Metrics "+
-				"collection is disabled because they weren't provided.")
-		return nil
+		if s.Options.Prod {
+			logging.Infof(s.Context, "Disabling tsmon: provide -ts-mon-account, -ts-mon-service-name and -ts-mon-job-name flags to enable")
+			tsmon.PortalPage.SetReadOnlySettings(&tsmon.Settings{},
+				"Settings are controlled through -ts-mon-* command line flags. Metrics "+
+					"collection is disabled because they weren't provided.")
+			return nil
+		}
+		logging.Infof(s.Context, "Enabling tsmon in the debug mode: metrics are collected, but flushed to /dev/null")
+		mon = monitor.NewNilMonitor()
 	}
 
 	s.tsmon = &tsmon.State{
-		IsDevMode: !s.Options.Prod,
+		Monitor: mon,
 		Settings: &tsmon.Settings{
 			Enabled:            true,
 			ProdXAccount:       s.Options.TsMonAccount,
