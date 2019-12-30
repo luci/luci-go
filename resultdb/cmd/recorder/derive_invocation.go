@@ -25,10 +25,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -67,7 +67,7 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 // the invocation returned is associated with the swarming task itself.
 func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
 	if err := validateDeriveInvocationRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	// Get the swarming service to use.
@@ -151,8 +151,9 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
 	state, err := readInvocationState(ctx, txn, id)
+	s, _ := appstatus.Get(err)
 	switch {
-	case grpcutil.Code(err) == codes.NotFound:
+	case s.Code() == codes.NotFound:
 		// No such invocation found means we may have to write it, so proceed.
 		return true, nil
 
