@@ -22,6 +22,30 @@
       "revId": "a9b27d912b94cc400907becedb17ba33b001b2ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c4ed403e_bf5f2d8b",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 506,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T23:15:38Z",
+      "side": 1,
+      "message": "Because there are no other kinds of ports.",
+      "parentUuid": "660a7b86_645beb61",
+      "range": {
+        "startLine": 506,
+        "startChar": 42,
+        "endLine": 506,
+        "endChar": 46
+      },
+      "revId": "a9b27d912b94cc400907becedb17ba33b001b2ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
