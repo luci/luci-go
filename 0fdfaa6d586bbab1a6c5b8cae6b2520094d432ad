@@ -110,6 +110,30 @@
       "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33c148b3_df4c0f25",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T23:32:43Z",
+      "side": 1,
+      "message": "while you are right about individual calls, I was thinking of several chunks being sent separately.",
+      "parentUuid": "2af9e7db_0c90189e",
+      "range": {
+        "startLine": 65,
+        "startChar": 45,
+        "endLine": 65,
+        "endChar": 46
+      },
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
