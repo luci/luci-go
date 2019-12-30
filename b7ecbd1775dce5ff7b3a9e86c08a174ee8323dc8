@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "130c0303_9f68dd03",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T20:20:47Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 34,
+        "startChar": 32,
+        "endLine": 34,
+        "endChar": 33
+      },
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2716018c_1262736f",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T20:20:47Z",
+      "side": 1,
+      "message": "add idx-- after thsi.\n\nat this point \"idx\" is at the first cell that won\u0027t be displayed in current table.\nHowever, on L82 you\u0027ll ++idx again, hence missing one cell.",
+      "range": {
+        "startLine": 92,
+        "startChar": 19,
+        "endLine": 92,
+        "endChar": 28
+      },
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ec516fa_9fafca96",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T20:20:47Z",
+      "side": 1,
+      "message": "and why aren\u0027t Golang templates good enough to render this directly?",
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
