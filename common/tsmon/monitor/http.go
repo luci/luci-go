@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
@@ -55,7 +56,16 @@ func (m *httpMonitor) ChunkSize() int {
 	return 500
 }
 
-func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
+func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) {
+	start := time.Now()
+	defer func() {
+		if err == nil {
+			logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), time.Since(start))
+		} else {
+			logging.Errorf(ctx, "tsmon: failed to send %d cells - %s", len(cells), err)
+		}
+	}()
+
 	// Serialize the tsmon cells into protobufs.
 	req := &pb.Request{
 		Payload: &pb.MetricsPayload{
