@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3096dc33_554ea29b",
+        "filename": "server/portal/internal/assets/third_party/bootstrap/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T19:32:46Z",
+      "side": 1,
+      "message": "I did that. Uploaded config.json, clicked Tables checkbox, and downloaded back the result. Looks like it updated Bootstrap to slightly newer version (probably the last one in v3.*), but everything appears to be looking OK (except I\u0027ve added some marging, otherwise the page ends too abruptly).",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 36
+      },
+      "revId": "39fe2cb1fdbe12a33d4790c3ffd70e02a51c7568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
