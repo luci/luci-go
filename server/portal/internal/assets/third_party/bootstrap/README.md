@@ -6,6 +6,7 @@ http://getbootstrap.com/customize/):
 * Common CSS:
   - Typography
   - Grid system
+  - Tables
   - Forms
   - Buttons
   - Breadcrumbs
