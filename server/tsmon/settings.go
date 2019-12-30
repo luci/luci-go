@@ -24,7 +24,9 @@ import (
 	"strings"
 	"sync"
 
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
+
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
@@ -253,6 +255,23 @@ func (p *settingsPage) WriteSettings(c context.Context, values map[string]string
 	}
 
 	return settings.SetIfChanged(c, settingsKey, &modified, who, why)
+}
+
+func (p *settingsPage) Actions(ctx context.Context) ([]portal.Action, error) {
+	return []portal.Action{
+		{
+			ID:            "metrics",
+			Title:         "Show buffered metrics",
+			NoSideEffects: true,
+			Callback: func(ctx context.Context) (string, template.HTML, error) {
+				if state := tsmon.GetState(ctx); state != nil {
+					cells := state.Store().GetAll(ctx)              // note: it is a mutable copy
+					return "Metrics", formatCellsAsHTML(cells), nil // see dump.go
+				}
+				return "", "", fmt.Errorf("no tsmon state in the context")
+			},
+		},
+	}, nil
 }
 
 // canActAsProdX attempts to grab ProdX scoped access token for the given
