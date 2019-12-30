@@ -27,17 +27,17 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
+	"go.chromium.org/luci/resultdb/internal"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateInvocationDeadline(t *testing.T) {
@@ -149,7 +149,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 
 		// Mock time.
 		now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -159,7 +159,7 @@ func TestCreateInvocation(t *testing.T) {
 		server := &prpctest.Server{}
 		server.UnaryServerInterceptor = func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 			res, err := handler(ctx, req)
-			err = grpcutil.GRPCifyAndLogErr(ctx, err)
+			err = internal.GRPCifyAndLog(ctx, err)
 			return res, err
 		}
 		pb.RegisterRecorderServer(server, &recorderServer{})
@@ -171,8 +171,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			So(err, ShouldErrLike, `bad request: invocation_id: unspecified`)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `bad request: invocation_id: unspecified`)
 		})
 
 		req := &pb.CreateInvocationRequest{
@@ -182,13 +181,12 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				testutil.InsertInvocation("u:inv", 1, "", testclock.TestRecentTimeUTC, false),
+				InsertInvocation("u:inv", 1, "", testclock.TestRecentTimeUTC, false),
 			})
 			So(err, ShouldBeNil)
 
 			_, err = recorder.CreateInvocation(ctx, req)
-			So(err, ShouldErrLike, `already exists`)
-			So(grpcutil.Code(err), ShouldEqual, codes.AlreadyExists)
+			So(err, ShouldHaveGRPCStatus, codes.AlreadyExists)
 		})
 
 		Convey(`unsorted tags`, func() {
@@ -196,7 +194,6 @@ func TestCreateInvocation(t *testing.T) {
 			inv, err := recorder.CreateInvocation(ctx, req)
 			So(err, ShouldBeNil)
 			So(inv.Tags, ShouldResemble, pbutil.StringPairs("a", "1", "b", "2"))
-
 		})
 
 		Convey(`no invocation in request`, func() {
@@ -274,7 +271,7 @@ func TestCreateInvocation(t *testing.T) {
 			}
 			key := span.InvocationID("u:inv").Key(taskID(taskTypeBqExport, 0))
 			invTaskRtn := &internalpb.InvocationTask{}
-			testutil.MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+			MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
 				"Payload": invTaskRtn,
 			})
 			So(invTaskRtn, ShouldResembleProto, invTask)
