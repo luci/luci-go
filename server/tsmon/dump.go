@@ -116,16 +116,6 @@ func formatCellsAsHTML(cells []types.Cell) template.HTML {
 	return template.HTML(buf.String())
 }
 
-// htmlBuilder is a helper to construct HTML tables with metrics.
-//
-// Using it is overall simpler and faster *in this case*, than using
-// "template/html", since we can process the metrics and emit HTML in one pass.
-//
-// Using HTML templates requires to prepare data for tables beforehand (in a
-// bunch of structs and slices), and only then render it. This is justifiable if
-// we expect frequently changes to how the data is displayed (and so want to
-// split the view into a standalone HTML template). But *in this case* we don't,
-// so the artisanally crafted HTML is fine and helps us avoid unnecessary code.
 type htmlBuilder struct {
 	strings.Builder
 }
