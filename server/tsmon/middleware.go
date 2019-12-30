@@ -73,8 +73,13 @@ type State struct {
 	// If nil, 0 will be used as task number regardless of instance ID.
 	TaskNumAllocator TaskNumAllocator
 
-	// IsDevMode should be set to true when running locally.
-	IsDevMode bool
+	// CustomMonitor, if not nil, is used to flush accumulated metrics instead of
+	// the default monitor (which is constructed on the fly based on current
+	// settings).
+	//
+	// Useful to override the default monitor in tests or when running locally in
+	// the debug mode.
+	CustomMonitor monitor.Monitor
 
 	// FlushInMiddleware is true to make Middleware(...) periodically
 	// synchronously send metrics to the backend after handling a request.
@@ -101,8 +106,6 @@ type State struct {
 	nextFlush   time.Time     // next time we should do the flush
 	lastFlush   time.Time     // last successful flush
 	flushRetry  time.Duration // flush retry delay
-
-	testingMonitor monitor.Monitor // mocked in unit tests
 }
 
 const (
@@ -392,9 +395,9 @@ func (s *State) doFlush(c context.Context, state *tsmon.State, settings *Setting
 	var mon monitor.Monitor
 	var err error
 
-	if s.testingMonitor != nil {
-		mon = s.testingMonitor
-	} else if s.IsDevMode || settings.ProdXAccount == "" {
+	if s.CustomMonitor != nil {
+		mon = s.CustomMonitor
+	} else if settings.ProdXAccount == "" {
 		mon = monitor.NewDebugMonitor("")
 	} else {
 		transport, err := auth.GetRPCTransport(
