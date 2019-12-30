@@ -20,15 +20,16 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -89,10 +90,10 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			return err
 
 		case state != pb.Invocation_ACTIVE:
-			return errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
+			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 
 		case deadline.Before(now):
-			retErr = errors.Reason("%q is not active", id.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
+			retErr = appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 
 			// The invocation has exceeded deadline, finalize it now.
 			return finalizeInvocation(ctx, txn, id, true, deadline)
@@ -116,16 +117,10 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	userToken := md.Get(updateTokenMetadataKey)
 	switch {
 	case len(userToken) == 0:
-		return "", errors.
-			Reason("missing %q metadata value in the request", updateTokenMetadataKey).
-			Tag(grpcutil.UnauthenticatedTag).
-			Err()
+		return "", appstatus.Errorf(codes.Unauthenticated, "missing %s metadata value in the request", updateTokenMetadataKey)
 
 	case len(userToken) > 1:
-		return "", errors.
-			Reason("expected exactly one %q metadata value, got %d", updateTokenMetadataKey, len(userToken)).
-			Tag(grpcutil.InvalidArgumentTag).
-			Err()
+		return "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", updateTokenMetadataKey, len(userToken))
 
 	default:
 		return userToken[0], nil
@@ -169,11 +164,11 @@ func resetInvocationTasks(ctx context.Context, txn *spanner.ReadWriteTransaction
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
 	if !updateToken.Valid {
-		return errors.Reason("no update token in active invocation").Tag(grpcutil.InternalTag).Err()
+		return errors.Reason("no update token in active invocation").Err()
 	}
 
 	if userToken != updateToken.StringVal {
-		return errors.Reason("invalid update token").Tag(grpcutil.PermissionDeniedTag).Err()
+		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 
 	return nil
