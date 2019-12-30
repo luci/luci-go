@@ -22,6 +22,7 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/validation"
@@ -67,7 +68,7 @@ var (
 	// globalTsMonState holds configuration and state related to time series
 	// monitoring.
 	globalTsMonState = &tsmon.State{
-		IsDevMode: appengine.IsDevAppServer(),
+		CustomMonitor: tsmonDebugMonitor(),
 		Target: func(ctx context.Context) target.Task {
 			return target.Task{
 				DataCenter:  "appengine",
@@ -81,6 +82,14 @@ var (
 		FlushInMiddleware: true,
 	}
 )
+
+// tsmonDebugMonitor returns debug monitor when running on dev server.
+func tsmonDebugMonitor() monitor.Monitor {
+	if appengine.IsDevAppServer() {
+		return monitor.NewDebugMonitor("")
+	}
+	return nil
+}
 
 // classicEnv is an AppEngine Classic GAE environment configuration. This is the
 // default AppEngine environment for simple (all-classic) layouts.

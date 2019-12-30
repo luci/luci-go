@@ -170,9 +170,8 @@ func buildTestState() (*State, *monitor.Fake, *fakeNumAllocator) {
 		},
 		InstanceID:        func(c context.Context) string { return "some.id" },
 		TaskNumAllocator:  allocator,
-		IsDevMode:         false, // hit same paths as prod
 		FlushInMiddleware: true,
-		testingMonitor:    mon,
+		CustomMonitor:     mon,
 		Settings: &Settings{
 			Enabled:          true,
 			FlushIntervalSec: 60,

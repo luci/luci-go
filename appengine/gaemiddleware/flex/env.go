@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
@@ -81,7 +82,7 @@ var (
 	// using the global context (the logging is moot in this case, since we'll
 	// have no trace ID for logs).
 	globalTsMonState = &tsmon.State{
-		IsDevMode: !metadata.OnGCE(),
+		CustomMonitor: tsmonDebugMonitor(),
 		Target: func(ctx context.Context) target.Task {
 			return target.Task{
 				DataCenter:  "appengine",
@@ -95,6 +96,14 @@ var (
 		FlushInMiddleware: true,
 	}
 )
+
+// tsmonDebugMonitor returns debug monitor when running on dev server.
+func tsmonDebugMonitor() monitor.Monitor {
+	if !metadata.OnGCE() {
+		return monitor.NewDebugMonitor("")
+	}
+	return nil
+}
 
 func init() {
 	if metadata.OnGCE() {
