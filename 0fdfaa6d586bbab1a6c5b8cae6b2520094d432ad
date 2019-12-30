@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "a8a3c93b_960b3f85",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T23:23:04Z",
+      "side": 1,
+      "message": "Yes, don\u0027t want to scare the next person who touches this with context clocks. But I noticed clock.Now(.ctx) is already used below, so might use it too. Changes to clock.Now(...).",
+      "parentUuid": "6099524b_fc8445bb",
+      "range": {
+        "startLine": 60,
+        "startChar": 10,
+        "endLine": 60,
+        "endChar": 20
+      },
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "268a4fda_665d8291",
         "filename": "common/tsmon/monitor/http.go",
         "patchSetId": 1
@@ -62,6 +86,30 @@
       "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2af9e7db_0c90189e",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T23:23:04Z",
+      "side": 1,
+      "message": "It depends on semantics of prodx endpoint. I suspect it accepts either all cells or none at all. Anyhow, added \"some of\".",
+      "parentUuid": "268a4fda_665d8291",
+      "range": {
+        "startLine": 65,
+        "startChar": 45,
+        "endLine": 65,
+        "endChar": 46
+      },
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
