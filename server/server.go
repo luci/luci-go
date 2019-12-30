@@ -88,6 +88,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
@@ -1322,18 +1323,20 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 	return nil, errors.Reason("a source of AuthDB is not configured").Err()
 }
 
-// initTSMon initializes time series monitoring state if tsmon is enabled.
+// initTSMon initializes time series monitoring state.
 func (s *Server) initTSMon() error {
+	// We keep tsmon always enabled (flushing to /dev/null if no -ts-mon-* flags
+	// are set) so that tsmon's in-process store is populated, and metrics there
+	// can be examined via /admin/tsmon. This is useful when developing/debugging
+	// tsmon metrics.
+	var customMonitor monitor.Monitor
 	if s.Options.TsMonAccount == "" || s.Options.TsMonServiceName == "" || s.Options.TsMonJobName == "" {
-		logging.Infof(s.Context, "Disabling tsmon: provide -ts-mon-account, -ts-mon-service-name and -ts-mon-job-name flags to enable")
-		tsmon.PortalPage.SetReadOnlySettings(&tsmon.Settings{},
-			"Settings are controlled through -ts-mon-* command line flags. Metrics "+
-				"collection is disabled because they weren't provided.")
-		return nil
+		logging.Infof(s.Context, "tsmon is in the debug mode: metrics are collected, but flushed to /dev/null (pass -ts-mon-* flags to start uploading metrics)")
+		customMonitor = monitor.NewNilMonitor()
 	}
 
 	s.tsmon = &tsmon.State{
-		IsDevMode: !s.Options.Prod,
+		CustomMonitor: customMonitor,
 		Settings: &tsmon.Settings{
 			Enabled:            true,
 			ProdXAccount:       s.Options.TsMonAccount,
@@ -1354,8 +1357,13 @@ func (s *Server) initTSMon() error {
 			}
 		},
 	}
-	tsmon.PortalPage.SetReadOnlySettings(s.tsmon.Settings,
-		"Settings are controlled through -ts-mon-* command line flags.")
+	if customMonitor != nil {
+		tsmon.PortalPage.SetReadOnlySettings(s.tsmon.Settings,
+			"Running in the debug mode. Pass all -ts-mon-* command line flags to start uploading metrics.")
+	} else {
+		tsmon.PortalPage.SetReadOnlySettings(s.tsmon.Settings,
+			"Settings are controlled through -ts-mon-* command line flags.")
+	}
 
 	// Report our image version as a metric, useful to monitor rollouts.
 	tsmoncommon.RegisterCallbackIn(s.Context, func(ctx context.Context) {
