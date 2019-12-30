@@ -146,6 +146,24 @@
       "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3572623f_1c073885",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T23:12:43Z",
+      "side": 1,
+      "message": "Added a comment, it is all subjective :-/ The real reason is I started with simpler HTML that didn\u0027t need a template and it evolved into this CL, and now I\u0027m lazy to rewrite it using templates, since I\u0027m sure it will take approximately the same amount of code, just more dispersed (a bunch of structs, a template and the main code).",
+      "parentUuid": "a827f10a_b06d05bd",
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
