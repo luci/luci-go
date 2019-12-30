@@ -55,11 +55,20 @@ func (m *httpMonitor) ChunkSize() int {
 	return 500
 }
 
-func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
+func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) {
+	startTime := clock.Now(ctx)
+	defer func() {
+		if err == nil {
+			logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Now(ctx).Sub(startTime))
+		} else {
+			logging.Errorf(ctx, "tsmon: failed to send some of %d cells - %s", len(cells), err)
+		}
+	}()
+
 	// Serialize the tsmon cells into protobufs.
 	req := &pb.Request{
 		Payload: &pb.MetricsPayload{
-			MetricsCollection: SerializeCells(cells, clock.Now(ctx)),
+			MetricsCollection: SerializeCells(cells, startTime),
 		},
 	}
 

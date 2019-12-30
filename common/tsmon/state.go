@@ -18,9 +18,7 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -192,25 +190,18 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 		chunkSize = len(cells)
 	}
 
-	startedAt := time.Now()
-
-	var nSent int
 	var lastErr error
 	for s := 0; s < len(cells); s += chunkSize {
 		e := s + chunkSize
 		if e > len(cells) {
 			e = len(cells)
 		}
-
-		if lastErr = mon.Send(ctx, cells[s:e]); lastErr != nil {
-			logging.Errorf(ctx, "Failed to send %d cells: %v", e-s, lastErr)
-			continue
+		if err := mon.Send(ctx, cells[s:e]); err != nil {
+			lastErr = err
 		}
-		nSent += e - s
 	}
 	s.resetGlobalCallbackMetrics(ctx)
 
-	logging.Debugf(ctx, "tsmon: sent %d/%d cells in %s", nSent, len(cells), time.Since(startedAt))
 	return lastErr
 }
 
