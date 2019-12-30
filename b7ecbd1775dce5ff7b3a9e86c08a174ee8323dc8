@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6f760b8e_a51ff2a9",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T21:32:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "130c0303_9f68dd03",
+      "range": {
+        "startLine": 34,
+        "startChar": 32,
+        "endLine": 34,
+        "endChar": 33
+      },
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2716018c_1262736f",
         "filename": "server/tsmon/dump.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "36a11767_ef6f2da9",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T21:32:39Z",
+      "side": 1,
+      "message": "Good observation :)",
+      "parentUuid": "2716018c_1262736f",
+      "range": {
+        "startLine": 92,
+        "startChar": 19,
+        "endLine": 92,
+        "endChar": 28
+      },
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ec516fa_9fafca96",
         "filename": "server/tsmon/dump.go",
         "patchSetId": 3
@@ -62,6 +110,24 @@
       "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "445c7a8d_790e2708",
+        "filename": "server/tsmon/dump.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T21:32:39Z",
+      "side": 1,
+      "message": "Doing non-range \u0027for\u0027 loops is difficult, doing type casts is difficult, doing calculations is difficult. I\u0027ll have to prepare all the data beforehand (as a bunch of slices with structs) and then render it separately. I can do it if you insist, but I believe it will be more code overall and it won\u0027t be easier to read.",
+      "parentUuid": "8ec516fa_9fafca96",
+      "revId": "b7ecbd1775dce5ff7b3a9e86c08a174ee8323dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
