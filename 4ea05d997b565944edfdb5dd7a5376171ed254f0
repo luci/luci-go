@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1a7e1bc7_451ff081",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T21:07:34Z",
+      "side": 1,
+      "message": "It is possible to flush to real prodx endpoint in development mode too (if correct -ts-mon-* flags are set). This is one of the ways to debug metrics. Anyway, I changed this comment since now tsmon is always enabled.",
+      "parentUuid": "8a2c25fb_65bb9245",
+      "range": {
+        "startLine": 1330,
+        "startChar": 22,
+        "endLine": 1330,
+        "endChar": 29
+      },
+      "revId": "4ea05d997b565944edfdb5dd7a5376171ed254f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ba3ae626_f2d8a5e1",
         "filename": "server/tsmon/middleware.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "4ea05d997b565944edfdb5dd7a5376171ed254f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "045cc795_7df0cb40",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T21:07:34Z",
+      "side": 1,
+      "message": "Renamed to CustomMonitor.",
+      "parentUuid": "ba3ae626_f2d8a5e1",
+      "revId": "4ea05d997b565944edfdb5dd7a5376171ed254f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
