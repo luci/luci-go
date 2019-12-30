@@ -384,12 +384,12 @@
   "css": [
     "type.less",
     "grid.less",
+    "tables.less",
     "forms.less",
     "buttons.less",
     "breadcrumbs.less",
     "alerts.less",
     "modals.less"
   ],
-  "js": [],
-  "customizerUrl": "https://getbootstrap.com/docs/3.3/customize/?id=37757440cb374361f2cde3c444058053"
+  "js": []
 }
