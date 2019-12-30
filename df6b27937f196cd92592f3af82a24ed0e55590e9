@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "459a2acd_4d4e6d47",
+        "filename": "common/testing/assertions/grpc.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T22:57:20Z",
+      "side": 1,
+      "message": "This is Yoda-speak. How about ShouldResembleStatus? Or at least ShouldBeLikeStatus?",
+      "range": {
+        "startLine": 199,
+        "startChar": 5,
+        "endLine": 199,
+        "endChar": 23
+      },
+      "revId": "df6b27937f196cd92592f3af82a24ed0e55590e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c55d5b92_d2d18032",
+        "filename": "resultdb/internal/appstatus/helpers.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T22:57:20Z",
+      "side": 1,
+      "message": "is shared",
+      "range": {
+        "startLine": 25,
+        "startChar": 20,
+        "endLine": 25,
+        "endChar": 27
+      },
+      "revId": "df6b27937f196cd92592f3af82a24ed0e55590e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7960a901_7dad04dc",
+        "filename": "resultdb/internal/appstatus/helpers.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T22:57:20Z",
+      "side": 1,
+      "message": "Let\u0027s panic here? This can happen only if the serialization fails. Which should not be happening... I\u0027m afraid BadRequest(...) returning not codes.InvalidArgument error may be hard to understand or account for. Presumably such errors would be converted to codes.Internal later, but panics would do the same, and more \"reliably\".",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 3
+      },
+      "revId": "df6b27937f196cd92592f3af82a24ed0e55590e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6e9863d_e3f513d5",
+        "filename": "resultdb/internal/appstatus/status.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T22:57:20Z",
+      "side": 1,
+      "message": "is this used?",
+      "range": {
+        "startLine": 26,
+        "startChar": 4,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "df6b27937f196cd92592f3af82a24ed0e55590e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9d33ff_0c7dec1a",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2019-12-30T22:57:20Z",
+      "side": 1,
+      "message": "nit: simplify (also I think it should be FromContextError(unwrapped)?)\n\nswitch unwrapped :\u003d ...; unwrapped {\n  case context.DeadlineExceeded, context.Canceled:\n    return status.FromContextError(unwrapped)\n  default:\n    ...\n}\n\n(this can also be a simple \u0027if/else\u0027).",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 97,
+        "endChar": 37
+      },
+      "revId": "df6b27937f196cd92592f3af82a24ed0e55590e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
