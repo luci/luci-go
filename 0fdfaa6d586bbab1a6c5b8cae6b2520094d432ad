@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13449d3b_567f9d00",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T23:14:30Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6099524b_fc8445bb",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T23:14:30Z",
+      "side": 1,
+      "message": "intentionally not using context for speed because who cares about mocking this?",
+      "range": {
+        "startLine": 60,
+        "startChar": 10,
+        "endLine": 60,
+        "endChar": 20
+      },
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "268a4fda_665d8291",
+        "filename": "common/tsmon/monitor/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2019-12-30T23:14:30Z",
+      "side": 1,
+      "message": "\"some of\"\n\nfor some cells may have been sent anyhow.",
+      "range": {
+        "startLine": 65,
+        "startChar": 45,
+        "endLine": 65,
+        "endChar": 46
+      },
+      "revId": "0fdfaa6d586bbab1a6c5b8cae6b2520094d432ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
