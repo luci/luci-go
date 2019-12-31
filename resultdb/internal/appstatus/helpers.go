@@ -32,12 +32,17 @@ func BadRequest(err error, details ...*errdetails.BadRequest) error {
 			det[i] = d
 		}
 
-		var detErr error
-		s, detErr = s.WithDetails(det...)
-		if detErr != nil {
-			panic(detErr)
-		}
+		s = MustWithDetails(s, det...)
 	}
 
 	return Attach(err, s)
+}
+
+// MustWithDetails adds details to a status and asserts it is successful.
+func MustWithDetails(s *status.Status, details ...proto.Message) *status.Status {
+	s, err := s.WithDetails(details...)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
