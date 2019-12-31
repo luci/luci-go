@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ca54a88f_b44d979c",
+        "filename": "resultdb/cmd/recorder/chromium/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T01:31:08Z",
+      "side": 1,
+      "message": "i am not sure what exactly you were proposing.\n\nanyway, the API has changed. PTAL. Now using grpc-native API, i.e. the status package.",
+      "parentUuid": "4822cf8b_efa8e3a6",
+      "range": {
+        "startLine": 80,
+        "startChar": 51,
+        "endLine": 80,
+        "endChar": 86
+      },
+      "revId": "52a5d9dd64ad7031dca28c9806ec90d5244ee08a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b36153c_3b604dfd",
         "filename": "resultdb/proto/rpc/v1/recorder.proto",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "52a5d9dd64ad7031dca28c9806ec90d5244ee08a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e6743ee_0ed06c11",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T01:31:08Z",
+      "side": 1,
+      "message": "this was intentional. This comment is not about INCOMPLETE_SWARMING_TASK, but about the nonexistent UNSPECIFIED member. moved it up",
+      "parentUuid": "4b36153c_3b604dfd",
+      "revId": "52a5d9dd64ad7031dca28c9806ec90d5244ee08a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
