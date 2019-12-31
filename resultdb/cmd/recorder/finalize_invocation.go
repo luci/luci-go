@@ -18,11 +18,12 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -39,13 +40,13 @@ func validateFinalizeInvocationRequest(req *pb.FinalizeInvocationRequest) error 
 }
 
 func getUnmatchedInterruptedFlagError(invID span.InvocationID) error {
-	return errors.Reason("%q has already been finalized with different interrupted flag", invID.Name()).Tag(grpcutil.FailedPreconditionTag).Err()
+	return appstatus.Errorf(codes.FailedPrecondition, "%s has already been finalized with different interrupted flag", invID.Name())
 }
 
 // FinalizeInvocation implements pb.RecorderServer.
 func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.FinalizeInvocationRequest) (*pb.Invocation, error) {
 	if err := validateFinalizeInvocationRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	userToken, err := extractUserUpdateToken(ctx)
