@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "27498898_e8da0644",
+        "filename": "server/limiter/grpcinterceptor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T03:21:58Z",
+      "side": 1,
+      "message": "nit: grpc.go",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "49b0ed05_1990ed87",
         "filename": "server/limiter/grpcinterceptor.go",
         "patchSetId": 1
@@ -22,6 +39,86 @@
       "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "572dcdd1_72101e03",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T03:21:58Z",
+      "side": 1,
+      "message": "requests, plural?",
+      "range": {
+        "startLine": 70,
+        "startChar": 18,
+        "endLine": 70,
+        "endChar": 25
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bccc9c9d_93057147",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T03:21:58Z",
+      "side": 1,
+      "message": "should be",
+      "range": {
+        "startLine": 108,
+        "startChar": 16,
+        "endLine": 108,
+        "endChar": 18
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c567e5c0_b72d225e",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T03:21:58Z",
+      "side": 1,
+      "message": "it is a bit concerning that this not very high perf code\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/3e7a396da3f43b9a89eafdf8543498d6ec83b4b6:common/tsmon/store/inmemory.go;l\u003d204;drc\u003de803803befeeeac823fe0a5efeb44de3d37b097a\n\nwill run on each request, in a blocking manner, 4 times\n\ncan we just offload this to a background goroutine?",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fab7a4c9_54e85906",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T03:21:58Z",
+      "side": 1,
+      "message": "are we going to reuse this flag for non-RPC limiter in the future?",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
