@@ -135,6 +135,8 @@ func UpdateServerMetrics(ctx context.Context, name string, code int,
 	userAgent string) {
 	isRobot := (strings.Contains(userAgent, "GoogleBot") ||
 		strings.Contains(userAgent, "GoogleSecurityScanner") ||
+		strings.HasPrefix(userAgent, "kube-probe/") ||
+		strings.HasPrefix(userAgent, "GoogleHC/") ||
 		userAgent == "B3M/prober")
 	serverDurationsMetric.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), code, name, isRobot)
 	serverResponseStatusMetric.Add(ctx, 1, code, name, isRobot)
