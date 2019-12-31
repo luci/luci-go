@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6ae84414_42b44eff",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T02:39:53Z",
+      "side": 1,
+      "message": "can we make it simpler: \"PageSize \u003d\u003d 0 implies streams\"\n\nalso there is no reason to ignore page token",
+      "range": {
+        "startLine": 96,
+        "startChar": 1,
+        "endLine": 96,
+        "endChar": 10
+      },
+      "revId": "34ce0a4f188846abb67d5d39cc9bd18f52b18ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbaf74c2_f4ab8708",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T02:39:53Z",
+      "side": 1,
+      "message": "why do we make the caller call fromSpanner? \n\nplease accept\n\n  func(tr *pb.TestResult) error",
+      "range": {
+        "startLine": 99,
+        "startChar": 103,
+        "endLine": 99,
+        "endChar": 106
+      },
+      "revId": "34ce0a4f188846abb67d5d39cc9bd18f52b18ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c8a64f3_647ed442",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T02:39:53Z",
+      "side": 1,
+      "message": "this name is too abstract for a global function, but see above",
+      "range": {
+        "startLine": 183,
+        "startChar": 5,
+        "endLine": 183,
+        "endChar": 16
+      },
+      "revId": "34ce0a4f188846abb67d5d39cc9bd18f52b18ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
