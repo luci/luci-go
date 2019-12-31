@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a173b948_4ce4ed26",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2019-12-31T02:41:01Z",
+      "side": 1,
+      "message": "we should check that streaming is enabled",
+      "revId": "23fd7ab400827ce1600b1e26fdba1493a176c521",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
