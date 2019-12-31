@@ -26,7 +26,9 @@ import (
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/stringset"
@@ -76,7 +78,13 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		// Tasks not yet completed should not be requested to be processed by the recorder.
-		return nil, nil, invalidTaskf("unexpectedly incomplete state %q", task.State)
+		s := status.Newf(codes.FailedPrecondition, "task %s is not complete yet", req.SwarmingTask.Id)
+		s = appstatus.MustWithDetails(s, &errdetails.PreconditionFailure{
+			Violations: []*errdetails.PreconditionFailure_Violation{{
+				Type: pb.DeriveInvocationPreconditionFailureType_INCOMPLETE_SWARMING_TASK.String(),
+			}},
+		})
+		return nil, nil, appstatus.ToError(s)
 	}
 
 	// Populate fields we will need in the base invocation.

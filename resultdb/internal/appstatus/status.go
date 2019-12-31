@@ -23,11 +23,21 @@ import (
 
 var appStatusTagKey = errors.NewTagKey("application-specific response status")
 
+// ToError converts an application-specific status to an error.
+func ToError(s *status.Status) error {
+	return Attach(s.Err(), s)
+}
+
+// Error returns an error with an application-specific status.
+// The message will be shared with the RPC client as is.
+func Error(code codes.Code, msg string) error {
+	return ToError(status.New(code, msg))
+}
+
 // Errorf returns an error with an application-specific status.
 // The message will be shared with the RPC client as is.
 func Errorf(code codes.Code, format string, args ...interface{}) error {
-	s := status.Newf(code, format, args...)
-	return Attach(s.Err(), s)
+	return ToError(status.Newf(code, format, args...))
 }
 
 // Attach attaches an application-specific status to the error.
