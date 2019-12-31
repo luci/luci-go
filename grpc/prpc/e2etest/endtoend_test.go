@@ -18,6 +18,11 @@ import (
 	"context"
 	"testing"
 
+	proto "github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/testing/prpctest"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,12 +55,25 @@ func TestEndToEnd(t *testing.T) {
 		}
 		client := NewHelloPRPCClient(prpcClient)
 
-		Convey(`Can round-trip a hello message.`, func() {
+		Convey(`Can round-trip a hello message`, func() {
 			svc.R = &HelloReply{Message: "sup"}
 
 			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldBeRPCOK)
 			So(resp, ShouldResembleProto, svc.R)
+		})
+
+		Convey(`Can round-trip status details`, func() {
+			detail := &errdetails.DebugInfo{Detail: "x"}
+
+			s := status.New(codes.Internal, "internal")
+			s, err := s.WithDetails(detail)
+			So(err, ShouldBeNil)
+			svc.err = s.Err()
+
+			_, err = client.Greet(c, &HelloRequest{Name: "round-trip"})
+			details := status.Convert(err).Details()
+			So(details, ShouldResembleProto, []proto.Message{detail})
 		})
 	})
 }
