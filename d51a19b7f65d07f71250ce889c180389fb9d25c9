@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "af0679d0_01339cc7",
+        "filename": "server/limiter/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "We\u0027ll see. I actually think we\u0027ll never touch it again :-/ Maybe until some next big outage.",
+      "parentUuid": "ebfe37eb_8e363ab8",
+      "range": {
+        "startLine": 18,
+        "startChar": 23,
+        "endLine": 19,
+        "endChar": 42
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27498898_e8da0644",
         "filename": "server/limiter/grpcinterceptor.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8ed4871_91bceeda",
+        "filename": "server/limiter/grpcinterceptor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "27498898_e8da0644",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +130,30 @@
     },
     {
       "key": {
+        "uuid": "29551140_53b78f84",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "572dcdd1_72101e03",
+      "range": {
+        "startLine": 70,
+        "startChar": 18,
+        "endLine": 70,
+        "endChar": 25
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bccc9c9d_93057147",
         "filename": "server/limiter/limiter.go",
         "patchSetId": 1
@@ -111,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "dcf753c0_d6c24440",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bccc9c9d_93057147",
+      "range": {
+        "startLine": 108,
+        "startChar": 16,
+        "endLine": 108,
+        "endChar": 18
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c567e5c0_b72d225e",
         "filename": "server/limiter/limiter.go",
         "patchSetId": 1
@@ -128,6 +218,24 @@
     },
     {
       "key": {
+        "uuid": "ceba7666_2fb5d760",
+        "filename": "server/limiter/limiter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "Fine, but it complicates the API. The correct solution is to fix tsmon to suck less. There\u0027s already many metrics updated per each request (6 to be precise).\n\nI set frequency of updates pretty high since I want this metric to be observable with lowish latency via /admin/portal/tsmon/metrics (I think it would be useful when debugging production issues).",
+      "parentUuid": "c567e5c0_b72d225e",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fab7a4c9_54e85906",
         "filename": "server/server.go",
         "patchSetId": 1
@@ -142,6 +250,24 @@
       "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e82b7f3_f53122b6",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T21:55:13Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "fab7a4c9_54e85906",
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
