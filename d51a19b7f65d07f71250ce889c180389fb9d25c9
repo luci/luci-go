@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "ebfe37eb_8e363ab8",
+        "filename": "server/limiter/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-02T20:14:42Z",
+      "side": 1,
+      "message": "I\u0027m afraid this will be quickly obsoleted. I don\u0027t have much better suggestions.",
+      "range": {
+        "startLine": 18,
+        "startChar": 23,
+        "endLine": 19,
+        "endChar": 42
+      },
+      "revId": "d51a19b7f65d07f71250ce889c180389fb9d25c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "27498898_e8da0644",
         "filename": "server/limiter/grpcinterceptor.go",
         "patchSetId": 1
