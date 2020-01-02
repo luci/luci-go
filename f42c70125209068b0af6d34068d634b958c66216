@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6d9969f_162ef830",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_group.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-02T23:48:59Z",
+      "side": 1,
+      "message": "i think you can extract it from the key already. Vadim, WDYT?\n\nAlso, ideally add new \u0027id\u0027 field to the proto\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/cq/api/config/v2/cq.proto?type\u003dcs\u0026q\u003dcq.proto+ConfigGroup\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d88\ns.t. you can actually test your change.",
+      "range": {
+        "startLine": 99,
+        "startChar": 6,
+        "endLine": 99,
+        "endChar": 17
+      },
+      "revId": "f42c70125209068b0af6d34068d634b958c66216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
