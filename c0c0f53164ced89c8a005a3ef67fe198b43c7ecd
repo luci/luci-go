@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7fdb05e_56f60606",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T20:59:09Z",
+      "side": 1,
+      "message": "This is at least second time this pattern appears. Consider adding \"appstatus.Code(err)\" which is a shortcut.",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 14
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c060208b_28d65cf8",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T20:59:09Z",
+      "side": 1,
+      "message": "This function may return both appstatus and non-appstatus errors. Is that OK?",
+      "range": {
+        "startLine": 164,
+        "startChar": 16,
+        "endLine": 165,
+        "endChar": 69
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d205fe2e_536cf698",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T20:59:09Z",
+      "side": 1,
+      "message": "again it seems wrong when a function returns both appstatus and non-appstatus errors",
+      "range": {
+        "startLine": 167,
+        "startChar": 9,
+        "endLine": 167,
+        "endChar": 68
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "019e0625_8fa31578",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T20:59:09Z",
+      "side": 1,
+      "message": "unrelated nit: this should be https://golang.org/pkg/crypto/subtle/#ConstantTimeCompare",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 38
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98a535d5_c6e41058",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-02T20:59:09Z",
+      "side": 1,
+      "message": "should this be also some kind of appstatus code?",
+      "range": {
+        "startLine": 51,
+        "startChar": 9,
+        "endLine": 51,
+        "endChar": 68
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
