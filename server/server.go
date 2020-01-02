@@ -107,6 +107,7 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/dump"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/internal"
+	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/redisconn"
@@ -166,25 +167,34 @@ func Main(opts *Options, init func(srv *Server) error) {
 
 // Options are exposed as command line flags.
 type Options struct {
-	Prod             bool               // must be set when running in production
-	HTTPAddr         string             // address to bind the main listening socket to
-	AdminAddr        string             // address to bind the admin socket to
-	RootSecretPath   string             // path to a JSON file with the root secret key
-	SettingsPath     string             // path to a JSON file with app settings
-	ClientAuth       clientauth.Options // base settings for client auth options
-	TokenCacheDir    string             // where to cache auth tokens (optional)
-	AuthDBPath       string             // if set, load AuthDB from a file
-	AuthServiceHost  string             // hostname of an Auth Service to use
-	AuthDBDump       string             // Google Storage path to fetch AuthDB dumps from
-	AuthDBSigner     string             // service account that signs AuthDB dumps
-	RedisAddr        string             // Redis server to connect to as "host:port" (optional)
-	RedisDB          int                // index of a logical Redis DB to use by default (optional)
-	CloudProject     string             // name of hosting Google Cloud Project
-	TraceSampling    string             // what portion of traces to upload to StackDriver
-	TsMonAccount     string             // service account to flush metrics as
-	TsMonServiceName string             // service name of tsmon target
-	TsMonJobName     string             // job name of tsmon target
-	ContainerImageID string             // ID of the container image with this binary, for logs (optional)
+	Prod      bool   // must be set when running in production
+	HTTPAddr  string // address to bind the main listening socket to
+	AdminAddr string // address to bind the admin socket to
+
+	RootSecretPath string // path to a JSON file with the root secret key
+	SettingsPath   string // path to a JSON file with app settings
+
+	ClientAuth      clientauth.Options // base settings for client auth options
+	TokenCacheDir   string             // where to cache auth tokens (optional)
+	AuthDBPath      string             // if set, load AuthDB from a file
+	AuthServiceHost string             // hostname of an Auth Service to use
+	AuthDBDump      string             // Google Storage path to fetch AuthDB dumps from
+	AuthDBSigner    string             // service account that signs AuthDB dumps
+
+	RedisAddr string // Redis server to connect to as "host:port" (optional)
+	RedisDB   int    // index of a logical Redis DB to use by default (optional)
+
+	CloudProject  string // name of hosting Google Cloud Project for Datastore and StackDriver
+	TraceSampling string // what portion of traces to upload to StackDriver
+
+	TsMonAccount     string // service account to flush metrics as
+	TsMonServiceName string // service name of tsmon target
+	TsMonJobName     string // job name of tsmon target
+
+	ContainerImageID string // ID of the container image with this binary, for logs (optional)
+
+	LimiterMaxConcurrentRPCs int64 // limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)
+	LimiterAdvisoryMode      bool  // if set, don't enforce LimiterMaxConcurrentRPCs, but still report violations
 
 	testCtx       context.Context          // base context for tests
 	testSeed      int64                    // used to seed rng in tests
@@ -201,6 +211,9 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	if o.AdminAddr == "" {
 		o.AdminAddr = "127.0.0.1:8900"
+	}
+	if o.LimiterMaxConcurrentRPCs == 0 {
+		o.LimiterMaxConcurrentRPCs = 100000
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
@@ -297,6 +310,18 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
 	)
+	f.Int64Var(
+		&o.LimiterMaxConcurrentRPCs,
+		"limiter-max-concurrent-rpcs",
+		o.LimiterMaxConcurrentRPCs,
+		"Limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)",
+	)
+	f.BoolVar(
+		&o.LimiterAdvisoryMode,
+		"limiter-advisory-mode",
+		o.LimiterAdvisoryMode,
+		"If set, don't enforce -limiter-max-concurrent-rpcs, but still report violations",
+	)
 }
 
 // imageVersion extracts image tag or digest from ContainerImageID.
@@ -359,6 +384,8 @@ type Server struct {
 	startTime   time.Time    // for calculating uptime for /healthz
 	hostname    string       // obtained from os.Hostname in New
 	lastReqTime atomic.Value // time.Time when the last request finished
+
+	rpcLimiter *limiter.Limiter // limits in-flight RPCs in the main port
 
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
@@ -494,6 +521,9 @@ func New(opts Options) (srv *Server, err error) {
 	if err := srv.initCloudContext(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize cloud context").Err()
 	}
+	if err := srv.initRPCLimiter(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize RPC limiter").Err()
+	}
 	if err := srv.initMainPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
 	}
@@ -610,11 +640,13 @@ func (s *Server) ListenAndServe() error {
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
 
-	// Put monitoring interceptor on top of whatever interceptors were installed
+	// Put our base interceptors in front of whatever interceptors were installed
 	// by the user of Server via public s.PRPC.UnaryServerInterceptor.
 	s.PRPC.UnaryServerInterceptor = grpcmon.NewUnaryServerInterceptor(
-		grpcutil.NewUnaryServerPanicCatcher(
-			s.PRPC.UnaryServerInterceptor,
+		limiter.NewUnaryServerInterceptor(s.rpcLimiter,
+			grpcutil.NewUnaryServerPanicCatcher(
+				s.PRPC.UnaryServerInterceptor,
+			),
 		),
 	)
 
@@ -1513,6 +1545,37 @@ func (s *Server) initCloudContext() error {
 		ProjectID: s.Options.CloudProject,
 		DS:        s.dsClient,
 	}).Use(s.Context)
+	return nil
+}
+
+// initRPCLimiter initializes a limiter on number of concurrent RPCs.
+func (s *Server) initRPCLimiter() error {
+	// Initialize the limiter now to detect any configuration errors. It will be
+	// installed as gRPC interceptor later in ListenAndServe (with the rest of
+	// the interceptors).
+	var err error
+	s.rpcLimiter, err = limiter.New(limiter.Options{
+		Name:                  "rpc",
+		AdvisoryMode:          s.Options.LimiterAdvisoryMode,
+		MaxConcurrentRequests: s.Options.LimiterMaxConcurrentRPCs,
+	})
+	if err != nil {
+		return err
+	}
+
+	// We want limiter's metrics to be reported before every flush (so the flushed
+	// values are as fresh as possible) and also once per second (to make the
+	// limiter state observable through /admin/portal/tsmon/metrics debug UI).
+	tsmoncommon.RegisterCallbackIn(s.Context, s.rpcLimiter.ReportMetrics)
+	s.RunInBackground("luci.limiter.rpc", func(c context.Context) {
+		for {
+			s.rpcLimiter.ReportMetrics(c)
+			if r := <-clock.After(c, time.Second); r.Err != nil {
+				return // the context is canceled
+			}
+		}
+	})
+
 	return nil
 }
 
