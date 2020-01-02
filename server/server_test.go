@@ -474,6 +474,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.SettingsPath = tmpSettings.Name()
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
 	opts.RedisAddr = "localhost:99999999" // doesn't matter, we won't actually dial it
+	opts.LimiterMaxConcurrentRPCs = 100000
 
 	opts.testCtx = ctx
 	opts.testSeed = 1
