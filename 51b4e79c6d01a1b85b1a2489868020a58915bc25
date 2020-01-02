@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13ef9995_ed9b8304",
+        "filename": "examples/k8s/helloworld/apipb/gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-02T22:26:22Z",
+      "side": 1,
+      "message": "obligatory: happy new year 😊",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "51b4e79c6d01a1b85b1a2489868020a58915bc25",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
