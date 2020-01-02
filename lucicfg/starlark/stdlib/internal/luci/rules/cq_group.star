@@ -41,7 +41,7 @@ def _cq_group(
 
   Args:
     name: a name of this CQ group, to reference it in other rules. Doesn't show
-        up anywhere in configs or UI. Required.
+        up anywhere in UI. Required, must be unique within a project.
     watch: either a single cq.refset(...) or a list of cq.refset(...) (one per
         repo), defining what set of refs the CQ should monitor for pending CLs.
         Required.
@@ -96,6 +96,7 @@ def _cq_group(
     cqimpl.validate_refset('watch', w)
 
   graph.add_node(key, props = {
+      'id': name,
       'watch': watch,
       'acls': aclimpl.validate_acls(acls, allowed_roles=[acl.CQ_COMMITTER, acl.CQ_DRY_RUNNER]),
       'allow_submit_with_open_deps': validate.bool(
