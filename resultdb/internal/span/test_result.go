@@ -95,12 +95,10 @@ type TestResultQuery struct {
 	PageToken     string
 }
 
-// QueryTestResults reads test results matching the predicate.
-// Returned test results from the same invocation are contiguous.
-func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
+func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(invID InvocationID, tr *pb.TestResult) error) (err error) {
 	switch {
-	case q.PageSize <= 0:
-		panic("PageSize <= 0")
+	case q.PageSize < 0:
+		panic("PageSize < 0")
 	}
 
 	from := "TestResults tr"
@@ -115,6 +113,11 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			JOIN@{FORCE_JOIN_ORDER=TRUE} TestResults tr
 				ON vur.TestId = tr.TestId AND vur.VariantHash = tr.VariantHash
 		`
+	}
+
+	limit := ""
+	if q.PageSize > 0 {
+		limit = `LIMIT @limit`
 	}
 
 	st := spanner.NewStatement(fmt.Sprintf(`
@@ -148,8 +151,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			)
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
-		LIMIT @limit
-	`, from))
+		%s
+	`, from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 
@@ -169,40 +172,64 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
-		return nil, "", grpcutil.Unimplemented
+		return grpcutil.Unimplemented
 	}
 
-	trs = make([]*pb.TestResult, 0, q.PageSize)
 	var summaryHTML Compressed
 	var b Buffer
 	err = query(ctx, txn, st, func(row *spanner.Row) error {
-		var invID InvocationID
-		var maybeUnexpected spanner.NullBool
-		var micros int64
-		tr := &pb.TestResult{}
-		err = b.FromSpanner(row,
-			&invID,
-			&tr.TestId,
-			&tr.ResultId,
-			&tr.Variant,
-			&maybeUnexpected,
-			&tr.Status,
-			&summaryHTML,
-			&tr.StartTime,
-			&micros,
-			&tr.Tags,
-			&tr.InputArtifacts,
-			&tr.OutputArtifacts,
-		)
+		invID, tr, err := fromSpanner(row, b, summaryHTML)
 		if err != nil {
 			return err
 		}
 
-		tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
-		tr.SummaryHtml = string(summaryHTML)
-		populateExpectedField(tr, maybeUnexpected)
-		populateDurationField(tr, micros)
+		if err = f(invID, tr); err != nil {
+			return err
+		}
+		return nil
+	})
+	return
+}
 
+func fromSpanner(row *spanner.Row, b Buffer, summaryHTML Compressed) (invID InvocationID, tr *pb.TestResult, err error) {
+	var maybeUnexpected spanner.NullBool
+	var micros int64
+	tr = &pb.TestResult{}
+	err = b.FromSpanner(row,
+		&invID,
+		&tr.TestId,
+		&tr.ResultId,
+		&tr.Variant,
+		&maybeUnexpected,
+		&tr.Status,
+		&summaryHTML,
+		&tr.StartTime,
+		&micros,
+		&tr.Tags,
+		&tr.InputArtifacts,
+		&tr.OutputArtifacts,
+	)
+	if err != nil {
+		return
+	}
+
+	tr.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+	tr.SummaryHtml = string(summaryHTML)
+	populateExpectedField(tr, maybeUnexpected)
+	populateDurationField(tr, micros)
+	return
+}
+
+// QueryTestResults reads test results matching the predicate.
+// Returned test results from the same invocation are contiguous.
+func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
+	switch {
+	case q.PageSize <= 0:
+		panic("PageSize <= 0")
+	}
+
+	trs = make([]*pb.TestResult, 0, q.PageSize)
+	err = queryTestResults(ctx, txn, q, func(invID InvocationID, tr *pb.TestResult) error {
 		trs = append(trs, tr)
 		return nil
 	})
