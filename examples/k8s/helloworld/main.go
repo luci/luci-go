@@ -15,30 +15,37 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"go.opencensus.io/trace"
-
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gomodule/redigo/redis"
+
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 )
 
 func main() {
 	server.Main(nil, func(srv *server.Server) error {
-		// Logging example.
+		// pRPC example.
+		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
+
+		// Logging and tracing example.
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			logging.Debugf(c.Context, "Hello debug world")
 
 			ctx, span := trace.StartSpan(c.Context, "Testing")
 			logging.Infof(ctx, "Hello info world")
 			time.Sleep(100 * time.Millisecond)
-			span.End()
+			span.End(nil)
 
 			logging.Warningf(c.Context, "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
@@ -71,4 +78,12 @@ func main() {
 
 		return nil
 	})
+}
+
+type greeterServer struct{}
+
+func (*greeterServer) SayHi(ctx context.Context, _ *empty.Empty) (*empty.Empty, error) {
+	logging.Infof(ctx, "Hi")
+	time.Sleep(100 * time.Millisecond)
+	return &empty.Empty{}, nil
 }
