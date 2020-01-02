@@ -248,6 +248,15 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
+func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(invID InvocationID, tr *pb.TestResult) error) (err error) {
+	switch {
+	case q.PageSize > 0:
+		panic("PageSize is specified when QueryTestResultsStreaming")
+	}
+	err = queryTestResults(ctx, txn, q, f)
+	return nil
+}
+
 func populateDurationField(tr *pb.TestResult, micros int64) {
 	tr.Duration = FromMicros(micros)
 }
