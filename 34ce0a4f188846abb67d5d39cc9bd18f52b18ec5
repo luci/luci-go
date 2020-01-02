@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "1e192933_0550e4d5",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-02T08:12:50Z",
+      "side": 1,
+      "message": "nvm. Accepting func(tr *pb.TestResult) error is enough",
+      "parentUuid": "a71f60aa_0f388b55",
+      "range": {
+        "startLine": 99,
+        "startChar": 103,
+        "endLine": 99,
+        "endChar": 106
+      },
+      "revId": "34ce0a4f188846abb67d5d39cc9bd18f52b18ec5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c8a64f3_647ed442",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 6
