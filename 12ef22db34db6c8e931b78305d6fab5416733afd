@@ -22,6 +22,283 @@
       "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4cf231e_6842a2c7",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "the fact that we have to do this math seems to be a signal that Uploader is in the way. I never thought that Uploader is a good abstraction. The most valuable part of the bq package is message-\u003ebigquery.Row conversion.\n\ni think it would be simpler if we simply didn\u0027t use the Uploader. Instead use bigquery.Uploader.Put and split by 500 rows-per-batch. Then you don\u0027t have to think about this.\n\nAlso it would be more concurrent. Right now we fetch 8k rows first, and only then start uploading. If we batch and upload ourselves, then as soon as we get first 500 rows, we start uploading.",
+      "parentUuid": "af94452e_eca8249b",
+      "range": {
+        "startLine": 38,
+        "startChar": 26,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b16c3993_33d22a67",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "it\u0027s a bit weird that the function starts with \"is\" but doesn\u0027t return bool.\n\noptions:\n* rename to assertInvocationIsFinal\n* refactor to return bool\n* reuse https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/recorder/invocation.go;l\u003d182?q\u003dreadInvocationState",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 26
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab24ac29_5dc21f14",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "invID.Name()",
+      "range": {
+        "startLine": 92,
+        "startChar": 50,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ba8f4b8_c6ac5c92",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "nit: why is \"buff\"? why not just \"resultC\"?",
+      "range": {
+        "startLine": 111,
+        "startChar": 75,
+        "endLine": 111,
+        "endChar": 86
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62a890c8_f3717194",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "nit: maxBatchSize",
+      "range": {
+        "startLine": 111,
+        "startChar": 55,
+        "endLine": 111,
+        "endChar": 69
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04278a56_0986e193",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "instead of queryDone, why not just close buffResults channel? then the loop is simply\n\n  for row :\u003d range buffResults {\n\nthen the inner loop would get simpler too",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b05a7094_6bdfdde6",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "this is a race. it is possible that queryDone we did not receive an item in L116 yet, but the code in another goroutine already reached a point that it will never send an item to buffResults\n\nditching queryDone would help because we would have *one* sync point",
+      "range": {
+        "startLine": 122,
+        "startChar": 22,
+        "endLine": 122,
+        "endChar": 35
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "219c8c1c_0dc2f5d4",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "suppose an error happened and continued to the next rows. How these errors are going to be handled later? are we going to reinsert everything again? if so, what\u0027s the point of continuing?",
+      "range": {
+        "startLine": 137,
+        "startChar": 3,
+        "endLine": 137,
+        "endChar": 11
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "998dd07f_e21e86eb",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "why not just return the error?",
+      "range": {
+        "startLine": 142,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 14
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "388b755a_9cfe09ca",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "in",
+      "range": {
+        "startLine": 148,
+        "startChar": 52,
+        "endLine": 148,
+        "endChar": 54
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3ab1a17_c36e88e0",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "errC",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 5
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e48ff49c_93b95688",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:31:50Z",
+      "side": 1,
+      "message": "rationale?\n\nthis means we will lose data without knowing about this",
+      "range": {
+        "startLine": 217,
+        "startChar": 1,
+        "endLine": 218,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
