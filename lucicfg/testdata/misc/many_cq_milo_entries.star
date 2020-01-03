@@ -8,7 +8,7 @@ luci.bucket(name = 'bucket')
 luci.recipe(name = 'noop', cipd_package = 'noop')
 
 luci.cq_group(
-    name = 'cq group',
+    name = 'cq-group',
     watch = cq.refset('https://example.googlesource.com/repo'),
     acls = [
         acl.entry(acl.CQ_COMMITTER, groups=['c']),
@@ -29,7 +29,7 @@ def one(name):
   )
   luci.cq_tryjob_verifier(
       builder = name,
-      cq_group = 'cq group',
+      cq_group = 'cq-group',
   )
   luci.list_view_entry(
       builder = name,
@@ -59,6 +59,7 @@ one('builder-a')
 #
 # === commit-queue.cfg
 # config_groups: <
+#   name: "cq-group"
 #   gerrit: <
 #     url: "https://example-review.googlesource.com"
 #     projects: <
