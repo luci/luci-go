@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3113dc4_995ec259",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-03T18:15:43Z",
+      "side": 1,
+      "message": "It should also be machine-friendly, so a restricted alphabet and length should apply.\nHow about adding this:\n\n// CQ uses this name messages posted to users and in monitoring data such as BigQuery events and timeseries metrics).\n\nalso please add validation. I think eventually CQ should require this to be specified.",
+      "revId": "88a9d6c8137773abe337558b328bcd9d27814dca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
