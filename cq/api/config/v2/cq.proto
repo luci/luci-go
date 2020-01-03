@@ -87,7 +87,9 @@ enum Toggle {
 message ConfigGroup {
   reserved 3; // allow_cq_depend.
 
-  // The human-readable name (unique within this project) of this config group.
+  // The human- and machine-readable name (unique within this project) of this
+  // config group. This is used in messages posted to users and in monitoring
+  // data.
   string name = 6;
 
   // Enumerates repositories on a Gerrit instance for which CQ should work.
