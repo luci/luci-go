@@ -48,9 +48,9 @@
 //
 // Response header "X-Prpc-Status-Details-Bin" contains elements of
 // google.rpc.Status.details field, one value per element, in the same order.
-// The header value is a base64 string of the encoded google.protobuf.Any,
-// where the message encoding is the same as the response message encoding,
-// i.e. depends on Accept request header.
+// The header value is a standard base64 string of the encoded
+// google.protobuf.Any, where the message encoding is the same as the response
+// message encoding, i.e. depends on Accept request header.
 //
 // ## v1.1
 //
@@ -105,7 +105,7 @@
 //  - Any other headers MUST be added to metadata.MD in the context that is
 //    passed to the service method implementation.
 //    - If a header name has "-Bin" suffix, the server must treat it as
-//      base64-encoded and trim the suffix.
+//      standard-base64-encoded and trim the suffix.
 //
 // Response headers:
 //  - "X-Prpc-Grpc-Code": specifies the gRPC code.
