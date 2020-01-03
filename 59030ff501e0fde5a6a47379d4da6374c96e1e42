@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aea10903_22b13918",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-03T19:28:47Z",
+      "side": 1,
+      "message": "Please add // TODO(crbug/1035470): require the name to be specified and ensure uniqueness.",
+      "revId": "59030ff501e0fde5a6a47379d4da6374c96e1e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
