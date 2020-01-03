@@ -22,6 +22,30 @@
       "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d95bb02_49adb6d1",
+        "filename": "resultdb/internal/appstatus/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T22:50:09Z",
+      "side": 1,
+      "message": "these situations happen today and that\u0027s ok: spanner\u0027s internal s.Err() error (spanner row not found) with attached application-specific status (invocation X not found).\n\nnote that the application should not look at the wrapper status error when deciding status of the RPC. I wonder if more package comments would help?",
+      "parentUuid": "0c014ef2_983432cb",
+      "range": {
+        "startLine": 28,
+        "startChar": 8,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
