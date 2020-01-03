@@ -96,8 +96,7 @@ type TestResultQuery struct {
 }
 
 func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) (err error) {
-	switch {
-	case q.PageSize < 0:
+	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
 
@@ -212,8 +211,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 // QueryTestResults reads test results matching the predicate.
 // Returned test results from the same invocation are contiguous.
 func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
-	switch {
-	case q.PageSize <= 0:
+	if q.PageSize <= 0 {
 		panic("PageSize <= 0")
 	}
 
@@ -235,6 +233,13 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		nextPageToken = pagination.Token(string(invID), testID, resultID)
 	}
 	return
+}
+
+func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) error {
+	if q.PageSize > 0 {
+		panic("PageSize is specified when QueryTestResultsStreaming")
+	}
+	return queryTestResults(ctx, txn, q, f)
 }
 
 func populateDurationField(tr *pb.TestResult, micros int64) {
