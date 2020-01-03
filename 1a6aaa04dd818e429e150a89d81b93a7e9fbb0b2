@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4a3bf991_6d51ff04",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-03T08:19:56Z",
+      "side": 1,
+      "message": "I\u0027m having a concern on how big should this number be?  If we choose a number today based on one invocation should have no more than N test results, would someday the assumption be invalid?",
+      "parentUuid": "aa2c8c0f_b7bdd56f",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "545268f1_bf1413f5",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63b62551_bdd222ed",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-03T08:19:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "545268f1_bf1413f5",
+      "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
