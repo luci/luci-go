@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa2c8c0f_b7bdd56f",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:14:59Z",
+      "side": 1,
+      "message": "stepping back, it seems it would be simpler if the caller simply sets some very large number, like 100000?\nthen we wouldn\u0027t have this conditional",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "545268f1_bf1413f5",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:14:59Z",
+      "side": 1,
+      "message": "do we still have to extract this func? it made some sense in the previous patchset, but not this one. Thus func is not generic because nobody but queryTestResults can use it, because it assumes a very specific list of fields, in a specific order.",
+      "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
