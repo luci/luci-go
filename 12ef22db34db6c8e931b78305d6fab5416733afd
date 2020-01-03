@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af94452e_eca8249b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-03T18:56:17Z",
+      "side": 1,
+      "message": "I assume uploading is the time consuming operation (compare to streaming query test results), so I chose a number to parallel the uploading the most (according to https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/common/bq/eventupload.go): \n8000 \u003d 500 (default batch size) * 16 (workPool size)\n\nWDYT?",
+      "range": {
+        "startLine": 38,
+        "startChar": 26,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
