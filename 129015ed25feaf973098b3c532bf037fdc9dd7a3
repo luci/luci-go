@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc5328a5_4c14d7c3",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:11:01Z",
+      "side": 1,
+      "message": "creates\n\nstepping back, this whole doc string could be just \n\n  // ensureBQTable creates a BQ table if it doesn\u0027t exist.\n\nit implies that it does the check",
+      "range": {
+        "startLine": 42,
+        "startChar": 57,
+        "endLine": 42,
+        "endChar": 63
+      },
+      "revId": "129015ed25feaf973098b3c532bf037fdc9dd7a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "337b8ac1_87d87a09",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:11:01Z",
+      "side": 1,
+      "message": "exports",
+      "range": {
+        "startLine": 66,
+        "startChar": 31,
+        "endLine": 66,
+        "endChar": 37
+      },
+      "revId": "129015ed25feaf973098b3c532bf037fdc9dd7a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
