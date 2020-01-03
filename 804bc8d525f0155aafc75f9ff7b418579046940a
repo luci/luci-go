@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e1cb4ac_f7402b5d",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 440,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-03T23:50:33Z",
+      "side": 1,
+      "message": "Please document in the go/prpc that it is indeed padded standard (not URL-safe) base64 encoding. The spec currently only says \"base64\", it is imprecise for a spec.",
+      "range": {
+        "startLine": 440,
+        "startChar": 8,
+        "endLine": 440,
+        "endChar": 26
+      },
+      "revId": "804bc8d525f0155aafc75f9ff7b418579046940a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
