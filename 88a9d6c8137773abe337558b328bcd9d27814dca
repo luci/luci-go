@@ -16,6 +16,24 @@
       "revId": "88a9d6c8137773abe337558b328bcd9d27814dca",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "808645a0_7a8df024",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002100
+      },
+      "writtenOn": "2020-01-03T19:11:53Z",
+      "side": 1,
+      "message": "Updated comment and added validation (and tests for validation).",
+      "parentUuid": "a3113dc4_995ec259",
+      "revId": "88a9d6c8137773abe337558b328bcd9d27814dca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
