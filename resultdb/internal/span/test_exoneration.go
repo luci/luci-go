@@ -149,3 +149,9 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	}
 	return
 }
+
+// QueryExoneratedTestVariants gets unique test variants that are exonerated and
+// matching the predicate.
+func QueryExoneratedTestVariants() {
+
+}
