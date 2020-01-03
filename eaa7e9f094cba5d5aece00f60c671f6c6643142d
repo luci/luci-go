@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c014ef2_983432cb",
+        "filename": "resultdb/internal/appstatus/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-03T22:33:12Z",
+      "side": 1,
+      "message": "I don\u0027t like that we carry two copies of \u0027s\u0027 here. One is inside \u0027error\u0027 returned by s.Err() (accessible via status.FromError), and another is in LUCI error tags (accessible via Get(...)). This has a smell. I can also imagine situations where two statuses may end up to be different. I didn\u0027t noticed it in the original CL, but here it is extra clear there are two \u0027s\u0027.",
+      "range": {
+        "startLine": 28,
+        "startChar": 8,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
