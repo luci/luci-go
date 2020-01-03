@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "c3dff5e2_5a1cd6c4",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:16:25Z",
+      "side": 1,
+      "message": "just \n\n  error\n\nsee below",
+      "range": {
+        "startLine": 252,
+        "startChar": 138,
+        "endLine": 252,
+        "endChar": 149
+      },
+      "revId": "2d910d4756d5185487ed0afed39c1113465cd20b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ef365f2b_bbc255d0",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 4
