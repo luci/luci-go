@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f32ce3a5_80c02675",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:36:35Z",
+      "side": 1,
+      "message": "Payload is not going to be used until we actually lease this task, which is going to be done in a different transactions. This means reading Payload in this txn is unnecessary",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 12
+      },
+      "revId": "8ebf1a10e01836d5e07d5593ed562f04841e772a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0327bdc3_cb501cb5",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:36:35Z",
+      "side": 1,
+      "message": "please use WITH clause https://cloud.google.com/spanner/docs/query-syntax#with-clause\nits is less indentation \u003d\u003e more readable",
+      "range": {
+        "startLine": 43,
+        "startChar": 3,
+        "endLine": 43,
+        "endChar": 4
+      },
+      "revId": "8ebf1a10e01836d5e07d5593ed562f04841e772a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18907966_6caa0c18",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:36:35Z",
+      "side": 1,
+      "message": "ret :\u003d make([]*TaskRow, 0, sampleSize)\n\nplease add a test",
+      "range": {
+        "startLine": 58,
+        "startChar": 23,
+        "endLine": 58,
+        "endChar": 25
+      },
+      "revId": "8ebf1a10e01836d5e07d5593ed562f04841e772a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfaae5e7_f8907113",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:36:35Z",
+      "side": 1,
+      "message": "nit: i think this sentence is short enough to be just one line",
+      "range": {
+        "startLine": 63,
+        "startChar": 15,
+        "endLine": 65,
+        "endChar": 23
+      },
+      "revId": "8ebf1a10e01836d5e07d5593ed562f04841e772a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
