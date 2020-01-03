@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4e40de6b_d69f505f",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:22:17Z",
+      "side": 1,
+      "message": "i did consider and rejected because it looks very similar to status.Code, but with a different semantics... so I opted to not-adding-it-YET. WDYT?",
+      "parentUuid": "a7fdb05e_56f60606",
+      "range": {
+        "startLine": 154,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 14
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c060208b_28d65cf8",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9e7d285_29fc84a1",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:22:17Z",
+      "side": 1,
+      "message": "yes. The principle you are implying is \"a function should either return all errors with appstatus, or all without\", but this means a func MUST know if all the funcs it calls return errors with appstatus and, potentially wrap with appstatus. I think it gets fragile quickly. The point of appstatus is  that pieces of code-that-really-understand-what\u0027s-going-on attach appstatus and everything else is an internal error.",
+      "parentUuid": "c060208b_28d65cf8",
+      "range": {
+        "startLine": 164,
+        "startChar": 16,
+        "endLine": 165,
+        "endChar": 69
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "32d90335_870a4b63",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:22:17Z",
+      "side": 1,
+      "message": "ditto",
+      "parentUuid": "d205fe2e_536cf698",
+      "range": {
+        "startLine": 167,
+        "startChar": 9,
+        "endLine": 167,
+        "endChar": 68
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "019e0625_8fa31578",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 9
@@ -91,6 +163,30 @@
       "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e527aac_f19e4673",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T00:22:17Z",
+      "side": 1,
+      "message": "thanks. will do in another CL",
+      "parentUuid": "019e0625_8fa31578",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 38
+      },
+      "revId": "c0c0f53164ced89c8a005a3ef67fe198b43c7ecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
