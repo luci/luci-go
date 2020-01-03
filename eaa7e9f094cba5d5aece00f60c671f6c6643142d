@@ -46,6 +46,30 @@
       "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "058fd841_ec3c10dc",
+        "filename": "resultdb/internal/appstatus/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-03T22:52:44Z",
+      "side": 1,
+      "message": "In good APIs there should be *no way* to do the wrong thing. No one would read comments. Let\u0027s move the discussion to https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1984537",
+      "parentUuid": "2d95bb02_49adb6d1",
+      "range": {
+        "startLine": 28,
+        "startChar": 8,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
