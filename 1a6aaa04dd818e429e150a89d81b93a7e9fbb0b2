@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "40e43cc1_96003718",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-03T19:06:18Z",
+      "side": 1,
+      "message": "fair enough",
+      "parentUuid": "4a3bf991_6d51ff04",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "1a6aaa04dd818e429e150a89d81b93a7e9fbb0b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "545268f1_bf1413f5",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 8
