@@ -70,6 +70,30 @@
       "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bdeb054_e4ebe1dc",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-04T00:46:58Z",
+      "side": 1,
+      "message": "it is not retrying all errors mindlessly: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1974790/9/resultdb/cli/poll.go#46",
+      "parentUuid": "8cb79ea7_92fae8e6",
+      "range": {
+        "startLine": 157,
+        "startChar": 3,
+        "endLine": 157,
+        "endChar": 104
+      },
+      "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
