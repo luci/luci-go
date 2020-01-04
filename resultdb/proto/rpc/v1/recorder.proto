@@ -261,3 +261,11 @@ message DeriveInvocationRequest {
   // Derive the invocation from the Swarming task.
   SwarmingTask swarming_task = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
+
+// Used a google.rpc.PreconditionFailure.Violation.type returned as a Status
+// detail by DeriveInvocation when responding with a PreconditionFailure status
+// code.
+enum DeriveInvocationPreconditionFailureType {
+  DERIVE_INVOCATION_PRECONDITION_FAILURE_TYPE_UNSPECIFIED = 0;
+  INCOMPLETE_SWARMING_TASK = 1;
+}
