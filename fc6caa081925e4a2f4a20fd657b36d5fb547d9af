@@ -94,6 +94,30 @@
       "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "50b53f20_7ee2b4d9",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-04T00:50:03Z",
+      "side": 1,
+      "message": "Ah, sorry, the original logging.Warningf here confused me. It is unreachable then and \"notReady.In(err)\" check is redundant there (we retry ONLY on notReadyIn errors).",
+      "parentUuid": "4bdeb054_e4ebe1dc",
+      "range": {
+        "startLine": 157,
+        "startChar": 3,
+        "endLine": 157,
+        "endChar": 104
+      },
+      "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
