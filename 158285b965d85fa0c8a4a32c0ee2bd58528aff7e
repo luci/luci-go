@@ -22,6 +22,54 @@
       "revId": "158285b965d85fa0c8a4a32c0ee2bd58528aff7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "578f42a6_85f11607",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-04T01:18:13Z",
+      "side": 1,
+      "message": "proto enum MUST start with a 0 member. Added the prefix",
+      "parentUuid": "1ae2a1a6_d7c71c36",
+      "range": {
+        "startLine": 269,
+        "startChar": 2,
+        "endLine": 269,
+        "endChar": 18
+      },
+      "revId": "158285b965d85fa0c8a4a32c0ee2bd58528aff7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "77257726_b409a921",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-04T01:18:13Z",
+      "side": 1,
+      "message": "first enum member MUST be 0. added the prefix",
+      "parentUuid": "1ae2a1a6_d7c71c36",
+      "range": {
+        "startLine": 269,
+        "startChar": 2,
+        "endLine": 269,
+        "endChar": 18
+      },
+      "revId": "158285b965d85fa0c8a4a32c0ee2bd58528aff7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
