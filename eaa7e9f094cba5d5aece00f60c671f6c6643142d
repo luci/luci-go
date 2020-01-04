@@ -70,6 +70,53 @@
       "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29418b7c_e24f5650",
+        "filename": "resultdb/internal/appstatus/status.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-04T00:40:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "058fd841_ec3c10dc",
+      "range": {
+        "startLine": 28,
+        "startChar": 8,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac216f14_dd1e772f",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-04T00:40:10Z",
+      "side": 1,
+      "message": "Maybe just add UNSPECIFIED instead of making this enum exceptional and then additionally commenting about it exceptionality? What harm is in having UNSPECIFIED or even just silently skipping 0? I can imagine in some distant dark future we may want to put these enums into real proto messages (for batch responses or something), where lack of UNSPECIFIED may be a concern.",
+      "range": {
+        "startLine": 269,
+        "startChar": 3,
+        "endLine": 269,
+        "endChar": 70
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
