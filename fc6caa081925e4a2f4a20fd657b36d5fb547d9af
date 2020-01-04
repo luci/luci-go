@@ -22,6 +22,30 @@
       "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2daf4a0_c7913086",
+        "filename": "resultdb/cli/cmd_derive.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-04T00:14:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08bc768e_78eb77bd",
+      "range": {
+        "startLine": 157,
+        "startChar": 3,
+        "endLine": 157,
+        "endChar": 104
+      },
+      "revId": "fc6caa081925e4a2f4a20fd657b36d5fb547d9af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
