@@ -117,6 +117,30 @@
       "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20ee2aef_cdaa757f",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-04T00:49:13Z",
+      "side": 1,
+      "message": "mostly because of https://screenshot.googleplex.com/4Svc2OxOqFV. done",
+      "parentUuid": "ac216f14_dd1e772f",
+      "range": {
+        "startLine": 269,
+        "startChar": 3,
+        "endLine": 269,
+        "endChar": 70
+      },
+      "revId": "eaa7e9f094cba5d5aece00f60c671f6c6643142d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
