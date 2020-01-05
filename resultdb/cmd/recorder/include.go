@@ -61,7 +61,7 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 
 	err := mutateInvocation(ctx, including, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Ensure the included invocation exists and is finalized.
-		switch includedState, err := readInvocationState(ctx, txn, included); {
+		switch includedState, err := span.ReadInvocationState(ctx, txn, included); {
 		case err != nil:
 			return err
 		case includedState != pb.Invocation_COMPLETED:

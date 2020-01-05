@@ -205,3 +205,10 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 	}
 	return ret, nil
 }
+
+// ReadInvocationState returns the invocation's state.
+func ReadInvocationState(ctx context.Context, txn Txn, id InvocationID) (pb.Invocation_State, error) {
+	var state pb.Invocation_State
+	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"State": &state})
+	return state, err
+}
