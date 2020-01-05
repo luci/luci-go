@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b462dcf2_36626847",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "As I mentioned in my previous comment, I assume uploading is slower than streaming, so if we make the batch size to be 500, the result channel could be filled up quickly and blocked by uploading. If so we may need uploading in parallel, which we can get for free from the Uploader. If waiting 8000 rows is not necessary, we can easily change the maxRowsInBatch, say, 1000?\n\nStepping back, we can achieve the same goal (even if continue using the Uploader) by reducing maxRowsInBatch to 500, right?",
+      "parentUuid": "d4cf231e_6842a2c7",
+      "range": {
+        "startLine": 38,
+        "startChar": 26,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b16c3993_33d22a67",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "ca24d723_43193781",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b16c3993_33d22a67",
+      "range": {
+        "startLine": 81,
+        "startChar": 5,
+        "endLine": 81,
+        "endChar": 26
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab24ac29_5dc21f14",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -92,6 +140,30 @@
       "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e62ebf38_85feafe2",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab24ac29_5dc21f14",
+      "range": {
+        "startLine": 92,
+        "startChar": 50,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +213,54 @@
     },
     {
       "key": {
+        "uuid": "03db7e40_c9bb5bdd",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ba8f4b8_c6ac5c92",
+      "range": {
+        "startLine": 111,
+        "startChar": 75,
+        "endLine": 111,
+        "endChar": 86
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df1f3bd2_625a8a44",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "62a890c8_f3717194",
+      "range": {
+        "startLine": 111,
+        "startChar": 55,
+        "endLine": 111,
+        "endChar": 69
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04278a56_0986e193",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -161,6 +281,30 @@
       "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ad078ab_84480d14",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04278a56_0986e193",
+      "range": {
+        "startLine": 115,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 3
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -187,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "fefeb20b_6d87a65b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b05a7094_6bdfdde6",
+      "range": {
+        "startLine": 122,
+        "startChar": 22,
+        "endLine": 122,
+        "endChar": 35
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "219c8c1c_0dc2f5d4",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -210,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "8862ae43_aeef9bbf",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Good point. done.",
+      "parentUuid": "219c8c1c_0dc2f5d4",
+      "range": {
+        "startLine": 137,
+        "startChar": 3,
+        "endLine": 137,
+        "endChar": 11
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "998dd07f_e21e86eb",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -221,6 +413,30 @@
       "writtenOn": "2020-01-03T19:31:50Z",
       "side": 1,
       "message": "why not just return the error?",
+      "range": {
+        "startLine": 142,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 14
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8a228f2_ad56f412",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "I don\u0027t understand this, return the error in a goroutine?",
+      "parentUuid": "998dd07f_e21e86eb",
       "range": {
         "startLine": 142,
         "startChar": 3,
@@ -256,6 +472,30 @@
     },
     {
       "key": {
+        "uuid": "60c88343_668e90f4",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "388b755a_9cfe09ca",
+      "range": {
+        "startLine": 148,
+        "startChar": 52,
+        "endLine": 148,
+        "endChar": 54
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3ab1a17_c36e88e0",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -279,6 +519,30 @@
     },
     {
       "key": {
+        "uuid": "bf6d3e18_1d2077f8",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3ab1a17_c36e88e0",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 5
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e48ff49c_93b95688",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -299,6 +563,30 @@
       "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af45ad04_a3709d08",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-05T04:33:42Z",
+      "side": 1,
+      "message": "I was thinking by enabling these flags the uploading will not be terminated by a few invalid rows.\n\nThough think it again, since we\u0027re exporting the spanner data, it\u0027ll mean breakages in resultdb if we see invalid rows. \n\nRemoved the flags.",
+      "parentUuid": "e48ff49c_93b95688",
+      "range": {
+        "startLine": 217,
+        "startChar": 1,
+        "endLine": 218,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
