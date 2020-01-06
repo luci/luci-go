@@ -22,8 +22,8 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -78,7 +78,7 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 // QueryTestResults implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
 	if err := validateQueryTestResultsRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	// Open a transaction.

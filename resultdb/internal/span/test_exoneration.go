@@ -21,8 +21,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -64,10 +64,7 @@ func ReadTestExonerationFull(ctx context.Context, txn Txn, name string) (*pb.Tes
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, errors.Reason("%q not found", ret.Name).
-			InternalReason("%s", err).
-			Tag(grpcutil.NotFoundTag).
-			Err()
+		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", ret.Name)
 
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch %q", ret.Name).Err()

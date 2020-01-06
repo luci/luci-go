@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -53,7 +53,7 @@ var errRepeatedRequest = fmt.Errorf("this request was handled before")
 // Include implements pb.RecorderServer.
 func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*empty.Empty, error) {
 	if err := validateIncludeRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	including := span.MustParseInvocationName(in.IncludingInvocation)
@@ -65,7 +65,7 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 		case err != nil:
 			return err
 		case includedState != pb.Invocation_COMPLETED:
-			return errors.Reason("%q is not finalized", in.IncludedInvocation).Tag(grpcutil.FailedPreconditionTag).Err()
+			return appstatus.Errorf(codes.FailedPrecondition, "%s is not finalized", in.IncludedInvocation)
 		}
 
 		// Insert a new inclusion.

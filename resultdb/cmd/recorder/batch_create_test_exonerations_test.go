@@ -22,15 +22,14 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
@@ -126,7 +125,7 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 
 func TestBatchCreateTestExonerations(t *testing.T) {
 	Convey(`TestBatchCreateTestExonerations`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 
 		recorder := &recorderServer{}
 
@@ -138,8 +137,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Invocation: "x",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldErrLike, `bad request: invocation: does not match`)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: invocation: does not match`)
 		})
 
 		Convey(`No invocation`, func() {
@@ -147,12 +145,11 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 				Invocation: "invocations/inv",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldErrLike, `"invocations/inv" not found`)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.BatchCreateTestExonerationsRequest{

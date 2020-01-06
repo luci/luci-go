@@ -29,9 +29,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -100,7 +100,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	now := clock.Now(ctx)
 
 	if err := validateCreateInvocationRequest(in, now); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	invID := span.InvocationID(in.InvocationId)
@@ -135,8 +135,9 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
 				"CreateRequestId": &curRequestID,
 			})
+			s, _ := appstatus.Get(err)
 			switch {
-			case grpcutil.Code(err) == codes.NotFound:
+			case s.Code() == codes.NotFound:
 				// Continue to creation.
 
 			case err != nil:
@@ -148,7 +149,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 				return err
 
 			default:
-				return invocationAlreadyExists()
+				return invocationAlreadyExists(invID)
 			}
 		}
 
@@ -163,7 +164,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	switch {
 	case spanner.ErrCode(err) == codes.AlreadyExists:
-		return nil, invocationAlreadyExists()
+		return nil, invocationAlreadyExists(invID)
 	case err != nil:
 		return nil, err
 	default:
@@ -171,8 +172,8 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	}
 }
 
-func invocationAlreadyExists() error {
-	return errors.Reason("invocation already exists").Tag(grpcutil.AlreadyExistsTag).Err()
+func invocationAlreadyExists(id span.InvocationID) error {
+	return appstatus.Errorf(codes.AlreadyExists, "%s already exsts", id.Name())
 }
 
 func generateUpdateToken() (string, error) {

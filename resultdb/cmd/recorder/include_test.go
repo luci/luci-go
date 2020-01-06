@@ -21,14 +21,13 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateIncludeRequest(t *testing.T) {
@@ -69,26 +68,25 @@ func TestValidateIncludeRequest(t *testing.T) {
 
 func TestInclude(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 		recorder := &recorderServer{}
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
 
-		insInv := testutil.InsertInvocation
+		insInv := InsertInvocation
 		ct := testclock.TestRecentTimeUTC
 
 		assertIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID
-			testutil.MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+			MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
 
 		Convey(`invalid request`, func() {
 			_, err := recorder.Include(ctx, &pb.IncludeRequest{})
-			So(err, ShouldErrLike, `bad request: including_invocation: unspecified`)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: including_invocation: unspecified`)
 		})
 
 		req := &pb.IncludeRequest{
@@ -98,31 +96,28 @@ func TestInclude(t *testing.T) {
 
 		Convey(`no including invocation`, func() {
 			_, err := recorder.Include(ctx, req)
-			So(err, ShouldErrLike, `"invocations/including" not found`)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
 		})
 
 		Convey(`no included invocation`, func() {
-			testutil.MustApply(ctx,
+			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
 			)
 			_, err := recorder.Include(ctx, req)
-			So(err, ShouldErrLike, `"invocations/included" not found`)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included not found`)
 		})
 
 		Convey(`included invocation is active`, func() {
-			testutil.MustApply(ctx,
+			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
 				insInv("included", pb.Invocation_ACTIVE, "", ct, false),
 			)
 			_, err := recorder.Include(ctx, req)
-			So(err, ShouldErrLike, `"invocations/included" is not finalized`)
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/included is not finalized`)
 		})
 
 		Convey(`idempotent`, func() {
-			testutil.MustApply(ctx,
+			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
 				insInv("included", pb.Invocation_COMPLETED, "", ct, false),
 			)
@@ -135,7 +130,7 @@ func TestInclude(t *testing.T) {
 		})
 
 		Convey(`success`, func() {
-			testutil.MustApply(ctx,
+			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false),
 				insInv("included", pb.Invocation_COMPLETED, "", ct, false),
 			)

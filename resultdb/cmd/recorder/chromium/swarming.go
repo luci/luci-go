@@ -26,6 +26,7 @@ import (
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/grpc/codes"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/stringset"
@@ -36,11 +37,11 @@ import (
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
@@ -70,13 +71,12 @@ var (
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
 	if isBlacklisted(task) {
-		return nil, nil, errors.Reason("blacklisted task").Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("blacklisted")
 	}
 
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		// Tasks not yet completed should not be requested to be processed by the recorder.
-		return nil, nil, errors.Reason(
-			"unexpectedly incomplete state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("unexpectedly incomplete state %q", task.State)
 	}
 
 	// Populate fields we will need in the base invocation.
@@ -86,10 +86,10 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "created_ts").Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("invalid task creation time %q: %s", task.CreatedTs, err)
 	}
 	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
-		return nil, nil, errors.Annotate(err, "completed_ts").Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("invalid task completion time %q: %s", task.CreatedTs, err)
 	}
 
 	// Decide how to continue based on task state.
@@ -111,8 +111,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		mustFetchOutputJSON = true
 
 	default:
-		return nil, nil, errors.Reason(
-			"unknown swarming state %q", task.State).Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("unknown state %q", task.State)
 	}
 
 	// Parse swarming tags.
@@ -135,8 +134,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	case mustFetchOutputJSON:
 		// Otherwise we expect output but have none, so fail.
-		return nil, nil, errors.Reason(
-			"missing expected isolated outputs").Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, nil, invalidTaskf("missing expected isolated outputs")
 	}
 
 	// Apply the base variant.
@@ -189,8 +187,15 @@ func GetSwarmSvc(cl *http.Client, swarmingURL string) (*swarmingAPI.Service, err
 func GetSwarmingTask(ctx context.Context, taskID string, swarmSvc *swarmingAPI.Service) (*swarmingAPI.SwarmingRpcsTaskResult, error) {
 	task, err := swarmSvc.Task.Result(taskID).Context(ctx).Do()
 	if err, ok := err.(*googleapi.Error); ok {
-		return nil, annotateErrWithGRPC(err, err.Code)
+		switch {
+		case err.Code == http.StatusNotFound:
+			return nil, appstatus.Attachf(err, codes.NotFound, "swarming task %s not found", taskID)
+
+		case err.Code >= 500:
+			return nil, appstatus.Attachf(err, codes.Internal, "transient swarming error")
+		}
 	}
+
 	return task, err
 }
 
@@ -246,7 +251,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 
 	// Convert the output JSON.
 	if results, err = ConvertOutputJSON(ctx, inv, testIDPrefix, outputJSON, outputArtifacts); err != nil {
-		return nil, errors.Annotate(err, "converting output").Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, attachInvalidTaskf(err, "invalid output: %s", err)
 	}
 
 	// TODO(crbug/1032779): Mark artifacts we know we may not process.
@@ -261,7 +266,12 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 	buf := &bytes.Buffer{}
 	if err := isoClient.Fetch(ctx, isolated.HexDigest(ref.Isolated), buf); err != nil {
 		if status, ok := lhttp.IsHTTPError(err); ok {
-			return nil, annotateErrWithGRPC(err, status)
+			switch {
+			case status == http.StatusNotFound:
+				return nil, appstatus.Attachf(err, codes.NotFound, "swarming task's output %s is not found", ref.Isolated)
+			case status >= 500:
+				return nil, transient.Tag.Apply(appstatus.Attachf(err, codes.Internal, "transient swarming error"))
+			}
 		}
 		return nil, err
 	}
@@ -269,7 +279,7 @@ func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swar
 	// Get the files.
 	isolates := &isolated.Isolated{}
 	if err := json.Unmarshal(buf.Bytes(), isolates); err != nil {
-		return nil, errors.Annotate(err, "").Tag(grpcutil.InternalTag).Err()
+		return nil, err
 	}
 	return isolates.Files, nil
 }
@@ -288,14 +298,11 @@ func FetchOutputJSON(ctx context.Context, isoClient *isolatedclient.Client, outp
 	}
 
 	if outputFile == nil {
-		return nil, errors.Reason(
-			"missing expected output in isolated outputs, tried {%s}",
-			strings.Join(outputJSONFileNames, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, invalidTaskf("missing expected output in isolated outputs, tried {%s}", strings.Join(outputJSONFileNames, ", "))
 	}
 
 	if *outputFile.Size == 0 {
-		return nil, errors.Reason("empty output file %s", outputJSONFileName).
-			Tag(grpcutil.FailedPreconditionTag).Err()
+		return nil, invalidTaskf("empty output file %s", outputJSONFileName)
 	}
 
 	// Now fetch (from the same server and namespace) the output file by digest.
@@ -338,21 +345,6 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 	return nil, errors.NewMultiError(jsonErr, gtestErr)
 }
 
-// annotateErrWithGRPC updates the error with appropriate gRPC tags given the HTTP code.
-func annotateErrWithGRPC(err error, httpCode int) error {
-	switch {
-	case httpCode == http.StatusUnauthorized:
-		return errors.Annotate(err, "").Tag(grpcutil.UnauthenticatedTag).Err()
-	case httpCode == http.StatusForbidden:
-		return errors.Annotate(err, "").Tag(grpcutil.PermissionDeniedTag).Err()
-	case httpCode == http.StatusNotFound:
-		return errors.Annotate(err, "").Tag(grpcutil.NotFoundTag).Err()
-	case httpCode >= 500:
-		return errors.Annotate(err, "").Tag(transient.Tag, grpcutil.InternalTag).Err()
-	}
-	return err
-}
-
 // isBlacklisted returns whether the given task is blacklisted from being processed.
 func isBlacklisted(task *swarmingAPI.SwarmingRpcsTaskResult) bool {
 	for _, t := range task.Tags {
@@ -379,4 +371,12 @@ func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
 		return nil, errors.Annotate(err, "converting timestamp string %q", ts).Err()
 	}
 	return ptypes.TimestampProto(t)
+}
+
+func invalidTaskf(format string, args ...interface{}) error {
+	return appstatus.Errorf(codes.FailedPrecondition, "invalid task: "+format, args...)
+}
+
+func attachInvalidTaskf(err error, format string, args ...interface{}) error {
+	return appstatus.Attachf(err, codes.FailedPrecondition, "invalid task: "+format, args...)
 }

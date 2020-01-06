@@ -20,8 +20,8 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -53,7 +53,7 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 // BatchCreateTestExonerations implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (rsp *pb.BatchCreateTestExonerationsResponse, err error) {
 	if err := validateBatchCreateTestExonerationsRequest(in); err != nil {
-		return nil, errors.Annotate(err, "bad request").Tag(grpcutil.InvalidArgumentTag).Err()
+		return nil, appstatus.BadRequest(err)
 	}
 
 	invID := span.MustParseInvocationName(in.Invocation)

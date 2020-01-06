@@ -19,9 +19,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -61,21 +63,37 @@ func CommonPrelude(ctx context.Context, methodName string, req proto.Message) (c
 }
 
 // CommonPostlude must be used as a postlude in all ResultDB services.
-// Extracts an error code from a grpcutil.Tag, logs a
-// stack trace and returns a gRPC-native error.
+//
+// Extracts a status using appstatus and returns to the requester.
+// If the error is internal or unknown, logs the stack trace.
 func CommonPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-	// Resultdb codebase uses grpcutil tags for error codes.
-	// If the error is not explicitly tagged, then it is an internal error.
-	// This prevents returning internal gRPC errors to our clients.
-	if _, ok := grpcutil.Tag.In(err); !ok {
-		err = errors.
-			Annotate(err, "Internal server error").
-			InternalReason("%s", err).
-			Tag(grpcutil.InternalTag).
-			Err()
+	return GRPCifyAndLog(ctx, err)
+}
+
+// GRPCifyAndLog converts the error to a GRPC error and potentially logs it.
+func GRPCifyAndLog(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
 	}
 
-	return grpcutil.GRPCifyAndLogErr(ctx, err)
+	s := statusFromError(err)
+	if s.Code() == codes.Internal || s.Code() == codes.Unknown {
+		errors.Log(ctx, err)
+	}
+	return s.Err()
+}
+
+// statusFromError returns a status to return to the client based on the error.
+func statusFromError(err error) *status.Status {
+	if s, ok := appstatus.Get(err); ok {
+		return s
+	}
+
+	if err := errors.Unwrap(err); err == context.DeadlineExceeded || err == context.Canceled {
+		return status.FromContextError(err)
+	}
+
+	return status.New(codes.Internal, "internal server error")
 }
 
 func verifyAccess(ctx context.Context) error {
@@ -89,10 +107,7 @@ func verifyAccess(ctx context.Context) error {
 		return err
 
 	case !allowed:
-		return errors.
-			Reason("%s is not in %q CIA group", auth.CurrentIdentity(ctx), accessGroup).
-			Tag(grpcutil.PermissionDeniedTag).
-			Err()
+		return appstatus.Errorf(codes.PermissionDenied, "%s is not in %s CIA group", auth.CurrentIdentity(ctx), accessGroup)
 
 	default:
 		return nil

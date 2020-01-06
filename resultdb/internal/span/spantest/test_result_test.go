@@ -19,31 +19,32 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 
 		now := clock.Now(ctx)
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now, false))
+		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now, false))
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
 			InvocationIDs: span.NewInvocationIDSet("inv1"),
 		}
 
-		makeTestResults := testutil.MakeTestResults
-		insertTestResults := testutil.InsertTestResults
+		makeTestResults := MakeTestResults
+		insertTestResults := InsertTestResults
 
 		read := func(q span.TestResultQuery) (trs []*pb.TestResult, token string, err error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -76,11 +77,11 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			testutil.MustApply(ctx,
-				testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false),
-				testutil.InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now, false),
+			MustApply(ctx,
+				InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false),
+				InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now, false),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(expected),
 				insertTestResults(makeTestResults("inv2", "Y", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
@@ -91,8 +92,8 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
+			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
 				insertTestResults(makeTestResults("inv1", "T1", pb.TestStatus_PASS)),
@@ -117,8 +118,8 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test id filter`, func() {
-			testutil.MustApply(ctx, testutil.InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
+			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),
 				insertTestResults(makeTestResults("inv1", "1-1", pb.TestStatus_PASS)),
@@ -145,7 +146,7 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			testutil.MustApply(ctx, insertTestResults(trs)...)
+			MustApply(ctx, insertTestResults(trs)...)
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
 				q2 := q
@@ -179,13 +180,13 @@ func TestQueryTestResults(t *testing.T) {
 				Convey(`From bad position`, func() {
 					q.PageToken = "CgVoZWxsbw=="
 					_, _, err := span.QueryTestResults(ctx, txn, q)
-					So(err, ShouldErrLike, "invalid page_token")
+					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 
 				Convey(`From decoding`, func() {
 					q.PageToken = "%%%"
 					_, _, err := span.QueryTestResults(ctx, txn, q)
-					So(err, ShouldErrLike, "invalid page_token")
+					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
 				})
 			})
 		})

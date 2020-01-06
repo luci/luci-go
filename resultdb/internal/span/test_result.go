@@ -25,8 +25,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -73,10 +73,8 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	})
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return nil, errors.Reason("%q not found", name).
-			InternalReason("%s", err).
-			Tag(grpcutil.NotFoundTag).
-			Err()
+		return nil, appstatus.Attachf(err, codes.NotFound, "%s not found", name)
+
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch %q", name).Err()
 	}
@@ -95,7 +93,7 @@ type TestResultQuery struct {
 	PageToken     string
 }
 
-func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) (err error) {
+func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) error {
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
@@ -161,17 +159,18 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 	st.Params["TestIdRegexp"] = fmt.Sprintf("^%s$", testIDRegexp)
 
+	var err error
 	st.Params["afterInvocationId"],
 		st.Params["afterTestId"],
 		st.Params["afterResultId"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
-		return
+		return err
 	}
 
 	if q.Predicate.GetVariant() != nil {
 		// TODO(nodir): add support for q.Predicate.Variant.
-		return grpcutil.Unimplemented
+		return appstatus.Errorf(codes.Unimplemented, "filtering by variant is not implemented yet")
 	}
 
 	var summaryHTML Compressed
@@ -268,12 +267,12 @@ func FromMicros(micros int64) *durpb.Duration {
 func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID string, err error) {
 	switch pos, tokErr := pagination.ParseToken(pageToken); {
 	case tokErr != nil:
-		err = encapsulatePageTokenError(tokErr)
+		err = pageTokenError(tokErr)
 
 	case pos == nil:
 
 	case len(pos) != 3:
-		err = encapsulatePageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
+		err = pageTokenError(errors.Reason("expected 3 position strings, got %q", pos).Err())
 
 	default:
 		inv = InvocationID(pos[0])
@@ -284,9 +283,9 @@ func parseTestObjectPageToken(pageToken string) (inv InvocationID, testID, objID
 	return
 }
 
-// encapsulatePageTokenError returns a generic error message that a page token
+// pageTokenError returns a generic error message that a page token
 // is invalid and records err as an internal error.
 // The returned error is anontated with INVALID_ARUGMENT code.
-func encapsulatePageTokenError(err error) error {
-	return errors.Reason("invalid page_token").InternalReason("%s", err).Tag(grpcutil.InvalidArgumentTag).Err()
+func pageTokenError(err error) error {
+	return appstatus.Attachf(err, codes.InvalidArgument, "invalid page_token")
 }

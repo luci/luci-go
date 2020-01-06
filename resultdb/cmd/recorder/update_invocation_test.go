@@ -24,15 +24,14 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
@@ -98,7 +97,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 func TestUpdateInvocation(t *testing.T) {
 	Convey(`TestUpdateInvocation`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
+		ctx := SpannerTestContext(t)
 
 		recorder := &recorderServer{}
 
@@ -113,8 +112,7 @@ func TestUpdateInvocation(t *testing.T) {
 		Convey(`invalid request`, func() {
 			req := &pb.UpdateInvocationRequest{}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldErrLike, `bad request: invocation: name: unspecified`)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: invocation: name: unspecified`)
 		})
 
 		Convey(`no invocation`, func() {
@@ -126,12 +124,11 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: updateMask,
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldErrLike, `"invocations/inv" not found`)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 		})
 
 		// Insert the invocation.
-		testutil.MustApply(ctx, testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{
@@ -153,7 +150,7 @@ func TestUpdateInvocation(t *testing.T) {
 				Name: expected.Name,
 			}
 			invID := span.InvocationID("inv")
-			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
+			MustReadRow(ctx, "Invocations", invID.Key(), map[string]interface{}{
 				"Deadline": &actual.Deadline,
 			})
 			So(actual, ShouldResembleProto, expected)

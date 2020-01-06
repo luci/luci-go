@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcutil"
 
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -45,13 +45,10 @@ func ReadInvocation(ctx context.Context, txn Txn, id InvocationID, ptrMap map[st
 	err := ReadRow(ctx, txn, "Invocations", id.Key(), ptrMap)
 	switch {
 	case spanner.ErrCode(err) == codes.NotFound:
-		return errors.Reason("%q not found", id.Name()).
-			InternalReason("%s", err).
-			Tag(grpcutil.NotFoundTag).
-			Err()
+		return appstatus.Attachf(err, codes.NotFound, "%s not found", id.Name())
 
 	case err != nil:
-		return errors.Annotate(err, "failed to fetch %q", id.Name()).Err()
+		return errors.Annotate(err, "failed to fetch %s", id.Name()).Err()
 
 	default:
 		return nil
@@ -200,7 +197,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 	}
 	for id := range ids {
 		if _, ok := ret[id]; !ok {
-			return nil, errors.Reason("%s not found", id.Name()).Tag(grpcutil.NotFoundTag).Err()
+			return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
 		}
 	}
 	return ret, nil

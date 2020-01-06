@@ -17,9 +17,10 @@ package main
 import (
 	"context"
 
-	"go.chromium.org/luci/grpc/grpcutil"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/appstatus"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -40,10 +41,10 @@ func NewRecorderServer() pb.RecorderServer {
 
 // CreateTestResult implements pb.RecorderServer.
 func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTestResultRequest) (*pb.TestResult, error) {
-	return nil, grpcutil.Unimplemented
+	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
 }
 
 // BatchCreateTestResults implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
-	return nil, grpcutil.Unimplemented
+	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
 }
