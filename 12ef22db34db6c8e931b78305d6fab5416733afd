@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "a7624976_87553a64",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T16:38:47Z",
+      "side": 1,
+      "message": "\u003e blocked by uploading\nuploading must not block streaming. it should happen in a separate goroutine. it would consume a channel of batches, not a channel of individual rows.\n\nyes, we can achieve improved concurrency by using 500 batch Size, but this also means that we are assuming a specific behavior in the bigquery library. Also I still don\u0027t see what value does bigquery.Uploader provide.\n\nalso, looks like the use of bigquery.Uploader actually adds a problem: it generates random insertIDs\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/270a41695194988c426bfd07f53923564bdd8f0f:common/bq/eventupload.go;l\u003d398;drc\u003de94f964255cda28b1702217c7d2e6925870444de\nbut we want to use test result names to avoid insertion of test results twice (in case of a retry of the invocation task), so I think bigquery.Uploader adds more harm than value",
+      "parentUuid": "b462dcf2_36626847",
+      "range": {
+        "startLine": 38,
+        "startChar": 26,
+        "endLine": 38,
+        "endChar": 30
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b16c3993_33d22a67",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 2
@@ -437,6 +461,30 @@
       "side": 1,
       "message": "I don\u0027t understand this, return the error in a goroutine?",
       "parentUuid": "998dd07f_e21e86eb",
+      "range": {
+        "startLine": 142,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 14
+      },
+      "revId": "12ef22db34db6c8e931b78305d6fab5416733afd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f55433a_642d30bf",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T16:38:47Z",
+      "side": 1,
+      "message": "there is no `go` keyword in this func. It is just a func that can return an error. Currently this func assumes the caller which needs a channel. This func would be simpler if we had\n\n  func f(...) error {\n     ...\n     return err\n  }\n\n  // in another func:\n  errC :\u003d make(chan error)\n  go func() {\n    errC \u003c- f(...)\n  })\n  \u003c-errC",
+      "parentUuid": "b8a228f2_ad56f412",
       "range": {
         "startLine": 142,
         "startChar": 3,

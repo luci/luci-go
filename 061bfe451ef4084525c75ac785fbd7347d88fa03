@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e07317de_8c469956",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T16:38:47Z",
+      "side": 1,
+      "message": "we have two loops, one in another, over the same channel. This very unusual. I think it would be simpler to do\n\n  var rows []proto.Message\n  for row :\u003d range resultC {\n    rows \u003d append(rows, row)\n    if len(rows) \u003d\u003d maxBatchSize {\n       // upload\n       rows \u003d rows[:0]\n    }\n  }\n\n  if len(rows) \u003e 0 {\n     // upload\n  }",
+      "revId": "061bfe451ef4084525c75ac785fbd7347d88fa03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8851f8c2_9e49436e",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T16:38:47Z",
+      "side": 1,
+      "message": "looks like we have to ways to stop streaming: 1) errC 2) cancel context.\nAlso say errC has an error, but QueryTestResultsStreaming is still waiting for a spanner response, for nothing.\n\nboth problems can be solved by doing\n\n  ctxStreaming, cancelStreaming :\u003d context.WithCancel(ctx)\n  go func() {\n    err :\u003d batchExportRows(ctx, up, maxBatchSize, resultC)\n    cancelStreaming()\n    errC \u003c- err\n  }()\n\n  err \u003d span.QueryTestResultsStreaming(streamingCtx, txn, q, func(tr *pb.TestResult) error {\n\tresultC \u003c- generateBQRow(invID, invs[invID], tr)\n\treturn nil\n})",
+      "range": {
+        "startLine": 159,
+        "startChar": 2,
+        "endLine": 159,
+        "endChar": 20
+      },
+      "revId": "061bfe451ef4084525c75ac785fbd7347d88fa03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c37ff98a_c693aa1b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T16:38:47Z",
+      "side": 1,
+      "message": "return \u003c-errC",
+      "range": {
+        "startLine": 172,
+        "startChar": 1,
+        "endLine": 176,
+        "endChar": 11
+      },
+      "revId": "061bfe451ef4084525c75ac785fbd7347d88fa03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
