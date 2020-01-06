@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"time"
 
@@ -167,7 +168,7 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 		return errors.Reason("no update token in active invocation").Err()
 	}
 
-	if userToken != updateToken.StringVal {
+	if subtle.ConstantTimeCompare([]byte(userToken), []byte(updateToken.StringVal)) == 0 {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
 
