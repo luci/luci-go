@@ -124,12 +124,11 @@ func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.Builds
 		for _, b := range res.Builds {
 			select {
 			case buildC <- b:
-
-			// Note: selecting on errC here would be a race because goroutine
-			// above might have been already done, but we still did not send
-			// all builds to the caller.
 			case <-ctx.Done():
-				return <-errC
+				// Note that even if ctx is done, errC is not guaranteed to have nil
+				// because the context might have canceled after the goroutine above
+				// exited.
+				return ctx.Err()
 			}
 		}
 	}
