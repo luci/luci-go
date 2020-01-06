@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7395363_30a1be01",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-06T23:20:48Z",
+      "side": 1,
+      "message": "golint requires all public symbols to have a comment",
+      "revId": "38fdf1124a5df49212d090655928404feef260e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
