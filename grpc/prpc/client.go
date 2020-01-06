@@ -17,6 +17,7 @@ package prpc
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -28,11 +29,14 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
+	spb "google.golang.org/genproto/googleapis/rpc/status"
 
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -286,8 +290,16 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 				return err
 			}
 			if code != codes.OK {
-				desc := strings.TrimSuffix(c.readErrorMessage(buf), "\n")
-				err := grpcutil.Errf(code, "%s", desc)
+				sp := &spb.Status{
+					Code:    int32(code),
+					Message: strings.TrimSuffix(c.readErrorMessage(buf), "\n"),
+				}
+				var detErr error
+				sp.Details, detErr = c.readStatusDetails(res)
+				if detErr != nil {
+					return detErr
+				}
+				err = status.FromProto(sp).Err()
 				if grpcutil.IsTransientCode(code) {
 					err = transient.Tag.Apply(err)
 				}
@@ -416,6 +428,38 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 	}
 
 	return ret
+}
+
+// readStatusDetails reads google.rpc.Status.details from the response headers.
+func (c *Client) readStatusDetails(r *http.Response) ([]*any.Any, error) {
+	values := r.Header[HeaderStatusDetail]
+	if len(values) == 0 {
+		return nil, nil
+	}
+
+	b64 := base64.StdEncoding
+
+	ret := make([]*any.Any, len(values))
+	var buf []byte
+	for i, v := range values {
+		sz := b64.DecodedLen(len(v))
+		if cap(buf) < sz {
+			buf = make([]byte, sz)
+		}
+
+		n, err := b64.Decode(buf[:sz], []byte(v))
+		if err != nil {
+			return nil, fmt.Errorf("invalid header %s: %s", HeaderStatusDetail, v)
+		}
+
+		msg := &any.Any{}
+		if err := proto.Unmarshal(buf[:n], msg); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal a status detail: %s", err)
+		}
+		ret[i] = msg
+	}
+
+	return ret, nil
 }
 
 // prepareRequest creates an HTTP request for an RPC,
