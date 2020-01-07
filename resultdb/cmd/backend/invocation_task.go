@@ -104,3 +104,18 @@ func dispatchInvocationTasks(ctx context.Context, taskKeys []*span.TaskKey) erro
 		}
 	})
 }
+
+// runInvocationTasks gets invocation tasks and dispatch the tasks to workers.
+func runInvocationTasks(ctx context.Context) {
+	for {
+		taskKeys, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to query invocation tasks %s", err)
+		}
+
+		err = dispatchInvocationTasks(ctx, taskKeys)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to run invocation tasks %s", err)
+		}
+	}
+}
