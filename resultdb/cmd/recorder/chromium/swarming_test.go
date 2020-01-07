@@ -27,6 +27,7 @@ import (
 	"time"
 
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -188,8 +189,12 @@ func TestSwarming(t *testing.T) {
 			task, err := swarmSvc.Task.Result("pending-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
+			req.SwarmingTask.Id = "pending-task"
 			_, _, err = DeriveProtosForWriting(ctx, task, req)
-			So(err, ShouldErrLike, "unexpectedly incomplete")
+			expectedDetail := &errdetails.PreconditionFailure{
+				Violations: []*errdetails.PreconditionFailure_Violation{{Type: "INCOMPLETE_SWARMING_TASK"}},
+			}
+			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, "task pending-task is not complete yet", expectedDetail)
 		})
 
 		Convey(`that are finalized wih no outputs expected`, func() {
