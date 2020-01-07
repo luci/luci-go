@@ -42,7 +42,9 @@ func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb
 
 // SampleInvocationTasks randomly picks sampleSize of rows in InvocationTasks
 // with ProcessAfter earlier than processTime.
-func SampleInvocationTasks(ctx context.Context, txn Txn, processTime time.Time, sampleSize int64) ([]*TaskKey, error) {
+func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSize int64) ([]*TaskKey, error) {
+	txn := Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
 	st := spanner.NewStatement(`
 		WITH readyTasks AS
 			(SELECT
