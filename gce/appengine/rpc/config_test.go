@@ -19,11 +19,14 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -54,9 +57,9 @@ func TestConfig(t *testing.T) {
 			})
 
 			Convey("valid", func() {
-				datastore.Put(c, &model.Config{
+				So(datastore.Put(c, &model.Config{
 					ID: "id",
-				})
+				}), ShouldBeNil)
 				cfg, err := srv.Delete(c, &config.DeleteRequest{
 					Id: "id",
 				})
@@ -163,12 +166,12 @@ func TestConfig(t *testing.T) {
 				})
 
 				Convey("found", func() {
-					datastore.Put(c, &model.Config{
+					So(datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: config.Config{
 							Prefix: "prefix",
 						},
-					})
+					}), ShouldBeNil)
 					cfg, err := srv.Get(c, &config.GetRequest{
 						Id: "id",
 					})
@@ -200,11 +203,9 @@ func TestConfig(t *testing.T) {
 					})
 
 					Convey("one", func() {
-						cfg := &model.Config{
+						So(datastore.Put(c, &model.Config{
 							ID: "id",
-						}
-						So(datastore.Put(c, cfg), ShouldBeNil)
-
+						}), ShouldBeNil)
 						rsp, err := srv.List(c, nil)
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 1)
@@ -220,11 +221,9 @@ func TestConfig(t *testing.T) {
 					})
 
 					Convey("one", func() {
-						cfg := &model.Config{
+						So(datastore.Put(c, &model.Config{
 							ID: "id",
-						}
-						So(datastore.Put(c, cfg), ShouldBeNil)
-
+						}), ShouldBeNil)
 						req := &config.ListRequest{}
 						rsp, err := srv.List(c, req)
 						So(err, ShouldBeNil)
@@ -289,6 +288,212 @@ func TestConfig(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(rsp.Configs, ShouldHaveLength, 3)
 						So(rsp.NextPageToken, ShouldBeEmpty)
+					})
+				})
+			})
+		})
+
+		Convey("Update", func() {
+			c = auth.WithState(c, &authtest.FakeState{
+				IdentityGroups: []string{"owners"},
+			})
+			So(datastore.Put(c, &model.Config{
+				ID: "id",
+				Config: config.Config{
+					Amount: &config.Amount{
+						Max: 3,
+						Min: 1,
+					},
+					CurrentAmount: 1,
+					Owner: []string{
+						"owners",
+					},
+					Prefix: "prefix",
+				},
+			}), ShouldBeNil)
+
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					cfg, err := srv.Update(c, nil)
+					So(err, ShouldErrLike, "ID is required")
+					So(cfg, ShouldBeNil)
+					mdl := &model.Config{
+						ID: "id",
+					}
+					err = datastore.Get(c, mdl)
+					So(err, ShouldBeNil)
+					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+				})
+
+				Convey("empty", func() {
+					cfg, err := srv.Update(c, &config.UpdateRequest{})
+					So(err, ShouldErrLike, "ID is required")
+					So(cfg, ShouldBeNil)
+					mdl := &model.Config{
+						ID: "id",
+					}
+					err = datastore.Get(c, mdl)
+					So(err, ShouldBeNil)
+					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+				})
+
+				Convey("id", func() {
+					cfg, err := srv.Update(c, &config.UpdateRequest{
+						UpdateMask: &field_mask.FieldMask{
+							Paths: []string{
+								"config.current_amount",
+							},
+						},
+					})
+					So(err, ShouldErrLike, "ID is required")
+					So(cfg, ShouldBeNil)
+					mdl := &model.Config{
+						ID: "id",
+					}
+					err = datastore.Get(c, mdl)
+					So(err, ShouldBeNil)
+					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+				})
+
+				Convey("update mask", func() {
+					Convey("missing", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+						})
+						So(err, ShouldErrLike, "update mask is required")
+						So(cfg, ShouldBeNil)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					})
+
+					Convey("empty", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{},
+							},
+						})
+						So(err, ShouldErrLike, "update mask is required")
+						So(cfg, ShouldBeNil)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					})
+
+					Convey("other", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{
+									"config.amount.default",
+								},
+							},
+						})
+						So(err, ShouldErrLike, "invalid or immutable")
+						So(cfg, ShouldBeNil)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					})
+				})
+			})
+
+			Convey("valid", func() {
+				Convey("unauthorized", func() {
+					c = auth.WithState(c, &authtest.FakeState{})
+					cfg, err := srv.Update(c, &config.UpdateRequest{
+						Id: "id",
+						Config: &config.Config{
+							CurrentAmount: 2,
+						},
+						UpdateMask: &field_mask.FieldMask{
+							Paths: []string{
+								"config.current_amount",
+							},
+						},
+					})
+					So(err, ShouldErrLike, "unauthorized user")
+					So(cfg, ShouldBeNil)
+					mdl := &model.Config{
+						ID: "id",
+					}
+					err = datastore.Get(c, mdl)
+					So(err, ShouldBeNil)
+					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+				})
+
+				Convey("authorized", func() {
+					Convey("min", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{
+									"config.current_amount",
+								},
+							},
+						})
+						So(err, ShouldBeNil)
+						So(cfg.CurrentAmount, ShouldEqual, 1)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					})
+
+					Convey("max", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							Config: &config.Config{
+								CurrentAmount: 4,
+							},
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{
+									"config.current_amount",
+								},
+							},
+						})
+						So(err, ShouldBeNil)
+						So(cfg.CurrentAmount, ShouldEqual, 3)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 3)
+					})
+
+					Convey("updates", func() {
+						cfg, err := srv.Update(c, &config.UpdateRequest{
+							Id: "id",
+							Config: &config.Config{
+								CurrentAmount: 2,
+							},
+							UpdateMask: &field_mask.FieldMask{
+								Paths: []string{
+									"config.current_amount",
+								},
+							},
+						})
+						So(err, ShouldBeNil)
+						So(cfg.CurrentAmount, ShouldEqual, 2)
+						mdl := &model.Config{
+							ID: "id",
+						}
+						err = datastore.Get(c, mdl)
+						So(err, ShouldBeNil)
+						So(mdl.Config.CurrentAmount, ShouldEqual, 2)
 					})
 				})
 			})

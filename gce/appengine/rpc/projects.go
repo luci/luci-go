@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 
 	"google.golang.org/grpc/codes"
@@ -24,7 +25,9 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/paged"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/appengine/model"
@@ -93,10 +96,26 @@ func (*Projects) List(c context.Context, req *projects.ListRequest) (*projects.L
 	return rsp, nil
 }
 
+// projectsPrelude ensures the user is authorized to use the read-only projects
+// API. Always returns permission denied for write methods.
+func projectsPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
+	if !isReadOnly(methodName) {
+		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+	}
+	switch is, err := auth.IsMember(c, admins, writers, readers); {
+	case err != nil:
+		return c, err
+	case is:
+		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
+		return c, nil
+	}
+	return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
+}
+
 // NewProjectsServer returns a new projects server.
 func NewProjectsServer() projects.ProjectsServer {
 	return &projects.DecoratedProjects{
-		Prelude:  readOnlyAuthPrelude,
+		Prelude:  projectsPrelude,
 		Service:  &Projects{},
 		Postlude: gRPCifyAndLogErr,
 	}

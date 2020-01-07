@@ -69,3 +69,13 @@ func (srv *Config) List(c context.Context, req *config.ListRequest) (*config.Lis
 	})
 	return rsp, nil
 }
+
+// Update handles a request to update a config.
+func (srv *Config) Update(c context.Context, req *config.UpdateRequest) (*config.Config, error) {
+	_, ok := srv.cfg.Load(req.GetId())
+	if !ok {
+		return nil, status.Errorf(codes.NotFound, "no config found with ID %q", req.GetId())
+	}
+	// TODO(smut): Handle updates.
+	return nil, status.Errorf(codes.InvalidArgument, "configs are immutable")
+}

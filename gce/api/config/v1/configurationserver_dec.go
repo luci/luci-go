@@ -92,3 +92,20 @@ func (s *DecoratedConfiguration) List(ctx context.Context, req *ListRequest) (rs
 	}
 	return
 }
+
+func (s *DecoratedConfiguration) Update(ctx context.Context, req *UpdateRequest) (rsp *Config, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "Update", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.Update(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "Update", rsp, err)
+	}
+	return
+}
