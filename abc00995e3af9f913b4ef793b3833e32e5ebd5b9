@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "cc34bef4_c85009fb",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "i see what you were trying to do. this is not how it is normally done. please select on sending to resultC/batchC and receiving from ctxStreaming.Done()",
+      "parentUuid": "51e83bde_22979b1b",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 12
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aabca64e_190d4b45",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8

@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72bc65bc_370a4528",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "please comment that it is implemented by bigquery.Inserter",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 13
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8214794d_5f783655",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "https://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables here again.\nplease do\n\n  rows :\u003d rows\n\ninside the loop",
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aaf8fbe_13326474",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "this is \n\n  return ins.Put(ctx, rows)",
+      "range": {
+        "startLine": 102,
+        "startChar": 4,
+        "endLine": 105,
+        "endChar": 14
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d74382a2_8f6e9b3a",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "we read a full invocation in L130 in the happy case. Let\u0027s read the full inv here and use its state",
+      "range": {
+        "startLine": 116,
+        "startChar": 0,
+        "endLine": 119,
+        "endChar": 2
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e167645_e41957fd",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "we don\u0027t have to do this anymore",
+      "range": {
+        "startLine": 146,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 13
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d362aff_1401c44f",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "see another comment. this is unnecessary",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 3
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1bb4b2f_b965d63e",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "it would be simpler to just send rows to batchC and do\n\n  rows \u003d make([]*bq.Row, 0, maxBatchSize)",
+      "range": {
+        "startLine": 168,
+        "startChar": 3,
+        "endLine": 169,
+        "endChar": 23
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c063991_1f6da7e5",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T23:12:21Z",
+      "side": 1,
+      "message": "this may hang forever if batchC has 20 items and upload goroutine exited. We should select on ctxStreaming.Done()",
+      "range": {
+        "startLine": 176,
+        "startChar": 2,
+        "endLine": 176,
+        "endChar": 16
+      },
+      "revId": "5a719c018114df14c2c44eda7679a60510d2387f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
