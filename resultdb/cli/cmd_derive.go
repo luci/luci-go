@@ -17,13 +17,20 @@ package cli
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/grpc/prpc"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -51,6 +58,10 @@ func cmdDerive(p Params) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
 			r.queryRun.registerFlags(p)
+			r.Flags.BoolVar(&r.wait, "wait", false, text.Doc(`
+				Wait for the tasks to complete.
+				Without waiting, if the task is incomplete, exits with an error.
+			`))
 			return r
 		},
 	}
@@ -60,6 +71,7 @@ type deriveRun struct {
 	queryRun
 	swarmingHost string
 	taskIDs      []string
+	wait         bool
 }
 
 func (r *deriveRun) parseArgs(args []string) error {
@@ -105,12 +117,7 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 		i := i
 		tid := tid
 		eg.Go(func() error {
-			res, err := r.recorder.DeriveInvocation(ctx, &pb.DeriveInvocationRequest{
-				SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
-					Hostname: r.swarmingHost,
-					Id:       tid,
-				},
-			})
+			res, err := r.deriveInvocation(ctx, tid)
 			if err != nil {
 				return err
 			}
@@ -120,4 +127,54 @@ func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 		})
 	}
 	return ret, eg.Wait()
+}
+
+// deriveInvocation derives an invocation from a task.
+func (r *deriveRun) deriveInvocation(ctx context.Context, taskID string) (*pb.Invocation, error) {
+	req := &pb.DeriveInvocationRequest{
+		SwarmingTask: &pb.DeriveInvocationRequest_SwarmingTask{
+			Hostname: r.swarmingHost,
+			Id:       taskID,
+		},
+	}
+
+	if !r.wait {
+		return r.recorder.DeriveInvocation(ctx, req)
+	}
+
+	var inv *pb.Invocation
+	err := retry.Retry(ctx, newPollingIter, func() error {
+		var err error
+		inv, err = r.recorder.DeriveInvocation(ctx, req, prpc.ExpectedCode(codes.OK, codes.FailedPrecondition))
+		if isTaskIncomplete(err) {
+			return errors.Annotate(err, "task is not complete yet").Tag(notReady).Err()
+		}
+		return err
+	}, func(err error, d time.Duration) {
+		logging.Infof(ctx, "task %s is incomplete; will wait for %s", taskID, d)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return inv, nil
+}
+
+func isTaskIncomplete(err error) bool {
+	return hasPreconditionViolationOfType(
+		status.Convert(err).Details(),
+		pb.DeriveInvocationPreconditionFailureType_INCOMPLETE_SWARMING_TASK.String(),
+	)
+}
+
+func hasPreconditionViolationOfType(details []interface{}, typ string) bool {
+	for _, d := range details {
+		if f, ok := d.(*errdetails.PreconditionFailure); ok {
+			for _, v := range f.Violations {
+				if v.Type == typ {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
