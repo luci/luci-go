@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a437d454_3fe9dad9",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:18:14Z",
+      "side": 1,
+      "message": "continue\n\nwe should probably sleep for some time too?",
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77a11e6d_c97ab141",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:18:14Z",
+      "side": 1,
+      "message": "nit: consolidate",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 4
+      },
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eebc55ae_ec759865",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:18:14Z",
+      "side": 1,
+      "message": "nit: \n\n  tasks: %s",
+      "range": {
+        "startLine": 118,
+        "startChar": 54,
+        "endLine": 118,
+        "endChar": 55
+      },
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
