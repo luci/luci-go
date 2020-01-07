@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24b5a401_084874b2",
+        "filename": "grpc/grpcmon/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T22:59:22Z",
+      "side": 1,
+      "message": "adding a new field breaks a metric, so the metric would need to be re-created.\nif we re-create it anyway, should we have only one field for code?",
+      "revId": "1d04f87ad27b988d47cd5f896ece4534fa57023b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
