@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd4a704e_c159c3d1",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88fc1588_525c0b91",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "puts are totally parallelizable. Was this considered? this would mean accepting `batchC chan[]*bq.Row` and having some N number of workers here, listening to the channel of batches and calling Put. \n\nthen the batching would be done in the spanner streaming callback.",
+      "range": {
+        "startLine": 103,
+        "startChar": 17,
+        "endLine": 103,
+        "endChar": 20
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae9bf012_79085865",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "nit: invocation",
+      "range": {
+        "startLine": 128,
+        "startChar": 12,
+        "endLine": 128,
+        "endChar": 23
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ccaf1b90_2cf2c583",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "why do we need this? it is used only in L166 only for the initial inv",
+      "range": {
+        "startLine": 134,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 5
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9212e5d_4ebb56f2",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "a comment explaining why we do this would be helpful.\n\nalternatively, we don\u0027t need this to begin with if we did batching in the L162 callback. See also a comment above",
+      "range": {
+        "startLine": 142,
+        "startChar": 31,
+        "endLine": 142,
+        "endChar": 43
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38408bce_715e1a49",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "why?",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 12
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aabca64e_190d4b45",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "errC has two states: 1) whether it has an error or not 2) whether it is closed or not.\nit has an error conditionally. it is closed conditionally.\n\nit would be simpler if both were unconditional (has an error unconditionally, closed/open unconditionally). \n\n  err :\u003d ..... \n  if err !\u003d nil {\n     ...\n  }\n  errC \u003c- err",
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60f1aa90_aa6c3b3c",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:10:25Z",
+      "side": 1,
+      "message": "there is no need to do this. span.QueryTestResultsStreaming already checks that ctxStreaming is not canceled. it should not call this func if it is canceled to begin with\n\nalso i think this is race, very similar to one i happened to fix yesterday https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1988538",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 16
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
