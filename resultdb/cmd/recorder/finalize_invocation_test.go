@@ -120,7 +120,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
 				MustApply(ctx,
 					InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct, false),
-					insertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
+					span.InsertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
