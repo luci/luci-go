@@ -279,6 +279,30 @@
     },
     {
       "key": {
+        "uuid": "70f5b45a_c137051b",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-01-07T22:25:09Z",
+      "side": 1,
+      "message": "I\u0027ll follow up if ChromeOS wants it.",
+      "parentUuid": "5d7e013b_8c8f0c36",
+      "range": {
+        "startLine": 131,
+        "startChar": 42,
+        "endLine": 131,
+        "endChar": 68
+      },
+      "revId": "01922680fa8b7cd5fe131d1f28bbf3e5c80aa6cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ec12d24_89586831",
         "filename": "gce/appengine/rpc/config.go",
         "patchSetId": 2
