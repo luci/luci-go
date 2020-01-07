@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0f87f8c4_6288a67b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd4a704e_c159c3d1",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88fc1588_525c0b91",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7123d1fb_01af61a7",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88fc1588_525c0b91",
+      "range": {
+        "startLine": 103,
+        "startChar": 17,
+        "endLine": 103,
+        "endChar": 20
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "399393c0_65530036",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae9bf012_79085865",
+      "range": {
+        "startLine": 128,
+        "startChar": 12,
+        "endLine": 128,
+        "endChar": 23
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ccaf1b90_2cf2c583",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8
@@ -91,6 +163,30 @@
       "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d924424d_f3d4488e",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Thanks for point it out! Should\u0027ve called span.ReadInvocationFull() instead.",
+      "parentUuid": "ccaf1b90_2cf2c583",
+      "range": {
+        "startLine": 134,
+        "startChar": 1,
+        "endLine": 134,
+        "endChar": 5
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "0498a283_c588d824",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9212e5d_4ebb56f2",
+      "range": {
+        "startLine": 142,
+        "startChar": 31,
+        "endLine": 142,
+        "endChar": 43
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38408bce_715e1a49",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8
@@ -128,6 +248,30 @@
       "writtenOn": "2020-01-07T17:10:25Z",
       "side": 1,
       "message": "why?",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 12
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51e83bde_22979b1b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "It\u0027s possible that resultC has been filled up, if so the streaming goroutine will sleep until resultC is unblocked. This line is to make sure that.\n\nComment added.",
+      "parentUuid": "38408bce_715e1a49",
       "range": {
         "startLine": 151,
         "startChar": 3,
@@ -157,6 +301,24 @@
     },
     {
       "key": {
+        "uuid": "584e2c42_660ab1b9",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aabca64e_190d4b45",
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "60f1aa90_aa6c3b3c",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8
@@ -168,6 +330,30 @@
       "writtenOn": "2020-01-07T17:10:25Z",
       "side": 1,
       "message": "there is no need to do this. span.QueryTestResultsStreaming already checks that ctxStreaming is not canceled. it should not call this func if it is canceled to begin with\n\nalso i think this is race, very similar to one i happened to fix yesterday https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1988538",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 16
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80fafb51_b5daeb87",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-07T22:34:46Z",
+      "side": 1,
+      "message": "Could you point me to the code of checking if ctxStreaming is cancelled?\n\nAnd since I call cancelStreaming() explicitly, will I encounter the same race?",
+      "parentUuid": "60f1aa90_aa6c3b3c",
       "range": {
         "startLine": 163,
         "startChar": 2,
