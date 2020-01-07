@@ -187,7 +187,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
 		if _, ok := ret[id]; ok {
-			panic("query is incorect; it returned duplicated invocation IDs")
+			panic("query is incorrect; it returned duplicated invocation IDs")
 		}
 		ret[id] = inv
 		return nil
