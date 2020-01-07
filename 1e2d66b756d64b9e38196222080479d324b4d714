@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57fe0507_12cc4805",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "spanner already knows the realm\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/e485ac7a4bf96ea9cacceb891cafa948cb266dbf:resultdb/internal/span/init_db.sql;l\u003d38;drc\u003d941630057954c2a2f4269932a59e73f991b8ef0b\n\n\u003d\u003e we can derive project from there \u003d\u003e we don\u0027t have to assume this",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc490e3b_6c4a4511",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "nit: start  the comment with a symbol name",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 32,
+        "endChar": 7
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120455ec_be585fd4",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "nit: i feel like it would be less code if we inlined readInvocationTask here, no? we have these variables defined twice",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 65
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "832d3e9d_bfdc49da",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "nit: i understand the general idea of separating code in smaller functions, but the way functions are split here are not in a reusable way, e.g. updateInvocationTask is very specific to leaseInvocationTask and is unlikely to be usable by anything else. Also leaseInvocationTask func is not that long to split. I think it would be more readable if we inversed this if conditions (normally, go code has error handling first, then happy case), and inline updateInvocationTask",
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7141807_4ea9252e",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "spanner retries L59 callback for unlimited amount of time in case of transient errors. this means \"now\" can get stale. I think we should call clock.Now() inside the callback",
+      "range": {
+        "startLine": 64,
+        "startChar": 36,
+        "endLine": 64,
+        "endChar": 39
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eaf3067f_bfe63fa7",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "we are not reading in this txn. please use https://godoc.org/cloud.google.com/go/spanner#Client.Apply",
+      "range": {
+        "startLine": 73,
+        "startChar": 16,
+        "endLine": 73,
+        "endChar": 20
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "730d3e26_28edda41",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "in general, please use clock.Now",
+      "range": {
+        "startLine": 82,
+        "startChar": 8,
+        "endLine": 82,
+        "endChar": 12
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e31256ad_ec321878",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-07T17:30:35Z",
+      "side": 1,
+      "message": "taskKey:\u003d taskKey\n\nhttps://github.com/golang/go/wiki/CommonMistakes#using-goroutines-on-loop-iterator-variables",
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
