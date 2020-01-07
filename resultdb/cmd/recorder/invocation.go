@@ -175,12 +175,6 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 	return nil
 }
 
-func readInvocationState(ctx context.Context, txn span.Txn, id span.InvocationID) (pb.Invocation_State, error) {
-	var state pb.Invocation_State
-	err := span.ReadInvocation(ctx, txn, id, map[string]interface{}{"State": &state})
-	return state, err
-}
-
 func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
 	createTime := pbutil.MustTimestamp(inv.CreateTime)
 
