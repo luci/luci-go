@@ -21,6 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
@@ -87,4 +88,30 @@ func dispatchInvocationTasks(ctx context.Context, taskKeys []*span.TaskKey) erro
 			}
 		}
 	})
+}
+
+// runInvocationTasks gets invocation tasks and dispatch the tasks to workers.
+func runInvocationTasks(ctx context.Context) {
+	// TODO(chanli): Add alert on failures.
+	attempt := 0
+	for {
+		taskKeys, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
+
+			attempt++
+			sleep := time.Duration(attempt) * time.Second
+			if sleep > 5*time.Second {
+				sleep = 5 * time.Second
+			}
+			time.Sleep(sleep)
+
+			continue
+		}
+
+		attempt = 0
+		if err = dispatchInvocationTasks(ctx, taskKeys); err != nil {
+			logging.Errorf(ctx, "Failed to run invocation tasks: %s", err)
+		}
+	}
 }
