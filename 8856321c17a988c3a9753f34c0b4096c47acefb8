@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "896c21a5_a35015ef",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T06:22:27Z",
+      "side": 1,
+      "message": "Done.\n\nIs exponential backoff needed here?",
+      "parentUuid": "a437d454_3fe9dad9",
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77a11e6d_c97ab141",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "c27b211d_3e1b7b48",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T06:22:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77a11e6d_c97ab141",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 4
+      },
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eebc55ae_ec759865",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -62,6 +104,30 @@
       "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea453b27_38123a65",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T06:22:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eebc55ae_ec759865",
+      "range": {
+        "startLine": 118,
+        "startChar": 54,
+        "endLine": 118,
+        "endChar": 55
+      },
+      "revId": "8856321c17a988c3a9753f34c0b4096c47acefb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
