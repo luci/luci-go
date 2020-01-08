@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8fcc3930_944733ce",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:08:28Z",
+      "side": 1,
+      "message": "it seems your intention is to sleep up to 5s. If so, this code does not entail your intention very well. it would be more readable it said\n\n  sleep :\u003d time.Duration(attempt) * time.Second\n  if sleep \u003e 5 * time.Second {\n    sleep \u003d 5 * time.Second\n  }",
+      "range": {
+        "startLine": 103,
+        "startChar": 3,
+        "endLine": 108,
+        "endChar": 4
+      },
+      "revId": "d959cb01414fe80cbb2fdaaaefd7dc4bc268259b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "752a097b_74f1b539",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:08:28Z",
+      "side": 1,
+      "message": "nit: \n\n  :\u003d",
+      "range": {
+        "startLine": 114,
+        "startChar": 9,
+        "endLine": 114,
+        "endChar": 10
+      },
+      "revId": "d959cb01414fe80cbb2fdaaaefd7dc4bc268259b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
