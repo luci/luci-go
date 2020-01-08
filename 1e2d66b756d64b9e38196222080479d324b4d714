@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9b91f6fa_24447317",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done.\n\nMade a change in exportResultsToBigQuery for getting the invocation\u0027s luci project.",
+      "parentUuid": "57fe0507_12cc4805",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc490e3b_6c4a4511",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c0ae471_500bea29",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc490e3b_6c4a4511",
+      "range": {
+        "startLine": 32,
+        "startChar": 3,
+        "endLine": 32,
+        "endChar": 7
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "2f9027fe_502bfb35",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "120455ec_be585fd4",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 62,
+        "endChar": 65
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "832d3e9d_bfdc49da",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -85,6 +157,24 @@
       "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06400279_7a80bd57",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "832d3e9d_bfdc49da",
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "4d5315f7_a2a0f89d",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7141807_4ea9252e",
+      "range": {
+        "startLine": 64,
+        "startChar": 36,
+        "endLine": 64,
+        "endChar": 39
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eaf3067f_bfe63fa7",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -131,6 +245,30 @@
       "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbdbe28a_5043c669",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eaf3067f_bfe63fa7",
+      "range": {
+        "startLine": 73,
+        "startChar": 16,
+        "endLine": 73,
+        "endChar": 20
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "48dcd332_f304dc04",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "730d3e26_28edda41",
+      "range": {
+        "startLine": 82,
+        "startChar": 8,
+        "endLine": 82,
+        "endChar": 12
+      },
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e31256ad_ec321878",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 2
@@ -171,6 +333,24 @@
       "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e064360a_8e09ce20",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T05:01:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e31256ad_ec321878",
+      "revId": "1e2d66b756d64b9e38196222080479d324b4d714",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
