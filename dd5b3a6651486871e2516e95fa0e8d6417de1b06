@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ca61e2f3_63846a39",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "errC \u003c- batchExportRows(ctx, ins, batchC)",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 13
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e35ffb2_2548ea8c",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "it would be more defensive to do\n\n  defer cancelStreaming()\n  errC \u003c- batchExportRows(ctx, ins, batchC)",
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62f2bd5b_d3aeeeaa",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "the fact that we returning errC instead of ctxStreaming.Err() warrants an explanatory comment:\n\n  either ctxStreaming was canceled by the other goroutine and errC contains the root error, or\n  the parent context is canceled ad batchExportRows will exit soon and send an error to errC\n\nor something along those lines",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 17
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd1980d0_ba19de92",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "we shouldn\u0027t do this if err !\u003d nil?\n\nin general, it is better to keep `err :\u003d ...` and `if err !\u003d nil` statements close together so that we do\u0027t accidentally insert something like this in between",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 0
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb8b7843_81492bd6",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "one problem here is that batchC is not guarantee to close (e.g. it is not `defer close(batchC)`), thus the other goroutine is not guaranteed to exit \u003d\u003e possible goroutine leak.\n\nalternatives:\n1) wrap L143-L167 in a function and do `defer close(batchC)` in the very beginning\n2) same as (1), but in a separate goroutine. The two goroutine can be orchestrated by https://godoc.org/golang.org/x/sync/errgroup#WithContext which cancels the context if either of goroutines exits with an error, thus canceling the other",
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

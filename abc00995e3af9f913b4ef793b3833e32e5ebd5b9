@@ -435,6 +435,30 @@
       "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05bf8089_40d50492",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:28:52Z",
+      "side": 1,
+      "message": "i was not entirely correct in the first comment. We do need to check ctxStreaming.Done because we are sending to resultC/batchC.\n\n\u003e Could you point me to the code of checking if ctxStreaming is cancelled?\n\nwe pass ctxStreaming to QueryTestResultsStreaming. Whenver we call f(ctx, ....), \nit is f\u0027s job to watch for ctx cancelation and exit soon if it canceled.",
+      "parentUuid": "46d11de9_f5c08f97",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 16
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
