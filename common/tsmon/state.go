@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/registry"
@@ -34,7 +35,7 @@ type State struct {
 	flusher                      *autoFlusher
 	callbacks                    []Callback
 	globalCallbacks              []GlobalCallback
-	invokeGlobalCallbacksOnFlush bool
+	invokeGlobalCallbacksOnFlush int32
 }
 
 // NewState returns a new State instance, configured with a nil store and nil
@@ -44,7 +45,7 @@ func NewState() *State {
 	return &State{
 		store:                        store.NewNilStore(),
 		monitor:                      monitor.NewNilMonitor(),
-		invokeGlobalCallbacksOnFlush: true,
+		invokeGlobalCallbacksOnFlush: 1,
 	}
 }
 
@@ -78,7 +79,7 @@ func (s *State) InhibitGlobalCallbacksOnFlush() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.invokeGlobalCallbacksOnFlush = false
+	atomic.StoreInt32(&s.invokeGlobalCallbacksOnFlush, 0)
 }
 
 // InvokeGlobalCallbacksOnFlush signals that the registered global callbacks
@@ -87,7 +88,7 @@ func (s *State) InvokeGlobalCallbacksOnFlush() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.invokeGlobalCallbacksOnFlush = true
+	atomic.StoreInt32(&s.invokeGlobalCallbacksOnFlush, 1)
 }
 
 // Monitor returns the State's monitor.
@@ -175,7 +176,7 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 	// Run any callbacks that have been registered to populate values in callback
 	// metrics.
 	s.runCallbacks(ctx)
-	if s.invokeGlobalCallbacksOnFlush {
+	if atomic.LoadInt32(&s.invokeGlobalCallbacksOnFlush) != 0 {
 		s.RunGlobalCallbacks(ctx)
 	}
 
