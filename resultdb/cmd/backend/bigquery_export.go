@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"regexp"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
@@ -42,6 +43,26 @@ const (
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
 	Put(ctx context.Context, src interface{}) error
+}
+
+var realmRe = regexp.MustCompile(`^(\w+)/(\w+)$`)
+
+func getLuciProject(ctx context.Context, invID span.InvocationID) (string, error) {
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+	var realm string
+	if err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{"Realm": &realm}); err != nil {
+		return "", err
+	}
+
+	var luciProject string
+	if match := realmRe.FindStringSubmatch(realm); match != nil {
+		luciProject = match[1]
+	}
+	if luciProject == "" {
+		return "", errors.Reason("realm %s of %s is malformatted", realm, invID.Name()).Err()
+	}
+	return luciProject, nil
 }
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
@@ -176,7 +197,12 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func exportResultsToBigQuery(ctx context.Context, luciProject string, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+	luciProject, err := getLuciProject(ctx, invID)
+	if err != nil {
+		return err
+	}
+
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
 		return err

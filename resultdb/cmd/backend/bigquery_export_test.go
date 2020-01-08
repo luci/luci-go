@@ -47,6 +47,36 @@ func (u *mockFailInserter) Put(ctx context.Context, src interface{}) error {
 	return fmt.Errorf("some error")
 }
 
+func TestGetLuciProject(t *testing.T) {
+	Convey(`success`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		now := clock.Now(ctx)
+
+		invID := span.InvocationID("inv")
+		testutil.MustApply(ctx,
+			testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, "different token", now, false, "chromium/public"),
+		)
+
+		luciProject, err := getLuciProject(ctx, invID)
+		So(err, ShouldBeNil)
+		So(luciProject, ShouldEqual, "chromium")
+	})
+
+	Convey(`realm malformatted`, t, func() {
+		ctx := testutil.SpannerTestContext(t)
+		now := clock.Now(ctx)
+
+		invID := span.InvocationID("inv")
+		testutil.MustApply(ctx,
+			testutil.InsertInvocation(invID, pb.Invocation_ACTIVE, "different token", now, false, ""),
+		)
+
+		luciProject, err := getLuciProject(ctx, invID)
+		So(err, ShouldErrLike, "realm  of invocations/inv is malformatted")
+		So(luciProject, ShouldEqual, "")
+	})
+}
+
 func TestExportToBigQuery(t *testing.T) {
 	ctx := testutil.SpannerTestContext(t)
 	const token = "update token"
@@ -54,7 +84,7 @@ func TestExportToBigQuery(t *testing.T) {
 
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("a", pb.Invocation_COMPLETED, token, now, false))
+			testutil.InsertInvocation("a", pb.Invocation_COMPLETED, token, now, false, ""))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pb.TestStatus_CRASH, pb.TestStatus_PASS)),
