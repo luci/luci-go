@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -367,7 +367,7 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 // cannot or do not properly handle this gRPC option.
 func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
 	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
-		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind")
+		return nil, errors.Reason("GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind").Err()
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
@@ -398,7 +398,7 @@ func (ts *tokenSource) Token() (*oauth2.Token, error) {
 		for k := range extra {
 			keys = append(keys, k)
 		}
-		panic(fmt.Errorf("extra headers are unexpectedly not empty: %s", keys))
+		panic(keys)
 	}
 	return tok, nil
 }
@@ -479,25 +479,25 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 
 	// Validate options.
 	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
-		return nil, fmt.Errorf("auth: WithScopes can only be used with AsSelf or AsActor authorization kind")
+		return nil, errors.Reason("WithScopes can only be used with AsSelf or AsActor authorization kind").Err()
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
-		return nil, fmt.Errorf("auth: WithServiceAccount can only be used with AsActor authorization kind")
+		return nil, errors.Reason("WithServiceAccount can only be used with AsActor authorization kind").Err()
 	}
 	if options.serviceAccount == "" && options.kind == AsActor {
-		return nil, fmt.Errorf("auth: AsActor authorization kind requires WithServiceAccount option")
+		return nil, errors.Reason("AsActor authorization kind requires WithServiceAccount option").Err()
 	}
 	if options.delegationToken != "" && options.kind != AsUser {
-		return nil, fmt.Errorf("auth: WithDelegationToken can only be used with AsUser authorization kind")
+		return nil, errors.Reason("WithDelegationToken can only be used with AsUser authorization kind").Err()
 	}
 	if len(options.delegationTags) != 0 && options.kind != AsUser {
-		return nil, fmt.Errorf("auth: WithDelegationTags can only be used with AsUser authorization kind")
+		return nil, errors.Reason("WithDelegationTags can only be used with AsUser authorization kind").Err()
 	}
 	if len(options.delegationTags) != 0 && options.delegationToken != "" {
-		return nil, fmt.Errorf("auth: WithDelegationTags and WithDelegationToken cannot be used together")
+		return nil, errors.Reason("WithDelegationTags and WithDelegationToken cannot be used together").Err()
 	}
 	if options.project == "" && options.kind == AsProject {
-		return nil, fmt.Errorf("auth: AsProject authorization kind requires WithProject option")
+		return nil, errors.Reason("AsProject authorization kind requires WithProject option").Err()
 	}
 
 	// Validate 'kind' and pick correct implementation of getRPCHeaders.
@@ -522,7 +522,7 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	case AsProject:
 		options.getRPCHeaders = asProjectHeaders
 	default:
-		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
+		return nil, errors.Reason("unknown RPCAuthorityKind %d", options.kind).Err()
 	}
 
 	// Default value for "client" field in monitoring metrics.
@@ -548,7 +548,10 @@ func asSelfHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		return nil, nil, ErrNotConfigured
 	}
 	tok, err := cfg.AccessTokenProvider(c, opts.scopes)
-	return tok, nil, err
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to get AsSelf access token").Err()
+	}
+	return tok, nil, nil
 }
 
 // asUserHeaders returns a map of authentication headers to add to outbound
@@ -575,7 +578,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		// Grab root URL of the destination service. Only https:// are allowed.
 		uri = strings.ToLower(uri)
 		if !strings.HasPrefix(uri, "https://") {
-			return nil, nil, fmt.Errorf("auth: refusing to use delegation tokens with non-https URL")
+			return nil, nil, errors.Reason("refusing to use delegation tokens with non-https URL").Err()
 		}
 		host := uri[len("https://"):]
 		if idx := strings.IndexRune(host, '/'); idx != -1 {
@@ -594,7 +597,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 			MinTTL:     10 * time.Minute,
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, errors.Annotate(err, "failed to mint AsUser delegation token").Err()
 		}
 		delegationToken = tok.Token
 	}
@@ -602,7 +605,7 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 	// Use our own OAuth token too, since the delegation token is bound to us.
 	oauthTok, err := cfg.AccessTokenProvider(c, []string{auth.OAuthScopeEmail})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Annotate(err, "failed to get own access token").Err()
 	}
 
 	logging.Fields{
@@ -642,7 +645,10 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 		Scopes:         opts.scopes,
 		MinTTL:         2 * time.Minute,
 	})
-	return oauthTok, nil, err
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to mint AsActor access token").Err()
+	}
+	return oauthTok, nil, nil
 }
 
 // asProjectHeaders returns a map of authentication headers to add to outbound
@@ -676,12 +682,18 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 	}
 
 	tok, err := mintTokenCall(c, mintParams)
-	// TODO(fmatenaar): This is only during migration and needs to be removed eventually.
-	if tok == nil && err == nil {
-		logging.Infof(c, "project %s not found, fallback to service identity", opts.project)
+	if err != nil {
+		return nil, nil, errors.Annotate(err, "failed to mint AsProject access token").Err()
+	}
+
+	// TODO(fmatenaar): This is only during migration and needs to be removed
+	// eventually.
+	if tok == nil {
+		logging.Infof(c, "Project %s not found, fallback to service identity", opts.project)
 		return asSelfHeaders(c, uri, opts)
 	}
-	return tok, nil, err
+
+	return tok, nil, nil
 }
 
 // isInternalURI returns true if the URI points to a LUCI microservice belonging
@@ -692,9 +704,9 @@ func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.
 func isInternalURI(c context.Context, uri string) (bool, error) {
 	switch u, err := url.Parse(uri); {
 	case err != nil:
-		return false, fmt.Errorf("auth: could not parse URI %q - %s", uri, err)
+		return false, errors.Annotate(err, "could not parse URI %q", uri).Err()
 	case u.Scheme != "https":
-		return false, fmt.Errorf("auth: AsProject can be used only with https:// targets, got %q", uri)
+		return false, errors.Reason("AsProject can be used only with https:// targets, got %q", uri).Err()
 	default:
 		state := GetState(c)
 		if state == nil {

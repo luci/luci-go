@@ -182,12 +182,14 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 				MinValidityDuration: int64(MaxScopedTokenTTL.Seconds()),
 			})
 
-			now := clock.Now(ctx).UTC()
-			// TODO(fmatenaar): This is valid during scoped-account migration
-			// and should be removed eventually after migration is finished for all projects.
+			// TODO(fmatenaar): This is valid during scoped-account migration and
+			// should be removed eventually after migration is finished for all
+			// projects.
+			//
 			// Cache the "NotFound" response and indicate it in the cached token.
+			now := clock.Now(ctx).UTC()
 			if err != nil && status.Code(err) == codes.NotFound {
-				logging.Warningf(ctx, "received NOT_FOUND from token-server, caching")
+				logging.Warningf(ctx, "Received NOT_FOUND from token-server, caching")
 				exp := now.Add(5 * time.Minute).UTC()
 				return &cachedToken{
 					Created:              jsontime.Time{now},
@@ -246,7 +248,8 @@ func MintProjectToken(ctx context.Context, p ProjectTokenParams) (_ *oauth2.Toke
 	if err != nil {
 		return nil, err
 	}
-	// TODO(fmatenaar): Remove this when scoped service accounts have been migrated.
+	// TODO(fmatenaar): Remove this when scoped service accounts have been
+	// migrated.
 	if cached.OAuth2Token == nil {
 		return nil, nil
 	}
