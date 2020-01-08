@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fbcba945_bed01d5b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca61e2f3_63846a39",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 13
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e35ffb2_2548ea8c",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 12
@@ -39,6 +63,24 @@
       "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1315cb3_e49e083d",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e35ffb2_2548ea8c",
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "e15a92c9_6e8a765a",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "errC is removed. The comment is not needed anymore.",
+      "parentUuid": "62f2bd5b_d3aeeeaa",
+      "range": {
+        "startLine": 154,
+        "startChar": 11,
+        "endLine": 154,
+        "endChar": 17
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd1980d0_ba19de92",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 12
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "522ec49d_4aad2e07",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "I thought the check of ctxStreaming.Done() should have guaranteed that. But then I recalled that \"A select blocks until one of its cases can run, then it executes that case. It chooses one at random if multiple are ready.\" \n\nSo the update has been made.",
+      "parentUuid": "fd1980d0_ba19de92",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 0
+      },
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb8b7843_81492bd6",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 12
@@ -102,6 +192,24 @@
       "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d31f0aa2_88703a9a",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb8b7843_81492bd6",
+      "revId": "dd5b3a6651486871e2516e95fa0e8d6417de1b06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -459,6 +459,30 @@
       "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22f66262_d59c53de",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T22:54:18Z",
+      "side": 1,
+      "message": "\u003e \u003e Could you point me to the code of checking if ctxStreaming is cancelled?\n\u003e \n\u003e we pass ctxStreaming to QueryTestResultsStreaming. Whenver we call f(ctx, ....), \n\u003e it is f\u0027s job to watch for ctx cancelation and exit soon if it canceled.\n\nOK, then I think we are on the same page as here is the f :)",
+      "parentUuid": "05bf8089_40d50492",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 16
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
