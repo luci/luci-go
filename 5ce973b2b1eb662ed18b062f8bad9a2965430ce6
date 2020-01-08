@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f967cc57_683fcd16",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-08T20:14:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6730b52e_b56b07e0",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 20
+      },
+      "revId": "5ce973b2b1eb662ed18b062f8bad9a2965430ce6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "384872d9_1f355b10",
         "filename": "common/tsmon/state.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "5ce973b2b1eb662ed18b062f8bad9a2965430ce6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d3b0e98_01418aee",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-08T20:14:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "384872d9_1f355b10",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 90,
+        "endChar": 0
+      },
+      "revId": "5ce973b2b1eb662ed18b062f8bad9a2965430ce6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
