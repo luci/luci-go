@@ -33,16 +33,18 @@ var (
 		"grpc/server/count",
 		"Total number of RPCs.",
 		nil,
-		field.String("method"), // full name of the grpc method
-		field.Int("code"))      // grpc.Code of the result
+		field.String("method"),         // full name of the grpc method
+		field.Int("code"),              // grpc.Code of the result
+		field.String("canonical_code")) // String representation of the code above
 
 	grpcServerDuration = metric.NewCumulativeDistribution(
 		"grpc/server/duration",
 		"Distribution of server-side RPC duration (in milliseconds).",
 		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
-		field.String("method"), // full name of the grpc method
-		field.Int("code"))      // grpc.Code of the result
+		field.String("method"),         // full name of the grpc method
+		field.Int("code"),              // grpc.Code of the result
+		field.String("canonical_code")) // String representation of the code above
 )
 
 // NewUnaryServerInterceptor returns an interceptor that gathers RPC handler
@@ -81,6 +83,6 @@ func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServe
 
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
 func reportServerRPCMetrics(ctx context.Context, method string, code codes.Code, dur time.Duration) {
-	grpcServerCount.Add(ctx, 1, method, int(code))
-	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code))
+	grpcServerCount.Add(ctx, 1, method, int(code), code.String())
+	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code), code.String())
 }

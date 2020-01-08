@@ -47,10 +47,10 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 0})
+		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 0, "OK"})
 		So(count, ShouldEqual, 1)
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 0})
+		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 0, "OK"})
 		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
 	})
 }
