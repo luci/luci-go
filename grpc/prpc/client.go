@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -82,8 +83,9 @@ var (
 type Client struct {
 	C *http.Client // if nil, uses http.DefaultClient
 
-	// ErrBodySize is the number of bytes to read from a HTTP response
-	// with error status and include in the error.
+	// ErrBodySize is the number of bytes to truncate error messages from HTTP
+	// responses to.
+	//
 	// If non-positive, defaults to 256.
 	ErrBodySize int
 
@@ -414,9 +416,10 @@ func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.
 
 // readErrorMessage reads an error message from a body buffer.
 // Respects c.ErrBodySize.
+//
 // If the error message is too long, trims it and appends "...".
 func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
-	ret := bodyBuf.String()
+	ret := bodyBuf.Bytes()
 
 	// Apply limits.
 	limit := c.ErrBodySize
@@ -424,10 +427,18 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 		limit = 256
 	}
 	if len(ret) > limit {
-		ret = strings.ToValidUTF8(ret[:limit], "") + "..."
+		// Note: we can't use strings.ToValidUTF8 here yet because it exists only
+		// in go1.13 and this code still needs to execute on go1.11 (for GAE). See
+		// also https://stackoverflow.com/a/52784785.
+		return strings.Map(func(r rune) rune {
+			if r == utf8.RuneError {
+				return -1
+			}
+			return r
+		}, string(ret[:limit])) + "..."
 	}
 
-	return ret
+	return string(ret)
 }
 
 // readStatusDetails reads google.rpc.Status.details from the response headers.
