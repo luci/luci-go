@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "00f29798_a0bb9241",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-08T21:09:24Z",
+      "side": 1,
+      "message": "I\u0027m very tempted just to write `return string(ret[:limit]) + \"...\"` and be done with it:\n1. It\u0027s not documented that error messages as UTF8.\n2. When under the limit, we don\u0027t verify the buffer is valid UTF8 anyway.",
+      "range": {
+        "startLine": 433,
+        "startChar": 3,
+        "endLine": 438,
+        "endChar": 33
+      },
+      "revId": "4441752c0fc255ee2cf928e6622926b6dd9e4a01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
