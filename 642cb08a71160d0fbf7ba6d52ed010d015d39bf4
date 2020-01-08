@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd0fa39d_4df8ef4f",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "this has little to do with bigquery export. it must be in a more general package, e.g. \"internal\"",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 48,
+        "endChar": 11
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6e7a5a7_5cce4ec9",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "LUCI",
+      "range": {
+        "startLine": 50,
+        "startChar": 8,
+        "endLine": 50,
+        "endChar": 12
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "770ec85c_b9902332",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "Single is more appropriate here",
+      "range": {
+        "startLine": 51,
+        "startChar": 25,
+        "endLine": 51,
+        "endChar": 44
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e03cb3dc_19316cd5",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "we\u0027d have fewer if statements if we did\n\n  match :\u003d ....\n  if match \u003d\u003d nil {\n    return \u003cerror\u003e\n  }\n\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/3f3ecf389473161d96f8ed7043dc0ab94e891526:resultdb/pbutil/test_result.go;l\u003d64;drc\u003d941630057954c2a2f4269932a59e73f991b8ef0b",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 2
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d0d310e_6d770a70",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "this function combines 1) retrieving a realm and 2) parsing a realm.\ni think these should be two separate functions. It is not hard to imagine we\u0027d fetch an invocation another way (or a few of them), but we still need to parse a realm",
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7d49d10_031c0302",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "realmRe and getLuciProject have little to do with bigquery. \nthey should be in a more general package, e.g. some parts are in span, some in internal",
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c211769b_4c70bc1f",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "i see this repeated here and in L40. Consider\n  \n\n  func (*TaskKey) Key() *spanner.Key",
+      "range": {
+        "startLine": 61,
+        "startChar": 36,
+        "endLine": 61,
+        "endChar": 76
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1eb90215_a79d4392",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "nit:\n\n  :\u003d",
+      "range": {
+        "startLine": 81,
+        "startChar": 11,
+        "endLine": 81,
+        "endChar": 12
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "631dbefe_feab6576",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "there is a lot of code repetition here. See existing tests how this is resolved, by a hierarchy of conveys",
+      "range": {
+        "startLine": 33,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 41
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d1639ef_cedef977",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "if we use Single, then we don\u0027t need to Close txn\n\nsame in other places",
+      "range": {
+        "startLine": 108,
+        "startChar": 26,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54db5d2a_1b7903a6",
+        "filename": "resultdb/internal/span/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-08T17:42:54Z",
+      "side": 1,
+      "message": "does Single() work here?",
+      "range": {
+        "startLine": 46,
+        "startChar": 20,
+        "endLine": 47,
+        "endChar": 18
+      },
+      "revId": "642cb08a71160d0fbf7ba6d52ed010d015d39bf4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
