@@ -35,7 +35,7 @@ func WithFakes(ctx context.Context) (context.Context, *store.Fake, *monitor.Fake
 	return WithState(ctx, &State{
 		store:                        s,
 		monitor:                      m,
-		invokeGlobalCallbacksOnFlush: true,
+		invokeGlobalCallbacksOnFlush: 1,
 	}), s, m
 }
 
@@ -46,7 +46,7 @@ func WithDummyInMemory(ctx context.Context) (context.Context, *monitor.Fake) {
 	return WithState(ctx, &State{
 		store:                        store.NewInMemory(&target.Task{}),
 		monitor:                      m,
-		invokeGlobalCallbacksOnFlush: true,
+		invokeGlobalCallbacksOnFlush: 1,
 	}), m
 }
 
