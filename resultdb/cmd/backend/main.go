@@ -28,6 +28,8 @@ func main() {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
+
+		srv.RunInBackground("resultdb.invocation_task", runInvocationTasks)
 		return nil
 	})
 }
