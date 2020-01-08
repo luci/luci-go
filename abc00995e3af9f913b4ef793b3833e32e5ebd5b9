@@ -308,6 +308,30 @@
     },
     {
       "key": {
+        "uuid": "998c66fc_9442caca",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T01:09:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc34bef4_c85009fb",
+      "range": {
+        "startLine": 151,
+        "startChar": 3,
+        "endLine": 151,
+        "endChar": 12
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aabca64e_190d4b45",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 8
@@ -378,6 +402,30 @@
       "side": 1,
       "message": "Could you point me to the code of checking if ctxStreaming is cancelled?\n\nAnd since I call cancelStreaming() explicitly, will I encounter the same race?",
       "parentUuid": "60f1aa90_aa6c3b3c",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 164,
+        "endChar": 16
+      },
+      "revId": "abc00995e3af9f913b4ef793b3833e32e5ebd5b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46d11de9_f5c08f97",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-08T01:09:17Z",
+      "side": 1,
+      "message": "WDYT?",
+      "parentUuid": "80fafb51_b5daeb87",
       "range": {
         "startLine": 163,
         "startChar": 2,
