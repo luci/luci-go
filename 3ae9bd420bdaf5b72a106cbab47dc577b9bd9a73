@@ -22,6 +22,30 @@
       "revId": "3ae9bd420bdaf5b72a106cbab47dc577b9bd9a73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18cd0e11_5f3170fc",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-01-09T21:51:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51295fb0_70d9fb26",
+      "range": {
+        "startLine": 160,
+        "startChar": 30,
+        "endLine": 160,
+        "endChar": 31
+      },
+      "revId": "3ae9bd420bdaf5b72a106cbab47dc577b9bd9a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
