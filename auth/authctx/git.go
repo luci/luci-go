@@ -49,8 +49,10 @@ var gitConfigTempl = template.Must(template.New(".gitconfig").Parse(`# Autogener
 
 [pack]
   packSizeLimit = 2g
-{{if .IsWindows}}
+
 [http]
+  version = HTTP/1.1
+{{if .IsWindows}}
   # This is path inside mingw64 installation, bundled with Git For Windows.
   sslCAinfo = /ssl/certs/ca-bundle.crt
 

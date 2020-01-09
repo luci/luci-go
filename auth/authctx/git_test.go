@@ -59,6 +59,9 @@ func TestGitConfig(t *testing.T) {
 [pack]
   packSizeLimit = 2g
 
+[http]
+  version = HTTP/1.1
+
 [gc]
   autodetach = false
 
@@ -95,6 +98,8 @@ func TestGitConfig(t *testing.T) {
   packSizeLimit = 2g
 
 [http]
+  version = HTTP/1.1
+
   # This is path inside mingw64 installation, bundled with Git For Windows.
   sslCAinfo = /ssl/certs/ca-bundle.crt
 
