@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f6776fb_7a83216e",
+        "filename": "grpc/grpcmon/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T23:30:47Z",
+      "side": 1,
+      "message": "please do this if !ok\nvast majority of time the code is valid, so allocate this string just to throw it away\n\nalso i suspect fmt.Sprintf will be more efficient (less strings to copy) and simpler",
+      "revId": "d9657f4d87c6f8ebb831c4add765f2780f49014f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
