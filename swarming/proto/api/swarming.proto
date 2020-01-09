@@ -280,6 +280,9 @@ message BotInfo {
   //
   // This can be the DUT (Device Under Test) or other peripherals.
   repeated PhysicalEntity devices = 9;
+
+  // This field is used in BOT_MISSING event to know the timestamp of the last activity.
+  google.protobuf.Timestamp last_seen_ts = 10;
 }
 
 // PhysicalEntity includes information about an host or device.
@@ -385,6 +388,9 @@ enum BotEventType {
   // In this case, the bot's historical data is still kept in the Swarming
   // server's DB for a year, but the bot is not shown anywhere.
   BOT_DELETED = 7;  // Not used yet. https://crbug.com/905087
+  // Bot is missing. There have been no communication from the bot for longer
+  // than deadline configured on server side.
+  BOT_MISSING = 8;
 
   // Bot polling results; these are commands sent to the bot to do actions.
 
@@ -814,6 +820,16 @@ message TaskRequest {
   string parent_run_id = 11;
   // Send notification to this pubsub topic for updates of this task.
   PubSub pubsub_notification = 10;
+  // Maximum delay between bot pings before the bot is considered dead
+  // while running a task.
+  //
+  // When a task is running, the bot sends update to the server every
+  // few seconds. In some cases, like when the system is overloaded,
+  // the bot may be preempted and delayed in sending its updates.
+  // After the delay specified here, the server will claim the bot to
+  // be dead and will forcibly abort the task as BOT_DIED. This is to
+  // catch system wide issues like a BSOD.
+  google.protobuf.Duration bot_ping_tolerance = 12;
 }
 
 // PubSub is a Cloud Pub/Sub topic to send task updates to.
