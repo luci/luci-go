@@ -16,43 +16,46 @@ import "google/protobuf/timestamp.proto";
 message Attempt {
   // The opaque key unique to this Attempt.
   string key = 1;
-  // The LUCI project that this attempt belongs to.
+  // The LUCI project that this Attempt belongs to.
   string project = 2;
 
-  // An opaque key that is unique for a given set of Gerrit change patchsets
+  // An opaque key that is unique for a given set of Gerrit change patchsets.
   // (or, equivalently, buildsets). The same cl_group_key will be used if
-  // another attempt is made for the same set of changes at a different time.
+  // another Attempt is made for the same set of changes at a different time.
   string cl_group_key = 3;
-
-  // Similar to cl_group_key, except the key will be the same as long as
-  // the earliest_equivalent_patchset values are the same, even if the patchset
-  // values are different, e.g. when a new "trivial" patchset is uploaded.
+  // Similar to cl_group_key, except the key will be the same when the
+  // earliest_equivalent_patchset values are the same, even if the patchset
+  // values are different.
+  //
+  // For example, when a new "trivial" patchset is uploaded, then the
+  // cl_group_key will change but the equivalent_cl_group_key will stay the
+  // same.
   string equivalent_cl_group_key = 4;
 
-  // Time when the attempt started (trigger time of the last CL triggered)
-  // and ended (released by CQ).
+  // The time when the Attempt started (trigger time of the last CL triggered).
   google.protobuf.Timestamp start_time = 5;
+  // The time when the Attempt ended (released by CQ).
   google.protobuf.Timestamp end_time = 6;
 
   // Gerrit changes, with specific patchsets, in this Attempt.
   // There should be one or more.
   repeated GerritChange gerrit_changes = 7;
 
-  // Relevant builds at of this Attempt's end time.
+  // Relevant builds as of this Attempt's end time.
   //
   // While Attempt is processed, CQ may consider more builds than included here.
   //
   // For example, the following builds will be not be included:
-  //   * builds triggered before this attempt started, considered temporarily by
+  //   * builds triggered before this Attempt started, considered temporarily by
   //     CQ, but then ignored because they ultimately failed such that CQ had to
   //     trigger new builds instead.
-  //   * successful builds which were fresh enough at the attempt start time,
+  //   * successful builds which were fresh enough at the Attempt start time,
   //     but which were ignored after they became too old for consideration such
   //     that CQ had to trigger new builds instead.
-  //   * builds triggered as part of this attempt, which were later removed from
-  //     project CQ config and hence were no longer required by CQ by attempt's
+  //   * builds triggered as part of this Attempt, which were later removed from
+  //     project CQ config and hence were no longer required by CQ by Attempt
   //     end time.
-  //   * builds triggered as part of this attempt that failed and were retried.
+  //   * builds triggered as part of this Attempt that failed and were retried.
   //     The latest retried build will be included, however.
   repeated Build builds = 8;
 
@@ -60,9 +63,8 @@ message Attempt {
   AttemptStatus status = 9;
 }
 
-
 // GerritChange represents one revision (patchset) of one Gerrit change
-// in an attempt.
+// in an Attempt.
 //
 // See also: GerritChange in buildbucket/proto/common.proto.
 message GerritChange {
@@ -74,11 +76,11 @@ message GerritChange {
   int64 change = 3;
   // Patch set number, e.g. 1.
   int64 patchset = 4;
-  // The earliest patchset of the CL that is considered
-  // equivalent to the patchset above.
+  // The earliest patchset of the CL that is considered equivalent to the
+  // patchset above.
   int64 earliest_equivalent_patchset = 5;
 
-  // The time that the CQ was triggered for this CL in this attempt.
+  // The time that the CQ was triggered for this CL in this Attempt.
   google.protobuf.Timestamp trigger_time = 6;
   // CQ Mode for this CL, e.g. dry run or full run.
   Mode mode = 7;
@@ -138,7 +140,6 @@ message Build {
   enum Origin {
     // Default. Never set.
     ORIGIN_UNSPECIFIED = 0;
-
     // Build was triggered as part of this attempt
     // because reuse was disabled for its builder.
     NOT_REUSABLE = 1;
@@ -148,11 +149,15 @@ message Build {
     // Build was reused.
     REUSED = 3;
   }
+  // Information about whether this build was triggered previously and reused,
+  // or triggered because there was no reusable build, or because builds by
+  // this builder are all not reusable.
   Origin origin = 3;
 
-  // YES if this build must pass in order for the CLs to be considered
-  // ready to submit; NO if the build status should not be used to assess
-  // correctness the CLs in the Attempt.
+  // Whether this build must pass in order for the CLs to be considered
+  // ready to submit. True means this build must pass, false means this
+  // build is "optional", and this build should not be used to assess
+  // the correctness of the CLs in the Attempt.
   bool critical = 4;
 }
 
