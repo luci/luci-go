@@ -195,38 +195,42 @@ func (Build_Origin) EnumDescriptor() ([]byte, []int) {
 type Attempt struct {
 	// The opaque key unique to this Attempt.
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// The LUCI project that this attempt belongs to.
+	// The LUCI project that this Attempt belongs to.
 	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
-	// An opaque key that is unique for a given set of Gerrit change patchsets
+	// An opaque key that is unique for a given set of Gerrit change patchsets.
 	// (or, equivalently, buildsets). The same cl_group_key will be used if
-	// another attempt is made for the same set of changes at a different time.
+	// another Attempt is made for the same set of changes at a different time.
 	ClGroupKey string `protobuf:"bytes,3,opt,name=cl_group_key,json=clGroupKey,proto3" json:"cl_group_key,omitempty"`
-	// Similar to cl_group_key, except the key will be the same as long as
-	// the earliest_equivalent_patchset values are the same, even if the patchset
-	// values are different, e.g. when a new "trivial" patchset is uploaded.
+	// Similar to cl_group_key, except the key will be the same when the
+	// earliest_equivalent_patchset values are the same, even if the patchset
+	// values are different.
+	//
+	// For example, when a new "trivial" patchset is uploaded, then the
+	// cl_group_key will change but the equivalent_cl_group_key will stay the
+	// same.
 	EquivalentClGroupKey string `protobuf:"bytes,4,opt,name=equivalent_cl_group_key,json=equivalentClGroupKey,proto3" json:"equivalent_cl_group_key,omitempty"`
-	// Time when the attempt started (trigger time of the last CL triggered)
-	// and ended (released by CQ).
+	// The time when the Attempt started (trigger time of the last CL triggered).
 	StartTime *timestamp.Timestamp `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	EndTime   *timestamp.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	// The time when the Attempt ended (released by CQ).
+	EndTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Gerrit changes, with specific patchsets, in this Attempt.
 	// There should be one or more.
 	GerritChanges []*GerritChange `protobuf:"bytes,7,rep,name=gerrit_changes,json=gerritChanges,proto3" json:"gerrit_changes,omitempty"`
-	// Relevant builds at of this Attempt's end time.
+	// Relevant builds as of this Attempt's end time.
 	//
 	// While Attempt is processed, CQ may consider more builds than included here.
 	//
 	// For example, the following builds will be not be included:
-	//   * builds triggered before this attempt started, considered temporarily by
+	//   * builds triggered before this Attempt started, considered temporarily by
 	//     CQ, but then ignored because they ultimately failed such that CQ had to
 	//     trigger new builds instead.
-	//   * successful builds which were fresh enough at the attempt start time,
+	//   * successful builds which were fresh enough at the Attempt start time,
 	//     but which were ignored after they became too old for consideration such
 	//     that CQ had to trigger new builds instead.
-	//   * builds triggered as part of this attempt, which were later removed from
-	//     project CQ config and hence were no longer required by CQ by attempt's
+	//   * builds triggered as part of this Attempt, which were later removed from
+	//     project CQ config and hence were no longer required by CQ by Attempt
 	//     end time.
-	//   * builds triggered as part of this attempt that failed and were retried.
+	//   * builds triggered as part of this Attempt that failed and were retried.
 	//     The latest retried build will be included, however.
 	Builds []*Build `protobuf:"bytes,8,rep,name=builds,proto3" json:"builds,omitempty"`
 	// Final status of the Attempt.
@@ -325,7 +329,7 @@ func (m *Attempt) GetStatus() AttemptStatus {
 }
 
 // GerritChange represents one revision (patchset) of one Gerrit change
-// in an attempt.
+// in an Attempt.
 //
 // See also: GerritChange in buildbucket/proto/common.proto.
 type GerritChange struct {
@@ -337,10 +341,10 @@ type GerritChange struct {
 	Change int64 `protobuf:"varint,3,opt,name=change,proto3" json:"change,omitempty"`
 	// Patch set number, e.g. 1.
 	Patchset int64 `protobuf:"varint,4,opt,name=patchset,proto3" json:"patchset,omitempty"`
-	// The earliest patchset of the CL that is considered
-	// equivalent to the patchset above.
+	// The earliest patchset of the CL that is considered equivalent to the
+	// patchset above.
 	EarliestEquivalentPatchset int64 `protobuf:"varint,5,opt,name=earliest_equivalent_patchset,json=earliestEquivalentPatchset,proto3" json:"earliest_equivalent_patchset,omitempty"`
-	// The time that the CQ was triggered for this CL in this attempt.
+	// The time that the CQ was triggered for this CL in this Attempt.
 	TriggerTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=trigger_time,json=triggerTime,proto3" json:"trigger_time,omitempty"`
 	// CQ Mode for this CL, e.g. dry run or full run.
 	Mode Mode `protobuf:"varint,7,opt,name=mode,proto3,enum=bigquery.Mode" json:"mode,omitempty"`
@@ -439,11 +443,15 @@ type Build struct {
 	// Buildbucket build ID, unique per Buildbucket instance.
 	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Buildbucket host, e.g. "cr-buildbucket.appspot.com".
-	Host   string       `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
+	// Information about whether this build was triggered previously and reused,
+	// or triggered because there was no reusable build, or because builds by
+	// this builder are all not reusable.
 	Origin Build_Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=bigquery.Build_Origin" json:"origin,omitempty"`
-	// YES if this build must pass in order for the CLs to be considered
-	// ready to submit; NO if the build status should not be used to assess
-	// correctness the CLs in the Attempt.
+	// Whether this build must pass in order for the CLs to be considered
+	// ready to submit. True means this build must pass, false means this
+	// build is "optional", and this build should not be used to assess
+	// the correctness of the CLs in the Attempt.
 	Critical             bool     `protobuf:"varint,4,opt,name=critical,proto3" json:"critical,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
