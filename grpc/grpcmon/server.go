@@ -16,8 +16,10 @@ package grpcmon
 
 import (
 	"context"
+	"strconv"
 	"time"
 
+	gcode "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -83,6 +85,11 @@ func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServe
 
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
 func reportServerRPCMetrics(ctx context.Context, method string, code codes.Code, dur time.Duration) {
-	grpcServerCount.Add(ctx, 1, method, int(code), code.String())
-	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code), code.String())
+	canon := "Code(" + strconv.FormatInt(int64(code), 10) + ")"
+	if name, ok := gcode.Code_name[int32(code)]; ok {
+		canon = name
+	}
+
+	grpcServerCount.Add(ctx, 1, method, int(code), canon)
+	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code), canon)
 }
