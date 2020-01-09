@@ -16,6 +16,7 @@ package grpcmon
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -83,6 +84,49 @@ func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServe
 
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
 func reportServerRPCMetrics(ctx context.Context, method string, code codes.Code, dur time.Duration) {
-	grpcServerCount.Add(ctx, 1, method, int(code), code.String())
-	grpcServerDuration.Add(ctx, float64(dur.Nanoseconds()/1e6), method, int(code), code.String())
+	grpcServerCount.Add(ctx, 1, method, int(code), toCanonicalString(code))
+	grpcServerDuration.Add(
+			ctx, float64(dur.Nanoseconds()/1e6), method, int(code), toCanonicalString(code))
+}
+
+// toCanonicalString converts a grpc code to its canonical string representation.
+func toCanonicalString(c codes.Code) string {
+	switch c {
+	case codes.OK:
+		return "OK"
+	case codes.Canceled:
+		return "CANCELLED"
+	case codes.Unknown:
+		return "UNKNOWN"
+	case codes.InvalidArgument:
+		return "INVALID_ARGUMENT"
+	case codes.DeadlineExceeded:
+		return "DEADLINE_EXCEEDED"
+	case codes.NotFound:
+		return "NOT_FOUND"
+	case codes.AlreadyExists:
+		return "ALREADY_EXISTS"
+	case codes.PermissionDenied:
+		return "PERMISSION_DENIED"
+	case codes.ResourceExhausted:
+		return "RESOURCE_EXHAUSTED"
+	case codes.FailedPrecondition:
+		return "FAILED_PRECONDITION"
+	case codes.Aborted:
+		return "ABORTED"
+	case codes.OutOfRange:
+		return "OUT_OF_RANGE"
+	case codes.Unimplemented:
+		return "UNIMPLEMENTED"
+	case codes.Internal:
+		return "INTERNAL"
+	case codes.Unavailable:
+		return "UNAVAILABLE"
+	case codes.DataLoss:
+		return "DATA_LOSS"
+	case codes.Unauthenticated:
+		return "UNAUTHENTICATED"
+	default:
+		return "Code(" + strconv.FormatInt(int64(c), 10) + ")"
+	}
 }
