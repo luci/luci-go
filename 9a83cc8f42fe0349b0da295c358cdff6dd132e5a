@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a68c7dba_5ae873a2",
+        "filename": "grpc/grpcmon/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-09T22:13:19Z",
+      "side": 1,
+      "message": "nit: not necessary in go and actually harms readability in this case IMHO",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 3
+      },
+      "revId": "9a83cc8f42fe0349b0da295c358cdff6dd132e5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
