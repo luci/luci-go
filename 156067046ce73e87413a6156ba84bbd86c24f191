@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2def5c7_13d8b4c4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T18:54:27Z",
+      "side": 1,
+      "message": "this might have XSS implications we should be careful of, since everything would be under the same rdb domain (I think)",
+      "range": {
+        "startLine": 23,
+        "startChar": 34,
+        "endLine": 23,
+        "endChar": 59
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd06b321_85c32d01",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T18:54:27Z",
+      "side": 1,
+      "message": "I would note that the opposing groups of properties are\n  * data_stream (which contains its own content_type)\n  * (fetch_url, content_type)\n\nOtherwise multiple artifacts could point to the same data_stream with different content types, which would be weird.\n\nAlso for GCS, doesn\u0027t GCS allow you to set the content type directly already?  (https://cloud.google.com/storage/docs/gsutil/addlhelp/WorkingWithObjectMetadata)\n\nIf content_type is just used as a hint for indexing to rdb, maybe it could be reduced to \"index_as\u003dTEXT\" or something like that, and just supplied in conjunction with fetch_url (assuming we want rdb to follow fetch_url via a realm-scoped account and consume that data for indexing). If rdb isn\u0027t going to follow fetch_url itself, then I think content_type probably can just be dropped, and then data_stream would carry its own content_type and index_as flags.",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33b6066c_5560cefb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T18:54:27Z",
+      "side": 1,
+      "message": "I misunderstood this when I first read it; it sounds like you\u0027re doing this so that rdb can, in the future, generate signed GCS urls from its own backing store? This sgtm (and we\u0027ll definitely need to substantially change the storage scheme for logdog logs if this is the case).",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 69
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
