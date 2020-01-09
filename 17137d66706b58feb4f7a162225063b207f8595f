@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b1769270_a747b55e",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95316ef0_7144c61b",
+      "range": {
+        "startLine": 88,
+        "startChar": 17,
+        "endLine": 88,
+        "endChar": 30
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2381b0c7_b9e37f72",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "0d21bf9a_1142a2be",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2381b0c7_b9e37f72",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 2
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82921dc7_c3593096",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -62,6 +110,24 @@
       "revId": "17137d66706b58feb4f7a162225063b207f8595f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa7fa732_d3aafa41",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "82921dc7_c3593096",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "c24e5aeb_7f068f60",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aa9120f_43d633b1",
+      "range": {
+        "startLine": 133,
+        "startChar": 8,
+        "endLine": 133,
+        "endChar": 11
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84e221ae_ad7b1467",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -99,6 +189,30 @@
       "writtenOn": "2020-01-09T18:58:57Z",
       "side": 1,
       "message": "if this limit is reached, we return the error and this task will be retried forever. We need to check that the limit is reached and somehow give up on this task",
+      "range": {
+        "startLine": 161,
+        "startChar": 56,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d87fc56b_ad506330",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Added a TODO, will be fixed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1987202/5",
+      "parentUuid": "84e221ae_ad7b1467",
       "range": {
         "startLine": 161,
         "startChar": 56,
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "ee391b8b_d16b50c6",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b207acbb_34ccf90c",
+      "range": {
+        "startLine": 169,
+        "startChar": 32,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c72302b_507d1082",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "38a9cc8d_1e6cd444",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c72302b_507d1082",
+      "range": {
+        "startLine": 172,
+        "startChar": 6,
+        "endLine": 172,
+        "endChar": 21
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e03d3554_0bfb89ee",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -174,6 +336,24 @@
     },
     {
       "key": {
+        "uuid": "91b77d24_92f5db21",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e03d3554_0bfb89ee",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51f91607_587a01c0",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -185,6 +365,24 @@
       "writtenOn": "2020-01-09T18:58:57Z",
       "side": 1,
       "message": "why is this needed?",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9be2f517_459d98b6",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "To make sure there\u0027s no race in the code.",
+      "parentUuid": "51f91607_587a01c0",
       "revId": "17137d66706b58feb4f7a162225063b207f8595f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -214,6 +412,30 @@
     },
     {
       "key": {
+        "uuid": "7d0d01e8_d3b31494",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2f8ff34d_79a9c9c1",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 22
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f725c5eb_ff167a75",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -237,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "92f230ba_10e7bf69",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f725c5eb_ff167a75",
+      "range": {
+        "startLine": 71,
+        "startChar": 63,
+        "endLine": 71,
+        "endChar": 85
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5c790fc_d853db1e",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -254,6 +500,24 @@
     },
     {
       "key": {
+        "uuid": "8aebcebb_aa29797d",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d5c790fc_d853db1e",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec05ac48_ee68d645",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -265,6 +529,30 @@
       "writtenOn": "2020-01-09T18:58:57Z",
       "side": 1,
       "message": "what\u0027s the value of this test?",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28ce6015_353bd323",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T22:48:26Z",
+      "side": 1,
+      "message": "To make sure exportTestResultsToBigQuery can handle errors properly.",
+      "parentUuid": "ec05ac48_ee68d645",
       "range": {
         "startLine": 74,
         "startChar": 2,
