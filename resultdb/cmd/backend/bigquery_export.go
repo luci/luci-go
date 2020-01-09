@@ -19,15 +19,32 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
+	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+const (
+	maxInvocationGraphSize = 1000
+	maxBatchSize           = 500
+)
+
+// inserter is implemented by bigquery.Inserter.
+type inserter interface {
+	// Put uploads one or more rows to the BigQuery service.
+	Put(ctx context.Context, src interface{}) error
+}
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
 	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(bigquery.Scope))
@@ -64,6 +81,108 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 	return nil
 }
 
+func generateBQRow(inv *pb.Invocation, tr *pb.TestResult) *bq.Row {
+	return &bq.Row{
+		Message: &bqpb.TestResultRow{
+			Invocation: &bqpb.TestResultRow_Invocation{
+				Id:          string(span.MustParseInvocationName(inv.Name)),
+				Interrupted: inv.Interrupted,
+				Tags:        inv.Tags,
+			},
+			Result: tr,
+			Exoneration: &bqpb.TestResultRow_TestExoneration{
+				Exonerated: false,
+			},
+		},
+		InsertID: tr.Name,
+	}
+}
+
+func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, maxBatchSize int, batchC chan []*bq.Row) error {
+	rows := make([]*bq.Row, 0, maxBatchSize)
+	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult) error {
+		rows = append(rows, generateBQRow(inv, tr))
+		if len(rows) >= maxBatchSize {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case batchC <- rows:
+			}
+			rows = make([]*bq.Row, 0, maxBatchSize)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(rows) > 0 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case batchC <- rows:
+		}
+	}
+
+	return nil
+}
+
+func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bq.Row) error {
+	return parallel.WorkPool(10, func(workC chan<- func() error) {
+		for rows := range batchC {
+			rows := rows
+			workC <- func() error {
+				return ins.Put(ctx, rows)
+			}
+		}
+	})
+}
+
+// exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
+func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport, maxBatchSize int) error {
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+
+	inv, err := span.ReadInvocationFull(ctx, txn, invID)
+	if err != nil {
+		return err
+	}
+	if inv.State != pb.Invocation_COMPLETED {
+		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
+	}
+
+	// Get the invocation set.
+	// TODO(chanli): when encounter TooManyInvocationsTag err, log the error and delete the invocation task.
+	invIDs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.NewInvocationIDSet(invID))
+	if err != nil {
+		return err
+	}
+
+	// TODO(chanli): Query test exonerations.
+
+	// Query test results and export to BigQuery.
+	batchC := make(chan []*bq.Row)
+
+	// Batch exports rows to BigQuery.
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return batchExportRows(ctx, ins, batchC)
+	})
+
+	q := span.TestResultQuery{
+		Predicate:     bqExport.GetTestResults().GetPredicate(),
+		InvocationIDs: invIDs,
+	}
+	eg.Go(func() error {
+		defer close(batchC)
+		return queryTestResultsStreaming(ctx, txn, inv, q, maxBatchSize, batchC)
+	})
+
+	return eg.Wait()
+}
+
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
 func exportResultsToBigQuery(ctx context.Context, luciProject string, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
 	client, err := getBQClient(ctx, luciProject, bqExport)
@@ -76,6 +195,6 @@ func exportResultsToBigQuery(ctx context.Context, luciProject string, invID span
 		return err
 	}
 
-	// TODO(chanli): Actually export test results.
-	return nil
+	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
+	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchSize)
 }
