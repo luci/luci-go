@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2baae388_2fe8bfbf",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "please don\u0027t use global variables. This should be a field of mockPassInserter",
+      "revId": "e1ef89d88401755c3d67d5b2044efa8007dccf19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28907dc0_3416926c",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "u.insertedMessages \u003d append(u.insertedMessages, messages...)",
+      "range": {
+        "startLine": 43,
+        "startChar": 2,
+        "endLine": 45,
+        "endChar": 3
+      },
+      "revId": "e1ef89d88401755c3d67d5b2044efa8007dccf19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d2dd44c_88be4813",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "please use MustParseTestResultName",
+      "range": {
+        "startLine": 86,
+        "startChar": 34,
+        "endLine": 86,
+        "endChar": 53
+      },
+      "revId": "e1ef89d88401755c3d67d5b2044efa8007dccf19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -225,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "b2c60a01_e7a7183a",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d87fc56b_ad506330",
+      "range": {
+        "startLine": 161,
+        "startChar": 56,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b207acbb_34ccf90c",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 13
@@ -383,6 +407,24 @@
       "side": 1,
       "message": "To make sure there\u0027s no race in the code.",
       "parentUuid": "51f91607_587a01c0",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "504baeca_7774749e",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "this is not how data races are fixed. If this appears to help with a race, this means this code is still racy, and we will see test flakes",
+      "parentUuid": "9be2f517_459d98b6",
       "revId": "17137d66706b58feb4f7a162225063b207f8595f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -553,6 +595,30 @@
       "side": 1,
       "message": "To make sure exportTestResultsToBigQuery can handle errors properly.",
       "parentUuid": "ec05ac48_ee68d645",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f479eef_f94deef6",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:59:35Z",
+      "side": 1,
+      "message": "what is the assertion that the error was handled *properly*? The fact that it returned an error?",
+      "parentUuid": "28ce6015_353bd323",
       "range": {
         "startLine": 74,
         "startChar": 2,
