@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7e8d3005_c20982df",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "this tests code in a different file, that is already covered by another test. i see little value in this test\n\nstepping back, i am not sure what\u0027s the value of TestGetLuciProject overall. It seems passing a proper realm in L87 would cover the code that this test covers?",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce651bb4_8cefb241",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "how does this test work without a realm?",
+      "range": {
+        "startLine": 87,
+        "startChar": 78,
+        "endLine": 87,
+        "endChar": 80
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c3a39ae_8c907b62",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "please put this in a common convey like other tests do",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 0
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38603981_22032983",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "Single",
+      "range": {
+        "startLine": 53,
+        "startChar": 27,
+        "endLine": 54,
+        "endChar": 20
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73f5cc58_93cab08e",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "Single() ?",
+      "range": {
+        "startLine": 87,
+        "startChar": 14,
+        "endLine": 88,
+        "endChar": 19
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e85eeec_56806737",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ea2f2f8_140118a8",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "this function is asking for data it does not really need. what if a func has a realm, wants parse its luci project, but does not have the originating inv name? propagating would add complexity. let\u0027s omit this and in the error message just say that realm X is malformeed\n\nstepping back, other similar functions are called ParseXXX and return all components. Consider\n\n  func ParseRealm(realm string) (project, realmID string)",
+      "range": {
+        "startLine": 26,
+        "startChar": 20,
+        "endLine": 26,
+        "endChar": 36
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "588ba369_7427c1d5",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:13:14Z",
+      "side": 1,
+      "message": "q",
+      "range": {
+        "startLine": 29,
+        "startChar": 35,
+        "endLine": 29,
+        "endChar": 36
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
