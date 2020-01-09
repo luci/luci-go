@@ -22,6 +22,23 @@
       "revId": "9a83cc8f42fe0349b0da295c358cdff6dd132e5a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2efdeac3_b194fbc6",
+        "filename": "grpc/grpcmon/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T22:16:11Z",
+      "side": 1,
+      "message": "please use https://godoc.org/google.golang.org/genproto/googleapis/rpc/code#Code_name",
+      "revId": "9a83cc8f42fe0349b0da295c358cdff6dd132e5a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
