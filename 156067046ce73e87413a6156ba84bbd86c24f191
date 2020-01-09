@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f8b6524f_dfb365aa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T19:45:38Z",
+      "side": 1,
+      "message": "I\u0027m not an expert in web security, but my understanding is that resources served from the same domain all are considered to be inside the same security domain too. This would mean that any artifacts served from resultdb domain for resultdb\u0027s own purposes would be in the same security domain as any artifact uploaded by a user.\n\nThough maybe artifacts.resultdb.cr.dev would be enough to separate them? I\u0027m thinking about stuff like the githubusercontent.com domain (which is github\u0027s domain for serving user content and is distinct from github.com).\n\nPractically, I think if someone uploaded javascript as an artifact, and then wrote a page which sourced that script from the resultdb domain, that javascript could make XHR requests within resultdb (i.e. execute RPCs) on behalf of the user\u0027s resultdb domain credentials without raising any flags. I think.",
+      "parentUuid": "da8df93c_b2f76bda",
+      "range": {
+        "startLine": 23,
+        "startChar": 34,
+        "endLine": 23,
+        "endChar": 59
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd06b321_85c32d01",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "i implied that one cannot specify content type or fetch url if they specify a datastream.\n\n\u003e Also for GCS, doesn\u0027t GCS allow you to set the content type directly already?  \n\nit does. What are you implying?\n\ncontent type is mostly for resultdb clients. We will probably use something more explicit. For BQ export of test results, we explicitly accept BigQueryExports message which explains which test results to export, where to. We can do the same for bigquery export of data streams.",
       "parentUuid": "fd06b321_85c32d01",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec51fa05_6e3f1fb8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T19:45:38Z",
+      "side": 1,
+      "message": "\u003e i implied that one cannot specify content type or fetch url if they specify a datastream.\n\u003e \n\u003e \u003e Also for GCS, doesn\u0027t GCS allow you to set the content type directly already?  \n\u003e \n\u003e it does. What are you implying?\n\nI\u0027m wondering why the standard HTTP mechanisms for dealing with content-type are insufficient. Is the intended use case for clients to be able to know \"oh, this is an image I should display\" without fetching the artifact? What if the GCS content-type doesn\u0027t match?\n\n\u003e \n\u003e content type is mostly for resultdb clients. We will probably use something more explicit. For BQ export of test results, we explicitly accept BigQueryExports message which explains which test results to export, where to. We can do the same for bigquery export of data streams.\n\nAh, I didn\u0027t see the BigQueryExports message; that makes sense to me.",
+      "parentUuid": "8c481f34_76f809ac",
       "range": {
         "startLine": 32,
         "startChar": 14,
@@ -272,6 +320,30 @@
       "side": 1,
       "message": "for artifacts, i think we will require a datastream to be uploaded before creating an artifact that points to it",
       "parentUuid": "d05f4bc1_38b0b028",
+      "range": {
+        "startLine": 174,
+        "startChar": 8,
+        "endLine": 174,
+        "endChar": 12
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f33206ce_ca52ef70",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T19:45:38Z",
+      "side": 1,
+      "message": "does this mean we need a separate finalization step for datastreams which is separate from finalizing the invocation? will that be a problem?",
+      "parentUuid": "ef35aa24_4772531c",
       "range": {
         "startLine": 174,
         "startChar": 8,
