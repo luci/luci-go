@@ -431,6 +431,24 @@
     },
     {
       "key": {
+        "uuid": "02bbe704_1dba8ed2",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:40:19Z",
+      "side": 1,
+      "message": "I\u0027m trying to use sleep to catch race, not help. With sleep I\u0027ve been able to find some race conditions earlier.",
+      "parentUuid": "504baeca_7774749e",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f8ff34d_79a9c9c1",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -619,6 +637,30 @@
       "side": 1,
       "message": "what is the assertion that the error was handled *properly*? The fact that it returned an error?",
       "parentUuid": "28ce6015_353bd323",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5a5ed74_231f6144",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:40:19Z",
+      "side": 1,
+      "message": "The intention was to make sure goroutines work as expected (i.e. no race) when error happens.",
+      "parentUuid": "0f479eef_f94deef6",
       "range": {
         "startLine": 74,
         "startChar": 2,
