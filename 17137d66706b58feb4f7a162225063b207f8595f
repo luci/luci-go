@@ -1,0 +1,279 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95316ef0_7144c61b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "if we did span.MustParseInvocationName(inv.Name) here, then we wouldn\u0027t have to propagate invID in L84, L101 and L110. Consider.",
+      "range": {
+        "startLine": 88,
+        "startChar": 17,
+        "endLine": 88,
+        "endChar": 30
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2381b0c7_b9e37f72",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "this func does not have to have this responsibility and moving this to the callsite would simplify signature of this function (`q span.TestResultQuery` instead of `invIDs span.InvocationIDSet, bqExport *pb.BigQueryExport`)",
+      "range": {
+        "startLine": 103,
+        "startChar": 0,
+        "endLine": 106,
+        "endChar": 2
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82921dc7_c3593096",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "case \u003c-ctx.Done():\n  return ctx.Err()",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aa9120f_43d633b1",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "this is nil",
+      "range": {
+        "startLine": 133,
+        "startChar": 8,
+        "endLine": 133,
+        "endChar": 11
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84e221ae_ad7b1467",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "if this limit is reached, we return the error and this task will be retried forever. We need to check that the limit is reached and somehow give up on this task",
+      "range": {
+        "startLine": 161,
+        "startChar": 56,
+        "endLine": 161,
+        "endChar": 78
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b207acbb_34ccf90c",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "i don\u0027t think this should be buffered, we already have 10 workers, so we\u0027d be processing 10 batches at the same time. This makes it so 10 workers are working on 10 batches, and on top of that 20 are in the queue. That\u0027s 30*500\u003d15000 test results. I am worried about OOMs.",
+      "range": {
+        "startLine": 169,
+        "startChar": 32,
+        "endLine": 169,
+        "endChar": 34
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c72302b_507d1082",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "nit: this cancels the whole ctx, not only streaming. So at least the name is inaccurate. \n\nconsider making it actually canceling only streaming:\n\n  eg, ctx :\u003d errgroup.WithContext(ctx)\n  ctxStreaming, cancelStreaming :\u003d context.WithCancel(ctx)\n\nlike before\n\n---\n\nstepping back, why do we need this now that we have errgroup? if batchExportRows returns before streaming is over, it means batchExportRows returned an error. In that case, errgroup will naturally cancel the error",
+      "range": {
+        "startLine": 172,
+        "startChar": 6,
+        "endLine": 172,
+        "endChar": 21
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e03d3554_0bfb89ee",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "since batchC is created in exportTestResultsToBigQuery (as opposed to queryTestResultsStreaming), it is better to place defer close(batchC) right here, consistently with defer cancelStreaming() above",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51f91607_587a01c0",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f8ff34d_79a9c9c1",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "please put this in a convey, like all other tests do",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 53,
+        "endChar": 22
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f725c5eb_ff167a75",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "just \"a\"",
+      "range": {
+        "startLine": 71,
+        "startChar": 63,
+        "endLine": 71,
+        "endChar": 85
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5c790fc_d853db1e",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "this test does not verify that anything was actually inserted, so it provides questionable value.\nin L38 please add messages to a slice, and here assert that that slice is what we expect",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec05ac48_ee68d645",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T18:58:57Z",
+      "side": 1,
+      "message": "what\u0027s the value of this test?",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
