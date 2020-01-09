@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -44,6 +45,19 @@ const (
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
 	Put(ctx context.Context, src interface{}) error
+}
+
+func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
+	realm, err := span.ReadInvocationRealm(ctx, span.Client(ctx).Single(), invID)
+	if err != nil {
+		return "", err
+	}
+
+	project, _ := internal.ParseRealm(realm)
+	if project == "" {
+		return "", errors.Reason("realm %s of %s is malformatted", realm, invName).Err()
+	}
+	return project, nil
 }
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
@@ -184,7 +198,12 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func exportResultsToBigQuery(ctx context.Context, luciProject string, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+	luciProject, err := getLUCIProject(ctx, invID)
+	if err != nil {
+		return err
+	}
+
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
 		return err
