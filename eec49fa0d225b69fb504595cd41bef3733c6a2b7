@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da44b675_018d642d",
+        "filename": "swarming/proto/config/bots.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-09T02:27:00Z",
+      "side": 0,
+      "message": "Hm, we need this preserved. Moving it to luci-py will require also moving proto/options.proto :-/",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 2
+      },
+      "revId": "eec49fa0d225b69fb504595cd41bef3733c6a2b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9cd3244_6b1cadfe",
+        "filename": "swarming/proto/config/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-09T02:27:00Z",
+      "side": 0,
+      "message": "same here",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 0
+      },
+      "revId": "eec49fa0d225b69fb504595cd41bef3733c6a2b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "924915bc_68d90fde",
+        "filename": "swarming/proto/config/pools.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-09T02:27:00Z",
+      "side": 0,
+      "message": "and here",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 0
+      },
+      "revId": "eec49fa0d225b69fb504595cd41bef3733c6a2b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
