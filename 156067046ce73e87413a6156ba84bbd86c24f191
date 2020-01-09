@@ -168,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "ab3f8ed5_c07f8c71",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T20:03:53Z",
+      "side": 1,
+      "message": "\u003e the only case when content type might not match is if we have a bug in result sink which uploads to GCS, marks the object with content type, but then uses different content type when creating an artifact pointing to the object. I think this is acceptable.\n\nAh, I misunderstood; I didn\u0027t realize that the rdb client would be uploading to GCS; I thought the user code would do that and then tell the rdb client where the GCS data was.\n\n\u003e \n\u003e Long term, artifact contents will be data streams. Then, client\n\u003e 1) creates a data stream with a specific content type\n\u003e 2) creates an artifact and points to the stream. Does not specify content type. RPC handler verifies data stream exists indeed and copies its content type",
+      "parentUuid": "d0f9aeb1_9f31bcac",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "33b6066c_5560cefb",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -416,6 +440,30 @@
       "side": 1,
       "message": "\u003e does this mean we need a separate finalization step for datastreams which is separate from finalizing the invocation? \nno. If we choose to use ByteStream service protocol, termination of a stream is per stream, for example.\n\n\u003e If it\u0027s a datastream then rdb could populate it on fetch from the current state of the datastream.\n\nthen this means we\u0027d have to add State here so that the client knows that the artifact won\u0027t change in the future. I\u0027d rather not do that because it is different from anything else here. If a test result there, it is final. Same for test exoneration.\n\nI don\u0027t see a use case for this feature. Test result artifacts are not streaming like compile logs. There is not result to upload until the test has completed. And that point all artifacts are already written.",
       "parentUuid": "f9ffab25_daa90bfd",
+      "range": {
+        "startLine": 174,
+        "startChar": 8,
+        "endLine": 174,
+        "endChar": 12
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be16194_a697abf8",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T20:03:53Z",
+      "side": 1,
+      "message": "\u003e \u003e does this mean we need a separate finalization step for datastreams which is separate from finalizing the invocation? \n\u003e no. If we choose to use ByteStream service protocol, termination of a stream is per stream, for example.\n\u003e \n\u003e \u003e If it\u0027s a datastream then rdb could populate it on fetch from the current state of the datastream.\n\u003e \n\u003e then this means we\u0027d have to add State here so that the client knows that the artifact won\u0027t change in the future. I\u0027d rather not do that because it is different from anything else here. If a test result there, it is final. Same for test exoneration.\n\u003e \n\u003e I don\u0027t see a use case for this feature. Test result artifacts are not streaming like compile logs. There is not result to upload until the test has completed. And that point all artifacts are already written.\n\nI guess I would still have \u0027size\u0027 be populated from the datastream if the artifact is using datastream. Otherwise the client will have to upload the datastream (now rdb knows the size of the datastream) and then also copy that size here too. Requiring it to be final in rdb for use in an artifact is fine though.",
+      "parentUuid": "1af0d2aa_cf1300b3",
       "range": {
         "startLine": 174,
         "startChar": 8,
