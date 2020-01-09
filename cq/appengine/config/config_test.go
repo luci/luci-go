@@ -52,6 +52,7 @@ const validConfigTextPB = `
 		burst_delay { seconds: 120 }
 	}
 	config_groups {
+		name: "test"
 		gerrit {
 			url: "https://chromium-review.googlesource.com"
 			projects {
@@ -221,6 +222,16 @@ func TestValidation(t *testing.T) {
 		})
 
 		Convey("ConfiGroups", func() {
+			Convey("with no Name", func() {
+				cfg.ConfigGroups[0].Name = ""
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldBeNil)
+			})
+			Convey("with valid Name", func() {
+				cfg.ConfigGroups[0].Name = "!invalid!"
+				validateProjectConfig(vctx, &cfg)
+				So(vctx.Finalize(), ShouldErrLike, "config group names must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$'")
+			})
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil
 				validateProjectConfig(vctx, &cfg)
