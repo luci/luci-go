@@ -73,6 +73,9 @@ message SettingsCfg {
 
   // Whether tasks should be run in FIFO or LIFO order.
   bool use_lifo = 17;
+
+  // Whether swarming should batch notifications to the external scheduler.
+  bool enable_batch_es_notifications = 18;
 }
 
 

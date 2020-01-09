@@ -118,6 +118,21 @@ func (m *BotsCfg) GetBotGroup() []*BotGroup {
 // If bot_id and bot_id_prefix are both missing, the group defines all bots that
 // didn't fit into other groups. There can be only one such "default" group.
 //
+// NOTE: Swarming allows 'derivative' bots where multiple bots run on the same
+// host machine in some sort of container (such as Docker containers) and SHARE
+// A SINGLE CREDENTIAL. These bots have hostnames such as 'hostmachine--001',
+// where the "--001" suffix indicates which of the contained bots on
+// 'hostmachine' it is. When Swarming checks the bot affiliation for this
+// contained machine, it checks ONLY the 'hostmachine' portion. This means that
+// if your contained bot is 'vm10-vlan2--001', it would match:
+//   `bot_id: "vm10-vlan2`
+//   `bot_id: "vm{0...100}-vlan2`
+//   `bot_id_prefix: "vm10-vlan`
+// but would NOT match:
+//   `bot_id: "vm10-vlan2--001`
+//   `bot_id_prefix: "vm10-vlan2-`
+//   `bot_id_prefix: "vm10-vlan2--`
+//
 // TODO(vadimsh): Introduce explicit field "use_as_default" instead.
 type BotGroup struct {
 	// Explicit enumeration of bot IDs belonging to this group.
