@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da8df93c_b2f76bda",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "what do we instead?",
+      "parentUuid": "e2def5c7_13d8b4c4",
+      "range": {
+        "startLine": 23,
+        "startChar": 34,
+        "endLine": 23,
+        "endChar": 59
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd06b321_85c32d01",
         "filename": "/COMMIT_MSG",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2020-01-09T18:54:27Z",
       "side": 1,
       "message": "I would note that the opposing groups of properties are\n  * data_stream (which contains its own content_type)\n  * (fetch_url, content_type)\n\nOtherwise multiple artifacts could point to the same data_stream with different content types, which would be weird.\n\nAlso for GCS, doesn\u0027t GCS allow you to set the content type directly already?  (https://cloud.google.com/storage/docs/gsutil/addlhelp/WorkingWithObjectMetadata)\n\nIf content_type is just used as a hint for indexing to rdb, maybe it could be reduced to \"index_as\u003dTEXT\" or something like that, and just supplied in conjunction with fetch_url (assuming we want rdb to follow fetch_url via a realm-scoped account and consume that data for indexing). If rdb isn\u0027t going to follow fetch_url itself, then I think content_type probably can just be dropped, and then data_stream would carry its own content_type and index_as flags.",
+      "range": {
+        "startLine": 32,
+        "startChar": 14,
+        "endLine": 32,
+        "endChar": 26
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c481f34_76f809ac",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "i implied that one cannot specify content type or fetch url if they specify a datastream.\n\n\u003e Also for GCS, doesn\u0027t GCS allow you to set the content type directly already?  \n\nit does. What are you implying?\n\ncontent type is mostly for resultdb clients. We will probably use something more explicit. For BQ export of test results, we explicitly accept BigQueryExports message which explains which test results to export, where to. We can do the same for bigquery export of data streams.",
+      "parentUuid": "fd06b321_85c32d01",
       "range": {
         "startLine": 32,
         "startChar": 14,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "d254938a_9bbea0d7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "\u003e I misunderstood this when I first read it; it sounds like you\u0027re doing this so that rdb can, in the future, generate signed GCS urls from its own backing store? \n\nyes",
+      "parentUuid": "33b6066c_5560cefb",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 69
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51605744_2a07eebf",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 2
@@ -82,6 +154,30 @@
       "writtenOn": "2020-01-09T19:07:53Z",
       "side": 1,
       "message": "Do I understand correctly that Artifact will be potentially generated on the fly when requested (to update signed links), instead of being a static proto in the storage somewhere?",
+      "range": {
+        "startLine": 155,
+        "startChar": 8,
+        "endLine": 155,
+        "endChar": 16
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69dbc94a_8944e240",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "Artifacts will not be generated dynamically. Their fetch_url might, but an entry of artifact is stored statically and points to the permanent location statically.",
+      "parentUuid": "51605744_2a07eebf",
       "range": {
         "startLine": 155,
         "startChar": 8,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "6ed40810_6bd8d119",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "this is wrong. I\u0027ve removed it.\n\nsee the thread in luci-eng. We won\u0027t use rbe-cas, isolate, etc.\n\nonly DeriveInvocation will rely on isolate temporarily to avoid re-uploading artifacts that are already uploaded to isolate. For that, we might need to have a plain HTTP endpoint for isolated files.",
+      "parentUuid": "632a189a_e76d998e",
+      "range": {
+        "startLine": 162,
+        "startChar": 55,
+        "endLine": 162,
+        "endChar": 64
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d05f4bc1_38b0b028",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 2
@@ -128,6 +248,30 @@
       "writtenOn": "2020-01-09T19:07:53Z",
       "side": 1,
       "message": "it may not be known for unfinalized logs",
+      "range": {
+        "startLine": 174,
+        "startChar": 8,
+        "endLine": 174,
+        "endChar": 12
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef35aa24_4772531c",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-09T19:36:28Z",
+      "side": 1,
+      "message": "for artifacts, i think we will require a datastream to be uploaded before creating an artifact that points to it",
+      "parentUuid": "d05f4bc1_38b0b028",
       "range": {
         "startLine": 174,
         "startChar": 8,
