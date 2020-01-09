@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3df844b7_e4760b08",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "7e8d3005_c20982df",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 3
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ce651bb4_8cefb241",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2020-01-09T19:13:14Z",
       "side": 1,
       "message": "how does this test work without a realm?",
+      "range": {
+        "startLine": 87,
+        "startChar": 78,
+        "endLine": 87,
+        "endChar": 80
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93d57b2a_f558d316",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "This test is for exportTestResultsToBigQuery(), not exportResultsToBigQuery() and the latter calls getLUCIProject()",
+      "parentUuid": "ce651bb4_8cefb241",
       "range": {
         "startLine": 87,
         "startChar": 78,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b732da1f_7571cde1",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5c3a39ae_8c907b62",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 0
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "38603981_22032983",
         "filename": "resultdb/cmd/backend/invocation_task_test.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "014a3e8d_2ab68083",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38603981_22032983",
+      "range": {
+        "startLine": 53,
+        "startChar": 27,
+        "endLine": 54,
+        "endChar": 20
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "3fc8b300_f2dc423a",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73f5cc58_93cab08e",
+      "range": {
+        "startLine": 87,
+        "startChar": 14,
+        "endLine": 88,
+        "endChar": 19
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e85eeec_56806737",
         "filename": "resultdb/cmd/backend/invocation_task_test.go",
         "patchSetId": 5
@@ -131,6 +251,24 @@
       "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b92faf9b_dce2b89b",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Though it\u0027ll complained taskID is not used. Removed.",
+      "parentUuid": "5e85eeec_56806737",
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "5e6619cd_f8c1f6b1",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ea2f2f8_140118a8",
+      "range": {
+        "startLine": 26,
+        "startChar": 20,
+        "endLine": 26,
+        "endChar": 36
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "588ba369_7427c1d5",
         "filename": "resultdb/internal/realm.go",
         "patchSetId": 5
@@ -177,6 +339,30 @@
       "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56c0abd3_0358516d",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-09T23:41:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "588ba369_7427c1d5",
+      "range": {
+        "startLine": 29,
+        "startChar": 35,
+        "endLine": 29,
+        "endChar": 36
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
