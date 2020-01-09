@@ -150,7 +150,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 }
 
 func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
-	state, err := readInvocationState(ctx, txn, id)
+	state, err := span.ReadInvocationState(ctx, txn, id)
 	s, _ := appstatus.Get(err)
 	switch {
 	case s.Code() == codes.NotFound:
