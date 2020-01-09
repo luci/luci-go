@@ -497,6 +497,30 @@
       "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a89e8b7a_8329bb79",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-09T20:10:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "701a0362_a129f60f",
+      "range": {
+        "startLine": 174,
+        "startChar": 8,
+        "endLine": 174,
+        "endChar": 12
+      },
+      "revId": "156067046ce73e87413a6156ba84bbd86c24f191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
