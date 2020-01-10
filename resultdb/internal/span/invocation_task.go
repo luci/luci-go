@@ -29,6 +29,10 @@ type TaskKey struct {
 	TaskID       string
 }
 
+func (tk *TaskKey) Key() spanner.Key {
+	return tk.InvocationID.Key(tk.TaskID)
+}
+
 // InsertInvocationTask inserts one row to InvocationTasks.
 func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
 	return InsertMap("InvocationTasks", map[string]interface{}{
@@ -42,7 +46,7 @@ func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb
 
 // SampleInvocationTasks randomly picks sampleSize of rows in InvocationTasks
 // with ProcessAfter earlier than processTime.
-func SampleInvocationTasks(ctx context.Context, txn Txn, processTime time.Time, sampleSize int64) ([]*TaskKey, error) {
+func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSize int64) ([]*TaskKey, error) {
 	st := spanner.NewStatement(`
 		WITH readyTasks AS
 			(SELECT
@@ -62,7 +66,7 @@ func SampleInvocationTasks(ctx context.Context, txn Txn, processTime time.Time, 
 
 	ret := make([]*TaskKey, 0, sampleSize)
 	var b Buffer
-	err := query(ctx, txn, st, func(row *spanner.Row) error {
+	err := query(ctx, Client(ctx).Single(), st, func(row *spanner.Row) error {
 		task := &TaskKey{}
 		err := b.FromSpanner(row, &task.InvocationID, &task.TaskID)
 

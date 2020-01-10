@@ -230,20 +230,9 @@ func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExpo
 			BigqueryExport: bqExport,
 		}
 
-		muts[i] = insertInvocationTask(id, taskID(taskTypeBqExport, i), invTask, processAfter, true)
+		muts[i] = span.InsertInvocationTask(id, taskID(taskTypeBqExport, i), invTask, processAfter, true)
 	}
 	return muts
-}
-
-// insertInvocationTask inserts one row to InvocationTasks.
-func insertInvocationTask(invID span.InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
-	return span.InsertMap("InvocationTasks", map[string]interface{}{
-		"InvocationId":    invID,
-		"TaskID":          taskID,
-		"Payload":         invTask,
-		"ProcessAfter":    processAfter,
-		"ResetOnFinalize": resetOnFinalize,
-	})
 }
 
 func taskID(taskType string, suffix interface{}) string {
