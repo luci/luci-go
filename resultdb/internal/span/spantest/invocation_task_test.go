@@ -41,10 +41,7 @@ func TestSampleInvocationTasks(t *testing.T) {
 			span.InsertInvocationTask(span.InvocationID("inv2"), "task_5", invTask, now.Add(time.Hour), false),
 		)
 
-		txn := span.Client(ctx).ReadOnlyTransaction()
-		defer txn.Close()
-
-		rows, err := span.SampleInvocationTasks(ctx, txn, now, 3)
+		rows, err := span.SampleInvocationTasks(ctx, now, 3)
 		So(err, ShouldBeNil)
 		So(rows, ShouldHaveLength, 3)
 		So(rows, ShouldNotContain, span.TaskKey{
