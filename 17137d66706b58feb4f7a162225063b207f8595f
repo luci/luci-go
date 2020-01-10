@@ -467,6 +467,24 @@
     },
     {
       "key": {
+        "uuid": "3c8c5fac_4c7f150c",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T06:53:14Z",
+      "side": 1,
+      "message": "Yes the test hung when there\u0027s a race.\n\nTo double check, the race I\u0027m referring to is basically \"all goroutines are asleep - deadlock!\", and `go test -race` can also detect that?",
+      "parentUuid": "46aec81d_32681230",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f8ff34d_79a9c9c1",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -712,6 +730,30 @@
       "revId": "17137d66706b58feb4f7a162225063b207f8595f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c6f5401_9bef81cc",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T06:53:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1f4107d_606009d1",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

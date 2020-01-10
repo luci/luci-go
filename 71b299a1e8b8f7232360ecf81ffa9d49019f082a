@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "00fc0c36_61d7ace5",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T06:53:14Z",
+      "side": 1,
+      "message": "This will cause data race, fixed in patch 16.",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 27
+      },
+      "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "59599f55_8e5bef89",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 15
@@ -16,6 +39,24 @@
       "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "572bcba1_0e0ed25f",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T06:53:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59599f55_8e5bef89",
+      "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -39,6 +80,30 @@
       "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c903a20_2df3fb1b",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T06:53:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ce6b1df6_035715dc",
+      "range": {
+        "startLine": 80,
+        "startChar": 31,
+        "endLine": 80,
+        "endChar": 42
+      },
+      "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
