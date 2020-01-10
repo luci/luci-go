@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "893b8878_622a3f69",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T18:41:30Z",
+      "side": 1,
+      "message": "I don\u0027t actually understand your question. \n\nI intentionally added sleep to force the goroutine running Put() to give up control to make sure it can awake later without causing \"all goroutines are asleep - deadlock!\" error. And now I\u0027m pretty confident that the code-under-test is free of deadlocks. \n\nAnd the issue with only have insertedMessages was a bug and I needed to fix it. I shouldn\u0027t use channel in ps 16 though, mutex is a much better choice.",
+      "parentUuid": "fa50c186_f3c74c31",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 36,
+        "endChar": 27
+      },
+      "revId": "71b299a1e8b8f7232360ecf81ffa9d49019f082a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59599f55_8e5bef89",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 15

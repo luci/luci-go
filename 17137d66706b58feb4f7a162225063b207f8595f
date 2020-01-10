@@ -503,6 +503,24 @@
     },
     {
       "key": {
+        "uuid": "18cd0216_def25d24",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-10T18:41:30Z",
+      "side": 1,
+      "message": "Current version of code doesn\u0027t have deadlock, confirming by using `go test -count 100`.",
+      "parentUuid": "0905c6c9_604f6e12",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f8ff34d_79a9c9c1",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
