@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8751542_fbfb150e",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-10T23:11:30Z",
+      "side": 1,
+      "message": "If we are ditching isolate, I wonder how would large file trees be represented? If each file is a separate Artifact, we\u0027ll need to reimplement parts of isolate/RBE-CAS client to efficiently fetch such large trees. E.g. RBE-CAS has BatchReadBlobs API to speed up reading lots of small files.",
+      "range": {
+        "startLine": 155,
+        "startChar": 8,
+        "endLine": 155,
+        "endChar": 16
+      },
+      "revId": "edb40ca82c3b8a46e3b38b7b1359c43c0409298c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "244dc8fb_78e65814",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-10T23:11:30Z",
+      "side": 1,
+      "message": "is this field always present?",
+      "range": {
+        "startLine": 164,
+        "startChar": 5,
+        "endLine": 164,
+        "endChar": 27
+      },
+      "revId": "edb40ca82c3b8a46e3b38b7b1359c43c0409298c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
