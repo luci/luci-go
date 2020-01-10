@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "f8898fac_2a62f956",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T00:09:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "93d57b2a_f558d316",
+      "range": {
+        "startLine": 87,
+        "startChar": 78,
+        "endLine": 87,
+        "endChar": 80
+      },
+      "revId": "001cd4bf8fc43db577ec02a9db712843422889c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c3a39ae_8c907b62",
         "filename": "resultdb/cmd/backend/invocation_task_test.go",
         "patchSetId": 5
