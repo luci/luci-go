@@ -16,6 +16,24 @@
       "revId": "88f9dc14bdb289544f203d41f9f6f39ba51b24ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8749aeb7_0b9db008",
+        "filename": "grpc/grpcmon/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2020-01-10T00:11:24Z",
+      "side": 1,
+      "message": "Hm, I used Code(%d) to be [otherwise] consistent with the Go library\u0027s codes.String(), so that we\u0027re not adding to the many ways of stringifying gRPC errors.\n\n(We don\u0027t really anticipate seeing this, so it shouldn\u0027t make much of a difference one way or the other.)\n\nI\u0027d like to land this to get some metrics up for testing alerts, but I\u0027m happy to follow up with this change if you prefer it/there\u0027s precedent otherwise for representation of gRPC codes that really aren\u0027t.",
+      "parentUuid": "45bbeadb_df36c769",
+      "revId": "88f9dc14bdb289544f203d41f9f6f39ba51b24ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
