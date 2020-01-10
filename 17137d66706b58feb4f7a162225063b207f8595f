@@ -449,6 +449,24 @@
     },
     {
       "key": {
+        "uuid": "46aec81d_32681230",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T00:07:32Z",
+      "side": 1,
+      "message": "did you try `go test -race`? it is much more efficient at detecting races. \n\n\u003e to catch the race\n\ndo you mean locally? how does a race manifests itself? does the test hang?\n\nif locally, then it sounds this code is temporary and should not be in the code review?",
+      "parentUuid": "02bbe704_1dba8ed2",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f8ff34d_79a9c9c1",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
@@ -661,6 +679,30 @@
       "side": 1,
       "message": "The intention was to make sure goroutines work as expected (i.e. no race) when error happens.",
       "parentUuid": "0f479eef_f94deef6",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 38
+      },
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1f4107d_606009d1",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T00:07:32Z",
+      "side": 1,
+      "message": "by work as expected you mean they don\u0027t hang, or race detector does not detect anything? if so, a comment would be nice because it is not obvious from this test",
+      "parentUuid": "a5a5ed74_231f6144",
       "range": {
         "startLine": 74,
         "startChar": 2,
