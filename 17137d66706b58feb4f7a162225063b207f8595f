@@ -485,6 +485,24 @@
     },
     {
       "key": {
+        "uuid": "0905c6c9_604f6e12",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:42:05Z",
+      "side": 1,
+      "message": "i think no, race detector can detect more subtle races. Deadline is pretty obvious when it happens. if this still happens, make sure you understand what they are waiting for. it is possible that we still have a deadlock in the code-under-test. if so, we gotta fix it. you can use `go test -count 100` to run the test 100 times",
+      "parentUuid": "3c8c5fac_4c7f150c",
+      "revId": "17137d66706b58feb4f7a162225063b207f8595f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2f8ff34d_79a9c9c1",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 13
