@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "63febfd2_2d88b80d",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T23:16:09Z",
+      "side": 1,
+      "message": "do you mean a test produces a large tree of files? i am not aware of such use case, but I can imagine things of course.\n\ni think we will not try to solve this problem until datastreams. With datastreams, each artifact will have a datastream, and then I imagine Robbie could come up with an API to fetch many datastreams efficiently.",
+      "parentUuid": "b8751542_fbfb150e",
+      "range": {
+        "startLine": 155,
+        "startChar": 8,
+        "endLine": 155,
+        "endChar": 16
+      },
+      "revId": "edb40ca82c3b8a46e3b38b7b1359c43c0409298c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "244dc8fb_78e65814",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "edb40ca82c3b8a46e3b38b7b1359c43c0409298c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c8b9d9f_38a1c264",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T23:16:09Z",
+      "side": 1,
+      "message": "clarified",
+      "parentUuid": "244dc8fb_78e65814",
+      "range": {
+        "startLine": 164,
+        "startChar": 5,
+        "endLine": 164,
+        "endChar": 27
+      },
+      "revId": "edb40ca82c3b8a46e3b38b7b1359c43c0409298c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
