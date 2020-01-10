@@ -64,6 +64,7 @@ func TestQPSSampler(t *testing.T) {
 		sampler := qpsSampler{
 			period: time.Second, // sample one request per second
 			now:    func() time.Time { return now.Load().(time.Time) },
+			rnd:    rand.New(rand.NewSource(0)),
 		}
 
 		sampled := 0
@@ -79,6 +80,6 @@ func TestQPSSampler(t *testing.T) {
 			}
 			tick(10 * time.Millisecond) // 100 QPS
 		}
-		So(sampled, ShouldEqual, 10000/100)
+		So(sampled, ShouldEqual, 10000/100+1) // '+1' is due to randomization
 	})
 }

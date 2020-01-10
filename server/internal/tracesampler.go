@@ -16,6 +16,7 @@ package internal
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
@@ -53,6 +54,7 @@ func Sampler(spec string) (trace.Sampler, error) {
 		return (&qpsSampler{
 			period: time.Duration(float64(time.Second) / qps),
 			now:    time.Now,
+			rnd:    rand.New(rand.NewSource(rand.Int63())),
 		}).Sampler, nil
 
 	default:
@@ -62,13 +64,14 @@ func Sampler(spec string) (trace.Sampler, error) {
 
 // qpsSampler asks to sample a trace approximately each 'period'.
 //
-// TODO(vadimsh): Use a token bucket algorithm once we have a reusable
-// implementation.
+// Adds some random jitter to desynchronize cycles running concurrently across
+// many processes.
 type qpsSampler struct {
 	m      sync.RWMutex
 	next   time.Time
 	period time.Duration
 	now    func() time.Time // for mocking time
+	rnd    *rand.Rand       // for random jitter
 }
 
 func (s *qpsSampler) Sampler(p trace.SamplingParameters) trace.SamplingDecision {
@@ -84,11 +87,21 @@ func (s *qpsSampler) Sampler(p trace.SamplingParameters) trace.SamplingDecision 
 
 	if sample {
 		s.m.Lock()
-		if sample = s.next.IsZero() || now.After(s.next); sample {
-			s.next = now.Add(s.period)
+		switch {
+		case s.next.IsZero():
+			// Start the cycle at some random offset.
+			s.next = now.Add(s.randomDurationLocked(0, s.period))
+		case now.After(s.next):
+			// Add random jitter to the cycle length.
+			jitter := s.period / 10
+			s.next = now.Add(s.randomDurationLocked(s.period-jitter, s.period+jitter))
 		}
 		s.m.Unlock()
 	}
 
 	return trace.SamplingDecision{Sample: sample}
+}
+
+func (s *qpsSampler) randomDurationLocked(min, max time.Duration) time.Duration {
+	return min + time.Duration(s.rnd.Int63n(int64(max-min)))
 }
