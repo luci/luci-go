@@ -32,7 +32,7 @@ const resultIDPattern = `[[:ascii:]]{1,32}`
 
 var testResultNameRe = regexpf("^invocations/(%s)/tests/([^/]+)/results/(%s)$",
 	invocationIDPattern, resultIDPattern)
-var testIDRe = regexp.MustCompile(`^[[:print:]]+$`)
+var testIDRe = regexp.MustCompile(`^[[:print:]]{1,256}$`)
 
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {

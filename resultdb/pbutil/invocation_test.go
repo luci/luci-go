@@ -34,7 +34,7 @@ func TestInvocationName(t *testing.T) {
 
 		Convey("Invalid", func() {
 			_, err := ParseInvocationName("invocations/-")
-			So(err, ShouldErrLike, `does not match ^invocations/([a-z][a-z0-9_\-:]*)$`)
+			So(err, ShouldErrLike, `does not match`)
 		})
 
 		Convey("Format", func() {
