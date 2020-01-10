@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -39,7 +41,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		// Handler that runs for 500 ms.
 		handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 			clock.Get(ctx).(testclock.TestClock).Add(500 * time.Millisecond)
-			return struct{}{}, nil
+			return struct{}{}, status.Error(codes.Internal, "errored internally")
 		}
 
 		// Run the handler with the interceptor.
@@ -47,10 +49,10 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 0, "OK"})
+		count := memStore.Get(c, grpcServerCount, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
 		So(count, ShouldEqual, 1)
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 0, "OK"})
+		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []interface{}{"/service/method", 13, "INTERNAL"})
 		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
 	})
 }
