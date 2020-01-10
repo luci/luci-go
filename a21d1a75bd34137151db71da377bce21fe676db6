@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "337a5779_360478d9",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:26:49Z",
+      "side": 1,
+      "message": "this checks that the tag value is there, but does not check that the tag value is true. It should be span.TooManyInvocationsTag.In(err)\nsee https://godoc.org/go.chromium.org/luci/common/errors#BoolTag.In",
+      "revId": "a21d1a75bd34137151db71da377bce21fe676db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5df54009_3ce718dc",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:26:49Z",
+      "side": 1,
+      "message": "let\u0027s prefix this log line with the context that we have\n\n  logging.Errorf(ctx, \"permanent failure to process task %s/%s: %s\", taskKey.InvocationId, taskKey.TaskId, err)",
+      "range": {
+        "startLine": 86,
+        "startChar": 27,
+        "endLine": 86,
+        "endChar": 29
+      },
+      "revId": "a21d1a75bd34137151db71da377bce21fe676db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d25e918_d14cedd7",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:26:49Z",
+      "side": 1,
+      "message": "this isn\u0027t great this adds more bq-specific code to generic dispatchInvocatoinTasks. Note that dispatchInvocationTasks is abstract, i.e. it can process other types of tasks.\n\nconsider returning a boolean from exportResultsToBigQuery instead",
+      "revId": "a21d1a75bd34137151db71da377bce21fe676db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "628b4a12_02e5e430",
+        "filename": "resultdb/internal/realm.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:26:49Z",
+      "side": 1,
+      "message": "q\n\nin general, please use %q when for potentially invalid user-supplied content. What if it is `` or `\"`?",
+      "range": {
+        "startLine": 29,
+        "startChar": 39,
+        "endLine": 29,
+        "endChar": 40
+      },
+      "revId": "a21d1a75bd34137151db71da377bce21fe676db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72b57aef_77cc26e1",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:26:49Z",
+      "side": 1,
+      "message": "please undo these changes. see my other comment",
+      "revId": "a21d1a75bd34137151db71da377bce21fe676db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
