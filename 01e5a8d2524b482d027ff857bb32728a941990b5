@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b05f8fa_e5c007cb",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T16:16:39Z",
+      "side": 1,
+      "message": "why not just put a mutex insertedMessages slice?",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 39
+      },
+      "revId": "01e5a8d2524b482d027ff857bb32728a941990b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
