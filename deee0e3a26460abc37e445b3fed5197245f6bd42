@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a6ee9bb_0a611566",
+        "filename": "common/gcloud/gs/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-10T22:25:51Z",
+      "side": 1,
+      "message": "we usually use the idiom of\n\n   var _ Interface \u003d (*prodWriter)(nil)\n\nhttps://source.chromium.org/search?q\u003d%22var%20_%22%20nil%20file:.*%5C.go\u0026sq\u003d\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F",
+      "range": {
+        "startLine": 49,
+        "startChar": 16,
+        "endLine": 49,
+        "endChar": 26
+      },
+      "revId": "deee0e3a26460abc37e445b3fed5197245f6bd42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
