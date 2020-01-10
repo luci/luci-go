@@ -46,6 +46,30 @@
       "revId": "deee0e3a26460abc37e445b3fed5197245f6bd42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ede36834_9f6e44a0",
+        "filename": "common/gcloud/gs/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-10T22:48:28Z",
+      "side": 1,
+      "message": "I can\u0027t speak to \u0027the dominant Go idiom\u0027, just saying how it\u0027s done elsewhere in our code. If there\u0027s official recommendation on it somewhere we could change to match that.",
+      "parentUuid": "630eaace_b3ada38c",
+      "range": {
+        "startLine": 49,
+        "startChar": 16,
+        "endLine": 49,
+        "endChar": 26
+      },
+      "revId": "deee0e3a26460abc37e445b3fed5197245f6bd42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
