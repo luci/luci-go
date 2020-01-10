@@ -22,6 +22,30 @@
       "revId": "deee0e3a26460abc37e445b3fed5197245f6bd42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "630eaace_b3ada38c",
+        "filename": "common/gcloud/gs/writer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2020-01-10T22:34:42Z",
+      "side": 1,
+      "message": "That works, too. Is there a reason the LUCI idiom is different from the dominant Go idiom?",
+      "parentUuid": "2a6ee9bb_0a611566",
+      "range": {
+        "startLine": 49,
+        "startChar": 16,
+        "endLine": 49,
+        "endChar": 26
+      },
+      "revId": "deee0e3a26460abc37e445b3fed5197245f6bd42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
