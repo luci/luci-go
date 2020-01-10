@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eff1010a_df7d53e2",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T21:58:44Z",
+      "side": 1,
+      "message": "here and below, the code would be a bit more defensive if we did the following instead\n\n  err \u003d permanentInvocationTaskErrTag.Apply(err)",
+      "range": {
+        "startLine": 166,
+        "startChar": 5,
+        "endLine": 166,
+        "endChar": 11
+      },
+      "revId": "7ca0d82a05454823ff3d1ea5d9e48e4edde1dd0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfd49fd8_4eda4f6b",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T21:58:44Z",
+      "side": 1,
+      "message": "p",
+      "range": {
+        "startLine": 35,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 4
+      },
+      "revId": "7ca0d82a05454823ff3d1ea5d9e48e4edde1dd0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "674fb1e3_e417780b",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-10T21:58:44Z",
+      "side": 1,
+      "message": "no, we returned in L92",
+      "range": {
+        "startLine": 97,
+        "startChar": 30,
+        "endLine": 97,
+        "endChar": 47
+      },
+      "revId": "7ca0d82a05454823ff3d1ea5d9e48e4edde1dd0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
