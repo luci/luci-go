@@ -183,7 +183,11 @@ func (a *Authenticator) Authenticate(ctx context.Context, r *http.Request) (_ co
 		var err error
 		s.user, err = m.Authenticate(tracedCtx, r)
 		if err != nil {
-			report(err, "ERROR_BROKEN_CREDS") // e.g. malformed OAuth token
+			if transient.Tag.In(err) {
+				report(err, "ERROR_TRANSIENT_IN_AUTH")
+			} else {
+				report(err, "ERROR_BROKEN_CREDS") // e.g. malformed OAuth token
+			}
 			return nil, err
 		}
 		if s.user != nil {
