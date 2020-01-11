@@ -58,7 +58,7 @@ func TestExportToBigQuery(t *testing.T) {
 		const token = "update token"
 		now := clock.Now(ctx)
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("a", pb.Invocation_COMPLETED, token, now, false))
+			testutil.InsertInvocation("a", pb.Invocation_COMPLETED, token, now, false, ""))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pb.TestStatus_CRASH, pb.TestStatus_PASS)),

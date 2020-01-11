@@ -62,19 +62,19 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false, ""))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, "different token", ct, false, ""))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with exceeded deadline`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false, ""))
 
 				// Mock now to be after deadline.
 				clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
@@ -98,7 +98,7 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false, ""))
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
@@ -122,7 +122,7 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`completed`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false))
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false, ""))
 
 			inv := readInv()
 			expected := &pb.Invocation{
@@ -136,8 +136,8 @@ func TestReadInvocation(t *testing.T) {
 
 			Convey(`with included invocations`, func() {
 				MustApply(ctx,
-					InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false),
-					InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false),
+					InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false, ""),
+					InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false, ""),
 					InsertInclusion("inv", "included0"),
 					InsertInclusion("inv", "included1"),
 				)
