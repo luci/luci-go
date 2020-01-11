@@ -174,7 +174,7 @@ func (s *State) Flush(ctx context.Context, mon monitor.Monitor) error {
 		s.RunGlobalCallbacks(ctx)
 	}
 
-	cells := s.store.GetAll(ctx)
+	cells := s.Store().GetAll(ctx)
 	if len(cells) == 0 {
 		return nil
 	}
