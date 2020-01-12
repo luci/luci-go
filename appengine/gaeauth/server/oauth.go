@@ -72,11 +72,11 @@ func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth
 		var u *user.User
 		u, err = user.CurrentOAuth(ctx, m.Scopes...)
 		if err != nil {
+			if isFatalOAuthErr(err) {
+				return nil, err
+			}
 			logging.Warningf(ctx, "oauth: failed to execute GetOAuthUser - %s", err)
 			continue
-		}
-		if u == nil {
-			return nil, nil
 		}
 		if u.ClientID == "" {
 			return nil, fmt.Errorf("oauth: ClientID is unexpectedly empty")
@@ -93,6 +93,13 @@ func (m *OAuth2Method) Authenticate(ctx context.Context, r *http.Request) (*auth
 		}, nil
 	}
 	return nil, transient.Tag.Apply(err)
+}
+
+// isFatalOAuthErr examines the error message to figure out whether the error
+// from the OAuth service is fatal.
+func isFatalOAuthErr(err error) bool {
+	msg := err.Error()
+	return strings.Contains(msg, "OAUTH_INVALID_TOKEN") || strings.Contains(msg, "OAUTH_INVALID_REQUEST")
 }
 
 // GetUserCredentials implements auth.UserCredentialsGetter.
