@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3ef9e75_2d09d1f5",
+        "filename": "appengine/gaeauth/server/oauth.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-12T03:19:09Z",
+      "side": 1,
+      "message": "go error management at its best 😞",
+      "revId": "0abffe3162d6bb4bcac2c7467d026483e51d54b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
