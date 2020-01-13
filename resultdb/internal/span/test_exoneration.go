@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
@@ -83,16 +84,25 @@ type TestExonerationQuery struct {
 	PageToken     string
 }
 
-// QueryTestExonerations reads test exonerations matching the predicate.
-// Returned test exonerations from the same invocation are contiguous.
-func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
-	switch {
-	case q.PageSize <= 0:
-		panic("PageSize <= 0")
+func queryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery, fullResult bool, f func(row *spanner.Row) error) error {
+	if q.PageSize < 0 {
+		panic("PageSize < 0")
 	}
 
-	st := spanner.NewStatement(`
-		SELECT InvocationId, TestId, ExonerationId, Variant,ExplanationHtml
+	selectSt := "SELECT InvocationId, TestId, ExonerationId, Variant, ExplanationHtml"
+	orderSt := "ORDER BY InvocationId, TestId, ExonerationId"
+	if !fullResult {
+		selectSt = "SELECT TestId, VariantHash"
+		orderSt = "ORDER BY TestId"
+	}
+
+	limit := ""
+	if q.PageSize > 0 {
+		limit = `LIMIT @limit`
+	}
+
+	st := spanner.NewStatement(fmt.Sprintf(`
+		%s
 		FROM TestExonerations
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
@@ -101,9 +111,11 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 				(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
 				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ExonerationID > @afterExonerationID)
 		  )
-		ORDER BY InvocationId, TestId, ExonerationId
-		LIMIT @limit
-	`)
+		%s
+		%s
+	`, selectSt, orderSt, limit))
+
+	var err error
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["afterInvocationId"],
@@ -111,16 +123,27 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 		st.Params["afterExonerationID"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
-		return
+		return err
 	}
 
 	// TODO(nodir): add support for q.Predicate.TestId.
 	// TODO(nodir): add support for q.Predicate.Variant.
 
+	err = query(ctx, txn, st, f)
+	return err
+}
+
+// QueryTestExonerations reads test exonerations matching the predicate.
+// Returned test exonerations from the same invocation are contiguous.
+func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
+	if q.PageSize <= 0 {
+		panic("PageSize <= 0")
+	}
+
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
 	var explanationHTML Compressed
-	err = query(ctx, txn, st, func(row *spanner.Row) error {
+	err = queryTestExonerations(ctx, txn, q, true, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)
@@ -145,4 +168,33 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 		nextPageToken = pagination.Token(string(invID), testID, exID)
 	}
 	return
+}
+
+// TestVariant returns a string containing testId and variantHash as a key to that test variant.
+func TestVariant(testId, variantHash string) string {
+	return fmt.Sprintf("%s@%s", testId, variantHash)
+}
+
+// QueryExoneratedTestVariants reads exonerated test variants matching the predicate.
+//// Returned test variants from the same invocation are contiguous.
+func QueryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (map[string]bool, error) {
+	if q.PageSize > 0 {
+		panic("PageSize is specified when QueryExoneratedTests")
+	}
+	tvs := map[string]bool{}
+	var b Buffer
+	err := queryTestExonerations(ctx, txn, q, false, func(row *spanner.Row) error {
+		var testId string
+		var variantHash string
+		err := b.FromSpanner(row, &testId, &variantHash)
+		if err != nil {
+			return err
+		}
+		tvs[TestVariant(testId, variantHash)] = true
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return tvs, nil
 }
