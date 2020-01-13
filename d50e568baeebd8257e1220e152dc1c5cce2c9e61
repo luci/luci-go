@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46d2f39b_7d72474c",
+        "filename": "lucicfg/starlark/stdlib/internal/time.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-13T20:43:46Z",
+      "side": 1,
+      "message": "nit: \\n after that before _duration(...) constants (since they form a block of their own, being all durations).",
+      "revId": "d50e568baeebd8257e1220e152dc1c5cce2c9e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02775ac0_a919e932",
+        "filename": "lucicfg/testdata/misc/time.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-13T20:43:46Z",
+      "side": 1,
+      "message": "need to actually call test_epoch() here",
+      "revId": "d50e568baeebd8257e1220e152dc1c5cce2c9e61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
