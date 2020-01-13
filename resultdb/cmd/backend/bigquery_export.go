@@ -37,8 +37,9 @@ import (
 )
 
 const (
-	maxInvocationGraphSize = 1000
-	maxBatchSize           = 500
+	maxInvocationGraphSize      = 1000
+	maxExoneratedTestVariantNum = 1000
+	maxBatchSize                = 500
 )
 
 // inserter is implemented by bigquery.Inserter.
@@ -109,7 +110,18 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 	}
 }
 
-func generateBQRow(inv *pb.Invocation, tr *pb.TestResult) *bq.Row {
+func isTestVariantExonerated(tr *pb.TestResult, variantHash string, exoneratedTestVariants map[string]bool) bool {
+	if tr.Expected {
+		return false
+	}
+
+	if _, ok := exoneratedTestVariants[span.TestVariant(tr.TestId, variantHash)]; ok {
+		return true
+	}
+	return false
+}
+
+func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bq.Row {
 	return &bq.Row{
 		Message: &bqpb.TestResultRow{
 			Invocation: &bqpb.TestResultRow_Invocation{
@@ -119,17 +131,17 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult) *bq.Row {
 			},
 			Result: tr,
 			Exoneration: &bqpb.TestResultRow_TestExoneration{
-				Exonerated: false,
+				Exonerated: exonerated,
 			},
 		},
 		InsertID: tr.Name,
 	}
 }
 
-func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, maxBatchSize int, batchC chan []*bq.Row) error {
+func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[string]bool, maxBatchSize int, batchC chan []*bq.Row) error {
 	rows := make([]*bq.Row, 0, maxBatchSize)
 	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
-		rows = append(rows, generateBQRow(inv, tr))
+		rows = append(rows, generateBQRow(inv, tr, isTestVariantExonerated(tr, variantHash, exoneratedTestVariants)))
 		if len(rows) >= maxBatchSize {
 			select {
 			case <-ctx.Done():
@@ -193,7 +205,17 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 		return err
 	}
 
-	// TODO(chanli): Query test exonerations.
+	teq := span.TestExonerationQuery{
+		InvocationIDs: invIDs,
+		PageSize:      maxExoneratedTestVariantNum,
+	}
+	exoneratedTestVariants, err := span.QueryExoneratedTestVariants(ctx, txn, teq)
+	if err != nil {
+		if span.TooManyExoneratedTestVariantsTag.In(err) {
+			err = permanentInvocationTaskErrTag.Apply(err)
+		}
+		return err
+	}
 
 	// Query test results and export to BigQuery.
 	batchC := make(chan []*bq.Row)
@@ -205,13 +227,13 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 		return batchExportRows(ctx, ins, batchC)
 	})
 
-	q := span.TestResultQuery{
+	tsq := span.TestResultQuery{
 		Predicate:     bqExport.GetTestResults().GetPredicate(),
 		InvocationIDs: invIDs,
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return queryTestResultsStreaming(ctx, txn, inv, q, maxBatchSize, batchC)
+		return queryTestResultsStreaming(ctx, txn, inv, tsq, exoneratedTestVariants, maxBatchSize, batchC)
 	})
 
 	return eg.Wait()
