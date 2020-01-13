@@ -791,6 +791,29 @@ time.duration value.
 
 
 
+### time.epoch {#time.epoch}
+
+```python
+time.epoch(layout, value, location)
+```
+
+
+
+Returns epoch seconds for value interpreted as a time per layout in location.
+
+#### Arguments {#time.epoch-args}
+
+* **layout**: a string format showing how the reference time would be interpreted, see golang's time.Parse. Required.
+* **value**: a string value to be parsed as a time. Required.
+* **location**: a string location, for example 'America/Los_Angeles'. Required.
+
+
+#### Returns  {#time.epoch-returns}
+
+int epoch seconds for value.
+
+
+
 ### time.truncate {#time.truncate}
 
 ```python

@@ -54,6 +54,14 @@ def test_helpers():
   assert.eq(time.truncate(2 * time.hour + time.minute, time.hour), 2 * time.hour)
 
 
+def test_epoch():
+  assert.eq(time.epoch(time.short_date, '2020-01-13 16:21:33', 'America/Denver'), 1578957693)
+  assert.eq(time.epoch(time.short_date, '2020-01-09 19:00:00', 'America/Denver'), 1578621600)
+  assert.eq(time.epoch(time.short_date, '2020-01-10 18:21:25', 'America/Denver'), 1578705685)
+  assert.eq(time.epoch(time.short_date, '1969-12-31 17:00:00', 'America/Denver'), 0)
+  assert.eq(time.epoch(time.short_date, '1969-12-31 16:00:00', 'America/Los_Angeles'), 0)
+
+
 def test_days_of_week():
   good_cases = {
       '': [],
@@ -85,4 +93,5 @@ def test_days_of_week():
 test_duration_type()
 test_type_mismatches()
 test_helpers()
+test_epoch()
 test_days_of_week()
