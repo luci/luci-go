@@ -15,6 +15,7 @@
 package lucicfg
 
 import (
+	"fmt"
 	"time"
 
 	"go.starlark.net/starlark"
@@ -96,5 +97,19 @@ func init() {
 			return nil, err
 		}
 		return duration{ms}, nil
+	})
+
+	// epoch(layout, value) returns int epoch seconds for value parsed as a time per layout.
+	declNative("epoch", func(call nativeCall) (starlark.Value, error) {
+		var layout starlark.String
+		var value starlark.String
+		if err := call.unpack(2, &layout, &value); err != nil {
+			return nil, err
+		}
+		t, err := time.Parse(layout.GoString(), value.GoString())
+		if err != nil {
+			return nil, fmt.Errorf("time.epoch: %s", err)
+		}
+		return starlark.MakeInt(int(t.UnixNano() / 1000000000)), nil
 	})
 }

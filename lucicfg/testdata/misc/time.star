@@ -54,6 +54,13 @@ def test_helpers():
   assert.eq(time.truncate(2 * time.hour + time.minute, time.hour), 2 * time.hour)
 
 
+def test_epoch():
+  assert.eq(time.epoch(time.unix_date, 'Mon Jan 13 16:21:33 MST 2020'), 1578957693)
+  assert.eq(time.epoch(time.unix_date, 'Thu Jan 9 19:00:00 MST 2020'), 1578621600)
+  assert.eq(time.epoch(time.unix_date, 'Fri Jan 10 18:21:25 MST 2020'), 1578705685)
+  assert.eq(time.epoch(time.unix_date, 'Wed Dec 31 17:00:00 MST 1969'), 0)
+
+
 def test_days_of_week():
   good_cases = {
       '': [],
