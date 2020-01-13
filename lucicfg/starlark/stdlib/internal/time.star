@@ -27,6 +27,24 @@ def _duration(milliseconds):
   return __native__.make_duration(milliseconds)
 
 
+def _epoch(layout, value):
+  """Returns the epoch seconds for value interpreted as a time per layout.
+
+  Args:
+    layout: a string format showing how the reference time would be
+      interpreted, see golang's time.Parse. Required.
+    value: a string value to be parsed as a time. Required.
+
+  Returns:
+    int epoch seconds for value.
+  """
+  if type(layout) != 'string':
+    fail('time.epoch: got %s as first argument, want string' % type(layout))
+  if type(value) != 'string':
+    fail('time.epoch: got %s as second argument, want string' % type(value))
+  return __native__.epoch(layout, value)
+
+
 def _truncate(duration, precision):
   """Truncates the precision of the duration to the given value.
 
@@ -116,7 +134,11 @@ def _days_of_week(spec):
 # | `time.week`        | `7 * time.day`            |
 time = struct(
     duration = _duration,
+    epoch = _epoch,
     truncate = _truncate,
+
+    # golang's time.UnixDate
+    unix_date = 'Mon Jan _2 15:04:05 MST 2006',
 
     zero = _duration(0),
     millisecond = _duration(1),
