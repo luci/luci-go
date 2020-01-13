@@ -287,27 +287,21 @@ func (c *Client) call(ctx context.Context, serviceName, methodName string, in []
 				*options.resTrailerMetadata = metadataFromHeaders(res.Trailer)
 			}
 
-			code, err := c.readStatusCode(res, buf)
-			if err != nil {
+			// Read status. If it is not OK, return an error.
+			switch st, err := c.readStatus(res, buf); {
+			case err != nil:
 				return err
-			}
-			if code != codes.OK {
-				sp := &spb.Status{
-					Code:    int32(code),
-					Message: strings.TrimSuffix(c.readErrorMessage(buf), "\n"),
-				}
-				var detErr error
-				sp.Details, detErr = c.readStatusDetails(res)
-				if detErr != nil {
-					return detErr
-				}
-				err = status.FromProto(sp).Err()
-				if grpcutil.IsTransientCode(code) {
+
+			case st != nil:
+				err := st.Err()
+				if grpcutil.IsTransientCode(st.Code()) {
 					err = transient.Tag.Apply(err)
 				}
 				return err
+
+			default:
+				return nil
 			}
-			return nil
 		},
 		func(err error, sleepTime time.Duration) {
 			logging.Fields{
@@ -389,10 +383,13 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 	return nil
 }
 
-// readStatusCode retrieves the status code from the response.
-func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.Code, error) {
+// readStatus retrieves the status from the response.
+// Returns (nil, nil) if status is OK.
+func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) (*status.Status, error) {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
+		// TODO(nodir): return an INTERNAL error for HTTP 500/503.
+
 		// Not a valid pRPC response.
 		err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, c.readErrorMessage(bodyBuf))
 
@@ -402,16 +399,27 @@ func (c *Client) readStatusCode(r *http.Response, bodyBuf *bytes.Buffer) (codes.
 		if r.StatusCode >= http.StatusInternalServerError {
 			err = transient.Tag.Apply(err)
 		}
-		return 0, err
+		return nil, err
 	}
 
-	codeInt, err := strconv.Atoi(codeHeader)
+	code, err := strconv.Atoi(codeHeader)
 	if err != nil {
 		// Not a valid pRPC response.
-		return 0, fmt.Errorf("invalid grpc code %q: %s", codeHeader, err)
+		return nil, fmt.Errorf("invalid grpc code %q: %s", codeHeader, err)
 	}
 
-	return codes.Code(codeInt), nil
+	if codes.Code(code) == codes.OK {
+		return nil, nil
+	}
+
+	sp := &spb.Status{
+		Code:    int32(code),
+		Message: strings.TrimSuffix(c.readErrorMessage(bodyBuf), "\n"),
+	}
+	if sp.Details, err = c.readStatusDetails(r); err != nil {
+		return nil, err
+	}
+	return status.FromProto(sp), nil
 }
 
 // readErrorMessage reads an error message from a body buffer.
