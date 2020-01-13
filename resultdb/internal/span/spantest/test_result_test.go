@@ -36,7 +36,7 @@ func TestQueryTestResults(t *testing.T) {
 
 		now := clock.Now(ctx)
 
-		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now, false))
+		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, "", now, false, ""))
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
@@ -78,8 +78,8 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_FAIL,
 			)
 			MustApply(ctx,
-				InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false),
-				InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now, false),
+				InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false, ""),
+				InsertInvocation("inv2", pb.Invocation_ACTIVE, "", now, false, ""),
 			)
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
@@ -92,7 +92,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false, ""))
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
@@ -118,7 +118,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test id filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false))
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, "", now, false, ""))
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),

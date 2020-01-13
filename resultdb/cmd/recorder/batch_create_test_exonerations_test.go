@@ -149,7 +149,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false, ""))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.BatchCreateTestExonerationsRequest{

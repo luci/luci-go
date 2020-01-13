@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -44,6 +45,19 @@ const (
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
 	Put(ctx context.Context, src interface{}) error
+}
+
+func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
+	realm, err := span.ReadInvocationRealm(ctx, span.Client(ctx).Single(), invID)
+	if err != nil {
+		return "", err
+	}
+
+	project, _, err := internal.ParseRealm(realm)
+	if err != nil {
+		return "", errors.Annotate(err, "invocation %q", invID.Name()).Err()
+	}
+	return project, nil
 }
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
@@ -64,21 +78,35 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 	// Check the existence of table.
 	// TODO(chanli): Cache the check result.
 	_, err := t.Metadata(ctx)
-	if apiErr, ok := err.(*googleapi.Error); !(ok && apiErr.Code == http.StatusNotFound) {
+	apiErr, ok := err.(*googleapi.Error)
+	switch {
+	case ok && apiErr.Code == http.StatusNotFound:
+		// Table doesn't exist.
+		break
+	case ok && apiErr.Code == http.StatusForbidden:
+		// No read table permission.
+		return permanentInvocationTaskErrTag.Apply(err)
+	default:
+		// Either no err or the err is not special cases above, simply return.
 		return err
 	}
 
 	// Table doesn't exist. Create one.
 	err = t.Create(ctx, nil)
-	if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusConflict {
+	apiErr, ok = err.(*googleapi.Error)
+	switch {
+	case err == nil:
+		logging.Infof(ctx, "Created BigQuery table %s.%s.%s", bqExport.Project, bqExport.Dataset, bqExport.Table)
+		return nil
+	case ok && apiErr.Code == http.StatusConflict:
 		// Table just got created. This is fine.
 		return nil
-	}
-	if err != nil {
+	case ok && apiErr.Code == http.StatusForbidden:
+		// No create table permission.
+		return permanentInvocationTaskErrTag.Apply(err)
+	default:
 		return err
 	}
-	logging.Infof(ctx, "Created BigQuery table %s.%s.%s", bqExport.Project, bqExport.Dataset, bqExport.Table)
-	return nil
 }
 
 func generateBQRow(inv *pb.Invocation, tr *pb.TestResult) *bq.Row {
@@ -133,7 +161,11 @@ func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bq.Row) e
 		for rows := range batchC {
 			rows := rows
 			workC <- func() error {
-				return ins.Put(ctx, rows)
+				err := ins.Put(ctx, rows)
+				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+					err = permanentInvocationTaskErrTag.Apply(err)
+				}
+				return err
 			}
 		}
 	})
@@ -153,9 +185,11 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	}
 
 	// Get the invocation set.
-	// TODO(chanli): when encounter TooManyInvocationsTag err, log the error and delete the invocation task.
 	invIDs, err := span.ReadReachableInvocations(ctx, txn, maxInvocationGraphSize, span.NewInvocationIDSet(invID))
 	if err != nil {
+		if span.TooManyInvocationsTag.In(err) {
+			err = permanentInvocationTaskErrTag.Apply(err)
+		}
 		return err
 	}
 
@@ -184,7 +218,12 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func exportResultsToBigQuery(ctx context.Context, luciProject string, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+	luciProject, err := getLUCIProject(ctx, invID)
+	if err != nil {
+		return err
+	}
+
 	client, err := getBQClient(ctx, luciProject, bqExport)
 	if err != nil {
 		return err
