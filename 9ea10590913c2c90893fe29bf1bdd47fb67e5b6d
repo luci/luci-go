@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd97d28b_cb040265",
+        "filename": "grpc/prpc/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-13T20:00:22Z",
+      "side": 1,
+      "message": "nit: 503 should be Unavailable, it is legitimately returned by load balancers when the backend is unavailable or by the task itself when it is under high load. And it is legitimately correct to retry in this case.",
+      "range": {
+        "startLine": 391,
+        "startChar": 56,
+        "endLine": 391,
+        "endChar": 59
+      },
+      "revId": "9ea10590913c2c90893fe29bf1bdd47fb67e5b6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
