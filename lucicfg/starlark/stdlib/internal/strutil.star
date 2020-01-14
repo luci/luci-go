@@ -100,6 +100,30 @@ def _b64_decode(s):
   return __native__.b64_decode(s)
 
 
+def _hex_encode(s):
+  """Encodes a string as a sequence of hex bytes.
+
+  Args:
+    s: a string to encode. Required.
+
+  Returns:
+    A string with hexadecimal encoding.
+  """
+  return __native__.hex_encode(s)
+
+
+def _hex_decode(s):
+  """Decodes a string encoded as a sequence of hex bytes.
+
+  Args:
+    s: a string to decode. Required.
+
+  Returns:
+    Decoded string.
+  """
+  return __native__.hex_decode(s)
+
+
 def _template(s):
   """Parses the given string as a Go text template and returns template object.
 
@@ -122,5 +146,7 @@ strutil = struct(
     to_yaml = _to_yaml,
     b64_encode = _b64_encode,
     b64_decode = _b64_decode,
+    hex_encode = _hex_encode,
+    hex_decode = _hex_decode,
     template = _template,
 )

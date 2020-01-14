@@ -16,6 +16,7 @@ package lucicfg
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -318,6 +319,26 @@ func init() {
 			return nil, err
 		}
 		raw, err := base64.StdEncoding.DecodeString(s.GoString())
+		if err != nil {
+			return nil, err
+		}
+		return starlark.String(string(raw)), nil
+	})
+
+	declNative("hex_encode", func(call nativeCall) (starlark.Value, error) {
+		var s starlark.String
+		if err := call.unpack(1, &s); err != nil {
+			return nil, err
+		}
+		return starlark.String(hex.EncodeToString([]byte(s.GoString()))), nil
+	})
+
+	declNative("hex_decode", func(call nativeCall) (starlark.Value, error) {
+		var s starlark.String
+		if err := call.unpack(1, &s); err != nil {
+			return nil, err
+		}
+		raw, err := hex.DecodeString(s.GoString())
 		if err != nil {
 			return nil, err
 		}
