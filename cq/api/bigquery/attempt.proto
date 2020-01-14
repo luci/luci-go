@@ -61,6 +61,9 @@ message Attempt {
 
   // Final status of the Attempt.
   AttemptStatus status = 9;
+
+  // Details about the failure, if the Attempt failed.
+  FailureType failure_type = 10;
 }
 
 // GerritChange represents one revision (patchset) of one Gerrit change
@@ -177,4 +180,32 @@ enum AttemptStatus {
   FAILURE = 4;
   // Failure in CQ itself caused the Attempt to be dropped.
   INFRA_FAILURE = 5;
+}
+
+enum FailureType {
+  // Default, never set.
+  FAILURE_TYPE_UNSPECIFIED = 0;
+  // The Attempt did not fail.
+  NONE = 1;
+  // Unknown failure type.
+  UNKNOWN = 2;
+  // Failed at least one critical tryjob.
+  FAILED_TRYJOBS = 3;
+  // Failed an initial quick check of CL state, e.g. footer flags.
+  FAILED_LINTER = 4;
+  // Failure parsing the Cq-Include-Trybots footer flag specifically.
+  INVALID_DELIMITER = 5;
+  // A CL owner doesn't have permission to trigger CQ.
+  NO_ACCESS = 6;
+  // A CL didn't get sufficient approval for submitting via CQ.
+  NOT_APPROVED = 7;
+  // Some dependencies are either not submitted or not grouped
+  // together in this attempt.
+  DEPENDENCY_OPEN = 8;
+  // Some (possibly transitive) dependencies are considered "out of scope".
+  DEPENDENCY_OUT_OF_SCOPE = 9;
+  // Some dependencies don't have sufficient approval to submit.
+  DEPENDENCY_UNAPPROVED = 10;
+  // Exhausted retry quota across all builders for this Attempt.
+  RETRY_QUOTA_EXCEEDED = 11;
 }
