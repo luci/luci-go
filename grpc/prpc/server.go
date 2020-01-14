@@ -57,6 +57,13 @@ var (
 	NoAuthentication Authenticator = nullAuthenticator{}
 )
 
+// NoAccessControl returns true unconditionally.
+// It can be used as Server.AccessControl.
+// It must NOT be used in combination with cookie-based authentication.
+func NoAccessControl(c context.Context, origin string) bool {
+	return true
+}
+
 // Server is a pRPC server to serve RPC requests.
 // Zero value is valid.
 type Server struct {
