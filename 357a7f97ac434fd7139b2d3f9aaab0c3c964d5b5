@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0c2f245_4fd486ed",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T01:27:49Z",
+      "side": 1,
+      "message": "this belongs to TestResultQuery",
+      "range": {
+        "startLine": 96,
+        "startChar": 96,
+        "endLine": 96,
+        "endChar": 113
+      },
+      "revId": "357a7f97ac434fd7139b2d3f9aaab0c3c964d5b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1847be3c_baa7c5c4",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T01:27:49Z",
+      "side": 1,
+      "message": "i think this is failing if %s\u003d\u003d\"\"\nplease add a test",
+      "range": {
+        "startLine": 144,
+        "startChar": 21,
+        "endLine": 145,
+        "endChar": 5
+      },
+      "revId": "357a7f97ac434fd7139b2d3f9aaab0c3c964d5b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
