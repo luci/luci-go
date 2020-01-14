@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88267df7_e5198350",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T17:17:58Z",
+      "side": 1,
+      "message": "it is possible to use go structs as map keys. It would be more efficient that generating these strings",
+      "range": {
+        "startLine": 118,
+        "startChar": 36,
+        "endLine": 118,
+        "endChar": 75
+      },
+      "revId": "51723264c4097a08aed68de6d3650bc610daac22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
