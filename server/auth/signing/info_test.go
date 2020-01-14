@@ -17,54 +17,87 @@ package signing
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchServiceInfo(t *testing.T) {
-	Convey("Works", t, func() {
+	t.Parallel()
+
+	const testURL = "https://test.example.com"
+
+	Convey("With empty cache", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{
-				"app_id": "some-app-id",
-				"app_runtime": "go",
-				"app_runtime_version": "go1.5.1",
-				"app_version": "1234-abcdef",
-				"service_account_name": "some-app-id@appspot.gserviceaccount.com"
-			}`))
-		}))
-		info, err := FetchServiceInfo(ctx, ts.URL)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &ServiceInfo{
-			AppID:              "some-app-id",
-			AppRuntime:         "go",
-			AppRuntimeVersion:  "go1.5.1",
-			AppVersion:         "1234-abcdef",
-			ServiceAccountName: "some-app-id@appspot.gserviceaccount.com",
+		global := &cachingtest.BlobCache{LRU: lru.New(0)}
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			infoCacheNamespace: global,
 		})
-	})
 
-	Convey("Error", t, func() {
-		ctx := caching.WithEmptyProcessCache(context.Background())
+		Convey("Works", func() {
+			calls := 0
+			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+				So(r.URL.String(), ShouldEqual, testURL)
+				calls++
+				return 200, `{
+					"app_id": "some-app-id",
+					"app_runtime": "go",
+					"app_runtime_version": "go1.5.1",
+					"app_version": "1234-abcdef",
+					"service_account_name": "some-app-id@appspot.gserviceaccount.com"
+				}`
+			})
 
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "fail", http.StatusInternalServerError)
-		}))
-		info, err := FetchServiceInfo(ctx, ts.URL)
-		So(info, ShouldBeNil)
-		So(err, ShouldNotBeNil)
+			expected := &ServiceInfo{
+				AppID:              "some-app-id",
+				AppRuntime:         "go",
+				AppRuntimeVersion:  "go1.5.1",
+				AppVersion:         "1234-abcdef",
+				ServiceAccountName: "some-app-id@appspot.gserviceaccount.com",
+			}
+
+			info1, err := FetchServiceInfo(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(info1, ShouldResemble, expected)
+			So(calls, ShouldEqual, 1)
+
+			// The in-process cache works.
+			info2, err := FetchServiceInfo(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(info2, ShouldEqual, info1) // the exact same object
+			So(calls, ShouldEqual, 1)     // no new calls
+
+			// The global cache works too.
+			ctx = caching.WithEmptyProcessCache(ctx)
+			info3, err := FetchServiceInfo(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(info3, ShouldNotEqual, info1)    // a new deserialized object
+			So(info3, ShouldResemble, expected) // still has the correct value
+			So(calls, ShouldEqual, 1)           // no new calls
+		})
+
+		Convey("Error", func() {
+			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
+				return 500, "error"
+			})
+			info, err := FetchServiceInfo(ctx, testURL)
+			So(info, ShouldBeNil)
+			So(err, ShouldNotBeNil)
+		})
 	})
 }
 
 func TestFetchLUCIServiceIdentity(t *testing.T) {
+	t.Parallel()
+
 	Convey("Works", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (code int, response string) {
