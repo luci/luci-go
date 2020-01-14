@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,36 +15,30 @@
 package lucicfg
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"hash"
 
 	"go.starlark.net/starlark"
 )
 
-const (
-	// Version is the version of lucicfg tool.
-	//
-	// It ends up in CLI output and in User-Agent headers.
-	Version = "1.11.17"
-
-	// UserAgent is used for User-Agent header in HTTP requests from lucicfg.
-	UserAgent = "lucicfg v" + Version
-)
-
+// See also //internal/digest.star.
 func init() {
-	// See //internal/lucicfg.star.
-	declNative("version", func(call nativeCall) (starlark.Value, error) {
-		if err := call.unpack(0); err != nil {
+	declNative("hash_digest", func(call nativeCall) (starlark.Value, error) {
+		var algo, blob starlark.String
+		if err := call.unpack(1, &algo, &blob); err != nil {
 			return nil, err
 		}
-		var major, minor, rev int
-		_, err := fmt.Sscanf(Version, "%d.%d.%d", &major, &minor, &rev)
-		if err != nil {
-			panic(err)
+
+		var h hash.Hash
+		switch algo.GoString() {
+		case "SHA256":
+			h = sha256.New()
+		default:
+			return nil, fmt.Errorf("digest.bytes: unknown hashing algorithm %q", algo.GoString())
 		}
-		return starlark.Tuple{
-			starlark.MakeInt(major),
-			starlark.MakeInt(minor),
-			starlark.MakeInt(rev),
-		}, nil
+
+		h.Write([]byte(blob))
+		return starlark.String(h.Sum(nil)), nil
 	})
 }
