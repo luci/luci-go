@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd81ee72_a177a26c",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-14T05:50:48Z",
+      "side": 1,
+      "message": "I realized this is not an equivalent change since tokenServiceCerts.GetCerts(c) used to return (perhaps) stale cached certs in case it could not refresh them. layered.Cache.GetOrCreate (and lru.Cache) evict expired items unconditionally, so if fresh ones can\u0027t be fetched it just returns an error.\n\nI think I\u0027ll add a similar feature to layered.Cache to restore back this functionality. It is helpful in a bunch of other places for reliability reasons (i.e. it is nice to use freshest data, but it is OK to use stale one if the freshest can\u0027t be fetched).\n\nI\u0027ll do it in a separate CL.",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 215,
+        "endChar": 2
+      },
+      "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
