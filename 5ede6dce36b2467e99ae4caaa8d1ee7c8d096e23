@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a645fb82_74fff60c",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T01:31:38Z",
+      "side": 1,
+      "message": "this might select a lot of identical TestId, VariantHash pairs because there is no DISTINCT.\n\nthis code was simple, but got rather complicated. Besides, you don\u0027t need paging in BigQuery export. I think it would be simpler if we didn\u0027t change this code, but just executed the exact query we need in BigQueryExport",
+      "revId": "5ede6dce36b2467e99ae4caaa8d1ee7c8d096e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8097b86_a52a5884",
+        "filename": "resultdb/internal/span/test_exoneration.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T01:31:38Z",
+      "side": 1,
+      "message": "this function is pretty specific to where you actually need it - bigquery.\ni.e. i don\u0027t think it is generic enough to be in this package. see other comments, I think we need to move the query to bq-specific code",
+      "range": {
+        "startLine": 169,
+        "startChar": 0,
+        "endLine": 172,
+        "endChar": 1
+      },
+      "revId": "5ede6dce36b2467e99ae4caaa8d1ee7c8d096e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
