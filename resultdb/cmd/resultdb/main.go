@@ -15,7 +15,10 @@
 package main
 
 import (
+	"flag"
 	"io"
+
+	"go.chromium.org/luci/resultdb/internal/usercontent"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
@@ -40,11 +43,19 @@ func NewResultDBServer() pb.ResultDBServer {
 }
 
 func main() {
+	contentHostname := usercontent.RegisterUserContentHostFlag(flag.CommandLine)
+
 	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
+
+		contentServer, err := usercontent.NewServer(srv.Context, *contentHostname)
+		if err != nil {
+			return err
+		}
+		contentServer.InstallHandlers(srv.Context, srv.Routes)
 
 		// Register an empty Recorder server only to make the discovery service
 		// list it.
