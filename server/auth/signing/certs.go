@@ -17,6 +17,7 @@ package signing
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"net/url"
@@ -28,19 +29,29 @@ import (
 
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 )
 
+// See auth/cache.go for where __luciauth__ appears for the first time. We
+// derive from it here for consistency.
+const certsCacheNamespace = "__luciauth__.signing.certs"
+
 // "url:..." | "email:..." | "google_auth2_certs" => *PublicCertificates.
-var certsCache = caching.RegisterLRUCache(1024)
+var certsCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(1024),
+	GlobalNamespace: certsCacheNamespace,
+	Marshal:         json.Marshal, // marshals *PublicCertificates
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		out := &PublicCertificates{}
+		err := json.Unmarshal(blob, out)
+		return out, err
+	},
+}
 
 const (
 	robotCertsURL  = "https://www.googleapis.com/robot/v1/metadata/x509/"
 	oauth2CertsURL = "https://www.googleapis.com/oauth2/v1/certs"
 )
-
-// CertsCacheExpiration defines how long to cache fetched certificates in local
-// memory.
-const CertsCacheExpiration = time.Hour
 
 // Certificate is public certificate of some service. Must not be mutated once
 // initialized.
@@ -94,12 +105,11 @@ func (t JSONTime) MarshalJSON() ([]byte, error) {
 // FetchCertificates fetches certificates from the given URL.
 //
 // The server is expected to reply with JSON described by PublicCertificates
-// struct (like LUCI services do). Uses the process cache to cache them for
-// CertsCacheExpiration minutes.
+// struct (like LUCI services do). Uses the process cache to cache them.
 //
 // LUCI services serve certificates at /auth/api/v1/server/certificates.
 func FetchCertificates(c context.Context, url string) (*PublicCertificates, error) {
-	certs, err := certsCache.LRU(c).GetOrCreate(c, "url:"+url, func() (interface{}, time.Duration, error) {
+	return getCachedOrFetch(c, "url:"+url, func() (*PublicCertificates, error) {
 		certs := &PublicCertificates{}
 		req := internal.Request{
 			Method: "GET",
@@ -107,14 +117,10 @@ func FetchCertificates(c context.Context, url string) (*PublicCertificates, erro
 			Out:    certs,
 		}
 		if err := req.Do(c); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
-		return certs, CertsCacheExpiration, nil
+		return certs, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*PublicCertificates), nil
 }
 
 // FetchCertificatesFromLUCIService is shortcut for FetchCertificates
@@ -129,7 +135,7 @@ func FetchCertificatesFromLUCIService(c context.Context, serviceURL string) (*Pu
 // service account.
 //
 // Works only with Google service accounts (@*.gserviceaccount.com). Uses the
-// process cache to cache them for CertsCacheExpiration minutes.
+// process cache to cache them.
 //
 // Usage (roughly):
 //
@@ -142,35 +148,40 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 	if !strings.HasSuffix(email, ".gserviceaccount.com") {
 		return nil, fmt.Errorf("signature: not a google service account %q", email)
 	}
-	certs, err := certsCache.LRU(c).GetOrCreate(c, "email:"+email, func() (interface{}, time.Duration, error) {
+	return getCachedOrFetch(c, "email:"+email, func() (*PublicCertificates, error) {
 		certs, err := fetchCertsJSON(c, robotCertsURL+url.QueryEscape(email))
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		certs.ServiceAccountName = email
-		return certs, CertsCacheExpiration, nil
+		return certs, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return certs.(*PublicCertificates), nil
 }
 
-// FetchGoogleOAuth2Certificates fetches root certificates of Google OAuth2
+// FetchGoogleOAuth2Certificates fetches root certificates of the Google OAuth2
 // service.
 //
 // They can be used to verify signatures on various JWTs issued by Google
 // OAuth2 backends (like OpenID identity tokens and GCE signed metadata JWTs).
 //
-// Uses the process cache to cache them for CertsCacheExpiration minutes.
+// Uses the process cache to cache them.
 func FetchGoogleOAuth2Certificates(c context.Context) (*PublicCertificates, error) {
-	certs, err := certsCache.LRU(c).GetOrCreate(c, "google_auth2_certs", func() (interface{}, time.Duration, error) {
-		certs, err := fetchCertsJSON(c, oauth2CertsURL)
+	return getCachedOrFetch(c, "google_auth2_certs", func() (*PublicCertificates, error) {
+		return fetchCertsJSON(c, oauth2CertsURL)
+	})
+}
+
+// getCachedOrFetch wraps interaction with certsCache.
+func getCachedOrFetch(c context.Context, key string, cb func() (*PublicCertificates, error)) (*PublicCertificates, error) {
+	certs, err := certsCache.GetOrCreate(c, key, func() (interface{}, time.Duration, error) {
+		certs, err := cb()
 		if err != nil {
 			return nil, 0, err
 		}
-		return certs, CertsCacheExpiration, nil
-	})
+		// It appears the Google service account keys are rotated approximately
+		// daily, so caching for 6h should be OK (with a large margin).
+		return certs, 6 * time.Hour, nil
+	}, layered.WithRandomizedExpiration(30*time.Minute))
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 
-	"go.chromium.org/luci/server/auth/authdb/internal/certs"
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/authdb/internal/ipaddr"
 	"go.chromium.org/luci/server/auth/authdb/internal/oauthid"
@@ -47,13 +46,11 @@ type SnapshotDB struct {
 	AuthServiceURL string // where it was fetched from
 	Rev            int64  // its revision number
 
-	groups         *graph.QueryableGraph  // queryable representation of groups
-	clientIDs      oauthid.Whitelist      // set of allowed client IDs
-	whitelistedIPs ipaddr.Whitelist       // set of named IP whitelists
-	securityCfg    *seccfg.SecurityConfig // parsed SecurityConfig proto
-
-	tokenServiceURL   string       // URL of the token server as provided by Auth service
-	tokenServiceCerts certs.Bundle // cached public keys of the token server
+	groups          *graph.QueryableGraph  // queryable representation of groups
+	clientIDs       oauthid.Whitelist      // set of allowed client IDs
+	whitelistedIPs  ipaddr.Whitelist       // set of named IP whitelists
+	securityCfg     *seccfg.SecurityConfig // parsed SecurityConfig proto
+	tokenServiceURL string                 // URL of the token server as provided by Auth service
 }
 
 var _ DB = &SnapshotDB{}
@@ -117,14 +114,13 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 	}
 
 	return &SnapshotDB{
-		AuthServiceURL:    authServiceURL,
-		Rev:               rev,
-		groups:            groups,
-		clientIDs:         oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
-		whitelistedIPs:    ipWL,
-		securityCfg:       securityCfg,
-		tokenServiceURL:   authDB.TokenServerUrl,
-		tokenServiceCerts: certs.Bundle{ServiceURL: authDB.TokenServerUrl},
+		AuthServiceURL:  authServiceURL,
+		Rev:             rev,
+		groups:          groups,
+		clientIDs:       oauthid.NewWhitelist(authDB.OauthClientId, authDB.OauthAdditionalClientIds),
+		whitelistedIPs:  ipWL,
+		securityCfg:     securityCfg,
+		tokenServiceURL: authDB.TokenServerUrl,
 	}, nil
 }
 
@@ -205,14 +201,25 @@ func (db *SnapshotDB) GetCertificates(c context.Context, signerID identity.Ident
 			db.AuthServiceURL)
 		return nil, nil
 	}
-	switch tokenServerID, certs, err := db.tokenServiceCerts.GetCerts(c); {
-	case err != nil:
-		return nil, err
-	case signerID != tokenServerID:
-		return nil, nil // signerID is not trusted since it's not a token server
-	default:
-		return certs, nil
+
+	// Fetch the certificates and the service account ID directly from the token
+	// server. Note that FetchCertificatesFromLUCIService has an in-process cache
+	// inside, so its OK to call it often.
+	certs, err := signing.FetchCertificatesFromLUCIService(c, db.tokenServiceURL)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch certs from %s", db.tokenServiceURL).Err()
 	}
+	tokenServerID, err := identity.MakeIdentity("user:" + certs.ServiceAccountName)
+	if err != nil {
+		return nil, errors.Reason("invalid service_account_name %q in certificates bundle from %s", certs.ServiceAccountName, db.tokenServiceURL).Err()
+	}
+
+	// If `signerID` is not the token server, return (nil, nil) to indicate that
+	// it should not be trusted (per GetCertificates contract).
+	if signerID != tokenServerID {
+		return nil, nil
+	}
+	return certs, nil
 }
 
 // GetWhitelistForIdentity returns name of the IP whitelist to use to check
