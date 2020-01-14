@@ -16,6 +16,7 @@ package signing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -23,10 +24,24 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/layered"
 )
 
+// See auth/cache.go for where __luciauth__ appears for the first time. We
+// derive from it here for consistency.
+const infoCacheNamespace = "__luciauth__.signing.info"
+
 // URL string => *ServiceInfo.
-var infoCache = caching.RegisterLRUCache(256)
+var infoCache = layered.Cache{
+	ProcessLRUCache: caching.RegisterLRUCache(256),
+	GlobalNamespace: infoCacheNamespace,
+	Marshal:         json.Marshal, // marshals *ServiceInfo
+	Unmarshal: func(blob []byte) (interface{}, error) {
+		out := &ServiceInfo{}
+		err := json.Unmarshal(blob, out)
+		return out, err
+	},
+}
 
 // ServiceInfo describes identity of some service.
 //
@@ -46,7 +61,7 @@ type ServiceInfo struct {
 //
 // LUCI services serve the service info at /auth/api/v1/server/info.
 func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
-	info, err := infoCache.LRU(c).GetOrCreate(c, url, func() (interface{}, time.Duration, error) {
+	info, err := infoCache.GetOrCreate(c, url, func() (interface{}, time.Duration, error) {
 		info := &ServiceInfo{}
 		req := internal.Request{
 			Method: "GET",
@@ -57,7 +72,7 @@ func FetchServiceInfo(c context.Context, url string) (*ServiceInfo, error) {
 			return nil, 0, err
 		}
 		return info, time.Hour, nil
-	})
+	}, layered.WithRandomizedExpiration(10*time.Minute))
 	if err != nil {
 		return nil, err
 	}

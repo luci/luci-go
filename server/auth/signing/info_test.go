@@ -18,11 +18,14 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -32,7 +35,14 @@ func TestFetchServiceInfo(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
+		global := &cachingtest.BlobCache{LRU: lru.New(0)}
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			infoCacheNamespace: global,
+		})
+
+		var calls int32
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&calls, 1)
 			w.Write([]byte(`{
 				"app_id": "some-app-id",
 				"app_runtime": "go",
@@ -41,15 +51,32 @@ func TestFetchServiceInfo(t *testing.T) {
 				"service_account_name": "some-app-id@appspot.gserviceaccount.com"
 			}`))
 		}))
-		info, err := FetchServiceInfo(ctx, ts.URL)
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &ServiceInfo{
+
+		expected := &ServiceInfo{
 			AppID:              "some-app-id",
 			AppRuntime:         "go",
 			AppRuntimeVersion:  "go1.5.1",
 			AppVersion:         "1234-abcdef",
 			ServiceAccountName: "some-app-id@appspot.gserviceaccount.com",
-		})
+		}
+
+		info, err := FetchServiceInfo(ctx, ts.URL)
+		So(err, ShouldBeNil)
+		So(info, ShouldResemble, expected)
+		So(atomic.LoadInt32(&calls), ShouldEqual, 1)
+
+		// The in-process cache works.
+		info, err = FetchServiceInfo(ctx, ts.URL)
+		So(err, ShouldBeNil)
+		So(info, ShouldResemble, expected)
+		So(atomic.LoadInt32(&calls), ShouldEqual, 1)
+
+		// The global cache works too.
+		ctx = caching.WithEmptyProcessCache(ctx)
+		info, err = FetchServiceInfo(ctx, ts.URL)
+		So(err, ShouldBeNil)
+		So(info, ShouldResemble, expected)
+		So(atomic.LoadInt32(&calls), ShouldEqual, 1)
 	})
 
 	Convey("Error", t, func() {
