@@ -128,7 +128,7 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult) *bq.Row {
 
 func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, maxBatchSize int, batchC chan []*bq.Row) error {
 	rows := make([]*bq.Row, 0, maxBatchSize)
-	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult) error {
+	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		rows = append(rows, generateBQRow(inv, tr))
 		if len(rows) >= maxBatchSize {
 			select {
@@ -206,8 +206,9 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	})
 
 	q := span.TestResultQuery{
-		Predicate:     bqExport.GetTestResults().GetPredicate(),
-		InvocationIDs: invIDs,
+		Predicate:         bqExport.GetTestResults().GetPredicate(),
+		InvocationIDs:     invIDs,
+		SelectVariantHash: true,
 	}
 	eg.Go(func() error {
 		defer close(batchC)
