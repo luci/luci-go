@@ -46,6 +46,8 @@ type prodWriter struct {
 	count   int64
 }
 
+var _ Writer = (*prodWriter)(nil)
+
 // Write writes data with exponenital backoff/retry.
 func (w *prodWriter) Write(d []byte) (a int, err error) {
 	if w.Writer == nil {
