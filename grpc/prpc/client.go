@@ -388,18 +388,20 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer) (*status.Status, error) {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
-		// TODO(nodir): return an INTERNAL error for HTTP 500/503.
+		if r.StatusCode >= 500 {
+			// It is possible that the request did not reach the pRPC server and
+			// that's why we don't have the code header. It's preferable to convert it
+			// to a gRPC status so that the client code treats the response
+			// appropriately.
+			code := codes.Internal
+			if r.StatusCode == http.StatusServiceUnavailable {
+				code = codes.Unavailable
+			}
+			return status.New(code, c.readErrorMessage(bodyBuf)), nil
+		}
 
 		// Not a valid pRPC response.
-		err := fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, c.readErrorMessage(bodyBuf))
-
-		// Some HTTP codes are returned directly by hosting platforms (e.g.,
-		// AppEngine), and should be automatically retried even if a gRPC code
-		// header is not supplied.
-		if r.StatusCode >= http.StatusInternalServerError {
-			err = transient.Tag.Apply(err)
-		}
-		return nil, err
+		return nil, fmt.Errorf("HTTP %d: no gRPC code. Body: %q", r.StatusCode, c.readErrorMessage(bodyBuf))
 	}
 
 	code, err := strconv.Atoi(codeHeader)
