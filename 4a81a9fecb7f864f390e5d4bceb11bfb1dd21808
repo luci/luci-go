@@ -22,6 +22,30 @@
       "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d35b7a94_b64601c8",
+        "filename": "server/auth/authdb/snapshot.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-14T17:07:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cd81ee72_a177a26c",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 215,
+        "endChar": 2
+      },
+      "revId": "4a81a9fecb7f864f390e5d4bceb11bfb1dd21808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
