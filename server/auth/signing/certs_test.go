@@ -21,8 +21,10 @@ import (
 	"net/http"
 	"testing"
 
+	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/caching/cachingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -46,9 +48,16 @@ func TestFetchCertificates(t *testing.T) {
 	Convey("With empty cache", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
+		global := &cachingtest.BlobCache{LRU: lru.New(0)}
+		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
+			certsCacheNamespace: global,
+		})
+
 		Convey("Works", func() {
+			calls := 0
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 				So(r.URL.String(), ShouldEqual, testURL)
+				calls++
 				return 200, fmt.Sprintf(`{
 				"service_account_name": "blah@blah.com",
 				"certificates": [{
@@ -59,10 +68,25 @@ func TestFetchCertificates(t *testing.T) {
 			}`, certBlob)
 			})
 
-			certs, err := FetchCertificates(ctx, testURL)
+			certs1, err := FetchCertificates(ctx, testURL)
 			So(err, ShouldBeNil)
-			So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
-			So(len(certs.Certificates), ShouldEqual, 1)
+			So(certs1.ServiceAccountName, ShouldEqual, "blah@blah.com")
+			So(len(certs1.Certificates), ShouldEqual, 1)
+			So(calls, ShouldEqual, 1)
+
+			// The in-process cache works.
+			certs2, err := FetchCertificates(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(certs2, ShouldEqual, certs1) // the exact same object
+			So(calls, ShouldEqual, 1)       // no new calls
+
+			// The global cache works too.
+			ctx = caching.WithEmptyProcessCache(ctx)
+			certs3, err := FetchCertificates(ctx, testURL)
+			So(err, ShouldBeNil)
+			So(certs3, ShouldNotEqual, certs1) // a new deserialized object
+			So(certs3.ServiceAccountName, ShouldEqual, "blah@blah.com")
+			So(calls, ShouldEqual, 1) // no new calls
 		})
 
 		Convey("Errors", func() {
