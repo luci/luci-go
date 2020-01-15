@@ -23,10 +23,11 @@ import (
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
+	"go.chromium.org/luci/resultdb/pbutil"
+	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -34,14 +35,14 @@ import (
 
 type mockPassInserter struct {
 	insertedMessages []*bq.Row
-	mux              sync.Mutex
+	mu               sync.Mutex
 }
 
 func (i *mockPassInserter) Put(ctx context.Context, src interface{}) error {
 	messages := src.([]*bq.Row)
-	i.mux.Lock()
+	i.mu.Lock()
 	i.insertedMessages = append(i.insertedMessages, messages...)
-	i.mux.Unlock()
+	i.mu.Unlock()
 	return nil
 }
 
@@ -60,8 +61,13 @@ func TestExportToBigQuery(t *testing.T) {
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("a", pb.Invocation_COMPLETED, token, now, false, ""))
 		testutil.MustApply(ctx, testutil.CombineMutations(
+			// Test results and exonerations have the same variants.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("a", "A", pbutil.Variant("k1", "v1", "k2", "v2"), 1),
+			// Test results and exonerations have different variants.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pb.TestStatus_CRASH, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("a", "B", pbutil.Variant("k1", "v1"), 1),
+			// Passing test result without exoneration.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "C", pb.TestStatus_PASS)),
 		)...)
 
@@ -77,8 +83,8 @@ func TestExportToBigQuery(t *testing.T) {
 			err := exportTestResultsToBigQuery(ctx, i, "a", bqExport, 2)
 			So(err, ShouldBeNil)
 
-			i.mux.Lock()
-			defer i.mux.Unlock()
+			i.mu.Lock()
+			defer i.mu.Unlock()
 			So(len(i.insertedMessages), ShouldEqual, 5)
 
 			expectedTestIDs := []string{"A", "B", "C"}
@@ -86,6 +92,8 @@ func TestExportToBigQuery(t *testing.T) {
 				invID, testID, _ := span.MustParseTestResultName(m.InsertID)
 				So(invID, ShouldEqual, "a")
 				So(testID, ShouldBeIn, expectedTestIDs)
+				tr := m.Message.(*bqpb.TestResultRow)
+				So(tr.Exoneration.Exonerated, ShouldEqual, testID == "A")
 			}
 		})
 

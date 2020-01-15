@@ -168,7 +168,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 	})
 	ret := make(map[InvocationID]*pb.Invocation, len(ids))
 	var b Buffer
-	err := query(ctx, txn, st, func(row *spanner.Row) error {
+	err := Query(ctx, txn, st, func(row *spanner.Row) error {
 		var id InvocationID
 		included := InvocationIDSet{}
 		inv := &pb.Invocation{}
