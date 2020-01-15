@@ -214,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "7f24e363_0dfe2b63",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T19:25:42Z",
+      "side": 1,
+      "message": "sorry, perhaps i was not clear.\nwe do need to support paging in QueryTestResults/QueryTestExonerations when returning those to users, and impl of those RPCs are two spanner RPCs, one after another (first get reachable invs, then get test results/exonerations), and paging is done only for the second RPC. It is difficult to have paging in first query (fetching reachable invs). We have to either fetch everything, or bail out. That\u0027s the only reason we have a limit there.\n\nthat does not apply here. happy to chat more",
+      "parentUuid": "6f3ce174_bbf946a4",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 14
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c2eafc2_2e3ee420",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 4
