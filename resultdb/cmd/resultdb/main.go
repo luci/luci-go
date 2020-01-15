@@ -17,6 +17,7 @@ package main
 import (
 	"io"
 
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
@@ -54,6 +55,8 @@ func main() {
 		// dynamically fetches discovery documents from other deployments and
 		// returns their union.
 		pb.RegisterRecorderServer(srv.PRPC, nil)
+
+		srv.PRPC.AccessControl = prpc.AllowOriginAll
 
 		return nil
 	})
