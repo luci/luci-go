@@ -62,6 +62,16 @@ type Txn interface {
 // content with https://godoc.org/github.com/klauspost/compress/zstd encoding.
 type Compressed []byte
 
+// CompressedProto is like Compressed, but for protobuf messages.
+//
+// Although not strictly necessary, FromSpanner expects a *CompressedProto,
+// for consistency.
+//
+// Note that `type CompressedProto proto.Message` and
+// `type CompressedProto interface{proto.Message}` do not work well with
+// type-switches.
+type CompressedProto struct{ Message proto.Message }
+
 var zstdHeader = []byte("ztd\n")
 
 // Globally shared zstd encoder and decoder. We use only their EncodeAll and
@@ -119,13 +129,14 @@ func ReadRow(ctx context.Context, txn Txn, table string, key spanner.Key, ptrMap
 //   - typepb.Variant
 //   - typepb.StringPair
 //   - Compressed
+//   - CompressedProto
 //   - proto.Message
 type Buffer struct {
-	nullStr   spanner.NullString
-	nullTime  spanner.NullTime
-	i64       int64
-	strSlice  []string
-	byteSlice []byte
+	nullStr               spanner.NullString
+	nullTime              spanner.NullTime
+	i64                   int64
+	strSlice              []string
+	byteSlice, byteSlice2 []byte
 }
 
 // FromSpanner is a shortcut for (&Buffer{}).FromSpanner.
@@ -177,6 +188,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 	case proto.Message:
 		spanPtr = &b.byteSlice
 	case *Compressed:
+		spanPtr = &b.byteSlice
+	case *CompressedProto:
 		spanPtr = &b.byteSlice
 	default:
 		spanPtr = goPtr
@@ -259,14 +272,21 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			// do not set to nil; otherwise we lose the buffer.
 			*goPtr = (*goPtr)[:0]
 		} else {
-			if !bytes.HasPrefix(b.byteSlice, zstdHeader) {
-				return errors.Reason("expected ztd header").Err()
-			}
 			// *goPtr might be pointing to an existing memory buffer.
 			// Try to reuse it for decoding.
-			*goPtr, err = zstdDecoder.DecodeAll(b.byteSlice[len(zstdHeader):], (*goPtr)[:0])
-			if err != nil {
-				return errors.Annotate(err, "failed to decode from zstd").Err()
+			if *goPtr, err = decompress(b.byteSlice, *goPtr); err != nil {
+				return err
+			}
+		}
+
+	case *CompressedProto:
+		goPtr.Message.Reset()
+		if len(b.byteSlice) != 0 {
+			if b.byteSlice2, err = decompress(b.byteSlice, b.byteSlice2); err != nil {
+				return err
+			}
+			if err := proto.Unmarshal(b.byteSlice2, goPtr.Message); err != nil {
+				return err
 			}
 		}
 
@@ -330,6 +350,11 @@ func ToSpanner(v interface{}) interface{} {
 		return ret
 
 	case proto.Message:
+		if isMessageNil(v) {
+			// Do not store empty messages.
+			return []byte(nil)
+		}
+
 		ret, err := proto.Marshal(v)
 		if err != nil {
 			panic(err)
@@ -355,9 +380,21 @@ func ToSpanner(v interface{}) interface{} {
 			// Do not store empty bytes.
 			return []byte(nil)
 		}
-		out := make([]byte, 0, len(v)/2+len(zstdHeader)) // hope for at least 2x compression
-		out = append(out, zstdHeader...)
-		return zstdEncoder.EncodeAll(v, out)
+		return compress(v)
+
+		// It must go before case proto.Message
+	case CompressedProto:
+		if isMessageNil(v.Message) {
+			// Do not store empty messages.
+			return []byte(nil)
+		}
+
+		// This might be optimized by reusing the memory buffer.
+		raw, err := proto.Marshal(v.Message)
+		if err != nil {
+			panic(err)
+		}
+		return compress(raw)
 
 	default:
 		return v
@@ -420,4 +457,26 @@ func query(ctx context.Context, txn Txn, st spanner.Statement, fn func(row *span
 	logging.Infof(ctx, "query %d: %s\n with params %#v", queryID, st.SQL, st.Params)
 
 	return txn.Query(ctx, st).Do(fn)
+}
+
+func compress(data []byte) []byte {
+	out := make([]byte, 0, len(data)/2+len(zstdHeader)) // hope for at least 2x compression
+	out = append(out, zstdHeader...)
+	return zstdEncoder.EncodeAll(data, out)
+}
+
+func decompress(src, dest []byte) ([]byte, error) {
+	if !bytes.HasPrefix(src, zstdHeader) {
+		return nil, errors.Reason("expected ztd header").Err()
+	}
+
+	dest, err := zstdDecoder.DecodeAll(src[len(zstdHeader):], dest[:0])
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to decode from zstd").Err()
+	}
+	return dest, nil
+}
+
+func isMessageNil(m proto.Message) bool {
+	return reflect.ValueOf(m).IsNil()
 }
