@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9b163fa4_1d7a29f0",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:40:16Z",
+      "side": 1,
+      "message": "Sorry I was not clear before: I don\u0027t see Hostname is used outside of usercontent package either, so I\u0027m wondering should it be private as well.",
+      "parentUuid": "e20b3356_fddf03f9",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 9
+      },
+      "revId": "2bad89d32ff26b2bb83f547d714f7d8f7af43dd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9eb11d54_4ffe2fa6",
         "filename": "resultdb/internal/usercontent/server.go",
         "patchSetId": 5
