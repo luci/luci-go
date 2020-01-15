@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2bfc4abb_eb3d3c3d",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "I think it would be confusing for an expected test result to be marked as \u0027exonerated\u0027.",
+      "parentUuid": "e9998fbf_9158f01f",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 2
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e5b7932_5ea26edc",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ec7571_8504f166",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e5b7932_5ea26edc",
+      "range": {
+        "startLine": 123,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 13
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "71b1c55e_a9381268",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6d1e59d_0b547222",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 17
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b964b34f_ea51392a",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f3ce174_bbf946a4",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "I have a similar concern since here we don\u0027t do paging on exonerations either.\n\nThough it may not be a big of a deal after all, since we only need a set of test variants.",
+      "parentUuid": "b964b34f_ea51392a",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 14
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "9534dbfc_ecd050b8",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6c2eafc2_2e3ee420",
+      "range": {
+        "startLine": 142,
+        "startChar": 8,
+        "endLine": 142,
+        "endChar": 33
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39039704_018a6e75",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 4
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "43b95939_f451233b",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39039704_018a6e75",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 12
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c5f8600_50c8eb68",
         "filename": "resultdb/cmd/backend/bigquery_export_test.go",
         "patchSetId": 4
@@ -160,6 +304,30 @@
       "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cba57777_97fa59cb",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T19:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c5f8600_50c8eb68",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 5
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
