@@ -15,12 +15,15 @@
 package main
 
 import (
+	"flag"
 	"io"
 
+	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/usercontent"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -40,11 +43,24 @@ func NewResultDBServer() pb.ResultDBServer {
 }
 
 func main() {
+	// TODO(crbug.com/1042261): remove the default when we start passing it.
+	// Without the default staging will start crashing.
+	contentHostname := flag.String("user-content-host", "results.usercontent.cr.dev", text.Doc(`
+		Use this host for all user content URLs.
+	`))
+
 	internal.Main(func(srv *server.Server) error {
+
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
+
+		contentServer, err := usercontent.NewServer(srv.Context, *contentHostname)
+		if err != nil {
+			return err
+		}
+		contentServer.InstallHandlers(srv.Context, srv.Routes)
 
 		// Register an empty Recorder server only to make the discovery service
 		// list it.
