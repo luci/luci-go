@@ -87,17 +87,22 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 
 // TestResultQuery specifies test results to fetch.
 type TestResultQuery struct {
-	InvocationIDs InvocationIDSet
-	Predicate     *pb.TestResultPredicate // Predicate.Invocation must be nil.
-	PageSize      int                     // must be positive
-	PageToken     string
+	InvocationIDs     InvocationIDSet
+	Predicate         *pb.TestResultPredicate // Predicate.Invocation must be nil.
+	PageSize          int                     // must be positive
+	PageToken         string
+	SelectVariantHash bool
 }
 
-func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) error {
+func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
 
+	extraSelect := ""
+	if q.SelectVariantHash {
+		extraSelect = "tr.VariantHash,"
+	}
 	from := "TestResults tr"
 	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
 		// We must return only test results of test variants that have unexpected results.
@@ -137,7 +142,8 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			tr.RunDurationUsec,
 			tr.Tags,
 			tr.InputArtifacts,
-			tr.OutputArtifacts
+			tr.OutputArtifacts,
+			%s
 		FROM %s
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
@@ -149,7 +155,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
 		%s
-	`, from, limit))
+	`, extraSelect, from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 
@@ -179,8 +185,10 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64
+		var variantHash string
 		tr := &pb.TestResult{}
-		err = b.FromSpanner(row,
+
+		ptrs := []interface{}{
 			&invID,
 			&tr.TestId,
 			&tr.ResultId,
@@ -193,7 +201,12 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&tr.Tags,
 			&tr.InputArtifacts,
 			&tr.OutputArtifacts,
-		)
+		}
+		if q.SelectVariantHash {
+			ptrs = append(ptrs, &variantHash)
+		}
+
+		err = b.FromSpanner(row, ptrs...)
 		if err != nil {
 			return err
 		}
@@ -203,7 +216,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		populateExpectedField(tr, maybeUnexpected)
 		populateDurationField(tr, micros)
 
-		return f(tr)
+		return f(tr, variantHash)
 	})
 }
 
@@ -215,7 +228,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	trs = make([]*pb.TestResult, 0, q.PageSize)
-	err = queryTestResults(ctx, txn, q, func(tr *pb.TestResult) error {
+	err = queryTestResults(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		trs = append(trs, tr)
 		return nil
 	})
@@ -234,7 +247,7 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
-func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult) error) error {
+func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when QueryTestResultsStreaming")
 	}
