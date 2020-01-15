@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4dda010c_55f85574",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T18:06:45Z",
+      "side": 1,
+      "message": "Any reason why only Hostname starts with cap?",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 9
+      },
+      "revId": "2bad89d32ff26b2bb83f547d714f7d8f7af43dd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9eb11d54_4ffe2fa6",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T18:06:45Z",
+      "side": 1,
+      "message": "Why would we need this if InstallHandlers will not return any error?",
+      "range": {
+        "startLine": 55,
+        "startChar": 72,
+        "endLine": 55,
+        "endChar": 77
+      },
+      "revId": "2bad89d32ff26b2bb83f547d714f7d8f7af43dd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "529290ef_4f97b54a",
+        "filename": "resultdb/internal/usercontent/server_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-15T18:06:45Z",
+      "side": 1,
+      "message": "nit: 2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "2bad89d32ff26b2bb83f547d714f7d8f7af43dd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
