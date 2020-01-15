@@ -25,6 +25,121 @@
     },
     {
       "key": {
+        "uuid": "7d49542d_f71a42de",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T23:27:21Z",
+      "side": 1,
+      "message": "midflight",
+      "range": {
+        "startLine": 58,
+        "startChar": 63,
+        "endLine": 58,
+        "endChar": 71
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bcf8981_4b2fd85d",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T23:27:21Z",
+      "side": 1,
+      "message": "I assume this is because this code is going to be deleted soon?",
+      "range": {
+        "startLine": 60,
+        "startChar": 6,
+        "endLine": 60,
+        "endChar": 47
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a78a052e_4f1b737c",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T23:27:21Z",
+      "side": 1,
+      "message": "Note that this will not work if the isolate client uses request.WithContext(...) and handleIsolateContent(...) does some authentication (i.e. changes auth.GetState(ctx)). It will panic in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/server/auth/client.go#298. \n\nI can remove this panic, but it would open a way to do bad mistakes. Maybe I can do something specifically for AsUser and AsCredentialsForwarder... I\u0027ll maybe send a CL for that.",
+      "range": {
+        "startLine": 50,
+        "startChar": 2,
+        "endLine": 50,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa867e7a_e20bb356",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T23:27:21Z",
+      "side": 1,
+      "message": "Please remove, it is confusing (InstallHandlers isn\u0027t supposed to do any blocking calls or log stuff, it doesn\u0027t need a context).",
+      "range": {
+        "startLine": 55,
+        "startChar": 33,
+        "endLine": 55,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d5de5ca_b17a6a61",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T23:27:21Z",
+      "side": 1,
+      "message": "I think this is not a good approach. We should route based on Host header, no just check it in a middleware. \n\nIn particular, we should not serve the rest of ResultDB endpoints from the usercontent host. With this approach we will, because other registered routes in router.Router don\u0027t check Host header. It has potentially security implications too (depending on what routes are served).\n\nI think we\u0027ll have to put a host-based router (as http.Handler) in front of router.Router, since our router.Router doesn\u0027t know how to route based on headers. Unfortunately this will require changes at least in server/server.go, since we need the host-based router be connected directly to http.Server. I\u0027ll look into it.",
+      "range": {
+        "startLine": 56,
+        "startChar": 33,
+        "endLine": 56,
+        "endChar": 67
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "83c03c75_0fdecc4c",
         "filename": "resultdb/internal/usercontent/signing.go",
         "patchSetId": 6
