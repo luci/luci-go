@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3b640c9_feaaa7c0",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T19:19:54Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "0d978ced039ff8ae244ef02ed9860788bb7b2c6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

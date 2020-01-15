@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d6946ab1_02926314",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T19:19:54Z",
+      "side": 1,
+      "message": "i don\u0027t expect this to happen in practice. presumably, nobody would want to exonerate a test variant that does not have unexpected results. however, if someone does, then the same test variant would have expected results marked non-exonerated, and unexpected results marked-exonerated. I think this inconsistent is confusing. Note that exoneration is done at test variant level, not test result level (exoneration does not specify result id)",
+      "parentUuid": "2bfc4abb_eb3d3c3d",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 2
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e5b7932_5ea26edc",
         "filename": "resultdb/cmd/backend/bigquery_export.go",
         "patchSetId": 4
