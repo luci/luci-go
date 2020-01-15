@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "03a34e66_7599dc17",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T20:17:15Z",
+      "side": 1,
+      "message": "you can add a noop flag first, make k8s.star change, and then implement it :)",
+      "range": {
+        "startLine": 47,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83c03c75_0fdecc4c",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T20:17:15Z",
+      "side": 1,
+      "message": "This would require configuring https://chrome-internal.googlesource.com/infradata/k8s/+/refs/heads/master/starlark/chops.star#82 :( \n\nDid you try to use this code from GKE? I believe it should be failing in generateSignedURL.",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 1
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a1ef64a_3aef1aa7",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-15T20:17:15Z",
+      "side": 1,
+      "message": "https://golang.org/pkg/net/http/#Error ?",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 62
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
