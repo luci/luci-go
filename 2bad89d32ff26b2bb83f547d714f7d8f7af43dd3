@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "59474953_f2c10314",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T19:42:28Z",
+      "side": 1,
+      "message": "i find write-only APIs a bit weird: the client can set it via NewServer, but can never read it back if Hostname is private. IMO making this public is more consistent with what I\u0027ve seen in the luci-go and Go stdlib codebases",
+      "parentUuid": "9b163fa4_1d7a29f0",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 9
+      },
+      "revId": "2bad89d32ff26b2bb83f547d714f7d8f7af43dd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9eb11d54_4ffe2fa6",
         "filename": "resultdb/internal/usercontent/server.go",
         "patchSetId": 5
