@@ -130,6 +130,29 @@ func TestTypeConversion(t *testing.T) {
 		})
 	})
 
+	Convey(`CompressedProto`, t, func() {
+		Convey(`Empty`, func() {
+			var msg *internalpb.InvocationTask
+			actualSPValue := ToSpanner(CompressedProto{msg})
+			So(actualSPValue, ShouldBeNil)
+		})
+		Convey(`non-Empty`, func() {
+			msg := &internalpb.InvocationTask{
+				BigqueryExport: &pb.BigQueryExport{},
+			}
+			actualSPValue := ToSpanner(CompressedProto{msg})
+			So(actualSPValue, ShouldResemble, []byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 17, 0, 0, 10, 0, 235, 239, 16, 177})
+
+			// FromSpanner
+			row, err := spanner.NewRow([]string{"a"}, []interface{}{actualSPValue})
+			So(err, ShouldBeNil)
+			dest := &CompressedProto{&internalpb.InvocationTask{}}
+			err = b.FromSpanner(row, dest)
+			So(err, ShouldBeNil)
+			So(dest.Message, ShouldResembleProto, msg)
+		})
+	})
+
 	Convey(`Slice`, t, func() {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
@@ -148,12 +171,12 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`proto.Message`, t, func() {
-		invTask := &internalpb.InvocationTask{
+		msg := &internalpb.InvocationTask{
 			BigqueryExport: &pb.BigQueryExport{},
 		}
-		expected, err := proto.Marshal(invTask)
+		expected, err := proto.Marshal(msg)
 		So(err, ShouldBeNil)
-		So(ToSpanner(invTask), ShouldResemble, expected)
+		So(ToSpanner(msg), ShouldResemble, expected)
 
 		row, err := spanner.NewRow([]string{"a"}, []interface{}{expected})
 		So(err, ShouldBeNil)
@@ -162,7 +185,7 @@ func TestTypeConversion(t *testing.T) {
 			expectedPtr := &internalpb.InvocationTask{}
 			err = b.FromSpanner(row, expectedPtr)
 			So(err, ShouldBeNil)
-			So(expectedPtr, ShouldResembleProto, invTask)
+			So(expectedPtr, ShouldResembleProto, msg)
 		})
 
 		Convey(`Passing nil pointer to fromSpanner`, func() {
