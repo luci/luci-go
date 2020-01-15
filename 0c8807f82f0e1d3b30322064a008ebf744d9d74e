@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9998fbf_9158f01f",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "whether test is expected is orthogonal to whether it was exonerated. why do need this?",
+      "range": {
+        "startLine": 119,
+        "startChar": 1,
+        "endLine": 121,
+        "endChar": 2
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e5b7932_5ea26edc",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "_, ok :\u003d exoneratedTestVariants[testVariantKey{testId: tr.TestId, variantHash: variantHash}]\nreturn ok",
+      "range": {
+        "startLine": 123,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 13
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6d1e59d_0b547222",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "why do we ask spanner to sort this? we are loosing order as soon as we add entries to the hashtable",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 17
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b964b34f_ea51392a",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "i\u0027ve seen builds with \u003e1000 tests failed. 1000 is not that many.\n\nthe reason we have a cap of number of included invocations is that we cannot support paging on invocations+testResults in QueryTestResults, and 1000 is a reasonable max there.\n\nwhy do we need a limit for exonerations?",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 14
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c2eafc2_2e3ee420",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "map[testVariantKey]struct{}{}\n\nGo has special optimizations for struct{}",
+      "range": {
+        "startLine": 142,
+        "startChar": 8,
+        "endLine": 142,
+        "endChar": 33
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39039704_018a6e75",
+        "filename": "resultdb/cmd/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "var key testVariantKey\n  if err :\u003d b.FromSpanner(row, \u0026key.testId, \u0026key.variantHash); err !\u003d nil {\n    return err\n  }\n  tvs[key] \u003d struct{}{}",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 152,
+        "endChar": 12
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c5f8600_50c8eb68",
+        "filename": "resultdb/cmd/backend/bigquery_export_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T06:07:01Z",
+      "side": 1,
+      "message": "So(tr.Exoneration.Exonerated, ShouldEqual, testID \u003d\u003d \"A\" \u0026\u0026 !tr.Result.Expected)",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 5
+      },
+      "revId": "0c8807f82f0e1d3b30322064a008ebf744d9d74e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
