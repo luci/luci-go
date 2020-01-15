@@ -22,6 +22,30 @@
       "revId": "bc8664b289f6f1c63cfdb9a3b28719e0837d5be2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e37ffd3_78f57a07",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-15T19:44:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e7b7c10_7a28e53c",
+      "range": {
+        "startLine": 164,
+        "startChar": 56,
+        "endLine": 164,
+        "endChar": 66
+      },
+      "revId": "bc8664b289f6f1c63cfdb9a3b28719e0837d5be2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
