@@ -47,6 +47,7 @@ func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client, requ
 	return ret, parallel.FanOutIn(func(work chan<- func() error) {
 		for i, cl := range f.cls {
 			i := i
+			cl := cl
 			work <- func() error {
 				change, err := f.retrieveCL(ctx, cl, httpClient, requirePatchset)
 				if err != nil {
