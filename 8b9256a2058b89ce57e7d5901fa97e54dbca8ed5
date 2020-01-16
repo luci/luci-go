@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dfa2474b_3aa8b92e",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-16T23:55:17Z",
+      "side": 1,
+      "message": "this looks like a waste of memory, unless you expect all your invocations graphs to always be very close to the limit",
+      "range": {
+        "startLine": 83,
+        "startChar": 30,
+        "endLine": 83,
+        "endChar": 35
+      },
+      "revId": "8b9256a2058b89ce57e7d5901fa97e54dbca8ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae2cfeb2_51fb19f0",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-16T23:55:17Z",
+      "side": 1,
+      "message": "It\u0027s not nice exiting without waiting for eg.Wait, considering there may be a lot of goroutines here. It may create a situation when the server is idle based on metrics, while in fact it is running a ton of stuff. This may happen if the context cancellation is laggy (e.g. in Spanner guts somewhere, it is a complex code). It would be better to cancel the context, wait for goroutines to stop, and only then exit.",
+      "range": {
+        "startLine": 131,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 18
+      },
+      "revId": "8b9256a2058b89ce57e7d5901fa97e54dbca8ed5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
