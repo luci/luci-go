@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39cbea1f_6cc8aa52",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-01-16T09:42:00Z",
+      "side": 1,
+      "message": "Where did you find the log that says os.Mkdir failed?\nIt would be better to show go isolated logs on the RawOutput section.",
+      "revId": "784982ac5d9ba07e985b77a4b3445e44b36d4a28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
