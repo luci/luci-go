@@ -128,7 +128,7 @@ func TestUpdateInvocation(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, token, testclock.TestRecentTimeUTC, false, ""))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, testclock.TestRecentTimeUTC, map[string]interface{}{"UpdateToken": token}))
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{

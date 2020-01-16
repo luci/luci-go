@@ -101,7 +101,7 @@ func TestInclude(t *testing.T) {
 
 		Convey(`no included invocation`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
+				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included not found`)
@@ -109,8 +109,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`included invocation is active`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
-				insInv("included", pb.Invocation_ACTIVE, "", ct, false, ""),
+				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_ACTIVE, ct, nil),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/included is not finalized`)
@@ -118,8 +118,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`idempotent`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
-				insInv("included", pb.Invocation_FINALIZED, "", ct, false, ""),
+				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, ct, nil),
 			)
 
 			_, err := recorder.Include(ctx, req)
@@ -131,8 +131,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`success`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
-				insInv("included", pb.Invocation_FINALIZED, "", ct, false, ""),
+				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, ct, nil),
 			)
 
 			_, err := recorder.Include(ctx, req)
