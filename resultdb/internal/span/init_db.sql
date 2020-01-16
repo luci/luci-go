@@ -68,6 +68,10 @@ CREATE TABLE Invocations (
   -- Flag for if the invocation is interrupted.
   -- Corresponds to Invocation.interrupted in invocation.proto.
   Interrupted BOOL,
+
+  -- Input artifacts, see also Invocation.bigquery_exports in invocation.proto.
+  -- Encoded as luci.resultdb.internal.BigQueryExports message.
+  BigQueryExports BYTES(MAX),
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.

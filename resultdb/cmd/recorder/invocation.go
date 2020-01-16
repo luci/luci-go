@@ -204,6 +204,10 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		row["CreateRequestId"] = createRequestID
 	}
 
+	if inv.BigqueryExports != nil {
+		row["BigQueryExports"] = inv.BigqueryExports
+	}
+
 	return row
 }
 
