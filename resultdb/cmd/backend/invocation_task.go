@@ -107,8 +107,10 @@ func runInvocationTasks(ctx context.Context) {
 	attempt := 0
 	for {
 		taskKeys, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
+		if err != nil || len(taskKeys) == 0 {
+			if err != nil {
+				logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
+			}
 
 			attempt++
 			sleep := time.Duration(attempt) * time.Second
