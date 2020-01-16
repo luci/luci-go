@@ -120,7 +120,7 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 	tes = make([]*pb.TestExoneration, 0, q.PageSize)
 	var b Buffer
 	var explanationHTML Compressed
-	err = query(ctx, txn, st, func(row *spanner.Row) error {
+	err = Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		ex := &pb.TestExoneration{}
 		err := b.FromSpanner(row, &invID, &ex.TestId, &ex.ExonerationId, &ex.Variant, &explanationHTML)

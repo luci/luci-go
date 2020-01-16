@@ -447,7 +447,7 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 // query executes a query.
 // Ensures st.Params are Spanner-compatible by modifying st.Params in place.
 // Logs the query and the time it took to run it.
-func query(ctx context.Context, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) error {
+func Query(ctx context.Context, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) error {
 	// Generate a random query ID in case we have multiple concurrent queries.
 	queryID := mathrand.Intn(ctx, 1000)
 
