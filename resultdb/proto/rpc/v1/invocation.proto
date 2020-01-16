@@ -18,6 +18,7 @@ package luci.resultdb.rpc.v1;
 
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/resultdb/proto/rpc/v1/predicate.proto";
 import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/rpc/v1;rpcpb";
@@ -106,4 +107,25 @@ message Invocation {
   // Use Recorder.Include RPC to modify this field.
   repeated string included_invocations = 8
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
+}
+
+// BigQueryExport indicates that results in this invocation should be exported
+// to BigQuery after finalization.
+message BigQueryExport {
+  // Name of the BigQuery project.
+  string project = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Name of the BigQuery Dataset.
+  string dataset = 2 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Name of the BigQuery Table.
+  string table = 3 [ (google.api.field_behavior) = REQUIRED ];
+
+  // TestResultExport indicates that test results should be exported.
+  message TestResults {
+    // Use predicate to query test results that should be exported to
+    // BigQuery table.
+    TestResultPredicate predicate = 1;
+  }
+  TestResults test_results = 4;
 }
