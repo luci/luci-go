@@ -187,6 +187,8 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 		spanPtr = &b.byteSlice
 	case proto.Message:
 		spanPtr = &b.byteSlice
+	case *[]*pb.BigQueryExport:
+		spanPtr = &b.byteSlice
 	case *Compressed:
 		spanPtr = &b.byteSlice
 	case *CompressedProto:
@@ -257,6 +259,14 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 			panic(err)
 		}
 		*goPtr = container.ArtifactsV1
+
+	case *[]*pb.BigQueryExport:
+		container := &internalpb.BigQueryExports{}
+		if err := proto.Unmarshal(b.byteSlice, container); err != nil {
+			// If it was written to Spanner, it should have been validated.
+			panic(err)
+		}
+		*goPtr = container.BigqueryExports
 
 	case proto.Message:
 		if reflect.ValueOf(goPtr).IsNil() {
@@ -344,6 +354,13 @@ func ToSpanner(v interface{}) interface{} {
 
 	case []*pb.Artifact:
 		ret, err := proto.Marshal(&internalpb.Artifacts{ArtifactsV1: v})
+		if err != nil {
+			panic(err)
+		}
+		return ret
+
+	case []*pb.BigQueryExport:
+		ret, err := proto.Marshal(&internalpb.BigQueryExports{BigqueryExports: v})
 		if err != nil {
 			panic(err)
 		}
