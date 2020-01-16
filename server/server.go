@@ -368,18 +368,25 @@ type Server struct {
 	// example to inject values accessible to all request handlers.
 	Context context.Context
 
-	// Routes is HTTP routes exposed via HTTPAddr port.
+	// Routes is a router for requests hitting HTTPAddr port.
+	//
+	// This router is used for all requests whose Host header does not match any
+	// registered per-host router (see VirtualHost). Normally, there are no
+	// per-host routers, so usually Routes is used for all requests.
 	//
 	// Should be populated before ListenAndServe call.
 	Routes *router.Router
 
-	// PRPC is pRPC service with APIs exposed via HTTPAddr port.
+	// PRPC is pRPC service with APIs exposed on HTTPAddr port via Routes router.
 	//
 	// Should be populated before ListenAndServe call.
 	PRPC *prpc.Server
 
 	// Options is a copy of options passed to New.
 	Options Options
+
+	mainPort  *Port // pre-registered main port, see initMainPort
+	adminPort *Port // pre-registered admin port, see initAdminPort
 
 	startTime   time.Time    // for calculating uptime for /healthz
 	hostname    string       // obtained from os.Hostname in New
@@ -390,12 +397,12 @@ type Server struct {
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
 
-	m       sync.Mutex     // protects fields below
-	httpSrv []*http.Server // all registered HTTP servers
-	started bool           // true inside and after ListenAndServe
-	stopped bool           // true inside and after Shutdown
-	ready   chan struct{}  // closed right before starting the serving loop
-	done    chan struct{}  // closed after Shutdown returns
+	m       sync.Mutex    // protects fields below
+	ports   []*Port       // all registered ports (each one hosts an HTTP server)
+	started bool          // true inside and after ListenAndServe
+	stopped bool          // true inside and after Shutdown
+	ready   chan struct{} // closed right before starting the serving loop
+	done    chan struct{} // closed after Shutdown returns
 
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
@@ -417,14 +424,6 @@ type Server struct {
 
 	redisPool *redis.Pool       // nil if redis is not used
 	dsClient  *datastore.Client // nil if datastore is not used
-}
-
-// Port describes options of a single serving HTTP port.
-//
-// See AddPort.
-type Port struct {
-	ListenAddr     string // local address to bind to
-	DisableMetrics bool   // do not collect HTTP metrics for requests on this port
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -536,11 +535,36 @@ func New(opts Options) (srv *Server, err error) {
 // AddPort prepares an additional serving HTTP port.
 //
 // Can be used to open more listening HTTP ports (in addition to opts.HTTPAddr
-// and opts.AdminAddr). Returns a router that should be populated with routes
-// exposed through the added port.
+// and opts.AdminAddr). The returned Port object can be used to populate the
+// router that serves requests hitting the added port.
 //
 // Should be called before ListenAndServe (panics otherwise).
-func (s *Server) AddPort(port Port) *router.Router {
+func (s *Server) AddPort(opts PortOptions) *Port {
+	port := &Port{
+		Routes: s.newRouter(opts),
+		parent: s,
+		opts:   opts,
+	}
+
+	s.m.Lock()
+	defer s.m.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	s.ports = append(s.ports, port)
+	return port
+}
+
+// VirtualHost returns a router (registering it if necessary) used for requests
+// that hit the main port (opts.HTTPAddr) and have the given Host header.
+//
+// Should be called before server's ListenAndServe (panics otherwise).
+func (s *Server) VirtualHost(host string) *router.Router {
+	return s.mainPort.VirtualHost(host)
+}
+
+// newRouter creates a Router with default middleware chain and routes.
+func (s *Server) newRouter(opts PortOptions) *router.Router {
 	s.m.Lock()
 	defer s.m.Unlock()
 	if s.started {
@@ -551,7 +575,7 @@ func (s *Server) AddPort(port Port) *router.Router {
 		s.rootMiddleware,            // prepares the per-request context
 		middleware.WithPanicCatcher, // transforms panics into HTTP 500
 	)
-	if s.tsmon != nil && !port.DisableMetrics {
+	if s.tsmon != nil && !opts.DisableMetrics {
 		mw = mw.Extend(s.tsmon.Middleware) // collect HTTP requests metrics
 	}
 
@@ -571,11 +595,6 @@ func (s *Server) AddPort(port Port) *router.Router {
 		http.NotFound(c.Writer, c.Request)
 	})
 
-	s.httpSrv = append(s.httpSrv, &http.Server{
-		Addr:     port.ListenAddr,
-		Handler:  r,
-		ErrorLog: nil, // TODO(vadimsh): Log via 'logging' package.
-	})
 	return r
 }
 
@@ -633,7 +652,7 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 func (s *Server) ListenAndServe() error {
 	s.m.Lock()
 	wasRunning := s.started
-	httpSrv := append(make([]*http.Server, 0, len(s.httpSrv)), s.httpSrv...)
+	ports := append(make([]*Port, 0, len(s.ports)), s.ports...)
 	s.started = true
 	s.m.Unlock()
 	if wasRunning {
@@ -673,17 +692,17 @@ func (s *Server) ListenAndServe() error {
 	close(s.ready)
 
 	// Run serving loops in parallel.
-	errs := make(errors.MultiError, len(httpSrv))
+	errs := make(errors.MultiError, len(ports))
 	wg := sync.WaitGroup{}
-	wg.Add(len(httpSrv))
-	for i, srv := range httpSrv {
-		logging.Infof(s.Context, "Serving http://%s", srv.Addr)
+	wg.Add(len(ports))
+	for i, port := range ports {
+		logging.Infof(s.Context, "Serving http://%s", port.nameForLog())
 		i := i
-		srv := srv
+		port := port
 		go func() {
 			defer wg.Done()
-			if err := s.serveLoop(srv); err != http.ErrServerClosed {
-				logging.WithError(err).Errorf(s.Context, "Server at %s failed", srv.Addr)
+			if err := s.serveLoop(port.httpServer()); err != http.ErrServerClosed {
+				logging.WithError(err).Errorf(s.Context, "Server %s failed", port.nameForLog())
 				errs[i] = err
 				s.Shutdown() // close all other servers
 			}
@@ -724,12 +743,12 @@ func (s *Server) Shutdown() {
 	// Stop all http.Servers in parallel. Each Shutdown call blocks until the
 	// corresponding server is stopped.
 	wg := sync.WaitGroup{}
-	wg.Add(len(s.httpSrv))
-	for _, srv := range s.httpSrv {
-		srv := srv
+	wg.Add(len(s.ports))
+	for _, port := range s.ports {
+		port := port
 		go func() {
 			defer wg.Done()
-			srv.Shutdown(s.Context)
+			port.httpServer().Shutdown(s.Context)
 		}()
 	}
 	wg.Wait()
@@ -1581,9 +1600,11 @@ func (s *Server) initRPCLimiter() error {
 
 // initMainPort initializes the server on options.HTTPAddr port.
 func (s *Server) initMainPort() error {
-	s.Routes = s.AddPort(Port{
+	s.mainPort = s.AddPort(PortOptions{
+		Name:       "main",
 		ListenAddr: s.Options.HTTPAddr,
 	})
+	s.Routes = s.mainPort.Routes
 
 	// Expose public pRPC endpoints (see also ListenAndServe where we put the
 	// final interceptors).
@@ -1622,14 +1643,17 @@ func (s *Server) initAdminPort() error {
 	})
 
 	// Install endpoints accessible through the admin port only.
-	admin := s.AddPort(Port{
+	s.adminPort = s.AddPort(PortOptions{
+		Name:           "admin",
 		ListenAddr:     s.Options.AdminAddr,
 		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
 	})
-	admin.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
+	routes := s.adminPort.Routes
+
+	routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
 	})
-	portal.InstallHandlers(admin, withAdminSecret, portal.AssumeTrustedPort)
+	portal.InstallHandlers(routes, withAdminSecret, portal.AssumeTrustedPort)
 
 	// Install pprof endpoints on the admin port. Note that they must not be
 	// exposed via the main serving port, since they do no authentication and
@@ -1639,7 +1663,7 @@ func (s *Server) initAdminPort() error {
 	//
 	// See also internal/pprof.go for more profiling goodies exposed through the
 	// admin portal.
-	admin.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
+	routes.GET("/debug/pprof/*path", router.MiddlewareChain{}, func(c *router.Context) {
 		switch strings.TrimPrefix(c.Params.ByName("path"), "/") {
 		case "cmdline":
 			pprof.Cmdline(c.Writer, c.Request)
