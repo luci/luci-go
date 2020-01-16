@@ -118,8 +118,6 @@ func (s *Server) ErrC() <-chan error {
 // an error. The context also has the server's information exported into it.
 // If callback finishes running, Run will return the error it returned.
 func (s *Server) Run(ctx context.Context, callback func(context.Context) error) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	// TODO(sajjadm): Add Export here when implemented and explain it in the function comment.
 	if err := s.Start(ctx); err != nil {
 		return err
@@ -133,7 +131,6 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 
 	select {
 	case err := <-s.errC:
-		cancel()
 		<-done
 		return err
 	case err := <-done:
@@ -171,8 +168,6 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) serveLoop(ctx context.Context) {
 	defer s.ln.Close()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	for {
 		switch conn, err := s.ln.Accept(); {
 		case err == nil:
@@ -216,8 +211,6 @@ func (s *Server) Export(ctx context.Context) context.Context {
 }
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	go func() {
 		<-ctx.Done()
 		c.Close()
