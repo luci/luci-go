@@ -159,6 +159,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 		 i.Deadline,
 		 i.Tags,
 		 i.Interrupted,
+		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId)
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
@@ -180,6 +181,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 			&inv.Deadline,
 			&inv.Tags,
 			&inv.Interrupted,
+			&inv.BigqueryExports,
 			&included)
 		if err != nil {
 			return err
