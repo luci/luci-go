@@ -31,9 +31,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func handshakeCheck(msg, token string) error {
+func handshakeCheck(ctx context.Context, msg, token string) error {
 	dc := json.NewDecoder(strings.NewReader(msg))
-	return processHandshake(dc, token)
+	return processHandshake(ctx, dc, token)
 }
 
 func Test(t *testing.T) {
@@ -51,6 +51,7 @@ func Test(t *testing.T) {
 			}
 		}()
 
+
 		Convey("Default server config", func() {
 			s, err := NewServer(ctx, ServerConfig{})
 			So(err, ShouldBeNil)
@@ -62,14 +63,14 @@ func Test(t *testing.T) {
 		Convey("Handshake processing", func() {
 			authToken := "hello"
 			Convey("Successful handshake", func() {
-				So(handshakeCheck(`{"auth_token":"hello"}`, authToken),
+				So(handshakeCheck(ctx, `{"auth_token":"hello"}`, authToken),
 					ShouldBeNil)
 			})
 			Convey("Unsuccessful handshake", func() {
-				err := handshakeCheck(`{"auth_token":"BAD"}`, authToken)
+				err := handshakeCheck(ctx, `{"auth_token":"BAD"}`, authToken)
 				So(err, ShouldErrLike, "invalid AuthToken")
-				err = handshakeCheck(`garbage`, authToken)
-				So(err, ShouldErrLike, "failed to parse")
+				err = handshakeCheck(ctx, `garbage`, authToken)
+				So(err, ShouldErrLike, "invalid character")
 			})
 		})
 
@@ -159,15 +160,31 @@ func Test(t *testing.T) {
 			goodInput := `{"testResult":{"testId":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryHtml":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testId":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryHtml":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
 			Convey("Garbage data", func() {
 				dc := json.NewDecoder(strings.NewReader(badInput))
-				err := processMessages(dc)
+				err := processMessages(ctx, dc)
 				So(err, ShouldErrLike, "invalid")
 			})
 
 			Convey("Two populated messages", func() {
 				dc := json.NewDecoder(strings.NewReader(goodInput))
-				err := processMessages(dc)
+				err := processMessages(ctx, dc)
 				So(err, ShouldErrLike, io.EOF)
 			})
+		})
+
+		Convey("handleConnection times out without MaxConnectLifetime", func() {
+			cr, cw := net.Pipe()
+			defer cr.Close()
+			defer cw.Close()
+			cfg := ServerConfig{MaxConnLifetime: 100*time.Millisecond}
+			server, err := NewServer(ctx, cfg)
+			So(err, ShouldBeNil)
+			So(server.handleConnection(ctx, cr), ShouldErrLike, context.DeadlineExceeded)
+		})
+
+		Convey("MaxConnectLifetime is set in default.", func() {
+			server, err := NewServer(ctx, ServerConfig{})
+			So(err, ShouldBeNil)
+			So(server.Config().MaxConnLifetime, ShouldEqual, defaultMaxConnLifetime)
 		})
 	})
 }
