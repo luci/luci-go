@@ -16,6 +16,24 @@
       "revId": "2432718bd6e0eb76443a1e1045bd313318912831",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e92dd39d_8daf956e",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T17:41:05Z",
+      "side": 1,
+      "message": "it resets retErr. the inner func may be called multiple times. It is possible that the prev call set retErr to non-nil, but ultimately failed, and then was called again, but retErr still has a value from the prev attempt.",
+      "parentUuid": "628dcfaa_89598355",
+      "revId": "2432718bd6e0eb76443a1e1045bd313318912831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
