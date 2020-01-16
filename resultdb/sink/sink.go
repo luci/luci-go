@@ -200,7 +200,7 @@ func (s *Server) Close() error {
 }
 
 // Process handles a message as if it had been sent over the TCP interface.
-func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
+func (s *Server) Process(msg *sinkpb.SinkMessage) error {
 	return errors.New("not implemented yet")
 }
 
@@ -234,7 +234,7 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
 
 func processMessages(dc *json.Decoder) error {
 	for {
-		msgp := &sinkpb.SinkMessageContainer{}
+		msgp := &sinkpb.SinkMessage{}
 		if err := readMessage(dc, msgp); err != nil {
 			return errors.Annotate(err, "failed to read message").Err()
 		}
