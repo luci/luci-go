@@ -47,16 +47,6 @@ message Invocation {
     // The invocation is immutable and no longer accepts new results nor
     // inclusions directly or indirectly.
     COMPLETED = 2;
-
-    // The invocation is finalized and does NOT contain all the results that the
-    // associated computation was expected to compute.
-    //
-    // This state has been DEPRECATED. To describe such invocation, please set
-    // the invocation's state to COMPLETED and set interrupted to true.
-    //
-    // TODO(chanli): remove this state when all the existing invocations have
-    // been updated.
-    INTERRUPTED = 3;
   }
 
   // Current state of the invocation.
@@ -92,7 +82,7 @@ message Invocation {
   // INTERRUPTED state.
   // If this field is set, implies that the invocation is finalized.
   google.protobuf.Timestamp finalize_time = 6
-  [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
   // Timestamp when the invocation will be forcefully finalized.
   // Can be extended with UpdateInvocation until finalized.
@@ -115,5 +105,5 @@ message Invocation {
   //
   // Use Recorder.Include RPC to modify this field.
   repeated string included_invocations = 8
-  [ (google.api.field_behavior) = OUTPUT_ONLY ];
+      [ (google.api.field_behavior) = OUTPUT_ONLY ];
 }

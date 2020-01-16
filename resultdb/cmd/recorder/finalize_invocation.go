@@ -55,7 +55,6 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 	}
 
 	invID := span.MustParseInvocationName(in.Name)
-	requestState := pb.Invocation_COMPLETED
 
 	ret := &pb.Invocation{Name: in.Name}
 	var retErr error
@@ -81,13 +80,13 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		finalizeTime := now
 		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
-		case ret.State == requestState && ret.Interrupted == in.Interrupted:
+		case ret.State == pb.Invocation_COMPLETED && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
-		case ret.State == requestState && ret.Interrupted != in.Interrupted:
+		case ret.State == pb.Invocation_COMPLETED && ret.Interrupted != in.Interrupted:
 			return getUnmatchedInterruptedFlagError(invID)
 		case deadline.Before(now):
-			ret.State = requestState
+			ret.State = pb.Invocation_COMPLETED
 			ret.FinalizeTime = ret.Deadline
 			ret.Interrupted = true
 			finalizeTime = deadline
@@ -97,7 +96,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			}
 		default:
 			// Finalize as requested.
-			ret.State = requestState
+			ret.State = pb.Invocation_COMPLETED
 			ret.FinalizeTime = pbutil.MustTimestampProto(now)
 			ret.Interrupted = in.Interrupted
 		}
