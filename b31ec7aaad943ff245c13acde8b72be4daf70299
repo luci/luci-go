@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0c01a76_13e4b91b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T16:55:43Z",
+      "side": 1,
+      "message": "serve",
+      "range": {
+        "startLine": 9,
+        "startChar": 29,
+        "endLine": 9,
+        "endChar": 35
+      },
+      "revId": "b31ec7aaad943ff245c13acde8b72be4daf70299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ba1a060_abbb490b",
+        "filename": "server/port.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T16:55:43Z",
+      "side": 1,
+      "message": "nit: \"mu\" is more standard",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 2
+      },
+      "revId": "b31ec7aaad943ff245c13acde8b72be4daf70299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a06c8f33_fe93dcf4",
+        "filename": "server/server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T16:55:43Z",
+      "side": 1,
+      "message": "server",
+      "range": {
+        "startLine": 380,
+        "startChar": 17,
+        "endLine": 380,
+        "endChar": 24
+      },
+      "revId": "b31ec7aaad943ff245c13acde8b72be4daf70299",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
