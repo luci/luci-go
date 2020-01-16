@@ -29,15 +29,16 @@ type TaskKey struct {
 	TaskID       string
 }
 
+// Key returns a spanner Key for this task key.
 func (tk *TaskKey) Key() spanner.Key {
 	return tk.InvocationID.Key(tk.TaskID)
 }
 
 // InsertInvocationTask inserts one row to InvocationTasks.
-func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
+func InsertInvocationTask(key TaskKey, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
 	return InsertMap("InvocationTasks", map[string]interface{}{
-		"InvocationId":    invID,
-		"TaskID":          taskID,
+		"InvocationId":    key.InvocationID,
+		"TaskID":          key.TaskID,
 		"Payload":         invTask,
 		"ProcessAfter":    processAfter,
 		"ResetOnFinalize": resetOnFinalize,
@@ -46,7 +47,7 @@ func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb
 
 // SampleInvocationTasks randomly picks sampleSize of rows in InvocationTasks
 // with ProcessAfter earlier than processTime.
-func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSize int64) ([]*TaskKey, error) {
+func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSize int64) ([]TaskKey, error) {
 	st := spanner.NewStatement(`
 		WITH readyTasks AS
 			(SELECT
@@ -64,16 +65,16 @@ func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSiz
 		"sampleSize":  sampleSize,
 	})
 
-	ret := make([]*TaskKey, 0, sampleSize)
+	ret := make([]TaskKey, 0, sampleSize)
 	var b Buffer
 	err := Query(ctx, "sample inv tasks", Client(ctx).Single(), st, func(row *spanner.Row) error {
-		task := &TaskKey{}
-		err := b.FromSpanner(row, &task.InvocationID, &task.TaskID)
+		var key TaskKey
+		err := b.FromSpanner(row, &key.InvocationID, &key.TaskID)
 
 		if err != nil {
 			return err
 		}
-		ret = append(ret, task)
+		ret = append(ret, key)
 		return nil
 	})
 	if err != nil {
