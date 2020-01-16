@@ -41,8 +41,8 @@ func TestReadInvocationFull(t *testing.T) {
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
 			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now, false, ""),
-			testutil.InsertInvocation("included0", pb.Invocation_COMPLETED, "", now, false, ""),
-			testutil.InsertInvocation("included1", pb.Invocation_COMPLETED, "", now, false, ""),
+			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, "", now, false, ""),
+			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, "", now, false, ""),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -165,9 +165,9 @@ func TestQueryInvocations(t *testing.T) {
 		now := clock.Now(ctx)
 
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv0", pb.Invocation_COMPLETED, "", now, false, ""),
-			testutil.InsertInvocation("inv1", pb.Invocation_COMPLETED, "", now, false, ""),
-			testutil.InsertInvocation("inv2", pb.Invocation_COMPLETED, "", now, false, ""),
+			testutil.InsertInvocation("inv0", pb.Invocation_FINALIZED, "", now, false, ""),
+			testutil.InsertInvocation("inv1", pb.Invocation_FINALIZED, "", now, false, ""),
+			testutil.InsertInvocation("inv2", pb.Invocation_FINALIZED, "", now, false, ""),
 		)
 
 		txn := span.Client(ctx).ReadOnlyTransaction()
@@ -179,7 +179,7 @@ func TestQueryInvocations(t *testing.T) {
 			So(invs, ShouldHaveLength, 1)
 			So(invs, ShouldContainKey, span.InvocationID("inv1"))
 			So(invs["inv1"].Name, ShouldEqual, "invocations/inv1")
-			So(invs["inv1"].State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(invs["inv1"].State, ShouldEqual, pb.Invocation_FINALIZED)
 		})
 
 		Convey(`Two names`, func() {
@@ -189,7 +189,7 @@ func TestQueryInvocations(t *testing.T) {
 			So(invs, ShouldContainKey, span.InvocationID("inv0"))
 			So(invs, ShouldContainKey, span.InvocationID("inv1"))
 			So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
-			So(invs["inv0"].State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(invs["inv0"].State, ShouldEqual, pb.Invocation_FINALIZED)
 		})
 
 		Convey(`Not found`, func() {

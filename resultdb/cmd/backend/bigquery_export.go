@@ -212,7 +212,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	if err != nil {
 		return err
 	}
-	if inv.State != pb.Invocation_COMPLETED {
+	if inv.State != pb.Invocation_FINALIZED {
 		return errors.Reason("%s is not finalized yet", invID.Name()).Err()
 	}
 

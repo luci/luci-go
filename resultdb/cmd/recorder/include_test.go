@@ -119,7 +119,7 @@ func TestInclude(t *testing.T) {
 		Convey(`idempotent`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
-				insInv("included", pb.Invocation_COMPLETED, "", ct, false, ""),
+				insInv("included", pb.Invocation_FINALIZED, "", ct, false, ""),
 			)
 
 			_, err := recorder.Include(ctx, req)
@@ -132,7 +132,7 @@ func TestInclude(t *testing.T) {
 		Convey(`success`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, token, ct, false, ""),
-				insInv("included", pb.Invocation_COMPLETED, "", ct, false, ""),
+				insInv("included", pb.Invocation_FINALIZED, "", ct, false, ""),
 			)
 
 			_, err := recorder.Include(ctx, req)
