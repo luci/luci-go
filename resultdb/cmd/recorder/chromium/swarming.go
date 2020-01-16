@@ -90,7 +90,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	// Populate fields we will need in the base invocation.
 	inv := &pb.Invocation{
 		Name:  GetInvocationID(task, req).Name(),
-		State: pb.Invocation_COMPLETED,
+		State: pb.Invocation_FINALIZED,
 	}
 	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {

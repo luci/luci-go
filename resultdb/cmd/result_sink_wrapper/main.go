@@ -82,7 +82,7 @@ func parseArgs() (wrapperArgs, error) {
 	var rawExitCodes []string
 	flag.Var(luciflag.CommaList(&rawExitCodes),
 		"complete-invocation-exit-codes",
-		"Comma-separated list of exit codes from the subprocess that mean the Invocation should be marked completed, otherwise it will be marked interrupted")
+		"Comma-separated list of exit codes from the subprocess that mean the Invocation should be marked non-interrupted")
 
 	flag.Parse()
 

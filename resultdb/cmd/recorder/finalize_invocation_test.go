@@ -64,7 +64,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`finalized failed`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, true, ""),
+				InsertInvocation("inv", pb.Invocation_FINALIZED, token, ct, true, ""),
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv has already been finalized with different interrupted flag`)
@@ -90,7 +90,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv", Interrupted: true})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 			So(inv.Interrupted, ShouldEqual, true)
 		})
 
@@ -101,11 +101,11 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 		})
 
 		Convey(`finalized`, func() {
@@ -124,7 +124,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
 				// Read the invocation from spanner to confirm it's really finalized.
 				txn := span.Client(ctx).ReadOnlyTransaction()
@@ -132,7 +132,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 				inv, err = span.ReadInvocationFull(ctx, txn, "inv")
 				So(err, ShouldBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
 
 				// Read InvocationTask to confirm it's reset.

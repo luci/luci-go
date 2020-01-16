@@ -204,7 +204,7 @@ func TestSwarming(t *testing.T) {
 			inv, _, err := DeriveProtosForWriting(ctx, task, req)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 			So(inv.Interrupted, ShouldEqual, true)
 		})
 
@@ -216,7 +216,7 @@ func TestSwarming(t *testing.T) {
 				inv, _, err := DeriveProtosForWriting(ctx, task, req)
 				So(err, ShouldBeNil)
 				So(inv, ShouldNotBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_COMPLETED)
+				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.Interrupted, ShouldEqual, true)
 			})
 

@@ -97,7 +97,7 @@ func TestDeriveInvocation(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_COMPLETED, "", ct, false, ""))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, "", ct, false, ""))
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
@@ -197,7 +197,7 @@ func TestDeriveInvocation(t *testing.T) {
 
 			So(inv, ShouldResembleProto, &pb.Invocation{
 				Name:                inv.Name, // inv.Name is non-determinisic in this test
-				State:               pb.Invocation_COMPLETED,
+				State:               pb.Invocation_FINALIZED,
 				CreateTime:          &tspb.Timestamp{Seconds: 1571060956, Nanos: 1e7},
 				Tags:                pbutil.StringPairs(formats.OriginalFormatTagKey, formats.FormatGTest),
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
@@ -240,7 +240,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 		now := pbutil.MustTimestampProto(testclock.TestRecentTimeUTC)
 
 		inv := &pb.Invocation{
-			State:        pb.Invocation_COMPLETED,
+			State:        pb.Invocation_FINALIZED,
 			CreateTime:   now,
 			FinalizeTime: now,
 			Deadline:     now,

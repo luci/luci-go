@@ -212,7 +212,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 		"Deadline":                          ct.Add(time.Hour),
 		"Interrupted":                       interrupted,
 	}
-	if state == pb.Invocation_COMPLETED {
+	if state == pb.Invocation_FINALIZED {
 		values["FinalizeTime"] = ct.Add(time.Hour)
 	}
 	return span.InsertMap("Invocations", values)
@@ -221,7 +221,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 // InsertInvocationIncl returns mutations to insert an invocation with inclusions.
 func InsertInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
 	t := testclock.TestRecentTimeUTC
-	ms := []*spanner.Mutation{InsertInvocation(id, pb.Invocation_COMPLETED, "", t, false, "")}
+	ms := []*spanner.Mutation{InsertInvocation(id, pb.Invocation_FINALIZED, "", t, false, "")}
 	for _, incl := range included {
 		ms = append(ms, InsertInclusion(id, incl))
 	}

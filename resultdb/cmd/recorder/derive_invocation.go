@@ -160,7 +160,7 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 	case err != nil:
 		return false, err
 
-	case state != pb.Invocation_COMPLETED:
+	case state != pb.Invocation_FINALIZED:
 		return false, errors.Reason(
 			"attempting to derive an existing non-finalized invocation").Err()
 	}
@@ -191,7 +191,7 @@ func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.T
 			// Convert the container Invocation in the batch.
 			batchInv := &pb.Invocation{
 				Name:         batchID.Name(),
-				State:        pb.Invocation_COMPLETED,
+				State:        pb.Invocation_FINALIZED,
 				CreateTime:   inv.CreateTime,
 				FinalizeTime: inv.FinalizeTime,
 				Deadline:     inv.Deadline,

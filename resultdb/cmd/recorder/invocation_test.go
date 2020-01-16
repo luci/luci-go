@@ -62,7 +62,7 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, token, ct, false, ""))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, token, ct, false, ""))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
@@ -92,7 +92,7 @@ func TestMutateInvocation(t *testing.T) {
 					"Interrupted":  &interrupted,
 					"FinalizeTime": &ft,
 				})
-				So(state, ShouldEqual, pb.Invocation_COMPLETED)
+				So(state, ShouldEqual, pb.Invocation_FINALIZED)
 				So(interrupted, ShouldEqual, true)
 				So(ft, ShouldEqual, ct.Add(time.Hour))
 			})
@@ -121,13 +121,13 @@ func TestReadInvocation(t *testing.T) {
 			return inv
 		}
 
-		Convey(`completed`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_COMPLETED, "", ct, false, ""))
+		Convey(`Finalized`, func() {
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, "", ct, false, ""))
 
 			inv := readInv()
 			expected := &pb.Invocation{
 				Name:         "invocations/inv",
-				State:        pb.Invocation_COMPLETED,
+				State:        pb.Invocation_FINALIZED,
 				CreateTime:   pbutil.MustTimestampProto(ct),
 				Deadline:     pbutil.MustTimestampProto(ct.Add(time.Hour)),
 				FinalizeTime: pbutil.MustTimestampProto(ct.Add(time.Hour)),
@@ -136,8 +136,8 @@ func TestReadInvocation(t *testing.T) {
 
 			Convey(`with included invocations`, func() {
 				MustApply(ctx,
-					InsertInvocation("included0", pb.Invocation_COMPLETED, "", ct, false, ""),
-					InsertInvocation("included1", pb.Invocation_COMPLETED, "", ct, false, ""),
+					InsertInvocation("included0", pb.Invocation_FINALIZED, "", ct, false, ""),
+					InsertInvocation("included1", pb.Invocation_FINALIZED, "", ct, false, ""),
 					InsertInclusion("inv", "included0"),
 					InsertInclusion("inv", "included1"),
 				)
