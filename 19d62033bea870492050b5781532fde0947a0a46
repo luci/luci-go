@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd476aa9_229e2a88",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T21:43:57Z",
+      "side": 1,
+      "message": "nit: extraValues",
+      "range": {
+        "startLine": 201,
+        "startChar": 105,
+        "endLine": 201,
+        "endChar": 118
+      },
+      "revId": "19d62033bea870492050b5781532fde0947a0a46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "110891b9_8f5b7f6b",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T21:43:57Z",
+      "side": 1,
+      "message": "can we pass token via specialValues too?",
+      "range": {
+        "startLine": 208,
+        "startChar": 39,
+        "endLine": 208,
+        "endChar": 50
+      },
+      "revId": "19d62033bea870492050b5781532fde0947a0a46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
