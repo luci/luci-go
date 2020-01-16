@@ -58,6 +58,9 @@ message Attempt {
 
   // Final status of the Attempt.
   AttemptStatus status = 9;
+
+  // A more fine-grained status the explains more details about the status.
+  AttemptSubstatus substatus = 10;
 }
 
 
@@ -172,4 +175,38 @@ enum AttemptStatus {
   FAILURE = 4;
   // Failure in CQ itself caused the Attempt to be dropped.
   INFRA_FAILURE = 5;
+}
+
+enum AttemptSubstatus {
+  // Default, never set.
+  ATTEMPT_SUBSTATUS_UNSPECIFIED = 0;
+  // There is no more detailed status set.
+  NO_SUBSTATUS = 1;
+  // Unknown failure type.
+  FAILURE_UNKNOWN = 2;
+  // Failed at least one critical tryjob.
+  FAILURE_TRYJOBS = 3;
+  // Failed an initial quick check of CL state, e.g. footer flags.
+  FAILURE_LINTER = 4;
+  // Failure parsing the Cq-Include-Trybots footer flag specifically.
+  FAILURE_INVALID_DELIMITER = 5;
+  // A CL owner doesn't have permission to trigger CQ.
+  FAILURE_NO_ACCESS = 6;
+  // A CL didn't get sufficient approval for submitting via CQ.
+  FAILURE_UNAPPROVED = 7;
+  // Some dependencies are either not submitted or not grouped
+  // together in this attempt.
+  FAILURE_DEPENDENCY_OPEN = 8;
+  // Some (possibly transitive) dependencies are considered "out of scope".
+  FAILURE_DEPENDENCY_OUT_OF_SCOPE = 9;
+  // Some dependencies don't have sufficient approval to submit.
+  FAILURE_DEPENDENCY_UNAPPROVED = 10;
+  // Exhausted retry quota across all builders for this Attempt.
+  FAILURE_RETRY_QUOTA_EXCEEDED = 11;
+  // After passing all checks, submit of one or more CLs failed.
+  FAILURE_SUBMIT = 12;
+  // Aborted because of a manual cancelation.
+  ABORTED_MANUAL_CANCEL = 13;
+  // CQ didn't have permission to trigger builds in some buckets.
+  INFRA_FAILURE_BUILDBUCKET_CONFIG = 14;
 }
