@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c493a7c5_57be704a",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T19:37:24Z",
+      "side": 1,
+      "message": "bq is present in the proto now",
+      "range": {
+        "startLine": 257,
+        "startChar": 3,
+        "endLine": 257,
+        "endChar": 44
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1eec5b8a_e370c998",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T19:37:24Z",
+      "side": 1,
+      "message": "in general, please do not compare slices to nil. Use len(...) \u003d\u003d 0 instead, because both nil and []TYPE{} are empty",
+      "range": {
+        "startLine": 207,
+        "startChar": 4,
+        "endLine": 207,
+        "endChar": 30
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75b4be0f_bdd44936",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T19:37:24Z",
+      "side": 1,
+      "message": "i didn\u0027t understand usage of \"on\" in this sentence. Consider \"Requests to the invocation to BigQuery\"",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e31a36fc_a7428394",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T19:37:24Z",
+      "side": 1,
+      "message": "i think what we did with Artifacts in this file is incorrect, because it is very specific, while this file is generic.\n\nplease the container in the code that reads/writes inv rows. Also please use CompressedProto.\n\nI will refactor artifacts as a part of another refactoring",
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5026bfb7_c91ffc58",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T19:37:24Z",
+      "side": 1,
+      "message": "let\u0027s omit this. in q1 or q2, bq export will be extended to log lines",
+      "range": {
+        "startLine": 112,
+        "startChar": 32,
+        "endLine": 112,
+        "endChar": 69
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
