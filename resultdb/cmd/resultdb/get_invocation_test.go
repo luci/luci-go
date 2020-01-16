@@ -58,9 +58,9 @@ func TestGetInvocation(t *testing.T) {
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, "", now, false, ""),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, "", now, false, ""),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, "", now, false, ""),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, now, nil),
+			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, now, nil),
+			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, now, nil),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
