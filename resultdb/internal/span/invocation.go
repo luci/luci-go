@@ -79,7 +79,7 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 		panic("len(roots) > limit")
 	}
 
-	ret := make(InvocationIDSet, limit)
+	ret := InvocationIDSet{}
 	var mu sync.Mutex
 	var visit func(id InvocationID) error
 
