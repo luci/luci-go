@@ -76,6 +76,36 @@ func TestServer(t *testing.T) {
 
 		Reset(func() { So(srv.StopBackgroundServing(), ShouldBeNil) })
 
+		Convey("VirtualHost", func() {
+			srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+				c.Writer.Write([]byte("default-router"))
+			})
+			srv.VirtualHost("test-host.example.com").GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
+				c.Writer.Write([]byte("test-host-router"))
+			})
+
+			srv.ServeInBackground()
+
+			// Requests with unknown Host header go to the default router.
+			resp, err := srv.GetMain("/test", map[string]string{
+				"Host": "unknown.example.com",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, "default-router")
+
+			// Requests with NO Host header go to the default router as well.
+			resp, err = srv.GetMain("/test", map[string]string{})
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, "default-router")
+
+			// Requests that match a registered virtual host go to its router.
+			resp, err = srv.GetMain("/test", map[string]string{
+				"Host": "test-host.example.com",
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, "test-host-router")
+		})
+
 		Convey("Logging", func() {
 			srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
 				logging.Infof(c.Context, "Info log")
@@ -556,6 +586,7 @@ func (s *testServer) get(uri string, headers map[string]string) (resp string, er
 		for k, v := range headers {
 			req.Header.Set(k, v)
 		}
+		req.Host = headers["Host"] // req.Host (even when empty) overrides req.Header["Host"]
 		var res *http.Response
 		if res, err = http.DefaultClient.Do(req); err != nil {
 			return
