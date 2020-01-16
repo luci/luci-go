@@ -66,7 +66,7 @@ func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSiz
 
 	ret := make([]*TaskKey, 0, sampleSize)
 	var b Buffer
-	err := Query(ctx, Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := Query(ctx, "sample inv tasks", Client(ctx).Single(), st, func(row *spanner.Row) error {
 		task := &TaskKey{}
 		err := b.FromSpanner(row, &task.InvocationID, &task.TaskID)
 

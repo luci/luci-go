@@ -94,6 +94,16 @@ func (s InvocationIDSet) Has(id InvocationID) bool {
 	return ok
 }
 
+// String implements fmt.Stringer.
+func (s InvocationIDSet) String() string {
+	strs := make([]string, 0, len(s))
+	for id := range s {
+		strs = append(strs, string(id))
+	}
+	sort.Strings(strs)
+	return fmt.Sprintf("%q", strs)
+}
+
 // MustParseInvocationNames converts invocation names to InvocationIDSet.
 // Panics if a name is invalid. Useful for situations when names were already
 // validated.
