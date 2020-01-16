@@ -44,16 +44,15 @@ message Invocation {
     // The invocation was created and accepts new results.
     ACTIVE = 1;
 
-    // The invocation is finalized.
     // The invocation is immutable and no longer accepts new results nor
     // inclusions directly or indirectly.
-    COMPLETED = 2;
+    FINALIZED = 3;
   }
 
   // Current state of the invocation.
   State state = 2 [ (google.api.field_behavior) = OUTPUT_ONLY ];
 
-  // True if the invocation is COMPLETED and does NOT contain all the results
+  // True if the invocation is inactive and does NOT contain all the results
   // that the associated computation was expected to compute.
   //  * The computation was interrupted prematurely.
   //  * Such invocation should be discarded.
@@ -61,7 +60,7 @@ message Invocation {
   //
   // False could mean 2 things:
   // * the invocation is still ACTIVE;
-  // * the invocation is COMPLETED and contains all the results that the
+  // * the invocation is inactive and contains all the results that the
   //   associated computation was expected to compute.
   //
   // Use this field with state above.
@@ -79,8 +78,7 @@ message Invocation {
 
   // == Finalization ===========================================================
 
-  // When the invocation was finalized, i.e. transitioned to COMPLETED or
-  // INTERRUPTED state.
+  // When the invocation was finalized, i.e. transitioned to FINALIZED state.
   // If this field is set, implies that the invocation is finalized.
   google.protobuf.Timestamp finalize_time = 6
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
