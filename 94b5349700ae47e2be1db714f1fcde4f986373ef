@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f6b0dc9_bc19635a",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-16T18:45:12Z",
+      "side": 1,
+      "message": "Do we need to purge/update existing data in staging? Otherwise all existing finalized invocations will soon to be in finalizing state and (perhaps) stuck there.",
+      "revId": "94b5349700ae47e2be1db714f1fcde4f986373ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
