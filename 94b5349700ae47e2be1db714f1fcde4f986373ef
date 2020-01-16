@@ -16,6 +16,24 @@
       "revId": "94b5349700ae47e2be1db714f1fcde4f986373ef",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09db5555_ea58f531",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-16T18:47:09Z",
+      "side": 1,
+      "message": "yeah, i will purge it",
+      "parentUuid": "0f6b0dc9_bc19635a",
+      "revId": "94b5349700ae47e2be1db714f1fcde4f986373ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
