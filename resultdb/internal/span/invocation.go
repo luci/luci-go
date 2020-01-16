@@ -64,11 +64,25 @@ var TooManyInvocationsTag = errors.BoolTag{
 }
 
 // ReadReachableInvocations returns a transitive closure of roots.
-// If the returned error is non-nil, it is annotated with a gRPC code.
 //
 // limit must be positive. If the size of the transitive closure exceeds the
 // limit, returns an error tagged with TooManyInvocationsTag.
 func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots InvocationIDSet) (InvocationIDSet, error) {
+	return readReachableInvocations(ctx, txn, limit, roots, nil)
+}
+
+// ReadReachableInvocationsStreaming sends a transitive closure of roots to idC.
+//
+// limit must be positive. If the size of the transitive closure exceeds the
+// limit, returns an error tagged with TooManyInvocationsTag.
+func ReadReachableInvocationsStreaming(ctx context.Context, txn Txn, limit int, roots InvocationIDSet, idC chan<- InvocationID) error {
+	_, err := readReachableInvocations(ctx, txn, limit, roots, idC)
+	return err
+}
+
+// readReachableInvocations implements ReadReachableInvocations and
+// ReadReachableInvocationsStreaming.
+func readReachableInvocations(ctx context.Context, txn Txn, limit int, roots InvocationIDSet, idC chan<- InvocationID) (InvocationIDSet, error) {
 	defer metrics.Trace(ctx, "ReadReachableInvocations")()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -88,21 +102,31 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	eg, ctx := errgroup.WithContext(ctx)
 	visit = func(id InvocationID) error {
 		mu.Lock()
-		defer mu.Unlock()
 
 		// Check if we already started/finished fetching this invocation.
 		if ret.Has(id) {
+			mu.Unlock()
 			return nil
 		}
 
 		// Consider fetching a new invocation.
 		if len(ret) == limit {
 			cancel()
+			mu.Unlock()
 			return errors.Reason("more than %d invocations match", limit).Tag(TooManyInvocationsTag).Err()
 		}
 
 		// Mark the invocation as being processed.
 		ret.Add(id)
+		mu.Unlock()
+
+		if idC != nil {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case idC <- id:
+			}
+		}
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
