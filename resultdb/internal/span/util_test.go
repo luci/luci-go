@@ -75,7 +75,7 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`pb.Invocation_State`, t, func() {
-		test(pb.Invocation_COMPLETED, int64(2))
+		test(pb.Invocation_FINALIZED, int64(3))
 	})
 
 	Convey(`pb.TestStatus`, t, func() {
@@ -157,17 +157,17 @@ func TestTypeConversion(t *testing.T) {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
-		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(2)})
+		row, err := spanner.NewRow([]string{"a", "b", "c"}, []interface{}{int64(42), int64(56), int64(3)})
 		So(err, ShouldBeNil)
 		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
 		So(err, ShouldBeNil)
 		So(varIntA, ShouldEqual, 42)
 		So(varIntB, ShouldEqual, 56)
-		So(varState, ShouldEqual, pb.Invocation_COMPLETED)
+		So(varState, ShouldEqual, pb.Invocation_FINALIZED)
 
 		// ToSpanner
 		spValues := ToSpannerSlice(varIntA, varIntB, varState)
-		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(2)})
+		So(spValues, ShouldResemble, []interface{}{int64(42), int64(56), int64(3)})
 	})
 
 	Convey(`proto.Message`, t, func() {
