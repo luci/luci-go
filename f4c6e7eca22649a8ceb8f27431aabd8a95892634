@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "793d1754_369aafaf",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-16T02:04:11Z",
+      "side": 1,
+      "message": "once https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2003944 lands, this would be\n\n  contentServer.InstallHandlers(..., srv.VirtualHost(*contentHostname))\n\n(and no need for a middleware)",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 63,
+        "endChar": 56
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7d49542d_f71a42de",
         "filename": "resultdb/internal/usercontent/isolate.go",
         "patchSetId": 6
