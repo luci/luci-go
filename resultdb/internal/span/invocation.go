@@ -16,6 +16,7 @@ package span
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"cloud.google.com/go/spanner"
@@ -168,7 +169,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 	})
 	ret := make(map[InvocationID]*pb.Invocation, len(ids))
 	var b Buffer
-	err := Query(ctx, txn, st, func(row *spanner.Row) error {
+	err := Query(ctx, fmt.Sprintf("full invocations %s", ids), txn, st, func(row *spanner.Row) error {
 		var id InvocationID
 		included := InvocationIDSet{}
 		inv := &pb.Invocation{}
