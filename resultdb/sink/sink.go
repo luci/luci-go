@@ -24,6 +24,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -40,6 +41,7 @@ import (
 const (
 	// DefaultPort is the TCP port that the Server listens on by default.
 	DefaultPort = 62115
+	defaultConnTimeout = 30 * time.Second
 )
 
 // ServerConfig defines the parameters of the server.
@@ -61,6 +63,10 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// MaxConnLifetime is the maximum lifetime of a connection. A value
+	// of zero means the connection has an infinite lifetime.
+	MaxConnLifetime time.Duration
 }
 
 // Server contains state relevant to the server itself.
@@ -171,8 +177,6 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) serveLoop(ctx context.Context) {
 	defer s.ln.Close()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	for {
 		switch conn, err := s.ln.Accept(); {
 		case err == nil:
@@ -216,51 +220,78 @@ func (s *Server) Export(ctx context.Context) context.Context {
 }
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
-	ctx, cancel := context.WithCancel(ctx)
+	var cancel context.CancelFunc
+	if lt := s.Config().MaxConnLifetime; lt > 0 {
+		ctx, cancel = context.WithTimeout(ctx, lt)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
 	defer cancel()
 	go func() {
 		<-ctx.Done()
 		c.Close()
 	}()
 
+	if dl, ok := ctx.Deadline(); ok {
+		if err := c.SetDeadline(dl); err != nil {
+			return errors.Reason("failed to set the I/O deadline").Err()
+		}
+	}
+
 	dc := json.NewDecoder(c)
-	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
+	if err := processHandshake(ctx, dc, s.cfg.AuthToken); err != nil {
+		if err == io.EOF {
+			// The peer closed the connection before sending any message.
+			return nil
+		}
 		return errors.Annotate(err, "handshake failed").Err()
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	if err := processMessages(dc); err != nil && err != io.EOF {
+	if err := processMessages(ctx, dc); err != nil && err != io.EOF {
 		return err
 	}
 
 	return nil
 }
 
-func processMessages(dc *json.Decoder) error {
+func processMessages(ctx context.Context, dc *json.Decoder) error {
 	for {
-		msgp := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(dc, msgp); err != nil {
-			return errors.Annotate(err, "failed to read message").Err()
+		msg := &sinkpb.SinkMessageContainer{}
+		if err := readMessage(ctx, dc, msg); err != nil {
+			return err
 		}
 
 		// TODO(sajjadm): msgp is valid, do something with it
 	}
 }
 
-func readMessage(dc *json.Decoder, dest proto.Message) error {
+func readMessage(ctx context.Context, dc *json.Decoder, dest proto.Message) error {
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		err := jsonpb.UnmarshalNext(dc, dest)
 		if shouldKeepTrying(err) {
 			continue
+		}
+
+		// The connection is closed by a go-routine in handleConnection(),
+		// when the context is expired. The close() likely happens before
+		// the I/O operation times out and causes an I/O error returned instead.
+		// To generate more accurate error logs, this returns the context error,
+		// instead, if there is.
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 		return err
 	}
 }
 
-func processHandshake(dc *json.Decoder, authToken string) error {
+func processHandshake(ctx context.Context, dc *json.Decoder, authToken string) error {
 	var hs sinkpb.Handshake
-	if err := jsonpb.UnmarshalNext(dc, &hs); err != nil {
-		return errors.Reason("failed to parse Handshake").Err()
+	if err := readMessage(ctx, dc, &hs); err != nil {
+		return err
 	}
 	if hs.GetAuthToken() != authToken {
 		return errors.Reason("handshake message had invalid AuthToken").Err()
