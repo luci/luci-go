@@ -130,12 +130,21 @@ func NewDisk(policies Policies, path, namespace string) (Cache, error) {
 	}()
 
 	if err != nil {
-		if err := os.RemoveAll(path); err != nil {
-			return nil, fmt.Errorf("failed to call os.RemoveAll(%s): %w", path, err)
+		// Do not use os.RemoveAll, due to strange 'Access Denied' error on windows
+		// in os.MkDir after os.RemoveAll.
+		// crbug.com/932396#c123
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to call ioutil.ReadDir(%s): %w", path, err)
 		}
-		if err := os.Mkdir(path, os.ModePerm); err != nil {
-			return nil, fmt.Errorf("failed to call os.Mkdir(%s, %#o): %w", path, os.ModePerm, err)
+
+		for _, file := range files {
+			p := filepath.Join(path, file.Name())
+			if err := os.RemoveAll(p); err != nil {
+				return nil, fmt.Errorf("failed to call os.RemoveAll(%s): %w", p, err)
+			}
 		}
+
 		d.lru = makeLRUDict(namespace)
 	}
 	return d, err
