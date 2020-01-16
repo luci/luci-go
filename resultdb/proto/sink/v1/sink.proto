@@ -20,12 +20,10 @@ import "go.chromium.org/luci/resultdb/proto/sink/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
 
-// A container of a message to a ResultSink server.
-// The server accepts a sequence of these messages in JSON format.
-message SinkMessageContainer {
+// A request message for ResultSink server.
+message SinkMessage {
   oneof msg {
-    // The very first message in a ResultSink TCP connection must be a
-    // handshake.
+    // Handshake the auth token to authenticate an incoming client.
     Handshake handshake = 1;
 
     // Upload one test result.
@@ -36,11 +34,10 @@ message SinkMessageContainer {
   }
 }
 
-// The very first message in a ResultSink TCP connection.
+// Sent from a client with the secret auth_token, obtained via LUCI_CONTEXT.
+//
+// This message must be sent before any other messages. Additional Handshake
+// messages sent after the first one are ignored.
 message Handshake {
-  // The auth token is available to eligible subprocesses via
-  // test_results.uploader.auth_token LUCI_CONTEXT value.
-  // More about LUCI_CONTEXT: https://chromium.googlesource.com/infra/luci/luci-py/+/6b6dad7aef994b96d3bb5b6f13fae8168938560f/client/LUCI_CONTEXT.md
-  // If the value is unexpected, the server will close the connection.
   string auth_token = 1;
 }
