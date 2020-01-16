@@ -110,7 +110,7 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 }
 
 type testVariantKey struct {
-	testId      string
+	testID      string
 	variantHash string
 }
 
@@ -127,7 +127,7 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	var b span.Buffer
 	err := span.Query(ctx, "exonerated test variants", txn, st, func(row *spanner.Row) error {
 		var key testVariantKey
-		if err := b.FromSpanner(row, &key.testId, &key.variantHash); err != nil {
+		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
 			return err
 		}
 		tvs[key] = struct{}{}
@@ -160,7 +160,7 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bq.R
 func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bq.Row) error {
 	rows := make([]*bq.Row, 0, maxBatchSize)
 	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
-		_, exonerated := exoneratedTestVariants[testVariantKey{testId: tr.TestId, variantHash: variantHash}]
+		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
 		rows = append(rows, generateBQRow(inv, tr, exonerated))
 		if len(rows) >= maxBatchSize {
 			select {
