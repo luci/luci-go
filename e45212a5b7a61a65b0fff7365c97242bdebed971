@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a8cb086_50a49376",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-01-16T00:30:28Z",
+      "side": 1,
+      "message": "Why not name this more specifically? E.g.\n\nFAILURE_PARSE_INCLUDE_TRYBOTS",
+      "range": {
+        "startLine": 192,
+        "startChar": 2,
+        "endLine": 192,
+        "endChar": 27
+      },
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "299bcbf7_6c79cff7",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1148599
+      },
+      "writtenOn": "2020-01-16T00:30:28Z",
+      "side": 1,
+      "message": "nit: out of scope doesn\u0027t make sense to me. I don\u0027t really know what it means from this context. Dunno if you really need to document this here, but it\u0027s not obvious to me.",
+      "range": {
+        "startLine": 201,
+        "startChar": 2,
+        "endLine": 201,
+        "endChar": 33
+      },
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
