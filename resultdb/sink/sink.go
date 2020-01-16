@@ -24,6 +24,7 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -40,6 +41,7 @@ import (
 const (
 	// DefaultPort is the TCP port that the Server listens on by default.
 	DefaultPort = 62115
+	defaultSessionTimeout = 30 * time.Second
 )
 
 // ServerConfig defines the parameters of the server.
@@ -171,19 +173,26 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) serveLoop(ctx context.Context) {
 	defer s.ln.Close()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	for {
+		if ctx.Err() != nil {
+			s.errC <- ctx.Err()
+			return
+		}
+
 		switch conn, err := s.ln.Accept(); {
 		case err == nil:
 			go func() {
-				if err := s.handleConnection(ctx, conn); err != nil {
+				// Start a session with a timeout.
+				// TODO(crbug/1017288): read the timeout value from config.
+				sctx, cancel := context.WithTimeout(ctx, defaultSessionTimeout)
+				defer cancel()
+				logging.Infof(ctx, "A session started.")
+				if err := s.handleConnection(sctx, conn); err != nil {
 					logging.Errorf(ctx, "%s", err)
 				}
+				logging.Infof(ctx, "A session terminated.")
 			}()
-		case ctx.Err() != nil:
-			s.errC <- ctx.Err()
-			return
+
 		case shouldKeepTrying(err):
 			continue
 		default:
@@ -223,32 +232,54 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
 		c.Close()
 	}()
 
+	if dl, ok := ctx.Deadline(); ok {
+		if err := c.SetDeadline(dl); err != nil {
+			return errors.Reason("failed to set the I/O deadline").Err()
+		}
+	}
+
 	dc := json.NewDecoder(c)
-	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
+	if err := processHandshake(ctx, dc, s.cfg.AuthToken); err != nil {
 		return errors.Annotate(err, "handshake failed").Err()
 	}
 	logging.Debugf(ctx, "Successful handshake")
 
-	if err := processMessages(dc); err != nil && err != io.EOF {
+	if err := processMessages(ctx, dc); err != nil && err != io.EOF {
 		return err
 	}
 
 	return nil
 }
 
-func processMessages(dc *json.Decoder) error {
+func processMessages(ctx context.Context, dc *json.Decoder) error {
 	for {
-		msgp := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(dc, msgp); err != nil {
-			return errors.Annotate(err, "failed to read message").Err()
+		msg := &sinkpb.SinkMessageContainer{}
+		if err := readMessage(ctx, dc, msg); err != nil {
+			return err
 		}
 
-		// TODO(sajjadm): msgp is valid, do something with it
+		var err error
+		if tr := msg.GetTestResult(); tr != nil {
+			err = uploadTestResult(ctx, tr)
+		} else if trf := msg.GetTestResultFile(); trf != nil {
+			err = uploadTestResultFile(ctx, trf)
+		} else if hs := msg.GetHandshake(); hs != nil {
+			logging.Infof(ctx, "Unnecessary Handshake; auth_token=%q", hs.AuthToken)
+		} else {
+			err = errors.Reason("Unknown SinkMessageContainer").Err()
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 }
 
-func readMessage(dc *json.Decoder, dest proto.Message) error {
+func readMessage(ctx context.Context, dc *json.Decoder, dest proto.Message) error {
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		err := jsonpb.UnmarshalNext(dc, dest)
 		if shouldKeepTrying(err) {
 			continue
@@ -257,10 +288,10 @@ func readMessage(dc *json.Decoder, dest proto.Message) error {
 	}
 }
 
-func processHandshake(dc *json.Decoder, authToken string) error {
+func processHandshake(ctx context.Context, dc *json.Decoder, authToken string) error {
 	var hs sinkpb.Handshake
-	if err := jsonpb.UnmarshalNext(dc, &hs); err != nil {
-		return errors.Reason("failed to parse Handshake").Err()
+	if err := readMessage(ctx, dc, &hs); err != nil {
+		return err
 	}
 	if hs.GetAuthToken() != authToken {
 		return errors.Reason("handshake message had invalid AuthToken").Err()
@@ -271,4 +302,16 @@ func processHandshake(dc *json.Decoder, authToken string) error {
 func shouldKeepTrying(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Temporary() || e.Timeout())
+}
+
+// uploadTestResult schedules an upload of the test result.
+func uploadTestResult(ctx context.Context, msg *sinkpb.TestResult) error {
+	// TODO(add the message into the dispatcher.
+	return nil
+}
+
+// uploadTestREsultFile schedules an upload of the test result file.
+func uploadTestResultFile(ctx context.Context, msg *sinkpb.TestResultFile) error {
+	// TODO: add the message into the dispatcher.
+	return nil
 }
