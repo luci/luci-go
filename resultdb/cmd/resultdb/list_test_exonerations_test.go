@@ -57,7 +57,7 @@ func TestListTestExonerations(t *testing.T) {
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, "", now, false, ""),
+			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, now, nil),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          testID,

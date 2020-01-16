@@ -58,7 +58,7 @@ func TestListTestResults(t *testing.T) {
 		now := clock.Now(ctx)
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, "", now, false, ""))
+		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, now, nil))
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 

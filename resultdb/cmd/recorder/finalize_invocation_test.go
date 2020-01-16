@@ -64,7 +64,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`finalized failed`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_FINALIZED, token, ct, true, ""),
+				InsertInvocation("inv", pb.Invocation_FINALIZED, ct, map[string]interface{}{"Interrupted": true, "UpdateToken": token}),
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv has already been finalized with different interrupted flag`)
@@ -72,7 +72,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`complete expired invocation failed`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false, ""),
+				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
@@ -83,7 +83,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`interrupt expired invocation passed`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false, ""),
+				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
@@ -96,7 +96,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`idempotent`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, token, ct, false, ""),
+				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
@@ -119,7 +119,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
 				MustApply(ctx,
-					InsertInvocation(invID, pb.Invocation_ACTIVE, token, ct, false, ""),
+					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 					span.InsertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})

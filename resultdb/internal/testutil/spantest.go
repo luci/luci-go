@@ -198,19 +198,23 @@ func fatalIf(err error) {
 }
 
 // InsertInvocation returns a spanner mutation that inserts an invocation.
-func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateToken string, ct time.Time, interrupted bool, realm string) *spanner.Mutation {
+func InsertInvocation(id span.InvocationID, state pb.Invocation_State, ct time.Time, extraValues map[string]interface{}) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	values := map[string]interface{}{
 		"InvocationId":                      id,
 		"ShardId":                           0,
 		"State":                             state,
-		"Realm":                             realm,
-		"UpdateToken":                       updateToken,
+		"Realm":                             "",
+		"UpdateToken":                       "",
 		"InvocationExpirationTime":          future,
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        ct,
 		"Deadline":                          ct.Add(time.Hour),
-		"Interrupted":                       interrupted,
+		"Interrupted":                       false,
+	}
+
+	for k, v := range extraValues {
+		values[k] = v
 	}
 	if state == pb.Invocation_FINALIZED {
 		values["FinalizeTime"] = ct.Add(time.Hour)
@@ -221,7 +225,7 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, updateTok
 // InsertInvocationIncl returns mutations to insert an invocation with inclusions.
 func InsertInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
 	t := testclock.TestRecentTimeUTC
-	ms := []*spanner.Mutation{InsertInvocation(id, pb.Invocation_FINALIZED, "", t, false, "")}
+	ms := []*spanner.Mutation{InsertInvocation(id, pb.Invocation_FINALIZED, t, nil)}
 	for _, incl := range included {
 		ms = append(ms, InsertInclusion(id, incl))
 	}
