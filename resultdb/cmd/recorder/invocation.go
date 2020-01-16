@@ -136,7 +136,7 @@ func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, 
 	return txn.BufferWrite([]*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationId": id,
-			"State":        pb.Invocation_COMPLETED,
+			"State":        pb.Invocation_FINALIZED,
 			"Interrupted":  interrupted,
 			"FinalizeTime": finalizeTime,
 		}),
