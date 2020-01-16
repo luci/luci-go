@@ -60,11 +60,11 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 	var retErr error
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		retErr = nil
 		now := clock.Now(ctx)
 
 		var updateToken spanner.NullString
-
-		err = span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
+		err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
 			"UpdateToken":  &updateToken,
 			"State":        &ret.State,
 			"Interrupted":  &ret.Interrupted,
@@ -83,8 +83,10 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		case ret.State == pb.Invocation_COMPLETED && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
+
 		case ret.State == pb.Invocation_COMPLETED && ret.Interrupted != in.Interrupted:
 			return getUnmatchedInterruptedFlagError(invID)
+
 		case deadline.Before(now):
 			ret.State = pb.Invocation_COMPLETED
 			ret.FinalizeTime = ret.Deadline
@@ -94,6 +96,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			if !in.Interrupted {
 				retErr = getUnmatchedInterruptedFlagError(invID)
 			}
+
 		default:
 			// Finalize as requested.
 			ret.State = pb.Invocation_COMPLETED
@@ -101,7 +104,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			ret.Interrupted = in.Interrupted
 		}
 
-		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
+		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
 			return err
 		}
 
