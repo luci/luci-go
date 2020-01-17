@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "48cb95f3_1ada835d",
+        "filename": "resultdb/cmd/recorder/create_invocation_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T00:41:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c493a7c5_57be704a",
+      "range": {
+        "startLine": 257,
+        "startChar": 3,
+        "endLine": 257,
+        "endChar": 44
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1eec5b8a_e370c998",
         "filename": "resultdb/cmd/recorder/invocation.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efc9baeb_7e842eec",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T00:41:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1eec5b8a_e370c998",
+      "range": {
+        "startLine": 207,
+        "startChar": 4,
+        "endLine": 207,
+        "endChar": 30
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "38b5e389_a46c22da",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T00:41:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75b4be0f_bdd44936",
+      "range": {
+        "startLine": 72,
+        "startChar": 14,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e31a36fc_a7428394",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -82,6 +154,24 @@
       "writtenOn": "2020-01-16T19:37:24Z",
       "side": 1,
       "message": "i think what we did with Artifacts in this file is incorrect, because it is very specific, while this file is generic.\n\nplease the container in the code that reads/writes inv rows. Also please use CompressedProto.\n\nI will refactor artifacts as a part of another refactoring",
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13d444f7_4b7771f1",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T00:41:57Z",
+      "side": 1,
+      "message": "\u003e please the container in the code that reads/writes inv rows. Also please use CompressedProto.\n\nThis sentence is missing a verb, so I don\u0027t understand.\n\nIn my new patch I used CompressedProto with Message of type *internalpb.BigQueryExports. Let me know if this is not what you meant.",
+      "parentUuid": "e31a36fc_a7428394",
       "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -108,6 +198,30 @@
       "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aced3dd8_a95c1cc6",
+        "filename": "resultdb/proto/rpc/v1/invocation.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T00:41:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5026bfb7_c91ffc58",
+      "range": {
+        "startLine": 112,
+        "startChar": 32,
+        "endLine": 112,
+        "endChar": 69
+      },
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
