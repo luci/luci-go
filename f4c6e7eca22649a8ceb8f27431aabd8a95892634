@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cc32b513_06e6767d",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "03a34e66_7599dc17",
+      "range": {
+        "startLine": 47,
+        "startChar": 4,
+        "endLine": 47,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "793d1754_369aafaf",
         "filename": "resultdb/cmd/resultdb/main.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66fa3e56_a868eaea",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Done\n\ni assume its ok not to use VirtualHost for pRPC. We are confident pRPC will never respond with unexpected content types",
+      "parentUuid": "793d1754_369aafaf",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 63,
+        "endChar": 56
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9c80aee2_1c21549b",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d49542d_f71a42de",
+      "range": {
+        "startLine": 58,
+        "startChar": 63,
+        "endLine": 58,
+        "endChar": 71
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bcf8981_4b2fd85d",
         "filename": "resultdb/internal/usercontent/isolate.go",
         "patchSetId": 6
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "e09201d9_c6d10150",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "no, i just did not notice https://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/5fed9c4b6c5c4ad3669591bc10e776118dbd4454:common/lhttp/client.go;l\u003d134;drc\u003da8727874e51a86b09a8df0849ad22952455e9520",
+      "parentUuid": "0bcf8981_4b2fd85d",
+      "range": {
+        "startLine": 60,
+        "startChar": 6,
+        "endLine": 60,
+        "endChar": 47
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a78a052e_4f1b737c",
         "filename": "resultdb/internal/usercontent/server.go",
         "patchSetId": 6
@@ -105,6 +201,30 @@
       "writtenOn": "2020-01-15T23:27:21Z",
       "side": 1,
       "message": "Note that this will not work if the isolate client uses request.WithContext(...) and handleIsolateContent(...) does some authentication (i.e. changes auth.GetState(ctx)). It will panic in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/server/auth/client.go#298. \n\nI can remove this panic, but it would open a way to do bad mistakes. Maybe I can do something specifically for AsUser and AsCredentialsForwarder... I\u0027ll maybe send a CL for that.",
+      "range": {
+        "startLine": 50,
+        "startChar": 2,
+        "endLine": 50,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b6dd44e1_a8b87f98",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "\u003e Note that this will not work if the isolate client uses request.WithContext(...) \n\nit does not\n\n\u003e and handleIsolateContent(...) does some authentication (i.e. changes auth.GetState(ctx)). \n\ndoes token validation count as \"changes auth.GetState(ctx)\"? \n\nalso what changes you are talking about?\n\n\u003e It will panic in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/server/auth/client.go#298. \n\u003e \n\u003e I can remove this panic, but it would open a way to do bad mistakes. Maybe I can do something specifically for AsUser and AsCredentialsForwarder... I\u0027ll maybe send a CL for that.",
+      "parentUuid": "a78a052e_4f1b737c",
       "range": {
         "startLine": 50,
         "startChar": 2,
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "1b2a5bbc_29c553f4",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "oops, done",
+      "parentUuid": "aa867e7a_e20bb356",
+      "range": {
+        "startLine": 55,
+        "startChar": 33,
+        "endLine": 55,
+        "endChar": 52
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d5de5ca_b17a6a61",
         "filename": "resultdb/internal/usercontent/server.go",
         "patchSetId": 6
@@ -160,6 +304,30 @@
       "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5558e8c8_08455484",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d5de5ca_b17a6a61",
+      "range": {
+        "startLine": 56,
+        "startChar": 33,
+        "endLine": 56,
+        "endChar": 67
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "77456df3_47eeb6a4",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Done\n\nI did not try running this. I only have that unit test.",
+      "parentUuid": "83c03c75_0fdecc4c",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 1
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a1ef64a_3aef1aa7",
         "filename": "resultdb/internal/usercontent/signing.go",
         "patchSetId": 6
@@ -206,6 +398,30 @@
       "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "625b10e8_85160335",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:44:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a1ef64a_3aef1aa7",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 62
+      },
+      "revId": "f4c6e7eca22649a8ceb8f27431aabd8a95892634",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
