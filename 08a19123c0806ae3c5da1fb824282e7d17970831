@@ -1,0 +1,216 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f60eff85_2c9a70db",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "We can get more invocations per query, no need to limit to number of workers.",
+      "range": {
+        "startLine": 69,
+        "startChar": 105,
+        "endLine": 69,
+        "endChar": 115
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f9926d2_6e5f4506",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "Just learnt that in general we prefer clock.Now(ctx).",
+      "range": {
+        "startLine": 69,
+        "startChar": 80,
+        "endLine": 69,
+        "endChar": 90
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "727ad81a_d36272ad",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "probably extract this to a function and reuse it?",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 78,
+        "endChar": 20
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5fab66a_9c82344a",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "Why wouldn\u0027t we just go ahead and try another shard?",
+      "range": {
+        "startLine": 85,
+        "startChar": 76,
+        "endLine": 86,
+        "endChar": 31
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54b8720f_29dbbfae",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "continue",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ba6a8ba_31715b74",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "Should we return []InvocationID instead?",
+      "range": {
+        "startLine": 221,
+        "startChar": 112,
+        "endLine": 221,
+        "endChar": 127
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1d5b641_68e6d232",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "expiredInvocations?",
+      "range": {
+        "startLine": 223,
+        "startChar": 6,
+        "endLine": 223,
+        "endChar": 25
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30df715d_dd704e0c",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "nit: remove one empty line",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "787a2233_254e1a6a",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "I\u0027m not sure if I missed any discussion, but shouldn\u0027t we query `test variants` with unexpected results, not just variants?",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bccc2792_2ac72b00",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T06:59:32Z",
+      "side": 1,
+      "message": "We should probably make it a set. A similar usage: https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/backend/bigquery_export.go;l\u003d126",
+      "range": {
+        "startLine": 274,
+        "startChar": 1,
+        "endLine": 274,
+        "endChar": 22
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
