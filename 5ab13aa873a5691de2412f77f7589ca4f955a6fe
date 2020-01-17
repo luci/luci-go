@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e17e98fd_6b095a03",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "I think we should use Nullstring here because ReadInvocationFullWithUpdateToken needs to return a NullString: we\u0027re checking updateToken.Valid at https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/recorder/invocation.go;l\u003d167",
+      "parentUuid": "8ade4550_23012078",
+      "range": {
+        "startLine": 145,
+        "startChar": 150,
+        "endLine": 145,
+        "endChar": 168
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7ce02338_2026fe82",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69e66242_291e61d1",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ce02338_2026fe82",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 5
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "0f22f177_b50674b5",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc07066c_586c3643",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 7
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e90c7ed0_0e5db20e",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98c916b6_c3e80c35",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e90c7ed0_0e5db20e",
+      "range": {
+        "startLine": 208,
+        "startChar": 58,
+        "endLine": 208,
+        "endChar": 65
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "3027d966_108fa74f",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96e6861a_c6b23687",
+      "range": {
+        "startLine": 212,
+        "startChar": 8,
+        "endLine": 212,
+        "endChar": 24
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0f6df174_78ed9a67",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 3
@@ -137,6 +257,30 @@
       "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cbfc104_7276ab55",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-17T23:41:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f6df174_78ed9a67",
+      "range": {
+        "startLine": 219,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 8
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
