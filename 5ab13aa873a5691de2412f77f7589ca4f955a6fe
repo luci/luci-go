@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8ade4550_23012078",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "i think this should be a string. we can pass NullString.StringVal below",
+      "range": {
+        "startLine": 145,
+        "startChar": 150,
+        "endLine": 145,
+        "endChar": 168
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ce02338_2026fe82",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "inconsistency: spaces vs tabs above",
+      "range": {
+        "startLine": 165,
+        "startChar": 0,
+        "endLine": 165,
+        "endChar": 5
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc07066c_586c3643",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 7
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e90c7ed0_0e5db20e",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "omit",
+      "range": {
+        "startLine": 208,
+        "startChar": 58,
+        "endLine": 208,
+        "endChar": 65
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96e6861a_c6b23687",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "this allocated memory will never be used. it is easier to compare ret to nil in L223. Consider\n\n  var ret *pb.Invocation\n\nsame below",
+      "range": {
+        "startLine": 212,
+        "startChar": 8,
+        "endLine": 212,
+        "endChar": 24
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f6df174_78ed9a67",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T22:40:02Z",
+      "side": 1,
+      "message": "we have 3 cases here. consider a switch statement\n\nsame below",
+      "range": {
+        "startLine": 219,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 8
+      },
+      "revId": "5ab13aa873a5691de2412f77f7589ca4f955a6fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
