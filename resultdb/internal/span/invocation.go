@@ -71,6 +71,9 @@ var TooManyInvocationsTag = errors.BoolTag{
 func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots InvocationIDSet) (InvocationIDSet, error) {
 	defer metrics.Trace(ctx, "ReadReachableInvocations")()
 
+	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	if limit <= 0 {
@@ -85,7 +88,6 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	var visit func(id InvocationID) error
 
 	sem := semaphore.NewWeighted(64)
-	eg, ctx := errgroup.WithContext(ctx)
 	visit = func(id InvocationID) error {
 		mu.Lock()
 		defer mu.Unlock()
