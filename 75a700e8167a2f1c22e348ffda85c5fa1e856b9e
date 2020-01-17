@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "970cf397_2bca8b7d",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "nit: IMHO this is completely unnecessary dependency. There are simpler ways to split the line into two lines. And it\u0027s no so long line to begin with. text.Doc at least makes readers wonder what the hell is this function doing.",
+      "range": {
+        "startLine": 50,
+        "startChar": 83,
+        "endLine": 50,
+        "endChar": 91
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16be239d_e68d89cf",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "consider returning *url.URL to indicate its a full URL with the host and everything",
+      "range": {
+        "startLine": 35,
+        "startChar": 96,
+        "endLine": 35,
+        "endChar": 102
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35b372a7_c96b18f4",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "IMHO the code would be simpler if you get rid of the middleware and inline it here, unless you expect it to be reused from other handlers",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 66
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c1779e_41d16a34",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "huh?",
+      "range": {
+        "startLine": 62,
+        "startChar": 33,
+        "endLine": 62,
+        "endChar": 49
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce1d4459_a8661764",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "nit: please get used to using auth.GetRPCTransport(ctx, auth.NoAuth) instead. http.DefaultClient is not reporting any metrics or tracing data. (I noticed this problem earlier in another place in ResultDB that uses http.DefaultClient, large gaps in traces).\n\nIf it\u0027s too long to type, I guess we can add a helper function.",
+      "range": {
+        "startLine": 48,
+        "startChar": 14,
+        "endLine": 48,
+        "endChar": 32
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9e86654_33ead732",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "This makes this code untestable e2e locally or without a TLS cert on GKE. This is not great. Consider adding a flag.",
+      "range": {
+        "startLine": 51,
+        "startChar": 13,
+        "endLine": 51,
+        "endChar": 18
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0785514_9bd5d6dd",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-17T01:23:38Z",
+      "side": 1,
+      "message": "nit: Validate(...) can potentially return a transient error (if it could not fetch the secret), we should return HTTP 500 in this case.",
+      "range": {
+        "startLine": 71,
+        "startChar": 42,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
