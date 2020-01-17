@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/resultdb/internal"
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -116,17 +115,17 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
-		Convey(`invalid bigquery_exports`, func() {
+		Convey(`invalid bigqueryExports`, func() {
 			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u:abc",
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
-				},
-				BigqueryExports: []*pb.BigQueryExport{
-					{
-						Project: "project",
+					BigqueryExports: []*pb.BigQueryExport{
+						&pb.BigQueryExport{
+							Project: "project",
+						},
 					},
 				},
 			}, now)
@@ -230,9 +229,9 @@ func TestCreateInvocation(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "1", "b", "2"),
-				},
-				BigqueryExports: []*pb.BigQueryExport{
-					bqExport,
+					BigqueryExports: []*pb.BigQueryExport{
+						bqExport,
+					},
 				},
 			}
 			inv, err := recorder.CreateInvocation(ctx, req, prpc.Header(headers))
@@ -264,17 +263,6 @@ func TestCreateInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(expectedResultsExpirationTime, ShouldEqual, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
 			So(invExpirationTime, ShouldEqual, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
-
-			// Check invocationTask is inserted.
-			invTask := &internalpb.InvocationTask{
-				BigqueryExport: bqExport,
-			}
-			key := span.InvocationID("u:inv").Key(taskID(taskTypeBqExport, 0))
-			invTaskRtn := &internalpb.InvocationTask{}
-			MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
-				"Payload": invTaskRtn,
-			})
-			So(invTaskRtn, ShouldResembleProto, invTask)
 		})
 	})
 }

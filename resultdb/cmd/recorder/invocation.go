@@ -204,6 +204,10 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		row["CreateRequestId"] = createRequestID
 	}
 
+	if len(inv.BigqueryExports) != 0 {
+		row["BigQueryExports"] = span.CompressedProto{&internalpb.BigQueryExports{BigqueryExports: inv.BigqueryExports}}
+	}
+
 	return row
 }
 
