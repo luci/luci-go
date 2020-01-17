@@ -248,7 +248,7 @@ func TestSerialization(t *testing.T) {
 		}
 
 		Convey("Happy path with deadline", func() {
-			originalItem := itemWithExp{[]byte("blah-blah"), now}
+			originalItem := itemWithExp{val: []byte("blah-blah"), exp: now}
 
 			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
@@ -260,7 +260,7 @@ func TestSerialization(t *testing.T) {
 		})
 
 		Convey("Happy path without deadline", func() {
-			originalItem := itemWithExp{[]byte("blah-blah"), time.Time{}}
+			originalItem := itemWithExp{val: []byte("blah-blah"), exp: time.Time{}}
 
 			blob, err := c.serializeItem(&originalItem)
 			So(err, ShouldBeNil)
@@ -296,11 +296,17 @@ func TestSerialization(t *testing.T) {
 				return nil, fail
 			}
 
-			blob, err := c.serializeItem(&itemWithExp{[]byte("blah-blah"), now})
+			blob, err := c.serializeItem(&itemWithExp{val: []byte("blah-blah"), exp: now})
 			So(err, ShouldBeNil)
 
 			_, err = c.deserializeItem(blob)
 			So(err, ShouldEqual, fail)
 		})
 	})
+}
+
+func TestWithAllowedStaleness(t *testing.T) {
+	t.Parallel()
+
+	// TODO
 }

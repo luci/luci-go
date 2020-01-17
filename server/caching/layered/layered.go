@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/caching"
 )
 
@@ -91,6 +93,22 @@ func WithRandomizedExpiration(threshold time.Duration) Option {
 	return expRandThresholdOpt(threshold)
 }
 
+// WithAllowedStaleness indicates that it is OK to return a stale item if
+// the refresh procedure fails with a transient error.
+//
+// This option may be used to improve resiliency in cases when the cached data
+// is fetched from another service and this service goes down. In many cases
+// it is acceptable to keep using stale cached data instead of evicting it from
+// the cache and failing on fetching the fresh one.
+//
+// Note that items created with this option never actually expire in the
+// global cache, so it should be used carefully if the cordiality of the set of
+// all possible items is huge. Note that items still may be evicted due to
+// memory pressure or if the cache is flushed.
+func WithAllowedStaleness() Option {
+	return allowedStalenessOpt{}
+}
+
 // GetOrCreate attempts to grab an item from process or global cache, or create
 // it if it's not cached yet.
 //
@@ -131,41 +149,60 @@ func (c *Cache) GetOrCreate(ctx context.Context, key string, fn lru.Maker, opts 
 	v, err := lru.Create(ctx, key, func() (interface{}, time.Duration, error) {
 		// Now that we have the lock, recheck that the item still needs a refresh.
 		// Purposely ignore an item we decided we want to prematurely expire.
+		var local *itemWithExp
 		if v, ok := lru.Get(ctx, key); ok {
-			if item := v.(*itemWithExp); item != ignored && item.isAcceptableTTL(now, o.minTTL) {
-				return item, item.expiration(now), nil
+			if local = v.(*itemWithExp); local != ignored && local.isAcceptableTTL(now, o.minTTL) {
+				return local, local.expiration(now), nil
 			}
 		}
 
-		// Attempt to grab it from the global cache, verifying TTL is acceptable.
-		if item := c.maybeFetchItem(ctx, key); item != nil && item.isAcceptableTTL(now, o.minTTL) {
-			return item, item.expiration(now), nil
+		// Here 'local' is either nil or expired. Attempt to grab a potentially
+		// newer copy from the global cache, maybe someone else already updated it.
+		var global *itemWithExp
+		if global = c.maybeFetchItem(ctx, key); global != nil && global.isAcceptableTTL(now, o.minTTL) {
+			return global, global.expiration(now), nil
 		}
 
-		// Either a cache miss, problems with the cached item or its TTL is not
-		// acceptable. Need a to make a new item.
+		// Either a cache miss, deserialization errors or the TTL is not acceptable.
+		// Need to make a new item.
 		var item itemWithExp
 		val, exp, err := fn()
 		item.val = val
 		switch {
+		case transient.Tag.In(err) && o.allowedStaleness:
+			if reused := tryReuseStale(ctx, now, &o, local, global); reused != nil {
+				logging.WithError(err).Errorf(ctx,
+					"Failed to refresh item %q (attempt %d, will try again in %s), reusing the stale one (expiry %s)",
+					key, reused.retries, reused.expiration(now), reused.origExp)
+				return reused, reused.expiration(now), nil
+			}
+			return nil, 0, err
 		case err != nil:
 			return nil, 0, err
-		case exp < 0:
+		case exp < 0: // bad API usage
 			panic("the expiration time must be non-negative")
-		case exp > 0: // note: if exp == 0 we want item.exp to be zero
+		case exp == 0: // indicates the item never expires
+			item.exp = time.Time{}
+		case exp > 0:
 			item.exp = now.Add(exp)
 			if !item.isAcceptableTTL(now, o.minTTL) {
-				// If 'fn' is incapable of generating an item with sufficient TTL there's
-				// nothing else we can do.
+				// If 'fn' is incapable of generating an item with sufficient TTL
+				// there's nothing else we can do.
 				return nil, 0, ErrCantSatisfyMinTTL
 			}
 		}
 
+		// When using WithAllowedStaleness we don't actually ever want to evict
+		// items from the global cache (since they are useful even when stale).
+		if o.allowedStaleness {
+			exp = 0
+		}
+
 		// Store the new item in the global cache. We may accidentally override
-		// an item here if someone else refreshed it already. But this is
-		// unavoidable given GlobalCache semantics and generally rare and harmless
-		// (given Cache guarantees or rather lack of there of).
-		if err := c.maybeStoreItem(ctx, key, &item, now); err != nil {
+		// it there if someone else refreshed it already. But this is unavoidable
+		// given GlobalCache semantics and generally rare and harmless (given Cache
+		// guarantees or rather lack of there of).
+		if err := c.maybeStoreItem(ctx, key, &item, exp); err != nil {
 			return nil, 0, err
 		}
 		return &item, item.expiration(now), nil
@@ -189,13 +226,16 @@ const formatVersionByte = 1
 type options struct {
 	minTTL           time.Duration
 	expRandThreshold time.Duration
+	allowedStaleness bool
 }
 
 type minTTLOpt time.Duration
 type expRandThresholdOpt time.Duration
+type allowedStalenessOpt struct{}
 
 func (o minTTLOpt) apply(opts *options)           { opts.minTTL = time.Duration(o) }
 func (o expRandThresholdOpt) apply(opts *options) { opts.expRandThreshold = time.Duration(o) }
+func (o allowedStalenessOpt) apply(opts *options) { opts.allowedStaleness = true }
 
 // itemWithExp is what is actually stored (pointer to it) in the process cache.
 //
@@ -204,6 +244,10 @@ func (o expRandThresholdOpt) apply(opts *options) { opts.expRandThreshold = time
 type itemWithExp struct {
 	val interface{}
 	exp time.Time
+
+	// Used exclusively by tryReuseStale.
+	retries int
+	origExp time.Time
 }
 
 // isAcceptableTTL returns true if item's TTL is large enough.
@@ -256,6 +300,62 @@ func (i *itemWithExp) expiration(now time.Time) time.Duration {
 	return d
 }
 
+// tryReuseStale chooses either `local` or `global`, modifies its locally stored
+// expiration time and returns it so it can be reused in GetOrCreate.
+//
+// See WithAllowedStaleness for more info.
+//
+// Returns nil if both items are nil.
+func tryReuseStale(ctx context.Context, now time.Time, o *options, local, global *itemWithExp) *itemWithExp {
+	// Pick an item we can reuse. Prefer the local one (it has additional state),
+	// unless 'global' is fresher.
+	var reuse *itemWithExp
+	switch {
+	case local == nil && global == nil:
+		return nil // nothing to reuse at all
+	case local != nil && global != nil:
+		// Don't use local.exp when comparing against the global.exp, since we
+		// adjust it locally when prolonging life of an item in the local LRU
+		// (see below). When we do so, we store the original expiration in origExp.
+		localExp := local.exp
+		if !local.origExp.IsZero() {
+			localExp = local.origExp
+		}
+		if localExp.Equal(global.exp) || localExp.After(global.exp) {
+			reuse = local // the local item is as fresh or fresher than the global one
+		} else {
+			reuse = global // someone updated the global and it is fresher
+		}
+	case local != nil:
+		reuse = local
+	case global != nil:
+		reuse = global
+	}
+
+	// We are about to clobber reuse.exp with a new value, save the original one.
+	reuse.retries++
+	if reuse.retries == 1 {
+		reuse.origExp = reuse.exp
+	}
+
+	// We are going to reuse the stale item, but we still want to update it as
+	// soon as possible. To do that, we set its expiration time in the local LRU
+	// to some near future. This will essentially triggers a retry later.
+	//
+	// Note that we can't just keep using the original expiration (it is likely in
+	// the past already). If we do, we'll just be busy-looping trying to refresh
+	// the item.
+	exp := time.Duration(math.Pow(1.5, float64(reuse.retries)) * float64(time.Second))
+	if exp > 5*time.Minute {
+		exp = 5 * time.Minute
+	}
+	jitter := time.Duration(mathrand.Int63n(ctx, int64(exp)/10) - int64(exp)/20)
+	total := o.minTTL + exp + jitter
+	reuse.exp = now.Add(total)
+
+	return reuse
+}
+
 // maybeFetchItem attempts to fetch the item from the global cache.
 //
 // If the global cache is not available or the cached item there is broken
@@ -284,11 +384,14 @@ func (c *Cache) maybeFetchItem(ctx context.Context, key string) *itemWithExp {
 
 // maybeStoreItem puts the item in the global cache, if possible.
 //
-// It returns an error only if the serialization fails. It generally means the
+// Uses given `exp` for the expiration duration ofthe item in the global cache.
+// It is not the same as item.exp when using WithAllowedStaleness.
+//
+// Returns an error only if the serialization fails. It generally means the
 // serialization code is buggy and should be adjusted.
 //
 // Global cache errors are logged and ignored.
-func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithExp, now time.Time) error {
+func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithExp, exp time.Duration) error {
 	g := caching.GlobalCache(ctx, c.GlobalNamespace)
 	if g == nil {
 		return nil
@@ -299,7 +402,7 @@ func (c *Cache) maybeStoreItem(ctx context.Context, key string, item *itemWithEx
 		return err
 	}
 
-	if err = g.Set(ctx, key, blob, item.expiration(now)); err != nil {
+	if err = g.Set(ctx, key, blob, exp); err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to store item %q in the global cache", key)
 	}
 	return nil
