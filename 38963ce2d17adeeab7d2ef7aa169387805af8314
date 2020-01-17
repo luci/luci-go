@@ -178,6 +178,24 @@
     },
     {
       "key": {
+        "uuid": "6e647bd5_0f6d102f",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T00:50:36Z",
+      "side": 1,
+      "message": "sorry i meant \"please move the container to the code that reads/writes inv rows\"\n\nwhat you did lgtm",
+      "parentUuid": "13d444f7_4b7771f1",
+      "revId": "38963ce2d17adeeab7d2ef7aa169387805af8314",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5026bfb7_c91ffc58",
         "filename": "resultdb/proto/rpc/v1/invocation.proto",
         "patchSetId": 3
