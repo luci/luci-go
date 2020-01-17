@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/klauspost/compress/zstd"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -449,6 +450,22 @@ func Query(ctx context.Context, title string, txn Txn, st spanner.Statement, fn 
 	defer metrics.Trace(ctx, "query [%s]", title)()
 	st.Params = ToSpannerMap(st.Params)
 	return txn.Query(ctx, st).Do(fn)
+}
+
+// QueryFirstRow returns the first row of the query.
+// If query returns no results, returns (nil, nil).
+func QueryFirstRow(ctx context.Context, txn Txn, st spanner.Statement) (*spanner.Row, error) {
+	iter := txn.Query(ctx, st)
+	defer iter.Stop()
+	row, err := iter.Next()
+	switch err {
+	case iterator.Done:
+		return nil, nil
+	case nil:
+		return row, nil
+	default:
+		return nil, err
+	}
 }
 
 func compress(data []byte) []byte {

@@ -39,7 +39,7 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 }
 
 // leaseInvocationTask leases an invocation task if it can.
-func leaseInvocationTask(ctx context.Context, taskKey *span.TaskKey) (*internalpb.InvocationTask, bool, error) {
+func leaseInvocationTask(ctx context.Context, taskKey span.TaskKey) (*internalpb.InvocationTask, bool, error) {
 	shouldRunTask := true
 	task := &internalpb.InvocationTask{}
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -64,14 +64,14 @@ func leaseInvocationTask(ctx context.Context, taskKey *span.TaskKey) (*internalp
 	return task, shouldRunTask, err
 }
 
-func deleteInvocationTask(ctx context.Context, taskKey *span.TaskKey) error {
+func deleteInvocationTask(ctx context.Context, taskKey span.TaskKey) error {
 	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
 		spanner.Delete("InvocationTasks", taskKey.Key()),
 	})
 	return err
 }
 
-func dispatchInvocationTasks(ctx context.Context, taskKeys []*span.TaskKey) error {
+func dispatchInvocationTasks(ctx context.Context, taskKeys []span.TaskKey) error {
 	return parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, taskKey := range taskKeys {
 			taskKey := taskKey
@@ -86,7 +86,15 @@ func dispatchInvocationTasks(ctx context.Context, taskKeys []*span.TaskKey) erro
 					return nil
 				}
 
-				if err := exportResultsToBigQuery(ctx, taskKey.InvocationID, task.BigqueryExport); err != nil {
+				switch task.Type.(type) {
+				case *internalpb.InvocationTask_BigqueryExport:
+					err = exportResultsToBigQuery(ctx, taskKey.InvocationID, task.GetBigqueryExport())
+				case *internalpb.InvocationTask_TryFinalizeInvocation:
+					err = tryFinalizeInvocation(ctx, taskKey.InvocationID)
+				default:
+					return errors.Reason("unexpected type of invocatoin task; %q", task).Err()
+				}
+				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
 						logging.Errorf(ctx, "permanent failure to process task %s/%s: %s", taskKey.InvocationID, taskKey.TaskID, err)
 						return deleteInvocationTask(ctx, taskKey)

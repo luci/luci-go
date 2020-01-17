@@ -137,9 +137,7 @@ func TestTypeConversion(t *testing.T) {
 			So(actualSPValue, ShouldBeNil)
 		})
 		Convey(`non-Empty`, func() {
-			msg := &pb.Invocation{
-				Name: "a",
-			}
+			msg := &pb.Invocation{Name: "x"}
 			actualSPValue := ToSpanner(CompressedProto{msg})
 			So(actualSPValue, ShouldResemble, []byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 25, 0, 0, 10, 1, 97, 135, 76, 200, 148})
 

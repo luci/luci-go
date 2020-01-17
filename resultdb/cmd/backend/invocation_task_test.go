@@ -37,11 +37,12 @@ func TestLeaseInvocationTask(t *testing.T) {
 		invTask := &internalpb.InvocationTask{}
 
 		test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedShouldRunTask bool) {
+			key := span.TaskKey{InvocationID: invID, TaskID: "task_1"}
 			testutil.MustApply(ctx,
-				span.InsertInvocationTask(invID, "task_1", invTask, processAfter, true),
+				span.InsertInvocationTask(key, invTask, processAfter, true),
 			)
 
-			_, shouldRunTask, err := leaseInvocationTask(ctx, &span.TaskKey{
+			_, shouldRunTask, err := leaseInvocationTask(ctx, span.TaskKey{
 				InvocationID: invID,
 				TaskID:       "task_1",
 			})
@@ -73,14 +74,15 @@ func TestLeaseInvocationTask(t *testing.T) {
 
 		invID := span.InvocationID("inv")
 
-		testutil.MustApply(ctx,
-			span.InsertInvocationTask(invID, "task_4", &internalpb.InvocationTask{}, now.Add(-time.Hour), true),
-		)
-
-		err := deleteInvocationTask(ctx, &span.TaskKey{
+		key := span.TaskKey{
 			InvocationID: invID,
 			TaskID:       "task_4",
-		})
+		}
+		testutil.MustApply(ctx,
+			span.InsertInvocationTask(key, &internalpb.InvocationTask{}, now.Add(-time.Hour), true),
+		)
+
+		err := deleteInvocationTask(ctx, key)
 		So(err, ShouldBeNil)
 
 		txn := span.Client(ctx).Single()
