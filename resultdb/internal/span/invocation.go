@@ -142,25 +142,16 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	return ret, nil
 }
 
-// ReadInvocationFull reads one invocation struct from Spanner.
-// If the invocation does not exist, the returned error is annotated with
-// NotFound GRPC code.
-func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, error) {
-	invs, err := ReadInvocationsFull(ctx, txn, NewInvocationIDSet(id))
-	if err != nil {
-		return nil, err
-	}
-	return invs[id], nil
-}
-
-// ReadInvocationsFull returns multiple invocations.
-// If any of them are not found, returns an error.
-func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map[InvocationID]*pb.Invocation, error) {
+func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpdateToken bool, f func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error) error {
 	if len(ids) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	st := spanner.NewStatement(`
+	extraSelect := ""
+	if withUpdateToken {
+		extraSelect = "i.UpdateToken"
+	}
+	st := spanner.NewStatement(fmt.Sprintf(`
 		SELECT
 		 i.InvocationId,
 		 i.State,
@@ -170,21 +161,23 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 		 i.Tags,
 		 i.Interrupted,
 		 i.BigQueryExports,
-		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId)
+		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
+		 %s
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
-	`)
+	`, extraSelect))
 	st.Params = ToSpannerMap(map[string]interface{}{
 		"invIDs": ids,
 	})
-	ret := make(map[InvocationID]*pb.Invocation, len(ids))
 	var b Buffer
-	err := Query(ctx, fmt.Sprintf("full invocations %s", ids), txn, st, func(row *spanner.Row) error {
+	return Query(ctx, fmt.Sprintf("full invocations %s", ids), txn, st, func(row *spanner.Row) error {
 		var id InvocationID
+		var updateToken spanner.NullString
 		included := InvocationIDSet{}
 		bigqueryExports := &internalpb.BigQueryExports{}
 		inv := &pb.Invocation{}
-		err := b.FromSpanner(row,
+
+		ptrs := []interface{}{
 			&id,
 			&inv.State,
 			&inv.CreateTime,
@@ -193,7 +186,12 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 			&inv.Tags,
 			&inv.Interrupted,
 			&CompressedProto{bigqueryExports},
-			&included)
+			&included,
+		}
+		if withUpdateToken {
+			ptrs = append(ptrs, &updateToken)
+		}
+		err := b.FromSpanner(row, ptrs...)
 		if err != nil {
 			return err
 		}
@@ -201,6 +199,58 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 		inv.BigqueryExports = bigqueryExports.BigqueryExports
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
+
+		return f(id, inv, updateToken)
+	})
+}
+
+// ReadInvocationFullWithUpdateToken reads one invocation and it's updateToken from Spanner.
+// If the invocation does not exist, the returned error is annotated with
+// NotFound GRPC code.
+func ReadInvocationFullWithUpdateToken(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, spanner.NullString, error) {
+	var ret *pb.Invocation
+	var token spanner.NullString
+	err := readInvocations(ctx, txn, NewInvocationIDSet(id), true, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
+		ret = inv
+		token = updateToken
+		return nil
+	})
+
+	switch {
+	case err != nil:
+		return nil, token, err
+	case ret == nil:
+		return nil, token, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+	default:
+		return ret, token, nil
+	}
+}
+
+// ReadInvocationFull reads one invocation from Spanner.
+// If the invocation does not exist, the returned error is annotated with
+// NotFound GRPC code.
+func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, error) {
+	var ret *pb.Invocation
+	err := readInvocations(ctx, txn, NewInvocationIDSet(id), false, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
+		ret = inv
+		return nil
+	})
+
+	switch {
+	case err != nil:
+		return nil, err
+	case ret == nil:
+		return nil, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
+	default:
+		return ret, nil
+	}
+}
+
+// ReadInvocationsFull returns multiple invocations.
+// If any of them are not found, returns an error.
+func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map[InvocationID]*pb.Invocation, error) {
+	ret := make(map[InvocationID]*pb.Invocation, len(ids))
+	err := readInvocations(ctx, txn, ids, false, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
 		if _, ok := ret[id]; ok {
 			panic("query is incorrect; it returned duplicated invocation IDs")
 		}
