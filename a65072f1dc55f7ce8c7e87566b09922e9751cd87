@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "37b3eb25_54065a58",
+        "filename": "resultdb/cmd/recorder/finalize_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:35:32Z",
+      "side": 1,
+      "message": "why we are not using ReadInvocationFull here? Response is missing inclusions here.\n\nconsider sending another CL where this code switches to ReadInvocationFull (or something like that. the point is remove duplication and fix the Inclusions bug). Then rebase this CL on top of that.",
+      "revId": "a65072f1dc55f7ce8c7e87566b09922e9751cd87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bf83842_c14e788a",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:35:32Z",
+      "side": 1,
+      "message": "is this allowed?\n\nthis is inconsistent with other tables",
+      "range": {
+        "startLine": 216,
+        "startChar": 24,
+        "endLine": 216,
+        "endChar": 25
+      },
+      "revId": "a65072f1dc55f7ce8c7e87566b09922e9751cd87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
