@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c733c1c2_f0ab1321",
+        "filename": "resultdb/cmd/resultdb/main.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "fine. this is a server. I don\u0027t expect long field descriptions",
+      "parentUuid": "970cf397_2bca8b7d",
+      "range": {
+        "startLine": 50,
+        "startChar": 83,
+        "endLine": 50,
+        "endChar": 91
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "16be239d_e68d89cf",
         "filename": "resultdb/internal/usercontent/isolate.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "388f12a4_f4c9c053",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16be239d_e68d89cf",
+      "range": {
+        "startLine": 35,
+        "startChar": 96,
+        "endLine": 35,
+        "endChar": 102
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c1c59570_86b29455",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "yes, i expect it to be reused. that\u0027s why generateSignedURL is extracted too",
+      "parentUuid": "35b372a7_c96b18f4",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 66
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58c1779e_41d16a34",
         "filename": "resultdb/internal/usercontent/isolate.go",
         "patchSetId": 9
@@ -91,6 +163,30 @@
       "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3be74eb_261c95d7",
+        "filename": "resultdb/internal/usercontent/isolate.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "thanks",
+      "parentUuid": "58c1779e_41d16a34",
+      "range": {
+        "startLine": 62,
+        "startChar": 33,
+        "endLine": 62,
+        "endChar": 49
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "92aae698_204d5c6b",
+        "filename": "resultdb/internal/usercontent/server.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "didn\u0027t know about auth.NoAuth. done",
+      "parentUuid": "ce1d4459_a8661764",
+      "range": {
+        "startLine": 48,
+        "startChar": 14,
+        "endLine": 48,
+        "endChar": 32
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9e86654_33ead732",
         "filename": "resultdb/internal/usercontent/signing.go",
         "patchSetId": 9
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "d8b9c461_3a1dce65",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9e86654_33ead732",
+      "range": {
+        "startLine": 51,
+        "startChar": 13,
+        "endLine": 51,
+        "endChar": 18
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0785514_9bd5d6dd",
         "filename": "resultdb/internal/usercontent/signing.go",
         "patchSetId": 9
@@ -160,6 +304,30 @@
       "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "486b2441_34af7742",
+        "filename": "resultdb/internal/usercontent/signing.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-17T16:54:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0785514_9bd5d6dd",
+      "range": {
+        "startLine": 71,
+        "startChar": 42,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "75a700e8167a2f1c22e348ffda85c5fa1e856b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
