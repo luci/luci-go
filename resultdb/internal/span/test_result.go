@@ -247,6 +247,8 @@ func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return
 }
 
+// QueryTestResultsStreaming is like QueryTestResults, but returns calls fn
+// instead of returning a slice.
 func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
 	if q.PageSize > 0 {
 		panic("PageSize is specified when QueryTestResultsStreaming")

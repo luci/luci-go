@@ -34,11 +34,11 @@ func TestSampleInvocationTasks(t *testing.T) {
 		invTask := &internalpb.InvocationTask{}
 
 		testutil.MustApply(ctx,
-			span.InsertInvocationTask(span.InvocationID("inv0"), "task_1", invTask, now.Add(-time.Hour), false),
-			span.InsertInvocationTask(span.InvocationID("inv0"), "task_2", invTask, now.Add(-time.Hour), false),
-			span.InsertInvocationTask(span.InvocationID("inv1"), "task_3", invTask, now.Add(-time.Hour), false),
-			span.InsertInvocationTask(span.InvocationID("inv1"), "task_4", invTask, now, false),
-			span.InsertInvocationTask(span.InvocationID("inv2"), "task_5", invTask, now.Add(time.Hour), false),
+			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv0", TaskID: "task_1"}, invTask, now.Add(-time.Hour), false),
+			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv0", TaskID: "task_2"}, invTask, now.Add(-time.Hour), false),
+			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv1", TaskID: "task_3"}, invTask, now.Add(-time.Hour), false),
+			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv1", TaskID: "task_4"}, invTask, now, false),
+			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv2", TaskID: "task_5"}, invTask, now.Add(time.Hour), false),
 		)
 
 		rows, err := span.SampleInvocationTasks(ctx, now, 3)

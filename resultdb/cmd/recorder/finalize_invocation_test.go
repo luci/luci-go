@@ -118,9 +118,13 @@ func TestFinalizeInvocation(t *testing.T) {
 				BigqueryExport: &pb.BigQueryExport{}}
 
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
+				key := span.TaskKey{
+					InvocationID: invID,
+					TaskID:       taskID(taskTypeBqExport, 0),
+				}
 				MustApply(ctx,
 					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-					span.InsertInvocationTask(invID, taskID(taskTypeBqExport, 0), invTask, origProcessAfter, resetOnFinalize),
+					span.InsertInvocationTask(key, invTask, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
@@ -136,9 +140,8 @@ func TestFinalizeInvocation(t *testing.T) {
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
 
 				// Read InvocationTask to confirm it's reset.
-				key := invID.Key(taskID(taskTypeBqExport, 0))
 				var processAfter *tspb.Timestamp
-				MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+				MustReadRow(ctx, "InvocationTasks", key.Key(), map[string]interface{}{
 					"ProcessAfter": &processAfter,
 				})
 				So(processAfter, ShouldResemble, expected)
