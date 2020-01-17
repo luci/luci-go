@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -252,6 +253,46 @@ func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransac
 		panic("PageSize is specified when QueryTestResultsStreaming")
 	}
 	return queryTestResults(ctx, txn, q, f)
+}
+
+
+func DeleteResultsFromExpectedVariants(ctx context.Context, id *InvocationID, variantHashesToKeep []string) error {
+	st := spanner.NewStatement(`
+		DELETE FROM TestResults
+		WHERE InvocationId = @invocationId
+		AND VariantHash NOT IN UNNEST(@variantHashesToKeep)`)
+	st.Params["invocationId"] = ToSpanner(id)
+	st.Params["variantHashesToKeep"] = variantHashesToKeep
+	delRowsCount, err := Client(ctx).PartitionedUpdate(ctx, st)
+	if err == nil {
+		logging.Infof(ctx, "Deleted %d expired test result rows for Invocation %s", delRowsCount, id)
+	}
+	return err
+}
+
+func QueryVariantsWithUnexpectedResults(ctx context.Context, id *InvocationID) ([]string, error) {
+	relevantVariantHashes := []string{}
+	st := spanner.NewStatement(`
+		SELECT DISTINCT VariantHash
+		FROM TestResults
+		WHERE InvocationId = @invocationId
+		AND IsUnexpected = TRUE`)
+
+	st.Params["invocationId"] = ToSpanner(id)
+	err := query(ctx, Client(ctx).Single(), st, func(row *spanner.Row) error {
+		var variantHash string
+		err := row.Column(0, &variantHash)
+		if err != nil {
+			return err
+		}
+		relevantVariantHashes = append(relevantVariantHashes, variantHash)
+		return nil
+
+	})
+	if err != nil {
+		return nil, err
+	}
+	return relevantVariantHashes, nil
 }
 
 func populateDurationField(tr *pb.TestResult, micros int64) {

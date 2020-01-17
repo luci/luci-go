@@ -17,6 +17,7 @@ package span
 import (
 	"context"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
@@ -216,3 +217,39 @@ func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string,
 	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
 }
+
+func SampleExpiredResultsInvocations(ctx context.Context, expirationTime time.Time, shardId, sampleSize int64) ([]*InvocationID, error) {
+	st := spanner.NewStatement(`
+	WITH expiringInvocations AS
+		(SELECT InvocationId
+		FROM Invocations
+		WHERE ShardId = @shardId
+		AND ExpectedTestResultsExpirationTime IS NOT NULL
+		AND ExpectedTestResultsExpirationTime <= @expirationTime)
+	SELECT *
+	FROM expiringInvocations
+	TABLESAMPLE RESERVOIR ( @sampleSize ROWS )
+	`)
+	st.Params = ToSpannerMap(map[string]interface{}{
+		"expirationTime": expirationTime,
+		"shardId": shardId,
+		"sampleSize":  sampleSize,
+	})
+	ret := make([]*InvocationID, 0, sampleSize)
+	var b Buffer
+	err := query(ctx, Client(ctx).Single(), st, func(row *spanner.Row) error {
+		var id *InvocationID
+		err := b.FromSpanner(row, id)
+
+		if err != nil {
+			return err
+		}
+		ret = append(ret, id)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+

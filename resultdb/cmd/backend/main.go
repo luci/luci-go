@@ -30,6 +30,7 @@ func main() {
 		})
 
 		srv.RunInBackground("resultdb.invocation_task", runInvocationTasks)
+		srv.RunInBackground("resultdb.drop_expired_results", dropExpiredResults)
 		return nil
 	})
 }
