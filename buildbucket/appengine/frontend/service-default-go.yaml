@@ -1,0 +1,10 @@
+service: default-go
+runtime: go111
+
+instance_class: F4
+
+handlers:
+- url: /admin/.*
+  script: auto
+  secure: always
+  login: admin
