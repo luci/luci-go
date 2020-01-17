@@ -34,13 +34,12 @@ func (tk *TaskKey) Key() spanner.Key {
 }
 
 // InsertInvocationTask inserts one row to InvocationTasks.
-func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time, resetOnFinalize bool) *spanner.Mutation {
+func InsertInvocationTask(invID InvocationID, taskID string, invTask *internalpb.InvocationTask, processAfter time.Time) *spanner.Mutation {
 	return InsertMap("InvocationTasks", map[string]interface{}{
-		"InvocationId":    invID,
-		"TaskID":          taskID,
-		"Payload":         invTask,
-		"ProcessAfter":    processAfter,
-		"ResetOnFinalize": resetOnFinalize,
+		"InvocationId": invID,
+		"TaskID":       taskID,
+		"Payload":      invTask,
+		"ProcessAfter": processAfter,
 	})
 }
 

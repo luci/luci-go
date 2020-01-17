@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -64,19 +65,22 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		now := clock.Now(ctx)
 
 		var updateToken spanner.NullString
+		bigqueryExports := &internalpb.BigQueryExports{}
 		err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
-			"UpdateToken":  &updateToken,
-			"State":        &ret.State,
-			"Interrupted":  &ret.Interrupted,
-			"CreateTime":   &ret.CreateTime,
-			"FinalizeTime": &ret.FinalizeTime,
-			"Deadline":     &ret.Deadline,
-			"Tags":         &ret.Tags,
+			"UpdateToken":     &updateToken,
+			"State":           &ret.State,
+			"Interrupted":     &ret.Interrupted,
+			"CreateTime":      &ret.CreateTime,
+			"FinalizeTime":    &ret.FinalizeTime,
+			"Deadline":        &ret.Deadline,
+			"Tags":            &ret.Tags,
+			"BigQueryExports": &span.CompressedProto{bigqueryExports},
 		})
 		if err != nil {
 			return err
 		}
 
+		ret.BigqueryExports = bigqueryExports.BigqueryExports
 		finalizeTime := now
 		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
@@ -108,7 +112,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return err
 		}
 
-		return finalizeInvocation(ctx, txn, invID, in.Interrupted, finalizeTime)
+		return finalizeInvocation(txn, invID, in.Interrupted, finalizeTime, ret.BigqueryExports)
 	})
 
 	if err != nil {
