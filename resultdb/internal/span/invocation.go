@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/metrics"
+	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -160,6 +161,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 		 i.Deadline,
 		 i.Tags,
 		 i.Interrupted,
+		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId)
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
@@ -172,6 +174,7 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 	err := Query(ctx, fmt.Sprintf("full invocations %s", ids), txn, st, func(row *spanner.Row) error {
 		var id InvocationID
 		included := InvocationIDSet{}
+		bigqueryExports := CompressedProto{&internalpb.BigQueryExports{}}
 		inv := &pb.Invocation{}
 		err := b.FromSpanner(row,
 			&id,
@@ -181,10 +184,13 @@ func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map
 			&inv.Deadline,
 			&inv.Tags,
 			&inv.Interrupted,
+			&bigqueryExports,
 			&included)
 		if err != nil {
 			return err
 		}
+
+		inv.BigqueryExports = bigqueryExports.Message.(*internalpb.BigQueryExports).BigqueryExports
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
 		if _, ok := ret[id]; ok {
