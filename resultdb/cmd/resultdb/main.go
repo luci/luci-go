@@ -15,6 +15,7 @@
 package main
 
 import (
+	"flag"
 	"io"
 
 	"go.chromium.org/luci/grpc/prpc"
@@ -22,6 +23,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/usercontent"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -41,11 +43,30 @@ func NewResultDBServer() pb.ResultDBServer {
 }
 
 func main() {
+	contentHTTP := flag.Bool(
+		"user-content-insecure-http",
+		false,
+		"Use HTTP (not HTTPS) for generated URLs",
+	)
+	contentHostname := flag.String(
+		"user-content-host",
+		// TODO(crbug.com/1042261): remove the default and make it required.
+		// Without the default staging will start crashing.
+		"results.usercontent.cr.dev",
+		"Use this host for all user content URLs",
+	)
+
 	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
 		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
+
+		contentServer, err := usercontent.NewServer(srv.Context, *contentHTTP, *contentHostname)
+		if err != nil {
+			return err
+		}
+		contentServer.InstallHandlers(srv.VirtualHost(*contentHostname))
 
 		// Register an empty Recorder server only to make the discovery service
 		// list it.
