@@ -211,13 +211,7 @@ CREATE TABLE InvocationTasks (
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
   -- or a future time indicating the invocation is not available to process yet.
   -- ProcessAfter can be reset in following conditions:
-  --  * if ResetOnFinalize is true, ProcessAfter will be set to the finalization
-  -- time when the invocation is finalized.
   --  * if a worker has started working on this task, ProcessAfter will be set
   -- to a future time to prevent other workers picking up the same task.
   ProcessAfter TIMESTAMP,
-
-  -- If true, set ProcessAfter to NOW when finalizing the invocation,
-  -- otherwise don't set it.
-  ResetOnFinalize BOOL,
 ) PRIMARY KEY (InvocationId, TaskId);
