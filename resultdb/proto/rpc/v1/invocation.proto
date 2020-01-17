@@ -105,6 +105,10 @@ message Invocation {
   // Use Recorder.Include RPC to modify this field.
   repeated string included_invocations = 8
       [ (google.api.field_behavior) = OUTPUT_ONLY ];
+
+  // bigquery_exports indicates what BigQuery table(s) that results in this
+  // invocation should export to.
+  repeated BigQueryExport bigquery_exports = 9;
 }
 
 // BigQueryExport indicates that results in this invocation should be exported

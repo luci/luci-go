@@ -86,7 +86,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 		}
 	}
 
-	for i, bqExport := range req.GetBigqueryExports() {
+	for i, bqExport := range inv.GetBigqueryExports() {
 		if err := pbutil.ValidateBigQueryExport(bqExport); err != nil {
 			return errors.Annotate(err, "bigquery_export[%d]", i).Err()
 		}
@@ -114,11 +114,12 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	// Prepare the invocation we will return.
 	inv := &pb.Invocation{
-		Name:       invID.Name(),
-		State:      pb.Invocation_ACTIVE,
-		CreateTime: pbutil.MustTimestampProto(now),
-		Deadline:   in.Invocation.GetDeadline(),
-		Tags:       in.Invocation.GetTags(),
+		Name:            invID.Name(),
+		State:           pb.Invocation_ACTIVE,
+		CreateTime:      pbutil.MustTimestampProto(now),
+		Deadline:        in.Invocation.GetDeadline(),
+		Tags:            in.Invocation.GetTags(),
+		BigqueryExports: in.Invocation.GetBigqueryExports(),
 	}
 
 	// Determine the deadline and expiration times.
@@ -153,13 +154,9 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 			}
 		}
 
-		muts := make([]*spanner.Mutation, 0, len(in.GetBigqueryExports())+1)
-		muts = append(muts, insertInvocation(ctx, inv, updateToken, in.RequestId))
-
-		invTaskMuts := insertBQExportingTasks(invID, now.Add(eventualInvocationTaskProcessAfter), in.GetBigqueryExports()...)
-		muts = append(muts, invTaskMuts...)
-
-		return txn.BufferWrite(muts)
+		return txn.BufferWrite([]*spanner.Mutation{
+			insertInvocation(ctx, inv, updateToken, in.RequestId),
+		})
 	})
 
 	switch {
