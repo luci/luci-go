@@ -21,6 +21,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -83,6 +84,7 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	var mu sync.Mutex
 	var visit func(id InvocationID) error
 
+	sem := semaphore.NewWeighted(64)
 	eg, ctx := errgroup.WithContext(ctx)
 	visit = func(id InvocationID) error {
 		mu.Lock()
@@ -104,7 +106,11 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
 			included, err := ReadIncludedInvocations(ctx, txn, id)
+			sem.Release(1)
 			if err != nil {
 				return err
 			}
