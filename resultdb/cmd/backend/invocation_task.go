@@ -86,7 +86,15 @@ func dispatchInvocationTasks(ctx context.Context, taskKeys []span.TaskKey) error
 					return nil
 				}
 
-				if err := exportResultsToBigQuery(ctx, taskKey.InvocationID, task.BigqueryExport); err != nil {
+				switch task.Type.(type) {
+				case *internalpb.InvocationTask_BigqueryExport:
+					err = exportResultsToBigQuery(ctx, taskKey.InvocationID, task.GetBigqueryExport())
+				case *internalpb.InvocationTask_TryFinalizeInvocation:
+					err = tryFinalizeInvocation(ctx, taskKey.InvocationID)
+				default:
+					return errors.Reason("unexpected type of invocatoin task; %q", task).Err()
+				}
+				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
 						logging.Errorf(ctx, "permanent failure to process task %s/%s: %s", taskKey.InvocationID, taskKey.TaskID, err)
 						return deleteInvocationTask(ctx, taskKey)
