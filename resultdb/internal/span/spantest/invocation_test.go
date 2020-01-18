@@ -196,5 +196,10 @@ func TestQueryInvocations(t *testing.T) {
 			_, err := span.ReadInvocationsFull(ctx, txn, span.NewInvocationIDSet("inv0", "x"))
 			So(err, ShouldErrLike, `invocations/x not found`)
 		})
+
+		Convey(`ReadInvocationFullWithUpdateToken Not found`, func() {
+			_, _, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, span.InvocationID("x"))
+			So(err, ShouldErrLike, `invocations/x not found`)
+		})
 	})
 }

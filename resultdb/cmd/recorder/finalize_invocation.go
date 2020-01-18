@@ -63,19 +63,11 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		retErr = nil
 		now := clock.Now(ctx)
 
-		var updateToken spanner.NullString
-		err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
-			"UpdateToken":  &updateToken,
-			"State":        &ret.State,
-			"Interrupted":  &ret.Interrupted,
-			"CreateTime":   &ret.CreateTime,
-			"FinalizeTime": &ret.FinalizeTime,
-			"Deadline":     &ret.Deadline,
-			"Tags":         &ret.Tags,
-		})
+		inv, updateToken, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, invID)
 		if err != nil {
 			return err
 		}
+		ret = inv
 
 		finalizeTime := now
 		deadline := pbutil.MustTimestamp(ret.Deadline)
