@@ -100,7 +100,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return err
 		}
 
-		return finalizeInvocation(ctx, txn, invID, in.Interrupted, finalizeTime)
+		return finalizeInvocation(txn, invID, in.Interrupted, finalizeTime, ret.BigqueryExports)
 	})
 
 	if err != nil {
