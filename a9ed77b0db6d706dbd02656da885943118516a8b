@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b3797c5_b6577d67",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-18T18:01:52Z",
+      "side": 1,
+      "message": "this line is a bit long. can we break it a bit?",
+      "revId": "a9ed77b0db6d706dbd02656da885943118516a8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7058b3bd_7399da53",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-18T18:01:52Z",
+      "side": 1,
+      "message": "not sure what are we testing here. We don\u0027t mutate this column",
+      "revId": "a9ed77b0db6d706dbd02656da885943118516a8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fabfeb5c_c3ede5d3",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-18T18:01:52Z",
+      "side": 1,
+      "message": "nit: this is just one condition now. the list (*) makes less sense now",
+      "range": {
+        "startLine": 213,
+        "startChar": 44,
+        "endLine": 213,
+        "endChar": 54
+      },
+      "revId": "a9ed77b0db6d706dbd02656da885943118516a8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
