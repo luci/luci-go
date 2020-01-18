@@ -197,17 +197,16 @@ CREATE TABLE TestExonerations (
 -- Stores tasks to perform on invocations.
 -- E.g. to export an invocation to a BigQuery table.
 CREATE TABLE InvocationTasks (
-  -- ID of the parent Invocations row.
-  InvocationId STRING(MAX) NOT NULL,
-
   -- Id of the task in the format of "<task_type>:<suffix>".
-  -- Should be unique per invocation.
   TaskId STRING(MAX) NOT NULL,
+
+  -- Invocation to process.
+  InvocationId STRING(MAX) NOT NULL,
 
   -- Binary-encoded luci.resultdb.internal.InvocationTask.
   Payload BYTES(MAX) NOT NULL,
 
-  -- When to process the invocation.
+  -- When to process the task.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
   -- or a future time indicating the invocation is not available to process yet.
   -- ProcessAfter can be reset in following conditions:
@@ -220,4 +219,4 @@ CREATE TABLE InvocationTasks (
   -- If true, set ProcessAfter to NOW when finalizing the invocation,
   -- otherwise don't set it.
   ResetOnFinalize BOOL,
-) PRIMARY KEY (InvocationId, TaskId);
+) PRIMARY KEY (TaskId);

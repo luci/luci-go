@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -113,18 +114,12 @@ func TestFinalizeInvocation(t *testing.T) {
 			nowTimestamp := pbutil.MustTimestampProto(now)
 			origProcessAfter := now.Add(2 * day)
 
-			invID := span.InvocationID("inv")
-			invTask := &internalpb.InvocationTask{
-				BigqueryExport: &pb.BigQueryExport{}}
-
 			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
-				key := span.TaskKey{
-					InvocationID: invID,
-					TaskID:       taskID(taskTypeBqExport, 0),
-				}
+				taskID := bqTaskID("inv", 0)
+				task := &internalpb.InvocationTask{BigqueryExport: &pb.BigQueryExport{}}
 				MustApply(ctx,
-					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-					span.InsertInvocationTask(key, invTask, origProcessAfter, resetOnFinalize),
+					InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+					span.InsertInvocationTask(taskID, "inv", task, origProcessAfter, resetOnFinalize),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
@@ -141,7 +136,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 				// Read InvocationTask to confirm it's reset.
 				var processAfter *tspb.Timestamp
-				MustReadRow(ctx, "InvocationTasks", key.Key(), map[string]interface{}{
+				MustReadRow(ctx, "InvocationTasks", spanner.Key{taskID}, map[string]interface{}{
 					"ProcessAfter": &processAfter,
 				})
 				So(processAfter, ShouldResemble, expected)
