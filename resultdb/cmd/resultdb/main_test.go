@@ -15,6 +15,9 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"net/url"
 	"testing"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -22,4 +25,16 @@ import (
 
 func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
+}
+
+func newTestResultDBService() *resultDBServer {
+	return &resultDBServer{
+		generateIsolateURL: func(ctx context.Context, host, ns, digest string) (*url.URL, error) {
+			return &url.URL{
+				Scheme: "http",
+				Host:   "results.usercontent.example.com",
+				Path:   fmt.Sprintf("/isolate/%s/%s/%s", host, ns, digest),
+			}, nil
+		},
+	}
 }
