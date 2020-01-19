@@ -17,12 +17,14 @@ package main
 import (
 	"context"
 
+
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -106,8 +108,27 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
+	if err := s.rewriteArtifactLinks(ctx, trs); err != nil {
+		return nil, err
+	}
+
 	return &pb.QueryTestResultsResponse{
 		NextPageToken: token,
 		TestResults:   trs,
 	}, nil
+}
+
+func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, trs []*pb.TestResult) error {
+	for _, tr := range trs {
+		for _, a := range tr.OutputArtifacts {
+			if host, ns, digest, err := util.ParseIsolateURL(a.FetchUrl); err == nil {
+				u, err := s.generateIsolateURL(ctx, host, ns, digest)
+				if err != nil {
+					return err
+				}
+				a.FetchUrl = u.String()
+			}
+		}
+	}
+	return nil
 }

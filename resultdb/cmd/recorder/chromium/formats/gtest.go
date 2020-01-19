@@ -144,7 +144,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 
 	var ret []*pb.TestResult
 	var testNames []string
-	summaryBuilder := &strings.Builder{}
+	buf := &strings.Builder{}
 	for _, data := range r.PerIterationData {
 		// Sort the test name to make the output deterministic.
 		testNames = testNames[:0]
@@ -164,7 +164,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 
 			for i, result := range data[name] {
 				// Store the processed test result into the correct part of the overall map.
-				rpb, err := r.convertTestResult(ctx, testID, name, result, summaryBuilder)
+				rpb, err := r.convertTestResult(ctx, testID, name, result, buf)
 				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
