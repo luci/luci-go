@@ -17,6 +17,7 @@ package formats
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -130,52 +131,48 @@ func TestGTestConversions(t *testing.T) {
 	})
 
 	Convey("convertTestResult", t, func() {
-		Convey("EXCESSIVE_OUTPUT", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
-				Status: "EXCESSIVE_OUTPUT",
-			})
+		convert := func(result *GTestRunResult) *pb.TestResult {
+			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", result, &strings.Builder{})
 			So(err, ShouldBeNil)
+			return tr
+		}
+		Convey("EXCESSIVE_OUTPUT", func() {
+			tr := convert(&GTestRunResult{Status: "EXCESSIVE_OUTPUT"})
 			So(tr.Status, ShouldEqual, pb.TestStatus_FAIL)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "EXCESSIVE_OUTPUT")), ShouldBeTrue)
 		})
 
 		Convey("NOTRUN", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
-				Status: "NOTRUN",
-			})
-			So(err, ShouldBeNil)
+			tr := convert(&GTestRunResult{Status: "NOTRUN"})
 			So(tr.Status, ShouldEqual, pb.TestStatus_SKIP)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_status", "NOTRUN")), ShouldBeTrue)
 		})
 
 		Convey("Duration", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
+			tr := convert(&GTestRunResult{
 				Status:        "SUCCESS",
 				ElapsedTimeMs: 1e6,
 			})
-			So(err, ShouldBeNil)
 			So(tr.Duration.GetSeconds(), ShouldEqual, 1)
 			So(tr.Duration.GetNanos(), ShouldEqual, 0)
 		})
 
 		Convey("snippet", func() {
 			Convey("valid", func() {
-				tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
+				tr := convert(&GTestRunResult{
 					Status:              "SUCCESS",
 					LosslessSnippet:     true,
 					OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFyCigxMCBtcyk=",
 				})
-				So(err, ShouldBeNil)
-				So(tr.SummaryHtml, ShouldEqual, "[ RUN      ] FooTest.TestDoBar\n(10 ms)")
+				So(tr.SummaryHtml, ShouldEqual, "<div><pre>[ RUN      ] FooTest.TestDoBar\n(10 ms)</pre></div>")
 			})
 
 			Convey("invalid does not cause a fatal error", func() {
-				tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
+				tr := convert(&GTestRunResult{
 					Status:              "SUCCESS",
 					LosslessSnippet:     true,
 					OutputSnippetBase64: "invalid base64",
 				})
-				So(err, ShouldBeNil)
 				So(tr.SummaryHtml, ShouldEqual, "")
 			})
 		})
@@ -189,16 +186,14 @@ func TestGTestConversions(t *testing.T) {
 					},
 				},
 			}
-			tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
-				Status: "SUCCESS",
-			})
+			tr, err := results.convertTestResult(ctx, "testId", "TestName", &GTestRunResult{Status: "SUCCESS"}, &strings.Builder{})
 			So(err, ShouldBeNil)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_file", "TestFile")), ShouldBeTrue)
 			So(pbutil.StringPairsContain(tr.Tags, pbutil.StringPair("gtest_line", "54")), ShouldBeTrue)
 		})
 
 		Convey("links", func() {
-			tr, err := (&GTestResults{}).convertTestResult(ctx, "testId", "TestName", &GTestRunResult{
+			tr := convert(&GTestRunResult{
 				Status:              "SUCCESS",
 				LosslessSnippet:     true,
 				OutputSnippetBase64: "invalid base64",
@@ -207,10 +202,7 @@ func TestGTestConversions(t *testing.T) {
 				},
 			})
 			pbutil.NormalizeTestResult(tr)
-			So(err, ShouldBeNil)
-			So(tr.OutputArtifacts, ShouldResemble, []*pb.Artifact{
-				{Name: "logcat", ViewUrl: "https://luci-logdog.appspot.com/v/?s=logcat"},
-			})
+			So(tr.SummaryHtml, ShouldContainSubstring, `<a href="https://luci-logdog.appspot.com/v/?s=logcat">logcat</a>`)
 		})
 	})
 

@@ -15,6 +15,7 @@
 package formats
 
 import (
+	"html/template"
 	"math"
 
 	"github.com/golang/protobuf/ptypes/duration"
@@ -32,6 +33,31 @@ const (
 	// FormatGTest is Chromium's GTest format.
 	FormatGTest = "chromium_gtest"
 )
+
+// summaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
+// results.
+var summaryTmpl = template.Must(template.New("JTR summary").Parse(`
+{{ define "links" -}}
+{{- if . -}}
+<ul>
+{{- range $name, $url := . -}}
+  <li><a href="{{ $url }}">{{ $name }}</a></li>
+{{- end -}}
+</ul>
+{{- end -}}
+{{- end -}}
+
+{{ define "gtest" -}}
+{{- template "links" .links -}}
+{{- if .snippet -}}
+<div><pre>{{.snippet}}</pre></div>
+{{- end -}}
+{{- end}}
+
+{{ define "jtr" -}}
+{{- template "links" .links -}}
+{{- end}}
+`))
 
 // secondsToTimestamp converts a UTC float64 timestamp to a ptypes Timestamp.
 func secondsToTimestamp(t float64) *timestamp.Timestamp {
