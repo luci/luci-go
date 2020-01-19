@@ -22,6 +22,30 @@
       "revId": "fd11ae65a39f5f859aeeeaa84756fabcaf653505",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d313644_9a88a738",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:30:23Z",
+      "side": 1,
+      "message": "this is crbug.com/1042602",
+      "parentUuid": "a830716f_fb4a0407",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 135
+      },
+      "revId": "fd11ae65a39f5f859aeeeaa84756fabcaf653505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
