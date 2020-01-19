@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -67,6 +68,11 @@ type ServerConfig struct {
 	// MaxConnLifetime is the maximum lifetime of a connection. If 0,
 	// the default max-lifetime value will be used, instead.
 	MaxConnLifetime time.Duration
+
+	// ChannelOptions specify the dispatcher options of the channel used, where
+	// the workloads for uploading TestResult(s) are queued. If nil, the default
+	// options are used.
+	ChannelOptions *dispatcher.Options
 }
 
 // Server contains state relevant to the server itself.
@@ -74,10 +80,11 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg    ServerConfig
-	cancel context.CancelFunc
-	errC   chan error
-	ln     net.Listener
+	cfg          ServerConfig
+	cancel       context.CancelFunc
+	errC         chan error
+	ln           net.Listener
+	uploadChanel dispatcher.Channel
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -326,8 +333,7 @@ func processUploadTestResult(ctx context.Context, msg *sinkpb.TestResult) error 
 	if err := validateUploadTestResult(msg); err != nil {
 		return errors.Annotate(err, "failed to validate the TestResult message").Err()
 	}
-
-	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	uploadChannel.C <- msg
 	return nil
 }
 
@@ -337,7 +343,6 @@ func processUploadTestResultFile(ctx context.Context, msg *sinkpb.TestResultFile
 	if err := validateUploadTestResultFile(msg); err != nil {
 		return errors.Annotate(err, "failed to validate the TestResultFile message").Err()
 	}
-
-	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	uploadChannel.C <- msg
 	return nil
 }
