@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de9f97ec_43f86296",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:16:15Z",
+      "side": 1,
+      "message": "could you elaborate what problem you are trying to solve?\n\nnote that it is generally difficult to predict for how long a given test suite/binary will run. A user does set some timeouts, but it is usually done at higher levels, e.g. at the swarming task level, which means our binary would be sigkilled",
+      "revId": "2d2f4dcb4e1a3a0f76d73e2896890bcecd48df63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
