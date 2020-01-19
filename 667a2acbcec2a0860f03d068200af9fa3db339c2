@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3476988e_54f59453",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-19T12:42:22Z",
+      "side": 1,
+      "message": "I\u0027m not sure if those are reasonable regex checks. Should it just check if the input values are empty or made of whitespace characters only?",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 32
+      },
+      "revId": "667a2acbcec2a0860f03d068200af9fa3db339c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3208c48_7a9acb0f",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-19T12:42:22Z",
+      "side": 1,
+      "message": "Is a TestResult valid if it has empty html_summary and no artifacts?",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 29
+      },
+      "revId": "667a2acbcec2a0860f03d068200af9fa3db339c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
