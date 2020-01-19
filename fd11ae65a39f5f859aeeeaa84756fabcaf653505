@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a830716f_fb4a0407",
+        "filename": "resultdb/cmd/recorder/finalize_invocation_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-19T13:10:16Z",
+      "side": 1,
+      "message": "JFYI, this failed in a presubmit with \"go test -race\" \n\n- https://ci.chromium.org/p/infra/builders/try/luci-go-try-xenial-64/b8890833011935674128\n- https://logs.chromium.org/logs/infra/buildbucket/cr-buildbucket.appspot.com/8890833011935674128/+/steps/go_test_-race/0/stdout\n\nI tried to reproduce the error locally, but couldn\u0027t.",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 135
+      },
+      "revId": "fd11ae65a39f5f859aeeeaa84756fabcaf653505",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
