@@ -25,6 +25,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+// the error string of ENOENT
+const enoent = "no such file or directory"
+
 func createFile(s string) string {
 	f, err := ioutil.TempFile("", "test_foo")
 	So(err, ShouldBeNil)
@@ -123,14 +126,14 @@ func TestValidate(t *testing.T) {
 			Convey("Fails", func() {
 				Convey("With an empty file path", func() {
 					msg := &sinkpb.TestResultFile{}
-					So(validateUploadTestResultFile(msg), ShouldNotBeNil)
+					So(validateUploadTestResultFile(msg), ShouldErrLike, enoent)
 				})
 				Convey("With an non-existing file path", func() {
 					p := "this doesn nnnnnot exisssst"
 					_, err := os.Stat(p)
-					So(err, ShouldNotBeNil)
+					So(err, ShouldErrLike, enoent)
 					msg := &sinkpb.TestResultFile{Path: p}
-					So(validateUploadTestResultFile(msg), ShouldNotBeNil)
+					So(validateUploadTestResultFile(msg), ShouldErrLike, enoent)
 				})
 			})
 		})
@@ -160,9 +163,9 @@ func TestValidate(t *testing.T) {
 				Convey("With a non-existing file", func() {
 					p := "this doooesn nnnnnot exisssssst"
 					_, err := os.Stat(p)
-					So(err, ShouldNotBeNil)
+					So(err, ShouldErrLike, enoent)
 					msg := createArtifactWithFP(p, "text/plain")
-					So(validateArtifact("name", msg), ShouldNotBeNil)
+					So(validateArtifact("name", msg), ShouldErrLike, enoent)
 				})
 			})
 		})
@@ -183,8 +186,8 @@ func TestValidate(t *testing.T) {
 				Convey("With a non-existing file", func() {
 					p := "this fie doesnt existttt"
 					_, err := os.Stat(p)
-					So(err, ShouldNotBeNil)
-					So(checkFileAccess(p), ShouldNotBeNil)
+					So(err, ShouldErrLike, enoent)
+					So(checkFileAccess(p), ShouldErrLike, enoent)
 				})
 				Convey("With an existing directory", func() {
 					p, err := ioutil.TempDir("", "test_foo")
