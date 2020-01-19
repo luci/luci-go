@@ -1,0 +1,227 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab24fa80_36bf3f0f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "nit: please use a type-switch on msg.Msg instead of a series of if statements",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9729296f_44315144",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "Warningf",
+      "range": {
+        "startLine": 274,
+        "startChar": 11,
+        "endLine": 274,
+        "endChar": 16
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e95f012_9a4ee26a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "logging an auth token is an anti-pattern. let\u0027s not do that.",
+      "range": {
+        "startLine": 274,
+        "startChar": 62,
+        "endLine": 274,
+        "endChar": 74
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "154d3527_88ffafe4",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "the regexp must be documented in rpc/v1/test_result.proto: Artifact.name",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b862651_e256d5b3",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "we need to define a max len",
+      "range": {
+        "startLine": 30,
+        "startChar": 57,
+        "endLine": 30,
+        "endChar": 58
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39bf5425_09b37253",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/test_result.go;l\u003d35?q\u003dpbutil%2Ftest_result.go",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cb9a0f8_1775ad06",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "let\u0027s not compile it each time",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da8f1b04_1fb80a5a",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/test_result.go;l\u003d38?q\u003dpbutil%2Ftest_result.go",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 2
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d34cd29_5fab15e0",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "let\u0027s return an error as soon as we encounter one. this is would be more consistent with pbutil",
+      "range": {
+        "startLine": 55,
+        "startChar": 10,
+        "endLine": 55,
+        "endChar": 16
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "327acab1_33cf324e",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "we keep validation of protos in pbutil package. please move it there.\n\nre validateStr: there is a lot regexp-based validation in pbutil package, see doesNotMatch(). Perhaps we could reuse some code",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b8de500_4329a428",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-19T20:29:45Z",
+      "side": 1,
+      "message": "this check is racy. even if it passes, there is still no guarantee that the fill still be there when we actually try to read the data.\n\nstepping back, normally when we do validation (in this code base), we validate only the data that it passed explicitly. What we get explicitly is a file path, not the file, its mode or contents (these may change), so let\u0027s no validate it here",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
