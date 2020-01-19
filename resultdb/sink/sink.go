@@ -265,7 +265,20 @@ func processMessages(ctx context.Context, dc *json.Decoder) error {
 			return err
 		}
 
-		// TODO(sajjadm): msgp is valid, do something with it
+		var err error
+		if tr := msg.GetTestResult(); tr != nil {
+			err = processUploadTestResult(ctx, tr)
+		} else if trf := msg.GetTestResultFile(); trf != nil {
+			err = processUploadTestResultFile(ctx, trf)
+		} else if hs := msg.GetHandshake(); hs != nil {
+			logging.Infof(ctx, "Unnecessary Handshake; auth_token=%q", hs.AuthToken)
+		} else {
+			err = errors.Reason("Unknown SinkMessageContainer").Err()
+		}
+
+		if err != nil {
+			return err
+		}
 	}
 }
 
@@ -305,4 +318,26 @@ func processHandshake(ctx context.Context, dc *json.Decoder, authToken string) e
 func shouldKeepTrying(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Temporary() || e.Timeout())
+}
+
+// uploadTestResult schedules an upload of the test result.
+func processUploadTestResult(ctx context.Context, msg *sinkpb.TestResult) error {
+	// run basic checks for the request before putting it to the channel.
+	if err := validateUploadTestResult(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResult message").Err()
+	}
+
+	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	return nil
+}
+
+// uploadTestResultFile schedules an upload of the test result stored in the file.
+func processUploadTestResultFile(ctx context.Context, msg *sinkpb.TestResultFile) error {
+	// run basic checks for the request before putting it to the channel.
+	if err := validateUploadTestResultFile(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResultFile message").Err()
+	}
+
+	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	return nil
 }
