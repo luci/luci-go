@@ -102,7 +102,7 @@ func TestTypeConversion(t *testing.T) {
 				{
 					Name:        "traces/a.txt",
 					FetchUrl:    "gs://a.txt",
-					ContentType: "plain/text",
+					ContentType: "text/plain",
 					Size:        4,
 					Contents:    []byte("1234"),
 				},

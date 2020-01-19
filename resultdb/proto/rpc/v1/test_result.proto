@@ -165,7 +165,7 @@ message Artifact {
   string view_url = 3 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Media type of the artifact.
-  // Logs are typically "plain/text" and screenshots are typically "image/png".
+  // Logs are typically "text/plain" and screenshots are typically "image/png".
   string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Size of the file, in bytes.

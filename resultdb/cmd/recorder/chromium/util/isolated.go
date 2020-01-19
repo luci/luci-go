@@ -54,7 +54,7 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 
 	switch path.Ext(relPath) {
 	case ".txt":
-		a.ContentType = "plain/text"
+		a.ContentType = "text/plain"
 	case ".png":
 		a.ContentType = "image/png"
 	}

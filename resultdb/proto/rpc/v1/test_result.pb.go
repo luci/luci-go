@@ -278,7 +278,7 @@ type Artifact struct {
 	// Typically a URL of a page where the user can view/download the arficact.
 	ViewUrl string `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
 	// Media type of the artifact.
-	// Logs are typically "plain/text" and screenshots are typically "image/png".
+	// Logs are typically "text/plain" and screenshots are typically "image/png".
 	ContentType string `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	// Size of the file, in bytes.
 	// Can be used in UI to decide whether to fetch an artifact and display it
