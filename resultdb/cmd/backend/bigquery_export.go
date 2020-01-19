@@ -160,6 +160,8 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bq.R
 func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bq.Row) error {
 	rows := make([]*bq.Row, 0, maxBatchSize)
 	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
+		trimTestResultForBigQuery(tr)
+
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
 		rows = append(rows, generateBQRow(inv, tr, exonerated))
 		if len(rows) >= maxBatchSize {
@@ -272,4 +274,15 @@ func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, bqExp
 
 	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
 	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchSize)
+}
+
+// trimTestResultForBigQuery trims fields that should not go to BigQuery.
+func trimTestResultForBigQuery(tr *pb.TestResult) {
+	trimArts := func(arts []*pb.Artifact) {
+		for _, a := range arts {
+			a.FetchUrl = ""
+		}
+	}
+	trimArts(tr.InputArtifacts)
+	trimArts(tr.OutputArtifacts)
 }
