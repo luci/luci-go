@@ -16,6 +16,24 @@
       "revId": "2d2f4dcb4e1a3a0f76d73e2896890bcecd48df63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fae2bd76_cc027cec",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T00:59:26Z",
+      "side": 1,
+      "message": "\u003e\u003e it is usually done at higher levels, e.g. at the swarming task level, which means our binary would be sigkilled\n\nI see. Then, does a Swarming Task execute this binary when it starts?",
+      "parentUuid": "de9f97ec_43f86296",
+      "revId": "2d2f4dcb4e1a3a0f76d73e2896890bcecd48df63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
