@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c2aa23f1_30669f26",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-20T07:42:18Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "e5ae61f0_525aea75",
+      "revId": "47cf22558c9de3841c38b99d71d816d0552d859d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a4d8990a_cc3953f1",
         "filename": "/COMMIT_MSG",
         "patchSetId": 5
@@ -30,6 +48,24 @@
       "writtenOn": "2020-01-20T07:36:49Z",
       "side": 1,
       "message": "nit: create another CL for this?",
+      "revId": "47cf22558c9de3841c38b99d71d816d0552d859d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c7de07b_582a8e85",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-20T07:42:18Z",
+      "side": 1,
+      "message": "crrev.com/c/2009534",
+      "parentUuid": "a4d8990a_cc3953f1",
       "revId": "47cf22558c9de3841c38b99d71d816d0552d859d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
