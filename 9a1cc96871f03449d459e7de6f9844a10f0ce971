@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "663ad5a7_c619ddb7",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "That\u0027s cool. I didn\u0027t know that golang supports a type-switch.",
+      "parentUuid": "ab24fa80_36bf3f0f",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9729296f_44315144",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 20
@@ -65,6 +83,54 @@
     },
     {
       "key": {
+        "uuid": "5f4b0ca3_f12721c7",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e95f012_9a4ee26a",
+      "range": {
+        "startLine": 274,
+        "startChar": 62,
+        "endLine": 274,
+        "endChar": 74
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92e297ff_51483307",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9729296f_44315144",
+      "range": {
+        "startLine": 274,
+        "startChar": 11,
+        "endLine": 274,
+        "endChar": 16
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "154d3527_88ffafe4",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -105,6 +171,48 @@
     },
     {
       "key": {
+        "uuid": "8e02035f_d8a49635",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done in the parent CL.",
+      "parentUuid": "154d3527_88ffafe4",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bbedde9e_92fe9890",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done in the parent CL.",
+      "parentUuid": "1b862651_e256d5b3",
+      "range": {
+        "startLine": 30,
+        "startChar": 57,
+        "endLine": 30,
+        "endChar": 58
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39bf5425_09b37253",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "1674aea1_d4d5ae37",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39bf5425_09b37253",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8cb9a0f8_1775ad06",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -142,6 +274,24 @@
       "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9380efa6_1ff223c7",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cb9a0f8_1775ad06",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -168,6 +318,30 @@
     },
     {
       "key": {
+        "uuid": "5df13211_95cd2cc3",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da8f1b04_1fb80a5a",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 2
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d34cd29_5fab15e0",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "dfbfa933_22b66809",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d34cd29_5fab15e0",
+      "range": {
+        "startLine": 55,
+        "startChar": 10,
+        "endLine": 55,
+        "endChar": 16
+      },
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "327acab1_33cf324e",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -208,6 +406,24 @@
     },
     {
       "key": {
+        "uuid": "33656160_8364f6dd",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Done in the parent CL.",
+      "parentUuid": "327acab1_33cf324e",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b8de500_4329a428",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 20
@@ -222,6 +438,24 @@
       "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "392ac672_4743274f",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Yes you are right that there is no guarantee that the file will remain with the same status, when this app actually reads the file. However, the intent of this validation was to drop  obviously bad requests before putting the workload into the upload channel.\n\n\u003e\u003e let\u0027s no validate it here\nI interpreted it as \"let\u0027s do validate it here\". Please correct me, if not.",
+      "parentUuid": "5b8de500_4329a428",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

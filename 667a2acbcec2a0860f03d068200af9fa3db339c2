@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7ad8c932_b6cc7e7f",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Answered in other comments",
+      "parentUuid": "3476988e_54f59453",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 32
+      },
+      "revId": "667a2acbcec2a0860f03d068200af9fa3db339c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3208c48_7a9acb0f",
         "filename": "resultdb/sink/validate.go",
         "patchSetId": 12
@@ -45,6 +69,30 @@
       "revId": "667a2acbcec2a0860f03d068200af9fa3db339c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c318a79_18820cbd",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-20T05:21:24Z",
+      "side": 1,
+      "message": "Marking as done",
+      "parentUuid": "f3208c48_7a9acb0f",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 29
+      },
+      "revId": "667a2acbcec2a0860f03d068200af9fa3db339c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
