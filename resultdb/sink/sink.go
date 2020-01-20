@@ -238,15 +238,25 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
 	return nil
 }
 
-func processMessages(ctx context.Context, dc *json.Decoder) error {
-	for {
+func processMessages(ctx context.Context, dc *json.Decoder) (err error) {
+	for err == nil {
 		msg := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(ctx, dc, msg); err != nil {
-			return err
+		if err = readMessage(ctx, dc, msg); err != nil {
+			continue
 		}
 
-		// TODO(sajjadm): msgp is valid, do something with it
+		switch mt := msg.Msg.(type) {
+		case *sinkpb.SinkMessageContainer_TestResult:
+			err = processUploadTestResult(ctx, msg.GetTestResult())
+		case *sinkpb.SinkMessageContainer_TestResultFile:
+			err = processUploadTestResultFile(ctx, msg.GetTestResultFile())
+		case *sinkpb.SinkMessageContainer_Handshake:
+			logging.Warningf(ctx, "Unnecessary Handshake")
+		default:
+			err = errors.Reason("Unknown SinkMessageContainer message - %q", mt).Err()
+		}
 	}
+	return
 }
 
 func readMessage(ctx context.Context, dc *json.Decoder, dest proto.Message) error {
@@ -280,4 +290,26 @@ func processHandshake(ctx context.Context, dc *json.Decoder, authToken string) e
 func shouldKeepTrying(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Temporary() || e.Timeout())
+}
+
+// uploadTestResult schedules an upload of the test result.
+func processUploadTestResult(ctx context.Context, msg *sinkpb.TestResult) error {
+	// run basic checks for the request before putting it to the channel.
+	if err := validateUploadTestResult(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResult message").Err()
+	}
+
+	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	return nil
+}
+
+// uploadTestResultFile schedules an upload of the test result stored in the file.
+func processUploadTestResultFile(ctx context.Context, msg *sinkpb.TestResultFile) error {
+	// run basic checks for the request before putting it to the channel.
+	if err := validateUploadTestResultFile(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResultFile message").Err()
+	}
+
+	// TODO(crbug/1017288) - put the message into the dispatcher channel.
+	return nil
 }
