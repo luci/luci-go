@@ -191,7 +191,6 @@ func (l *lruDict) touch(key isolated.HexDigest) {
 
 type serializedLRUDict struct {
 	Version int     // 1.
-	Algo    string  // "sha-1".
 	Items   []entry // ordered key -> value mapping in order.
 }
 
@@ -200,7 +199,6 @@ const currentVersion = 1
 func (l *lruDict) MarshalJSON() ([]byte, error) {
 	s := &serializedLRUDict{
 		Version: currentVersion,
-		Algo:    "sha-1",
 		Items:   l.items.serialized(),
 	}
 	// Not strictly true but #closeneough.
@@ -219,9 +217,6 @@ func (l *lruDict) UnmarshalJSON(data []byte) error {
 
 	if s.Version != currentVersion {
 		return fmt.Errorf("invalid lru dict version %d instead of current version %d", s.Version, currentVersion)
-	}
-	if s.Algo != "sha-1" {
-		return fmt.Errorf("invalid lru dict algo: %s", s.Algo)
 	}
 	l.sum = 0
 	for _, e := range s.Items {
