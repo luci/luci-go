@@ -19,6 +19,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
@@ -26,13 +27,14 @@ import (
 
 // entry is an entry in the orderedDict.
 type entry struct {
-	key   isolated.HexDigest
-	value units.Size
+	key        isolated.HexDigest
+	value      units.Size
+	lastAccess int64 // UTC time
 }
 
 func (e *entry) MarshalJSON() ([]byte, error) {
 	// encode as a tuple.
-	return json.Marshal([]interface{}{e.key, e.value})
+	return json.Marshal([]interface{}{e.key, []interface{}{e.value, e.lastAccess}})
 }
 
 func (e *entry) UnmarshalJSON(data []byte) error {
@@ -46,10 +48,25 @@ func (e *entry) UnmarshalJSON(data []byte) error {
 	}
 	if key, ok := elems[0].(string); ok {
 		e.key = isolated.HexDigest(key)
-		if value, ok := elems[1].(float64); ok {
+		values, ok := elems[1].([]interface{})
+		if !ok {
+			return fmt.Errorf("invalid entry: expected array for second element: %s", string(data))
+		}
+
+		if len(values) != 2 {
+			return fmt.Errorf("invalid entry: expected 2 items: %v", values)
+		}
+
+		if value, ok := values[0].(float64); ok {
 			e.value = units.Size(value)
 		} else {
-			return fmt.Errorf("invalid entry: expected value to be number: %s", string(data))
+			return fmt.Errorf("invalid entry: expected value to be number: %#v", values[0])
+		}
+
+		if value, ok := values[1].(float64); ok {
+			e.lastAccess = int64(value)
+		} else {
+			return fmt.Errorf("invalid entry: expected value to be number: %#v", values[1])
 		}
 	} else {
 		return fmt.Errorf("invalid entry: expected key to be string: %s", string(data))
@@ -109,18 +126,20 @@ func (o *orderedDict) pushFront(key isolated.HexDigest, value units.Size) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToFront(e)
 		e.Value.(*entry).value = value
+		e.Value.(*entry).lastAccess = time.Now().Unix()
 		return
 	}
-	o.entries[key] = o.ll.PushFront(&entry{key, value})
+	o.entries[key] = o.ll.PushFront(&entry{key, value, time.Now().Unix()})
 }
 
-func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size) {
+func (o *orderedDict) pushBack(key isolated.HexDigest, value units.Size, lastAccess int64) {
 	if e, ok := o.entries[key]; ok {
 		o.ll.MoveToBack(e)
 		e.Value.(*entry).value = value
+		e.Value.(*entry).lastAccess = lastAccess
 		return
 	}
-	o.entries[key] = o.ll.PushBack(&entry{key, value})
+	o.entries[key] = o.ll.PushBack(&entry{key, value, lastAccess})
 }
 
 // serialized returns all the items in order.
@@ -190,11 +209,11 @@ func (l *lruDict) touch(key isolated.HexDigest) {
 }
 
 type serializedLRUDict struct {
-	Version int     // 1.
-	Items   []entry // ordered key -> value mapping in order.
+	Version int     `json:"version"` // 1.
+	Items   []entry `json:"items"`   // ordered key -> value mapping in order.
 }
 
-const currentVersion = 1
+const currentVersion = 3
 
 func (l *lruDict) MarshalJSON() ([]byte, error) {
 	s := &serializedLRUDict{
@@ -223,7 +242,7 @@ func (l *lruDict) UnmarshalJSON(data []byte) error {
 		if !e.key.Validate(l.h) {
 			return fmt.Errorf("invalid entry: %s", e.key)
 		}
-		l.items.pushBack(e.key, e.value)
+		l.items.pushBack(e.key, e.value, e.lastAccess)
 		l.sum += e.value
 	}
 	l.dirty = false
