@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -452,7 +452,7 @@ func (c *GetBuildersCall) Header() http.Header {
 
 func (c *GetBuildersCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20191012")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.6 gdcl/20200108")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -578,7 +578,7 @@ func (c *GetTaskDefCall) Header() http.Header {
 
 func (c *GetTaskDefCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20191012")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.6 gdcl/20200108")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
@@ -704,7 +704,7 @@ func (c *SetNextBuildNumberCall) Header() http.Header {
 
 func (c *SetNextBuildNumberCall) doRequest(alt string) (*http.Response, error) {
 	reqHeaders := make(http.Header)
-	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.0 gdcl/20191012")
+	reqHeaders.Set("x-goog-api-client", "gl-go/1.13.6 gdcl/20200108")
 	for k, v := range c.header_ {
 		reqHeaders[k] = v
 	}
