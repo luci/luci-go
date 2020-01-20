@@ -193,9 +193,11 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS"
+                "MODIFIED_TS",
+                "STARTED_TS"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -752,9 +754,11 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS"
+                "MODIFIED_TS",
+                "STARTED_TS"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -865,9 +869,11 @@
                 "ABANDONED_TS",
                 "COMPLETED_TS",
                 "CREATED_TS",
-                "MODIFIED_TS"
+                "MODIFIED_TS",
+                "STARTED_TS"
               ],
               "enumDescriptions": [
+                "",
                 "",
                 "",
                 "",
@@ -1427,6 +1433,9 @@
           "type": "string"
         },
         "pubsub_userdata": {
+          "type": "string"
+        },
+        "request_uuid": {
           "type": "string"
         },
         "service_account": {
