@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bb15df8_8db690e4",
+        "filename": "resultdb/internal/isolate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T20:17:23Z",
+      "side": 1,
+      "message": "Consider either moving this to chromium/util/isolated.go (where a lot of other generic isolate stuff seems to be), or extract non-chromium specific isolate stuff from chromium/util/isolated.go into internal/isolate/* to have e.g. isolate.URL(...), isolate.ParseURL, isolate.FileToArtifact, ... (that\u0027s what I meant by \"move to internal/\", I didn\u0027t mean literally \u0027internal\u0027 package).",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "7c9fe67d4a52cbb4e4992cd344ddc73a38ebef1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
