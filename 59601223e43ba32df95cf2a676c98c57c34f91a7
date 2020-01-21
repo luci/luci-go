@@ -70,6 +70,30 @@
       "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d102cbe_8e0a7695",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:53:48Z",
+      "side": 1,
+      "message": "What you are saying essentially implies \"either we annotate an error with appstatus, or we panic\". I strongly disagree with this statement.\n\nnot annotating an error with appstatus meanas it will be returned as \"Internal server error\" and the error message would be logged. this is how errors are handled in this code base. \n\nwhy would we panic? at this level of abstraction (this line of code), this error is not necessarily impossible.",
+      "parentUuid": "e1656c78_0c23ec65",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 15
+      },
+      "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
