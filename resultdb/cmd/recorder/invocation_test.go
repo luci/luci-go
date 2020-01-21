@@ -174,7 +174,7 @@ func TestInsertBQExportingTasks(t *testing.T) {
 
 		test := func(index int, bqExport *pb.BigQueryExport) {
 			invTask := &internalpb.InvocationTask{
-				BigqueryExport: bqExport,
+				Task: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
 			}
 			invTaskRtn := &internalpb.InvocationTask{}
 			MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", index)}, map[string]interface{}{

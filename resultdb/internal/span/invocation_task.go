@@ -26,7 +26,7 @@ import (
 // InsertInvocationTask inserts one row to InvocationTasks.
 func InsertInvocationTask(taskID string, invID InvocationID, invTask *internalpb.InvocationTask, processAfter time.Time) *spanner.Mutation {
 	return InsertMap("InvocationTasks", map[string]interface{}{
-		"TaskId":       taskID,
+		"TaskID":       taskID,
 		"InvocationId": invID,
 		"Payload":      invTask,
 		"ProcessAfter": processAfter,

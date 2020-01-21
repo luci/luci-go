@@ -197,7 +197,7 @@ CREATE TABLE TestExonerations (
 -- Stores tasks to perform on invocations.
 -- E.g. to export an invocation to a BigQuery table.
 CREATE TABLE InvocationTasks (
-  -- Id of the task.
+  -- Id of the task in the format of "<task_type>:<suffix>".
   TaskId STRING(MAX) NOT NULL,
 
   -- ID of the invocation to process.

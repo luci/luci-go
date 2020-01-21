@@ -76,7 +76,7 @@ func TestTasks(t *testing.T) {
 			txn := span.Client(ctx).Single()
 			var taskID string
 			err = span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{"task"}, map[string]interface{}{
-				"TaskId": &taskID,
+				"TaskID": &taskID,
 			})
 			So(err, ShouldErrLike, "row not found")
 		})
