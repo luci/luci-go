@@ -26,23 +26,34 @@ import (
 )
 
 // artifactFormatVersion identifies the version of artifact encoding format we're using.
-const artifactFormatVersion = 1
+const (
+	artifactFormatVersion = 1
+	resultIDPattern       = `[[:ascii:]]{1,32}`
+)
 
-const resultIDPattern = `[[:ascii:]]{1,32}`
-
-var testResultNameRe = regexpf("^invocations/(%s)/tests/([^/]+)/results/(%s)$",
-	invocationIDPattern, resultIDPattern)
-var testIDRe = regexp.MustCompile(`^[[:print:]]{1,256}$`)
+var (
+	artifactNameRe   = regexp.MustCompile("^[[:word:]]([[:print:]]{0,254}[[:word:]])?$")
+	resultIDRe       = regexpf("^%s$", resultIDPattern)
+	testIDRe         = regexp.MustCompile(`^[[:print:]]{1,256}$`)
+	testResultNameRe = regexpf(
+		"^invocations/(%s)/tests/([^/]+)/results/(%s)$", invocationIDPattern,
+		resultIDPattern,
+	)
+)
 
 // ValidateTestID returns a non-nil error if testID is invalid.
 func ValidateTestID(testID string) error {
-	if testID == "" {
-		return unspecified()
-	}
-	if !testIDRe.MatchString(testID) {
-		return doesNotMatch(testIDRe)
-	}
-	return nil
+	return validateWithRe(testIDRe, testID)
+}
+
+// ValidateTestResultID returns a non-nil error if resultID is invalid.
+func ValidateResultID(resultID string) error {
+	return validateWithRe(resultIDRe, resultID)
+}
+
+// ValidateArtifactName returns a non-nil error if artifactName is invalid.
+func ValidateArtifactName(artifactName string) error {
+	return validateWithRe(artifactNameRe, artifactName)
 }
 
 // ValidateTestResultName returns a non-nil error if name is invalid.
@@ -70,9 +81,8 @@ func ParseTestResultName(name string) (invID, testID, resultID string, err error
 		return
 	}
 
-	if !testIDRe.MatchString(unescapedTestID) {
-		err = errors.Annotate(
-			doesNotMatch(testIDRe), "test id %q", unescapedTestID).Err()
+	if ve := validateWithRe(testIDRe, unescapedTestID); ve != nil {
+		err = errors.Annotate(ve, "test id %q", unescapedTestID).Err()
 		return
 	}
 	return m[1], unescapedTestID, m[3], nil

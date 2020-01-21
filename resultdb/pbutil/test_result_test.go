@@ -15,6 +15,7 @@
 package pbutil
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -57,6 +58,37 @@ func TestTestResultName(t *testing.T) {
 			So(TestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
 				ShouldEqual,
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+		})
+	})
+}
+
+func TestValidateArtifactName(t *testing.T) {
+	t.Parallel()
+	Convey("Successes with good names", t, func() {
+		gn := []string{
+			"n", "name", "foo bar", "Chrome - Test #1",
+			"ab12-3cda-9b8b-dd75", "1111-2222-3333-4444",
+		}
+		for _, n := range gn {
+			So(ValidateArtifactName(n), ShouldBeNil)
+		}
+	})
+
+	Convey("Fails", t, func() {
+		Convey("With an empty name", func() {
+			So(ValidateArtifactName(""), ShouldErrLike, "unspecified")
+		})
+
+		Convey("With bad names", func() {
+			bn := []string{" name", "name ", "name ##", "name ?", "name 1@"}
+			for _, n := range bn {
+				So(ValidateArtifactName(n), ShouldErrLike, "does not match")
+			}
+		})
+
+		Convey("With a too-long name", func() {
+			n := strings.Repeat("n", 256+1)
+			So(ValidateArtifactName(n), ShouldErrLike, "does not match")
 		})
 	})
 }

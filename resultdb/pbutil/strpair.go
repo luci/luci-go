@@ -74,8 +74,8 @@ func sortStringPairs(tags []*typepb.StringPair) {
 
 // ValidateStringPair returns an error if p is invalid.
 func ValidateStringPair(p *typepb.StringPair) error {
-	if !stringPairKeyRe.MatchString(p.Key) {
-		return errors.Annotate(doesNotMatch(stringPairKeyRe), "key").Err()
+	if err := validateWithRe(stringPairKeyRe, p.Key); err != nil {
+		return errors.Annotate(err, "key").Err()
 	}
 	if len(p.Key) > maxStringPairKeyLength {
 		return errors.Reason("key length must be less or equal to %d", maxStringPairKeyLength).Err()
