@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8a64249_de94c39d",
+        "filename": "resultdb/cmd/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "this change seems unrelated...",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 3
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24e73376_88710c88",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "this one too",
+      "range": {
+        "startLine": 326,
+        "startChar": 1,
+        "endLine": 334,
+        "endChar": 30
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7c207a9_848a73c7",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "IMHO this should be in the *.proto (marked as an internal implementation detail). Proto doc is not only for external users, but also for developers.",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 12
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5bcf0e6_28a12119",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "add \u0027s\u0027 here? Otherwise the error message may be too cryptic (considering it isn\u0027t wrapped later either)",
+      "range": {
+        "startLine": 80,
+        "startChar": 23,
+        "endLine": 80,
+        "endChar": 37
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "441f5f3b_c52a0f5a",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "nit: add a test for err !\u003d nil",
+      "range": {
+        "startLine": 31,
+        "startChar": 9,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f45e708_9a23d8b3",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "nit: this doesn\u0027t look nice. I\u0027d assume all packages under cmd/\u003csomething\u003e are used only for \u003csomething\u003e binary. Consider moving to internal/",
+      "range": {
+        "startLine": 28,
+        "startChar": 32,
+        "endLine": 28,
+        "endChar": 58
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d6e417b_03998eb6",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:17:11Z",
+      "side": 1,
+      "message": "Please move this to a constant shared between the module that generates signed URLs and this one, or make generateUsolateURL return the expiration time instead, or make it accept \u0027hourLater\u0027 or just time.Hour as an argument. \n\nOtherwise times in FetchUrlExpiration and in the link may desynchronize.",
+      "range": {
+        "startLine": 123,
+        "startChar": 59,
+        "endLine": 123,
+        "endChar": 68
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
