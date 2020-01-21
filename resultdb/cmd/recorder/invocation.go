@@ -59,9 +59,6 @@ const (
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
 
-// BigQuery export task type.
-const taskTypeBqExport = "bqExport"
-
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
 // If the invocation is active, continue with the other mutation(s) in f.
@@ -205,22 +202,18 @@ func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateTok
 }
 
 // insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
-func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
+func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(bqExports))
 	for i, bqExport := range bqExports {
-		invTask := &internalpb.InvocationTask{
+		taskID := bqTaskID(invID, i)
+		task := &internalpb.InvocationTask{
 			BigqueryExport: bqExport,
 		}
-
-		key := span.TaskKey{
-			InvocationID: id,
-			TaskID:       taskID(taskTypeBqExport, i),
-		}
-		muts[i] = span.InsertInvocationTask(key, invTask, processAfter)
+		muts[i] = span.InsertInvocationTask(taskID, invID, task, processAfter)
 	}
 	return muts
 }
 
-func taskID(taskType string, suffix interface{}) string {
-	return fmt.Sprintf("%s:%v", taskType, suffix)
+func bqTaskID(invID span.InvocationID, index int) string {
+	return fmt.Sprintf("bq_export:%s:%d", invID, index)
 }
