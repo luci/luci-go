@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ae96c2b4_c6f53977",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "this stops the loop\n\nlet\u0027s narrow lifetime of our state. there is no reason for err lifetime to span entire loop body. consider\n\n  var err error\n  switch... {\n  }\n  if err !\u003d nil {\n     ...\n  }",
+      "range": {
+        "startLine": 245,
+        "startChar": 3,
+        "endLine": 245,
+        "endChar": 11
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfb7bc22_856672fc",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "in golang, errors must start with a lower case letter\n\nsame in validate.go",
+      "range": {
+        "startLine": 256,
+        "startChar": 24,
+        "endLine": 256,
+        "endChar": 25
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e21daa2e_2ddc7530",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "processUploadTestResult",
+      "range": {
+        "startLine": 295,
+        "startChar": 3,
+        "endLine": 295,
+        "endChar": 19
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf3adf94_edf3911e",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "please make this code most consistent with other validation code in resultdb. example: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/recorder/create_invocation.go;l\u003d59?q\u003dvalidateCreateInvocationRequest\u0026ss\u003dchromium%2Finfra%2Finfra\n\nthe error messages are annotated with proto field names, so this should just say \"test_id\".\n\nif you are thinking of the case where a given string does not match a regexp, maybe should move %q into validateWithRe func?",
+      "range": {
+        "startLine": 30,
+        "startChar": 31,
+        "endLine": 30,
+        "endChar": 40
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aee9185d_37958868",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "result_id",
+      "range": {
+        "startLine": 33,
+        "startChar": 31,
+        "endLine": 33,
+        "endChar": 42
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06014a57_d35d9902",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "also pbutil.ValidateEnum(Status), pbutil.ValidateStringPairs(Tags), pbutil.ValidateVariant(Variant), validate start time and duration for sane values\n\nalso note that we will have to write the same validation logic for rpc/v1/TestResult proto, so the alternative is to convert sink/v1/TestResult proto rpc/v1/TestResult proto and then validate. then we will have the validation implemented only once.",
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "159cffd2_c31a1555",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "return",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d620e3c6_e1043899",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "nit: name",
+      "range": {
+        "startLine": 57,
+        "startChar": 22,
+        "endLine": 57,
+        "endChar": 23
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4debe85c_36f51a21",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "here the error message prefixed with something that entails and identifies an artifact, and below we do not. this is inconsistent. In L39, let\u0027s return errors.Annotate(err, \"input_artifact %q\", n).Err()\nthen here we can just just \"name\"",
+      "range": {
+        "startLine": 59,
+        "startChar": 31,
+        "endLine": 59,
+        "endChar": 47
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04e27639_8bc64e2a",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 21
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "from this err message, it is unclear which artifact we are talking about",
+      "range": {
+        "startLine": 63,
+        "startChar": 10,
+        "endLine": 63,
+        "endChar": 13
+      },
+      "revId": "bb48f62f1082da3bf681703099129c406ac9ec53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -456,6 +456,24 @@
       "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac148eca_9d7fa956",
+        "filename": "resultdb/sink/validate.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T17:00:27Z",
+      "side": 1,
+      "message": "i meant \"let\u0027s not validate it here\"\nbecause we will have to validate again anyway.\nin practice, the second validation will be very soon after this one. let\u0027s add complexity when it is necessary.",
+      "parentUuid": "392ac672_4743274f",
+      "revId": "9a1cc96871f03449d459e7de6f9844a10f0ce971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
