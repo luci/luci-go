@@ -60,11 +60,11 @@ func TestTypeConversion(t *testing.T) {
 	})
 
 	Convey(`*InvocationID`, t, func() {
-		test(InvocationID("a"), "ca978112ca1bbdca:a")
+		test(InvocationID("a"), "ca978112:a")
 	})
 
 	Convey(`*InvocationIDSet`, t, func() {
-		test(NewInvocationIDSet("a", "b"), []string{"3e23e8160039594a:b", "ca978112ca1bbdca:a"})
+		test(NewInvocationIDSet("a", "b"), []string{"3e23e816:b", "ca978112:a"})
 	})
 
 	Convey(`*timestamp.Timestamp`, t, func() {
