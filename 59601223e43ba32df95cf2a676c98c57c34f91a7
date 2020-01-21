@@ -46,6 +46,30 @@
       "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1656c78_0c23ec65",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T18:48:10Z",
+      "side": 1,
+      "message": "why not panic(...) then? Either error is \"impossible\" and it is fine to panic, or it is possible and may be returned to users and should be properly annotated.",
+      "parentUuid": "20633d72_e3d324e3",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 15
+      },
+      "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
