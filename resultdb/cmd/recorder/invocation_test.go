@@ -153,7 +153,6 @@ func TestInsertBQExportingTasks(t *testing.T) {
 	Convey(`insertBQExportingTasks`, t, func() {
 		now := testclock.TestRecentTimeUTC
 		ctx := SpannerTestContext(t)
-		invID := span.InvocationID("invID")
 
 		bqExport1 := &pb.BigQueryExport{
 			Project:     "project",
@@ -169,7 +168,7 @@ func TestInsertBQExportingTasks(t *testing.T) {
 			TestResults: &pb.BigQueryExport_TestResults{},
 		}
 
-		muts := insertBQExportingTasks(invID, now, bqExport1, bqExport2)
+		muts := insertBQExportingTasks("inv", now, bqExport1, bqExport2)
 
 		MustApply(ctx, muts...)
 
@@ -177,9 +176,8 @@ func TestInsertBQExportingTasks(t *testing.T) {
 			invTask := &internalpb.InvocationTask{
 				BigqueryExport: bqExport,
 			}
-			key := span.InvocationID("invID").Key(taskID(taskTypeBqExport, index))
 			invTaskRtn := &internalpb.InvocationTask{}
-			MustReadRow(ctx, "InvocationTasks", key, map[string]interface{}{
+			MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", index)}, map[string]interface{}{
 				"Payload": invTaskRtn,
 			})
 			So(invTaskRtn, ShouldResembleProto, invTask)

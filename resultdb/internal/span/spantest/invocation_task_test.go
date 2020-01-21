@@ -31,22 +31,18 @@ func TestSampleInvocationTasks(t *testing.T) {
 	Convey(`TestSampleInvocationTasks`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		now := clock.Now(ctx)
-		invTask := &internalpb.InvocationTask{}
-
+		task := &internalpb.InvocationTask{}
 		testutil.MustApply(ctx,
-			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv0", TaskID: "task_1"}, invTask, now.Add(-time.Hour)),
-			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv0", TaskID: "task_2"}, invTask, now.Add(-time.Hour)),
-			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv1", TaskID: "task_3"}, invTask, now.Add(-time.Hour)),
-			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv1", TaskID: "task_4"}, invTask, now),
-			span.InsertInvocationTask(span.TaskKey{InvocationID: "inv2", TaskID: "task_5"}, invTask, now.Add(time.Hour)),
+			span.InsertInvocationTask("task1", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("task2", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("task3", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("task4", "inv", task, now),
+			span.InsertInvocationTask("task5", "inv", task, now.Add(time.Hour)),
 		)
 
 		rows, err := span.SampleInvocationTasks(ctx, now, 3)
 		So(err, ShouldBeNil)
 		So(rows, ShouldHaveLength, 3)
-		So(rows, ShouldNotContain, span.TaskKey{
-			InvocationID: span.InvocationID("inv0"),
-			TaskID:       "task_5",
-		})
+		So(rows, ShouldNotContain, "task5")
 	})
 }

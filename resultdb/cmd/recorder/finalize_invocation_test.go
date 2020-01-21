@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -112,8 +113,6 @@ func TestFinalizeInvocation(t *testing.T) {
 			now := testclock.TestRecentTimeUTC
 			nowTimestamp := pbutil.MustTimestampProto(now)
 
-			invID := span.InvocationID("inv")
-
 			Convey(`finalized and add InvocationTasks`, func() {
 				extra := map[string]interface{}{
 					"UpdateToken": token,
@@ -121,7 +120,7 @@ func TestFinalizeInvocation(t *testing.T) {
 						BigqueryExports: []*pb.BigQueryExport{&pb.BigQueryExport{}}}},
 				}
 				MustApply(ctx,
-					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, extra),
+					InsertInvocation("inv", pb.Invocation_ACTIVE, ct, extra),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
@@ -138,13 +137,12 @@ func TestFinalizeInvocation(t *testing.T) {
 
 				// Read InvocationTask to confirm it's added.
 				var processAfter *tspb.Timestamp
-				key := span.TaskKey{
-					InvocationID: invID,
-					TaskID:       taskID(taskTypeBqExport, 0),
-				}
-				MustReadRow(ctx, "InvocationTasks", key.Key(), map[string]interface{}{
+				var invID span.InvocationID
+				MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", 0)}, map[string]interface{}{
+					"InvocationID": &invID,
 					"ProcessAfter": &processAfter,
 				})
+				So(invID, ShouldEqual, "inv")
 				So(processAfter, ShouldResemble, nowTimestamp)
 			})
 		})
