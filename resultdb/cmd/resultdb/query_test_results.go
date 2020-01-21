@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -106,8 +107,30 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 		return nil, err
 	}
 
+	if err := s.rewriteArtifactLinks(ctx, trs); err != nil {
+		return nil, err
+	}
+
 	return &pb.QueryTestResultsResponse{
 		NextPageToken: token,
 		TestResults:   trs,
 	}, nil
+}
+
+func (s *resultDBServer) rewriteArtifactLinks(ctx context.Context, trs []*pb.TestResult) error {
+	for _, tr := range trs {
+		for _, a := range tr.OutputArtifacts {
+			// If the URL looks an isolate URL, then generate a signed plain HTTP
+			// URL that serves the isolate file contents.
+			if host, ns, digest, err := internal.ParseIsolateURL(a.FetchUrl); err == nil {
+				u, exp, err := s.generateIsolateURL(ctx, host, ns, digest)
+				if err != nil {
+					return err
+				}
+				a.FetchUrl = u.String()
+				a.FetchUrlExpiration = pbutil.MustTimestampProto(exp)
+			}
+		}
+	}
+	return nil
 }

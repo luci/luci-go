@@ -303,6 +303,15 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
+// testArtifactsPerRun maps a run index to a map of run index to slice of
+// associated *pb.Artifacts.
+type testArtifactsPerRun map[int]*parsedArtifacts
+
+type parsedArtifacts struct {
+	artifacts []*pb.Artifact
+	links     map[string]string
+}
+
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 //
@@ -380,14 +389,6 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 	}
 
 	return unresolved, nil
-}
-
-// testArtifactsPerRun maps a run index to artifacts and links.
-type testArtifactsPerRun map[int]*parsedArtifacts
-
-type parsedArtifacts struct {
-	artifacts []*pb.Artifact
-	links     map[string]string
 }
 
 // getArtifacts gets pb.Artifacts corresponding to the TestField's artifacts.

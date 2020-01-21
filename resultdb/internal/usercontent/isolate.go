@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync/atomic"
+	"time"
 
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
@@ -33,7 +34,7 @@ const isolatePathPattern = "/isolate/:host/:ns/:digest"
 
 // GenerateSignedIsolateURL returns a signed 1h-lived URL at which the
 // content of the given isolated file can be fetched via plain HTTP.
-func (s *Server) GenerateSignedIsolateURL(ctx context.Context, isolateHost, ns, digest string) (*url.URL, error) {
+func (s *Server) GenerateSignedIsolateURL(ctx context.Context, isolateHost, ns, digest string) (u *url.URL, expiration time.Time, err error) {
 	return s.generateSignedURL(ctx, fmt.Sprintf("/isolate/%s/%s/%s", isolateHost, ns, digest))
 }
 
