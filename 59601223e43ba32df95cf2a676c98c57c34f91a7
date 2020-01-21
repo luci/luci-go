@@ -94,6 +94,30 @@
       "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5b06b3b_d1d97b44",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-21T19:04:56Z",
+      "side": 1,
+      "message": "Err, sorry, I meant an error from internal.ParseIsolateURL(a.FetchUrl). It is never wrapped and doesn\u0027t have any context. Also looks like it is used only as a boolean signal. So maybe make it \u0027bool\u0027 instead (whether the URL was recognized or not).",
+      "parentUuid": "9d102cbe_8e0a7695",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 15
+      },
+      "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
