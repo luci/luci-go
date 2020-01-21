@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ce87e12_a24ee21c",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T23:52:01Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 44,
+        "startChar": 18,
+        "endLine": 44,
+        "endChar": 19
+      },
+      "revId": "bc7dddd00842a4a5c085daaf5196fe0624f9538a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9cc2402_f40c041a",
+        "filename": "resultdb/cmd/recorder/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T23:52:01Z",
+      "side": 1,
+      "message": "that\u0027s not going to work. derivedInvBQTable should be a pointer and star should be in L33",
+      "range": {
+        "startLine": 28,
+        "startChar": 22,
+        "endLine": 28,
+        "endChar": 23
+      },
+      "revId": "bc7dddd00842a4a5c085daaf5196fe0624f9538a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb952d4b_590c30e0",
+        "filename": "resultdb/cmd/recorder/recorder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T23:52:01Z",
+      "side": 1,
+      "message": "this is still to be parsed and can turn out to be invalid AFTER the service startup. let\u0027s make this the final product: *pb.BigqueryExport\n\nexcept not in this CL. FWIU the point of this CL is only to add the flag. I think this file should not change in this CL at all.",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 18
+      },
+      "revId": "bc7dddd00842a4a5c085daaf5196fe0624f9538a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
