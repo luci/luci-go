@@ -111,20 +111,17 @@ func TestFinalizeInvocation(t *testing.T) {
 		Convey(`finalized`, func() {
 			now := testclock.TestRecentTimeUTC
 			nowTimestamp := pbutil.MustTimestampProto(now)
-			origProcessAfter := now.Add(2 * day)
 
 			invID := span.InvocationID("inv")
-			invTask := &internalpb.InvocationTask{
-				BigqueryExport: &pb.BigQueryExport{}}
 
-			test := func(resetOnFinalize bool, expected *tspb.Timestamp) {
-				key := span.TaskKey{
-					InvocationID: invID,
-					TaskID:       taskID(taskTypeBqExport, 0),
+			Convey(`finalized and add InvocationTasks`, func() {
+				extra := map[string]interface{}{
+					"UpdateToken": token,
+					"BigQueryExports": span.CompressedProto{&internalpb.BigQueryExports{
+						BigqueryExports: []*pb.BigQueryExport{&pb.BigQueryExport{}}}},
 				}
 				MustApply(ctx,
-					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-					span.InsertInvocationTask(key, invTask, origProcessAfter, resetOnFinalize),
+					InsertInvocation(invID, pb.Invocation_ACTIVE, ct, extra),
 				)
 				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 				So(err, ShouldBeNil)
@@ -139,20 +136,16 @@ func TestFinalizeInvocation(t *testing.T) {
 				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
 
-				// Read InvocationTask to confirm it's reset.
+				// Read InvocationTask to confirm it's added.
 				var processAfter *tspb.Timestamp
+				key := span.TaskKey{
+					InvocationID: invID,
+					TaskID:       taskID(taskTypeBqExport, 0),
+				}
 				MustReadRow(ctx, "InvocationTasks", key.Key(), map[string]interface{}{
 					"ProcessAfter": &processAfter,
 				})
-				So(processAfter, ShouldResemble, expected)
-			}
-
-			Convey(`finalized and reset InvocationTasks`, func() {
-				test(true, nowTimestamp)
-			})
-
-			Convey(`finalized and not reset InvocationTasks`, func() {
-				test(false, pbutil.MustTimestampProto(origProcessAfter))
+				So(processAfter, ShouldResemble, nowTimestamp)
 			})
 		})
 	})

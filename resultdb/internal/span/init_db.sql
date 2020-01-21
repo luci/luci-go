@@ -72,7 +72,7 @@ CREATE TABLE Invocations (
   -- Requests to export the invocation to BigQuery, see also
   -- Invocation.bigquery_exports in invocation.proto.
   -- Encoded as compressed luci.resultdb.internal.BigQueryExports message.
-  BigQueryExports BYTES(MAX),
+  BigQueryExports BYTES(MAX)
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.
@@ -210,14 +210,7 @@ CREATE TABLE InvocationTasks (
   -- When to process the invocation.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
   -- or a future time indicating the invocation is not available to process yet.
-  -- ProcessAfter can be reset in following conditions:
-  --  * if ResetOnFinalize is true, ProcessAfter will be set to the finalization
-  -- time when the invocation is finalized.
-  --  * if a worker has started working on this task, ProcessAfter will be set
-  -- to a future time to prevent other workers picking up the same task.
-  ProcessAfter TIMESTAMP,
-
-  -- If true, set ProcessAfter to NOW when finalizing the invocation,
-  -- otherwise don't set it.
-  ResetOnFinalize BOOL,
+  -- ProcessAfter can be reset to a future time by a worker when it starts to
+  -- work on this task to prevent other workers picking up the same one.
+  ProcessAfter TIMESTAMP
 ) PRIMARY KEY (InvocationId, TaskId);

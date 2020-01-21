@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -80,10 +79,12 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 		var updateToken spanner.NullString
 		var state pb.Invocation_State
 		var deadline time.Time
+		bigqueryExports := &internalpb.BigQueryExports{}
 		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"UpdateToken": &updateToken,
-			"State":       &state,
-			"Deadline":    &deadline,
+			"UpdateToken":     &updateToken,
+			"State":           &state,
+			"Deadline":        &deadline,
+			"BigQueryExports": &span.CompressedProto{bigqueryExports},
 		})
 
 		switch {
@@ -97,7 +98,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			retErr = appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(ctx, txn, id, true, deadline)
+			return finalizeInvocation(txn, id, true, deadline, bigqueryExports.BigqueryExports)
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -128,39 +129,16 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
-	if err := resetInvocationTasks(ctx, txn, id, finalizeTime); err != nil {
-		return err
-	}
+func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time, bigqueryExports []*pb.BigQueryExport) error {
+	muts := insertBQExportingTasks(id, finalizeTime, bigqueryExports...)
+	muts = append(muts, span.UpdateMap("Invocations", map[string]interface{}{
+		"InvocationId": id,
+		"State":        pb.Invocation_FINALIZED,
+		"Interrupted":  interrupted,
+		"FinalizeTime": finalizeTime,
+	}))
 
-	return txn.BufferWrite([]*spanner.Mutation{
-		span.UpdateMap("Invocations", map[string]interface{}{
-			"InvocationId": id,
-			"State":        pb.Invocation_FINALIZED,
-			"Interrupted":  interrupted,
-			"FinalizeTime": finalizeTime,
-		}),
-	})
-}
-
-// resetInvocationTasks is used by finalizeInvocation() to set ProcessAfter
-// of an invocation's tasks.
-func resetInvocationTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, processAfter time.Time) error {
-	st := spanner.NewStatement(`
-		UPDATE InvocationTasks
-		SET ProcessAfter = @processAfter
-		WHERE InvocationId = @invocationId AND ResetOnFinalize
-	`)
-	st.Params = span.ToSpannerMap(map[string]interface{}{
-		"invocationId": id,
-		"processAfter": processAfter,
-	})
-	updatedRowCount, err := txn.Update(ctx, st)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "Reset %d invocation tasks for invocation %s", updatedRowCount, id)
-	return nil
+	return txn.BufferWrite(muts)
 }
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
@@ -238,7 +216,7 @@ func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExpo
 			InvocationID: id,
 			TaskID:       taskID(taskTypeBqExport, i),
 		}
-		muts[i] = span.InsertInvocationTask(key, invTask, processAfter, true)
+		muts[i] = span.InsertInvocationTask(key, invTask, processAfter)
 	}
 	return muts
 }

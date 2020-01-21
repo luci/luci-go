@@ -42,7 +42,7 @@ func TestLeaseInvocationTask(t *testing.T) {
 				TaskID:       "task_1",
 			}
 			testutil.MustApply(ctx,
-				span.InsertInvocationTask(key, invTask, processAfter, true),
+				span.InsertInvocationTask(key, invTask, processAfter),
 			)
 
 			_, shouldRunTask, err := leaseInvocationTask(ctx, key)
@@ -79,7 +79,7 @@ func TestLeaseInvocationTask(t *testing.T) {
 			TaskID:       "task_4",
 		}
 		testutil.MustApply(ctx,
-			span.InsertInvocationTask(key, &internalpb.InvocationTask{}, now.Add(-time.Hour), true),
+			span.InsertInvocationTask(key, &internalpb.InvocationTask{}, now.Add(-time.Hour)),
 		)
 
 		err := deleteInvocationTask(ctx, key)
