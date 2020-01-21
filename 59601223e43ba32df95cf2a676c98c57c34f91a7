@@ -22,6 +22,30 @@
       "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20633d72_e3d324e3",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:46:29Z",
+      "side": 1,
+      "message": "this err can happen only if we failed to generate an isolate URL\n\"does not match\" cannot happen here",
+      "parentUuid": "4a0b1bd9_3028eddc",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 15
+      },
+      "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
