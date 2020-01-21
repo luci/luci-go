@@ -96,6 +96,8 @@ func TestDeriveInvocation(t *testing.T) {
 	Convey(`TestDeriveInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
+		derivedInvBQTableStr := "project.dataset.table"
+		derivedInvBQTable = &derivedInvBQTableStr
 
 		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, ct, nil))
 
@@ -203,6 +205,14 @@ func TestDeriveInvocation(t *testing.T) {
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
+				BigqueryExports: []*pb.BigQueryExport{
+					&pb.BigQueryExport{
+						Project:     "project",
+						Dataset:     "dataset",
+						Table:       "table",
+						TestResults: &pb.BigQueryExport_TestResults{},
+					},
+				},
 			})
 
 			// Assert we wrote correct test results.

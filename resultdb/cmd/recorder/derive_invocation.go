@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"strings"
 
@@ -37,6 +38,36 @@ import (
 const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
+
+// derivedInvBQTable is the BigQuery table that the derived invocations
+// should be exported to.
+var derivedInvBQTable *string
+
+func registerDerivedInvBQTableFlag() {
+	derivedInvBQTable = flag.String("derive-bigquery-table", "",
+		`Name of the Big Query table for result export. In the format of "<project>.<dataset>.<table>".`)
+}
+
+// validateDerivedInvBQTableFlag validates derivedInvBQTable.
+func validateDerivedInvBQTableFlag() error {
+	if *derivedInvBQTable == "" {
+		return errors.Reason("-derive-bigquery-table is missing").Err()
+	}
+
+	if p, d, t := parseBQTable(*derivedInvBQTable); p == "" || d == "" || t == "" {
+		return errors.Reason("invalid bq table %s", *derivedInvBQTable).Err()
+	}
+
+	return nil
+}
+
+func parseBQTable(bqTable string) (project, dataset, table string) {
+	bqTableInfo := strings.Split(bqTable, ".")
+	if len(bqTableInfo) != 3 {
+		return "", "", ""
+	}
+	return bqTableInfo[0], bqTableInfo[1], bqTableInfo[2]
+}
 
 // validateDeriveInvocationRequest returns an error if req is invalid.
 func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
@@ -123,6 +154,17 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return nil, err
 	}
 	inv.IncludedInvocations = batchInvs.Names()
+
+	project, dataset, table := parseBQTable(*derivedInvBQTable)
+	if project != "" && dataset != "" && table != "" {
+		bqExport := &pb.BigQueryExport{
+			Project:     project,
+			Dataset:     dataset,
+			Table:       table,
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+		inv.BigqueryExports = []*pb.BigQueryExport{bqExport}
+	}
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(inv.IncludedInvocations)+1)

@@ -60,7 +60,7 @@ const (
 const updateTokenMetadataKey = "update-token"
 
 // BigQuery export task type.
-const taskTypeBqExport = "bqExport"
+const taskTypeBQExport = "bqExport"
 
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
@@ -214,7 +214,7 @@ func insertBQExportingTasks(id span.InvocationID, processAfter time.Time, bqExpo
 
 		key := span.TaskKey{
 			InvocationID: id,
-			TaskID:       taskID(taskTypeBqExport, i),
+			TaskID:       taskID(taskTypeBQExport, i),
 		}
 		muts[i] = span.InsertInvocationTask(key, invTask, processAfter)
 	}

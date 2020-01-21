@@ -140,7 +140,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				var processAfter *tspb.Timestamp
 				key := span.TaskKey{
 					InvocationID: invID,
-					TaskID:       taskID(taskTypeBqExport, 0),
+					TaskID:       taskID(taskTypeBQExport, 0),
 				}
 				MustReadRow(ctx, "InvocationTasks", key.Key(), map[string]interface{}{
 					"ProcessAfter": &processAfter,
