@@ -22,6 +22,30 @@
       "revId": "7c9fe67d4a52cbb4e4992cd344ddc73a38ebef1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b803683c_5ab0264e",
+        "filename": "resultdb/internal/isolate.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T20:22:04Z",
+      "side": 1,
+      "message": "considered. i might do it later. all isolated code in resultdb is temporary. i hope to delete all of it this quarter.",
+      "parentUuid": "2bb15df8_8db690e4",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 16
+      },
+      "revId": "7c9fe67d4a52cbb4e4992cd344ddc73a38ebef1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
