@@ -132,11 +132,12 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 	sort.Strings(testNames)
 
 	ret := make([]*pb.TestResult, 0, len(r.Tests))
+	buf := &strings.Builder{}
 	for _, name := range testNames {
 		testID := testIDPrefix + name
 
 		// Populate protos.
-		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testID, outputs)
+		unresolvedOutputs, err := r.Tests[name].toProtos(ctx, &ret, testID, outputs, buf)
 		if err != nil {
 			return nil, errors.Annotate(err, "test %q failed to convert run fields", name).Err()
 		}
@@ -302,15 +303,11 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
-// testArtifactsPerRun maps a run index to a map of run index to slice of
-// associated *pb.Artifacts.
-type testArtifactsPerRun map[int][]*pb.Artifact
-
 // toProtos converts the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 //
 // TODO(crbug/1032779): Track artifacts that did not get processed.
-func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testID string, outputs map[string]*pb.Artifact) (map[string][]string, error) {
+func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testID string, outputs map[string]*pb.Artifact, buf *strings.Builder) (map[string][]string, error) {
 	// Process statuses.
 	actualStatuses := strings.Split(f.Actual, " ")
 	expectedSet := stringset.NewFromSlice(strings.Split(f.Expected, " ")...)
@@ -356,11 +353,22 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 		}
 
 		tr := &pb.TestResult{
-			TestId:          testID,
-			Expected:        expectedSet.Has(runStatus),
-			Status:          status,
-			Tags:            pbutil.StringPairs("json_format_status", runStatus),
-			OutputArtifacts: arts[i],
+			TestId:   testID,
+			Expected: expectedSet.Has(runStatus),
+			Status:   status,
+			Tags:     pbutil.StringPairs("json_format_status", runStatus),
+		}
+
+		if container, ok := arts[i]; ok {
+			buf.Reset()
+			err := summaryTmpl.ExecuteTemplate(buf, "jtr", map[string]interface{}{
+				"links": container.links,
+			})
+			if err != nil {
+				return nil, err
+			}
+			tr.SummaryHtml = buf.String()
+			tr.OutputArtifacts = container.artifacts
 		}
 
 		if i < len(durations) {
@@ -372,6 +380,14 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 	}
 
 	return unresolved, nil
+}
+
+// testArtifactsPerRun maps a run index to artifacts and links.
+type testArtifactsPerRun map[int]*parsedArtifacts
+
+type parsedArtifacts struct {
+	artifacts []*pb.Artifact
+	links     map[string]string
 }
 
 // getArtifacts gets pb.Artifacts corresponding to the TestField's artifacts.
@@ -395,11 +411,18 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 				unresolvedArtifacts[name] = append(unresolvedArtifacts[name], path)
 				continue
 			}
+			container := artifacts[runID]
+			if container == nil {
+				container = &parsedArtifacts{
+					links: map[string]string{},
+				}
+				artifacts[runID] = container
+			}
 
 			// Look for the path in isolated outputs.
 			// TODO(crbug/1032779): Track outputs that were processed.
 			if _, art := checkIsolatedOutputs(outputs, normPath); art != nil {
-				artifacts[runID] = append(artifacts[runID], art)
+				container.artifacts = append(container.artifacts, art)
 				continue
 			}
 
@@ -409,19 +432,11 @@ func (f *TestFields) getArtifacts(outputs map[string]*pb.Artifact) (artifacts te
 			if name == "gold_triage_link" || name == "triage_link_for_entire_cl" {
 				// We don't expect more than one triage link per test run, but if there is more than one,
 				// suffix the name with index to ensure we retain it too.
-				artName := name
+				linkName := name
 				if i > 0 {
-					artName = fmt.Sprintf("%s_%d", name, i)
+					linkName = fmt.Sprintf("%s_%d", name, i)
 				}
-
-				artifacts[runID] = append(artifacts[runID], &pb.Artifact{Name: artName, ViewUrl: path})
-				continue
-			}
-
-			// Accept about:blank references.
-			if m := aboutBlankRe.FindStringSubmatch(path); m != nil {
-				artifacts[runID] = append(
-					artifacts[runID], &pb.Artifact{Name: name, ViewUrl: "about:blank"})
+				container.links[linkName] = path
 				continue
 			}
 

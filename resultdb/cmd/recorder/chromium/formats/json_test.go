@@ -256,7 +256,6 @@ func TestJSONConversions(t *testing.T) {
 				Tags:     pbutil.StringPairs("json_format_status", "PASS"),
 				OutputArtifacts: []*pb.Artifact{
 					{Name: "log_2.txt"},
-					{Name: "ref_mismatch", ViewUrl: "about:blank"},
 				},
 			},
 
@@ -298,10 +297,6 @@ func TestJSONConversions(t *testing.T) {
 				Tags:     pbutil.StringPairs("json_format_status", "FAIL"),
 				OutputArtifacts: []*pb.Artifact{
 					{
-						Name:    "gold_triage_link",
-						ViewUrl: "https://chrome-gpu-gold.skia.org/detail?test=foo&digest=beef",
-					},
-					{
 						Name:        "relative/path/to/diff.png",
 						FetchUrl:    "isolate://isosrv/ad1ff",
 						ContentType: "image/png",
@@ -314,6 +309,7 @@ func TestJSONConversions(t *testing.T) {
 						Size:        32,
 					},
 				},
+				SummaryHtml: `<ul><li><a href="https://chrome-gpu-gold.skia.org/detail?test=foo&amp;digest=beef">gold_triage_link</a></li></ul>`,
 			},
 
 			// Test 4
@@ -368,8 +364,8 @@ func TestArtifactUtils(t *testing.T) {
 		artifactsPerRun, unresolved := f.getArtifacts(outputsToProcess)
 		So(artifactsPerRun, ShouldHaveLength, 1)
 
-		pbutil.NormalizeArtifactSlice(artifactsPerRun[0])
-		So(artifactsPerRun[0], ShouldResemble, []*pb.Artifact{
+		pbutil.NormalizeArtifactSlice(artifactsPerRun[0].artifacts)
+		So(artifactsPerRun[0].artifacts, ShouldResemble, []*pb.Artifact{
 			{Name: "artifacts/a/stderr.txt"},
 			{Name: "artifacts/a/stdout.txt"},
 			{Name: "c/stderr.txt"},
