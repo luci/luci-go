@@ -127,7 +127,7 @@ func (s InvocationIDSet) Names() []string {
 
 // hashPrefixBytes is the number of bytes of sha256 to prepend to a PK
 // to achieve even distribution.
-const hashPrefixBytes = 8
+const hashPrefixBytes = 4
 
 func prefixWithHash(s string) string {
 	h := sha256.Sum256([]byte(s))
