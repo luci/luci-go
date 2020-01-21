@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c8f9a2e1_ad9e7c02",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-21T23:31:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e75ec979_b56bea71",
+      "revId": "fd9c71ab37187bf00e4fe66ea91fcf35409b31e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6284f507_5603ea6d",
         "filename": "resultdb/proto/rpc/v1/test_result.proto",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "fd9c71ab37187bf00e4fe66ea91fcf35409b31e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9abfd9d_1aaee4a3",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-21T23:31:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6284f507_5603ea6d",
+      "revId": "fd9c71ab37187bf00e4fe66ea91fcf35409b31e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
