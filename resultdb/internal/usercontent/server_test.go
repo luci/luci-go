@@ -22,7 +22,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -66,7 +68,7 @@ func TestIsolate(t *testing.T) {
 
 		Convey(`URL sanity check`, func() {
 			// Validate generated signed URL.
-			u, err := s.GenerateSignedIsolateURL(ctx, "isolate.example.com", "default-gzip", "deadbeef")
+			u, _, err := s.GenerateSignedIsolateURL(ctx, "isolate.example.com", "default-gzip", "deadbeef")
 			So(err, ShouldBeNil)
 
 			So(u.Query().Get("token"), ShouldNotEqual, "")
@@ -89,8 +91,9 @@ func TestIsolate(t *testing.T) {
 				_, err := w.Write([]byte("contents"))
 				return err
 			}
-			u, err := s.GenerateSignedIsolateURL(ctx, "isolate.example.com", "default-gzip", "deadbeef")
+			u, exp, err := s.GenerateSignedIsolateURL(ctx, "isolate.example.com", "default-gzip", "deadbeef")
 			So(err, ShouldBeNil)
+			So(exp, ShouldResemble, clock.Now(ctx).Add(time.Hour))
 
 			status, actualContents := fetch(u.String())
 			So(status, ShouldEqual, http.StatusOK)
