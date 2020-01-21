@@ -28,11 +28,21 @@ import (
 func TestIsolatedUtils(t *testing.T) {
 	t.Parallel()
 
+	Convey(`URL`, t, func() {
+		u := IsolateURL("isolate.example.com", "default-gzip", "deadbeef")
+		So(u, ShouldEqual, "isolate://isolate.example.com/default-gzip/deadbeef")
+
+		host, ns, digest, err := ParseIsolateURL(u)
+		So(err, ShouldBeNil)
+		So(host, ShouldEqual, "isolate.example.com")
+		So(ns, ShouldEqual, "default-gzip")
+		So(digest, ShouldEqual, "deadbeef")
+	})
+
 	Convey(`Conversion to *pb.Artifact works`, t, func() {
 		f := &isolated.File{Digest: "400dc0ffee"}
 		expectedArt := &pb.Artifact{
 			FetchUrl: "isolate://iso.appspot.com/default-zip/400dc0ffee",
-			ViewUrl:  "https://iso.appspot.com/browse?namespace=default-zip&digest=400dc0ffee",
 		}
 
 		Convey(`with text type`, func() {
