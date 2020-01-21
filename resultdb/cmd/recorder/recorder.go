@@ -28,12 +28,16 @@ import (
 //
 // It does not return gRPC-native errors. NewRecorder takes care of that.
 type recorderServer struct {
+	// derivedInvBQTable is the BigQuery table that the derived invocations
+	// should be exported to.
+	derivedInvBQTable string
 }
 
 // NewRecorderServer creates an implementation of RecorderServer.
-func NewRecorderServer() pb.RecorderServer {
+func NewRecorderServer(derivedInvBQTable string) pb.RecorderServer {
+
 	return &pb.DecoratedRecorder{
-		Service:  &recorderServer{},
+		Service:  &recorderServer{derivedInvBQTable},
 		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
 	}
