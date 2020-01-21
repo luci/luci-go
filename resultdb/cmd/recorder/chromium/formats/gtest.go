@@ -314,15 +314,6 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 			snippet = string(outputBytes)
 		}
 	}
-	buf.Reset()
-	err = summaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
-		"snippet": snippet,
-		"links":   result.Links,
-	})
-	if err != nil {
-		return nil, err
-	}
-	tr.SummaryHtml = buf.String()
 
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
@@ -332,5 +323,14 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 		)
 	}
 
+	buf.Reset()
+	err = summaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
+		"snippet": snippet,
+		"links":   result.Links,
+	})
+	if err != nil {
+		return nil, err
+	}
+	tr.SummaryHtml = buf.String()
 	return tr, nil
 }

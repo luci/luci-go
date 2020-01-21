@@ -15,8 +15,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
+	"net/url"
 
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
@@ -27,16 +29,20 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// IsolateURLGenerator generates a plain HTTP URL for an isolate file.
+type IsolateURLGenerator func(ctx context.Context, host, ns, digest string) (*url.URL, error)
+
 // resultDBServer implements pb.ResultDBServer.
 //
 // It does not return gRPC-native errors. NewResultDBServer takes care of that.
 type resultDBServer struct {
+	generateIsolateURL IsolateURLGenerator
 }
 
 // NewResultDBServer creates an implementation of resultDBServer.
-func NewResultDBServer() pb.ResultDBServer {
+func NewResultDBServer(generateIsolateURL IsolateURLGenerator) pb.ResultDBServer {
 	return &pb.DecoratedResultDB{
-		Service:  &resultDBServer{},
+		Service:  &resultDBServer{generateIsolateURL: generateIsolateURL},
 		Prelude:  internal.CommonPrelude,
 		Postlude: internal.CommonPostlude,
 	}
@@ -60,13 +66,14 @@ func main() {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
-		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer())
 
 		contentServer, err := usercontent.NewServer(srv.Context, *insecureSelfURLs, *contentHostname)
 		if err != nil {
 			return err
 		}
 		contentServer.InstallHandlers(srv.VirtualHost(*contentHostname))
+
+		pb.RegisterResultDBServer(srv.PRPC, NewResultDBServer(contentServer.GenerateSignedIsolateURL))
 
 		// Register an empty Recorder server only to make the discovery service
 		// list it.

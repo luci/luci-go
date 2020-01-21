@@ -49,7 +49,7 @@ func TestGetTestExoneration(t *testing.T) {
 
 		now := clock.Now(ctx)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 
 		invID := span.InvocationID("inv_0")
 		// Insert a TestExoneration.

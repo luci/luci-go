@@ -36,16 +36,7 @@ const (
 
 // summaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
 // results.
-var summaryTmpl = template.Must(template.New("summary").Parse(`
-{{ define "gtest" -}}
-{{- template "links" .links -}}
-{{- if .snippet }}<div><pre>{{.snippet}}</pre></div>{{ end -}}
-{{- end}}
-
-{{ define "jtr" -}}
-{{- template "links" .links -}}
-{{- end}}
-
+var summaryTmpl = template.Must(template.New("JTR summary").Parse(`
 {{ define "links" -}}
 {{- if . -}}
 <ul>
@@ -55,6 +46,17 @@ var summaryTmpl = template.Must(template.New("summary").Parse(`
 </ul>
 {{- end -}}
 {{- end -}}
+
+{{ define "gtest" -}}
+{{- template "links" .links -}}
+{{- if .snippet -}}
+<div><pre>{{.snippet}}</pre></div>
+{{- end -}}
+{{- end}}
+
+{{ define "jtr" -}}
+{{- template "links" .links -}}
+{{- end}}
 `))
 
 // secondsToTimestamp converts a UTC float64 timestamp to a ptypes Timestamp.
