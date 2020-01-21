@@ -60,7 +60,7 @@ func TestGetTestResult(t *testing.T) {
 
 		now := clock.Now(ctx)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
 			req := &pb.GetTestResultRequest{Name: name}
 			tr, err := srv.GetTestResult(ctx, req)

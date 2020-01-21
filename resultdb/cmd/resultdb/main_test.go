@@ -15,11 +15,30 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"net/url"
 	"testing"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
+}
+
+func newTestResultDBService() *resultDBServer {
+	return &resultDBServer{
+		generateIsolateURL: func(ctx context.Context, host, ns, digest string) (u *url.URL, expiration time.Time, err error) {
+			u = &url.URL{
+				Scheme: "http",
+				Host:   "results.usercontent.example.com",
+				Path:   fmt.Sprintf("/isolate/%s/%s/%s", host, ns, digest),
+			}
+			expiration = clock.Now(ctx).Add(time.Hour)
+			return
+		},
+	}
 }

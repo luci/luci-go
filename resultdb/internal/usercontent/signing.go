@@ -21,6 +21,7 @@ import (
 	"path"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
@@ -37,18 +38,21 @@ var pathTokenKind = tokens.TokenKind{
 // generateSignedURL generates a signed HTTPS URL back to this server.
 // The token works only with the urlPath, after calling path.Clean.
 // The function can be used for any kind of user content URLs.
-func (s *Server) generateSignedURL(ctx context.Context, urlPath string) (*url.URL, error) {
+func (s *Server) generateSignedURL(ctx context.Context, urlPath string) (u *url.URL, expiration time.Time, err error) {
 	urlPath = path.Clean(urlPath)
 
+	const ttl = time.Hour
+	now := clock.Now(ctx)
+
 	state := []byte(urlPath)
-	tok, err := pathTokenKind.Generate(ctx, state, nil, time.Hour)
+	tok, err := pathTokenKind.Generate(ctx, state, nil, ttl)
 	if err != nil {
-		return nil, err
+		return nil, time.Time{}, err
 	}
 
 	q := url.Values{}
 	q.Set("token", tok)
-	u := &url.URL{
+	u = &url.URL{
 		Scheme:   "https",
 		Host:     s.Hostname,
 		Path:     urlPath,
@@ -57,7 +61,8 @@ func (s *Server) generateSignedURL(ctx context.Context, urlPath string) (*url.UR
 	if s.InsecureURLs {
 		u.Scheme = "http"
 	}
-	return u, nil
+	expiration = now.Add(ttl)
+	return
 }
 
 // validateToken validates token query parameter.

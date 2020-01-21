@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/isolated"
 
+	"go.chromium.org/luci/resultdb/internal"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -35,7 +36,7 @@ func IsolatedFilesToString(fMap map[string]*pb.Artifact) string {
 }
 
 // IsolatedFileToArtifact returns a possibly partial pb.Artifact representing the isolated.File.
-func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Artifact {
+func IsolatedFileToArtifact(isolateServer, ns, relPath string, f *isolated.File) *pb.Artifact {
 	// We don't know how to handle symlink files, so return nil for the caller to deal with it.
 	if f.Link != nil {
 		return nil
@@ -44,8 +45,7 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 	// Otherwise, populate the artifact fields.
 	a := &pb.Artifact{
 		Name:     NormalizeIsolatedPath(relPath),
-		FetchUrl: IsolateFetchURL(host, ns, string(f.Digest)),
-		ViewUrl:  IsolateViewURL(host, ns, string(f.Digest)),
+		FetchUrl: internal.IsolateURL(isolateServerToHost(isolateServer), ns, string(f.Digest)),
 	}
 
 	if f.Size != nil {
@@ -62,17 +62,15 @@ func IsolatedFileToArtifact(host, ns, relPath string, f *isolated.File) *pb.Arti
 	return a
 }
 
-// IsolateFetchURL returns a fetch URL for an isolated object.
-func IsolateFetchURL(host, ns, digest string) string {
-	return fmt.Sprintf("isolate://%s/%s/%s", host, ns, digest)
-}
-
-// IsolateViewURL returns a view URL for an isolated object.
-func IsolateViewURL(host, ns, digest string) string {
-	return fmt.Sprintf("https://%s/browse?namespace=%s&digest=%s", host, ns, digest)
-}
-
 // NormalizeIsolatedPath converts the isolated path to the canonical form.
 func NormalizeIsolatedPath(p string) string {
 	return path.Clean(strings.ReplaceAll(p, "\\", "/"))
+}
+
+func isolateServerToHost(server string) string {
+	host := server
+	host = strings.TrimPrefix(host, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	host = strings.TrimRight(host, "/")
+	return host
 }

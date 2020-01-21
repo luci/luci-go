@@ -101,14 +101,13 @@ func TestTypeConversion(t *testing.T) {
 			ArtifactsV1: []*pb.Artifact{
 				{
 					Name:        "traces/a.txt",
-					FetchUrl:    "gs://a.txt",
+					FetchUrl:    "https://example.com/a",
 					ContentType: "text/plain",
 					Size:        4,
-					Contents:    []byte("1234"),
 				},
 				{
 					Name:        "diff/b.png",
-					FetchUrl:    "isolate://b.png",
+					FetchUrl:    "https://example.com/b",
 					ContentType: "image/png",
 					Size:        16384,
 				},

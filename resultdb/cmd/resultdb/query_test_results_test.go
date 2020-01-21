@@ -93,7 +93,7 @@ func TestQueryTestResults(t *testing.T) {
 			testutil.InsertTestResults(testutil.MakeTestResults("c", "C", pb.TestStatus_PASS)),
 		)...)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 		res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 			Invocations: []string{"invocations/a"},
 		})

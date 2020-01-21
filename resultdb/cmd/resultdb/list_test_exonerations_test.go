@@ -101,7 +101,7 @@ func TestListTestExonerations(t *testing.T) {
 				ExonerationId: "2",
 			},
 		}
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 
 		Convey(`Basic`, func() {
 			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/inv"}

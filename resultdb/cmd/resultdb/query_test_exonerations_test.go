@@ -61,7 +61,7 @@ func TestQueryTestExonerations(t *testing.T) {
 			insertEx("c", "C", pbutil.Variant("v", "c"), 1),
 		)...)
 
-		srv := &resultDBServer{}
+		srv := newTestResultDBService()
 		res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 			Invocations: []string{"invocations/a"},
 		})

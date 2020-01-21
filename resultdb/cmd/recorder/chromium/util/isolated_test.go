@@ -32,7 +32,6 @@ func TestIsolatedUtils(t *testing.T) {
 		f := &isolated.File{Digest: "400dc0ffee"}
 		expectedArt := &pb.Artifact{
 			FetchUrl: "isolate://iso.appspot.com/default-zip/400dc0ffee",
-			ViewUrl:  "https://iso.appspot.com/browse?namespace=default-zip&digest=400dc0ffee",
 		}
 
 		Convey(`with text type`, func() {

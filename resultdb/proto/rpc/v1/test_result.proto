@@ -156,28 +156,26 @@ message Artifact {
   // A slash-separated relative path, identifies the artifact.
   // Example: "traces/a.txt".
   string name = 1 [ (google.api.field_behavior) = IMMUTABLE ];
-  // Machine-readable URL to fetch the contents of the artifact.
-  // Valid schemes: "isolate", "gs", "logdog", "rbe-cas".
-  string fetch_url = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
-  // Human-consumable URL to the file content.
-  // Typically a URL of a page where the user can view/download the arficact.
-  string view_url = 3 [ (google.api.field_behavior) = IMMUTABLE ];
+  // Machine-readable URL to fetch the contents of the artifact.
+  // This must be a plain (curlable) HTTPS URL.
+  //
+  // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
+  // storage level, but it is converted to an HTTP URL before serving.
+  string fetch_url = 2;
+
+  // When fetch_url expires. If expired, re-request this Artifact.
+  // If fetch_url does not expire, this is unset.
+  google.protobuf.Timestamp fetch_url_expiration = 3;
 
   // Media type of the artifact.
   // Logs are typically "text/plain" and screenshots are typically "image/png".
   string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Size of the file, in bytes.
-  // Can be used in UI to decide whether to fetch an artifact and display it
-  // inline, or only show a link if it is too large.
+  // Can be used in UI to decide between displaying the artifact inline or only
+  // showing a link if it is too large.
   int64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
-
-  // Contents of the artifact if it is stored inline with the test result.
-  // Empty for artifacts stored elsewhere. To fetch such artifacts, use
-  // fetch_url.
-  // Size MUST be <= 8KB.
-  bytes contents = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
