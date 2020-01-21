@@ -44,6 +44,27 @@ func registerDerivedInvBQTableFlag() *string {
 		`Name of the Big Query table for result export. In the format of "<project>.<dataset>.<table>".`)
 }
 
+// validateDerivedInvBQTableFlag validates derivedInvBQTable.
+func validateDerivedInvBQTableFlag(derivedInvBQTable string) error {
+	if derivedInvBQTable == "" {
+		return errors.Reason("-derive-bigquery-table is missing").Err()
+	}
+
+	if p, d, t := parseBQTable(derivedInvBQTable); p == "" || d == "" || t == "" {
+		return errors.Reason("invalid bq table %s", derivedInvBQTable).Err()
+	}
+
+	return nil
+}
+
+func parseBQTable(bqTable string) (project, dataset, table string) {
+	bqTableInfo := strings.Split(bqTable, ".")
+	if len(bqTableInfo) != 3 {
+		return "", "", ""
+	}
+	return bqTableInfo[0], bqTableInfo[1], bqTableInfo[2]
+}
+
 // validateDeriveInvocationRequest returns an error if req is invalid.
 func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 	if req.SwarmingTask == nil {
@@ -129,6 +150,16 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return nil, err
 	}
 	inv.IncludedInvocations = batchInvs.Names()
+
+	project, dataset, table := parseBQTable(s.derivedInvBQTable)
+	if project != "" && dataset != "" && table != "" {
+		inv.BigqueryExports = []*pb.BigQueryExport{&pb.BigQueryExport{
+			Project:     project,
+			Dataset:     dataset,
+			Table:       table,
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}}
+	}
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(inv.IncludedInvocations)+1)

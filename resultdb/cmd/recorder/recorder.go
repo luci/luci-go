@@ -35,7 +35,6 @@ type recorderServer struct {
 
 // NewRecorderServer creates an implementation of RecorderServer.
 func NewRecorderServer(derivedInvBQTable string) pb.RecorderServer {
-
 	return &pb.DecoratedRecorder{
 		Service:  &recorderServer{derivedInvBQTable},
 		Prelude:  internal.CommonPrelude,

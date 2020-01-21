@@ -27,6 +27,10 @@ import (
 func main() {
 	derivedInvBQTable := *registerDerivedInvBQTableFlag()
 	internal.Main(func(srv *server.Server) error {
+		if err := validateDerivedInvBQTableFlag(derivedInvBQTable); err != nil {
+			return err
+		}
+
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
