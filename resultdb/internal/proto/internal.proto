@@ -35,11 +35,15 @@ message PageToken {
 // Used to store artifacts in Spanner.
 message Artifacts { repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1; }
 
+message TryFinalizeInvocation {}
+
 // A message for storing input for an invocation task.
 message InvocationTask {
   oneof type {
     // Export an invocation to a BigQuery table.
     luci.resultdb.rpc.v1.BigQueryExport bigquery_export = 1;
+    // Finalize an invocation if it does not include active invocations.
+    TryFinalizeInvocation try_finalize_invocation = 2;
   }
 }
 

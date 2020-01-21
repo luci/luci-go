@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"crypto/subtle"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -127,15 +126,17 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 }
 
 func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time, bigqueryExports []*pb.BigQueryExport) error {
-	muts := insertBQExportingTasks(id, finalizeTime, bigqueryExports...)
-	muts = append(muts, span.UpdateMap("Invocations", map[string]interface{}{
-		"InvocationId": id,
-		"State":        pb.Invocation_FINALIZED,
-		"Interrupted":  interrupted,
-		"FinalizeTime": finalizeTime,
-	}))
+	return txn.BufferWrite([]*spanner.Mutation{
+		// TODO(crbug.com/1032434): enqueue a finalizing task.
 
-	return txn.BufferWrite(muts)
+		span.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId": id,
+			// TODO(crbug.com/1032434): use FINALIZING state here.
+			"State":        pb.Invocation_FINALIZED,
+			"Interrupted":  interrupted,
+			"FinalizeTime": finalizeTime,
+		}),
+	})
 }
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
@@ -199,21 +200,4 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	return span.InsertOrUpdateMap(
 		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
-}
-
-// insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
-func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
-	muts := make([]*spanner.Mutation, len(bqExports))
-	for i, bqExport := range bqExports {
-		taskID := bqTaskID(invID, i)
-		task := &internalpb.InvocationTask{
-			Type: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
-		}
-		muts[i] = span.InsertInvocationTask(taskID, invID, task, processAfter)
-	}
-	return muts
-}
-
-func bqTaskID(invID span.InvocationID, index int) string {
-	return fmt.Sprintf("bq_export:%s:%d", invID, index)
 }

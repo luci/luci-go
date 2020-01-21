@@ -51,7 +51,7 @@ func TestQueryTestExonerations(t *testing.T) {
 	Convey(`QueryTestExonerations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertInvocationWithInclusions
+		insertInv := testutil.InsertFinalizedInvocationWithInclusions
 		insertEx := testutil.InsertTestExonerations
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("a", "b"),
