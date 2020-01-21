@@ -208,7 +208,7 @@ func TestJSONConversions(t *testing.T) {
 			"relative/path/to/log.txt": {
 				Name:        "relative/path/to/log.txt",
 				FetchUrl:    "isolate://isosrv/a104",
-				ContentType: "plain/text",
+				ContentType: "text/plain",
 				Size:        32,
 			},
 			"relative/path/to/diff.png": {
@@ -310,7 +310,7 @@ func TestJSONConversions(t *testing.T) {
 					{
 						Name:        "relative/path/to/log.txt",
 						FetchUrl:    "isolate://isosrv/a104",
-						ContentType: "plain/text",
+						ContentType: "text/plain",
 						Size:        32,
 					},
 				},

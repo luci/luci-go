@@ -37,7 +37,7 @@ func TestIsolatedUtils(t *testing.T) {
 
 		Convey(`with text type`, func() {
 			expectedArt.Name = "a/foo.txt"
-			expectedArt.ContentType = "plain/text"
+			expectedArt.ContentType = "text/plain"
 			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", "a/foo.txt", f),
 				ShouldResembleProto, expectedArt)
 		})
@@ -60,14 +60,14 @@ func TestIsolatedUtils(t *testing.T) {
 
 		Convey(`with non-canonical paths`, func() {
 			expectedArt.Name = "a/foo.txt"
-			expectedArt.ContentType = "plain/text"
+			expectedArt.ContentType = "text/plain"
 			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", ".\\b\\..\\a\\foo.txt", f),
 				ShouldResembleProto, expectedArt)
 		})
 
 		Convey(`with backslashes`, func() {
 			expectedArt.Name = "a/foo.txt"
-			expectedArt.ContentType = "plain/text"
+			expectedArt.ContentType = "text/plain"
 			So(IsolatedFileToArtifact("iso.appspot.com", "default-zip", "a\\foo.txt", f),
 				ShouldResembleProto, expectedArt)
 		})
