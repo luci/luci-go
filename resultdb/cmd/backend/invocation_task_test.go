@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/clock"
 
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
@@ -28,68 +30,55 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestLeaseInvocationTask(t *testing.T) {
-	Convey(`leaseInvocationTask`, t, func() {
+func TestTasks(t *testing.T) {
+	Convey(`TestTasks`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		now := clock.Now(ctx)
+		task := &internalpb.InvocationTask{}
 
-		invID := span.InvocationID("inv")
-		invTask := &internalpb.InvocationTask{}
+		Convey(`leaseInvocationTask`, func() {
 
-		test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedShouldRunTask bool) {
-			key := span.TaskKey{
-				InvocationID: invID,
-				TaskID:       "task_1",
+			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
+				testutil.MustApply(ctx,
+					span.InsertInvocationTask("task", "inv", task, processAfter),
+				)
+
+				_, _, err := leaseInvocationTask(ctx, "task")
+				So(err, ShouldEqual, expectedLeaseErr)
+
+				// Check the task's ProcessAfter is updated.
+				var newProcessAfter time.Time
+				txn := span.Client(ctx).Single()
+				err = span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{"task"}, map[string]interface{}{
+					"ProcessAfter": &newProcessAfter,
+				})
+				So(err, ShouldBeNil)
+				So(newProcessAfter, ShouldEqual, expectedProcessAfter)
 			}
+
+			Convey(`succeeded`, func() {
+				test(now.Add(-time.Hour), now.Add(taskLeaseTime), nil)
+			})
+
+			Convey(`skipped`, func() {
+				test(now.Add(time.Hour), now.Add(time.Hour), errLeasingConflict)
+			})
+		})
+
+		Convey(`deleteInvocationTask`, func() {
 			testutil.MustApply(ctx,
-				span.InsertInvocationTask(key, invTask, processAfter),
+				span.InsertInvocationTask("task", "inv", task, now.Add(-time.Hour)),
 			)
 
-			_, shouldRunTask, err := leaseInvocationTask(ctx, key)
+			err := deleteInvocationTask(ctx, "task")
 			So(err, ShouldBeNil)
-			So(shouldRunTask, ShouldEqual, expectedShouldRunTask)
 
-			// Check the task's ProcessAfter is updated.
-			var newProcessAfter time.Time
 			txn := span.Client(ctx).Single()
-			err = span.ReadRow(ctx, txn, "InvocationTasks", invID.Key("task_1"), map[string]interface{}{
-				"ProcessAfter": &newProcessAfter,
+			var taskID string
+			err = span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{"task"}, map[string]interface{}{
+				"TaskId": &taskID,
 			})
-			So(err, ShouldBeNil)
-			So(newProcessAfter, ShouldEqual, expectedProcessAfter)
-		}
-
-		Convey(`succeeded`, func() {
-			test(now.Add(-time.Hour), now.Add(taskLeaseTime), true)
+			So(err, ShouldErrLike, "row not found")
 		})
-
-		Convey(`skipped`, func() {
-			test(now.Add(time.Hour), now.Add(time.Hour), false)
-		})
-	})
-
-	Convey(`deleteInvocationTask`, t, func() {
-		ctx := testutil.SpannerTestContext(t)
-		now := clock.Now(ctx)
-
-		invID := span.InvocationID("inv")
-
-		key := span.TaskKey{
-			InvocationID: invID,
-			TaskID:       "task_4",
-		}
-		testutil.MustApply(ctx,
-			span.InsertInvocationTask(key, &internalpb.InvocationTask{}, now.Add(-time.Hour)),
-		)
-
-		err := deleteInvocationTask(ctx, key)
-		So(err, ShouldBeNil)
-
-		txn := span.Client(ctx).Single()
-		var taskID string
-		err = span.ReadRow(ctx, txn, "InvocationTasks", invID.Key("task_4"), map[string]interface{}{
-			"TaskID": &taskID,
-		})
-		So(err, ShouldErrLike, "row not found")
 	})
 }

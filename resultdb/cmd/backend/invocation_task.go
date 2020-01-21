@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -38,64 +39,71 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
+var errLeasingConflict = fmt.Errorf("the task is already leased")
+
 // leaseInvocationTask leases an invocation task if it can.
-func leaseInvocationTask(ctx context.Context, taskKey span.TaskKey) (*internalpb.InvocationTask, bool, error) {
-	shouldRunTask := true
+// If the task could not be leased, returns errLeasingConflict.
+func leaseInvocationTask(ctx context.Context, id string) (span.InvocationID, *internalpb.InvocationTask, error) {
+	var invID span.InvocationID
 	task := &internalpb.InvocationTask{}
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		now := clock.Now(ctx)
 		var processAfter time.Time
-		err := span.ReadRow(ctx, txn, "InvocationTasks", taskKey.Key(), map[string]interface{}{
+		err := span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{id}, map[string]interface{}{
+			"InvocationId": &invID,
 			"ProcessAfter": &processAfter,
 			"Payload":      task,
 		})
-		if err != nil || processAfter.After(now) {
-			shouldRunTask = false
+		switch {
+		case err != nil:
 			return err
+
+		case processAfter.After(now):
+			return errLeasingConflict
+
+		default:
+			return txn.BufferWrite([]*spanner.Mutation{
+				span.UpdateMap("InvocationTasks", map[string]interface{}{
+					"TaskId":       id,
+					"ProcessAfter": now.Add(taskLeaseTime),
+				}),
+			})
 		}
-		return txn.BufferWrite([]*spanner.Mutation{
-			span.UpdateMap("InvocationTasks", map[string]interface{}{
-				"InvocationId": taskKey.InvocationID,
-				"TaskId":       taskKey.TaskID,
-				"ProcessAfter": now.Add(taskLeaseTime),
-			}),
-		})
 	})
-	return task, shouldRunTask, err
+	return invID, task, err
 }
 
-func deleteInvocationTask(ctx context.Context, taskKey span.TaskKey) error {
+func deleteInvocationTask(ctx context.Context, id string) error {
 	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-		spanner.Delete("InvocationTasks", taskKey.Key()),
+		spanner.Delete("InvocationTasks", spanner.Key{id}),
 	})
 	return err
 }
 
-func dispatchInvocationTasks(ctx context.Context, taskKeys []span.TaskKey) error {
+func dispatchInvocationTasks(ctx context.Context, ids []string) error {
 	return parallel.WorkPool(10, func(workC chan<- func() error) {
-		for _, taskKey := range taskKeys {
-			taskKey := taskKey
+		for _, id := range ids {
+			id := id
 			workC <- func() error {
-				task, shouldRunTask, err := leaseInvocationTask(ctx, taskKey)
-
-				if err != nil {
-					return err
-				}
-				if !shouldRunTask {
+			invID, task, err := leaseInvocationTask(ctx, id)
+				switch {
+				case err == errLeasingConflict:
 					// It's possible another worker has leased the task, and it's fine, skip.
 					return nil
+				case err != nil:
+					return err
 				}
 
-				if err := exportResultsToBigQuery(ctx, taskKey.InvocationID, task.BigqueryExport); err != nil {
+				if err := exportResultsToBigQuery(ctx, invID, task.BigqueryExport); err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
-						logging.Errorf(ctx, "permanent failure to process task %s/%s: %s", taskKey.InvocationID, taskKey.TaskID, err)
-						return deleteInvocationTask(ctx, taskKey)
+						logging.Errorf(ctx, "permanent failure to process task %s: %s", id, err)
+						return deleteInvocationTask(ctx, id)
 					}
 					return err
 				}
 
 				// Invocation task is done, delete the row from spanner.
-				return deleteInvocationTask(ctx, taskKey)
+				return deleteInvocationTask(ctx, id)
 			}
 		}
 	})
@@ -106,8 +114,8 @@ func runInvocationTasks(ctx context.Context) {
 	// TODO(chanli): Add alert on failures.
 	attempt := 0
 	for {
-		taskKeys, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
-		if err != nil || len(taskKeys) == 0 {
+		ids, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
+		if err != nil || len(ids) == 0 {
 			if err != nil {
 				logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
 			}
@@ -123,7 +131,7 @@ func runInvocationTasks(ctx context.Context) {
 		}
 
 		attempt = 0
-		if err = dispatchInvocationTasks(ctx, taskKeys); err != nil {
+		if err = dispatchInvocationTasks(ctx, ids); err != nil {
 			logging.Errorf(ctx, "Failed to run invocation tasks: %s", err)
 		}
 	}
