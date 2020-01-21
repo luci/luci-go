@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5c93cba9_f3830b27",
+        "filename": "resultdb/cmd/recorder/chromium/formats/common.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "rebased",
+      "parentUuid": "c8a64249_de94c39d",
+      "range": {
+        "startLine": 50,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 3
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "24e73376_88710c88",
         "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44083b35_28c49842",
+        "filename": "resultdb/cmd/recorder/chromium/formats/gtest.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "rebased",
+      "parentUuid": "24e73376_88710c88",
+      "range": {
+        "startLine": 326,
+        "startChar": 1,
+        "endLine": 334,
+        "endChar": 30
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "abcbf9b6_8c9b2bb7",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7c207a9_848a73c7",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 12
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5bcf0e6_28a12119",
         "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
         "patchSetId": 9
@@ -91,6 +163,30 @@
       "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2968bf1_869311c2",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "nah, this code base follows a rule that a function returning an error does not include information that the caller already knows. otherwise the caller may also include it, resulting in duplicating info.",
+      "parentUuid": "c5bcf0e6_28a12119",
+      "range": {
+        "startLine": 80,
+        "startChar": 23,
+        "endLine": 80,
+        "endChar": 37
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "98826f1d_eaca9466",
+        "filename": "resultdb/cmd/recorder/chromium/util/isolated_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "441f5f3b_c52a0f5a",
+      "range": {
+        "startLine": 31,
+        "startChar": 9,
+        "endLine": 31,
+        "endChar": 12
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3f45e708_9a23d8b3",
         "filename": "resultdb/cmd/resultdb/query_test_results.go",
         "patchSetId": 9
@@ -137,6 +257,30 @@
       "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "743da78e_40f159d9",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T18:36:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f45e708_9a23d8b3",
+      "range": {
+        "startLine": 28,
+        "startChar": 32,
+        "endLine": 28,
+        "endChar": 58
+      },
+      "revId": "9043a2b587e5fe7330f82042b03f2c3586a80955",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
