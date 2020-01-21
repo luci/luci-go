@@ -71,7 +71,7 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Exact{Exact: invalidVariant},
 					})
-					So(err, ShouldErrLike, `variant: exact: "":"": key: does not match`)
+					So(err, ShouldErrLike, `variant: exact: "":"": key: unspecified`)
 				})
 			})
 
@@ -86,7 +86,7 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Contains{Contains: invalidVariant},
 					})
-					So(err, ShouldErrLike, `variant: contains: "":"": key: does not match`)
+					So(err, ShouldErrLike, `variant: contains: "":"": key: unspecified`)
 				})
 			})
 

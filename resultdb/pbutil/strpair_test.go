@@ -54,7 +54,7 @@ func TestValidateStringPair(t *testing.T) {
 	Convey(`TestValidateStringPairs`, t, func() {
 		Convey(`empty`, func() {
 			err := ValidateStringPair(StringPair("", ""))
-			So(err, ShouldErrLike, `key: does not match`)
+			So(err, ShouldErrLike, `key: unspecified`)
 		})
 
 		Convey(`invalid key`, func() {

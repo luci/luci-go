@@ -58,7 +58,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 					Variant: pbutil.Variant("", ""),
 				},
 			}, true)
-			So(err, ShouldErrLike, `variant: "":"": key: does not match`)
+			So(err, ShouldErrLike, `variant: "":"": key: unspecified`)
 		})
 
 		Convey(`Valid`, func() {

@@ -40,6 +40,16 @@ func unspecified() error {
 	return errors.Reason("unspecified").Err()
 }
 
+func validateWithRe(re *regexp.Regexp, value string) error {
+	if value == "" {
+		return unspecified()
+	}
+	if !re.MatchString(value) {
+		return doesNotMatch(re)
+	}
+	return nil
+}
+
 // MustTimestampProto converts a time.Time to a *tspb.Timestamp and panics
 // on failure.
 func MustTimestampProto(t time.Time) *tspb.Timestamp {
