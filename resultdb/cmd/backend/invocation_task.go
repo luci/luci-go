@@ -85,7 +85,7 @@ func dispatchInvocationTasks(ctx context.Context, ids []string) error {
 		for _, id := range ids {
 			id := id
 			workC <- func() error {
-			invID, task, err := leaseInvocationTask(ctx, id)
+				invID, task, err := leaseInvocationTask(ctx, id)
 				switch {
 				case err == errLeasingConflict:
 					// It's possible another worker has leased the task, and it's fine, skip.
@@ -94,7 +94,13 @@ func dispatchInvocationTasks(ctx context.Context, ids []string) error {
 					return err
 				}
 
-				if err := exportResultsToBigQuery(ctx, invID, task.BigqueryExport); err != nil {
+				switch task.Task.(type) {
+				case *internalpb.InvocationTask_BigqueryExport:
+					err = exportResultsToBigQuery(ctx, invID, task.GetBigqueryExport())
+				default:
+					err = errors.Reason("unexpected type in task %q", task).Err()
+				}
+				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
 						logging.Errorf(ctx, "permanent failure to process task %s: %s", id, err)
 						return deleteInvocationTask(ctx, id)

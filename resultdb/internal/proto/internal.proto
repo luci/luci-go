@@ -33,15 +33,14 @@ message PageToken {
 
 // A container of artifacts.
 // Used to store artifacts in Spanner.
-message Artifacts {
-  repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1;
-}
+message Artifacts { repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1; }
 
 // A message for storing input for an invocation task.
-// Currently it's for BigQuery exports only.
 message InvocationTask {
-  // Input for exporting an invocation to a BigQuery table.
-  luci.resultdb.rpc.v1.BigQueryExport bigquery_export = 1;
+  oneof task {
+    // Export an invocation to a BigQuery table.
+    luci.resultdb.rpc.v1.BigQueryExport bigquery_export = 1;
+  }
 }
 
 // A container of bigquery_exports.
