@@ -23,7 +23,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"golang.org/x/net/context"
 
@@ -145,6 +144,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 
 	var ret []*pb.TestResult
 	var testNames []string
+	buf := &strings.Builder{}
 	for _, data := range r.PerIterationData {
 		// Sort the test name to make the output deterministic.
 		testNames = testNames[:0]
@@ -164,7 +164,7 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 
 			for i, result := range data[name] {
 				// Store the processed test result into the correct part of the overall map.
-				rpb, err := r.convertTestResult(ctx, testID, name, result)
+				rpb, err := r.convertTestResult(ctx, testID, name, result, buf)
 				if err != nil {
 					return nil, errors.Annotate(err,
 						"iteration %d of test %s failed to convert run result", i, name).Err()
@@ -279,13 +279,13 @@ func extractGTestParameters(testID string) (baseID string, params map[string]str
 	return
 }
 
-func (r *GTestResults) convertTestResult(ctx context.Context, testID, name string, result *GTestRunResult) (*pb.TestResult, error) {
+func (r *GTestResults) convertTestResult(ctx context.Context, testID, name string, result *GTestRunResult, buf *strings.Builder) (*pb.TestResult, error) {
 	status, err := fromGTestStatus(result.Status)
 	if err != nil {
 		return nil, err
 	}
 
-	rpb := &pb.TestResult{
+	tr := &pb.TestResult{
 		TestId:   testID,
 		Expected: status == pb.TestStatus_PASS,
 		Status:   status,
@@ -299,10 +299,11 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 
 	// Do not set duration if it is unknown.
 	if result.ElapsedTimeMs != 0 {
-		rpb.Duration = secondsToDuration(1e-6 * float64(result.ElapsedTimeMs))
+		tr.Duration = secondsToDuration(1e-6 * float64(result.ElapsedTimeMs))
 	}
 
 	// Write the summary.
+	var snippet string
 	if result.OutputSnippetBase64 != "" {
 		outputBytes, err := base64.StdEncoding.DecodeString(result.OutputSnippetBase64)
 		if err != nil {
@@ -310,26 +311,26 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 			// convert a summary.
 			logging.Errorf(ctx, "Failed to convert OutputSnippetBase64 %q", result.OutputSnippetBase64)
 		} else {
-			// TODO(jchinlee): Escape Markdown.
-			rpb.SummaryHtml = strings.ToValidUTF8(string(outputBytes), string(utf8.RuneError))
+			snippet = string(outputBytes)
 		}
 	}
+	buf.Reset()
+	err = summaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
+		"snippet": snippet,
+		"links":   result.Links,
+	})
+	if err != nil {
+		return nil, err
+	}
+	tr.SummaryHtml = buf.String()
 
 	// Store the test code location.
 	if loc, ok := r.TestLocations[name]; ok {
-		rpb.Tags = append(rpb.Tags,
+		tr.Tags = append(tr.Tags,
 			pbutil.StringPair("gtest_file", loc.File),
 			pbutil.StringPair("gtest_line", strconv.Itoa(loc.Line)),
 		)
 	}
 
-	// Include links if any.
-	for name, url := range result.Links {
-		rpb.OutputArtifacts = append(rpb.OutputArtifacts, &pb.Artifact{
-			Name:    name,
-			ViewUrl: url,
-		})
-	}
-
-	return rpb, nil
+	return tr, nil
 }
