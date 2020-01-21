@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f2697650_aa7c085e",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T19:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d400c2cd_979e30cb",
+      "range": {
+        "startLine": 67,
+        "startChar": 6,
+        "endLine": 67,
+        "endChar": 12
+      },
+      "revId": "95fa25faeec543e03ffe5b2751f79a53fecc1c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e781b25_8be3c3c7",
         "filename": "resultdb/cmd/backend/invocation_task_test.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a8d5021d_75d4fa0f",
+        "filename": "resultdb/cmd/backend/invocation_task_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T19:11:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e781b25_8be3c3c7",
+      "range": {
+        "startLine": 79,
+        "startChar": 5,
+        "endLine": 79,
+        "endChar": 11
+      },
+      "revId": "95fa25faeec543e03ffe5b2751f79a53fecc1c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9b095416_94681052",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "95fa25faeec543e03ffe5b2751f79a53fecc1c01",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06ef33b2_aeb35e42",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 3
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T19:11:56Z",
+      "side": 1,
+      "message": "removed. this doc does not add a lot of value. prefixing a string key with a type is a very standard technique, pretty much for any string key",
+      "parentUuid": "9b095416_94681052",
+      "range": {
+        "startLine": 200,
+        "startChar": 37,
+        "endLine": 200,
+        "endChar": 60
+      },
+      "revId": "95fa25faeec543e03ffe5b2751f79a53fecc1c01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
