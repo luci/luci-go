@@ -118,6 +118,30 @@
       "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "171aedf1_3d28497b",
+        "filename": "resultdb/cmd/resultdb/query_test_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-21T19:09:56Z",
+      "side": 1,
+      "message": "all ParseXXX and functions in this code base return an error with explanation \"why false\". Why would this would be different?\n\nI\u0027ve added a comment that we are sniffing \"type\" of fetch url",
+      "parentUuid": "b5b06b3b_d1d97b44",
+      "range": {
+        "startLine": 126,
+        "startChar": 12,
+        "endLine": 126,
+        "endChar": 15
+      },
+      "revId": "59601223e43ba32df95cf2a676c98c57c34f91a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
