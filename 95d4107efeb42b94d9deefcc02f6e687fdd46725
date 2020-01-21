@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c28952a_e3096a4d",
+        "filename": "resultdb/internal/proto/internal.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-21T19:11:32Z",
+      "side": 1,
+      "message": "How about \"task\" instead of \"type\"?",
+      "range": {
+        "startLine": 40,
+        "startChar": 8,
+        "endLine": 40,
+        "endChar": 12
+      },
+      "revId": "95d4107efeb42b94d9deefcc02f6e687fdd46725",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
