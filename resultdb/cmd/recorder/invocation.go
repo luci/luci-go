@@ -207,7 +207,7 @@ func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqE
 	for i, bqExport := range bqExports {
 		taskID := bqTaskID(invID, i)
 		task := &internalpb.InvocationTask{
-			BigqueryExport: bqExport,
+			Task: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
 		}
 		muts[i] = span.InsertInvocationTask(taskID, invID, task, processAfter)
 	}
