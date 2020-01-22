@@ -97,6 +97,12 @@ CREATE TABLE IncludedInvocations (
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
+-- Reverse of IncludedInvocations.
+-- Used to find invocations included by a given one, a potentially transition
+-- them from FINALIZING to FINALIZED state.
+CREATE INDEX ReversedIncludedInvocations
+  ON IncludedInvocations (IncludedInvocationId, InvocationId);
+
 -- Stores test results. Interleaved in Invocations.
 CREATE TABLE TestResults (
   -- ID of the parent Invocations row.
