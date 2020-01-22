@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gkelogger
+package sdlogger
 
 import (
 	"sync/atomic"
@@ -34,13 +34,13 @@ func (s *SeverityTracker) Write(l *LogEntry) {
 
 	var ptr *int32
 	switch l.Severity {
-	case "debug":
+	case DebugSeverity:
 		ptr = &s.debug
-	case "info":
+	case InfoSeverity:
 		ptr = &s.info
-	case "warning":
+	case WarningSeverity:
 		ptr = &s.warn
-	case "error":
+	case ErrorSeverity:
 		ptr = &s.err
 	default:
 		return
@@ -52,17 +52,17 @@ func (s *SeverityTracker) Write(l *LogEntry) {
 }
 
 // MaxSeverity returns maximum severity observed thus far or "".
-func (s *SeverityTracker) MaxSeverity() string {
+func (s *SeverityTracker) MaxSeverity() Severity {
 	switch {
 	case atomic.LoadInt32(&s.err) == 1:
-		return "error"
+		return ErrorSeverity
 	case atomic.LoadInt32(&s.warn) == 1:
-		return "warning"
+		return WarningSeverity
 	case atomic.LoadInt32(&s.info) == 1:
-		return "info"
+		return InfoSeverity
 	case atomic.LoadInt32(&s.debug) == 1:
-		return "debug"
+		return DebugSeverity
 	default:
-		return ""
+		return UnknownSeverity
 	}
 }
