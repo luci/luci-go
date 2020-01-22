@@ -59,6 +59,7 @@ one('builder-a')
 #
 # === commit-queue.cfg
 # config_groups: <
+#   name: "cq group"
 #   gerrit: <
 #     url: "https://example-review.googlesource.com"
 #     projects: <

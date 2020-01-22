@@ -452,6 +452,7 @@ lucicfg.emit(
 #   >
 # >
 # config_groups: <
+#   name: "main-cq"
 #   gerrit: <
 #     url: "https://example-review.googlesource.com"
 #     projects: <
