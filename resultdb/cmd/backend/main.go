@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"io"
 
 	"go.chromium.org/luci/server"
@@ -29,7 +30,12 @@ func main() {
 			io.WriteString(c.Writer, "OK")
 		})
 
-		srv.RunInBackground("resultdb.invocation_task", runInvocationTasks)
+		runTasksInBackground := func(activity string, taskType taskType) {
+			srv.RunInBackground(activity, func(ctx context.Context) {
+				runInvocationTasks(ctx, taskType)
+			})
+		}
+		runTasksInBackground("resultdb.bigquery_export", taskBQExport)
 		return nil
 	})
 }

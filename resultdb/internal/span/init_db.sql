@@ -197,14 +197,21 @@ CREATE TABLE TestExonerations (
 -- Stores tasks to perform on invocations.
 -- E.g. to export an invocation to a BigQuery table.
 CREATE TABLE InvocationTasks (
+  -- Type of the task. Examples:
+  -- * "bqexport": exports an invocation to BigQuery.
+  --   The Payload is binary-encoded BigQueryExport message.
+  -- * "finalize": attempts to finalize the invocation, if possible.
+  --   Not payload.
+  TaskType STRING(16) NOT NULL,
+
   -- Id of the task.
   TaskId STRING(MAX) NOT NULL,
 
   -- ID of the invocation to process.
   InvocationId STRING(MAX) NOT NULL,
 
-  -- Binary-encoded luci.resultdb.internal.InvocationTask.
-  Payload BYTES(MAX) NOT NULL,
+  -- Depends on task type. See TaskType comment.
+  Payload BYTES(MAX),
 
   -- When to process the task.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
@@ -212,4 +219,4 @@ CREATE TABLE InvocationTasks (
   -- ProcessAfter can be reset to a future time by a worker when it starts to
   -- work on this task to prevent other workers picking up the same one.
   ProcessAfter TIMESTAMP
-) PRIMARY KEY (TaskId);
+) PRIMARY KEY (TaskType, TaskId);

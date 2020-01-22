@@ -33,14 +33,14 @@ func TestSampleInvocationTasks(t *testing.T) {
 		now := clock.Now(ctx)
 		task := &internalpb.InvocationTask{}
 		testutil.MustApply(ctx,
-			span.InsertInvocationTask("task1", "inv", task, now.Add(-time.Hour)),
-			span.InsertInvocationTask("task2", "inv", task, now.Add(-time.Hour)),
-			span.InsertInvocationTask("task3", "inv", task, now.Add(-time.Hour)),
-			span.InsertInvocationTask("task4", "inv", task, now),
-			span.InsertInvocationTask("task5", "inv", task, now.Add(time.Hour)),
+			span.InsertInvocationTask("bqexport", "task1", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("bqexport", "task2", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("bqexport", "task3", "inv", task, now.Add(-time.Hour)),
+			span.InsertInvocationTask("bqexport", "task4", "inv", task, now),
+			span.InsertInvocationTask("bqexport", "task5", "inv", task, now.Add(time.Hour)),
 		)
 
-		rows, err := span.SampleInvocationTasks(ctx, now, 3)
+		rows, err := span.SampleInvocationTasks(ctx, "bqexport", now, 3)
 		So(err, ShouldBeNil)
 		So(rows, ShouldHaveLength, 3)
 		So(rows, ShouldNotContain, "task5")

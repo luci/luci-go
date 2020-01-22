@@ -202,6 +202,7 @@ func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateTok
 }
 
 // insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
+// TODO(crbug.com/1032434): move this function.
 func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
 	muts := make([]*spanner.Mutation, len(bqExports))
 	for i, bqExport := range bqExports {
@@ -209,11 +210,11 @@ func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqE
 		task := &internalpb.InvocationTask{
 			Task: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
 		}
-		muts[i] = span.InsertInvocationTask(taskID, invID, task, processAfter)
+		muts[i] = span.InsertInvocationTask("bqexport", taskID, invID, task, processAfter)
 	}
 	return muts
 }
 
 func bqTaskID(invID span.InvocationID, index int) string {
-	return fmt.Sprintf("bq_export:%s:%d", invID, index)
+	return fmt.Sprintf("%s:%d", invID, index)
 }
