@@ -18,15 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -116,8 +113,6 @@ func TestFinalizeInvocation(t *testing.T) {
 			Convey(`finalized and add InvocationTasks`, func() {
 				extra := map[string]interface{}{
 					"UpdateToken": token,
-					"BigQueryExports": span.CompressedProto{&internalpb.BigQueryExports{
-						BigqueryExports: []*pb.BigQueryExport{&pb.BigQueryExport{}}}},
 				}
 				MustApply(ctx,
 					InsertInvocation("inv", pb.Invocation_ACTIVE, ct, extra),
@@ -134,16 +129,6 @@ func TestFinalizeInvocation(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
-
-				// Read InvocationTask to confirm it's added.
-				var processAfter *tspb.Timestamp
-				var invID span.InvocationID
-				MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", 0)}, map[string]interface{}{
-					"InvocationID": &invID,
-					"ProcessAfter": &processAfter,
-				})
-				So(invID, ShouldEqual, "inv")
-				So(processAfter, ShouldResemble, nowTimestamp)
 			})
 		})
 	})
