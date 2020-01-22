@@ -1,0 +1,4 @@
+runtime: go113
+
+entrypoint: >
+  /usr/local/bin/start -auth-service-host chrome-infra-auth-dev.appspot.com
