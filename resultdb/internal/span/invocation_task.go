@@ -24,8 +24,9 @@ import (
 )
 
 // InsertInvocationTask inserts one row to InvocationTasks.
-func InsertInvocationTask(taskID string, invID InvocationID, invTask *internalpb.InvocationTask, processAfter time.Time) *spanner.Mutation {
+func InsertInvocationTask(taskType, taskID string, invID InvocationID, invTask *internalpb.InvocationTask, processAfter time.Time) *spanner.Mutation {
 	return InsertMap("InvocationTasks", map[string]interface{}{
+		"TaskType":     taskType,
 		"TaskId":       taskID,
 		"InvocationId": invID,
 		"Payload":      invTask,
@@ -35,12 +36,12 @@ func InsertInvocationTask(taskID string, invID InvocationID, invTask *internalpb
 
 // SampleInvocationTasks randomly picks sampleSize of rows in InvocationTasks
 // with ProcessAfter earlier than processTime.
-func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSize int64) ([]string, error) {
+func SampleInvocationTasks(ctx context.Context, taskType string, processTime time.Time, sampleSize int64) ([]string, error) {
 	st := spanner.NewStatement(`
 		WITH readyTasks AS (
 			SELECT TaskId
 			FROM InvocationTasks
-			WHERE ProcessAfter <= @processTime
+			WHERE TaskType = @taskType AND ProcessAfter <= @processTime
 		)
 		SELECT *
 		FROM readyTasks
@@ -48,6 +49,7 @@ func SampleInvocationTasks(ctx context.Context, processTime time.Time, sampleSiz
 	`)
 
 	st.Params = ToSpannerMap(map[string]interface{}{
+		"taskType":    taskType,
 		"processTime": processTime,
 		"sampleSize":  sampleSize,
 	})

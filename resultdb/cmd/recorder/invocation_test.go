@@ -177,7 +177,7 @@ func TestInsertBQExportingTasks(t *testing.T) {
 				Task: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
 			}
 			invTaskRtn := &internalpb.InvocationTask{}
-			MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", index)}, map[string]interface{}{
+			MustReadRow(ctx, "InvocationTasks", spanner.Key{"bqexport", bqTaskID("inv", index)}, map[string]interface{}{
 				"Payload": invTaskRtn,
 			})
 			So(invTaskRtn, ShouldResembleProto, invTask)

@@ -138,7 +138,7 @@ func TestFinalizeInvocation(t *testing.T) {
 				// Read InvocationTask to confirm it's added.
 				var processAfter *tspb.Timestamp
 				var invID span.InvocationID
-				MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", 0)}, map[string]interface{}{
+				MustReadRow(ctx, "InvocationTasks", spanner.Key{"bqexport", bqTaskID("inv", 0)}, map[string]interface{}{
 					"InvocationID": &invID,
 					"ProcessAfter": &processAfter,
 				})
