@@ -1306,6 +1306,13 @@ func (s *Server) initTokenSource(scopes []string) (scopedAuth, error) {
 	opts := s.Options.ClientAuth
 	opts.Scopes = scopes
 
+	// GAE v2 is very aggressive in caching the token internally (in the metadata
+	// server) and refreshing it only when it is very close to its expiration. We
+	// need to match this behavior in our in-process cache, otherwise
+	// GetAccessToken complains that the token refresh procedure doesn't actually
+	// change the token (because the metadata server returned the cached one).
+	opts.MinTokenLifetime = 20 * time.Second
+
 	// Note: we are using the root context here (not request-scoped context passed
 	// to getAccessToken) because the authenticator *outlives* the request (by
 	// being cached), thus it needs a long-living context.
