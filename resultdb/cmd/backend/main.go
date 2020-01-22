@@ -15,6 +15,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"io"
 
 	"go.chromium.org/luci/server"
@@ -29,7 +31,12 @@ func main() {
 			io.WriteString(c.Writer, "OK")
 		})
 
-		srv.RunInBackground("resultdb.invocation_task", runInvocationTasks)
+		for _, taskType := range allTaskTypes {
+			activity := fmt.Sprintf("resultdb.task.%s", taskType)
+			srv.RunInBackground(activity, func(ctx context.Context) {
+				runInvocationTasks(ctx, taskType)
+			})
+		}
 		return nil
 	})
 }

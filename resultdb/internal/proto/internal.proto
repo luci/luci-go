@@ -18,7 +18,6 @@ package luci.resultdb.internal;
 
 option go_package = "internalpb";
 
-import "go.chromium.org/luci/resultdb/proto/rpc/v1/invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
 
 // A message for storing all the information attached to a page token.
@@ -34,11 +33,3 @@ message PageToken {
 // A container of artifacts.
 // Used to store artifacts in Spanner.
 message Artifacts { repeated luci.resultdb.rpc.v1.Artifact artifacts_v1 = 1; }
-
-// A message for storing input for an invocation task.
-message InvocationTask {
-  oneof task {
-    // Export an invocation to a BigQuery table.
-    luci.resultdb.rpc.v1.BigQueryExport bigquery_export = 1;
-  }
-}

@@ -26,9 +26,23 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
+
+type taskType string
+
+func (t taskType) Key(taskID string) spanner.Key {
+	return spanner.Key{string(t), taskID}
+}
+
+// Types of invocation tasks. Used as InvocationTasks.TaskType column value.
+const (
+	// taskBQExport is a type of task that exports an invocation to BigQuery.
+	// The task payload is binary-encoded BigQueryExport message.
+	taskBQExport taskType = "bq_export"
+)
+
+var allTaskTypes = []taskType{taskBQExport}
 
 // taskLeaseTime is the time allowed for a worker to work on an invocation task.
 const taskLeaseTime = 10 * time.Minute
@@ -43,16 +57,14 @@ var errLeasingConflict = fmt.Errorf("the task is already leased")
 
 // leaseInvocationTask leases an invocation task if it can.
 // If the task could not be leased, returns errLeasingConflict.
-func leaseInvocationTask(ctx context.Context, id string) (span.InvocationID, *internalpb.InvocationTask, error) {
-	var invID span.InvocationID
-	task := &internalpb.InvocationTask{}
-	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+func leaseInvocationTask(ctx context.Context, taskType taskType, id string) (invID span.InvocationID, payload []byte, err error) {
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		now := clock.Now(ctx)
 		var processAfter time.Time
-		err := span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{id}, map[string]interface{}{
+		err := span.ReadRow(ctx, txn, "InvocationTasks", taskType.Key(id), map[string]interface{}{
 			"InvocationId": &invID,
 			"ProcessAfter": &processAfter,
-			"Payload":      task,
+			"Payload":      &payload,
 		})
 		switch {
 		case err != nil:
@@ -64,28 +76,29 @@ func leaseInvocationTask(ctx context.Context, id string) (span.InvocationID, *in
 		default:
 			return txn.BufferWrite([]*spanner.Mutation{
 				span.UpdateMap("InvocationTasks", map[string]interface{}{
+					"TaskType":     string(taskType),
 					"TaskId":       id,
 					"ProcessAfter": now.Add(taskLeaseTime),
 				}),
 			})
 		}
 	})
-	return invID, task, err
+	return
 }
 
-func deleteInvocationTask(ctx context.Context, id string) error {
+func deleteInvocationTask(ctx context.Context, taskType taskType, id string) error {
 	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-		spanner.Delete("InvocationTasks", spanner.Key{id}),
+		spanner.Delete("InvocationTasks", taskType.Key(id)),
 	})
 	return err
 }
 
-func dispatchInvocationTasks(ctx context.Context, ids []string) error {
+func dispatchInvocationTasks(ctx context.Context, taskType taskType, ids []string) error {
 	return parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
 			workC <- func() error {
-				invID, task, err := leaseInvocationTask(ctx, id)
+				invID, payload, err := leaseInvocationTask(ctx, taskType, id)
 				switch {
 				case err == errLeasingConflict:
 					// It's possible another worker has leased the task, and it's fine, skip.
@@ -94,33 +107,33 @@ func dispatchInvocationTasks(ctx context.Context, ids []string) error {
 					return err
 				}
 
-				switch task.Task.(type) {
-				case *internalpb.InvocationTask_BigqueryExport:
-					err = exportResultsToBigQuery(ctx, invID, task.GetBigqueryExport())
+				switch taskType {
+				case taskBQExport:
+					err = exportResultsToBigQuery(ctx, invID, payload)
 				default:
-					err = errors.Reason("unexpected type in task %q", task).Err()
+					err = errors.Reason("unexpected task type %q", taskType).Err()
 				}
 				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
 						logging.Errorf(ctx, "permanent failure to process task %s: %s", id, err)
-						return deleteInvocationTask(ctx, id)
+						return deleteInvocationTask(ctx, taskType, id)
 					}
 					return err
 				}
 
 				// Invocation task is done, delete the row from spanner.
-				return deleteInvocationTask(ctx, id)
+				return deleteInvocationTask(ctx, taskType, id)
 			}
 		}
 	})
 }
 
 // runInvocationTasks gets invocation tasks and dispatch the tasks to workers.
-func runInvocationTasks(ctx context.Context) {
+func runInvocationTasks(ctx context.Context, taskType taskType) {
 	// TODO(chanli): Add alert on failures.
 	attempt := 0
 	for {
-		ids, err := span.SampleInvocationTasks(ctx, time.Now(), 100)
+		ids, err := span.SampleInvocationTasks(ctx, string(taskType), time.Now(), 100)
 		if err != nil || len(ids) == 0 {
 			if err != nil {
 				logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
@@ -137,7 +150,7 @@ func runInvocationTasks(ctx context.Context) {
 		}
 
 		attempt = 0
-		if err = dispatchInvocationTasks(ctx, ids); err != nil {
+		if err = dispatchInvocationTasks(ctx, taskType, ids); err != nil {
 			logging.Errorf(ctx, "Failed to run invocation tasks: %s", err)
 		}
 	}
