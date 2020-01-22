@@ -42,7 +42,7 @@ message TestResult {
   ];
 
   // Test id, a unique identifier of the test in a LUCI project.
-  // Regex: ^[[::print::]]+$.
+  // Regex: ^[[::print::]]{1,256}$
   //
   // If two tests have a common test id prefix that ends with a
   // non-alphanumeric character, they considered a part of a group. Examples:
@@ -62,7 +62,7 @@ message TestResult {
   string test_id = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Identifies a test result in a given invocation and test id.
-  // Regex: ^[[:ascii:]]{1,32}$.
+  // Regex: ^[[:ascii:]]{1,32}$
   string result_id = 3 [
     (google.api.field_behavior) = IMMUTABLE,
     (google.api.field_behavior) = REQUIRED
@@ -154,7 +154,7 @@ enum TestStatus {
 // See TestResult.output_artifacts for examples.
 message Artifact {
   // A slash-separated relative path, identifies the artifact.
-  // Example: "traces/a.txt".
+  // Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
   string name = 1 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Machine-readable URL to fetch the contents of the artifact.

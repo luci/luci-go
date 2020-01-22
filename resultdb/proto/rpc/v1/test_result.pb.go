@@ -98,7 +98,7 @@ type TestResult struct {
 	// https://golang.org/pkg/net/url/#PathEscape See also https://aip.dev/122.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Test id, a unique identifier of the test in a LUCI project.
-	// Regex: ^[[::print::]]+$.
+	// Regex: ^[[::print::]]{1,256}$
 	//
 	// If two tests have a common test id prefix that ends with a
 	// non-alphanumeric character, they considered a part of a group. Examples:
@@ -117,7 +117,7 @@ type TestResult struct {
 	// LUCI does not interpret test ids in any other way.
 	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
 	// Identifies a test result in a given invocation and test id.
-	// Regex: ^[[:ascii:]]{1,32}$.
+	// Regex: ^[[:ascii:]]{1,32}$
 	ResultId string `protobuf:"bytes,3,opt,name=result_id,json=resultId,proto3" json:"result_id,omitempty"`
 	// Description of one specific way of running the test,
 	// e.g. a specific bucket, builder and a test suite.
@@ -269,7 +269,7 @@ func (m *TestResult) GetOutputArtifacts() []*Artifact {
 // See TestResult.output_artifacts for examples.
 type Artifact struct {
 	// A slash-separated relative path, identifies the artifact.
-	// Example: "traces/a.txt".
+	// Regex: ^[[:word:]]([[:print:]]{0,254}[[:word:]])?$
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Machine-readable URL to fetch the contents of the artifact.
 	// This must be a plain (curlable) HTTPS URL.

@@ -25,13 +25,7 @@ var invocationNameRe = regexpf("^invocations/(%s)$", invocationIDPattern)
 
 // ValidateInvocationID returns a non-nil error if id is invalid.
 func ValidateInvocationID(id string) error {
-	if id == "" {
-		return unspecified()
-	}
-	if !invocationIDRe.MatchString(id) {
-		return doesNotMatch(invocationIDRe)
-	}
-	return nil
+	return validateWithRe(invocationIDRe, id)
 }
 
 // ValidateInvocationName returns a non-nil error if name is invalid.
