@@ -143,6 +143,10 @@ var (
 // Registers all options in the default flag set and uses `flag.Parse` to parse
 // them. If 'opts' is nil, the default options will be used.
 //
+// Additionally recognizes GAE_APPLICATION env var as an indicator that the
+// server is running on GAE. This slightly tweaks its behavior to match what GAE
+// expects from servers.
+//
 // On errors, logs them and aborts the process with non-zero exit code.
 func Main(opts *Options, init func(srv *Server) error) {
 	mathrand.SeedRandomly()
@@ -151,8 +155,11 @@ func Main(opts *Options, init func(srv *Server) error) {
 			ClientAuth: chromeinfra.DefaultAuthOptions(),
 		}
 	}
+
 	opts.Register(flag.CommandLine)
 	flag.Parse()
+	opts.FromGAEEnv()
+
 	srv, err := New(*opts)
 	if err != nil {
 		srv.Fatal(err)
@@ -165,11 +172,18 @@ func Main(opts *Options, init func(srv *Server) error) {
 	}
 }
 
-// Options are exposed as command line flags.
+// Options are used to configure the server.
+//
+// Most of them are exposed as command line flags (see Register implementation).
+// Some (mostly GAE-specific) are only settable through code or are derived from
+// the environment.
 type Options struct {
-	Prod      bool   // must be set when running in production
+	Prod     bool   // set when running in production (not on a dev workstation)
+	GAE      bool   // set when running on GAE, implies Prod
+	Hostname string // used for logging and metric fields, default is os.Hostname
+
 	HTTPAddr  string // address to bind the main listening socket to
-	AdminAddr string // address to bind the admin socket to
+	AdminAddr string // address to bind the admin socket to, ignored on GAE
 
 	RootSecretPath string // path to a JSON file with the root secret key
 	SettingsPath   string // path to a JSON file with app settings
@@ -324,6 +338,47 @@ func (o *Options) Register(f *flag.FlagSet) {
 	)
 }
 
+// FromGAEEnv uses the GAE_APPLICATION env var (and other GAE-specific env vars)
+// to configure the server for the GAE environment.
+//
+// Does nothing if GAE_APPLICATION is not set.
+//
+// Equivalent to passing the following flags:
+//   -prod
+//   -http-addr 0.0.0.0:${PORT}
+//   -cloud-project ${GOOGLE_CLOUD_PROJECT}
+//   -service-account-json :gce
+//   -ts-mon-service-name ${GOOGLE_CLOUD_PROJECT}
+//   -ts-mon-job-name ${GAE_SERVICE}
+//
+// Additionally the hostname and -container-image-id (used in metric and trace
+// fields) are derived from available GAE_* env vars to be semantically similar
+// to what they represent in the GKE environment.
+//
+// See https://cloud.google.com/appengine/docs/standard/go/runtime.
+func (o *Options) FromGAEEnv() {
+	if os.Getenv("GAE_APPLICATION") == "" {
+		return
+	}
+	o.GAE = true
+	o.Prod = true
+	o.Hostname = fmt.Sprintf("%s-%s-%s",
+		os.Getenv("GAE_SERVICE"),
+		os.Getenv("GAE_DEPLOYMENT_ID"),
+		os.Getenv("GAE_INSTANCE")[:8],
+	)
+	o.HTTPAddr = fmt.Sprintf("0.0.0.0:%s", os.Getenv("PORT"))
+	o.CloudProject = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	o.ClientAuth.ServiceAccountJSONPath = clientauth.GCEServiceAccount
+	o.TsMonServiceName = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	o.TsMonJobName = os.Getenv("GAE_SERVICE")
+	o.ContainerImageID = fmt.Sprintf("appengine/%s/%s:%s",
+		os.Getenv("GOOGLE_CLOUD_PROJECT"),
+		os.Getenv("GAE_SERVICE"),
+		os.Getenv("GAE_VERSION"),
+	)
+}
+
 // imageVersion extracts image tag or digest from ContainerImageID.
 //
 // This is eventually reported as a value of 'server/version' metric.
@@ -391,7 +446,6 @@ type Server struct {
 	Options Options
 
 	startTime   time.Time    // for calculating uptime for /healthz
-	hostname    string       // obtained from os.Hostname in New
 	lastReqTime atomic.Value // time.Time when the last request finished
 
 	rpcLimiter *limiter.Limiter // limits in-flight RPCs in the main port
@@ -399,8 +453,7 @@ type Server struct {
 	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
 
-	mainPort  *Port // pre-registered main port, see initMainPort
-	adminPort *Port // pre-registered admin port, see initAdminPort
+	mainPort *Port // pre-registered main port, see initMainPort
 
 	mu      sync.Mutex    // protects fields below
 	ports   []*Port       // all registered ports (each one hosts an HTTP server)
@@ -489,11 +542,13 @@ func New(opts Options) (srv *Server, err error) {
 	srv.initLogging()
 
 	// Need the hostname (e.g. pod name on k8s) for logs and metrics.
-	srv.hostname, err = os.Hostname()
-	if err != nil {
-		return srv, errors.Annotate(err, "failed to get own hostname").Err()
+	if srv.Options.Hostname == "" {
+		srv.Options.Hostname, err = os.Hostname()
+		if err != nil {
+			return srv, errors.Annotate(err, "failed to get own hostname").Err()
+		}
 	}
-	logging.Infof(srv.Context, "Running on %s", srv.hostname)
+	logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
 	if opts.ContainerImageID != "" {
 		logging.Infof(srv.Context, "Container image is %s", opts.ContainerImageID)
 	}
@@ -797,7 +852,7 @@ func (s *Server) healthResponse(c context.Context) string {
 		"",
 		"service: " + maybeEmpty(s.Options.TsMonServiceName),
 		"job:     " + maybeEmpty(s.Options.TsMonJobName),
-		"host:    " + s.hostname,
+		"host:    " + s.Options.Hostname,
 		"",
 	}, "\n")
 }
@@ -1421,7 +1476,7 @@ func (s *Server) initTSMon() error {
 				DataCenter:  "appengine",
 				ServiceName: s.Options.TsMonServiceName,
 				JobName:     s.Options.TsMonJobName,
-				HostName:    s.hostname,
+				HostName:    s.Options.Hostname,
 			}
 		},
 	}
@@ -1479,7 +1534,7 @@ func (s *Server) initTracing() error {
 			"cr.dev/image":   s.Options.ContainerImageID,
 			"cr.dev/service": s.Options.TsMonServiceName,
 			"cr.dev/job":     s.Options.TsMonJobName,
-			"cr.dev/host":    s.hostname,
+			"cr.dev/host":    s.Options.Hostname,
 		},
 		OnError: func(err error) {
 			logging.Errorf(s.Context, "StackDriver error: %s", err)
@@ -1636,6 +1691,10 @@ func (s *Server) initMainPort() error {
 
 // initAdminPort initializes the server on options.AdminAddr port.
 func (s *Server) initAdminPort() error {
+	if s.Options.GAE {
+		return nil // additional ports are not reachable on GAE
+	}
+
 	// Admin portal uses XSRF tokens that require a secret key. We generate this
 	// key randomly during process startup (i.e. now). It means XSRF tokens in
 	// admin HTML pages rendered by a server process are understood only by the
@@ -1652,12 +1711,12 @@ func (s *Server) initAdminPort() error {
 	})
 
 	// Install endpoints accessible through the admin port only.
-	s.adminPort = s.AddPort(PortOptions{
+	adminPort := s.AddPort(PortOptions{
 		Name:           "admin",
 		ListenAddr:     s.Options.AdminAddr,
 		DisableMetrics: true, // do not pollute HTTP metrics with admin-only routes
 	})
-	routes := s.adminPort.Routes
+	routes := adminPort.Routes
 
 	routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/admin/portal", http.StatusFound)
