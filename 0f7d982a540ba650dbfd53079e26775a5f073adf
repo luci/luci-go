@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3b6dfc16_e4480668",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T22:49:54Z",
+      "side": 1,
+      "message": "golint will complain that these public symbols do not have comments",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 16
+      },
+      "revId": "0f7d982a540ba650dbfd53079e26775a5f073adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78e5fc73_6b570ec2",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T22:49:54Z",
+      "side": 1,
+      "message": "this is https://godoc.org/github.com/golang/protobuf/ptypes/timestamp#Timestamp\nand https://godoc.org/github.com/golang/protobuf/ptypes#TimestampProto\n\nwhy reinvent the wheel?",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 1
+      },
+      "revId": "0f7d982a540ba650dbfd53079e26775a5f073adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
