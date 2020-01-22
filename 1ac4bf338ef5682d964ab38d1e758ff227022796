@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1563f890_b38dd17b",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T19:20:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee3d49e4_8cd52169",
+      "range": {
+        "startLine": 43,
+        "startChar": 26,
+        "endLine": 43,
+        "endChar": 34
+      },
+      "revId": "1ac4bf338ef5682d964ab38d1e758ff227022796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d245f93_af3a4f09",
         "filename": "resultdb/cmd/backend/invocation_task.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "1ac4bf338ef5682d964ab38d1e758ff227022796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bf71c35_61f1afa3",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T19:20:26Z",
+      "side": 1,
+      "message": "the task type is incorporated into the \"activity\" (in main.go) which is a part of every log message produced from that activity",
+      "parentUuid": "6d245f93_af3a4f09",
+      "range": {
+        "startLine": 142,
+        "startChar": 4,
+        "endLine": 142,
+        "endChar": 68
+      },
+      "revId": "1ac4bf338ef5682d964ab38d1e758ff227022796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
