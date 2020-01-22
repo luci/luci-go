@@ -49,6 +49,8 @@ func main() {
 
 			logging.Warningf(c.Context, "Hello warning world")
 			c.Writer.Write([]byte("Hello, world"))
+
+			logging.WithError(fmt.Errorf("boom")).Errorf(c.Context, "Hello error world")
 		})
 
 		// Redis example.
