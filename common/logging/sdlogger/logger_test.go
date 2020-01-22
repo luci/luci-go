@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gkelogger
+package sdlogger
 
 import (
 	"bytes"
@@ -51,10 +51,10 @@ func TestLogger(t *testing.T) {
 		c = use(c, buf, LogEntry{TraceID: "hi"})
 		logging.Infof(c, "test context")
 		So(read(buf), ShouldResemble, &LogEntry{
-			Message:  "test context",
-			Severity: "info",
-			Time:     "1454472306.7",
-			TraceID:  "hi", // copied from the prototype
+			Message:   "test context",
+			Severity:  InfoSeverity,
+			Timestamp: Timestamp{Seconds: 1454472306, Nanos: 7},
+			TraceID:   "hi", // copied from the prototype
 		})
 	})
 

@@ -82,8 +82,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gkelogger"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/trace"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
@@ -210,12 +210,12 @@ type Options struct {
 	LimiterMaxConcurrentRPCs int64 // limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)
 	LimiterAdvisoryMode      bool  // if set, don't enforce LimiterMaxConcurrentRPCs, but still report violations
 
-	testCtx       context.Context          // base context for tests
-	testSeed      int64                    // used to seed rng in tests
-	testStdout    gkelogger.LogEntryWriter // mocks stdout in tests
-	testStderr    gkelogger.LogEntryWriter // mocks stderr in tests
-	testListeners map[string]net.Listener  // addr => net.Listener, for tests
-	testAuthDB    authdb.DB                // AuthDB to use in tests
+	testCtx       context.Context         // base context for tests
+	testSeed      int64                   // used to seed rng in tests
+	testStdout    sdlogger.LogEntryWriter // mocks stdout in tests
+	testStderr    sdlogger.LogEntryWriter // mocks stderr in tests
+	testListeners map[string]net.Listener // addr => net.Listener, for tests
+	testAuthDB    authdb.DB               // AuthDB to use in tests
 }
 
 // Register registers the command line flags.
@@ -450,8 +450,8 @@ type Server struct {
 
 	rpcLimiter *limiter.Limiter // limits in-flight RPCs in the main port
 
-	stdout gkelogger.LogEntryWriter // for logging to stdout, nil in dev mode
-	stderr gkelogger.LogEntryWriter // for logging to stderr, nil in dev mode
+	stdout sdlogger.LogEntryWriter // for logging to stdout, nil in dev mode
+	stderr sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
 
 	mainPort *Port // pre-registered main port, see initMainPort
 
@@ -961,7 +961,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 
 	// Observe maximum emitted severity to use it as an overall severity for the
 	// request log entry.
-	severityTracker := gkelogger.SeverityTracker{Out: s.stdout}
+	severityTracker := sdlogger.SeverityTracker{Out: s.stdout}
 
 	// Log the overall request information when the request finishes. Use TraceID
 	// to correlate this log entry with entries emitted by the request handler
@@ -982,13 +982,13 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		} else {
 			s.lastReqTime.Store(now)
 		}
-		entry := gkelogger.LogEntry{
+		entry := sdlogger.LogEntry{
 			Severity:     severityTracker.MaxSeverity(),
-			Time:         gkelogger.FormatTime(now),
+			Timestamp:    sdlogger.ToTimestamp(now),
 			TraceID:      traceID,
 			TraceSampled: span.IsRecordingEvents(),
 			SpanID:       spanCtx.SpanID.String(), // the top-level span ID
-			RequestInfo: &gkelogger.RequestInfo{
+			RequestInfo: &sdlogger.RequestInfo{
 				Method:       c.Request.Method,
 				URL:          getRequestURL(c.Request),
 				Status:       statusCode,
@@ -1000,7 +1000,12 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 			},
 		}
 		if s.Options.Prod {
-			s.stderr.Write(&entry)
+			// Skip writing the root request log entry on GAE, since GAE writes it
+			// itself (in "appengine.googleapis.com/request_log" log). See also
+			// comments for initLogging(...).
+			if !s.Options.GAE {
+				s.stderr.Write(&entry)
+			}
 		} else {
 			logging.Infof(s.Context, "%d %s %q (%s)",
 				entry.RequestInfo.Status,
@@ -1022,16 +1027,16 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 
 	// Make the request logger emit log entries associated with the tracing span.
 	if s.Options.Prod {
-		annotateWithSpan := func(ctx context.Context, e *gkelogger.LogEntry) {
+		annotateWithSpan := func(ctx context.Context, e *sdlogger.LogEntry) {
 			// Note: here 'span' is some inner span from where logging.Log(...) was
 			// called. We annotate log lines with spans that emitted them.
 			if span := octrace.FromContext(ctx); span != nil {
 				e.SpanID = span.SpanContext().SpanID.String()
 			}
 		}
-		ctx = logging.SetFactory(ctx, gkelogger.Factory(&severityTracker, gkelogger.LogEntry{
+		ctx = logging.SetFactory(ctx, sdlogger.Factory(&severityTracker, sdlogger.LogEntry{
 			TraceID:   traceID,
-			Operation: &gkelogger.Operation{ID: s.genUniqueID(32)},
+			Operation: &sdlogger.Operation{ID: s.genUniqueID(32)},
 		}, annotateWithSpan))
 	}
 
@@ -1046,22 +1051,34 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 // be initialized yet, be careful.
 //
 // When running in production uses the ugly looking JSON format that is hard to
-// read by humans but which is parsed by google-fluentd.
+// read by humans but which is parsed by google-fluentd and GAE hosting
+// environment.
 //
-// To support per-request log grouping in Stackdriver Logs UI emit two log
-// streams:
-//  * stderr: top-level HTTP requests (conceptually "200 GET /path").
-//  * stdout: all application logs, correlated with HTTP logs in a particular
-//    way (see the link below).
+// To support per-request log grouping in Stackdriver Logs UI there must be
+// two different log streams:
+//   * A stream with top-level HTTP request entries (conceptually like Apache's
+//     access.log, i.e. with one log entry per request).
+//   * A stream with logs produced within requests (correlated with HTTP request
+//     logs via the trace ID field).
 //
-// This technique is primarily intended for GAE Flex, but it works anywhere:
+// Both streams are expected to have a particular format and use particular
+// fields for Stackdriver UI to display them correctly. This technique is
+// primarily intended for GAE Flex, but it works in many Google environments:
 // https://cloud.google.com/appengine/articles/logging#linking_app_logs_and_requests
 //
-// Stderr stream is also used to log all global activities that happens
-// outside of any request handler (stuff like initialization, shutdown,
+// On GKE we use 'stderr' stream for top-level HTTP request entries and 'stdout'
+// stream for logs produced by requests.
+//
+// On GAE, the stream with top-level HTTP request entries is produced by the GAE
+// runtime itself (as 'appengine.googleapis.com/request_log'). So we emit only
+// logs produced within requests (also to 'stdout', just like on GKE).
+//
+// In all environments 'stderr' stream is used to log all global activities that
+// happens outside of any request handler (stuff like initialization, shutdown,
 // background goroutines, etc).
 //
-// In non-production mode use the human-friendly format and a single log stream.
+// In non-production mode we use the human-friendly format and a single 'stderr'
+// log stream for everything.
 func (s *Server) initLogging() {
 	if !s.Options.Prod {
 		s.Context = gologger.StdConfig.Use(s.Context)
@@ -1072,18 +1089,18 @@ func (s *Server) initLogging() {
 	if s.Options.testStdout != nil {
 		s.stdout = s.Options.testStdout
 	} else {
-		s.stdout = &gkelogger.Sink{Out: os.Stdout}
+		s.stdout = &sdlogger.Sink{Out: os.Stdout}
 	}
 
 	if s.Options.testStderr != nil {
 		s.stderr = s.Options.testStderr
 	} else {
-		s.stderr = &gkelogger.Sink{Out: os.Stderr}
+		s.stderr = &sdlogger.Sink{Out: os.Stderr}
 	}
 
 	s.Context = logging.SetFactory(s.Context,
-		gkelogger.Factory(s.stderr, gkelogger.LogEntry{
-			Operation: &gkelogger.Operation{
+		sdlogger.Factory(s.stderr, sdlogger.LogEntry{
+			Operation: &sdlogger.Operation{
 				ID: s.genUniqueID(32), // correlate all global server logs together
 			},
 		}, nil),

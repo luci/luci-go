@@ -37,7 +37,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gkelogger"
+	"go.chromium.org/luci/common/logging/sdlogger"
 
 	"go.chromium.org/luci/lucictx"
 
@@ -124,11 +124,11 @@ func TestServer(t *testing.T) {
 			So(resp, ShouldEqual, "Hello, world")
 
 			// Stderr log captures details about the request.
-			So(srv.stderr.Last(1), ShouldResemble, []gkelogger.LogEntry{
+			So(srv.stderr.Last(1), ShouldResemble, []sdlogger.LogEntry{
 				{
-					Severity: "warning",
-					Time:     "1454472307.7",
-					RequestInfo: &gkelogger.RequestInfo{
+					Severity:  sdlogger.WarningSeverity,
+					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
+					RequestInfo: &sdlogger.RequestInfo{
 						Method:       "GET",
 						URL:          srv.mainAddr + "/test",
 						Status:       201,
@@ -141,20 +141,20 @@ func TestServer(t *testing.T) {
 				},
 			})
 			// Stdout log captures individual log lines.
-			So(srv.stdout.Last(2), ShouldResemble, []gkelogger.LogEntry{
+			So(srv.stdout.Last(2), ShouldResemble, []sdlogger.LogEntry{
 				{
-					Severity: "info",
-					Message:  "Info log",
-					Time:     "1454472306.7",
-					Operation: &gkelogger.Operation{
+					Severity:  sdlogger.InfoSeverity,
+					Message:   "Info log",
+					Timestamp: sdlogger.Timestamp{Seconds: 1454472306, Nanos: 7},
+					Operation: &sdlogger.Operation{
 						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
 				{
-					Severity: "warning",
-					Message:  "Warn log",
-					Time:     "1454472307.7",
-					Operation: &gkelogger.Operation{
+					Severity:  sdlogger.WarningSeverity,
+					Message:   "Warn log",
+					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
+					Operation: &sdlogger.Operation{
 						ID: "6694d2c422acd208a0072939487f6999",
 					},
 				},
@@ -683,10 +683,10 @@ func (e *errorEvent) Get() error {
 type logsRecorder struct {
 	discard bool
 	m       sync.Mutex
-	logs    []gkelogger.LogEntry
+	logs    []sdlogger.LogEntry
 }
 
-func (r *logsRecorder) Write(e *gkelogger.LogEntry) {
+func (r *logsRecorder) Write(e *sdlogger.LogEntry) {
 	if r.discard {
 		return
 	}
@@ -700,8 +700,8 @@ func (r *logsRecorder) Write(e *gkelogger.LogEntry) {
 	r.m.Unlock()
 }
 
-func (r *logsRecorder) Last(n int) []gkelogger.LogEntry {
-	entries := make([]gkelogger.LogEntry, n)
+func (r *logsRecorder) Last(n int) []sdlogger.LogEntry {
+	entries := make([]sdlogger.LogEntry, n)
 	r.m.Lock()
 	copy(entries, r.logs[len(r.logs)-n:])
 	r.m.Unlock()

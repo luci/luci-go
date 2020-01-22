@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gkelogger"
+	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/runtime/profiling"
 	"go.chromium.org/luci/common/system/signals"
@@ -156,8 +156,8 @@ type Service struct {
 // function.
 func (s *Service) Run(c context.Context, f func(context.Context) error) {
 	// Log to Stdout using fluentd-compatible JSON log lines.
-	sink := &gkelogger.Sink{Out: os.Stdout}
-	c = teelogger.Use(c, gkelogger.Factory(sink, gkelogger.LogEntry{}, nil))
+	sink := &sdlogger.Sink{Out: os.Stdout}
+	c = teelogger.Use(c, sdlogger.Factory(sink, sdlogger.LogEntry{}, nil))
 
 	// If a service name isn't specified, default to the base of the current
 	// executable.

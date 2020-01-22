@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gkelogger
+package sdlogger
 
 import (
 	"testing"
@@ -25,22 +25,22 @@ func TestSeverityTracker(t *testing.T) {
 
 	Convey("Works", t, func() {
 		st := SeverityTracker{Out: nullOut{}}
-		So(st.MaxSeverity(), ShouldEqual, "")
+		So(st.MaxSeverity(), ShouldEqual, UnknownSeverity)
 
-		st.Write(&LogEntry{Severity: "debug"})
-		So(st.MaxSeverity(), ShouldEqual, "debug")
+		st.Write(&LogEntry{Severity: DebugSeverity})
+		So(st.MaxSeverity(), ShouldEqual, DebugSeverity)
 
-		st.Write(&LogEntry{Severity: "info"})
-		So(st.MaxSeverity(), ShouldEqual, "info")
+		st.Write(&LogEntry{Severity: InfoSeverity})
+		So(st.MaxSeverity(), ShouldEqual, InfoSeverity)
 
-		st.Write(&LogEntry{Severity: "warning"})
-		So(st.MaxSeverity(), ShouldEqual, "warning")
+		st.Write(&LogEntry{Severity: WarningSeverity})
+		So(st.MaxSeverity(), ShouldEqual, WarningSeverity)
 
-		st.Write(&LogEntry{Severity: "error"})
-		So(st.MaxSeverity(), ShouldEqual, "error")
+		st.Write(&LogEntry{Severity: ErrorSeverity})
+		So(st.MaxSeverity(), ShouldEqual, ErrorSeverity)
 
-		st.Write(&LogEntry{Severity: "warning"})
-		So(st.MaxSeverity(), ShouldEqual, "error") // still error
+		st.Write(&LogEntry{Severity: WarningSeverity})
+		So(st.MaxSeverity(), ShouldEqual, ErrorSeverity) // still error
 	})
 }
 
