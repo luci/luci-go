@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f8788869_b60e3ecd",
+        "filename": "examples/appengine/helloworld_v2/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:04:25Z",
+      "side": 1,
+      "message": "This is used to test custom Cloud Tracing spans. Otherwise they are very small.",
+      "parentUuid": "f2d00dca_596c68ad",
+      "range": {
+        "startLine": 47,
+        "startChar": 14,
+        "endLine": 47,
+        "endChar": 17
+      },
+      "revId": "132d58f562ebbf373776c10e46e731b1fa3a9e44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45fa23bc_3378df6e",
         "filename": "examples/appengine/helloworld_v2/main.go",
         "patchSetId": 5
@@ -59,6 +83,30 @@
       "writtenOn": "2020-01-22T01:42:40Z",
       "side": 1,
       "message": "wow... probably we need some scripts for this, right?",
+      "range": {
+        "startLine": 57,
+        "startChar": 7,
+        "endLine": 57,
+        "endChar": 75
+      },
+      "revId": "132d58f562ebbf373776c10e46e731b1fa3a9e44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5224436d_b3299932",
+        "filename": "examples/appengine/helloworld_v2/main.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:04:25Z",
+      "side": 1,
+      "message": "No, this is literally the single line to run. We can add scripts when we use Redis for real in a real project. This is something I used locally to test integration.",
+      "parentUuid": "45fa23bc_3378df6e",
       "range": {
         "startLine": 57,
         "startChar": 7,
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "7e9736a6_e6b8ad18",
+        "filename": "server/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:04:25Z",
+      "side": 1,
+      "message": "I don\u0027t think there\u0027s dev appserver, since GCP wants GAE apps to be like regular server-side processes.\n\nhttps://cloud.google.com/appengine/docs/standard/go/testing-and-deploying-your-app\n\n\"\"\"\nTo test your application\u0027s functionality before deploying, run your application in your local environment with the development tools that you usually use. For example, the go run command.\n\"\"\"\n\nThis is what **not passing** -prod is for. It makes logging output readable and sets up some (generally unsecure) defaults for otherwise necessary CLI flags (like -auth-service-host). This makes it easy to run app locally to hack on it.",
+      "parentUuid": "91c27270_c14f8ad8",
+      "range": {
+        "startLine": 182,
+        "startChar": 45,
+        "endLine": 182,
+        "endChar": 52
+      },
+      "revId": "132d58f562ebbf373776c10e46e731b1fa3a9e44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01b98229_5f54708a",
         "filename": "server/server.go",
         "patchSetId": 5
@@ -114,6 +186,30 @@
       "revId": "132d58f562ebbf373776c10e46e731b1fa3a9e44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5897fd32_88fa0b29",
+        "filename": "server/server.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:04:25Z",
+      "side": 1,
+      "message": "Returning errors here causes the logging and panic. See Main(...). It\u0027s just simpler to return annotated errors and let Fatal(...) handle them rather than panic directly. Also tests are simpler that way.",
+      "parentUuid": "01b98229_5f54708a",
+      "range": {
+        "startLine": 548,
+        "startChar": 38,
+        "endLine": 548,
+        "endChar": 63
+      },
+      "revId": "132d58f562ebbf373776c10e46e731b1fa3a9e44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
