@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0fdc77ad_6a5cb74d",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 6
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-22T20:50:23Z",
+      "side": 1,
+      "message": "See \"taskType\" type in the Go code for examples.",
+      "range": {
+        "startLine": 210,
+        "startChar": 27,
+        "endLine": 210,
+        "endChar": 48
+      },
+      "revId": "13fa9b2052b6316dfb2900c5fdd55afcbeb538c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

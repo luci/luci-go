@@ -93,6 +93,30 @@
       "revId": "1ac4bf338ef5682d964ab38d1e758ff227022796",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "79dcb773_383ef71d",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-22T20:50:23Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1bf71c35_61f1afa3",
+      "range": {
+        "startLine": 142,
+        "startChar": 4,
+        "endLine": 142,
+        "endChar": 68
+      },
+      "revId": "1ac4bf338ef5682d964ab38d1e758ff227022796",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
