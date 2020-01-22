@@ -204,7 +204,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 			for i, buf := range bqExports {
 				inv.BigqueryExports[i] = &pb.BigQueryExport{}
 				if err := proto.Unmarshal(buf, inv.BigqueryExports[i]); err != nil {
-					return errors.Annotate(err, "%s: failed to unmarshal BigQuery export", inv.Name).Err()
+					return errors.Annotate(err, "failed to unmarshal BigQuery export").Err()
 				}
 			}
 		}

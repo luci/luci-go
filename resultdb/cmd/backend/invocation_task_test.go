@@ -18,11 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
-
 	"go.chromium.org/luci/common/clock"
 
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 
@@ -34,22 +31,20 @@ func TestTasks(t *testing.T) {
 	Convey(`TestTasks`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		now := clock.Now(ctx)
-		task := &internalpb.InvocationTask{}
 
 		Convey(`leaseInvocationTask`, func() {
-
 			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
 				testutil.MustApply(ctx,
-					span.InsertInvocationTask("task", "inv", task, processAfter),
+					span.InsertInvocationTask(string(taskBQExport), "task", "inv", "payload", processAfter),
 				)
 
-				_, _, err := leaseInvocationTask(ctx, "task")
+				_, _, err := leaseInvocationTask(ctx, taskBQExport, "task")
 				So(err, ShouldEqual, expectedLeaseErr)
 
 				// Check the task's ProcessAfter is updated.
 				var newProcessAfter time.Time
 				txn := span.Client(ctx).Single()
-				err = span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{"task"}, map[string]interface{}{
+				err = span.ReadRow(ctx, txn, "InvocationTasks", taskBQExport.Key("task"), map[string]interface{}{
 					"ProcessAfter": &newProcessAfter,
 				})
 				So(err, ShouldBeNil)
@@ -67,15 +62,15 @@ func TestTasks(t *testing.T) {
 
 		Convey(`deleteInvocationTask`, func() {
 			testutil.MustApply(ctx,
-				span.InsertInvocationTask("task", "inv", task, now.Add(-time.Hour)),
+				span.InsertInvocationTask(string(taskBQExport), "task", "inv", "payload", now.Add(-time.Hour)),
 			)
 
-			err := deleteInvocationTask(ctx, "task")
+			err := deleteInvocationTask(ctx, taskBQExport, "task")
 			So(err, ShouldBeNil)
 
 			txn := span.Client(ctx).Single()
 			var taskID string
-			err = span.ReadRow(ctx, txn, "InvocationTasks", spanner.Key{"task"}, map[string]interface{}{
+			err = span.ReadRow(ctx, txn, "InvocationTasks", taskBQExport.Key("task"), map[string]interface{}{
 				"TaskId": &taskID,
 			})
 			So(err, ShouldErrLike, "row not found")

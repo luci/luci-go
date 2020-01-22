@@ -20,6 +20,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
@@ -256,7 +257,12 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
+func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, payload []byte) error {
+	bqExport := &pb.BigQueryExport{}
+	if err := proto.Unmarshal(payload, bqExport); err != nil {
+		return err
+	}
+
 	luciProject, err := getLUCIProject(ctx, invID)
 	if err != nil {
 		return err
