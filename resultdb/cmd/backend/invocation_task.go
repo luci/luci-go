@@ -40,6 +40,10 @@ const (
 	// taskBQExport is a type of task that exports an invocation to BigQuery.
 	// The task payload is binary-encoded BigQueryExport message.
 	taskBQExport taskType = "bq_export"
+
+	// taskTryFinalizeInvocation is a type of task that tries to finalize an
+	// invocation. No payload.
+	taskTryFinalizeInvocation taskType = "finalize"
 )
 
 var allTaskTypes = []taskType{taskBQExport}
@@ -110,6 +114,8 @@ func dispatchInvocationTasks(ctx context.Context, taskType taskType, ids []strin
 				switch taskType {
 				case taskBQExport:
 					err = exportResultsToBigQuery(ctx, invID, payload)
+				case taskTryFinalizeInvocation:
+					err = tryFinalizeInvocation(ctx, invID)
 				default:
 					err = errors.Reason("unexpected task type %q", taskType).Err()
 				}
