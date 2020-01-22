@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/spanner"
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -134,16 +132,6 @@ func TestFinalizeInvocation(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
 				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
-
-				// Read InvocationTask to confirm it's added.
-				var processAfter *tspb.Timestamp
-				var invID span.InvocationID
-				MustReadRow(ctx, "InvocationTasks", spanner.Key{bqTaskID("inv", 0)}, map[string]interface{}{
-					"InvocationID": &invID,
-					"ProcessAfter": &processAfter,
-				})
-				So(invID, ShouldEqual, "inv")
-				So(processAfter, ShouldResemble, nowTimestamp)
 			})
 		})
 	})

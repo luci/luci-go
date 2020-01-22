@@ -97,6 +97,8 @@ func dispatchInvocationTasks(ctx context.Context, ids []string) error {
 				switch task.Task.(type) {
 				case *internalpb.InvocationTask_BigqueryExport:
 					err = exportResultsToBigQuery(ctx, invID, task.GetBigqueryExport())
+				case *internalpb.InvocationTask_TryFinalizeInvocation:
+					err = tryFinalizeInvocation(ctx, invID)
 				default:
 					err = errors.Reason("unexpected type in task %q", task).Err()
 				}
