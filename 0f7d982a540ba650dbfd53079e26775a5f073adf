@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e0041169_0e782cf3",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T23:21:20Z",
+      "side": 1,
+      "message": "Added group-level comment.",
+      "parentUuid": "3b6dfc16_e4480668",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 16
+      },
+      "revId": "0f7d982a540ba650dbfd53079e26775a5f073adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78e5fc73_6b570ec2",
         "filename": "common/logging/sdlogger/logger.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "0f7d982a540ba650dbfd53079e26775a5f073adf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fecb1dd_8b236249",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T23:21:20Z",
+      "side": 1,
+      "message": "The wheel is 10 lines of code. I don\u0027t want to involve protos in this because conceptually this API has nothing to do with protos. It formats entries as JSON which doesn\u0027t even really map to any protos (it use keys like \u0027logging.googleapis.com/trace\u0027). \"A little copying is better than a little dependency.\" especially when this dependency is conceptually wrong.\n\nUsing packages you propose will also make callers more complicated because they will have to handle useless error from TimestampProto.",
+      "parentUuid": "78e5fc73_6b570ec2",
+      "range": {
+        "startLine": 95,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 1
+      },
+      "revId": "0f7d982a540ba650dbfd53079e26775a5f073adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
