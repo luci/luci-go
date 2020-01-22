@@ -71,8 +71,9 @@ CREATE TABLE Invocations (
 
   -- Requests to export the invocation to BigQuery, see also
   -- Invocation.bigquery_exports in invocation.proto.
-  -- Encoded as compressed luci.resultdb.internal.BigQueryExports message.
-  BigQueryExports BYTES(MAX)
+  -- Each array element is a binary-encoded luci.resultdb.rpc.v1.BigQueryExport
+  -- message.
+  BigQueryExports ARRAY<BYTES(MAX)>
 ) PRIMARY KEY (InvocationId);
 
 -- Index of invocations by expiration time.

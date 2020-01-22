@@ -42,9 +42,3 @@ message InvocationTask {
     luci.resultdb.rpc.v1.BigQueryExport bigquery_export = 1;
   }
 }
-
-// A container of bigquery_exports.
-// Used to store bigquery_exports in Spanner.
-message BigQueryExports {
-  repeated luci.resultdb.rpc.v1.BigQueryExport bigquery_exports = 1;
-}

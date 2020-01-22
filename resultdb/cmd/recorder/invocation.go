@@ -17,9 +17,11 @@ package main
 import (
 	"context"
 	"crypto/subtle"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
@@ -29,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -176,7 +177,14 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 	}
 
 	if len(inv.BigqueryExports) != 0 {
-		row["BigQueryExports"] = span.CompressedProto{&internalpb.BigQueryExports{BigqueryExports: inv.BigqueryExports}}
+		bqExports := make([][]byte, len(inv.BigqueryExports))
+		for i, msg := range inv.BigqueryExports {
+			var err error
+			if bqExports[i], err = proto.Marshal(msg); err != nil {
+				panic(fmt.Sprintf("failed to marshal BigQueryExport to bytes: %s", err))
+			}
+		}
+		row["BigQueryExports"] = bqExports
 	}
 
 	return row
