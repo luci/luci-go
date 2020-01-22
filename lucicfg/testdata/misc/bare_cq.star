@@ -12,6 +12,7 @@ luci.cq_group(
 #
 # === commit-queue.cfg
 # config_groups: <
+#   name: "first"
 #   gerrit: <
 #     url: "https://example-review.googlesource.com"
 #     projects: <

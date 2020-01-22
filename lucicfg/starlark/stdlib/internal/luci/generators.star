@@ -817,6 +817,7 @@ def _cq_config_group(cq_group, project, triggering_map):
     group_by_gob_host.setdefault(w.__gob_host, []).append(w)
 
   return cq_pb.ConfigGroup(
+      name = cq_group.key.id,
       gerrit = [
           cq_pb.ConfigGroup.Gerrit(
               url = 'https://%s-review.googlesource.com' % host,
