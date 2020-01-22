@@ -46,6 +46,30 @@
       "revId": "66ddf94b825ece739ae19fc548a191cac2259a31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8a7686e_8712a332",
+        "filename": "resultdb/cmd/recorder/recorder.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T16:51:31Z",
+      "side": 1,
+      "message": "in that comment I suggested to make this field *pb.BigqueryExport.\nIn PS9 I see *string.",
+      "parentUuid": "afb7c331_0036843b",
+      "range": {
+        "startLine": 33,
+        "startChar": 19,
+        "endLine": 33,
+        "endChar": 25
+      },
+      "revId": "66ddf94b825ece739ae19fc548a191cac2259a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
