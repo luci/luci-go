@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "efd73f15_97ef16a7",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-22T23:02:13Z",
+      "side": 1,
+      "message": "Yes, but we want to move on to other shards so we don\u0027t purge all invocations.",
+      "parentUuid": "f60eff85_2c9a70db",
+      "range": {
+        "startLine": 69,
+        "startChar": 105,
+        "endLine": 69,
+        "endChar": 115
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b80bece1_bcb32643",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-22T23:02:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6f9926d2_6e5f4506",
+      "range": {
+        "startLine": 69,
+        "startChar": 80,
+        "endLine": 69,
+        "endChar": 90
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "727ad81a_d36272ad",
         "filename": "resultdb/cmd/backend/drop_expired_results.go",
         "patchSetId": 1
