@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"crypto/subtle"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -76,12 +75,10 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 		var updateToken spanner.NullString
 		var state pb.Invocation_State
 		var deadline time.Time
-		bigqueryExports := &internalpb.BigQueryExports{}
 		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"UpdateToken":     &updateToken,
-			"State":           &state,
-			"Deadline":        &deadline,
-			"BigQueryExports": &span.CompressedProto{bigqueryExports},
+			"UpdateToken": &updateToken,
+			"State":       &state,
+			"Deadline":    &deadline,
 		})
 
 		switch {
@@ -95,7 +92,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			retErr = appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 
 			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, id, true, deadline, bigqueryExports.BigqueryExports)
+			return finalizeInvocation(txn, id, true, deadline)
 		}
 
 		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
@@ -126,16 +123,15 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time, bigqueryExports []*pb.BigQueryExport) error {
-	muts := insertBQExportingTasks(id, finalizeTime, bigqueryExports...)
-	muts = append(muts, span.UpdateMap("Invocations", map[string]interface{}{
-		"InvocationId": id,
-		"State":        pb.Invocation_FINALIZED,
-		"Interrupted":  interrupted,
-		"FinalizeTime": finalizeTime,
-	}))
-
-	return txn.BufferWrite(muts)
+func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
+	return txn.BufferWrite([]*spanner.Mutation{
+		span.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId": id,
+			"State":        pb.Invocation_FINALIZED,
+			"Interrupted":  interrupted,
+			"FinalizeTime": finalizeTime,
+		}),
+	})
 }
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
@@ -199,21 +195,4 @@ func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, crea
 func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
 	return span.InsertOrUpdateMap(
 		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
-}
-
-// insertBQExportingTasks inserts BigQuery exporting tasks to InvocationTasks.
-func insertBQExportingTasks(invID span.InvocationID, processAfter time.Time, bqExports ...*pb.BigQueryExport) []*spanner.Mutation {
-	muts := make([]*spanner.Mutation, len(bqExports))
-	for i, bqExport := range bqExports {
-		taskID := bqTaskID(invID, i)
-		task := &internalpb.InvocationTask{
-			Task: &internalpb.InvocationTask_BigqueryExport{BigqueryExport: bqExport},
-		}
-		muts[i] = span.InsertInvocationTask(taskID, invID, task, processAfter)
-	}
-	return muts
-}
-
-func bqTaskID(invID span.InvocationID, index int) string {
-	return fmt.Sprintf("bq_export:%s:%d", invID, index)
 }
