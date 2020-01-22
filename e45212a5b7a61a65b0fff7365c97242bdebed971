@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "e4beac9f_6069e130",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-22T17:50:26Z",
+      "side": 1,
+      "message": "we\u0027ll change these fields substantially. The list here represents the legacy well, but not what we should be representing.",
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a8cb086_50a49376",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 5
