@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ffed4874_580505bc",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T23:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52263362_a6700306",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31036e42_25021125",
         "filename": "resultdb/internal/tasks/tasks.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20a04937_037d5484",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T23:06:04Z",
+      "side": 1,
+      "message": "good point about diff durations for diff types of task. Made it a param in this package\n\nalso simplified Lease() to use a single DML query",
+      "parentUuid": "31036e42_25021125",
+      "range": {
+        "startLine": 29,
+        "startChar": 29,
+        "endLine": 29,
+        "endChar": 36
+      },
+      "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6dc15625_25299318",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T23:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c20d722d_b07f692c",
+      "range": {
+        "startLine": 66,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 46
+      },
+      "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c87eb13_2bc314e5",
         "filename": "resultdb/internal/tasks/tasks.go",
         "patchSetId": 2
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "b9d0f3fd_e6a0629b",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T23:06:04Z",
+      "side": 1,
+      "message": "type is a reserved keyword in go. it wouldn\u0027t compile",
+      "parentUuid": "5c87eb13_2bc314e5",
+      "range": {
+        "startLine": 68,
+        "startChar": 33,
+        "endLine": 68,
+        "endChar": 36
+      },
+      "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2fc52aad_feb3b30c",
         "filename": "resultdb/internal/tasks/tasks.go",
         "patchSetId": 2
@@ -114,6 +210,30 @@
       "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3872f95_b990de59",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-22T23:06:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2fc52aad_feb3b30c",
+      "range": {
+        "startLine": 107,
+        "startChar": 15,
+        "endLine": 107,
+        "endChar": 34
+      },
+      "revId": "3464c588e5a7bf493cea7bc4b403ff25eb6d27e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
