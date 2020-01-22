@@ -207,12 +207,6 @@ const (
 	OptionalLogin LoginMode = "OptionalLogin"
 )
 
-// minAcceptedLifetime is minimal lifetime of a token returned by the token
-// source or put into authentication headers.
-//
-// If token is expected to live less than this duration, it will be refreshed.
-const minAcceptedLifetime = 2 * time.Minute
-
 // Options are used by NewAuthenticator call.
 type Options struct {
 	// Transport is underlying round tripper to use for requests.
@@ -344,6 +338,18 @@ type Options struct {
 	//
 	// The default is 'luci-go'.
 	MonitorAs string
+
+	// MinTokenLifetime defines a minimally acceptable lifetime of access tokens
+	// generated internally by authenticating http.RoundTripper, TokenSource and
+	// PerRPCCredentials.
+	//
+	// Not used when GetAccessToken is called directly (it accepts this parameter
+	// as an argument).
+	//
+	// The default is 2 min. There's rarely a need to change it and using smaller
+	// values may be dangerous (e.g. if the request gets stuck somewhere or the
+	// token is cached incorrectly it may expire before it is checked).
+	MinTokenLifetime time.Duration
 
 	// testingBaseTokenProvider is used in unit tests.
 	testingBaseTokenProvider internal.TokenProvider
@@ -484,6 +490,9 @@ func NewAuthenticator(ctx context.Context, loginMode LoginMode, opts Options) *A
 	}
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
+	}
+	if opts.MinTokenLifetime == 0 {
+		opts.MinTokenLifetime = 2 * time.Minute
 	}
 
 	// TODO(vadimsh): Check SecretsDir permissions. It should be 0700.
@@ -797,7 +806,7 @@ func (creds perRPCCreds) GetRequestMetadata(c context.Context, uri ...string) (m
 	if creds.a == nil {
 		return nil, nil
 	}
-	tok, err := creds.a.GetAccessToken(minAcceptedLifetime)
+	tok, err := creds.a.GetAccessToken(creds.a.opts.MinTokenLifetime)
 	if err != nil {
 		return nil, err
 	}
@@ -817,7 +826,7 @@ type tokenSource struct {
 
 // Token is part of oauth2.TokenSource interface.
 func (s tokenSource) Token() (*oauth2.Token, error) {
-	return s.a.GetAccessToken(minAcceptedLifetime)
+	return s.a.GetAccessToken(s.a.opts.MinTokenLifetime)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1105,7 +1114,7 @@ func (a *Authenticator) getBaseTokenLocked(ctx context.Context, lifetime time.Du
 //
 // Used as a callback for NewModifyingTransport.
 func (a *Authenticator) authTokenInjector(req *http.Request) error {
-	switch tok, err := a.GetAccessToken(minAcceptedLifetime); {
+	switch tok, err := a.GetAccessToken(a.opts.MinTokenLifetime); {
 	case err == ErrLoginRequired && a.effectiveLoginMode() == OptionalLogin:
 		return nil // skip auth, no need for modifications
 	case err != nil:
