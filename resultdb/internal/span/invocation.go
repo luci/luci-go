@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/spanner"
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
@@ -28,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/metrics"
-	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -174,7 +174,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 		var id InvocationID
 		var updateToken spanner.NullString
 		included := InvocationIDSet{}
-		bigqueryExports := &internalpb.BigQueryExports{}
+		var bqExports [][]byte
 		inv := &pb.Invocation{}
 
 		ptrs := []interface{}{
@@ -185,7 +185,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 			&inv.Deadline,
 			&inv.Tags,
 			&inv.Interrupted,
-			&CompressedProto{bigqueryExports},
+			&bqExports,
 			&included,
 		}
 		if withUpdateToken {
@@ -196,9 +196,18 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 			return err
 		}
 
-		inv.BigqueryExports = bigqueryExports.BigqueryExports
 		inv.Name = pbutil.InvocationName(string(id))
 		inv.IncludedInvocations = included.Names()
+
+		if len(bqExports) > 0 {
+			inv.BigqueryExports = make([]*pb.BigQueryExport, len(bqExports))
+			for i, buf := range bqExports {
+				inv.BigqueryExports[i] = &pb.BigQueryExport{}
+				if err := proto.Unmarshal(buf, inv.BigqueryExports[i]); err != nil {
+					return errors.Annotate(err, "%s: failed to unmarshal BigQuery export", inv.Name).Err()
+				}
+			}
+		}
 
 		return f(id, inv, updateToken)
 	})
