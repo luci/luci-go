@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "700da4c4_0e99d18b",
+        "filename": "auth/auth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:13:31Z",
+      "side": 1,
+      "message": "In particular the chain `luci-go binary \u003d\u003e LUCI_CONTEXT \u003d\u003e swarming task_runner.py \u003d\u003e Swarming server | GCE metadata` is quite brittle, there are a bunch of under-documented caches along the path and it is hard to catch all possible interactions (they depend on passage of time).\n\nI\u0027m actually very scared to change the default since auth.Authenticator is used in a LOT of binaries with uncertain release schedules and I don\u0027t want to deal with potential fallout at random moments in time in the following year(s).\n\nThat\u0027t the reason I made this an option and changed it in one place only.",
+      "range": {
+        "startLine": 350,
+        "startChar": 11,
+        "endLine": 350,
+        "endChar": 27
+      },
+      "revId": "07e5f221777ae58455d0fe3950f1c11294afc2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "24741d36_85897e2e",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1314,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-22T02:13:31Z",
+      "side": 1,
+      "message": "I may need to tweak this value. Still trying to figure when GAE metadata server actually refrehes the token :-/",
+      "range": {
+        "startLine": 1314,
+        "startChar": 25,
+        "endLine": 1314,
+        "endChar": 27
+      },
+      "revId": "07e5f221777ae58455d0fe3950f1c11294afc2a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
