@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package tasks
 
 import (
 	"testing"
@@ -32,19 +32,34 @@ func TestTasks(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		now := clock.Now(ctx)
 
-		Convey(`leaseInvocationTask`, func() {
+		Convey(`Sample`, func() {
+			testutil.MustApply(ctx,
+				Enqueue(BQExport, "task1", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task2", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task3", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task4", "inv", "payload", now),
+				Enqueue(BQExport, "task5", "inv", "payload", now.Add(time.Hour)),
+			)
+
+			rows, err := Sample(ctx, BQExport, now, 3)
+			So(err, ShouldBeNil)
+			So(rows, ShouldHaveLength, 3)
+			So(rows, ShouldNotContain, "task5")
+		})
+
+		Convey(`Lease`, func() {
 			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
 				testutil.MustApply(ctx,
-					span.InsertInvocationTask(string(taskBQExport), "task", "inv", "payload", processAfter),
+					Enqueue(BQExport, "task", "inv", "payload", processAfter),
 				)
 
-				_, _, err := leaseInvocationTask(ctx, taskBQExport, "task")
+				_, _, err := Lease(ctx, BQExport, "task", time.Second)
 				So(err, ShouldEqual, expectedLeaseErr)
 
 				// Check the task's ProcessAfter is updated.
 				var newProcessAfter time.Time
 				txn := span.Client(ctx).Single()
-				err = span.ReadRow(ctx, txn, "InvocationTasks", taskBQExport.Key("task"), map[string]interface{}{
+				err = span.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 					"ProcessAfter": &newProcessAfter,
 				})
 				So(err, ShouldBeNil)
@@ -52,25 +67,25 @@ func TestTasks(t *testing.T) {
 			}
 
 			Convey(`succeeded`, func() {
-				test(now.Add(-time.Hour), now.Add(taskLeaseTime), nil)
+				test(now.Add(-time.Hour), now.Add(time.Second), nil)
 			})
 
 			Convey(`skipped`, func() {
-				test(now.Add(time.Hour), now.Add(time.Hour), errLeasingConflict)
+				test(now.Add(time.Hour), now.Add(time.Hour), ErrConflict)
 			})
 		})
 
-		Convey(`deleteInvocationTask`, func() {
+		Convey(`Delete`, func() {
 			testutil.MustApply(ctx,
-				span.InsertInvocationTask(string(taskBQExport), "task", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task", "inv", "payload", now.Add(-time.Hour)),
 			)
 
-			err := deleteInvocationTask(ctx, taskBQExport, "task")
+			err := Delete(ctx, BQExport, "task")
 			So(err, ShouldBeNil)
 
 			txn := span.Client(ctx).Single()
 			var taskID string
-			err = span.ReadRow(ctx, txn, "InvocationTasks", taskBQExport.Key("task"), map[string]interface{}{
+			err = span.ReadRow(ctx, txn, "InvocationTasks", BQExport.Key("task"), map[string]interface{}{
 				"TaskId": &taskID,
 			})
 			So(err, ShouldErrLike, "row not found")
