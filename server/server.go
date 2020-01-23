@@ -109,6 +109,7 @@ import (
 	"go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/modules"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -138,6 +139,22 @@ var (
 		nil)
 )
 
+var globalModules struct {
+	mu      sync.Mutex
+	modules []modules.Module
+}
+
+// RegisterModule adds the module to a list of modules installed by default
+// in Main(...) before any other modules specified in Options.Modules.
+//
+// If you don't use Main(...) has no effect. Populate Options.Modules explicitly
+// in this case.
+func RegisterModule(m modules.Module) {
+	globalModules.mu.Lock()
+	defer globalModules.mu.Unlock()
+	globalModules.modules = append(globalModules.modules, m)
+}
+
 // Main initializes the server and runs its serving loop until SIGTERM.
 //
 // Registers all options in the default flag set and uses `flag.Parse` to parse
@@ -156,6 +173,11 @@ func Main(opts *Options, init func(srv *Server) error) {
 		}
 	}
 
+	// Prepend modules registered via RegisterModule.
+	globalModules.mu.Lock()
+	opts.Modules = append(globalModules.modules, opts.Modules...)
+	globalModules.mu.Unlock()
+
 	opts.Register(flag.CommandLine)
 	flag.Parse()
 	opts.FromGAEEnv()
@@ -164,8 +186,10 @@ func Main(opts *Options, init func(srv *Server) error) {
 	if err != nil {
 		srv.Fatal(err)
 	}
-	if err = init(srv); err != nil {
-		srv.Fatal(err)
+	if init != nil {
+		if err = init(srv); err != nil {
+			srv.Fatal(err)
+		}
 	}
 	if err = srv.ListenAndServe(); err != nil {
 		srv.Fatal(err)
@@ -209,6 +233,8 @@ type Options struct {
 
 	LimiterMaxConcurrentRPCs int64 // limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)
 	LimiterAdvisoryMode      bool  // if set, don't enforce LimiterMaxConcurrentRPCs, but still report violations
+
+	Modules []modules.Module // any extra server modules, see 'modules' package
 
 	testCtx       context.Context         // base context for tests
 	testSeed      int64                   // used to seed rng in tests
@@ -336,6 +362,11 @@ func (o *Options) Register(f *flag.FlagSet) {
 		o.LimiterAdvisoryMode,
 		"If set, don't enforce -limiter-max-concurrent-rpcs, but still report violations",
 	)
+
+	// Register extra flags from modules.
+	for _, m := range o.Modules {
+		m.RegisterFlags(f)
+	}
 }
 
 // FromGAEEnv uses the GAE_APPLICATION env var (and other GAE-specific env vars)
@@ -405,6 +436,16 @@ func (o *Options) shouldEnableTracing() bool {
 		return false // in dev mode don't upload samples by default
 	default:
 		return true
+	}
+}
+
+// hostOptions constructs HostOptions for module.Initialize(...).
+func (o *Options) hostOptions() modules.HostOptions {
+	return modules.HostOptions{
+		Prod:         o.Prod,
+		GAE:          o.GAE,
+		Hostname:     o.Hostname,
+		CloudProject: o.CloudProject,
 	}
 }
 
@@ -490,6 +531,31 @@ type scopedAuth struct {
 	authen *clientauth.Authenticator
 }
 
+// moduleHostImpl implements modules.Host via server.Server.
+//
+// Just a tiny wrapper to make sure modules consume only curated limited set of
+// the server API and do not retain the pointer to the server.
+type moduleHostImpl struct {
+	srv     *Server
+	invalid bool
+}
+
+func (h *moduleHostImpl) panicIfInvalid() {
+	if h.invalid {
+		panic("modules.Host must not be used outside of Initialize")
+	}
+}
+
+func (h *moduleHostImpl) RegisterCleanup(cb func()) {
+	h.panicIfInvalid()
+	h.srv.RegisterCleanup(cb)
+}
+
+func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context)) {
+	h.panicIfInvalid()
+	h.srv.RunInBackground(activity, f)
+}
+
 // New constructs a new server instance.
 //
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
@@ -549,8 +615,8 @@ func New(opts Options) (srv *Server, err error) {
 		}
 	}
 	logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
-	if opts.ContainerImageID != "" {
-		logging.Infof(srv.Context, "Container image is %s", opts.ContainerImageID)
+	if srv.Options.ContainerImageID != "" {
+		logging.Infof(srv.Context, "Container image is %s", srv.Options.ContainerImageID)
 	}
 
 	// Configure base server subsystems by injecting them into the root context
@@ -589,6 +655,19 @@ func New(opts Options) (srv *Server, err error) {
 	if err := srv.initAdminPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
 	}
+
+	// Initialize all extra modules.
+	host := moduleHostImpl{srv: srv}
+	for _, m := range srv.Options.Modules {
+		switch ctx, err := m.Initialize(srv.Context, &host, srv.Options.hostOptions()); {
+		case err != nil:
+			return srv, errors.Annotate(err, "failed to initialize module %T", m).Err()
+		case ctx != nil:
+			srv.Context = ctx
+		}
+	}
+	host.invalid = true // break `host` to make sure modules do not retain it
+
 	return srv, nil
 }
 
