@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
 
@@ -34,7 +35,12 @@ import (
 )
 
 func main() {
-	server.Main(nil, nil, func(srv *server.Server) error {
+	// Additional modules that extend the server functionality.
+	modules := []module.Module{
+		redisconn.NewModuleFromFlags(),
+	}
+
+	server.Main(nil, modules, func(srv *server.Server) error {
 		// pRPC example.
 		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
 
