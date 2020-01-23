@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fddb0719_8f6717ba",
+        "filename": "common/gcloud/gs/path.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:37:33Z",
+      "side": 1,
+      "message": "Can this just be inlined into MakePath now and all callers switched to use MakePath?",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 19
+      },
+      "revId": "ae70538b20811dfa83dfdd6c8ce7e1d50868de5d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
