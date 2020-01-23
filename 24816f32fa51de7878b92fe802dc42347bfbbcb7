@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0d78b3d_ac5faa32",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-23T09:26:19Z",
+      "side": 1,
+      "message": "\u003e \"elemnt\" is a possible misspelling of \"element\".\n\nPlease fix.",
+      "parentUuid": "b1f11794_1bc2993d",
+      "range": {
+        "startLine": 136,
+        "startChar": 52,
+        "endLine": 136,
+        "endChar": 58
+      },
+      "revId": "24816f32fa51de7878b92fe802dc42347bfbbcb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
