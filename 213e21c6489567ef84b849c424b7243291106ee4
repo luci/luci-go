@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fef9ea03_659392b4",
+        "filename": "resultdb/cmd/backend/processing_loop.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:03:13Z",
+      "side": 1,
+      "message": "this is currently not exponential (my comment was wrong). please either make it exponential or fix the comment",
+      "range": {
+        "startLine": 26,
+        "startChar": 65,
+        "endLine": 26,
+        "endChar": 78
+      },
+      "revId": "213e21c6489567ef84b849c424b7243291106ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af37e3fe_f19f7ab6",
+        "filename": "resultdb/cmd/backend/processing_loop.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:03:13Z",
+      "side": 1,
+      "message": "I",
+      "range": {
+        "startLine": 35,
+        "startChar": 24,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "213e21c6489567ef84b849c424b7243291106ee4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
