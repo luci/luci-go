@@ -44,6 +44,8 @@ type Meta struct {
 }
 
 // FormatSpec is a specification for formatted data.
+//
+// DEPRECATED.
 type FormatSpec struct {
 	// Formatter is the name of the formatter that produces the content data.
 	//
@@ -65,6 +67,8 @@ type Config struct {
 	//
 	// It is set only if config was obtained through cfgclient guts that does
 	// reformatting (e.g. formats text protos into binary protos).
+	//
+	// DEPRECATED.
 	FormatSpec FormatSpec `json:"formatSpec,omitempty"`
 
 	// Error is not nil if there where troubles fetching this config. Used only
@@ -104,19 +108,13 @@ type Project struct {
 	RepoURL *url.URL
 }
 
-// Interface represents low-level luci-config service API.
+// Interface represents low-level pull-based LUCI Config API.
 //
-// All methods accept context.Context they use for deadlines and for passing to
-// callbacks (if the implementation uses any). Contexts here don't necessary
-// relate to a "global" package context (used by GetImplementation and
-// SetImplementation), though very often they are the same (as is the case when
-// using package-level functions like GetConfig).
+// This is roughly a wrapper over LUCI Config RPC interface, and all methods
+// are generally slow and depend on available of LUCI Config service. They
+// *must not* be used in a hot path of requests.
 //
-// For example, unit tests may instantiate an implementation of Interface
-// directly and don't bother registering it in the context with
-// SetImplementation(...).
-//
-// Transient errors are wrapped in errors.Transient. See common/errors.
+// Transient errors are tagged with transient.Tag.
 type Interface interface {
 	// GetConfig returns a config at a path in a config set or ErrNoConfig
 	// if missing. If metaOnly is true, returned Config struct has only Meta set
