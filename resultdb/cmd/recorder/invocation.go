@@ -25,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 
@@ -71,32 +70,21 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			return err
 		}
 
-		now := clock.Now(ctx)
-
 		var updateToken spanner.NullString
 		var state pb.Invocation_State
-		var deadline time.Time
 		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
 			"UpdateToken": &updateToken,
 			"State":       &state,
-			"Deadline":    &deadline,
 		})
-
 		switch {
 		case err != nil:
 			return err
 
 		case state != pb.Invocation_ACTIVE:
 			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
-
-		case deadline.Before(now):
-			retErr = appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
-
-			// The invocation has exceeded deadline, finalize it now.
-			return finalizeInvocation(txn, id, true, deadline)
 		}
 
-		if err = validateUserUpdateToken(updateToken, userToken); err != nil {
+		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
 			return err
 		}
 
