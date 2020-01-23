@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "994ee42d_be5dc845",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:04:21Z",
+      "side": 1,
+      "message": "d",
+      "range": {
+        "startLine": 44,
+        "startChar": 26,
+        "endLine": 44,
+        "endChar": 27
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c4da820_0797b7c6",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:04:21Z",
+      "side": 1,
+      "message": "ey",
+      "range": {
+        "startLine": 44,
+        "startChar": 52,
+        "endLine": 44,
+        "endChar": 53
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5948d517_587a17b4",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -42,6 +88,53 @@
         "startChar": 0,
         "endLine": 93,
         "endChar": 0
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb92d78f_aa4c25e0",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:04:21Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "009512ff_200b1f49",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 0
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "70c9885e_8df5ad98",
+        "filename": "server/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:04:21Z",
+      "side": 1,
+      "message": "i found that in Go using ... for the last param which is a slice is often better. consider.",
+      "range": {
+        "startLine": 542,
+        "startChar": 49,
+        "endLine": 542,
+        "endChar": 51
       },
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
