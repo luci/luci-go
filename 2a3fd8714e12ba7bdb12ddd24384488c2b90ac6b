@@ -22,6 +22,30 @@
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "009512ff_200b1f49",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T19:16:15Z",
+      "side": 1,
+      "message": "Two reasons I decided not to do this:\n1. It will force all leaf modules to \"link\" to a pretty beefy \u0027server\u0027 package. I expect it may result in dependency cycles in some places.\n2. I want to have very strict control over what modules can do. Some of them will probably end up in a lot of binaries and it is scary to give them unlimited power. At the same time I want to give unlimited power to the direct users of *server.Server, since they use it only in their own binaries not shared with anyone else, so no big deal if their code does something weird (if it must).",
+      "parentUuid": "5948d517_587a17b4",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 0
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
