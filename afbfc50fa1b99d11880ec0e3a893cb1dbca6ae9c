@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6829f567_a05c6963",
+        "filename": "resultdb/cmd/backend/invocation_finalization.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T00:49:37Z",
+      "side": 1,
+      "message": "This means it\u0027s possible to have multiple finalize tasks for one invocation. So we should expect many finalize tasks end no need to do anything since the invocation has been closed. I\u0027m fine with that.\n\nThough I\u0027m also wondering if it\u0027s possible to only enqueue one finalize task for each invocation? One idea is to use including.InvocationId only as task_id, then here we also query InvocationTasks to look for existing finalize tasks and skip them if found. Will that work?",
+      "range": {
+        "startLine": 194,
+        "startChar": 20,
+        "endLine": 194,
+        "endChar": 67
+      },
+      "revId": "afbfc50fa1b99d11880ec0e3a893cb1dbca6ae9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
