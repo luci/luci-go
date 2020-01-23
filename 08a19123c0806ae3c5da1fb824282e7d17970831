@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "1972a9ba_6776e9fb",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "Done. I made internal/span.LinearBackoff",
+      "parentUuid": "727ad81a_d36272ad",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 78,
+        "endChar": 20
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5fab66a_9c82344a",
         "filename": "resultdb/cmd/backend/drop_expired_results.go",
         "patchSetId": 1
@@ -159,6 +183,48 @@
     },
     {
       "key": {
+        "uuid": "b8594489_c400f255",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "I have added an explanation in a comment in the latest patchset, ptal.",
+      "parentUuid": "d5fab66a_9c82344a",
+      "range": {
+        "startLine": 85,
+        "startChar": 76,
+        "endLine": 86,
+        "endChar": 31
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "634bb880_d6eb9abe",
+        "filename": "resultdb/cmd/backend/drop_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54b8720f_29dbbfae",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ba6a8ba_31715b74",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 1
@@ -179,6 +245,30 @@
       "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd6ce120_35cb5675",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ba6a8ba_31715b74",
+      "range": {
+        "startLine": 221,
+        "startChar": 112,
+        "endLine": 221,
+        "endChar": 127
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -205,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "27ce1c45_5ff4be8a",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "I think expiring may reflect better the fact that these have not been purged yet, but are due for being purged.",
+      "parentUuid": "c1d5b641_68e6d232",
+      "range": {
+        "startLine": 223,
+        "startChar": 6,
+        "endLine": 223,
+        "endChar": 25
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30df715d_dd704e0c",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 1
@@ -219,6 +333,24 @@
       "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de9eb11c_6cb1f95d",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30df715d_dd704e0c",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -239,6 +371,24 @@
     },
     {
       "key": {
+        "uuid": "bc6e5e70_76010e98",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "Your are right. I was mistaken.",
+      "parentUuid": "787a2233_254e1a6a",
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bccc2792_2ac72b00",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 1
@@ -250,6 +400,30 @@
       "writtenOn": "2020-01-17T06:59:32Z",
       "side": 1,
       "message": "We should probably make it a set. A similar usage: https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/cmd/backend/bigquery_export.go;l\u003d126",
+      "range": {
+        "startLine": 274,
+        "startChar": 1,
+        "endLine": 274,
+        "endChar": 22
+      },
+      "revId": "08a19123c0806ae3c5da1fb824282e7d17970831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ede7c16_1ba6bd24",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T01:37:36Z",
+      "side": 1,
+      "message": "I couldn\u0027t find documentation of how we could set a value of type map[struct{TestId string, VariantHash string}]interface{} as a query param.\n\nAlso, this seems to only gain set methods for the golang type, but in here we do no operations with this other than pass it back to spanner, please look at the latest patchset.",
+      "parentUuid": "bccc2792_2ac72b00",
       "range": {
         "startLine": 274,
         "startChar": 1,
