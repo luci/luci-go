@@ -472,3 +472,15 @@ func decompress(src, dest []byte) ([]byte, error) {
 func isMessageNil(m proto.Message) bool {
 	return reflect.ValueOf(m).IsNil()
 }
+
+// LinearBackoff sleeps a second for every failed attempt, up to `max` seconds.
+//
+// This is intended to back off to avoid overloading the service when a
+// transient failure occurs.
+func LinearBackoff(attempt, max int) {
+	sleep := time.Duration(attempt) * time.Second
+	if attempt > max {
+		sleep = time.Duration(max) * time.Second
+	}
+	time.Sleep(sleep)
+}

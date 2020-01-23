@@ -140,12 +140,7 @@ func runInvocationTasks(ctx context.Context, taskType taskType) {
 			}
 
 			attempt++
-			sleep := time.Duration(attempt) * time.Second
-			if sleep > 5*time.Second {
-				sleep = 5 * time.Second
-			}
-			time.Sleep(sleep)
-
+			span.LinearBackoff(attempt, 5)
 			continue
 		}
 
