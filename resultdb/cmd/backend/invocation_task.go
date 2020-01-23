@@ -54,6 +54,8 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				switch taskType {
 				case tasks.BQExport:
 					err = exportResultsToBigQuery(ctx, invID, payload)
+				case tasks.TryFinalizeInvocation:
+					err = tryFinalizeInvocation(ctx, invID)
 				default:
 					err = errors.Reason("unexpected task type %q", taskType).Err()
 				}
