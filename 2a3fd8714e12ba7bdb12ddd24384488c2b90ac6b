@@ -2,6 +2,98 @@
   "comments": [
     {
       "key": {
+        "uuid": "f45477bf_9c6c48bf",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "nit: I would prefer `redisconn.NewModuleFromFlags()` so it\u0027s totally obvious what\u0027s going on.",
+      "range": {
+        "startLine": 18,
+        "startChar": 24,
+        "endLine": 18,
+        "endChar": 27
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e39986a_6075ee6e",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "nit: I don\u0027t think \u0027reusable\u0027 adds much meaning here.",
+      "range": {
+        "startLine": 23,
+        "startChar": 35,
+        "endLine": 23,
+        "endChar": 43
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bd8e41a_2e7a74ab",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "I assume there\u0027s a requirement here that a Module.Name() be unique within a Server? If so, can we document this here?",
+      "range": {
+        "startLine": 28,
+        "startChar": 56,
+        "endLine": 28,
+        "endChar": 60
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5351011_f7f8e3bd",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "It seems like it would be bad practice to rely on some other Module being included before this one? At the risk of enterprising this too much, would it be reasonable to have a Dependencies() method which returns a slice of other module names that this depends on? e.g. if AuthDB relies on luci/gae, it would be explicitly stated.",
+      "range": {
+        "startLine": 31,
+        "startChar": 66,
+        "endLine": 31,
+        "endChar": 79
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "994ee42d_be5dc845",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -41,6 +133,52 @@
         "startChar": 52,
         "endLine": 44,
         "endChar": 53
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69e671f3_80b82702",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "It seems like it would be bad practice to implicitly rely on some other Module being included before this one? At the risk of enterprising this too much, would it be reasonable to have a Dependencies() method which returns a slice of other module names that this depends on? e.g. if AuthDB relies on luci/gae, it would be explicitly stated and Server can sort the Modules appropriately.",
+      "range": {
+        "startLine": 45,
+        "startChar": 46,
+        "endLine": 45,
+        "endChar": 51
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8bbd8f9_1080d439",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-23T22:31:45Z",
+      "side": 1,
+      "message": "(as opposed to GKE, Cloud Run, GAE Flex (?), ...)",
+      "range": {
+        "startLine": 58,
+        "startChar": 44,
+        "endLine": 58,
+        "endChar": 47
       },
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
