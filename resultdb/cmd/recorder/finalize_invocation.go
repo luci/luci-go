@@ -39,10 +39,6 @@ func validateFinalizeInvocationRequest(req *pb.FinalizeInvocationRequest) error 
 	return nil
 }
 
-func getUnmatchedInterruptedFlagError(invID span.InvocationID) error {
-	return appstatus.Errorf(codes.FailedPrecondition, "%s has already been finalized with different interrupted flag", invID.Name())
-}
-
 // FinalizeInvocation implements pb.RecorderServer.
 func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.FinalizeInvocationRequest) (*pb.Invocation, error) {
 	if err := validateFinalizeInvocationRequest(in); err != nil {
@@ -56,11 +52,8 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	invID := span.MustParseInvocationName(in.Name)
 
-	ret := &pb.Invocation{Name: in.Name}
-	var retErr error
-
+	var ret *pb.Invocation
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		retErr = nil
 		now := clock.Now(ctx)
 
 		inv, updateToken, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, invID)
@@ -69,25 +62,17 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		}
 		ret = inv
 
-		finalizeTime := now
-		deadline := pbutil.MustTimestamp(ret.Deadline)
 		switch {
 		case ret.State == pb.Invocation_FINALIZED && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
 
 		case ret.State == pb.Invocation_FINALIZED && ret.Interrupted != in.Interrupted:
-			return getUnmatchedInterruptedFlagError(invID)
-
-		case deadline.Before(now):
-			ret.State = pb.Invocation_FINALIZED
-			ret.FinalizeTime = ret.Deadline
-			ret.Interrupted = true
-			finalizeTime = deadline
-
-			if !in.Interrupted {
-				retErr = getUnmatchedInterruptedFlagError(invID)
-			}
+			return appstatus.Errorf(
+				codes.FailedPrecondition,
+				"%s has already been finalized with different interrupted flag",
+				invID.Name(),
+			)
 
 		default:
 			// Finalize as requested.
@@ -100,15 +85,11 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			return err
 		}
 
-		return finalizeInvocation(txn, invID, in.Interrupted, finalizeTime)
+		return finalizeInvocation(txn, invID, in.Interrupted, now)
 	})
 
 	if err != nil {
 		return nil, err
-	}
-
-	if retErr != nil {
-		return nil, retErr
 	}
 
 	return ret, nil
