@@ -23,6 +23,8 @@
 //
 // This is a port of the ACL implementation from the config service:
 // https://chromium.googlesource.com/external/github.com/luci/luci-py/+/e3fbb1f5dafa59a2c57cf3a9fe3708f4309ab653/appengine/components/components/config/api.py
+//
+// DEPRECATED.
 package access
 
 import (

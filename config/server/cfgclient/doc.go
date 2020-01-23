@@ -38,4 +38,6 @@
 //
 // Layers (2) and (4) are managed by the Resolver type, which is associated by
 // the application with the underlying configuration data.
+//
+// DEPRECATED.
 package cfgclient
