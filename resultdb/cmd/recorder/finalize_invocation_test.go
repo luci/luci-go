@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -65,60 +65,67 @@ func TestFinalizeInvocation(t *testing.T) {
 				InsertInvocation("inv", pb.Invocation_FINALIZED, ct, map[string]interface{}{"Interrupted": true, "UpdateToken": token}),
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv has already been finalized with different interrupted flag`)
+			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `has already been finalized with different interrupted flag`)
 		})
 
-		Convey(`interrupt expired invocation passed`, func() {
+		Convey(`Interrupt expired invocation passed`, func() {
 			MustApply(ctx,
 				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 			// Mock now to be after deadline.
 			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
 
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv", Interrupted: true})
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
+				Name:        "invocations/inv",
+				Interrupted: true,
+			})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 			So(inv.Interrupted, ShouldEqual, true)
+
+			// Read the invocation from Spanner to confirm it's really interrupted.
+			inv, err = span.ReadInvocationFull(ctx, span.Client(ctx).Single(), "inv")
+			So(err, ShouldBeNil)
+			So(inv.Interrupted, ShouldBeTrue)
+
 		})
 
-		Convey(`idempotent`, func() {
+		Convey(`Idempotent`, func() {
 			MustApply(ctx,
 				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
 			)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 		})
 
-		Convey(`finalized`, func() {
-			now := testclock.TestRecentTimeUTC
-			nowTimestamp := pbutil.MustTimestampProto(now)
+		Convey(`Success`, func() {
+			extra := map[string]interface{}{
+				"UpdateToken": token,
+			}
+			MustApply(ctx,
+				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, extra),
+			)
+			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
-			Convey(`finalized and add InvocationTasks`, func() {
-				extra := map[string]interface{}{
-					"UpdateToken": token,
-				}
-				MustApply(ctx,
-					InsertInvocation("inv", pb.Invocation_ACTIVE, ct, extra),
-				)
-				inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-				So(err, ShouldBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
-				So(inv.FinalizeTime, ShouldResemble, pbutil.MustTimestampProto(testclock.TestRecentTimeUTC))
-				// Read the invocation from spanner to confirm it's really finalized.
-				txn := span.Client(ctx).ReadOnlyTransaction()
-				defer txn.Close()
+			// Read the invocation from Spanner to confirm it's really FINALIZING.
+			inv, err = span.ReadInvocationFull(ctx, span.Client(ctx).Single(), "inv")
+			So(err, ShouldBeNil)
+			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
 
-				inv, err = span.ReadInvocationFull(ctx, txn, "inv")
-				So(err, ShouldBeNil)
-				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
-				So(inv.FinalizeTime, ShouldResemble, nowTimestamp)
+			var taskInv span.InvocationID
+			taskID := "finalize/" + span.InvocationID("inv").RowID()
+			MustReadRow(ctx, "InvocationTasks", tasks.TryFinalizeInvocation.Key(taskID), map[string]interface{}{
+				"InvocationId": &taskInv,
 			})
+			So(taskInv, ShouldEqual, span.InvocationID("inv"))
 		})
 	})
 }
