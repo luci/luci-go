@@ -1,0 +1,659 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9215bcdc_2a83aaae",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "other files in this codebase use tspb. let\u0027s be consistent",
+      "range": {
+        "startLine": 28,
+        "startChar": 1,
+        "endLine": 28,
+        "endChar": 4
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f62989b_7ece4d66",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "HTML\n\ngolang likes abbreviation capitalized",
+      "range": {
+        "startLine": 36,
+        "startChar": 14,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98f60857_58cb6f57",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "thinking about this a bit more, we must not allow \\\nso that users don\u0027t shoot themselves in the foot by putting Windows-specific paths\n\nnot for this CL",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 60
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53ef297e_69cc3baa",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "HTML",
+      "range": {
+        "startLine": 66,
+        "startChar": 20,
+        "endLine": 66,
+        "endChar": 24
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8d7e697_db4e6523",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "there are no st or d",
+      "range": {
+        "startLine": 73,
+        "startChar": 56,
+        "endLine": 73,
+        "endChar": 64
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "929c68aa_241e1d7e",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "what is pd? why not duration",
+      "range": {
+        "startLine": 74,
+        "startChar": 54,
+        "endLine": 74,
+        "endChar": 56
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c36d5b73_d307951c",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "what is pt? why not startTime",
+      "range": {
+        "startLine": 74,
+        "startChar": 35,
+        "endLine": 74,
+        "endChar": 37
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "089f374f_34174f13",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "start time is optional",
+      "range": {
+        "startLine": 75,
+        "startChar": 28,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ef33a7f_a4acdad4",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "we usually never use time.Now, but clock.Now.\nthese are validation functions, so passing context does not make a lot of sense. please pass now as a param",
+      "range": {
+        "startLine": 84,
+        "startChar": 8,
+        "endLine": 84,
+        "endChar": 18
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82247d41_80601176",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "in the",
+      "range": {
+        "startLine": 86,
+        "startChar": 44,
+        "endLine": 86,
+        "endChar": 45
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f8054f6_199479f2",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "nit: error messages are usually represent \":\"-separated field path, so please \"start_time: cannot be in the future\"\n\nsame below",
+      "range": {
+        "startLine": 86,
+        "startChar": 34,
+        "endLine": 86,
+        "endChar": 35
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46760cd4_9f1fb0d9",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "in go, errors must not end with a punctuation mark",
+      "range": {
+        "startLine": 92,
+        "startChar": 43,
+        "endLine": 92,
+        "endChar": 44
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4e09b4b_7068a1f4",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "URL",
+      "range": {
+        "startLine": 102,
+        "startChar": 24,
+        "endLine": 102,
+        "endChar": 27
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b81674f3_8ce784f3",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "https://godoc.org/net/url#ParseRequestURI says\n\n\u003e It assumes that rawurl was received in an HTTP request\n\nwhich is not the case. why not url.Parse?",
+      "range": {
+        "startLine": 104,
+        "startChar": 15,
+        "endLine": 104,
+        "endChar": 30
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d008fac_1017d984",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "these are 4 cases here. please use switch",
+      "range": {
+        "startLine": 112,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 3
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d2258fb_054bbe74",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "unspecified()",
+      "range": {
+        "startLine": 121,
+        "startChar": 9,
+        "endLine": 121,
+        "endChar": 47
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c6264f6_bc985b0b",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "this does not prepend context to the returned error. e.g. when validating an artifact, the error message may be \"unspecified\" because name was unspecified. consider:\n\n\ntype checker struct {\n\terr *error\n}\n\nfunc (c *checker) Check(err error, format string, args ...interface{}) bool {\n\tif *c.err !\u003d nil {\n\t\treturn false\n\t}\n\tif err !\u003d nil {\n\t\t*c.err \u003d errors.Annotate(err, format, args...).Err()\n\t\treturn false\n\t}\n\treturn true\n}\n\nc :\u003d checker{\u0026err}\nswitch {\n\tcase c.Check(ValidateArtifactName(art.Name), \"name\"):\n\tcase c.Check(ValidateArtifactFetchUrl(art.FetchUrl), \"fetch_url\"):\n\t\t// skip `FetchUrlExpiration`\n\t\t// skip `ContentType`\n\t\t// skip `Size`\n\t\tbreak\n\t}",
+      "range": {
+        "startLine": 129,
+        "startChar": 6,
+        "endLine": 129,
+        "endChar": 11
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e4be3be_dbcd6f14",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "why this is not validated?",
+      "range": {
+        "startLine": 131,
+        "startChar": 11,
+        "endLine": 131,
+        "endChar": 29
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8060d4a_b33a510d",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "what does this mean? we don\u0027t plan to check that size is non-negative?",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 16
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ca343a8_9eab77d7",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 134,
+        "startChar": 2,
+        "endLine": 134,
+        "endChar": 7
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bf5d87b_82c11da3",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "unclear which element is invalid\n\n  return errors.Annotate(err, \"%d\", i).Err()",
+      "range": {
+        "startLine": 143,
+        "startChar": 10,
+        "endLine": 143,
+        "endChar": 13
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65506137_45c31369",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "unspecified()",
+      "range": {
+        "startLine": 155,
+        "startChar": 9,
+        "endLine": 155,
+        "endChar": 49
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc46cd15_f1f2c934",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "same problem here",
+      "range": {
+        "startLine": 165,
+        "startChar": 6,
+        "endLine": 165,
+        "endChar": 11
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcf0d509_523134fc",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 175,
+        "startChar": 2,
+        "endLine": 176,
+        "endChar": 7
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f87fb7cf_4803151b",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "please don\u0027t use real time.Now() in tests. this way, it is easy to make tests flaky.\nuse clock.Now instead or testclock.TestRecentTimeUTC",
+      "range": {
+        "startLine": 32,
+        "startChar": 32,
+        "endLine": 32,
+        "endChar": 42
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f0caba4_27b801b4",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "move one line up",
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "604af48f_b4edd9b8",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "here and everywhere. for consistency, please make t.Parallel() the very first statement in a test",
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dee044f0_5f43ab6d",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "please use ShouldErrLike, to be consistent with other tests, and to prevent situations where we caught a different error",
+      "range": {
+        "startLine": 358,
+        "startChar": 30,
+        "endLine": 358,
+        "endChar": 44
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28b4bea7_a9058b6b",
+        "filename": "resultdb/proto/rpc/v1/test_result.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T21:37:07Z",
+      "side": 1,
+      "message": "that\u0027s not what this CL does though. it checks number of bytes https://blog.golang.org/strings",
+      "range": {
+        "startLine": 89,
+        "startChar": 62,
+        "endLine": 90,
+        "endChar": 16
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
