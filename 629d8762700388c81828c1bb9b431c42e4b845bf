@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "360195cc_3944d8a4",
+        "filename": "resultdb/internal/tasks/finalization.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T23:32:47Z",
+      "side": 1,
+      "message": "i\u0027ve posted questions on the bug about this field. Let\u0027s continue discussing it in the bug. If we decide to add it, it can be done in a separate CL",
+      "parentUuid": "67088061_82cc7eb0",
+      "revId": "629d8762700388c81828c1bb9b431c42e4b845bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "586a6234_7e33cc4e",
         "filename": "resultdb/internal/tasks/finalization.go",
         "patchSetId": 5
@@ -39,6 +57,30 @@
       "revId": "629d8762700388c81828c1bb9b431c42e4b845bf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815d9f4b_bf8d01cb",
+        "filename": "resultdb/internal/tasks/finalization.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T23:32:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "586a6234_7e33cc4e",
+      "range": {
+        "startLine": 43,
+        "startChar": 34,
+        "endLine": 43,
+        "endChar": 52
+      },
+      "revId": "629d8762700388c81828c1bb9b431c42e4b845bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
