@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2c339c4_365a6ac0",
+        "filename": "common/gcloud/gs/path.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T23:31:51Z",
+      "side": 1,
+      "message": "Can it be named just MakePath? \"concat\" is now unnecessary.\n\nIf not, at least adjust the comment to say \"MakeConcatPath constructs ...\".",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "734173fcf2d2891f7d92232a1aff66c510ac817c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
