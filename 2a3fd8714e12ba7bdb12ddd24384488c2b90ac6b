@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "61fe6946_8c372d5d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Maybe. But it will require writing more boilerplate in each module. Will consider this when actually writing modules.",
+      "parentUuid": "f45477bf_9c6c48bf",
+      "range": {
+        "startLine": 18,
+        "startChar": 24,
+        "endLine": 18,
+        "endChar": 27
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e39986a_6075ee6e",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "721ee6f2_2bdf4046",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e39986a_6075ee6e",
+      "range": {
+        "startLine": 23,
+        "startChar": 35,
+        "endLine": 23,
+        "endChar": 43
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e845730b_991f7989",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7bd8e41a_2e7a74ab",
+      "range": {
+        "startLine": 28,
+        "startChar": 56,
+        "endLine": 28,
+        "endChar": 60
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5351011_f7f8e3bd",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -82,6 +154,30 @@
       "writtenOn": "2020-01-23T22:31:45Z",
       "side": 1,
       "message": "It seems like it would be bad practice to rely on some other Module being included before this one? At the risk of enterprising this too much, would it be reasonable to have a Dependencies() method which returns a slice of other module names that this depends on? e.g. if AuthDB relies on luci/gae, it would be explicitly stated.",
+      "range": {
+        "startLine": 31,
+        "startChar": 66,
+        "endLine": 31,
+        "endChar": 79
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e83c6598_83042e9c",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Yes, but I didn\u0027t want to over engineer the initial approach. We can add dependency graph when it becomes necessary. It\u0027s not exactly trivial.",
+      "parentUuid": "d5351011_f7f8e3bd",
       "range": {
         "startLine": 31,
         "startChar": 66,
@@ -140,6 +236,54 @@
     },
     {
       "key": {
+        "uuid": "fe1545d0_7d1215f2",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c4da820_0797b7c6",
+      "range": {
+        "startLine": 44,
+        "startChar": 52,
+        "endLine": 44,
+        "endChar": 53
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3eba21bc_702cced0",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "994ee42d_be5dc845",
+      "range": {
+        "startLine": 44,
+        "startChar": 26,
+        "endLine": 44,
+        "endChar": 27
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "69e671f3_80b82702",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "89e3a9a5_1d0d826a",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "69e671f3_80b82702",
+      "range": {
+        "startLine": 45,
+        "startChar": 46,
+        "endLine": 45,
+        "endChar": 51
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8bbd8f9_1080d439",
         "filename": "server/module/module.go",
         "patchSetId": 4
@@ -183,6 +351,30 @@
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b865a919_a8b450f1",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "Actually, removed this for now. Better not to encourage different behavior on GAE/non-GAE. Remove \"Hostname\" too. Will add back when necessary.",
+      "parentUuid": "b8bbd8f9_1080d439",
+      "range": {
+        "startLine": 58,
+        "startChar": 44,
+        "endLine": 58,
+        "endChar": 47
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -301,6 +493,30 @@
       "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75a15688_d0d68894",
+        "filename": "server/server.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T22:59:25Z",
+      "side": 1,
+      "message": "I\u0027d like this signature to be similar to server.Main(...) and in server.Main(...) the last param is already used by the \u0027init\u0027 callback (and it is most readable to keep it that way).",
+      "parentUuid": "70c9885e_8df5ad98",
+      "range": {
+        "startLine": 542,
+        "startChar": 49,
+        "endLine": 542,
+        "endChar": 51
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
