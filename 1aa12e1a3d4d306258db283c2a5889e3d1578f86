@@ -1,0 +1,659 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "079ba589_57340e8e",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "span\n\nthe you don\u0027t have to do span.ToSpanner in L47",
+      "range": {
+        "startLine": 45,
+        "startChar": 2,
+        "endLine": 45,
+        "endChar": 9
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f5ba906_5b6dacbd",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "remove. id.Name() return value has \"invocation\" as a substring already",
+      "range": {
+        "startLine": 64,
+        "startChar": 83,
+        "endLine": 64,
+        "endChar": 93
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0263826a_63387f23",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this number is incorrect because we capped the number of test variants we fetch, so let\u0027s omit this",
+      "range": {
+        "startLine": 64,
+        "startChar": 31,
+        "endLine": 64,
+        "endChar": 36
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1886eca4_36c1ded8",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "Warningf",
+      "range": {
+        "startLine": 64,
+        "startChar": 10,
+        "endLine": 64,
+        "endChar": 15
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "959effe0_a8bc5f50",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "remove. we have a return above",
+      "range": {
+        "startLine": 66,
+        "startChar": 3,
+        "endLine": 66,
+        "endChar": 9
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a593e34e_ef3ff455",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: this is impl details. consider focusing on the meaning of the func",
+      "range": {
+        "startLine": 77,
+        "startChar": 38,
+        "endLine": 78,
+        "endChar": 39
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06827f55_d29e52ce",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: why not just \"invIDs\".\nthe aspect of \"expired results\" is already clear from the function name",
+      "range": {
+        "startLine": 79,
+        "startChar": 61,
+        "endLine": 79,
+        "endChar": 88
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d5ea62d_d61cc84c",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "i still quite a bit of repetition. consider\n\n\nfunc processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {\n\tattempt :\u003d 0\n\tfor {\n\t\tstart :\u003d clock.Now(ctx)\n\n\t\tif err :\u003d f(ctx); err \u003d\u003d nil {\n\t\t\tattempt \u003d 0\n\t\t} else {\n\t\t\tlogging.Errorf(...)\n\n\t\t\tattempt++\n\t\t\tsleep :\u003d time.Duration(attempt) * time.Second\n\t\t\tif sleep \u003e maxSleep {\n\t\t\t\tsleep \u003d maxSleep\n\t\t\t}\n\t\t\ttime.Sleep(sleep)\n\t\t}\n\n\t\tif sleep :\u003d minInterval - clock.Since(ctx, start); sleep \u003e 0 {\n\t\t\ttime.Sleep(sleep)\n\t\t}\n\t}\n}\n\nthis would separate sleeping/logging logic from the business logic",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 37
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1bf108_e2f7e59a",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "i think its fine to omit this if we use minInterval in processingLoop()?",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 3
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f10a2f73_6ccca0b3",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "there is no given shard",
+      "range": {
+        "startLine": 125,
+        "startChar": 3,
+        "endLine": 125,
+        "endChar": 15
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7828e94f_4978e16d",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "FWIU this will scan all invocations (terrabytes)? please force InvocationsByInvocationExpiration. it has ShardId *descending* for this reason",
+      "range": {
+        "startLine": 130,
+        "startChar": 7,
+        "endLine": 130,
+        "endChar": 18
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34f33016_57b8dadd",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this may return an error, we should check it",
+      "range": {
+        "startLine": 132,
+        "startChar": 5,
+        "endLine": 132,
+        "endChar": 12
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf07565c_8e6d2dcf",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this may be nil if err!\u003dnil",
+      "range": {
+        "startLine": 132,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 4
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f3e03e_a8365390",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: inline",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 12
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4aae7326_9ccf95ec",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: span.Query already does this",
+      "range": {
+        "startLine": 148,
+        "startChar": 13,
+        "endLine": 148,
+        "endChar": 31
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a004b36_7465d34a",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: related to the comment below, usually we refer to this as \"test variant id\". Consider \"testVariantID\"",
+      "range": {
+        "startLine": 172,
+        "startChar": 5,
+        "endLine": 172,
+        "endChar": 22
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d22cec23_6b6b147b",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: this func currently knows about what it is used for more than it has to. I think the following would be cleaner\n\n  func deleteTestResults(ctx context.context, id span.InvocationId, except []testVariantID)",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 130
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3221b6a0_c5aca5f1",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 186,
+        "startChar": 29,
+        "endLine": 186,
+        "endChar": 44
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b07c2f6_65a759ff",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: count\n\nthe aspect of \"deletion\" is already clear from the context (func name)",
+      "range": {
+        "startLine": 188,
+        "startChar": 1,
+        "endLine": 188,
+        "endChar": 13
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d795cff_d8766053",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: in",
+      "range": {
+        "startLine": 190,
+        "startChar": 58,
+        "endLine": 190,
+        "endChar": 61
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "024d6f7e_5924efbc",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "\"up to mmaxTestVariantsToFilter+1\"\nor to make it less awkward and to make it explicit, consider passing a limit as param",
+      "range": {
+        "startLine": 195,
+        "startChar": 44,
+        "endLine": 195,
+        "endChar": 47
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4510fc3b_7b2a4d23",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: this struct is just two pointers to strings. It would more efficient not to use pointers. \nIs Spanner OK with []testIdVariantHash?",
+      "range": {
+        "startLine": 197,
+        "startChar": 86,
+        "endLine": 197,
+        "endChar": 87
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f80024a_a2d322ce",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "nit: just \"id\". span.Query already calls span.ToSpanner",
+      "range": {
+        "startLine": 207,
+        "startChar": 29,
+        "endLine": 207,
+        "endChar": 47
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e449b42_f6cf3c8b",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "in this code base, \"variant\" and \"test variant\" have different meanings:\n- variant: a key-value map\n- test variant: tuple (TestId, Variant)\n\nthe latter is more appropriate here. Also consider using shorter variable names (this is Golang). Chan used \"tv\" for test variants.\n\nsame concern with the function name",
+      "range": {
+        "startLine": 210,
+        "startChar": 2,
+        "endLine": 210,
+        "endChar": 13
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e95e826d_75752ab9",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this is confusing because \"invocation name\" term is reserved for something else.\nconsider accepting `invID span.InvocationID` here. \ngolang still allows passing a string literal at the callsite",
+      "range": {
+        "startLine": 67,
+        "startChar": 58,
+        "endLine": 67,
+        "endChar": 72
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e13e70b_ff009a74",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this must be slower than accumulating all mutations, and then apply after the loop\n\n  ms \u003d append(ms, testutil.InsertTestResults(results)...)",
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1d305b7_5bc6e468",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "would be simpler to assert (err, ShouldBeNil) right here",
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1054ec1f_d17d3bdf",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "why?\n\nall data is purged before start of each test",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 138,
+        "endChar": 3
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5db7108_f58f12d7",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:26:44Z",
+      "side": 1,
+      "message": "this function has nothing to do with spanner. why is it in the span package?\nalso i have doubts it would be used outside of backend, so perhaps it should live there",
+      "range": {
+        "startLine": 480,
+        "startChar": 5,
+        "endLine": 480,
+        "endChar": 18
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
