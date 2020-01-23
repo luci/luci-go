@@ -12,32 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package tasks
 
 import (
-	"context"
-	"fmt"
-	"io"
+	"testing"
 
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
-
-	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
-func main() {
-	internal.Main(func(srv *server.Server) error {
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			io.WriteString(c.Writer, "OK")
-		})
-
-		for _, taskType := range tasks.AllTypes {
-			activity := fmt.Sprintf("resultdb.task.%s", taskType)
-			srv.RunInBackground(activity, func(ctx context.Context) {
-				runInvocationTasks(ctx, taskType)
-			})
-		}
-		return nil
-	})
+func TestMain(m *testing.M) {
+	testutil.SpannerTestMain(m)
 }
