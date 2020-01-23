@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "outDir": "./static/dist",
+        "lib": ["ESNext", "dom"],
+        "noEmitOnError": true,
+        "target": "es2015",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "strict": true
+    }
+}
