@@ -47,7 +47,7 @@ const (
 )
 
 // AllTypes is a slice of all known types of tasks.
-var AllTypes = []Type{BQExport}
+var AllTypes = []Type{BQExport, TryFinalizeInvocation}
 
 // Enqueue inserts one row to InvocationTasks.
 func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface{}, processAfter time.Time) *spanner.Mutation {
