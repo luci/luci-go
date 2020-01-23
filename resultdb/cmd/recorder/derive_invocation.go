@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"strings"
 
@@ -37,6 +38,11 @@ import (
 const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
+
+func registerDerivedInvBQTableFlag() *string {
+	return flag.String("derive-bigquery-table", "",
+		`Name of the BigQuery table for result export. In the format of "<project>.<dataset>.<table>".`)
+}
 
 // validateDeriveInvocationRequest returns an error if req is invalid.
 func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
