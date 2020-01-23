@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "67088061_82cc7eb0",
+        "filename": "resultdb/internal/tasks/finalization.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T23:15:20Z",
+      "side": 1,
+      "message": "Should we add a finalizing timestamp in Invocation?\n\nReferrence: https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1032434#c2",
+      "revId": "629d8762700388c81828c1bb9b431c42e4b845bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "586a6234_7e33cc4e",
+        "filename": "resultdb/internal/tasks/finalization.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T23:15:20Z",
+      "side": 1,
+      "message": "\"finalize\"?",
+      "range": {
+        "startLine": 43,
+        "startChar": 34,
+        "endLine": 43,
+        "endChar": 52
+      },
+      "revId": "629d8762700388c81828c1bb9b431c42e4b845bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
