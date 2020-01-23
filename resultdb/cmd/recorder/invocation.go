@@ -112,16 +112,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func finalizeInvocation(txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool, finalizeTime time.Time) error {
-	return txn.BufferWrite([]*spanner.Mutation{
-		span.UpdateMap("Invocations", map[string]interface{}{
-			"InvocationId": id,
-			"State":        pb.Invocation_FINALIZED,
-			"Interrupted":  interrupted,
-			"FinalizeTime": finalizeTime,
-		}),
-	})
-}
 
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
 	if !updateToken.Valid {
