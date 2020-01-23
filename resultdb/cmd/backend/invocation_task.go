@@ -72,30 +72,19 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 	})
 }
 
-// runInvocationTasks gets invocation tasks and dispatch the tasks to workers.
+// runInvocationTasks gets invocation tasks and dispatches them to workers.
 func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	// TODO(chanli): Add alert on failures.
-	attempt := 0
-	for {
-		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
-		if err != nil || len(ids) == 0 {
-			if err != nil {
-				logging.Errorf(ctx, "Failed to query invocation tasks: %s", err)
-			}
+	processingLoop(ctx, time.Second, 5*time.Second, func(ctx context.Context) error {
+		switch ids, err := tasks.Sample(ctx, taskType, time.Now(), 100); {
+		case err != nil:
+			return errors.Annotate(err, "failed to query invocation tasks").Err()
 
-			attempt++
-			sleep := time.Duration(attempt) * time.Second
-			if sleep > 5*time.Second {
-				sleep = 5 * time.Second
-			}
-			time.Sleep(sleep)
+		case len(ids) == 0:
+			return nil
 
-			continue
+		default:
+			return dispatchInvocationTasks(ctx, taskType, ids)
 		}
-
-		attempt = 0
-		if err = dispatchInvocationTasks(ctx, taskType, ids); err != nil {
-			logging.Errorf(ctx, "Failed to run invocation tasks: %s", err)
-		}
-	}
+	})
 }
