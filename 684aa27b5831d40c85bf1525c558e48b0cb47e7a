@@ -22,6 +22,30 @@
       "revId": "684aa27b5831d40c85bf1525c558e48b0cb47e7a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a163a1f2_9dc2bf39",
+        "filename": "common/logging/sdlogger/logger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T00:15:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16111a17_129b27e0",
+      "range": {
+        "startLine": 251,
+        "startChar": 2,
+        "endLine": 251,
+        "endChar": 35
+      },
+      "revId": "684aa27b5831d40c85bf1525c558e48b0cb47e7a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
