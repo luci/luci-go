@@ -1012,6 +1012,30 @@
     },
     {
       "key": {
+        "uuid": "050e4c93_7277b116",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T22:50:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4510fc3b_7b2a4d23",
+      "range": {
+        "startLine": 197,
+        "startChar": 86,
+        "endLine": 197,
+        "endChar": 87
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f80024a_a2d322ce",
         "filename": "resultdb/cmd/backend/purge_expired_results.go",
         "patchSetId": 3
