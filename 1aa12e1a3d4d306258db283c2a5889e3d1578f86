@@ -186,6 +186,30 @@
     },
     {
       "key": {
+        "uuid": "c383e7d0_d1448375",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T19:29:50Z",
+      "side": 1,
+      "message": "actually the loop should be\n\n  for ctx.Err() \u003d\u003d nil {",
+      "parentUuid": "3d5ea62d_d61cc84c",
+      "range": {
+        "startLine": 94,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 37
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3f1bf108_e2f7e59a",
         "filename": "resultdb/cmd/backend/purge_expired_results.go",
         "patchSetId": 3
