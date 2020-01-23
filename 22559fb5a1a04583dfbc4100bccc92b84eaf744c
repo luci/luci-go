@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4bef2bd_f8ce8827",
+        "filename": "resultdb/cmd/backend/invocation_finalization.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T23:45:38Z",
+      "side": 1,
+      "message": "Move this comment closer to readyToFinalize()?",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 44,
+        "endChar": 60
+      },
+      "revId": "22559fb5a1a04583dfbc4100bccc92b84eaf744c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47b986d5_ae06c814",
+        "filename": "resultdb/cmd/backend/invocation_finalization.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T23:45:38Z",
+      "side": 1,
+      "message": "nit: This is",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 12
+      },
+      "revId": "22559fb5a1a04583dfbc4100bccc92b84eaf744c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

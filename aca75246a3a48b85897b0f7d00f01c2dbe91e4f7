@@ -140,6 +140,30 @@
       "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2ee6f428_2aefda63",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-23T23:45:38Z",
+      "side": 1,
+      "message": "I still think the comment is not right. Since IncludedInvocationId is the first part of the index, it should be the other way around: Used to find invocations including a given one.",
+      "parentUuid": "3f0db9f8_a16ae185",
+      "range": {
+        "startLine": 101,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 43
+      },
+      "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
