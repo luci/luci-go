@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "6375a611_2e6be02a",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-23T21:49:35Z",
+      "side": 1,
+      "message": "Another reason I forgot to mention is that I want to have some modules enabled by default in server.go (to split code into more manageable chunks). It means their implementation won\u0027t be able to import \u0027server\u0027 package due to a dependency cycle.",
+      "parentUuid": "eb92d78f_aa4c25e0",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 0
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70c9885e_8df5ad98",
         "filename": "server/server.go",
         "patchSetId": 4
