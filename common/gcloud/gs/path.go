@@ -29,7 +29,11 @@ type Path string
 // components.
 //
 // Trailing forward slashes will be removed from the bucket name, if present.
-func MakePath(bucket, filename string) Path {
+func MakePath(bucket string, parts ...string) Path {
+	return MakeConcatPath(bucket, parts...)
+}
+
+func makePath(bucket, filename string) Path {
 	var carr [2]string
 
 	comps := carr[:0]
@@ -47,11 +51,11 @@ func MakePath(bucket, filename string) Path {
 // Trailing forward slashes will be removed from the bucket name, if present.
 func MakeConcatPath(bucket string, parts ...string) Path {
 	if len(parts) == 0 {
-		return MakePath(bucket, "")
+		return makePath(bucket, "")
 	} else if len(parts) <= 1 {
-		return MakePath(bucket, parts[0])
+		return makePath(bucket, parts[0])
 	}
-	path := MakePath(bucket, parts[0])
+	path := makePath(bucket, parts[0])
 	return path.Concat(parts[1], parts[2:]...)
 }
 
@@ -115,12 +119,15 @@ func (p Path) Concat(v string, parts ...string) Path {
 
 	// Build our components slice.
 	b, f := p.Split()
+	if cleanBucket := stripTrailingSlashes(b); cleanBucket != "" {
+		add("gs://" + cleanBucket)
+	}
 	add(f)
 	add(v)
 	for _, p := range parts {
 		add(p)
 	}
-	return MakePath(b, strings.Join(comps, "/"))
+	return Path(strings.Join(comps, "/"))
 }
 
 func trimPrefix(s, prefix string) (string, bool) {
