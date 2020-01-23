@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 
@@ -27,6 +28,9 @@ import (
 )
 
 func main() {
+	purgeResults := flag.Bool("purge-expired-results", false,
+		"Whether to purge expired test results belonging to test variants that have only expected results")
+
 	internal.Main(func(srv *server.Server) error {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
@@ -37,6 +41,9 @@ func main() {
 			srv.RunInBackground(activity, func(ctx context.Context) {
 				runInvocationTasks(ctx, taskType)
 			})
+		}
+		if *purgeResults {
+			srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
 		}
 		return nil
 	})
