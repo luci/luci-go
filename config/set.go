@@ -22,12 +22,12 @@ import (
 // stored as a single unit in a same repository.
 //
 // A config set name consists of a domain and a series of path components:
-// domain/target/refs...
+// domain/target[/ref].
 //
-//	- Service config sets are config sets in the "services" domain, with the
-//	  service name as the target.
-//	- Project config sets are config sets in the "projects" domain. The target
-//	  is the project name.
+//  - Service config sets are config sets in the "services" domain, with the
+//    service name as the target.
+//  - Project config sets are config sets in the "projects" domain. The target
+//    is the project name.
 type Set string
 
 // ServiceSet returns the name of a config set for the specified service.
