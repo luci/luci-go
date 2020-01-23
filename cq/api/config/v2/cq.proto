@@ -317,8 +317,8 @@ message Verifiers {
 
     // Builders on which tryjobs should be triggered.
     //
-    // TODO(crbug/937080): CQ won't allow adding any builder via `CQ-Include-Trybots:`
-    // in CL description except those in this list.
+    // CQ won't allow adding any builder via `CQ-Include-Trybots:` in CL
+    // description except those in this list.
     repeated Builder builders = 1;
 
     // Optional, defaulting to no retries whatsoever.
@@ -386,10 +386,8 @@ message Verifiers {
       //
       // Failure/Retry semantics:
       //   * If `triggered_by` (parent) builder succeeds, but doesn't set
-      //     the right `triggered_build_ids` s.t. CQ can't find this (child)
-      //     builder among triggered builds, then CQ will wait till
-      //     TRYJOB_PENDING_TIMEOUT is reached, currently hardcoded at 2 hours.
-      //     TODO(tandrii,sergiyb): improve this.
+      //     the right `triggered_build_ids` then CQ will wait for this child
+      //     build to complete for as long as parent build result remains valid.
       //   * If this (child) builder fails and CQ still has retry budget,
       //     CQ will retry a parent builder.
       //
