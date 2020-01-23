@@ -1129,6 +1129,30 @@
     },
     {
       "key": {
+        "uuid": "b5461add_8287e6cb",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T22:39:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e95e826d_75752ab9",
+      "range": {
+        "startLine": 67,
+        "startChar": 58,
+        "endLine": 67,
+        "endChar": 72
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e13e70b_ff009a74",
         "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
         "patchSetId": 3
@@ -1146,6 +1170,24 @@
     },
     {
       "key": {
+        "uuid": "aa936bdb_508d4cd5",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T22:39:16Z",
+      "side": 1,
+      "message": "Done. I had done it originally, but in my tests I easily exceeded the 20000 cells limit in the transaction. I have adjusted my testcase to work within this limit.",
+      "parentUuid": "4e13e70b_ff009a74",
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1d305b7_5bc6e468",
         "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
         "patchSetId": 3
@@ -1160,6 +1202,24 @@
       "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9b27710_bde041b5",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T22:39:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1d305b7_5bc6e468",
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -1186,6 +1246,30 @@
     },
     {
       "key": {
+        "uuid": "891be970_80236c4b",
+        "filename": "resultdb/cmd/backend/purge_expired_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T22:39:16Z",
+      "side": 1,
+      "message": "Done. I was not sure about this.",
+      "parentUuid": "1054ec1f_d17d3bdf",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 138,
+        "endChar": 3
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5db7108_f58f12d7",
         "filename": "resultdb/internal/span/util.go",
         "patchSetId": 3
@@ -1206,6 +1290,30 @@
       "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0874e9f_48cf1ac6",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 480,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T22:39:16Z",
+      "side": 1,
+      "message": "Removed. Processing loop now takes care of backing off.",
+      "parentUuid": "c5db7108_f58f12d7",
+      "range": {
+        "startLine": 480,
+        "startChar": 5,
+        "endLine": 480,
+        "endChar": 18
+      },
+      "revId": "1aa12e1a3d4d306258db283c2a5889e3d1578f86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
