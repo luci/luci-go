@@ -63,6 +63,7 @@ func TestLogger(t *testing.T) {
 		logging.NewFields(map[string]interface{}{"foo": "bar"}).Infof(c, "test field")
 		e := read(buf)
 		So(e.Fields["foo"], ShouldEqual, "bar")
+		So(e.Message, ShouldEqual, `test field :: {"foo":"bar"}`)
 	})
 
 	Convey("Error field", t, func() {
@@ -72,5 +73,6 @@ func TestLogger(t *testing.T) {
 		e := read(buf)
 		So(e.Fields["foo"], ShouldEqual, "bar")             // still works
 		So(e.Fields[logging.ErrorKey], ShouldEqual, "boom") // also works
+		So(e.Message, ShouldEqual, `boom :: {"error":"boom", "foo":"bar"}`)
 	})
 }
