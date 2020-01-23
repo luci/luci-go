@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5948d517_587a17b4",
+        "filename": "server/module/module.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T19:09:25Z",
+      "side": 1,
+      "message": "FWIU this will grow a lot (TODOs). Do we have to have this layer of indirection? Can we put Module in server package and pass *server.Server in Module.Initialize?",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 0
+      },
+      "revId": "2a3fd8714e12ba7bdb12ddd24384488c2b90ac6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
