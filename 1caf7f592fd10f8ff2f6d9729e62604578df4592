@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f6be0487_1f3ee4d3",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T23:53:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8e93933_9155dab0",
+      "range": {
+        "startLine": 98,
+        "startChar": 71,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6c10ced2_22765639",
         "filename": "resultdb/cmd/backend/purge_expired_results.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3123f9ca_18035cf2",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T23:53:46Z",
+      "side": 1,
+      "message": "Neither seems to make a difference. \n\nThey are all fast, yet they all seem to have \"full scan: True\"\nhttp://shortn/_f4YeVA7aTn\nhttp://shortn/_BlL1WNCtUK\nhttp://shortn/_JNc7PCcNVx\n\nI\u0027ll go with your second option as it is more explicit.",
+      "parentUuid": "6c10ced2_22765639",
+      "range": {
+        "startLine": 103,
+        "startChar": 9,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ffc8fe0e_b4ac9eb7",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T23:53:46Z",
+      "side": 1,
+      "message": "Sg. Done.",
+      "parentUuid": "7b0435f0_61557ff0",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 106,
+        "endChar": 16
+      },
+      "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b7104369_edc30c92",
         "filename": "resultdb/cmd/backend/purge_expired_results.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42b3333c_3e86d8f6",
+        "filename": "resultdb/cmd/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-23T23:53:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b7104369_edc30c92",
+      "range": {
+        "startLine": 178,
+        "startChar": 9,
+        "endLine": 178,
+        "endChar": 32
+      },
+      "revId": "1caf7f592fd10f8ff2f6d9729e62604578df4592",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
