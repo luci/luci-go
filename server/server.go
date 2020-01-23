@@ -1829,28 +1829,30 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 
 // getRemoteIP extracts end-user IP address from X-Forwarded-For header.
 func getRemoteIP(r *http.Request) string {
-	// X-Forwarded-For header is set by Cloud Load Balancer and has format:
+	// X-Forwarded-For header is set by Cloud Load Balancer and GAE frontend and
+	// has format:
 	//   [<untrusted part>,]<IP that connected to LB>,<unimportant>[,<more>].
 	//
-	// <untrusted part> is present if the original request from the Internet comes
-	// with X-Forwarded-For header. We can't trust IPs specified there. We assume
-	// Cloud Load Balancer sanitizes the format of this field though.
+	// <untrusted part> may be present if the original request from the Internet
+	// comes with X-Forwarded-For header. We can't trust IPs specified there. We
+	// assume Cloud Load Balancer and GAE sanitize the format of this field
+	// though.
 	//
 	// <IP that connected to LB> is what we are after.
 	//
-	// <unimportant> is "global forwarding rule external IP" which we don't care
-	// about.
+	// <unimportant> is "global forwarding rule external IP" for GKE or
+	// the constant "169.254.1.1" for GAE. We don't care about these.
 	//
 	// <more> is present only if we proxy the request through more layers of
 	// load balancers *while it is already inside GKE cluster*. We assume we don't
 	// do that (if we ever do, Options{...} should be extended with a setting that
 	// specifies how many layers of load balancers to skip to get to the original
-	// IP).
+	// IP). On GAE <more> is always empty.
 	//
 	// See https://cloud.google.com/load-balancing/docs/https for more info.
 	forwardedFor := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
 	if len(forwardedFor) >= 2 {
-		return forwardedFor[len(forwardedFor)-2]
+		return strings.TrimSpace(forwardedFor[len(forwardedFor)-2])
 	}
 
 	// Fallback to the peer IP if X-Forwarded-For is not set. Happens when
