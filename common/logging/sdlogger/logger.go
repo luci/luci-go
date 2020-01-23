@@ -196,6 +196,10 @@ type jsonLogger struct {
 	w         LogEntryWriter
 	prototype LogEntry
 	mut       LogEntryMutator
+
+	once      sync.Once      // used to initializes fields from 'ctx' on demand
+	fields    logging.Fields // in a structured form for LogEntry.Fields
+	fieldsStr string         // in a string form for LogEntry.Message
 }
 
 func (l *jsonLogger) Debugf(format string, args ...interface{}) {
@@ -219,20 +223,32 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 		return
 	}
 
+	// Within a single context.Context fields are static and we can strinfigy them
+	// once when really necessary.
+	l.once.Do(func() {
+		fields := logging.GetFields(l.ctx)
+		if len(fields) == 0 {
+			return
+		}
+
+		// logging.ErrorKey usually points to a value that implements 'error'
+		// interface, which is not JSON-serializable. Convert it to a string. Note
+		// that mutating the result of logging.GetFields in place is not allowed, so
+		// we'll make a copy.
+		if err, ok := fields[logging.ErrorKey].(error); ok {
+			fields = logging.NewFields(fields)
+			fields[logging.ErrorKey] = err.Error()
+		}
+
+		l.fields = fields
+		l.fieldsStr = " :: " + fields.String()
+	})
+
 	e := l.prototype
 	e.Severity = LevelToSeverity(lvl)
-	e.Message = fmt.Sprintf(format, args...)
+	e.Message = fmt.Sprintf(format, args...) + l.fieldsStr
 	e.Timestamp = ToTimestamp(clock.Now(l.ctx))
-	e.Fields = logging.GetFields(l.ctx)
-
-	// logging.ErrorKey usually points to a value that implements 'error'
-	// interface, which is not JSON-serializable. Convert it to a string. Note
-	// that mutating the result of logging.GetFields in place is not allowed, so
-	// we'll make a copy.
-	if err, ok := e.Fields[logging.ErrorKey].(error); ok {
-		e.Fields = logging.NewFields(e.Fields)
-		e.Fields[logging.ErrorKey] = err.Error()
-	}
+	e.Fields = l.fields
 
 	if l.mut != nil {
 		l.mut(l.ctx, &e)
