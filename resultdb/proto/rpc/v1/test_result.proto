@@ -86,8 +86,9 @@ message TestResult {
   // MUST NOT be STATUS_UNSPECIFIED.
   TestStatus status = 6 [ (google.api.field_behavior) = IMMUTABLE ];
 
-  // Human-readable explanation of the result, in HTML.
-  // MUST be sanitized before rendering in the browser.
+  // Human-readable explanation of the result, in HTML. Up to 4k unicode
+  // characters can be stored, and the content MUST be sanitized before
+  // rendering in the browser.
   string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
@@ -95,6 +96,7 @@ message TestResult {
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Duration of the test case execution.
+  // MUST be equal to or greater than 0.
   google.protobuf.Duration duration = 9
       [ (google.api.field_behavior) = IMMUTABLE ];
 
@@ -161,7 +163,7 @@ message Artifact {
   // This must be a plain (curlable) HTTPS URL.
   //
   // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
-  // storage level, but it is converted to an HTTP URL before serving.
+  // storage level, but it is converted to an HTTPS URL before serving.
   string fetch_url = 2;
 
   // When fetch_url expires. If expired, re-request this Artifact.
@@ -170,12 +172,13 @@ message Artifact {
 
   // Media type of the artifact.
   // Logs are typically "text/plain" and screenshots are typically "image/png".
+  // Can be omitted.
   string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Size of the file, in bytes.
   // Can be used in UI to decide between displaying the artifact inline or only
   // showing a link if it is too large.
-  int64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
+  uint64 size = 5 [ (google.api.field_behavior) = IMMUTABLE ];
 }
 
 // Indicates the test subject (e.g. a CL) is absolved from blame
