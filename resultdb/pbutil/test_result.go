@@ -19,9 +19,13 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 
+	"github.com/golang/protobuf/ptypes"
+	dpb "github.com/golang/protobuf/ptypes/duration"
+	tpb "github.com/golang/protobuf/ptypes/timestamp"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -29,6 +33,7 @@ import (
 const (
 	artifactFormatVersion = 1
 	resultIDPattern       = `[[:ascii:]]{1,32}`
+	maxLenSummaryHtml     = 4 * 1024
 )
 
 var (
@@ -51,15 +56,126 @@ func ValidateResultID(resultID string) error {
 	return validateWithRe(resultIDRe, resultID)
 }
 
-// ValidateArtifactName returns a non-nil error if artifactName is invalid.
-func ValidateArtifactName(artifactName string) error {
-	return validateWithRe(artifactNameRe, artifactName)
-}
-
 // ValidateTestResultName returns a non-nil error if name is invalid.
 func ValidateTestResultName(name string) error {
 	_, _, _, err := ParseTestResultName(name)
 	return err
+}
+
+// ValidateSummaryHtml returns a non-nil error if summary is invalid.
+func ValidateSummaryHtml(summary string) error {
+	if len(summary) > maxLenSummaryHtml {
+		return errors.Reason("exceeds the maximum length of %d", maxLenSummaryHtml).Err()
+	}
+	return nil
+}
+
+// ValidateStartWithDuration returns a non-nil error if st and d are invalid.
+func ValidateStartTimeWithDuration(pt *tpb.Timestamp, pd *dpb.Duration) error {
+	t, err := ptypes.Timestamp(pt)
+	if err != nil {
+		return err
+	}
+	d, err := ptypes.Duration(pd)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	if now.Before(t) {
+		return errors.Reason("start_time cannot be future").Err()
+	}
+	if d < 0 {
+		return errors.Reason("duration is < 0").Err()
+	}
+	if now.Before(t.Add(d)) {
+		return errors.Reason("duration is invalid.").Err()
+	}
+	return nil
+}
+
+// ValidateArtifactName returns a non-nil error if name is invalid.
+func ValidateArtifactName(name string) error {
+	return validateWithRe(artifactNameRe, name)
+}
+
+// ValidateArtifactFetchUrl returns a non-nil error if rawurl is invalid.
+func ValidateArtifactFetchUrl(rawurl string) error {
+	u, err := url.ParseRequestURI(rawurl)
+	if err != nil {
+		return err
+	}
+	// ParseRequestURI un-capitalizes all the letters of Scheme.
+	if u.Scheme != "https" {
+		return errors.Reason("the URL scheme is not HTTPS").Err()
+	}
+	if u.Host == "" {
+		return errors.Reason("missing host").Err()
+	}
+	return nil
+}
+
+// ValidateArtifact returns a non-nil error if art is invalid.
+func ValidateArtifact(art *pb.Artifact) (err error) {
+	if art == nil {
+		return errors.Reason("Artifact is nil").Err()
+	}
+	isErr := func(ve error) bool {
+		err = ve
+		return ve != nil
+	}
+
+	switch {
+	case isErr(ValidateArtifactName(art.Name)):
+	case isErr(ValidateArtifactFetchUrl(art.FetchUrl)):
+		// skip `FetchUrlExpiration`
+		// skip `ContentType`
+		// skip `Size`
+		break
+	}
+	return
+}
+
+// ValidateArtifacts returns a non-nil error if any elemnt of arts is invalid.
+func ValidateArtifacts(arts []*pb.Artifact) error {
+	for _, art := range arts {
+		if err := ValidateArtifact(art); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ValidateTestResult returns a non-nil error if msg is invalid.
+//
+// Note that this function validates msg as an RPC request message. Therefore,
+// fields with OUTPUT_ONLY tag are not validated.
+func ValidateTestResult(msg *pb.TestResult) (err error) {
+	if msg == nil {
+		return errors.Reason("TestResult is nil").Err()
+	}
+
+	isErr := func(ve error) bool {
+		err = ve
+		return ve != nil
+	}
+
+	switch {
+	// skip `Name`
+	case isErr(ValidateTestID(msg.TestId)):
+	case isErr(ValidateResultID(msg.ResultId)):
+	case isErr(ValidateVariant(msg.Variant)):
+	// skip `Expected`
+	case isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name)):
+	case isErr(ValidateSummaryHtml(msg.SummaryHtml)):
+	case isErr(ValidateStartTimeWithDuration(msg.StartTime, msg.Duration)):
+	case isErr(ValidateStringPairs(msg.Tags)):
+	case isErr(ValidateArtifacts(msg.InputArtifacts)):
+	case isErr(ValidateArtifacts(msg.OutputArtifacts)):
+		// validation error!
+		break
+	}
+	return
 }
 
 // ParseTestResultName extracts the invocation ID, unescaped test id, and
