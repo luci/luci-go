@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "503088be_8ef2c493",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a561b704_59eaaa66",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 19,
+        "endChar": 0
+      },
+      "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4e8d397_697387ec",
         "filename": "resultdb/cmd/backend/invocation_finalization.go",
         "patchSetId": 11
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "dca5e791_1f268876",
+        "filename": "resultdb/cmd/backend/invocation_finalization.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:47:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4e8d397_697387ec",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 24
+      },
+      "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f75df18_57e27984",
         "filename": "resultdb/internal/span/init_db.sql",
         "patchSetId": 11
@@ -68,6 +116,30 @@
       "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f0db9f8_a16ae185",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:47:28Z",
+      "side": 1,
+      "message": "yeah, i\u0027ve simplified this sentence",
+      "parentUuid": "8f75df18_57e27984",
+      "range": {
+        "startLine": 101,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 43
+      },
+      "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

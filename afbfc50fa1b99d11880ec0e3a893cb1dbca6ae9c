@@ -22,6 +22,30 @@
       "revId": "afbfc50fa1b99d11880ec0e3a893cb1dbca6ae9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3001aa2b_cc7d1fb6",
+        "filename": "resultdb/cmd/backend/invocation_finalization.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-23T16:47:28Z",
+      "side": 1,
+      "message": "i think this would work, but it would make the code more complex for no obvious reason. This code is already quite complex.\n\nbesides, if everything is fine, a task is processed soon after it is enqueued, so most of the time there will be no task to reuse. Reuse can happen only if task processing is slow, but if that\u0027s the case, we have more serious problems to take care of.\n\nalso, prefix task ids with *our* invocation id means all tasks are inserted into the same place of the keyspace, which is a bit more efficient than inserting into different places.",
+      "parentUuid": "6829f567_a05c6963",
+      "range": {
+        "startLine": 194,
+        "startChar": 20,
+        "endLine": 194,
+        "endChar": 67
+      },
+      "revId": "afbfc50fa1b99d11880ec0e3a893cb1dbca6ae9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
