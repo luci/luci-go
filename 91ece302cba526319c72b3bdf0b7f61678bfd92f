@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7734942a_cc0aec12",
+        "filename": "config/OWNERS",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-23T01:53:36Z",
+      "side": 1,
+      "message": "TIL 😊",
+      "range": {
+        "startLine": 2,
+        "startChar": 0,
+        "endLine": 2,
+        "endChar": 20
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
