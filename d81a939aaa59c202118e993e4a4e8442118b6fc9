@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc8beafa_521542c1",
+        "filename": "server/redisconn/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T22:02:19Z",
+      "side": 1,
+      "message": "If this says \"optional\", it would be good to document what happens when it\u0027s omitted.",
+      "range": {
+        "startLine": 40,
+        "startChar": 48,
+        "endLine": 40,
+        "endChar": 56
+      },
+      "revId": "d81a939aaa59c202118e993e4a4e8442118b6fc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6815cce_e10e11d9",
+        "filename": "server/redisconn/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T22:02:19Z",
+      "side": 1,
+      "message": "why not \"redisconn\"? Or \"go.chromium.org/luci/server/redisconn\"?",
+      "range": {
+        "startLine": 80,
+        "startChar": 9,
+        "endLine": 80,
+        "endChar": 14
+      },
+      "revId": "d81a939aaa59c202118e993e4a4e8442118b6fc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
