@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -38,6 +39,7 @@ func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
 		redisconn.NewModuleFromFlags(),
+		gaeemulation.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
