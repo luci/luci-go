@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "22eafbc1_bca66ba1",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T16:39:37Z",
+      "side": 1,
+      "message": "yeah, i bet nobody will see it. up to you.",
+      "parentUuid": "cb751275_d52fc583",
+      "range": {
+        "startLine": 153,
+        "startChar": 1,
+        "endLine": 153,
+        "endChar": 64
+      },
+      "revId": "d6be2cb7c8df2b362b1d81477bd4ca9fc7682547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "42f88171_2a3faa5b",
         "filename": "resultdb/cmd/recorder/derive_invocation.go",
         "patchSetId": 2
@@ -41,6 +65,29 @@
         "startChar": 18,
         "endLine": 166,
         "endChar": 45
+      },
+      "revId": "d6be2cb7c8df2b362b1d81477bd4ca9fc7682547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85165ce2_6f6dfe1a",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T16:39:37Z",
+      "side": 1,
+      "message": "tasks.Enqueue?\n\nalso consider tasks.EnqueueBQExport(invID, s.derivedInvBQTable)",
+      "range": {
+        "startLine": 164,
+        "startChar": 18,
+        "endLine": 170,
+        "endChar": 3
       },
       "revId": "d6be2cb7c8df2b362b1d81477bd4ca9fc7682547",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
