@@ -241,7 +241,7 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
 		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, ProcessAfter)
-		SELECT @taskType, FORMAT("%d", i), @invID, payload, CURRENT_TIMESTAMP()
+		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, CURRENT_TIMESTAMP()
 		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
 		WHERE inv.InvocationId = @invID
 	`)
