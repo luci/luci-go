@@ -29,7 +29,17 @@ type Path string
 // components.
 //
 // Trailing forward slashes will be removed from the bucket name, if present.
-func MakePath(bucket, filename string) Path {
+func MakePath(bucket string, parts ...string) Path {
+	if len(parts) == 0 {
+		return makePath(bucket, "")
+	} else if len(parts) <= 1 {
+		return makePath(bucket, parts[0])
+	}
+	path := makePath(bucket, parts[0])
+	return path.Concat(parts[1], parts[2:]...)
+}
+
+func makePath(bucket, filename string) Path {
 	var carr [2]string
 
 	comps := carr[:0]
@@ -40,19 +50,6 @@ func MakePath(bucket, filename string) Path {
 		comps = append(comps, filename)
 	}
 	return Path(strings.Join(comps, "/"))
-}
-
-// MakeConcatPath makes a GS path from multiple parts.
-//
-// Trailing forward slashes will be removed from the bucket name, if present.
-func MakeConcatPath(bucket string, parts ...string) Path {
-	if len(parts) == 0 {
-		return MakePath(bucket, "")
-	} else if len(parts) <= 1 {
-		return MakePath(bucket, parts[0])
-	}
-	path := MakePath(bucket, parts[0])
-	return path.Concat(parts[1], parts[2:]...)
 }
 
 // Bucket returns the Google Storage bucket component of the Path. If there is
@@ -115,12 +112,15 @@ func (p Path) Concat(v string, parts ...string) Path {
 
 	// Build our components slice.
 	b, f := p.Split()
+	if cleanBucket := stripTrailingSlashes(b); cleanBucket != "" {
+		add("gs://" + cleanBucket)
+	}
 	add(f)
 	add(v)
 	for _, p := range parts {
 		add(p)
 	}
-	return MakePath(b, strings.Join(comps, "/"))
+	return Path(strings.Join(comps, "/"))
 }
 
 func trimPrefix(s, prefix string) (string, bool) {
