@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"crypto/subtle"
+	"flag"
 	"fmt"
 	"time"
 
@@ -41,9 +42,6 @@ const (
 	// Delete Invocations row after this duration since invocation creation.
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 
-	// Delete expected test results afte this duration since invocation creation.
-	expectedTestResultsExpirationDuration = 60 * day // 2mo
-
 	// By default, interrupt the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
@@ -57,6 +55,12 @@ const (
 // It is returned by CreateInvocation RPC in response header metadata,
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
+
+// expectedTestResultsExpirationDays is the number of days since invocation
+// creation after which to delete expected test results.
+var expectedTestResultsExpirationDays = flag.Int(
+	"expected-results-expiration", 60,
+	"How many days to keep results for test variants with only expected results")
 
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
@@ -136,7 +140,7 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
 
 		"InvocationExpirationTime":          createTime.Add(invocationExpirationDuration),
-		"ExpectedTestResultsExpirationTime": createTime.Add(expectedTestResultsExpirationDuration),
+		"ExpectedTestResultsExpirationTime": createTime.Add(time.Duration(*expectedTestResultsExpirationDays) * day),
 
 		"UpdateToken": updateToken,
 
