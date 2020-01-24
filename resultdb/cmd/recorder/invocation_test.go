@@ -23,7 +23,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -70,30 +69,6 @@ func TestMutateInvocation(t *testing.T) {
 				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": "different token"}))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
-			})
-
-			Convey(`with exceeded deadline`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}))
-
-				// Mock now to be after deadline.
-				clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
-
-				err := mayMutate()
-				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
-
-				// Confirm the invocation has been updated.
-				var state pb.Invocation_State
-				var ft time.Time
-				var interrupted bool
-				inv := span.InvocationID("inv")
-				MustReadRow(ctx, "Invocations", inv.Key(), map[string]interface{}{
-					"State":        &state,
-					"Interrupted":  &interrupted,
-					"FinalizeTime": &ft,
-				})
-				So(state, ShouldEqual, pb.Invocation_FINALIZED)
-				So(interrupted, ShouldEqual, true)
-				So(ft, ShouldEqual, ct.Add(time.Hour))
 			})
 
 			Convey(`with active invocation and same token`, func() {

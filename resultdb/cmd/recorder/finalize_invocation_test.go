@@ -68,17 +68,6 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv has already been finalized with different interrupted flag`)
 		})
 
-		Convey(`complete expired invocation failed`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-			)
-			// Mock now to be after deadline.
-			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
-
-			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv has already been finalized with different interrupted flag`)
-		})
-
 		Convey(`interrupt expired invocation passed`, func() {
 			MustApply(ctx,
 				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
