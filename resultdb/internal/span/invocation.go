@@ -170,7 +170,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 		"invIDs": ids,
 	})
 	var b Buffer
-	return Query(ctx, fmt.Sprintf("full invocations %s", ids), txn, st, func(row *spanner.Row) error {
+	return Query(ctx, txn, st, func(row *spanner.Row) error {
 		var id InvocationID
 		var updateToken spanner.NullString
 		included := InvocationIDSet{}
