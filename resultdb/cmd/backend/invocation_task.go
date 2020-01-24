@@ -41,7 +41,14 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 	return parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
-			workC <- func() error {
+			workC <- func() (err error) {
+				// Annotate the returned error with the task id.
+				defer func() {
+					if err != nil {
+						err = errors.Annotate(err, "failed to process task %s", id).Err()
+					}
+				}()
+
 				invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
 				switch {
 				case err == tasks.ErrConflict:
