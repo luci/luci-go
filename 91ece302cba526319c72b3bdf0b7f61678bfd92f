@@ -22,6 +22,98 @@
       "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ee38f34d_e41bbe8c",
+        "filename": "config/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T17:27:09Z",
+      "side": 1,
+      "message": "just for my education. Are you calling \"data plane\" code paths that serve users directly and \"control plane\" the rest?",
+      "range": {
+        "startLine": 31,
+        "startChar": 9,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "07304726_083fe6e1",
+        "filename": "config/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T17:27:09Z",
+      "side": 1,
+      "message": "enthusiastic +1 from me",
+      "range": {
+        "startLine": 44,
+        "startChar": 48,
+        "endLine": 44,
+        "endChar": 68
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "831ffe16_bfcd773a",
+        "filename": "config/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T17:27:09Z",
+      "side": 1,
+      "message": "+1",
+      "range": {
+        "startLine": 50,
+        "startChar": 35,
+        "endLine": 50,
+        "endChar": 49
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "089e0f43_0534eca7",
+        "filename": "config/set.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T17:27:09Z",
+      "side": 1,
+      "message": "please remove. ref configs are no longer supported. They are non-existent at the public API level",
+      "range": {
+        "startLine": 25,
+        "startChar": 16,
+        "endLine": 25,
+        "endChar": 22
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
