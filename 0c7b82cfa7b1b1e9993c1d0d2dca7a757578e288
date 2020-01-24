@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "ebb29bff_512440df",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T19:07:57Z",
+      "side": 1,
+      "message": "\u003e As long as the path is unique within the test result, any character can be put?\n\nResultDB itself doesn\u0027t care much because it does not interpret artifact names.\nBut customers will suffer if we don\u0027t establish any constraints. Thinking about this a bit more, perhaps this should be limited to valid Unix file paths, so that a generic client could save an artifact on the local filesystem with the same name. On Windows, we will just replace / with \\.",
+      "parentUuid": "b3b2da59_76f4c477",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 60
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "53ef297e_69cc3baa",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
@@ -848,6 +872,30 @@
     },
     {
       "key": {
+        "uuid": "4b56effd_af399cd5",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T19:07:57Z",
+      "side": 1,
+      "message": "thinking this a bit more, I am not aware of cases where we will accept it from the users. i.e. the field should be marked with OUTPUT_ONLY (https://aip.dev/203#output-only). Not in this CL. The guideline is that we ignore this field in incoming messages, so we don\u0027t have to validate it.",
+      "parentUuid": "83b609f6_9be2fdf9",
+      "range": {
+        "startLine": 131,
+        "startChar": 11,
+        "endLine": 131,
+        "endChar": 29
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8060d4a_b33a510d",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
@@ -892,6 +940,30 @@
       "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e164cce2_4be63c70",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T19:07:57Z",
+      "side": 1,
+      "message": "uint64 sgtm. Let\u0027s do it in a separate CL",
+      "parentUuid": "39ec8400_fabd78b8",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 16
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
