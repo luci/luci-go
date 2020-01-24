@@ -165,7 +165,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			st := spanner.NewStatement(`
-				SELECT InvocationId, Payload
+				SELECT TaskID, InvocationId, Payload
 				FROM InvocationTasks
 				WHERE TaskType = @taskType
 			`)
@@ -173,10 +173,12 @@ func TestFinalizeInvocation(t *testing.T) {
 			var payloads []string
 			var b span.Buffer
 			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+				var taskID string
 				var invID span.InvocationID
 				var payload []byte
-				err := b.FromSpanner(r, &invID, &payload)
+				err := b.FromSpanner(r, &taskID, &invID, &payload)
 				So(err, ShouldBeNil)
+				So(taskID, ShouldContainSubstring, "x:")
 				payloads = append(payloads, string(payload))
 				return nil
 			})
