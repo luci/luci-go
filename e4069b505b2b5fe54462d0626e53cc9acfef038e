@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "56b6c98a_ebfbabf2",
+        "filename": "server/module/module.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T23:09:08Z",
+      "side": 1,
+      "message": "recommend to use golang package name?",
+      "revId": "e4069b505b2b5fe54462d0626e53cc9acfef038e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
