@@ -46,6 +46,30 @@
       "revId": "b7654832ee61e6240b25b4d15bd57829cd1284a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "458bf41a_8641975e",
+        "filename": "cipd/client/cipd/builder/pkgdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T06:18:49Z",
+      "side": 1,
+      "message": "good point, but yeah, this seems unlikely :p",
+      "parentUuid": "da9e3142_557a9f53",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 254,
+        "endChar": 71
+      },
+      "revId": "b7654832ee61e6240b25b4d15bd57829cd1284a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
