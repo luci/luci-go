@@ -126,7 +126,7 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 
 	tvs := map[testVariantKey]struct{}{}
 	var b span.Buffer
-	err := span.Query(ctx, "exonerated test variants", txn, st, func(row *spanner.Row) error {
+	err := span.Query(ctx, txn, st, func(row *spanner.Row) error {
 		var key testVariantKey
 		if err := b.FromSpanner(row, &key.testID, &key.variantHash); err != nil {
 			return err

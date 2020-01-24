@@ -90,7 +90,7 @@ func Sample(ctx context.Context, typ Type, processTime time.Time, sampleSize int
 
 	ret := make([]string, 0, sampleSize)
 	var b span.Buffer
-	err := span.Query(ctx, "sample inv tasks", span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id string
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err

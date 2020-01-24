@@ -181,7 +181,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 
 	var summaryHTML Compressed
 	var b Buffer
-	return Query(ctx, fmt.Sprintf("test results; %#v", st.Params), txn, st, func(row *spanner.Row) error {
+	return Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
 		var micros int64

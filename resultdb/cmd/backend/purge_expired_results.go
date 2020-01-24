@@ -129,7 +129,7 @@ func sampleExpiredResultsInvocations(ctx context.Context, expirationTime time.Ti
 	st.Params["sampleSize"] = sampleSize
 	ret := make([]span.InvocationID, 0, sampleSize)
 	var b span.Buffer
-	err = span.Query(ctx, "Sample expired results invocations", span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err = span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id span.InvocationID
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
@@ -186,7 +186,7 @@ func queryTestVariantsWithUnexpectedResults(ctx context.Context, id span.Invocat
 
 	st.Params["invocationId"] = id
 	st.Params["limit"] = limit
-	err := span.Query(ctx, "Query test variant combinations with expired test results", span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		tv := testVariantID{}
 		if err := row.Columns(&tv.TestId, &tv.VariantHash); err != nil {
 			return err
