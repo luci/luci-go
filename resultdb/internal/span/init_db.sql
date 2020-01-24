@@ -52,7 +52,7 @@ CREATE TABLE Invocations (
   CreateTime TIMESTAMP NOT NULL,
 
   -- When the invocation was finalized.
-  FinalizeTime TIMESTAMP,
+  FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
 
   -- When to force invocation finalization with state INTERRUPTED.
   Deadline TIMESTAMP NOT NULL,
@@ -96,6 +96,11 @@ CREATE TABLE IncludedInvocations (
   IncludedInvocationId STRING(MAX) NOT NULL
 ) PRIMARY KEY (InvocationId, IncludedInvocationId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
+
+-- Reverse of IncludedInvocations.
+-- Used to find invocations including a given one.
+CREATE INDEX ReversedIncludedInvocations
+  ON IncludedInvocations (IncludedInvocationId, InvocationId);
 
 -- Stores test results. Interleaved in Invocations.
 CREATE TABLE TestResults (
