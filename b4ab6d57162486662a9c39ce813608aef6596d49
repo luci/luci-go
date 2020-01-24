@@ -22,6 +22,30 @@
       "revId": "b4ab6d57162486662a9c39ce813608aef6596d49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30a494d_295e8327",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T16:57:53Z",
+      "side": 1,
+      "message": "oops. fix: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2019902",
+      "parentUuid": "914f04de_97eb1106",
+      "range": {
+        "startLine": 105,
+        "startChar": 78,
+        "endLine": 105,
+        "endChar": 128
+      },
+      "revId": "b4ab6d57162486662a9c39ce813608aef6596d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
