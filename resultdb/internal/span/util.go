@@ -17,9 +17,12 @@ package span
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
+
+	"go.chromium.org/luci/common/trace"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
@@ -30,7 +33,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	internalpb "go.chromium.org/luci/resultdb/internal/proto"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -445,8 +447,10 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 // Query executes a query.
 // Ensures st.Params are Spanner-compatible by modifying st.Params in place.
 // Logs the query and the time it took to run it.
-func Query(ctx context.Context, title string, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) error {
-	defer metrics.Trace(ctx, "query [%s]", title)()
+func Query(ctx context.Context, title string, txn Txn, st spanner.Statement, fn func(row *spanner.Row) error) (err error) {
+	ctx, span := trace.StartSpan(ctx, fmt.Sprintf("query [%s]", title))
+	defer func() { span.End(err) }()
+
 	st.Params = ToSpannerMap(st.Params)
 	return txn.Query(ctx, st).Do(fn)
 }
