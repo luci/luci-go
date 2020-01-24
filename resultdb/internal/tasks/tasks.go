@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -104,27 +106,31 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		st := spanner.NewStatement(`
-			UPDATE InvocationTasks
-			SET ProcessAfter = @processAfter
-			WHERE TaskType = @taskType AND TaskId = @taskId AND ProcessAfter <= @now
-		`)
 		now := clock.Now(ctx)
-		st.Params = span.ToSpannerMap(map[string]interface{}{
-			"taskType":     string(typ),
-			"taskId":       id,
-			"now":          now,
-			"processAfter": now.Add(duration),
+		var processAfter time.Time
+		err := span.ReadRow(ctx, txn, "InvocationTasks", typ.Key(id), map[string]interface{}{
+			"InvocationId": &invID,
+			"ProcessAfter": &processAfter,
+			"Payload":      &payload,
 		})
-		switch count, err := txn.Update(ctx, st); {
+		switch {
+		case grpc.Code(err) == codes.NotFound:
+			return ErrConflict
+
 		case err != nil:
 			return err
 
-		case count == 0:
+		case processAfter.After(now):
 			return ErrConflict
 
 		default:
-			return nil
+			return txn.BufferWrite([]*spanner.Mutation{
+				span.UpdateMap("InvocationTasks", map[string]interface{}{
+					"TaskType":     string(typ),
+					"TaskId":       id,
+					"ProcessAfter": now.Add(duration),
+				}),
+			})
 		}
 	})
 	return

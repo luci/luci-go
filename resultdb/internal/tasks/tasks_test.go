@@ -50,11 +50,13 @@ func TestTasks(t *testing.T) {
 		Convey(`Lease`, func() {
 			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
 				testutil.MustApply(ctx,
-					Enqueue(BQExport, "task", "inv", "payload", processAfter),
+					Enqueue(BQExport, "task", "inv", []byte("payload"), processAfter),
 				)
 
-				_, _, err := Lease(ctx, BQExport, "task", time.Second)
+				invID, payload, err := Lease(ctx, BQExport, "task", time.Second)
 				So(err, ShouldEqual, expectedLeaseErr)
+				So(invID, ShouldEqual, span.InvocationID("inv"))
+				So(payload, ShouldResemble, []byte("payload"))
 
 				// Check the task's ProcessAfter is updated.
 				var newProcessAfter time.Time
@@ -72,6 +74,11 @@ func TestTasks(t *testing.T) {
 
 			Convey(`skipped`, func() {
 				test(now.Add(time.Hour), now.Add(time.Hour), ErrConflict)
+			})
+
+			Convey(`Non-existing task`, func() {
+				_, _, err := Lease(ctx, BQExport, "task", time.Second)
+				So(err, ShouldEqual, ErrConflict)
 			})
 		})
 
