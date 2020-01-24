@@ -506,7 +506,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.RedisAddr = "localhost:99999999" // doesn't matter, we won't actually dial it
 	opts.LimiterMaxConcurrentRPCs = 100000
 
-	opts.testCtx = ctx
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
 	opts.testStderr = &srv.stderr
@@ -521,7 +520,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 		"admin_addr": setupListener(),
 	}
 
-	if srv.Server, err = New(opts); err != nil {
+	if srv.Server, err = New(ctx, opts, nil); err != nil {
 		return nil, err
 	}
 

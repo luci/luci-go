@@ -40,7 +40,7 @@ const (
 func Main(init func(srv *server.Server) error) {
 	spannerDB := flag.String("spanner-database", "", "Name of the spanner database to connect to")
 
-	server.Main(nil, func(srv *server.Server) error {
+	server.Main(nil, nil, func(srv *server.Server) error {
 		var err error
 		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB); err != nil {
 			return err
