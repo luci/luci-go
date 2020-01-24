@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43c2f893_dca8957a",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T02:17:39Z",
+      "side": 1,
+      "message": "var comment must start with the symbol name\n\n// expectedTestResultsExpirationDuration ...",
+      "revId": "d6fc657c18e46867e3f38cde9fe57cd4793c97d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3cf53af_4d94a52f",
+        "filename": "resultdb/cmd/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T02:17:39Z",
+      "side": 1,
+      "message": "Days\n\nsince it changed from time.Duration to number of days",
+      "range": {
+        "startLine": 60,
+        "startChar": 33,
+        "endLine": 60,
+        "endChar": 41
+      },
+      "revId": "d6fc657c18e46867e3f38cde9fe57cd4793c97d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
