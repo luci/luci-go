@@ -22,6 +22,30 @@
       "revId": "b7654832ee61e6240b25b4d15bd57829cd1284a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da9e3142_557a9f53",
+        "filename": "cipd/client/cipd/builder/pkgdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-24T06:12:48Z",
+      "side": 1,
+      "message": "Let\u0027s assume we combine regexps as `(^...$)|(^...$)`. Then regexp `$)dosomerandomshit(^` will combine into `(^$)dosomerandomsit(^$)|...` which is not correct. This is similar to SQL injections.\n\n(But the real reason I left this comment is because I\u0027m too lazy to rewrite this code to use a single regexp, so I divined a plausible reason why not do it).",
+      "parentUuid": "ad4a48f5_34a20cf4",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 254,
+        "endChar": 71
+      },
+      "revId": "b7654832ee61e6240b25b4d15bd57829cd1284a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
