@@ -22,6 +22,30 @@
       "revId": "734173fcf2d2891f7d92232a1aff66c510ac817c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f391cb7_ba160183",
+        "filename": "common/gcloud/gs/path.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1238766
+      },
+      "writtenOn": "2020-01-24T00:53:49Z",
+      "side": 1,
+      "message": "I...thought I did that. Fixed.",
+      "parentUuid": "a2c339c4_365a6ac0",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 19
+      },
+      "revId": "734173fcf2d2891f7d92232a1aff66c510ac817c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
