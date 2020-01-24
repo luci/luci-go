@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb751275_d52fc583",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-24T07:14:15Z",
+      "side": 1,
+      "message": "I think it\u0027s OK to not store BigqueryExports in derived invocations.\n\nHappy to remove it.",
+      "range": {
+        "startLine": 153,
+        "startChar": 1,
+        "endLine": 153,
+        "endChar": 64
+      },
+      "revId": "d6be2cb7c8df2b362b1d81477bd4ca9fc7682547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42f88171_2a3faa5b",
+        "filename": "resultdb/cmd/recorder/derive_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-24T07:14:15Z",
+      "side": 1,
+      "message": "This taskId is actually different from other bq_export tasks\u0027 taskId. To make it the same here it should be fmt.Sprintf(\"%s:0\", invID.RowID()). But I don\u0027t think that\u0027s necessary. WDYT?",
+      "range": {
+        "startLine": 166,
+        "startChar": 18,
+        "endLine": 166,
+        "endChar": 45
+      },
+      "revId": "d6be2cb7c8df2b362b1d81477bd4ca9fc7682547",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
