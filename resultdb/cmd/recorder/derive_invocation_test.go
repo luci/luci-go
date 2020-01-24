@@ -188,7 +188,13 @@ func TestDeriveInvocation(t *testing.T) {
 			},
 		}
 
-		recorder := &recorderServer{}
+		derivedInvBQTable := &pb.BigQueryExport{
+			Project:     "project",
+			Dataset:     "dataset",
+			Table:       "table",
+			TestResults: &pb.BigQueryExport_TestResults{},
+		}
+		recorder := &recorderServer{derivedInvBQTable: derivedInvBQTable}
 
 		Convey(`inserts a new invocation`, func() {
 			req.SwarmingTask.Id = "completed-task"
@@ -203,6 +209,7 @@ func TestDeriveInvocation(t *testing.T) {
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
+				BigqueryExports:     []*pb.BigQueryExport{derivedInvBQTable},
 			})
 
 			// Assert we wrote correct test results.

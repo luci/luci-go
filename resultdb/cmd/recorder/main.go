@@ -25,12 +25,17 @@ import (
 )
 
 func main() {
-	registerDerivedInvBQTableFlag()
+	bqTableFlag := registerDerivedInvBQTableFlag()
 	internal.Main(func(srv *server.Server) error {
+		derivedInvBQTable, err := parseBQTable(*bqTableFlag)
+		if err != nil {
+			return err
+		}
+
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
-		pb.RegisterRecorderServer(srv.PRPC, NewRecorderServer())
+		pb.RegisterRecorderServer(srv.PRPC, NewRecorderServer(derivedInvBQTable))
 		return nil
 	})
 }
