@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 
@@ -198,7 +197,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 			// Absolute path to directory to scan.
 			startDir := makeAbs(chunk.Dir)
 			// Exclude files as specified in 'exclude' section.
-			exclude, err := makeExclusionFilter(startDir, chunk.Exclude)
+			exclude, err := makeExclusionFilter(chunk.Exclude)
 			if err != nil {
 				return nil, err
 			}
@@ -243,19 +242,19 @@ func (def *PackageDef) VersionFile() string {
 	return ""
 }
 
-// makeExclusionFilter produces a predicate that checks an absolute file path
-// against a list of regexps.
+// makeExclusionFilter produces a predicate that checks a relative file path
+// against a list of regexps and returns true to exclude it.
 //
-// Regexps are defined against slash separated paths relative to 'startDir'.
-// The predicate takes absolute native path, converts it to slash separated path
-// relative to 'startDir' and checks against list of regexps in 'patterns'.
-// Returns true to exclude a path.
-func makeExclusionFilter(startDir string, patterns []string) (fs.ScanFilter, error) {
+// Note that regexps are defined against slash-separated relative paths (to make
+// the package definition YAML platform-agnostic).
+func makeExclusionFilter(patterns []string) (fs.ScanFilter, error) {
 	if len(patterns) == 0 {
 		return nil, nil
 	}
 
-	// Compile regular expressions.
+	// Compile regular expressions. Note that we want to verify that each
+	// individual pattern is a valid regexp. For that reason we don't just
+	// concatenate them in a single uber-regexp and compile it afterwards.
 	exps := []*regexp.Regexp{}
 	for _, expr := range patterns {
 		if expr == "" {
@@ -274,16 +273,8 @@ func makeExclusionFilter(startDir string, patterns []string) (fs.ScanFilter, err
 		exps = append(exps, re)
 	}
 
-	return func(abs string) bool {
-		rel, err := filepath.Rel(startDir, abs)
-		if err != nil {
-			return true
-		}
-		// Do not evaluate paths outside of startDir or startDir itself.
+	return func(rel string) bool {
 		rel = filepath.ToSlash(rel)
-		if rel == "." || strings.HasPrefix(rel, "../") {
-			return false
-		}
 		for _, exp := range exps {
 			if exp.MatchString(rel) {
 				return true
