@@ -170,7 +170,11 @@ func (f *fileSystemFile) Open() (io.ReadCloser, error) {
 }
 
 // ScanFilter is predicate used by ScanFileSystem to decide what files to skip.
-type ScanFilter func(abs string) bool
+//
+// It receives a path being judged and returns true if it should be skipped.
+// The path is a filepath relative to the starting scanning directory (i.e.
+// 'dir' in ScanFileSystem).
+type ScanFilter func(rel string) bool
 
 // ScanOptions specify which file properties to preserve in the archive.
 type ScanOptions struct {
@@ -184,29 +188,51 @@ type ScanOptions struct {
 }
 
 // ScanFileSystem returns all files in some file system directory in
-// an alphabetical order. It returns only files, skipping directory entries
-// (i.e. empty directories are completely invisible).
+// alphabetical order.
 //
-// ScanFileSystem follows symbolic links which have a target in
-// <root>/<SiteServiceDir> (i.e. the .cipd folder). Other symlinks will
-// will be preserved as symlinks (see Symlink() method of File interface).
-// Symlinks with absolute targets inside of the root will be converted to
-// relative targets inside of the root.
+// It scans 'dir' path, returning File objects that have paths relative to
+// 'root'. Returns only files, skipping directory entries (i.e. empty
+// directories are completely "invisible").
 //
-// It scans "dir" path, returning File objects that have paths relative to
-// "root". It skips files and directories for which 'exclude(absolute path)'
-// returns true. It also will always skip <root>/<SiteServiceDir>.
+// It also skips files and directories for which 'exclude(path relative to dir)'
+// returns true. It also always skips <root>/<SiteServiceDir>, but follows
+// symlinks that point there.
+//
+// Symlinks are preserved (see Symlink() method of File interface), but the
+// following rules apply:
+//   * Relative symlinks pointing outside of the root are forbidden.
+//   * An absolute symlink with the target outside the root is kept as such.
+//   * An absolute symlink with the target within the root becomes relative.
+//
+// If 'dir' is a symlink itself, it is emitted as such (with all above rules
+// applying), except when 'dir == root' (lexicographically, as cleaned absolute
+// paths). In that case the symlink is followed and whatever it points to is
+// used as new 'dir' and 'root'. This is completely transparent in the output
+// though, since File uses only relative paths. Without this exception using
+// a symlink as a package root leads to very surprising errors.
 func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOptions) ([]File, error) {
-	root, err := filepath.Abs(filepath.Clean(root))
+	dir, err := filepath.Abs(filepath.Clean(dir))
 	if err != nil {
 		return nil, err
 	}
-	dir, err = filepath.Abs(filepath.Clean(dir))
+	root, err = filepath.Abs(filepath.Clean(root))
 	if err != nil {
 		return nil, err
 	}
+
+	// If we are scanning 'root' directly, it doesn't matter if it is itself
+	// a symlink. We should never try to package it as such, it is useless.
+	if dir == root {
+		resolved, err := filepath.EvalSymlinks(dir)
+		if err != nil {
+			return nil, err
+		}
+		dir = resolved
+		root = resolved
+	}
+
 	if !IsSubpath(dir, root) {
-		return nil, fmt.Errorf("scanned directory must be under root directory")
+		return nil, fmt.Errorf("the scanned directory must be under the root directory")
 	}
 
 	files := []File{}
@@ -222,12 +248,18 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 			return filepath.SkipDir
 		}
 
-		if exclude != nil && abs != dir && exclude(abs) {
-			if info.Mode().IsDir() {
-				return filepath.SkipDir
+		// Apply the exclusion filter. Also skip files for which filepath.Rel
+		// returns an error.
+		if exclude != nil && abs != dir {
+			if rel, err := filepath.Rel(dir, abs); err != nil || exclude(rel) {
+				if info.Mode().IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
 			}
-			return nil
 		}
+
+		// Skip exotic file types, we deal only with regular files and symlinks.
 		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
 			f, err := WrapFile(abs, root, &info, scanOpts)
 			if err != nil {
@@ -235,6 +267,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 			}
 			files = append(files, f)
 		}
+
 		return nil
 	})
 
