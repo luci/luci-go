@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,20 +16,15 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/trace"
 )
 
-// Trace records current time and returns a function that logs the duration
-// since Trace was called.
-// Example usage:
-//    defer Trace(ctx, "doing something")()
-func Trace(ctx context.Context, titleFormat string, args ...interface{}) func() {
-	// TODO(nodir): use actual tracing API.
-
-	start := clock.Now(ctx)
-	return func() {
-		logging.Infof(ctx, titleFormat+" took %s", append(args, clock.Since(ctx, start))...)
+// Trace starts a span and return sa function to end it.
+func Trace(ctx context.Context, errPtr *error, nameSuffixFormat string, args ...interface{}) (context.Context, func()) {
+	ctx, trace := trace.StartSpan(ctx, fmt.Sprintf("resultdb."+nameSuffixFormat, args))
+	return ctx, func() {
+		trace.End(*errPtr)
 	}
 }

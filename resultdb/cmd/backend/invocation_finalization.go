@@ -63,8 +63,9 @@ var notReadyToFinalize = errors.BoolTag{Key: errors.NewTagKey("not ready to get 
 // readyToFinalize returns true if the invocation should be finalized.
 // An invocation is ready to be finalized if no ACTIVE invocation is reachable
 // from it.
-func readyToFinalize(ctx context.Context, invID span.InvocationID) (bool, error) {
-	defer metrics.Trace(ctx, "readyToFinalize")()
+func readyToFinalize(ctx context.Context, invID span.InvocationID) (ready bool, err error) {
+	ctx, endTrace := metrics.Trace(ctx, &err, "readyToFinalize")
+	defer endTrace()
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
