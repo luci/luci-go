@@ -20,11 +20,11 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -54,38 +54,34 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	var ret *pb.Invocation
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		now := clock.Now(ctx)
-
 		inv, updateToken, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, invID)
 		if err != nil {
 			return err
 		}
 		ret = inv
 
+		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
+			return err
+		}
+
 		switch {
-		case ret.State == pb.Invocation_FINALIZED && ret.Interrupted == in.Interrupted:
+		case ret.State != pb.Invocation_ACTIVE && ret.Interrupted == in.Interrupted:
 			// Idempotent.
 			return nil
 
-		case ret.State == pb.Invocation_FINALIZED && ret.Interrupted != in.Interrupted:
+		case ret.State != pb.Invocation_ACTIVE && ret.Interrupted != in.Interrupted:
 			return appstatus.Errorf(
 				codes.FailedPrecondition,
-				"%s has already been finalized with different interrupted flag",
+				"%s is already finalizing / has already been finalized with different interrupted flag",
 				invID.Name(),
 			)
 
 		default:
 			// Finalize as requested.
-			ret.State = pb.Invocation_FINALIZED
-			ret.FinalizeTime = pbutil.MustTimestampProto(now)
+			ret.State = pb.Invocation_FINALIZING
 			ret.Interrupted = in.Interrupted
+			return tasks.StartInvocationFinalization(ctx, txn, invID, in.Interrupted)
 		}
-
-		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
-			return err
-		}
-
-		return finalizeInvocation(txn, invID, in.Interrupted, now)
 	})
 
 	if err != nil {
