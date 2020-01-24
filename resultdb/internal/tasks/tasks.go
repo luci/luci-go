@@ -60,6 +60,10 @@ func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface
 	})
 }
 
+func EnqueueBQExport(invID span.InvocationID, payload interface{}, processAfter time.Time) *spanner.Mutation {
+	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID), invID, payload, processAfter)
+}
+
 // Sample randomly picks sampleSize of tasks of a given type
 // with ProcessAfter earlier than processTime.
 func Sample(ctx context.Context, typ Type, processTime time.Time, sampleSize int64) ([]string, error) {

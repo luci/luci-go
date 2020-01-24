@@ -25,6 +25,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -209,7 +211,6 @@ func TestDeriveInvocation(t *testing.T) {
 				FinalizeTime:        &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				Deadline:            &tspb.Timestamp{Seconds: 1571064556, Nanos: 1e7},
 				IncludedInvocations: []string{inv.Name + "::batch::0"},
-				BigqueryExports:     []*pb.BigQueryExport{derivedInvBQTable},
 			})
 
 			// Assert we wrote correct test results.
@@ -237,6 +238,17 @@ func TestDeriveInvocation(t *testing.T) {
 			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
 			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
+
+			// Read InvocationTask to confirm it's added.
+			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name)))
+			var payload []byte
+			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
+				"Payload": &payload,
+			})
+			bqExports := &pb.BigQueryExport{}
+			err = proto.Unmarshal(payload, bqExports)
+			So(err, ShouldBeNil)
+			So(bqExports, ShouldResembleProto, derivedInvBQTable)
 		})
 	})
 }
