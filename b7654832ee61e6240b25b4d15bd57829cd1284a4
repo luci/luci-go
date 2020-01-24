@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ad4a48f5_34a20cf4",
+        "filename": "cipd/client/cipd/builder/pkgdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T05:12:10Z",
+      "side": 1,
+      "message": "hm... wouldn\u0027t an invalid regexp still cause the overall compilation to fail?",
+      "range": {
+        "startLine": 252,
+        "startChar": 1,
+        "endLine": 254,
+        "endChar": 71
+      },
+      "revId": "b7654832ee61e6240b25b4d15bd57829cd1284a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

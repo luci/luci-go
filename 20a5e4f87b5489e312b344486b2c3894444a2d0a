@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dccff04b_f1c9c5fd",
+        "filename": "cipd/client/cipd/builder/pkgdef.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T05:12:10Z",
+      "side": 0,
+      "message": "this bit is still true though, right? just not the \"absolute\" parts.",
+      "range": {
+        "startLine": 249,
+        "startChar": 31,
+        "endLine": 249,
+        "endChar": 36
+      },
+      "revId": "20a5e4f87b5489e312b344486b2c3894444a2d0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
