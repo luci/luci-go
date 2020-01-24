@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "778993b5_4a707b13",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T23:39:24Z",
+      "side": 1,
+      "message": "s/if/in",
+      "range": {
+        "startLine": 45,
+        "startChar": 67,
+        "endLine": 45,
+        "endChar": 69
+      },
+      "revId": "ea274e3042d1abcce68a2ab8238a621c715da6e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "686af06f_fcc96486",
+        "filename": "server/auth/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-24T23:39:24Z",
+      "side": 1,
+      "message": "s/multiple times/for each unique set of scopes/\n\n(to be more precise)",
+      "range": {
+        "startLine": 48,
+        "startChar": 50,
+        "endLine": 48,
+        "endChar": 58
+      },
+      "revId": "ea274e3042d1abcce68a2ab8238a621c715da6e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
