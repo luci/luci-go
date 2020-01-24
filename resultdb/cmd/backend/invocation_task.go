@@ -85,15 +85,16 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	// TODO(chanli): Add alert on failures.
 	processingLoop(ctx, time.Second, 5*time.Second, func(ctx context.Context) error {
-		switch ids, err := tasks.Sample(ctx, taskType, time.Now(), 100); {
-		case err != nil:
+		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
+		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
-
-		case len(ids) == 0:
-			return nil
-
-		default:
-			return dispatchInvocationTasks(ctx, taskType, ids)
 		}
+
+		if err := dispatchInvocationTasks(ctx, taskType, ids); err != nil {
+			return err
+		}
+
+		logging.Infof(ctx, "processed tasks: %q", ids)
+		return nil
 	})
 }
