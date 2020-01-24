@@ -20,4 +20,6 @@
 // implementations are best defined out of this package.
 //
 // All non-user-facing operations of cfgclient will operate on backend types.
+//
+// DEPRECATED.
 package backend

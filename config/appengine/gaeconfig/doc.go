@@ -16,4 +16,6 @@
 // storage and caching.
 //
 // Importing this module registers ${appid} variable in config validation rules.
+//
+// DEPRECATED.
 package gaeconfig

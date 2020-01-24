@@ -26,6 +26,8 @@
 //	  compiled schema, and the schema change is responsible (adding, renaming,
 //	  repurposing) the binary cache value will continue to load where the text
 //	  protobuf would fail.
+//
+// DEPRECATED.
 package textproto
 
 import (
