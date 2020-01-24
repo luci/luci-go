@@ -189,7 +189,10 @@ func finalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 			return err
 		}
 
-		// TODO(crbug.com/1032434): Insert BigQuery export tasks
+		// Enqueue tasks to export the invocation to BigQuery.
+		if err := insertBigQueryTasks(ctx, txn, invID); err != nil {
+			return err
+		}
 
 		// Update the invocation state.
 		return txn.BufferWrite([]*spanner.Mutation{
@@ -228,5 +231,28 @@ func insertNextFinalizatoinTasks(ctx context.Context, txn *spanner.ReadWriteTran
 		return errors.Annotate(err, "failed to insert further finalizing tasks").Err()
 	}
 	logging.Infof(ctx, "Inserted %d %s tasks", count, tasks.TryFinalizeInvocation)
+	return nil
+}
+
+// insertBigQueryTasks inserts a bq_export invocation task for each element
+// of Invocations.BigQueryExports array in the specified invocation.
+func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID span.InvocationID) error {
+	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
+	// in "INSERT INTO ... SELECT" queries.
+	st := spanner.NewStatement(`
+		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, ProcessAfter)
+		SELECT @taskType, FORMAT("%d", i), @invID, payload, CURRENT_TIMESTAMP()
+		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
+		WHERE inv.InvocationId = @invID
+	`)
+	st.Params = span.ToSpannerMap(map[string]interface{}{
+		"taskType": string(tasks.BQExport),
+		"invID":    invID,
+	})
+	count, err := txn.Update(ctx, st)
+	if err != nil {
+		return errors.Annotate(err, "failed to insert bq_export tasks").Err()
+	}
+	logging.Infof(ctx, "Inserted %d %s tasks", count, tasks.BQExport)
 	return nil
 }

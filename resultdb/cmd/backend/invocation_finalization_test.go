@@ -20,6 +20,8 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/clock/testclock"
+
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -147,6 +149,39 @@ func TestFinalizeInvocation(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(nextInvs, ShouldResemble, span.NewInvocationIDSet("finalizing1", "finalizing2"))
+		})
+
+		Convey(`Enqueues more bq_export tasks`, func() {
+			testutil.MustApply(ctx,
+				testutil.InsertInvocation("x", pb.Invocation_FINALIZING, testclock.TestRecentTimeUTC, map[string]interface{}{
+					"BigQueryExports": [][]byte{
+						[]byte("bq_export1"),
+						[]byte("bq_export2"),
+					},
+				}),
+			)
+
+			err := finalizeInvocation(ctx, "x")
+			So(err, ShouldBeNil)
+
+			st := spanner.NewStatement(`
+				SELECT InvocationId, Payload
+				FROM InvocationTasks
+				WHERE TaskType = @taskType
+			`)
+			st.Params["taskType"] = string(tasks.BQExport)
+			var payloads []string
+			var b span.Buffer
+			err = span.Client(ctx).Single().Query(ctx, st).Do(func(r *spanner.Row) error {
+				var invID span.InvocationID
+				var payload []byte
+				err := b.FromSpanner(r, &invID, &payload)
+				So(err, ShouldBeNil)
+				payloads = append(payloads, string(payload))
+				return nil
+			})
+			So(err, ShouldBeNil)
+			So(payloads, ShouldResemble, []string{"bq_export1", "bq_export2"})
 		})
 	})
 }
