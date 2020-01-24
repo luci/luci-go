@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bd9cd450_a78c36ad",
+        "filename": "resultdb/proto/sink/v1/test_result.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T17:13:29Z",
+      "side": 1,
+      "message": "\"_pairs\" was necessary with \"extra_\". It is not longer necessary and at this point inconsistent with rpc\u0027s TestResult.variant. Please rename to \"variant\".",
+      "range": {
+        "startLine": 36,
+        "startChar": 36,
+        "endLine": 36,
+        "endChar": 42
+      },
+      "revId": "0c7ec4dd44f57e80a01d23a545638b2a68a68d84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
