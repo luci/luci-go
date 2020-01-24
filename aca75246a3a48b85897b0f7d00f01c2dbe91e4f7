@@ -164,6 +164,30 @@
       "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "041af09c_2c002845",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 11
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-24T00:16:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ee6f428_2aefda63",
+      "range": {
+        "startLine": 101,
+        "startChar": 3,
+        "endLine": 102,
+        "endChar": 43
+      },
+      "revId": "aca75246a3a48b85897b0f7d00f01c2dbe91e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
