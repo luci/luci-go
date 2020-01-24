@@ -36,15 +36,15 @@ func TestScanFileSystem(t *testing.T) {
 
 		Convey("Scan empty dir works", func() {
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(files, ShouldBeEmpty)
 			So(err, ShouldBeNil)
+			So(files, ShouldBeEmpty)
 		})
 
 		Convey("Discovering single file works", func() {
 			writeFile(tempDir, "single_file", "12345", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(len(files), ShouldEqual, 1)
 			So(err, ShouldBeNil)
+			So(len(files), ShouldEqual, 1)
 
 			file := files[0]
 			So(file.Name(), ShouldEqual, "single_file")
@@ -57,8 +57,8 @@ func TestScanFileSystem(t *testing.T) {
 			}
 			So(err, ShouldBeNil)
 			buf, err := ioutil.ReadAll(r)
-			So(buf, ShouldResemble, []byte("12345"))
 			So(err, ShouldBeNil)
+			So(buf, ShouldResemble, []byte("12345"))
 		})
 
 		Convey("Enumerating subdirectories", func() {
@@ -89,8 +89,8 @@ func TestScanFileSystem(t *testing.T) {
 			mkDir(tempDir, "1/c")
 			writeFile(tempDir, "1/d/file", "1234", 0666)
 			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(len(files), ShouldEqual, 1)
 			So(err, ShouldBeNil)
+			So(len(files), ShouldEqual, 1)
 			So(files[0].Name(), ShouldEqual, "1/d/file")
 		})
 
@@ -122,33 +122,27 @@ func TestScanFileSystem(t *testing.T) {
 		Convey("Exclude filter works", func() {
 			writeFile(tempDir, "a", "", 0666)
 			writeFile(tempDir, "b", "", 0666)
+			writeFile(tempDir, "c/a", "", 0666)
 			writeFile(tempDir, "1/a", "", 0666)
 			writeFile(tempDir, "1/b", "", 0666)
 			writeFile(tempDir, "1/2/a", "", 0666)
 
 			// Exclude "a" and entire "1/" directory.
 			var excluderCalls []string
-			excluder := func(abs string) bool {
-				excluderCalls = append(excluderCalls, abs)
-				if abs == filepath.Join(tempDir, "a") {
-					return true
-				}
-				if abs == filepath.Join(tempDir, "1") {
-					return true
-				}
-				return false
+			excluder := func(rel string) bool {
+				excluderCalls = append(excluderCalls, rel)
+				return rel == "a" || rel == "1"
 			}
 
 			files, err := ScanFileSystem(tempDir, tempDir, excluder, ScanOptions{})
 			So(err, ShouldBeNil)
-			So(len(files), ShouldEqual, 1)
+			So(len(files), ShouldEqual, 2)
 			So(files[0].Name(), ShouldEqual, "b")
+			So(files[1].Name(), ShouldEqual, "c/a")
 
 			// "1/*" subdir should have been skipped completely.
 			So(excluderCalls, ShouldResemble, []string{
-				filepath.Join(tempDir, "1"),
-				filepath.Join(tempDir, "a"),
-				filepath.Join(tempDir, "b"),
+				"1", "a", "b", "c", filepath.FromSlash("c/a"),
 			})
 		})
 
@@ -185,8 +179,8 @@ func TestScanFileSystem(t *testing.T) {
 			Convey("Discovering single executable file works", func() {
 				writeFile(tempDir, "single_file", "12345", 0766)
 				files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-				So(len(files), ShouldEqual, 1)
 				So(err, ShouldBeNil)
+				So(len(files), ShouldEqual, 1)
 				file := files[0]
 				So(file.Executable(), ShouldBeTrue)
 			})
@@ -195,6 +189,18 @@ func TestScanFileSystem(t *testing.T) {
 				writeSymlink(tempDir, "a/b1/rel_symlink", filepath.FromSlash("../../.."))
 				_, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
 				So(err, ShouldNotBeNil)
+			})
+
+			Convey("Scanning a symlink", func() {
+				writeFile(tempDir, "zzz/real_root/file", "12345", 0666)
+				writeSymlink(tempDir, "symlink_root", filepath.FromSlash("zzz/real_root"))
+
+				symlinkRootAbs := filepath.Join(tempDir, "symlink_root")
+
+				files, err := ScanFileSystem(symlinkRootAbs, symlinkRootAbs, nil, ScanOptions{})
+				So(err, ShouldBeNil)
+				So(len(files), ShouldEqual, 1)
+				So(files[0].Name(), ShouldEqual, "file")
 			})
 		}
 	})
