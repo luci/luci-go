@@ -104,6 +104,14 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		err := span.ReadRow(ctx, txn, "InvocationTasks", typ.Key(id), map[string]interface{}{
+			"InvocationId": &invID,
+			"Payload":      &payload,
+		})
+		if err != nil {
+			return err
+		}
+
 		st := spanner.NewStatement(`
 			UPDATE InvocationTasks
 			SET ProcessAfter = @processAfter
