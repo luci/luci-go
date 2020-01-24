@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "87bb92c0_8db67cdb",
+        "filename": "config/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-24T21:29:17Z",
+      "side": 1,
+      "message": "Yes: https://en.wikipedia.org/wiki/Data_plane\n\nData plane generally needs to scale with the load, while control plane doesn\u0027t usually need to be very scalable. Also it is often has lower reliability requirements since it is tolerable if the system stops reacting to config changes (but keeps serving data).\n\nAnother examples:\n  In LUCI: chrome-infra-auth is control plane, Token Server is data plane.\n  In Cloud: \"gcloud app deploy\" is control plane, GAE app serving is data plane.\n  In K8s: masters are control plane, nodes are data plane (i.e. the cluster keeps working if masters are down, just doesn\u0027t react to any changes any more).",
+      "parentUuid": "ee38f34d_e41bbe8c",
+      "range": {
+        "startLine": 31,
+        "startChar": 9,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "91ece302cba526319c72b3bdf0b7f61678bfd92f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07304726_083fe6e1",
         "filename": "config/doc.go",
         "patchSetId": 3
