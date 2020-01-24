@@ -187,7 +187,7 @@ func TestExclusion(t *testing.T) {
 	t.Parallel()
 
 	Convey("makeExclusionFilter works", t, func() {
-		filter, err := makeExclusionFilter("a/b/c", []string{
+		filter, err := makeExclusionFilter([]string{
 			".*\\.pyc",
 			".*/pip-.*-build/.*",
 			"bin/activate",
@@ -196,33 +196,27 @@ func TestExclusion(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(filter, ShouldNotBeNil)
 
-		// Not inside "a/b/c".
-		So(filter(filepath.FromSlash("a/b/test.pyc")), ShouldBeFalse)
-
-		// "a/b/c" itself.
-		So(filter(filepath.FromSlash("a/b/c")), ShouldBeFalse)
-
 		// *.pyc filtering.
-		So(filter(filepath.FromSlash("a/b/c/test.pyc")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("a/b/c/test.py")), ShouldBeFalse)
-		So(filter(filepath.FromSlash("a/b/c/d/e/f/test.pyc")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("a/b/c/d/e/f/test.py")), ShouldBeFalse)
+		So(filter(filepath.FromSlash("test.pyc")), ShouldBeTrue)
+		So(filter(filepath.FromSlash("test.py")), ShouldBeFalse)
+		So(filter(filepath.FromSlash("d/e/f/test.pyc")), ShouldBeTrue)
+		So(filter(filepath.FromSlash("d/e/f/test.py")), ShouldBeFalse)
 
 		// Subdir filtering.
-		So(filter(filepath.FromSlash("a/b/c/x/pip-blah-build/d/e/f")), ShouldBeTrue)
+		So(filter(filepath.FromSlash("x/pip-blah-build/d/e/f")), ShouldBeTrue)
 
 		// Single file exclusion.
-		So(filter(filepath.FromSlash("a/b/c/bin/activate")), ShouldBeTrue)
-		So(filter(filepath.FromSlash("a/b/c/bin/activate2")), ShouldBeFalse)
-		So(filter(filepath.FromSlash("a/b/c/d/bin/activate")), ShouldBeFalse)
+		So(filter(filepath.FromSlash("bin/activate")), ShouldBeTrue)
+		So(filter(filepath.FromSlash("bin/activate2")), ShouldBeFalse)
+		So(filter(filepath.FromSlash("d/bin/activate")), ShouldBeFalse)
 
 		// More complicated regexp.
-		p := "a/b/c/lib/python2.7/site-packages/coverage-3.7.1.dist-info/RECORD"
+		p := "lib/python2.7/site-packages/coverage-3.7.1.dist-info/RECORD"
 		So(filter(filepath.FromSlash(p)), ShouldBeTrue)
 	})
 
 	Convey("makeExclusionFilter bad regexp", t, func() {
-		_, err := makeExclusionFilter("a/b/c", []string{"****"})
+		_, err := makeExclusionFilter([]string{"****"})
 		So(err, ShouldNotBeNil)
 	})
 }
