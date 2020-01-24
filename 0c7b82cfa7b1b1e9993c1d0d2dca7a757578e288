@@ -119,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b3b2da59_76f4c477",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-24T11:13:12Z",
+      "side": 1,
+      "message": "As long as the path is unique within the test result, any character can be put?\n\nAccording to the field description in sink.proto, the key of a map{} entry in input_artifacts are copied to the Artifact.Name. It\u0027s not copied from sinkpb.Artifact.FilePath.\n\n```\n  // Equivalent of luci.resultpb.TestResult.input_artifacts.\n  // The map key is an artifact name.\n  map\u003cstring, Artifact\u003e input_artifacts \u003d 10;\n```\n\nAlso, Artifact has field fetch_url. Therefore, Artifact.Name doesn\u0027t need to be embedded into an URL. In my understanding, it is just the unique ID of each Artifact within the TestResult.",
+      "parentUuid": "98f60857_58cb6f57",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 60
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "53ef297e_69cc3baa",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
