@@ -222,10 +222,15 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, ct time.T
 	return span.InsertMap("Invocations", values)
 }
 
-// InsertInvocationIncl returns mutations to insert an invocation with inclusions.
-func InsertInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
+// InsertFinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
+func InsertFinalizedInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
+	return InsertInvocationWithInclusions(id, pb.Invocation_FINALIZED, included...)
+}
+
+// InsertInvocationWithInclusions returns mutations to insert an invocation with inclusions.
+func InsertInvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, included ...span.InvocationID) []*spanner.Mutation {
 	t := testclock.TestRecentTimeUTC
-	ms := []*spanner.Mutation{InsertInvocation(id, pb.Invocation_FINALIZED, t, nil)}
+	ms := []*spanner.Mutation{InsertInvocation(id, state, t, nil)}
 	for _, incl := range included {
 		ms = append(ms, InsertInclusion(id, incl))
 	}

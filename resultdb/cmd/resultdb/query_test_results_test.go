@@ -83,7 +83,7 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertInvocationWithInclusions
+		insertInv := testutil.InsertFinalizedInvocationWithInclusions
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			insertInv("a", "b"),
 			insertInv("b", "c"),

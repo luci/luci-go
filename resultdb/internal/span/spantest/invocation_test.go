@@ -67,7 +67,7 @@ func TestReadReachableInvocations(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		insertInv := testutil.InsertInvocationWithInclusions
+		insertInv := testutil.InsertFinalizedInvocationWithInclusions
 
 		read := func(limit int, roots ...span.InvocationID) (span.InvocationIDSet, error) {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -132,7 +132,7 @@ func BenchmarkChainFetch(b *testing.B) {
 		}
 		id := span.InvocationID(fmt.Sprintf("inv%d", i))
 		prev = id
-		ms = append(ms, testutil.InsertInvocationWithInclusions(id, included...)...)
+		ms = append(ms, testutil.InsertFinalizedInvocationWithInclusions(id, included...)...)
 	}
 
 	if _, err := client.Apply(ctx, ms); err != nil {

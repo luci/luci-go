@@ -44,6 +44,11 @@ message Invocation {
     // The invocation was created and accepts new results.
     ACTIVE = 1;
 
+    // The invocation is in the process of transitioning into FINALIZED state.
+    // This will happen automatically soon after all of its directly or
+    // indirectly included invocations become inactive.
+    FINALIZING = 2;
+
     // The invocation is immutable and no longer accepts new results nor
     // inclusions directly or indirectly.
     FINALIZED = 3;
