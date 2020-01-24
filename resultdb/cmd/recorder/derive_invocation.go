@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -148,10 +150,8 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	}
 	inv.IncludedInvocations = batchInvs.Names()
 
-	inv.BigqueryExports = []*pb.BigQueryExport{s.derivedInvBQTable}
-
 	// Prepare mutations.
-	ms := make([]*spanner.Mutation, 0, len(inv.IncludedInvocations)+1)
+	ms := make([]*spanner.Mutation, 0, len(batchInvs)+2)
 	ms = append(ms, insertInvocation(ctx, inv, "", ""))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
@@ -159,6 +159,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			"IncludedInvocationId": includedID,
 		}))
 	}
+	ms = append(ms, tasks.EnqueueBQExport(invID, s.derivedInvBQTable, clock.Now(ctx)))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.

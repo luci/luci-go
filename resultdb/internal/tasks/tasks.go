@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal/span"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 // Type is a value for InvocationTasks.TaskType column.
@@ -60,6 +61,11 @@ func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface
 		"Payload":      payload,
 		"ProcessAfter": processAfter,
 	})
+}
+
+// EnqueueBQExport inserts one row to InvocationTasks for a bq export task.
+func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, processAfter time.Time) *spanner.Mutation {
+	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID), invID, payload, processAfter)
 }
 
 // Sample randomly picks sampleSize of tasks of a given type
