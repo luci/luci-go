@@ -227,11 +227,12 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldBeNil)
 			})
-			Convey("with valid Name", func() {
+			// See TODO in validateConfigGroup.
+			/*Convey("with valid Name", func() {
 				cfg.ConfigGroups[0].Name = "!invalid!"
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "config group names must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$'")
-			})
+			})*/
 			Convey("with Gerrit", func() {
 				cfg.ConfigGroups[0].Gerrit = nil
 				validateProjectConfig(vctx, &cfg)
