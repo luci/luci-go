@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
@@ -123,7 +123,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 					BigqueryExports: []*pb.BigQueryExport{
-						&pb.BigQueryExport{
+						{
 							Project: "project",
 						},
 					},
@@ -161,9 +161,7 @@ func TestCreateInvocation(t *testing.T) {
 			err = internal.GRPCifyAndLog(ctx, err)
 			return res, err
 		}
-		pb.RegisterRecorderServer(server, &recorderServer{
-			expectedResultsExpiration: 60 * day,
-		})
+		pb.RegisterRecorderServer(server, newTestRecorderServer())
 		server.Start(ctx)
 		defer server.Close()
 		client, err := server.NewClient()
