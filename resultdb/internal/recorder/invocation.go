@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
