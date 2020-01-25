@@ -16,21 +16,28 @@ package main
 
 import (
 	"flag"
-	"io"
+	"strings"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
 func main() {
-	bqTableFlag := registerDerivedInvBQTableFlag()
+	bqTableFlag := flag.String(
+		"derive-bigquery-table",
+		"",
+		`Name of the BigQuery table for result export. In the format of "<project>.<dataset>.<table>".`,
+	)
 	expectedTestResultsExpirationDays := flag.Int(
-		"expected-results-expiration", 60,
-		"How many days to keep results for test variants with only expected results")
+		"expected-results-expiration",
+		60,
+		"How many days to keep results for test variants with only expected results",
+	)
 
 	internal.Main(func(srv *server.Server) error {
 		derivedInvBQTable, err := parseBQTable(*bqTableFlag)
@@ -38,17 +45,28 @@ func main() {
 			return err
 		}
 
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			io.WriteString(c.Writer, "OK")
-		})
-		pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
-			Service: &recorderServer{
-				derivedInvBQTable:         derivedInvBQTable,
-				expectedResultsExpiration: time.Duration(*expectedTestResultsExpirationDays) * day,
-			},
-			Prelude:  internal.CommonPrelude,
-			Postlude: internal.CommonPostlude,
+		recorder.InitServer(srv, recorder.Options{
+			DerivedInvBQTable:         derivedInvBQTable,
+			ExpectedResultsExpiration: time.Duration(*expectedTestResultsExpirationDays) * 24 * time.Hour,
 		})
 		return nil
 	})
+}
+
+func parseBQTable(bqTable string) (*pb.BigQueryExport, error) {
+	if bqTable == "" {
+		return nil, errors.Reason("-derive-bigquery-table is missing").Err()
+	}
+
+	p := strings.Split(bqTable, ".")
+	if len(p) != 3 || p[0] == "" || p[1] == "" || p[2] == "" {
+		return nil, errors.Reason("invalid bq table %q", bqTable).Err()
+	}
+
+	return &pb.BigQueryExport{
+		Project:     p[0],
+		Dataset:     p[1],
+		Table:       p[2],
+		TestResults: &pb.BigQueryExport_TestResults{},
+	}, nil
 }

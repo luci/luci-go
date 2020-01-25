@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
@@ -155,7 +155,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, in.RequestId, s.expectedResultsExpiration)),
+			span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, in.RequestId, s.ExpectedResultsExpiration)),
 		})
 	})
 

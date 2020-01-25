@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"testing"
@@ -69,7 +69,7 @@ func TestValidateIncludeRequest(t *testing.T) {
 func TestInclude(t *testing.T) {
 	Convey(`TestInclude`, t, func() {
 		ctx := SpannerTestContext(t)
-		recorder := &recorderServer{}
+		recorder := newTestRecorderServer()
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"crypto/tls"
@@ -32,8 +32,8 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -190,13 +190,13 @@ func TestDeriveInvocation(t *testing.T) {
 			},
 		}
 
-		derivedInvBQTable := &pb.BigQueryExport{
+		recorder := newTestRecorderServer()
+		recorder.DerivedInvBQTable = &pb.BigQueryExport{
 			Project:     "project",
 			Dataset:     "dataset",
 			Table:       "table",
 			TestResults: &pb.BigQueryExport_TestResults{},
 		}
-		recorder := &recorderServer{derivedInvBQTable: derivedInvBQTable}
 
 		Convey(`inserts a new invocation`, func() {
 			req.SwarmingTask.Id = "completed-task"
@@ -248,7 +248,7 @@ func TestDeriveInvocation(t *testing.T) {
 			bqExports := &pb.BigQueryExport{}
 			err = proto.Unmarshal(payload, bqExports)
 			So(err, ShouldBeNil)
-			So(bqExports, ShouldResembleProto, derivedInvBQTable)
+			So(bqExports, ShouldResembleProto, recorder.DerivedInvBQTable)
 		})
 	})
 }
@@ -269,7 +269,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
 			{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
 		}
-		recorder := &recorderServer{}
+		recorder := newTestRecorderServer()
 
 		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*pb.TestResult) {
 			// Check included Invocations.
