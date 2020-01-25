@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3300a4ae_728c68fd",
+        "filename": "resultdb/cmd/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-25T03:19:07Z",
+      "side": 1,
+      "message": "\"sampled tasks\"? Since a lot of tasks could be noop because of ErrConflict.",
+      "range": {
+        "startLine": 101,
+        "startChar": 22,
+        "endLine": 101,
+        "endChar": 37
+      },
+      "revId": "8c234bb70f848e66153ba394d088ac5e7ca75411",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
