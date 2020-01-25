@@ -29,7 +29,8 @@ import (
 
 // recorderServer implements pb.RecorderServer.
 //
-// It does not return gRPC-native errors. NewRecorder takes care of that.
+// It does not return gRPC-native errors; use DecoratedRecorder with
+// internal.CommonPostlude.
 type recorderServer struct {
 	*Options
 }
