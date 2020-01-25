@@ -45,7 +45,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		}
 
 		// Run the handler with the interceptor.
-		NewUnaryServerInterceptor(nil)(c, nil, &grpc.UnaryServerInfo{
+		UnaryServerInterceptor(c, nil, &grpc.UnaryServerInfo{
 			FullMethod: "/service/method",
 		}, handler)
 

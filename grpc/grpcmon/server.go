@@ -49,38 +49,29 @@ var (
 		field.String("canonical_code")) // String representation of the code above
 )
 
-// NewUnaryServerInterceptor returns an interceptor that gathers RPC handler
-// metrics and sends them to tsmon.
-//
-// It can be optionally chained with other interceptor. The reported metrics
-// include time spent in this other interceptor too.
+// UnaryServerInterceptor is a grpc.UnaryServerInterceptor that gathers RPC
+// handler metrics and sends them to tsmon.
 //
 // It assumes the RPC context has tsmon initialized already.
-func NewUnaryServerInterceptor(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		started := clock.Now(ctx)
-		panicking := true
-		defer func() {
-			// We don't want to recover anything, but we want to log Internal error
-			// in case of a panic. We pray here reportServerRPCMetrics is very
-			// lightweight and it doesn't panic itself.
-			code := codes.OK
-			switch {
-			case err != nil:
-				code = grpc.Code(err)
-			case panicking:
-				code = codes.Internal
-			}
-			reportServerRPCMetrics(ctx, info.FullMethod, code, clock.Now(ctx).Sub(started))
-		}()
-		if next != nil {
-			resp, err = next(ctx, req, info, handler)
-		} else {
-			resp, err = handler(ctx, req)
+func UnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	started := clock.Now(ctx)
+	panicking := true
+	defer func() {
+		// We don't want to recover anything, but we want to log Internal error
+		// in case of a panic. We pray here reportServerRPCMetrics is very
+		// lightweight and it doesn't panic itself.
+		code := codes.OK
+		switch {
+		case err != nil:
+			code = grpc.Code(err)
+		case panicking:
+			code = codes.Internal
 		}
-		panicking = false // normal exit, no panic happened, disarms defer
-		return
-	}
+		reportServerRPCMetrics(ctx, info.FullMethod, code, clock.Now(ctx).Sub(started))
+	}()
+	resp, err = handler(ctx, req)
+	panicking = false // normal exit, no panic happened, disarms defer
+	return
 }
 
 // reportServerRPCMetrics sends metrics after RPC handler has finished.
