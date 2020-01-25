@@ -16,10 +16,10 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -31,15 +31,9 @@ type recorderServer struct {
 	// derivedInvBQTable is the BigQuery table that the derived invocations
 	// should be exported to.
 	derivedInvBQTable *pb.BigQueryExport
-}
-
-// NewRecorderServer creates an implementation of RecorderServer.
-func NewRecorderServer(derivedInvBQTable *pb.BigQueryExport) pb.RecorderServer {
-	return &pb.DecoratedRecorder{
-		Service:  &recorderServer{derivedInvBQTable: derivedInvBQTable},
-		Prelude:  internal.CommonPrelude,
-		Postlude: internal.CommonPostlude,
-	}
+	// Duration since invocation creation after which to delete expected test
+	// results.
+	expectedResultsExpiration time.Duration
 }
 
 // CreateTestResult implements pb.RecorderServer.

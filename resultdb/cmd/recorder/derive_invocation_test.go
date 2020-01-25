@@ -269,6 +269,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 			{TestId: "Foo.DoBar", ResultId: "1", Status: pb.TestStatus_FAIL},
 			{TestId: "Foo.DoBar", ResultId: "2", Status: pb.TestStatus_CRASH},
 		}
+		recorder := &recorderServer{}
 
 		checkBatches := func(baseID span.InvocationID, actualInclusions span.InvocationIDSet, expectedBatches [][]*pb.TestResult) {
 			// Check included Invocations.
@@ -301,7 +302,7 @@ func TestBatchInsertTestResults(t *testing.T) {
 		Convey(`for one batch`, func() {
 			baseID := span.InvocationID("one_batch")
 			inv.Name = baseID.Name()
-			actualInclusions, err := batchInsertTestResults(ctx, inv, results, 5)
+			actualInclusions, err := recorder.batchInsertTestResults(ctx, inv, results, 5)
 			So(err, ShouldBeNil)
 			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results})
 		})
@@ -309,14 +310,14 @@ func TestBatchInsertTestResults(t *testing.T) {
 		Convey(`for multiple batches`, func() {
 			baseID := span.InvocationID("multiple_batches")
 			inv.Name = baseID.Name()
-			actualInclusions, err := batchInsertTestResults(ctx, inv, results, 2)
+			actualInclusions, err := recorder.batchInsertTestResults(ctx, inv, results, 2)
 			So(err, ShouldBeNil)
 			checkBatches(baseID, actualInclusions, [][]*pb.TestResult{results[:2], results[2:]})
 
 			Convey(`with batch size a factor of number of TestResults`, func() {
 				baseID := span.InvocationID("multiple_batches_factor")
 				inv.Name = baseID.Name()
-				actualInclusions, err := batchInsertTestResults(ctx, inv, results, 1)
+				actualInclusions, err := recorder.batchInsertTestResults(ctx, inv, results, 1)
 				So(err, ShouldBeNil)
 				checkBatches(baseID, actualInclusions,
 					[][]*pb.TestResult{results[:1], results[1:2], results[2:]})
