@@ -188,12 +188,16 @@ func bestEffortDisjointGroups(ctx *validation.Context, cfg *v2.Config) {
 }
 
 func validateConfigGroup(ctx *validation.Context, group *v2.ConfigGroup) {
-	re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]*$")
-	if group.Name != "" {
-		if !re.MatchString(group.Name) {
-			ctx.Errorf("config group names must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$': %q", group.Name)
+	// TODO(vadimsh): Either relax the regexp or fix all existing commit-queue.cfg
+	// before turning this on again.
+	/*
+		re, _ := regexp.Compile("^[a-zA-Z][a-zA-Z0-9_-]*$")
+		if group.Name != "" {
+			if !re.MatchString(group.Name) {
+				ctx.Errorf("config group names must match '^[a-zA-Z][a-zA-Z0-9 _.-]*$': %q", group.Name)
+			}
 		}
-	}
+	*/
 
 	if len(group.Gerrit) == 0 {
 		ctx.Errorf("at least 1 gerrit is required")
