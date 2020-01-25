@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
@@ -22,24 +22,14 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	"go.chromium.org/luci/server"
 )
 
 // recorderServer implements pb.RecorderServer.
 //
 // It does not return gRPC-native errors. NewRecorder takes care of that.
 type recorderServer struct {
-	// derivedInvBQTable is the BigQuery table that the derived invocations
-	// should be exported to.
-	derivedInvBQTable *pb.BigQueryExport
-}
-
-// NewRecorderServer creates an implementation of RecorderServer.
-func NewRecorderServer(derivedInvBQTable *pb.BigQueryExport) pb.RecorderServer {
-	return &pb.DecoratedRecorder{
-		Service:  &recorderServer{derivedInvBQTable: derivedInvBQTable},
-		Prelude:  internal.CommonPrelude,
-		Postlude: internal.CommonPostlude,
-	}
+	*Options
 }
 
 // CreateTestResult implements pb.RecorderServer.
@@ -50,4 +40,20 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 // BatchCreateTestResults implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
+}
+
+// Options configured recorder binary.
+type Options struct {
+	// BigQuery table that the derived invocations should be exported to.
+	DerivedInvBQTable *pb.BigQueryExport
+}
+
+// InitServer initializes a recorder server.
+func InitServer(srv *server.Server, opt Options) error {
+	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
+		Service:  &recorderServer{Options: &opt},
+		Prelude:  internal.CommonPrelude,
+		Postlude: internal.CommonPostlude,
+	})
+	return nil
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"crypto/tls"
@@ -32,8 +32,8 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -196,7 +196,11 @@ func TestDeriveInvocation(t *testing.T) {
 			Table:       "table",
 			TestResults: &pb.BigQueryExport_TestResults{},
 		}
-		recorder := &recorderServer{derivedInvBQTable: derivedInvBQTable}
+		recorder := &recorderServer{
+			Options: &Options{
+				DerivedInvBQTable: derivedInvBQTable,
+			},
+		}
 
 		Convey(`inserts a new invocation`, func() {
 			req.SwarmingTask.Id = "completed-task"

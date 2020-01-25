@@ -40,8 +40,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/formats"
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium/util"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
