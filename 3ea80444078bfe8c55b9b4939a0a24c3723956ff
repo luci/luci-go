@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2305e3f9_375eac9d",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-01-25T02:09:01Z",
+      "side": 1,
+      "message": "crbug/1045679 perhaps, but not that important.",
+      "range": {
+        "startLine": 191,
+        "startChar": 9,
+        "endLine": 191,
+        "endChar": 16
+      },
+      "revId": "3ea80444078bfe8c55b9b4939a0a24c3723956ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
