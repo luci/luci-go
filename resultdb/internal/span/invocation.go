@@ -26,9 +26,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -69,8 +69,9 @@ var TooManyInvocationsTag = errors.BoolTag{
 //
 // limit must be positive. If the size of the transitive closure exceeds the
 // limit, returns an error tagged with TooManyInvocationsTag.
-func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots InvocationIDSet) (InvocationIDSet, error) {
-	defer metrics.Trace(ctx, "ReadReachableInvocations")()
+func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots InvocationIDSet) (reachable InvocationIDSet, err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.readReachableInvocations")
+	defer func() { ts.End(err) }()
 
 	eg, ctx := errgroup.WithContext(ctx)
 	defer eg.Wait()
@@ -84,7 +85,7 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 		panic("len(roots) > limit")
 	}
 
-	ret := make(InvocationIDSet, len(roots))
+	reachable = make(InvocationIDSet, len(roots))
 	var mu sync.Mutex
 	var visit func(id InvocationID) error
 
@@ -94,18 +95,18 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 		defer mu.Unlock()
 
 		// Check if we already started/finished fetching this invocation.
-		if ret.Has(id) {
+		if reachable.Has(id) {
 			return nil
 		}
 
 		// Consider fetching a new invocation.
-		if len(ret) == limit {
+		if len(reachable) == limit {
 			cancel()
 			return errors.Reason("more than %d invocations match", limit).Tag(TooManyInvocationsTag).Err()
 		}
 
 		// Mark the invocation as being processed.
-		ret.Add(id)
+		reachable.Add(id)
 
 		// Concurrently fetch the inclusions without a lock.
 		eg.Go(func() error {
@@ -139,7 +140,7 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
-	return ret, nil
+	return reachable, nil
 }
 
 func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpdateToken bool, f func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error) error {
