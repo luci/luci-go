@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e4bac75_8cfd0601",
+        "filename": "resultdb/internal/recorder/recorder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-25T01:15:49Z",
+      "side": 1,
+      "message": "It seems to be not needed?",
+      "range": {
+        "startLine": 58,
+        "startChar": 49,
+        "endLine": 58,
+        "endChar": 54
+      },
+      "revId": "634973905deb3f8632e01e79720f8c524e44e89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
