@@ -22,6 +22,30 @@
       "revId": "634973905deb3f8632e01e79720f8c524e44e89f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4b42760_1a22e5d3",
+        "filename": "resultdb/internal/recorder/recorder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-25T02:15:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e4bac75_8cfd0601",
+      "range": {
+        "startLine": 58,
+        "startChar": 49,
+        "endLine": 58,
+        "endChar": 54
+      },
+      "revId": "634973905deb3f8632e01e79720f8c524e44e89f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
