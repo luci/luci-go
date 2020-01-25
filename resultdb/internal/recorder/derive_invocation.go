@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"strings"
 
@@ -28,9 +27,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	"go.chromium.org/luci/resultdb/cmd/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/internal/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -40,29 +39,6 @@ import (
 const testResultBatchSizeMax = 1000
 
 var urlPrefixes = []string{"http://", "https://"}
-
-func registerDerivedInvBQTableFlag() *string {
-	return flag.String("derive-bigquery-table", "",
-		`Name of the BigQuery table for result export. In the format of "<project>.<dataset>.<table>".`)
-}
-
-func parseBQTable(bqTable string) (*pb.BigQueryExport, error) {
-	if bqTable == "" {
-		return nil, errors.Reason("-derive-bigquery-table is missing").Err()
-	}
-
-	p := strings.Split(bqTable, ".")
-	if len(p) != 3 || p[0] == "" || p[1] == "" || p[2] == "" {
-		return nil, errors.Reason("invalid bq table %q", bqTable).Err()
-	}
-
-	return &pb.BigQueryExport{
-		Project:     p[0],
-		Dataset:     p[1],
-		Table:       p[2],
-		TestResults: &pb.BigQueryExport_TestResults{},
-	}, nil
-}
 
 // validateDeriveInvocationRequest returns an error if req is invalid.
 func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
@@ -152,14 +128,14 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+2)
-	ms = append(ms, span.InsertMap("Invocations", rowOfInvocation(ctx, inv, "", "", s.expectedResultsExpiration)))
+	ms = append(ms, span.InsertMap("Invocations", rowOfInvocation(ctx, inv, "", "", s.ExpectedResultsExpiration)))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
 			"IncludedInvocationId": includedID,
 		}))
 	}
-	ms = append(ms, tasks.EnqueueBQExport(invID, s.derivedInvBQTable, clock.Now(ctx)))
+	ms = append(ms, tasks.EnqueueBQExport(invID, s.DerivedInvBQTable, clock.Now(ctx)))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
@@ -224,7 +200,7 @@ func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Inv
 				Deadline:     inv.Deadline,
 			}
 			muts = append(muts, span.InsertOrUpdateMap(
-				"Invocations", rowOfInvocation(ctx, batchInv, "", "", s.expectedResultsExpiration)),
+				"Invocations", rowOfInvocation(ctx, batchInv, "", "", s.ExpectedResultsExpiration)),
 			)
 
 			// Convert the TestResults in the batch.

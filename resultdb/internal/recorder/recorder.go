@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"context"
@@ -20,6 +20,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/server"
+
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -28,12 +31,7 @@ import (
 //
 // It does not return gRPC-native errors. NewRecorder takes care of that.
 type recorderServer struct {
-	// derivedInvBQTable is the BigQuery table that the derived invocations
-	// should be exported to.
-	derivedInvBQTable *pb.BigQueryExport
-	// Duration since invocation creation after which to delete expected test
-	// results.
-	expectedResultsExpiration time.Duration
+	*Options
 }
 
 // CreateTestResult implements pb.RecorderServer.
@@ -44,4 +42,23 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 // BatchCreateTestResults implements pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
+}
+
+// Options is recorder server configuration.
+type Options struct {
+	// BigQuery table that the derived invocations should be exported to.
+	DerivedInvBQTable *pb.BigQueryExport
+
+	// Duration since invocation creation after which to delete expected test
+	// results.
+	ExpectedResultsExpiration time.Duration
+}
+
+// InitServer initializes a recorder server.
+func InitServer(srv *server.Server, opt Options) {
+	pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
+		Service:  &recorderServer{Options: &opt},
+		Prelude:  internal.CommonPrelude,
+		Postlude: internal.CommonPostlude,
+	})
 }

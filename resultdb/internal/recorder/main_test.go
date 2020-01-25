@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"testing"
@@ -22,4 +22,10 @@ import (
 
 func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
+}
+
+func newTestRecorderServer() *recorderServer {
+	return &recorderServer{
+		Options: &Options{ExpectedResultsExpiration: 60 * day},
+	}
 }
