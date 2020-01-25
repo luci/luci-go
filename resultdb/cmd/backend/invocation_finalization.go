@@ -186,7 +186,7 @@ func finalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 		}
 
 		// Enqueue tasks to try to finalize invocations that include ours.
-		if err := insertNextFinalizatoinTasks(ctx, txn, invID); err != nil {
+		if err := insertNextFinalizationTasks(ctx, txn, invID); err != nil {
 			return err
 		}
 
@@ -207,9 +207,9 @@ func finalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 	return err
 }
 
-// insertNextFinalizatoinTasks, for each FINALIZING invocation that directly
+// insertNextFinalizationTasks, for each FINALIZING invocation that directly
 // includes ours, schedules a task to try to finalize it.
-func insertNextFinalizatoinTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID span.InvocationID) error {
+func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID span.InvocationID) error {
 	// Note: its OK not to schedule a task for active invocations because
 	// state transition ACTIVE->FINALIZING includes creating a finalization
 	// task.
