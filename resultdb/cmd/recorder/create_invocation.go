@@ -155,7 +155,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			insertInvocation(ctx, inv, updateToken, in.RequestId),
+			span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, in.RequestId, s.expectedResultsExpiration)),
 		})
 	})
 
