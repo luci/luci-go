@@ -144,7 +144,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// Write test results in batches concurrently, updating inv with the names of the invocations
 	// that will be included.
-	batchInvs, err := batchInsertTestResults(ctx, inv, results, testResultBatchSizeMax)
+	batchInvs, err := s.batchInsertTestResults(ctx, inv, results, testResultBatchSizeMax)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+2)
-	ms = append(ms, insertInvocation(ctx, inv, "", ""))
+	ms = append(ms, span.InsertMap("Invocations", rowOfInvocation(ctx, inv, "", "", s.expectedResultsExpiration)))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
@@ -198,7 +198,7 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
 // returning container ids.
-func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
+func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
 	includedInvs := make(span.InvocationIDSet, len(batches))
 
@@ -223,7 +223,9 @@ func batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.T
 				FinalizeTime: inv.FinalizeTime,
 				Deadline:     inv.Deadline,
 			}
-			muts = append(muts, insertOrUpdateInvocation(ctx, batchInv, "", ""))
+			muts = append(muts, span.InsertOrUpdateMap(
+				"Invocations", rowOfInvocation(ctx, batchInv, "", "", s.expectedResultsExpiration)),
+			)
 
 			// Convert the TestResults in the batch.
 			for k, tr := range batch {

@@ -161,7 +161,9 @@ func TestCreateInvocation(t *testing.T) {
 			err = internal.GRPCifyAndLog(ctx, err)
 			return res, err
 		}
-		pb.RegisterRecorderServer(server, &recorderServer{})
+		pb.RegisterRecorderServer(server, &recorderServer{
+			expectedResultsExpiration: 60 * day,
+		})
 		server.Start(ctx)
 		defer server.Close()
 		client, err := server.NewClient()

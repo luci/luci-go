@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"crypto/subtle"
-	"flag"
 	"fmt"
 	"time"
 
@@ -55,12 +54,6 @@ const (
 // It is returned by CreateInvocation RPC in response header metadata,
 // and is required by all RPCs mutating an invocation.
 const updateTokenMetadataKey = "update-token"
-
-// expectedTestResultsExpirationDays is the number of days since invocation
-// creation after which to delete expected test results.
-var expectedTestResultsExpirationDays = flag.Int(
-	"expected-results-expiration", 60,
-	"How many days to keep results for test variants with only expected results")
 
 // mutateInvocation checks if the invocation can be mutated and also
 // finalizes the invocation if it's deadline is exceeded.
@@ -116,7 +109,6 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-
 func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
 	if !updateToken.Valid {
 		return errors.Reason("no update token in active invocation").Err()
@@ -129,7 +121,7 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 	return nil
 }
 
-func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
+func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string, expectedResultsExpiration time.Duration) map[string]interface{} {
 	createTime := pbutil.MustTimestamp(inv.CreateTime)
 
 	row := map[string]interface{}{
@@ -140,7 +132,7 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
 
 		"InvocationExpirationTime":          createTime.Add(invocationExpirationDuration),
-		"ExpectedTestResultsExpirationTime": createTime.Add(time.Duration(*expectedTestResultsExpirationDays) * day),
+		"ExpectedTestResultsExpirationTime": createTime.Add(expectedResultsExpiration),
 
 		"UpdateToken": updateToken,
 
@@ -170,19 +162,4 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 	}
 
 	return row
-}
-
-// insertInvocation returns an spanner mutation that inserts an Invocation row.
-// Uses the value of clock.Now(ctx) to compute expiration times.
-// Assumes inv is complete and valid; may panic otherwise.
-func insertInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
-	return span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
-}
-
-// insertOrUpdateInvocation returns an spanner mutation that inserts or updates an Invocation row.
-// Uses the value of clock.Now(ctx) to compute expiration times.
-// Assumes inv is complete and valid; may panic otherwise.
-func insertOrUpdateInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) *spanner.Mutation {
-	return span.InsertOrUpdateMap(
-		"Invocations", rowOfInvocation(ctx, inv, updateToken, createRequestID))
 }

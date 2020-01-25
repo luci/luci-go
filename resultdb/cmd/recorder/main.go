@@ -15,7 +15,9 @@
 package main
 
 import (
+	"flag"
 	"io"
+	"time"
 
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
@@ -26,6 +28,10 @@ import (
 
 func main() {
 	bqTableFlag := registerDerivedInvBQTableFlag()
+	expectedTestResultsExpirationDays := flag.Int(
+		"expected-results-expiration", 60,
+		"How many days to keep results for test variants with only expected results")
+
 	internal.Main(func(srv *server.Server) error {
 		derivedInvBQTable, err := parseBQTable(*bqTableFlag)
 		if err != nil {
@@ -35,7 +41,14 @@ func main() {
 		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 			io.WriteString(c.Writer, "OK")
 		})
-		pb.RegisterRecorderServer(srv.PRPC, NewRecorderServer(derivedInvBQTable))
+		pb.RegisterRecorderServer(srv.PRPC, &pb.DecoratedRecorder{
+			Service: &recorderServer{
+				derivedInvBQTable:         derivedInvBQTable,
+				expectedResultsExpiration: time.Duration(*expectedTestResultsExpirationDays) * day,
+			},
+			Prelude:  internal.CommonPrelude,
+			Postlude: internal.CommonPostlude,
+		})
 		return nil
 	})
 }
