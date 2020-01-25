@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -31,14 +32,15 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
-func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) error {
+func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
 	leaseDuration := time.Minute
 	switch taskType {
 	case tasks.TryFinalizeInvocation:
 		leaseDuration = 10 * time.Second
 	}
 
-	return parallel.WorkPool(10, func(workC chan<- func() error) {
+	var mu sync.Mutex
+	err = parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
 			workC <- func() (err error) {
@@ -75,10 +77,18 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				}
 
 				// Invocation task is done, delete the row from spanner.
-				return tasks.Delete(ctx, taskType, id)
+				if err := tasks.Delete(ctx, taskType, id); err != nil {
+					return err
+				}
+
+				mu.Lock()
+				processed = append(processed, id)
+				mu.Unlock()
+				return nil
 			}
 		}
 	})
+	return
 }
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
@@ -90,11 +100,10 @@ func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
 		}
 
-		if err := dispatchInvocationTasks(ctx, taskType, ids); err != nil {
-			return err
+		processed, err := dispatchInvocationTasks(ctx, taskType, ids)
+		if len(processed) > 0 {
+			logging.Infof(ctx, "processed tasks: %q", processed)
 		}
-
-		logging.Infof(ctx, "processed tasks: %q", ids)
-		return nil
+		return err
 	})
 }
