@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97caec47_0271c37f",
+        "filename": "grpc/grpcutil/interceptors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-25T03:02:01Z",
+      "side": 1,
+      "message": "IMO, there should be an note stating the assertion for future readers:\n\n// This creates a chain of O(1) function calls per interceptor.\n\n\n* my brain is unsure if O(1) is actually 2 or 3, but this is of minor importance.",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 1
+      },
+      "revId": "e357328db75082d921689e7b8eed471d4546b768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90b0237c_c24d890e",
+        "filename": "grpc/grpcutil/interceptors_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-25T03:02:01Z",
+      "side": 1,
+      "message": "👍very clever 👍",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 40,
+        "endChar": 3
+      },
+      "revId": "e357328db75082d921689e7b8eed471d4546b768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
