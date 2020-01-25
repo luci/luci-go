@@ -15,36 +15,21 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"fmt"
-	"io"
 
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/backend"
 )
 
 func main() {
-	purgeResults := flag.Bool("purge-expired-results", false,
+	var opts backend.Options
+	flag.BoolVar(&opts.PurgeExiredResults, "purge-expired-results", false,
 		"Whether to purge expired test results belonging to test variants that have only expected results")
 
 	internal.Main(func(srv *server.Server) error {
-		srv.Routes.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
-			io.WriteString(c.Writer, "OK")
-		})
-
-		for _, taskType := range tasks.AllTypes {
-			activity := fmt.Sprintf("resultdb.task.%s", taskType)
-			srv.RunInBackground(activity, func(ctx context.Context) {
-				runInvocationTasks(ctx, taskType)
-			})
-		}
-		if *purgeResults {
-			srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
-		}
+		backend.InitServer(srv, opts)
 		return nil
 	})
 }

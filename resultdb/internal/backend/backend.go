@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package backend
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/server"
 )
 
 // processingLoop runs f repeatedly, until the context is cancelled.
@@ -44,5 +48,24 @@ func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f 
 		if sleep := minInterval - clock.Since(ctx, start); sleep > 0 {
 			time.Sleep(sleep)
 		}
+	}
+}
+
+// Options is backend server configuration.
+type Options struct {
+	// Whether to purge expired results.
+	PurgeExiredResults bool
+}
+
+// InitServer initializes a backend server.
+func InitServer(srv *server.Server, opts Options) {
+	for _, taskType := range tasks.AllTypes {
+		activity := fmt.Sprintf("resultdb.task.%s", taskType)
+		srv.RunInBackground(activity, func(ctx context.Context) {
+			runInvocationTasks(ctx, taskType)
+		})
+	}
+	if opts.PurgeExiredResults {
+		srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
 	}
 }
