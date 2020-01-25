@@ -22,6 +22,30 @@
       "revId": "333d957fe7d3a7ce58d0aa40ba53b21a4a0b3998",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c610c2b7_acb6e9f0",
+        "filename": "server/redisconn/module.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-25T01:33:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89e8f672_8c1ca987",
+      "range": {
+        "startLine": 46,
+        "startChar": 58,
+        "endLine": 46,
+        "endChar": 72
+      },
+      "revId": "333d957fe7d3a7ce58d0aa40ba53b21a4a0b3998",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
