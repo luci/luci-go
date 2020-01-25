@@ -86,8 +86,12 @@ func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	// TODO(chanli): Add alert on failures.
 	processingLoop(ctx, time.Second, 5*time.Second, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
-		if err != nil {
+		switch {
+		case err != nil:
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
+		case len(ids) == 0:
+			// Avoid unnecessary logging.
+			return nil
 		}
 
 		if err := dispatchInvocationTasks(ctx, taskType, ids); err != nil {
