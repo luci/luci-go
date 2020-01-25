@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package recorder
 
 import (
 	"testing"
@@ -54,7 +54,7 @@ func TestValidateFinalizeInvocationRequest(t *testing.T) {
 func TestFinalizeInvocation(t *testing.T) {
 	Convey(`TestFinalizeInvocation`, t, func() {
 		ctx := SpannerTestContext(t)
-		recorder := &recorderServer{}
+		recorder := newTestRecorderServer()
 		ct := testclock.TestRecentTimeUTC
 
 		const token = "update token"
