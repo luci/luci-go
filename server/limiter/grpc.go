@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// NewUnaryServerInterceptor returns an interceptor that uses the given limiter
-// to accept or drop gRPC requests.
-func NewUnaryServerInterceptor(l *Limiter, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+// NewUnaryServerInterceptor returns a grpc.UnaryServerInterceptor that uses
+// the given limiter to accept or drop gRPC requests.
+func NewUnaryServerInterceptor(l *Limiter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		done, err := l.CheckRequest(ctx, &RequestInfo{
 			CallLabel: info.FullMethod,
@@ -34,9 +34,6 @@ func NewUnaryServerInterceptor(l *Limiter, next grpc.UnaryServerInterceptor) grp
 			return nil, status.Error(codes.Unavailable, err.Error())
 		}
 		defer done()
-		if next != nil {
-			return next(ctx, req, info, handler)
-		}
 		return handler(ctx, req)
 	}
 }

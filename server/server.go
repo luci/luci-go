@@ -725,12 +725,11 @@ func (s *Server) ListenAndServe() error {
 
 	// Put our base interceptors in front of whatever interceptors were installed
 	// by the user of Server via public s.PRPC.UnaryServerInterceptor.
-	s.PRPC.UnaryServerInterceptor = grpcmon.NewUnaryServerInterceptor(
-		limiter.NewUnaryServerInterceptor(s.rpcLimiter,
-			grpcutil.NewUnaryServerPanicCatcher(
-				s.PRPC.UnaryServerInterceptor,
-			),
-		),
+	s.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
+		grpcmon.UnaryServerInterceptor,
+		limiter.NewUnaryServerInterceptor(s.rpcLimiter),
+		grpcutil.UnaryServerPanicCatcherInterceptor,
+		s.PRPC.UnaryServerInterceptor,
 	)
 
 	// Catch SIGTERM while inside this function. Upon receiving SIGTERM, wait
