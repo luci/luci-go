@@ -25,9 +25,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/golang/protobuf/jsonpb"
 	"go.chromium.org/luci/common/errors"
@@ -42,6 +46,10 @@ import (
 )
 
 func main() {
+	go func() {
+		// serves "/debug" endpoints for pprof.
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	os.Exit(mainImpl())
 }
 
