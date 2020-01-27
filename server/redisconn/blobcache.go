@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package redisconn
 
 import (
 	"context"
@@ -21,26 +21,24 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/common/trace"
-
 	"go.chromium.org/luci/server/caching"
-	"go.chromium.org/luci/server/redisconn"
 )
 
-// RedisBlobCache implements caching.BlobCache using Redis.
-type RedisBlobCache struct {
+// redisBlobCache implements caching.BlobCache using Redis.
+type redisBlobCache struct {
 	Prefix string // prefix to prepend to keys
 }
 
-var _ caching.BlobCache = (*RedisBlobCache)(nil)
+var _ caching.BlobCache = (*redisBlobCache)(nil)
 
-func (rc *RedisBlobCache) key(k string) string { return rc.Prefix + k }
+func (rc *redisBlobCache) key(k string) string { return rc.Prefix + k }
 
 // Get returns a cached item or ErrCacheMiss if it's not in the cache.
-func (rc *RedisBlobCache) Get(ctx context.Context, key string) (blob []byte, err error) {
+func (rc *redisBlobCache) Get(ctx context.Context, key string) (blob []byte, err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server.RedisBlobCache.Get")
 	defer func() { span.End(err) }()
 
-	conn, err := redisconn.Get(ctx)
+	conn, err := Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +54,11 @@ func (rc *RedisBlobCache) Get(ctx context.Context, key string) (blob []byte, err
 // Set unconditionally overwrites an item in the cache.
 //
 // If 'exp' is zero, the item will have no expiration time.
-func (rc *RedisBlobCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) (err error) {
+func (rc *redisBlobCache) Set(ctx context.Context, key string, value []byte, exp time.Duration) (err error) {
 	ctx, span := trace.StartSpan(ctx, "go.chromium.org/luci/server.RedisBlobCache.Set")
 	defer func() { span.End(err) }()
 
-	conn, err := redisconn.Get(ctx)
+	conn, err := Get(ctx)
 	if err != nil {
 		return err
 	}
