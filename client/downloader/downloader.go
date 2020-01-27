@@ -427,17 +427,25 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 
 		if d.options.Cache == nil {
-			// no cache use case.
-			f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
-			if err != nil {
+			if err := retry.Retry(d.ctx, retry.Default, func() error {
+				// no cache use case.
+				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
+				if err != nil {
+					return err
+				}
+				defer f.Close()
+
+				if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
+					f.Close()
+					os.Remove(filename)
+					return err
+				}
+				return nil
+			}, nil); err != nil {
 				d.addError(fileType, name, err)
 				return
 			}
-			defer f.Close()
-			if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
-				d.addError(fileType, name, err)
-				return
-			}
+
 			d.completeFile(name, details)
 			return
 		}
@@ -494,7 +502,10 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 
 	d.pool.Schedule(tarType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := d.c.Fetch(d.ctx, hash, d.track(&buf)); err != nil {
+		if err := retry.Retry(d.ctx, retry.Default, func() error {
+			buf.Reset()
+			return d.c.Fetch(d.ctx, hash, d.track(&buf))
+		}, nil); err != nil {
 			d.addError(tarType, string(hash), err)
 			return
 		}
@@ -573,7 +584,10 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 func (d *Downloader) scheduleIsolatedJob(hash isolated.HexDigest) {
 	d.pool.Schedule(isolatedType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := d.c.Fetch(d.ctx, hash, &buf); err != nil {
+		if err := retry.Retry(d.ctx, retry.Default, func() error {
+			buf.Reset()
+			return d.c.Fetch(d.ctx, hash, &buf)
+		}, nil); err != nil {
 			d.addError(isolatedType, string(hash), err)
 			return
 		}
