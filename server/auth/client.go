@@ -36,6 +36,21 @@ import (
 	"go.chromium.org/luci/server/auth/internal"
 )
 
+// CloudOAuthScopes is a list of OAuth scopes recommended to use when
+// authenticating to Google Cloud services.
+//
+// Besides the actual cloud-platform scope also includes userinfo.email scope,
+// so that it is possible to examine the token email.
+//
+// Note that it is preferable to use the exact same list of scopes in all
+// Cloud API clients. That way when the server runs locally in a development
+// mode, we need to go through the login flow only once. Using different scopes
+// for different clients would require to "login" for each unique set of scopes.
+var CloudOAuthScopes = []string{
+	"https://www.googleapis.com/auth/cloud-platform",
+	"https://www.googleapis.com/auth/userinfo.email",
+}
+
 // RPCAuthorityKind defines under whose authority RPCs are made.
 type RPCAuthorityKind int
 

@@ -22,7 +22,6 @@
 //   * go.chromium.org/luci/server/secrets: Secrets (optional).
 //   * go.chromium.org/luci/server/settings: Access to app settings (optional).
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
-//   * go.chromium.org/gae: Datastore (optional).
 //
 // Minimal usage example:
 //
@@ -64,15 +63,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"cloud.google.com/go/datastore"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"go.opencensus.io/exporter/stackdriver/propagation"
 	octrace "go.opencensus.io/trace"
-
-	"go.chromium.org/gae/impl/cloud"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
@@ -115,13 +111,6 @@ import (
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/tsmon"
 )
-
-// DefaultOAuthScopes is a list of OAuth scopes we want a local user to grant us
-// when running the server locally.
-var DefaultOAuthScopes = []string{
-	"https://www.googleapis.com/auth/cloud-platform", // for accessing GCP services
-	"https://www.googleapis.com/auth/userinfo.email", // for accessing LUCI services
-}
 
 const (
 	// Path of the health check endpoint.
@@ -196,7 +185,7 @@ type Options struct {
 	AuthDBDump      string             // Google Storage path to fetch AuthDB dumps from
 	AuthDBSigner    string             // service account that signs AuthDB dumps
 
-	CloudProject  string // name of hosting Google Cloud Project for Datastore and StackDriver
+	CloudProject  string // name of the hosting Google Cloud Project
 	TraceSampling string // what portion of traces to upload to StackDriver (ignored on GAE)
 
 	TsMonAccount     string // service account to flush metrics as
@@ -472,8 +461,6 @@ type Server struct {
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
 	authDB       atomic.Value          // last known good authdb.DB instance
-
-	dsClient *datastore.Client // nil if datastore is not used
 }
 
 // scopedAuth holds TokenSource and Authenticator that produced it.
@@ -585,12 +572,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	if err := srv.initTracing(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
-	}
-	if err := srv.initDatastoreClient(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize Datastore client").Err()
-	}
-	if err := srv.initCloudContext(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize cloud context").Err()
 	}
 	if err := srv.initRPCLimiter(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize RPC limiter").Err()
@@ -1287,7 +1268,7 @@ func (s *Server) initAuth() error {
 	// we can generate tokens with *any* scope, since there's no restrictions on
 	// what scopes are accessible to a service account, as long as the private key
 	// is valid (which we just verified by generating some token).
-	au, err := s.initTokenSource(DefaultOAuthScopes)
+	au, err := s.initTokenSource(auth.CloudOAuthScopes)
 	if err != nil {
 		return errors.Annotate(err, "failed to initialize the token source").Err()
 	}
@@ -1488,7 +1469,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 			StorageDumpPath:    s.Options.AuthDBDump[len("gs://"):],
 			AuthServiceURL:     "https://" + s.Options.AuthServiceHost,
 			AuthServiceAccount: s.Options.AuthDBSigner,
-			OAuthScopes:        DefaultOAuthScopes,
+			OAuthScopes:        auth.CloudOAuthScopes,
 		}
 		curSnap, _ := cur.(*authdb.SnapshotDB)
 		snap, err := fetcher.FetchAuthDB(c, curSnap)
@@ -1587,11 +1568,11 @@ func (s *Server) initTracing() error {
 	}
 
 	// Grab the token source to call StackDriver API.
-	auth, err := s.initTokenSource(DefaultOAuthScopes)
+	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to initialize token source").Err()
 	}
-	opts := []option.ClientOption{option.WithTokenSource(auth.source)}
+	opts := []option.ClientOption{option.WithTokenSource(ts)}
 
 	// Register the trace uploader. It is also accidentally metrics uploader, but
 	// we shouldn't be using metrics (we have tsmon instead).
@@ -1623,50 +1604,6 @@ func (s *Server) initTracing() error {
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(func(context.Context) { exporter.Flush() })
-	return nil
-}
-
-// initDatastoreClient initializes Cloud Datastore client, if enabled.
-func (s *Server) initDatastoreClient() error {
-	if s.Options.CloudProject == "" {
-		return nil
-	}
-
-	logging.Infof(s.Context, "Setting up datastore client for project %q", s.Options.CloudProject)
-
-	// Enable auth only when using the real datastore.
-	var opts []option.ClientOption
-	if addr := os.Getenv("DATASTORE_EMULATOR_HOST"); addr == "" {
-		auth, err := s.initTokenSource(DefaultOAuthScopes)
-		if err != nil {
-			return errors.Annotate(err, "failed to initialize token source").Err()
-		}
-		opts = []option.ClientOption{option.WithTokenSource(auth.source)}
-	}
-
-	client, err := datastore.NewClient(s.Context, s.Options.CloudProject, opts...)
-	if err != nil {
-		return errors.Annotate(err, "failed to instantiate the client").Err()
-	}
-
-	s.RegisterCleanup(func(ctx context.Context) {
-		if err := client.Close(); err != nil {
-			logging.Warningf(ctx, "Failed to close datastore client - %s", err)
-		}
-	})
-
-	s.dsClient = client
-	return nil
-}
-
-// initCloudContext makes the context compatible with the supported portion of
-// 'go.chromium.org/gae' library.
-func (s *Server) initCloudContext() error {
-	s.Context = (&cloud.ConfigLite{
-		IsDev:     !s.Options.Prod,
-		ProjectID: s.Options.CloudProject,
-		DS:        s.dsClient,
-	}).Use(s.Context)
 	return nil
 }
 

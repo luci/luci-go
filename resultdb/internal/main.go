@@ -56,7 +56,7 @@ func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context,
 	}
 
 	// A token source with Cloud scope.
-	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(server.DefaultOAuthScopes...))
+	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return ctx, errors.Annotate(err, "failed to get the token source").Err()
 	}
