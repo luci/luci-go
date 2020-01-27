@@ -23,22 +23,15 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
 
-// NewUnaryServerPanicCatcher returns a unary interceptor that catches panics
-// in RPC handlers, recovers them and returns codes.Internal gRPC errors
-// instead.
-//
-// It can be optionally chained with other interceptor.
-func NewUnaryServerPanicCatcher(next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-			logging.Fields{
-				"panic.error": p.Reason,
-			}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", info.FullMethod, p.Reason, p.Stack)
-			err = Internal
-		})
-		if next != nil {
-			return next(ctx, req, info, handler)
-		}
-		return handler(ctx, req)
-	}
+// UnaryServerPanicCatcherInterceptor is a grpc.UnaryServerInterceptor that
+// catches panics in RPC handlers, recovers them and returns codes.Internal gRPC
+// errors instead.
+func UnaryServerPanicCatcherInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+		logging.Fields{
+			"panic.error": p.Reason,
+		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", info.FullMethod, p.Reason, p.Stack)
+		err = Internal
+	})
+	return handler(ctx, req)
 }

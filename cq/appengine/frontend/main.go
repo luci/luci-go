@@ -33,7 +33,7 @@ import (
 
 func main() {
 	mathrand.SeedRandomly()
-	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
+	api := prpc.Server{UnaryServerInterceptor: grpcmon.UnaryServerInterceptor}
 	discovery.Enable(&api)
 
 	r := router.New()

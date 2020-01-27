@@ -54,7 +54,7 @@ func main() {
 	// RPCs sent to this module will automatically be routed to them via
 	// "dispatch.yaml".
 	svr := &prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	logsPb.RegisterLogsServer(svr, dummyLogsService)
 	registrationPb.RegisterRegistrationServer(svr, dummyRegistrationService)

@@ -57,8 +57,10 @@ func main() {
 	// Install all RPC servers. Catch panics, report metrics to tsmon (including
 	// panics themselves, as Internal errors).
 	srv := &prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(
-			grpcutil.NewUnaryServerPanicCatcher(nil)),
+		UnaryServerInterceptor: grpcutil.ChainUnaryServerInterceptors(
+			grpcmon.UnaryServerInterceptor,
+			grpcutil.UnaryServerPanicCatcherInterceptor,
+		),
 	}
 	adminapi.RegisterAdminServer(srv, impl.AdminAPI)
 	pubapi.RegisterStorageServer(srv, impl.PublicCAS)

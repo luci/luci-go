@@ -189,7 +189,7 @@ func main() {
 
 	// Install RPC servers.
 	api := prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	scheduler.RegisterSchedulerServer(&api, &apiservers.SchedulerServer{
 		Engine:  globalEngine.PublicAPI(),

@@ -49,7 +49,7 @@ func main() {
 
 	api := prpc.Server{
 		// Install an interceptor capable of reporting tsmon metrics.
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	crimson.RegisterCrimsonServer(&api, srv)
 	discovery.Enable(&api)
