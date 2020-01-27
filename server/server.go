@@ -25,10 +25,10 @@
 //   * go.chromium.org/luci/server/redisconn: Redis connection pool (optional).
 //   * go.chromium.org/gae: Datastore (optional).
 //
-// Usage example:
+// Minimal usage example:
 //
 //   func main() {
-//     server.Main(nil, func(srv *server.Server) error {
+//     server.Main(nil, nil, func(srv *server.Server) error {
 //       // Initialize global state, change root context.
 //       if err := initializeGlobalStuff(srv.Context); err != nil {
 //         return err
@@ -79,6 +79,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
@@ -109,6 +110,7 @@ import (
 	"go.chromium.org/luci/server/internal"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
@@ -148,7 +150,7 @@ var (
 // expects from servers.
 //
 // On errors, logs them and aborts the process with non-zero exit code.
-func Main(opts *Options, init func(srv *Server) error) {
+func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 	mathrand.SeedRandomly()
 	if opts == nil {
 		opts = &Options{
@@ -160,12 +162,14 @@ func Main(opts *Options, init func(srv *Server) error) {
 	flag.Parse()
 	opts.FromGAEEnv()
 
-	srv, err := New(*opts)
+	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
 		srv.Fatal(err)
 	}
-	if err = init(srv); err != nil {
-		srv.Fatal(err)
+	if init != nil {
+		if err = init(srv); err != nil {
+			srv.Fatal(err)
+		}
 	}
 	if err = srv.ListenAndServe(); err != nil {
 		srv.Fatal(err)
@@ -210,7 +214,6 @@ type Options struct {
 	LimiterMaxConcurrentRPCs int64 // limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)
 	LimiterAdvisoryMode      bool  // if set, don't enforce LimiterMaxConcurrentRPCs, but still report violations
 
-	testCtx       context.Context         // base context for tests
 	testSeed      int64                   // used to seed rng in tests
 	testStdout    sdlogger.LogEntryWriter // mocks stdout in tests
 	testStderr    sdlogger.LogEntryWriter // mocks stderr in tests
@@ -408,6 +411,14 @@ func (o *Options) shouldEnableTracing() bool {
 	}
 }
 
+// hostOptions constructs HostOptions for module.Initialize(...).
+func (o *Options) hostOptions() module.HostOptions {
+	return module.HostOptions{
+		Prod:         o.Prod,
+		CloudProject: o.CloudProject,
+	}
+}
+
 // Server is responsible for initializing and launching the serving environment.
 //
 // Generally assumed to be a singleton: do not launch multiple Server instances
@@ -469,7 +480,7 @@ type Server struct {
 	bgrWg   sync.WaitGroup // waits for RunInBackground goroutines to stop
 
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
-	cleanup  []func()
+	cleanup  []func(context.Context)
 
 	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such, may be nil
 	settings *settings.ExternalStorage // backing store for settings.Get(...) API
@@ -490,26 +501,49 @@ type scopedAuth struct {
 	authen *clientauth.Authenticator
 }
 
+// moduleHostImpl implements module.Host via server.Server.
+//
+// Just a tiny wrapper to make sure modules consume only curated limited set of
+// the server API and do not retain the pointer to the server.
+type moduleHostImpl struct {
+	srv     *Server
+	invalid bool
+}
+
+func (h *moduleHostImpl) panicIfInvalid() {
+	if h.invalid {
+		panic("module.Host must not be used outside of Initialize")
+	}
+}
+
+func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context)) {
+	h.panicIfInvalid()
+	h.srv.RunInBackground(activity, f)
+}
+
+func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
+	h.panicIfInvalid()
+	h.srv.RegisterCleanup(cb)
+}
+
 // New constructs a new server instance.
 //
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
 // also responsible for preparing contexts for incoming requests.
 //
+// The given context will become the root context of the server and will be
+// inherited by all handlers.
+//
 // On errors returns partially initialized server (always non-nil). At least
 // its logging will be configured and can be used to report the error. Trying
 // to use such partially initialized server for anything else is undefined
 // behavior.
-func New(opts Options) (srv *Server, err error) {
+func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, err error) {
 	seed := opts.testSeed
 	if seed == 0 {
 		if err := binary.Read(cryptorand.Reader, binary.BigEndian, &seed); err != nil {
 			panic(err)
 		}
-	}
-
-	ctx := opts.testCtx
-	if ctx == nil {
-		ctx = context.Background()
 	}
 
 	// Do this very early, so that various transports created during the
@@ -549,8 +583,8 @@ func New(opts Options) (srv *Server, err error) {
 		}
 	}
 	logging.Infof(srv.Context, "Running on %s", srv.Options.Hostname)
-	if opts.ContainerImageID != "" {
-		logging.Infof(srv.Context, "Container image is %s", opts.ContainerImageID)
+	if srv.Options.ContainerImageID != "" {
+		logging.Infof(srv.Context, "Container image is %s", srv.Options.ContainerImageID)
 	}
 
 	// Configure base server subsystems by injecting them into the root context
@@ -589,6 +623,24 @@ func New(opts Options) (srv *Server, err error) {
 	if err := srv.initAdminPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the admin port").Err()
 	}
+
+	// Initialize all extra modules. Note that names aren't really used yet, but
+	// we still want to guarantee they are unique to avoid issues in the future.
+	seen := stringset.New(len(mods))
+	host := moduleHostImpl{srv: srv}
+	for _, m := range mods {
+		if !seen.Add(m.Name()) {
+			return srv, errors.Reason("duplicate module %q", m.Name()).Err()
+		}
+		switch ctx, err := m.Initialize(srv.Context, &host, srv.Options.hostOptions()); {
+		case err != nil:
+			return srv, errors.Annotate(err, "failed to initialize module %q", m.Name()).Err()
+		case ctx != nil:
+			srv.Context = ctx
+		}
+	}
+	host.invalid = true // break `host` to make sure modules do not retain it
+
 	return srv, nil
 }
 
@@ -905,7 +957,7 @@ func (s *Server) waitUntilNotServing() {
 //
 // Registering a new cleanup callback from within a cleanup causes a deadlock,
 // don't do that.
-func (s *Server) RegisterCleanup(cb func()) {
+func (s *Server) RegisterCleanup(cb func(context.Context)) {
 	s.cleanupM.Lock()
 	defer s.cleanupM.Unlock()
 	s.cleanup = append(s.cleanup, cb)
@@ -917,7 +969,7 @@ func (s *Server) runCleanup() {
 	s.cleanupM.Lock()
 	defer s.cleanupM.Unlock()
 	for i := len(s.cleanup) - 1; i >= 0; i-- {
-		s.cleanup[i]()
+		s.cleanup[i](s.Context)
 	}
 }
 
@@ -1592,7 +1644,7 @@ func (s *Server) initTracing() error {
 	octrace.ApplyConfig(octrace.Config{DefaultSampler: octrace.NeverSample()})
 
 	// Do the final flush before exiting.
-	s.RegisterCleanup(exporter.Flush)
+	s.RegisterCleanup(func(context.Context) { exporter.Flush() })
 	return nil
 }
 
@@ -1614,9 +1666,9 @@ func (s *Server) initRedis() error {
 	})
 
 	// Close all connections when exiting gracefully.
-	s.RegisterCleanup(func() {
+	s.RegisterCleanup(func(ctx context.Context) {
 		if err := s.redisPool.Close(); err != nil {
-			logging.Warningf(s.Context, "Failed to close Redis pool - %s", err)
+			logging.Warningf(ctx, "Failed to close Redis pool - %s", err)
 		}
 	})
 
@@ -1651,9 +1703,9 @@ func (s *Server) initDatastoreClient() error {
 		return errors.Annotate(err, "failed to instantiate the client").Err()
 	}
 
-	s.RegisterCleanup(func() {
+	s.RegisterCleanup(func(ctx context.Context) {
 		if err := client.Close(); err != nil {
-			logging.Warningf(s.Context, "Failed to close datastore client - %s", err)
+			logging.Warningf(ctx, "Failed to close datastore client - %s", err)
 		}
 	})
 

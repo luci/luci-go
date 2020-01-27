@@ -34,7 +34,7 @@ import (
 )
 
 func main() {
-	server.Main(nil, func(srv *server.Server) error {
+	server.Main(nil, nil, func(srv *server.Server) error {
 		// pRPC example.
 		apipb.RegisterGreeterServer(srv.PRPC, &greeterServer{})
 
