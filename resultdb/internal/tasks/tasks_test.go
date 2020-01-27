@@ -34,11 +34,11 @@ func TestTasks(t *testing.T) {
 
 		Convey(`Sample`, func() {
 			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task1", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task2", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task3", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task4", "inv", "payload", now),
-				Enqueue(BQExport, "task5", "inv", "payload", now.Add(time.Hour)),
+				Enqueue(BQExport, "task1", "inv", "payload", now, now.Add(-time.Hour)),
+				Enqueue(BQExport, "task2", "inv", "payload", now, now.Add(-time.Hour)),
+				Enqueue(BQExport, "task3", "inv", "payload", now, now.Add(-time.Hour)),
+				Enqueue(BQExport, "task4", "inv", "payload", now, now),
+				Enqueue(BQExport, "task5", "inv", "payload", now, now.Add(time.Hour)),
 			)
 
 			rows, err := Sample(ctx, BQExport, now, 3)
@@ -50,7 +50,7 @@ func TestTasks(t *testing.T) {
 		Convey(`Lease`, func() {
 			test := func(processAfter time.Time, expectedProcessAfter time.Time, expectedLeaseErr error) {
 				testutil.MustApply(ctx,
-					Enqueue(BQExport, "task", "inv", []byte("payload"), processAfter),
+					Enqueue(BQExport, "task", "inv", []byte("payload"), now, processAfter),
 				)
 
 				invID, payload, err := Lease(ctx, BQExport, "task", time.Second)
@@ -84,7 +84,7 @@ func TestTasks(t *testing.T) {
 
 		Convey(`Delete`, func() {
 			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task", "inv", "payload", now, now.Add(-time.Hour)),
 			)
 
 			err := Delete(ctx, BQExport, "task")
