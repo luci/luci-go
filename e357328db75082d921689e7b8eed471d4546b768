@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "71163282_7c8f1082",
+        "filename": "grpc/grpcutil/interceptors.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-27T19:24:08Z",
+      "side": 1,
+      "message": "I\u0027m 80% sure it basically builds `func() { func() { func() { ... } } }` and there\u0027s no more branching or looping in the produced closures. The chain is already mentioned in the doc string for the function.",
+      "parentUuid": "97caec47_0271c37f",
+      "range": {
+        "startLine": 36,
+        "startChar": 1,
+        "endLine": 47,
+        "endChar": 1
+      },
+      "revId": "e357328db75082d921689e7b8eed471d4546b768",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "90b0237c_c24d890e",
         "filename": "grpc/grpcutil/interceptors_test.go",
         "patchSetId": 2
