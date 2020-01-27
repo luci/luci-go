@@ -24,7 +24,20 @@ import (
 //
 // The first one becomes the outermost, and the last one becomes the
 // innermost, i.e. `ChainUnaryServerInterceptors(a, b, c)(h) === a(b(c(h)))`.
+//
+// nil-valued interceptors are silently skipped.
 func ChainUnaryServerInterceptors(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+	filtered := interceptors[:0]
+	for _, intr := range interceptors {
+		if intr != nil {
+			filtered = append(filtered, intr)
+		}
+	}
+	return chain(filtered)
+}
+
+// chain chains non-nil interceptors.
+func chain(interceptors []grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
 	switch len(interceptors) {
 	case 0:
 		return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -33,7 +46,7 @@ func ChainUnaryServerInterceptors(interceptors ...grpc.UnaryServerInterceptor) g
 	case 1:
 		return interceptors[0]
 	default:
-		return combinator(interceptors[0], ChainUnaryServerInterceptors(interceptors[1:]...))
+		return combinator(interceptors[0], chain(interceptors[1:]))
 	}
 }
 

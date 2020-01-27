@@ -116,6 +116,18 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			})
 		})
 
+		Convey("Nils are OK", func() {
+			resp, err := callChain(ChainUnaryServerInterceptors(nil, doNothing, nil, nil), successHandler)
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, testResponse)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> successHandler",
+				"<- successHandler",
+				"<- doNothing",
+			})
+		})
+
 		Convey("Changes propagate", func() {
 			chain := ChainUnaryServerInterceptors(
 				populateContext,
