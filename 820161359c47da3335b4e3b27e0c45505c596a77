@@ -395,6 +395,24 @@
     },
     {
       "key": {
+        "uuid": "fb72cf50_662cc01b",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-27T17:06:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7807e524_d9c70810",
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "26057b14_ba8f8c2d",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -415,6 +433,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94f3247e_e20e5a72",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-27T17:06:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26057b14_ba8f8c2d",
+      "range": {
+        "startLine": 152,
+        "startChar": 9,
+        "endLine": 152,
+        "endChar": 31
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -764,6 +806,24 @@
       "side": 1,
       "message": "Good point, but how can we ensure the code coverage systematically? I\u0027d like to add a presubmit check for the coverage, but it looks like it will require additional work.\n\n```\nok      go.chromium.org/luci/resultdb/pbutil coverage: 73.0% of statements\n```",
       "parentUuid": "21518020_e458168e",
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcdf21a8_62346c72",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-27T17:06:32Z",
+      "side": 1,
+      "message": "it looks you are agreeing, but the changes wasn\u0027t made? I still see ValidateArtifactFetchURL here.\n\nfor coverage, see https://groups.google.com/a/google.com/g/chrome-infra-syd/c/pwR0CgBm66c/m/2a1rl9OBBQAJ",
+      "parentUuid": "d3737a8b_7c26001f",
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
