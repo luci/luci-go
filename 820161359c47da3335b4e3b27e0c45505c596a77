@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d1e10e0f_6804f2ef",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ac2f526_bf70a64c",
+      "range": {
+        "startLine": 61,
+        "startChar": 12,
+        "endLine": 61,
+        "endChar": 14
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28981e31_93a444e8",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -45,6 +69,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b47eae04_b830c047",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "28981e31_93a444e8",
+      "range": {
+        "startLine": 82,
+        "startChar": 8,
+        "endLine": 82,
+        "endChar": 23
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "481bdb5c_4b2e5430",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f5b59ce_b53bde26",
+      "range": {
+        "startLine": 102,
+        "startChar": 2,
+        "endLine": 102,
+        "endChar": 7
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49a41bce_bd484184",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -91,6 +163,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b24d12bc_7f2095d8",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49a41bce_bd484184",
+      "range": {
+        "startLine": 106,
+        "startChar": 33,
+        "endLine": 106,
+        "endChar": 43
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d476b7de_102c4f09",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5298c07c_0592f47f",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 119,
+        "endChar": 5
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bebc291c_1139253a",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -137,6 +257,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7fabb54_cae8f4e6",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bebc291c_1139253a",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 7
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "bfd8da0f_99ffc65c",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3fc0c4e4_6f027a97",
+      "range": {
+        "startLine": 124,
+        "startChar": 2,
+        "endLine": 124,
+        "endChar": 7
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c219735_f99c8cca",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -183,6 +351,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58be868c_a313515e",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c219735_f99c8cca",
+      "range": {
+        "startLine": 133,
+        "startChar": 1,
+        "endLine": 135,
+        "endChar": 2
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -249,6 +441,30 @@
     },
     {
       "key": {
+        "uuid": "6d88586f_d1f36779",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Good point. Done",
+      "parentUuid": "99d733ee_7440aa46",
+      "range": {
+        "startLine": 155,
+        "startChar": 25,
+        "endLine": 155,
+        "endChar": 58
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03994edb_48a8ba0b",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 8
@@ -269,6 +485,30 @@
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f8bffe8_0892c665",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03994edb_48a8ba0b",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 170,
+        "endChar": 16
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -295,6 +535,30 @@
     },
     {
       "key": {
+        "uuid": "845c793d_e298948d",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53fe3719_a1a2fe74",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 14
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d28d016_adb83a6c",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 8
@@ -312,6 +576,24 @@
     },
     {
       "key": {
+        "uuid": "423a24f2_a287fff7",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d28d016_adb83a6c",
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b2ac5ad9_6c521206",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 8
@@ -323,6 +605,30 @@
       "writtenOn": "2020-01-24T19:07:57Z",
       "side": 1,
       "message": "this is very clever! we should use this in other places too",
+      "range": {
+        "startLine": 111,
+        "startChar": 27,
+        "endLine": 111,
+        "endChar": 57
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c78a2640_9c3556a5",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Thanks! I will update other tests in upcoming CLs, then.",
+      "parentUuid": "b2ac5ad9_6c521206",
       "range": {
         "startLine": 111,
         "startChar": 27,
@@ -358,6 +664,30 @@
     },
     {
       "key": {
+        "uuid": "833f7655_ea174832",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6083c19b_09d598ef",
+      "range": {
+        "startLine": 145,
+        "startChar": 3,
+        "endLine": 145,
+        "endChar": 11
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "301a8904_9c82449e",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 8
@@ -381,6 +711,30 @@
     },
     {
       "key": {
+        "uuid": "cfd6d54b_f77a4dbc",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "301a8904_9c82449e",
+      "range": {
+        "startLine": 229,
+        "startChar": 3,
+        "endLine": 229,
+        "endChar": 11
+      },
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21518020_e458168e",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 8
@@ -392,6 +746,24 @@
       "writtenOn": "2020-01-24T19:07:57Z",
       "side": 1,
       "message": "i see in all these tests we do \n\n  ValidateXXX\n  ValidateArtifact\n\nor\n\n  ValidateXXX\n  ValidateTestResult\n\ndo we really have to have that ValidateXXX call? ValidateTestResult/ValidateArtifact gets code coverage for both XXX and the ValidateXXX call inside ValidateTestResult/ValidateArtifact",
+      "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3737a8b_7c26001f",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Good point, but how can we ensure the code coverage systematically? I\u0027d like to add a presubmit check for the coverage, but it looks like it will require additional work.\n\n```\nok      go.chromium.org/luci/resultdb/pbutil coverage: 73.0% of statements\n```",
+      "parentUuid": "21518020_e458168e",
       "revId": "820161359c47da3335b4e3b27e0c45505c596a77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

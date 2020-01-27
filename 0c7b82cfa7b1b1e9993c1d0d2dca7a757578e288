@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "d4f84db6_069dbb98",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ebb29bff_512440df",
+      "range": {
+        "startLine": 40,
+        "startChar": 55,
+        "endLine": 40,
+        "endChar": 60
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53ef297e_69cc3baa",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
@@ -390,6 +414,30 @@
       "side": 1,
       "message": "From rpc/v1/test_result.proto\n\n```\n// A result of a functional test case\nmessage TestResult {\n  \n  // The point in time when the test case started to execute.\n  google.protobuf.Timestamp start_time \u003d 8 \n}\n```\n\n\u003e\u003e start time is optional\nThe message is a result of a test case, which has already happened, and, therefore, the data of start_time must be available in the test_case. Do you mean that TestResult clients don\u0027t have to report the start_time?",
       "parentUuid": "089f374f_34174f13",
+      "range": {
+        "startLine": 75,
+        "startChar": 28,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41bf7951_6cfb6b2c",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-27T15:08:34Z",
+      "side": 1,
+      "message": "What about the duration? Is it valid if a TestResult doesn\u0027t report a start_time, but duration?",
+      "parentUuid": "c6487d10_7ad5279f",
       "range": {
         "startLine": 75,
         "startChar": 28,
