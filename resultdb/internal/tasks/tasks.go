@@ -53,19 +53,20 @@ const (
 var AllTypes = []Type{BQExport, TryFinalizeInvocation}
 
 // Enqueue inserts one row to InvocationTasks.
-func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface{}, processAfter time.Time) *spanner.Mutation {
+func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface{}, createTime, processAfter time.Time) *spanner.Mutation {
 	return span.InsertMap("InvocationTasks", map[string]interface{}{
 		"TaskType":     string(typ),
 		"TaskId":       taskID,
 		"InvocationId": invID,
 		"Payload":      payload,
+		"CreateTime":   createTime,
 		"ProcessAfter": processAfter,
 	})
 }
 
 // EnqueueBQExport inserts one row to InvocationTasks for a bq export task.
-func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, processAfter time.Time) *spanner.Mutation {
-	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID), invID, payload, processAfter)
+func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, createTime, processAfter time.Time) *spanner.Mutation {
+	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID), invID, payload, createTime, processAfter)
 }
 
 // Sample randomly picks sampleSize of tasks of a given type

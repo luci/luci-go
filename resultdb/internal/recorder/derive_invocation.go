@@ -135,7 +135,9 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			"IncludedInvocationId": includedID,
 		}))
 	}
-	ms = append(ms, tasks.EnqueueBQExport(invID, s.DerivedInvBQTable, clock.Now(ctx)))
+
+	now := clock.Now(ctx)
+	ms = append(ms, tasks.EnqueueBQExport(invID, s.DerivedInvBQTable, now, now))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Check invocation state again.
