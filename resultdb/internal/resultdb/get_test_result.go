@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package resultdb
 
 import (
 	"context"
@@ -25,20 +25,20 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-func validateGetTestExonerationRequest(req *pb.GetTestExonerationRequest) error {
-	if err := pbutil.ValidateTestExonerationName(req.Name); err != nil {
+func validateGetTestResultRequest(req *pb.GetTestResultRequest) error {
+	if err := pbutil.ValidateTestResultName(req.Name); err != nil {
 		return errors.Annotate(err, "name").Err()
 	}
 
 	return nil
 }
 
-func (s *resultDBServer) GetTestExoneration(ctx context.Context, in *pb.GetTestExonerationRequest) (*pb.TestExoneration, error) {
-	if err := validateGetTestExonerationRequest(in); err != nil {
+func (s *resultDBServer) GetTestResult(ctx context.Context, in *pb.GetTestResultRequest) (*pb.TestResult, error) {
+	if err := validateGetTestResultRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
-	return span.ReadTestExonerationFull(ctx, txn, in.Name)
+	return span.ReadTestResult(ctx, txn, in.Name)
 }
