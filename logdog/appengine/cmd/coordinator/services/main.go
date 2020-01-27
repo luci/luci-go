@@ -39,7 +39,7 @@ func main() {
 
 	// Setup Cloud Endpoints.
 	svr := prpc.Server{
-		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
+		UnaryServerInterceptor: grpcmon.UnaryServerInterceptor,
 	}
 	servicesPb.RegisterServicesServer(&svr, services.New())
 	registrationPb.RegisterRegistrationServer(&svr, registration.New())

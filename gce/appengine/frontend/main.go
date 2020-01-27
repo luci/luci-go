@@ -38,7 +38,7 @@ import (
 
 func main() {
 	mathrand.SeedRandomly()
-	api := prpc.Server{UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil)}
+	api := prpc.Server{UnaryServerInterceptor: grpcmon.UnaryServerInterceptor}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
 	instances.RegisterInstancesServer(&api, rpc.NewInstancesServer())
 	projects.RegisterProjectsServer(&api, rpc.NewProjectsServer())
