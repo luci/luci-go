@@ -95,7 +95,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 		}
 
 		Convey("Noop chain", func() {
-			resp, err := callChain(ChainUnaryServerInterceptors(), successHandler)
+			resp, err := callChain(ChainUnaryServerInterceptors(nil, nil), successHandler)
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, testResponse)
 			So(calls, ShouldResemble, []string{
@@ -106,6 +106,18 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 
 		Convey("One link chain", func() {
 			resp, err := callChain(ChainUnaryServerInterceptors(doNothing), successHandler)
+			So(err, ShouldBeNil)
+			So(resp, ShouldEqual, testResponse)
+			So(calls, ShouldResemble, []string{
+				"-> doNothing",
+				"-> successHandler",
+				"<- successHandler",
+				"<- doNothing",
+			})
+		})
+
+		Convey("Nils are OK", func() {
+			resp, err := callChain(ChainUnaryServerInterceptors(nil, doNothing, nil, nil), successHandler)
 			So(err, ShouldBeNil)
 			So(resp, ShouldEqual, testResponse)
 			So(calls, ShouldResemble, []string{
