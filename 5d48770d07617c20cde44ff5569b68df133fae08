@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34bf392a_8a3b81cf",
+        "filename": "grpc/grpcutil/interceptors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-27T21:58:11Z",
+      "side": 1,
+      "message": "this mutates input. at least document it",
+      "range": {
+        "startLine": 30,
+        "startChar": 13,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "5d48770d07617c20cde44ff5569b68df133fae08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
