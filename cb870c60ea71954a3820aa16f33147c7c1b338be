@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "221f18a8_296171df",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-27T19:26:29Z",
+      "side": 1,
+      "message": "using spanner.CommitTime would be simpler and would bring Spanner\u0027s guarantee of exact timing when the task was created. WDYT?",
+      "range": {
+        "startLine": 62,
+        "startChar": 18,
+        "endLine": 62,
+        "endChar": 28
+      },
+      "revId": "cb870c60ea71954a3820aa16f33147c7c1b338be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
