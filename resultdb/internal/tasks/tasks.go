@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -121,6 +122,7 @@ func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (in
 		})
 		switch {
 		case grpc.Code(err) == codes.NotFound:
+			logging.Warningf(ctx, "task %s/%s not found: %s", typ, id, err)
 			return ErrConflict
 
 		case err != nil:
