@@ -22,6 +22,30 @@
       "revId": "5d48770d07617c20cde44ff5569b68df133fae08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "522cf1f4_61bb0d0b",
+        "filename": "grpc/grpcutil/interceptors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-27T22:08:28Z",
+      "side": 1,
+      "message": "Made it not to mutate inputs.",
+      "parentUuid": "34bf392a_8a3b81cf",
+      "range": {
+        "startLine": 30,
+        "startChar": 13,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "5d48770d07617c20cde44ff5569b68df133fae08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
