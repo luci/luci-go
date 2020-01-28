@@ -135,6 +135,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			"IncludedInvocationId": includedID,
 		}))
 	}
+
 	ms = append(ms, tasks.EnqueueBQExport(invID, s.DerivedInvBQTable, clock.Now(ctx)))
 
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {

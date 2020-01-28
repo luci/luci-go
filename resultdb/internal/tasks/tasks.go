@@ -60,6 +60,7 @@ func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface
 		"TaskId":       taskID,
 		"InvocationId": invID,
 		"Payload":      payload,
+		"CreateTime":   spanner.CommitTimestamp,
 		"ProcessAfter": processAfter,
 	})
 }
