@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b9b737ae_e71b5856",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-28T20:41:40Z",
+      "side": 1,
+      "message": "I had first added this to processingLoop, but I thought it made it harder to read. Also, I thought it would be easier to move out into utilities later if we needed to, or even remove it if we wanted.",
+      "parentUuid": "55f3e5a0_7d295556",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 20
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "893c8af5_81f754b9",
         "filename": "resultdb/internal/backend/backend.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a648b10_1c5229e8",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-28T20:41:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "893c8af5_81f754b9",
+      "range": {
+        "startLine": 40,
+        "startChar": 28,
+        "endLine": 40,
+        "endChar": 41
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c6334ca6_f8c8a6b8",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-28T20:41:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5de5a52_9cfcee27",
+      "range": {
+        "startLine": 42,
+        "startChar": 27,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fbaea7d7_84aee391",
         "filename": "resultdb/internal/backend/backend.go",
         "patchSetId": 6
@@ -91,6 +163,30 @@
       "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43238a55_5e9add19",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-28T20:41:40Z",
+      "side": 1,
+      "message": "I made this into an inline func that only calls .Err() when running. PTAL.",
+      "parentUuid": "fbaea7d7_84aee391",
+      "range": {
+        "startLine": 56,
+        "startChar": 55,
+        "endLine": 56,
+        "endChar": 64
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
