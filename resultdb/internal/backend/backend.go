@@ -60,6 +60,7 @@ type Options struct {
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
 	for _, taskType := range tasks.AllTypes {
+		taskType := taskType
 		activity := fmt.Sprintf("resultdb.task.%s", taskType)
 		srv.RunInBackground(activity, func(ctx context.Context) {
 			runInvocationTasks(ctx, taskType)
