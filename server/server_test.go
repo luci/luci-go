@@ -48,7 +48,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/secrets"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -283,14 +282,6 @@ func testContextFeatures(ctx context.Context) (err error) {
 		}
 	}()
 
-	// Secrets work.
-	switch s, err := secrets.GetSecret(ctx, "secret_name"); {
-	case err != nil:
-		return errors.Annotate(err, "secrets").Err()
-	case len(s.Current) == 0:
-		return errors.Reason("unexpectedly got empty secret").Err()
-	}
-
 	// Client auth works (a test for advanced features is in TestServer).
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes("A", "B"))
 	if err != nil {
@@ -365,7 +356,6 @@ func BenchmarkServer(b *testing.B) {
 	// The route we are going to hit from the benchmark.
 	srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
 		logging.Infof(c.Context, "Hello, world")
-		secrets.GetSecret(c.Context, "key-name") // e.g. checking XSRF token
 		for i := 0; i < 10; i++ {
 			// E.g. calling bunch of Cloud APIs.
 			ts, _ := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes("A", "B", "C"))
@@ -441,28 +431,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 		return nil, err
 	}
 	ctx = lucictx.SetLocalAuth(ctx, la)
-
-	// Contortions to cleanup on all possible failures.
-	var cleanup []*os.File
-	doCleanup := func() {
-		authSrv.Stop(ctx)
-		for _, f := range cleanup {
-			os.Remove(f.Name())
-		}
-	}
-	defer func() {
-		if err != nil {
-			doCleanup()
-		} else {
-			srv.cleanup = doCleanup
-		}
-	}()
-
-	tmpSecret, err := tempJSONFile(&secrets.Secret{Current: []byte("test secret")})
-	if err != nil {
-		return nil, err
-	}
-	cleanup = append(cleanup, tmpSecret)
+	srv.cleanup = func() { authSrv.Stop(ctx) }
 
 	var opts Options
 	if o != nil {
@@ -472,7 +441,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.Prod = true
 	opts.HTTPAddr = "main_addr"
 	opts.AdminAddr = "admin_addr"
-	opts.RootSecretPath = tmpSecret.Name()
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
 
 	opts.testSeed = 1
@@ -490,6 +458,7 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	}
 
 	if srv.Server, err = New(ctx, opts, nil); err != nil {
+		srv.cleanup()
 		return nil, err
 	}
 
