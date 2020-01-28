@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package cfgmodule
 
 import (
 	"bytes"
@@ -22,8 +22,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,7 +33,7 @@ func TestInstallHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("Initialization of validator, validation routes and handlers", t, func() {
-		rules := RuleSet{}
+		rules := validation.RuleSet{}
 
 		r := router.New()
 		rr := httptest.NewRecorder()
@@ -99,16 +99,16 @@ func TestInstallHandlers(t *testing.T) {
 		})
 
 		Convey("Basic validationHandler call", func() {
-			rules.Add("dead", "beef", func(ctx *Context, configSet, path string, content []byte) error {
+			rules.Add("dead", "beef", func(ctx *validation.Context, configSet, path string, content []byte) error {
 				So(string(content), ShouldEqual, "content")
-				ctx.errors = append(ctx.errors, errors.New("deadbeef"))
+				ctx.Errorf("deadbeef")
 				return nil
 			})
 			valResp := valCall("dead", "beef", "content")
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(valResp, ShouldResemble, &config.ValidationResponseMessage{
 				Messages: []*config.ValidationResponseMessage_Message{{
-					Text:     "deadbeef",
+					Text:     "in \"beef\": deadbeef",
 					Severity: config.ValidationResponseMessage_ERROR,
 				}},
 			})

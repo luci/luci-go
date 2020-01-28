@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/signing"
@@ -74,7 +75,7 @@ func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, ru
 			next(c)
 		}
 	})
-	validation.InstallHandlers(r, base, rules)
+	cfgmodule.InstallHandlers(r, base, rules)
 }
 
 func errStatus(c context.Context, w http.ResponseWriter, err error, status int, msg string) {
