@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/resultdb/internal/tasks"
+	"go.chromium.org/luci/resultdb/internal/finalization"
 )
 
 // permanentInvocationTaskErrTag set in an error indicates that the err is not
@@ -64,7 +65,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				case tasks.BQExport:
 					err = exportResultsToBigQuery(ctx, invID, payload)
 				case tasks.TryFinalizeInvocation:
-					err = tryFinalizeInvocation(ctx, invID)
+					err = finalization.TryFinalizeInvocation(ctx, invID)
 				default:
 					err = errors.Reason("unexpected task type %q", taskType).Err()
 				}
