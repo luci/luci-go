@@ -16,6 +16,24 @@
       "revId": "703d0072a23667f79a2de16ef9fb1dfbcf01d524",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e577dd0_1c5b1e92",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T02:11:12Z",
+      "side": 1,
+      "message": "They are intentionally slightly different. Host interface doesn\u0027t have ListenAndServe and there\u0027s no way for a module to call RegisterUnaryServerInterceptor \"at a wrong time\". Also RegisterUnaryServerInterceptor here can register interceptors only after modules have done their registration (updated the comment to reflect that).",
+      "parentUuid": "7f43770d_5c725e78",
+      "revId": "703d0072a23667f79a2de16ef9fb1dfbcf01d524",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
