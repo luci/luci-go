@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -26,12 +27,39 @@ import (
 	"go.chromium.org/luci/server"
 )
 
+// ThrottledLogger emits a log item at most every MinHeartbeatInterval.
+//
+// Its zero-value emits a debug-level log every time Beat() is called.
+type ThrottledLogger struct {
+	MinHeartbeatInterval time.Duration
+	Level                logging.Level
+	lastHeartbeat        time.Time
+	mu                   sync.Mutex
+}
+
+// Beat emits a log item if lastHeartbeat was longer than MinHeartbeatInterval
+// ago.
+func (tl *ThrottledLogger) Beat(ctx context.Context, format string, args ...interface{}) {
+	now := clock.Now(ctx)
+	tl.mu.Lock()
+	if now.Sub(tl.lastHeartbeat) > tl.MinHeartbeatInterval {
+		logging.Logf(ctx, tl.Level, format, args...)
+		tl.lastHeartbeat = now
+	}
+	tl.mu.Unlock()
+}
+
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (minInterval) and backs off linearly
 // on errors.
 func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {
+	defer logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
 	attempt := 0
+	var iterationCounter int64
+	tl := ThrottledLogger{MinHeartbeatInterval: 5 * time.Minute}
 	for ctx.Err() == nil {
+		iterationCounter++
+		tl.Beat(ctx, "%d iterations have run since start-up", iterationCounter)
 		start := clock.Now(ctx)
 		if err := f(ctx); err == nil {
 			attempt = 0
