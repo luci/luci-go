@@ -50,6 +50,7 @@ func tryFinalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 		return nil
 
 	default:
+		logging.Infof(ctx, "finalizing %s...", invID.Name())
 		return finalizeInvocation(ctx, invID)
 	}
 }
