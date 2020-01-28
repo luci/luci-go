@@ -15,18 +15,27 @@
 // Package server implements an environment for running LUCI servers.
 //
 // It interprets command line flags and initializes the serving environment with
-// following services available via context.Context:
+// the following base services available via context.Context:
 //   * go.chromium.org/luci/common/logging: Logging.
 //   * go.chromium.org/luci/common/trace: Tracing.
 //   * go.chromium.org/luci/server/caching: Process cache.
-//   * go.chromium.org/luci/server/secrets: Secrets (optional).
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
 //
-// Minimal usage example:
+// Other functionality is optional and provided by modules (objects implementing
+// module.Module interface). They should be passed to the server when it starts.
+//
+// Usage example:
 //
 //   func main() {
-//     server.Main(nil, nil, func(srv *server.Server) error {
-//       // Initialize global state, change root context.
+//     // When copying, please pick only modules you need.
+//     modules := []module.Module{
+//       gaeemulation.NewModuleFromFlags(),
+//       limiter.NewModuleFromFlags(),
+//       redisconn.NewModuleFromFlags(),
+//       secrets.NewModuleFromFlags(),
+//     }
+//     server.Main(nil, modules, func(srv *server.Server) error {
+//       // Initialize global state, change root context (if necessary).
 //       if err := initializeGlobalStuff(srv.Context); err != nil {
 //         return err
 //       }
@@ -49,7 +58,6 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -173,8 +181,6 @@ type Options struct {
 	HTTPAddr  string // address to bind the main listening socket to
 	AdminAddr string // address to bind the admin socket to, ignored on GAE
 
-	RootSecretPath string // path to a JSON file with the root secret key
-
 	ClientAuth      clientauth.Options // base settings for client auth options
 	TokenCacheDir   string             // where to cache auth tokens (optional)
 	AuthDBPath      string             // if set, load AuthDB from a file
@@ -209,7 +215,6 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
-	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key, or literal \":dev\" for development not-really-a-secret")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
 		"service-account-json",
@@ -432,9 +437,8 @@ type Server struct {
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
 	cleanup  []func(context.Context)
 
-	secrets *secrets.DerivedStore // indirectly used to derive XSRF tokens and such, may be nil
-	tsmon   *tsmon.State          // manages flushing of tsmon metrics
-	sampler octrace.Sampler       // trace sampler to use for top level spans
+	tsmon   *tsmon.State    // manages flushing of tsmon metrics
+	sampler octrace.Sampler // trace sampler to use for top level spans
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
@@ -541,9 +545,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	// Configure base server subsystems by injecting them into the root context
 	// inherited later by all requests.
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
-	if err := srv.initSecrets(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize secrets store").Err()
-	}
 	if err := srv.initAuth(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize auth").Err()
 	}
@@ -1124,70 +1125,6 @@ func (s *Server) initLogging() {
 		}, nil),
 	)
 	s.Context = logging.SetLevel(s.Context, logging.Debug)
-}
-
-// initSecrets reads the initial root secret (if provided) and launches a job to
-// periodically reread it.
-//
-// An error to read the secret when the server starts is fatal. But if the
-// server managed to start successfully but can't re-read the secret later
-// (e.g. the file disappeared), it logs the error and keeps using the cached
-// secret.
-func (s *Server) initSecrets() error {
-	secret, err := s.readRootSecret()
-	switch {
-	case err != nil:
-		return err
-	case secret == nil:
-		return nil
-	}
-	s.secrets = secrets.NewDerivedStore(*secret)
-	s.Context = secrets.Set(s.Context, s.secrets)
-
-	s.RunInBackground("luci.secrets", func(c context.Context) {
-		for {
-			if r := <-clock.After(c, time.Minute); r.Err != nil {
-				return // the context is canceled
-			}
-			secret, err := s.readRootSecret()
-			if secret == nil {
-				logging.WithError(err).Errorf(c, "Failed to re-read the root secret, using the cached one")
-			} else {
-				s.secrets.SetRoot(*secret)
-			}
-		}
-	})
-	return nil
-}
-
-// readRootSecret reads the secret from a path specified via -root-secret-path.
-//
-// Returns nil if the secret is not configured. Returns an error if the secret
-// is configured, but could not be loaded.
-func (s *Server) readRootSecret() (*secrets.Secret, error) {
-	switch {
-	case s.Options.RootSecretPath == "":
-		return nil, nil // not configured
-	case s.Options.RootSecretPath == ":dev" && !s.Options.Prod:
-		return &secrets.Secret{Current: []byte("dev-non-secret")}, nil
-	case s.Options.RootSecretPath == ":dev" && s.Options.Prod:
-		return nil, errors.Reason("-root-secret-path \":dev\" is not allowed in production mode").Err()
-	}
-
-	f, err := os.Open(s.Options.RootSecretPath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	secret := &secrets.Secret{}
-	if err = json.NewDecoder(f).Decode(secret); err != nil {
-		return nil, errors.Annotate(err, "not a valid JSON").Err()
-	}
-	if len(secret.Current) == 0 {
-		return nil, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
-	}
-	return secret, nil
 }
 
 // initAuth initializes auth system by preparing the context, pre-warming caches
