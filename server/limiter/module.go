@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
-const defaultMaxConccurentRPCs = 100000 // e.g. unlimited
+const defaultMaxConcurrentRPCs = 100000 // e.g. unlimited
 
 // ModuleOptions contains configuration of the server module that installs
 // default limiters applied to all routes/services in the server.
@@ -37,7 +37,7 @@ type ModuleOptions struct {
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	if o.MaxConcurrentRPCs == 0 {
-		o.MaxConcurrentRPCs = defaultMaxConccurentRPCs
+		o.MaxConcurrentRPCs = defaultMaxConcurrentRPCs
 	}
 	f.Int64Var(
 		&o.MaxConcurrentRPCs,
@@ -89,7 +89,7 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	// Now that options are parsed by the server we can validate them and
 	// construct a limiter from them.
 	if m.opts.MaxConcurrentRPCs == 0 {
-		m.opts.MaxConcurrentRPCs = defaultMaxConccurentRPCs
+		m.opts.MaxConcurrentRPCs = defaultMaxConcurrentRPCs
 	}
 	var err error
 	m.rpcLimiter, err = New(Options{
