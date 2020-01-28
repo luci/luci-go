@@ -113,7 +113,7 @@ func TestInclude(t *testing.T) {
 				insInv("included", pb.Invocation_ACTIVE, ct, nil),
 			)
 			_, err := recorder.Include(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/included is not finalized`)
+			So(err, ShouldBeNil)
 		})
 
 		Convey(`idempotent`, func() {
