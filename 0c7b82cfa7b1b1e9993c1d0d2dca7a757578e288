@@ -474,6 +474,30 @@
     },
     {
       "key": {
+        "uuid": "86f32a99_e673fe71",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-28T09:19:21Z",
+      "side": 1,
+      "message": "Done. PTAL",
+      "parentUuid": "dbf0417c_c8f6d042",
+      "range": {
+        "startLine": 75,
+        "startChar": 28,
+        "endLine": 75,
+        "endChar": 30
+      },
+      "revId": "0c7b82cfa7b1b1e9993c1d0d2dca7a757578e288",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ef33a7f_a4acdad4",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
