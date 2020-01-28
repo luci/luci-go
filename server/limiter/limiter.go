@@ -55,7 +55,7 @@ var (
 		field.String("reason"))  // why the request was rejected
 )
 
-// Options contains overall configuration of a Limiter instance.
+// Options contains configuration of a single Limiter instance.
 type Options struct {
 	Name                  string // used for metric fields, logs and error messages
 	AdvisoryMode          bool   // if true, don't actually reject requests, just log
