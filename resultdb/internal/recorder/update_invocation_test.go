@@ -102,7 +102,7 @@ func TestUpdateInvocation(t *testing.T) {
 		recorder := newTestRecorderServer()
 
 		const token = "update token"
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(clock.Now(ctx).Add(day))
 		updateMask := &field_mask.FieldMask{

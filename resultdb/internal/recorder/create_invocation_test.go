@@ -245,7 +245,7 @@ func TestCreateInvocation(t *testing.T) {
 			})
 			So(inv, ShouldResembleProto, expected)
 
-			So(headers.Get(updateTokenMetadataKey), ShouldHaveLength, 1)
+			So(headers.Get(UpdateTokenMetadataKey), ShouldHaveLength, 1)
 
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()

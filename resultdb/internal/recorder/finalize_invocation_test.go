@@ -58,7 +58,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		ct := testclock.TestRecentTimeUTC
 
 		const token = "update token"
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`finalized failed`, func() {
 			MustApply(ctx,

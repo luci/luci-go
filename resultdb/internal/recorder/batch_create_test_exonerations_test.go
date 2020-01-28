@@ -130,7 +130,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		recorder := newTestRecorderServer()
 
 		const token = "update token"
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`Invalid request`, func() {
 			req := &pb.BatchCreateTestExonerationsRequest{

@@ -72,7 +72,7 @@ func TestInclude(t *testing.T) {
 		recorder := newTestRecorderServer()
 
 		const token = "update token"
-		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		insInv := InsertInvocation
 		ct := testclock.TestRecentTimeUTC
