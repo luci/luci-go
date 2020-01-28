@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -42,6 +43,7 @@ const (
 func Main(init func(srv *server.Server) error) {
 	modules := []module.Module{
 		limiter.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 	}
 
 	spannerDB := flag.String("spanner-database", "", "Name of the spanner database to connect to")
