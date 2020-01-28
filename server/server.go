@@ -20,7 +20,6 @@
 //   * go.chromium.org/luci/common/trace: Tracing.
 //   * go.chromium.org/luci/server/caching: Process cache.
 //   * go.chromium.org/luci/server/secrets: Secrets (optional).
-//   * go.chromium.org/luci/server/settings: Access to app settings (optional).
 //   * go.chromium.org/luci/server/auth: Making authenticated calls.
 //
 // Minimal usage example:
@@ -108,7 +107,6 @@ import (
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
-	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/tsmon"
 )
 
@@ -176,7 +174,6 @@ type Options struct {
 	AdminAddr string // address to bind the admin socket to, ignored on GAE
 
 	RootSecretPath string // path to a JSON file with the root secret key
-	SettingsPath   string // path to a JSON file with app settings
 
 	ClientAuth      clientauth.Options // base settings for client auth options
 	TokenCacheDir   string             // where to cache auth tokens (optional)
@@ -219,7 +216,6 @@ func (o *Options) Register(f *flag.FlagSet) {
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
 	f.StringVar(&o.AdminAddr, "admin-addr", o.AdminAddr, "Address to bind the admin socket to")
 	f.StringVar(&o.RootSecretPath, "root-secret-path", o.RootSecretPath, "Path to a JSON file with the root secret key, or literal \":dev\" for development not-really-a-secret")
-	f.StringVar(&o.SettingsPath, "settings-path", o.SettingsPath, "Path to a JSON file with app settings")
 	f.StringVar(
 		&o.ClientAuth.ServiceAccountJSONPath,
 		"service-account-json",
@@ -453,10 +449,9 @@ type Server struct {
 	cleanupM sync.Mutex // protects 'cleanup' and actual cleanup critical section
 	cleanup  []func(context.Context)
 
-	secrets  *secrets.DerivedStore     // indirectly used to derive XSRF tokens and such, may be nil
-	settings *settings.ExternalStorage // backing store for settings.Get(...) API
-	tsmon    *tsmon.State              // manages flushing of tsmon metrics
-	sampler  octrace.Sampler           // trace sampler to use for top level spans
+	secrets *secrets.DerivedStore // indirectly used to derive XSRF tokens and such, may be nil
+	tsmon   *tsmon.State          // manages flushing of tsmon metrics
+	sampler octrace.Sampler       // trace sampler to use for top level spans
 
 	authM        sync.RWMutex
 	authPerScope map[string]scopedAuth // " ".join(scopes) => ...
@@ -560,9 +555,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	srv.Context = caching.WithProcessCacheData(srv.Context, caching.NewProcessCacheData())
 	if err := srv.initSecrets(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize secrets store").Err()
-	}
-	if err := srv.initSettings(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize settings").Err()
 	}
 	if err := srv.initAuth(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize auth").Err()
@@ -1180,52 +1172,6 @@ func (s *Server) readRootSecret() (*secrets.Secret, error) {
 		return nil, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
 	}
 	return secret, nil
-}
-
-// initSettings reads the initial settings and launches a job to periodically
-// reread them.
-//
-// Does nothing is if -settings-path is not set: settings are optional. If
-// -settings-path is set, it must point to a structurally valid JSON file or
-// the server will fail to start.
-func (s *Server) initSettings() error {
-	if !s.Options.Prod && s.Options.SettingsPath == "" {
-		// In dev mode use settings backed by memory.
-		s.Context = settings.Use(s.Context, settings.New(&settings.MemoryStorage{}))
-	} else {
-		// In prod mode use setting backed by a file (if any).
-		s.settings = &settings.ExternalStorage{}
-		s.Context = settings.Use(s.Context, settings.New(s.settings))
-	}
-
-	if s.Options.SettingsPath == "" {
-		return nil
-	}
-	if err := s.loadSettings(s.Context); err != nil {
-		return err
-	}
-
-	s.RunInBackground("luci.settings", func(c context.Context) {
-		for {
-			if r := <-clock.After(c, 30*time.Second); r.Err != nil {
-				return // the context is canceled
-			}
-			if err := s.loadSettings(c); err != nil {
-				logging.WithError(err).Errorf(c, "Failed to reload settings, using the cached ones")
-			}
-		}
-	})
-	return nil
-}
-
-// loadSettings loads settings from a path specified via -settings-path.
-func (s *Server) loadSettings(c context.Context) error {
-	f, err := os.Open(s.Options.SettingsPath)
-	if err != nil {
-		return errors.Annotate(err, "failed to open settings file").Err()
-	}
-	defer f.Close()
-	return s.settings.Load(c, f)
 }
 
 // initAuth initializes auth system by preparing the context, pre-warming caches

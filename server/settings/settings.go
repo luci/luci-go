@@ -18,6 +18,8 @@
 // Settings are represented as (key, value) pairs, where value is JSON
 // serializable struct. Settings are cached internally in the process memory to
 // avoid hitting the storage all the time.
+//
+// DEPRECATED. Available only on GAEv1. Use command line flags instead.
 package settings
 
 import (
