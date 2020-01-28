@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f43770d_5c725e78",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T01:58:22Z",
+      "side": 1,
+      "message": "considered referring to the doc on Host iface to avoid out-of-sync copy-pasta?",
+      "revId": "703d0072a23667f79a2de16ef9fb1dfbcf01d524",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
