@@ -43,6 +43,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 	err = parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
+			ctx := logging.SetField(ctx, "task_id", id)
 			workC <- func() (err error) {
 				// Annotate the returned error with the task id.
 				defer func() {
@@ -70,7 +71,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				}
 				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
-						logging.Errorf(ctx, "permanent failure to process task %s: %s", id, err)
+						logging.Errorf(ctx, "permanent failure to process the task: %s", err)
 						return tasks.Delete(ctx, taskType, id)
 					}
 					return err
