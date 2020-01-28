@@ -18,6 +18,8 @@ package module
 
 import (
 	"context"
+
+	"google.golang.org/grpc"
 )
 
 // Module represents some optional part of a server.
@@ -68,7 +70,6 @@ type HostOptions struct {
 //
 // TODO(vadimsh):
 //  * Allow adding a middleware to the default middleware chain.
-//  * Allow adding an interceptor to the pRPC server interceptor chain.
 //  * Allow registering HTTP routes.
 //  * Allow registering pRPC servers.
 type Host interface {
@@ -92,4 +93,12 @@ type Host interface {
 	//
 	// It receives the global server context.
 	RegisterCleanup(cb func(context.Context))
+
+	// RegisterUnaryServerInterceptor registers an grpc.UnaryServerInterceptor
+	// applied to all unary RPCs that hit the server.
+	//
+	// Interceptors are chained in order they are registered, which matches
+	// the order of modules in the list of modules. The first registered
+	// interceptor becomes the outermost.
+	RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor)
 }

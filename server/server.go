@@ -64,6 +64,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"go.opencensus.io/exporter/stackdriver/propagation"
@@ -101,7 +102,6 @@ import (
 	"go.chromium.org/luci/server/auth/authdb/dump"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/internal"
-	"go.chromium.org/luci/server/limiter"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/portal"
@@ -191,9 +191,6 @@ type Options struct {
 
 	ContainerImageID string // ID of the container image with this binary, for logs (optional)
 
-	LimiterMaxConcurrentRPCs int64 // limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)
-	LimiterAdvisoryMode      bool  // if set, don't enforce LimiterMaxConcurrentRPCs, but still report violations
-
 	testSeed      int64                   // used to seed rng in tests
 	testStdout    sdlogger.LogEntryWriter // mocks stdout in tests
 	testStderr    sdlogger.LogEntryWriter // mocks stderr in tests
@@ -208,9 +205,6 @@ func (o *Options) Register(f *flag.FlagSet) {
 	}
 	if o.AdminAddr == "" {
 		o.AdminAddr = "127.0.0.1:8900"
-	}
-	if o.LimiterMaxConcurrentRPCs == 0 {
-		o.LimiterMaxConcurrentRPCs = 100000
 	}
 	f.BoolVar(&o.Prod, "prod", o.Prod, "Switch the server into production mode")
 	f.StringVar(&o.HTTPAddr, "http-addr", o.HTTPAddr, "Address to bind the main listening socket to")
@@ -293,18 +287,6 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"container-image-id",
 		o.ContainerImageID,
 		"ID of the container image with this binary, for logs (optional)",
-	)
-	f.Int64Var(
-		&o.LimiterMaxConcurrentRPCs,
-		"limiter-max-concurrent-rpcs",
-		o.LimiterMaxConcurrentRPCs,
-		"Limit on a number of incoming concurrent RPCs (default is 100000, i.e. unlimited)",
-	)
-	f.BoolVar(
-		&o.LimiterAdvisoryMode,
-		"limiter-advisory-mode",
-		o.LimiterAdvisoryMode,
-		"If set, don't enforce -limiter-max-concurrent-rpcs, but still report violations",
 	)
 }
 
@@ -426,8 +408,6 @@ type Server struct {
 	startTime   time.Time    // for calculating uptime for /healthz
 	lastReqTime atomic.Value // time.Time when the last request finished
 
-	rpcLimiter *limiter.Limiter // limits in-flight RPCs in the main port
-
 	stdout sdlogger.LogEntryWriter // for logging to stdout, nil in dev mode
 	stderr sdlogger.LogEntryWriter // for logging to stderr, nil in dev mode
 
@@ -439,6 +419,9 @@ type Server struct {
 	stopped bool          // true inside and after Shutdown
 	ready   chan struct{} // closed right before starting the serving loop
 	done    chan struct{} // closed after Shutdown returns
+
+	// See RegisterUnaryServerInterceptor and ListenAndServe.
+	unaryInterceptors []grpc.UnaryServerInterceptor
 
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
@@ -487,6 +470,11 @@ func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context
 func (h *moduleHostImpl) RegisterCleanup(cb func(context.Context)) {
 	h.panicIfInvalid()
 	h.srv.RegisterCleanup(cb)
+}
+
+func (h *moduleHostImpl) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
+	h.panicIfInvalid()
+	h.srv.RegisterUnaryServerInterceptor(intr)
 }
 
 // New constructs a new server instance.
@@ -564,9 +552,6 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	if err := srv.initTracing(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
-	}
-	if err := srv.initRPCLimiter(); err != nil {
-		return srv, errors.Annotate(err, "failed to initialize RPC limiter").Err()
 	}
 	if err := srv.initMainPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
@@ -708,6 +693,29 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 	}()
 }
 
+// RegisterUnaryServerInterceptor registers an grpc.UnaryServerInterceptor
+// applied to all unary RPCs that hit the server.
+//
+// Interceptors are chained in order they are registered, i.e. the first
+// registered interceptor becomes the outermost. The initial chain already
+// contains some base interceptors (e.g. for monitoring) and all interceptors
+// registered by server modules. RegisterUnaryServerInterceptor extends this
+// chain.
+//
+// An interceptor set in server.PRPC.UnaryServerInterceptor (if any) is
+// automatically registered as the last (innermost) one right before the server
+// starts listening for requests in ListenAndServe.
+//
+// Should be called before ListenAndServe (panics otherwise).
+func (s *Server) RegisterUnaryServerInterceptor(intr grpc.UnaryServerInterceptor) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started {
+		s.Fatal(errors.Reason("the server has already been started").Err())
+	}
+	s.unaryInterceptors = append(s.unaryInterceptors, intr)
+}
+
 // ListenAndServe launches the serving loop.
 //
 // Blocks forever or until the server is stopped via Shutdown (from another
@@ -718,22 +726,30 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 // Should be called only once. Panics otherwise.
 func (s *Server) ListenAndServe() error {
 	s.mu.Lock()
-	wasRunning := s.started
-	ports := append(make([]*Port, 0, len(s.ports)), s.ports...)
-	s.started = true
-	s.mu.Unlock()
-	if wasRunning {
+	if s.started {
+		s.mu.Unlock()
 		s.Fatal(errors.Reason("the server has already been started").Err())
 	}
+	s.started = true
 
-	// Put our base interceptors in front of whatever interceptors were installed
-	// by the user of Server via public s.PRPC.UnaryServerInterceptor.
-	s.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(
+	ports := append(make([]*Port, 0, len(s.ports)), s.ports...)
+
+	// Assemble the interceptor chain. Put our base interceptors in front of
+	// whatever interceptors were installed by modules and by the user of Server
+	// via public s.PRPC.UnaryServerInterceptor.
+	interceptors := []grpc.UnaryServerInterceptor{
 		grpcmon.UnaryServerInterceptor,
-		limiter.NewUnaryServerInterceptor(s.rpcLimiter),
 		grpcutil.UnaryServerPanicCatcherInterceptor,
-		s.PRPC.UnaryServerInterceptor,
-	)
+	}
+	interceptors = append(interceptors, s.unaryInterceptors...)
+	if s.PRPC.UnaryServerInterceptor != nil {
+		interceptors = append(interceptors, s.PRPC.UnaryServerInterceptor)
+	}
+
+	s.mu.Unlock()
+
+	// Install the interceptor chain.
+	s.PRPC.UnaryServerInterceptor = grpcutil.ChainUnaryServerInterceptors(interceptors...)
 
 	// Catch SIGTERM while inside this function. Upon receiving SIGTERM, wait
 	// until the pod is removed from the load balancer before actually shutting
@@ -1550,37 +1566,6 @@ func (s *Server) initTracing() error {
 
 	// Do the final flush before exiting.
 	s.RegisterCleanup(func(context.Context) { exporter.Flush() })
-	return nil
-}
-
-// initRPCLimiter initializes a limiter on number of concurrent RPCs.
-func (s *Server) initRPCLimiter() error {
-	// Initialize the limiter now to detect any configuration errors. It will be
-	// installed as gRPC interceptor later in ListenAndServe (with the rest of
-	// the interceptors).
-	var err error
-	s.rpcLimiter, err = limiter.New(limiter.Options{
-		Name:                  "rpc",
-		AdvisoryMode:          s.Options.LimiterAdvisoryMode,
-		MaxConcurrentRequests: s.Options.LimiterMaxConcurrentRPCs,
-	})
-	if err != nil {
-		return err
-	}
-
-	// We want limiter's metrics to be reported before every flush (so the flushed
-	// values are as fresh as possible) and also once per second (to make the
-	// limiter state observable through /admin/portal/tsmon/metrics debug UI).
-	tsmoncommon.RegisterCallbackIn(s.Context, s.rpcLimiter.ReportMetrics)
-	s.RunInBackground("luci.limiter.rpc", func(c context.Context) {
-		for {
-			s.rpcLimiter.ReportMetrics(c)
-			if r := <-clock.After(c, time.Second); r.Err != nil {
-				return // the context is canceled
-			}
-		}
-	})
-
 	return nil
 }
 

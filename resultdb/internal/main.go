@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/limiter"
+	"go.chromium.org/luci/server/module"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -38,9 +40,13 @@ const (
 //
 // Registers -spanner-database flag and initializes a Spanner client.
 func Main(init func(srv *server.Server) error) {
+	modules := []module.Module{
+		limiter.NewModuleFromFlags(),
+	}
+
 	spannerDB := flag.String("spanner-database", "", "Name of the spanner database to connect to")
 
-	server.Main(nil, nil, func(srv *server.Server) error {
+	server.Main(nil, modules, func(srv *server.Server) error {
 		var err error
 		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB); err != nil {
 			return err
@@ -50,6 +56,7 @@ func Main(init func(srv *server.Server) error) {
 	})
 }
 
+// TODO(vadimsh): Move to a module.Module.
 func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context, error) {
 	if dbFlag == "" {
 		return ctx, errors.Reason("-spanner-database flag is required").Err()
