@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2551e1a9_30c31430",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T05:36:58Z",
+      "side": 1,
+      "message": "Well, I believe server.Server uses \u003c10 values, even with all available modules enabled. Note that I didn\u0027t remove cacheContext from GAE code paths.",
+      "parentUuid": "19722e2b_f8e26eae",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 33
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ad6621c_379527c7",
         "filename": "common/data/caching/cacheContext/context.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "d88533f0a1accf85103a524308c540b369cec85a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31db163f_965acd1c",
+        "filename": "common/data/caching/cacheContext/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T05:36:58Z",
+      "side": 1,
+      "message": "It is read/write lock, so only two atomic ops on a happy path (one in RLock, another in RUnlock). But looks like they are still slower than traversing linked lists.",
+      "parentUuid": "6ad6621c_379527c7",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 13
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "dc217f6b_fe82a8dc",
+        "filename": "common/data/caching/cacheContext/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T05:36:58Z",
+      "side": 1,
+      "message": "No, this code path is hit in a negligible amount of cases. It\u0027s mostly \"correctess\" fix. Users of RW locks need to double check the condition after grabbing the exclusive lock.",
+      "parentUuid": "13367af8_b55a51f4",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bac8cc4_90f51bff",
         "filename": "common/data/caching/cacheContext/context_test.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "bfc8917a_26bae9eb",
+        "filename": "common/data/caching/cacheContext/context_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T05:36:58Z",
+      "side": 1,
+      "message": "🤷‍♂️",
+      "parentUuid": "0bac8cc4_90f51bff",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 6
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a9c6530_690146d3",
         "filename": "common/data/caching/cacheContext/context_test.go",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "d88533f0a1accf85103a524308c540b369cec85a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df2c9da6_2aee6670",
+        "filename": "common/data/caching/cacheContext/context_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-28T05:36:58Z",
+      "side": 1,
+      "message": "There\u0027s only one caching context here. If something is derived from it, it becomes regular context.Context. Grabbing a value from it would result in linked list traversal, until it hits cachingContext node, which will then use hash table.",
+      "parentUuid": "0a9c6530_690146d3",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 0
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
