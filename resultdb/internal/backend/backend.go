@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -26,12 +27,42 @@ import (
 	"go.chromium.org/luci/server"
 )
 
+// ThrottledLogger emits a log item at most every MinLogInterval.
+//
+// Its zero-value emits a debug-level log every time Log() is called.
+type ThrottledLogger struct {
+	MinLogInterval time.Duration
+	Level          logging.Level
+	lastLog        time.Time
+	mu             sync.Mutex
+}
+
+// Log emits a log item at most once every MinLogInterval.
+func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...interface{}) {
+	now := clock.Now(ctx)
+	tl.mu.Lock()
+	if now.Sub(tl.lastLog) > tl.MinLogInterval {
+		logging.Logf(ctx, tl.Level, format, args...)
+		tl.lastLog = now
+	}
+	tl.mu.Unlock()
+}
+
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (minInterval) and backs off linearly
 // on errors.
 func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {
+	defer func() {
+		if ctx.Err() != nil {
+			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
+		}
+	}()
 	attempt := 0
+	var iterationCounter int64
+	tl := ThrottledLogger{MinLogInterval: 5 * time.Minute}
 	for ctx.Err() == nil {
+		iterationCounter++
+		tl.Log(ctx, "%d iterations have run since start-up", iterationCounter)
 		start := clock.Now(ctx)
 		if err := f(ctx); err == nil {
 			attempt = 0
