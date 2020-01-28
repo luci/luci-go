@@ -79,7 +79,6 @@ import (
 	octrace "go.opencensus.io/trace"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/caching/cacheContext"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -677,7 +676,6 @@ func (s *Server) RunInBackground(activity string, f func(context.Context)) {
 			// as soon as bgrDone is signaled.
 			ctx, cancel := context.WithCancel(s.Context)
 			ctx = logging.SetField(ctx, "activity", activity)
-			ctx = cacheContext.Wrap(ctx)
 			defer cancel()
 			go func() {
 				select {
@@ -1059,8 +1057,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		}, annotateWithSpan))
 	}
 
-	ctx = caching.WithRequestCache(ctx)
-	c.Context = cacheContext.Wrap(ctx)
+	c.Context = caching.WithRequestCache(ctx)
 	next(c)
 }
 
@@ -1344,9 +1341,7 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 		return s.Options.testAuthDB, nil
 	}
 
-	// Loading from a local file.
-	//
-	// TODO(vadimsh): Get rid of this once -auth-service-host is deployed.
+	// Loading from a local file (useful in integration tests).
 	if s.Options.AuthDBPath != "" {
 		r, err := os.Open(s.Options.AuthDBPath)
 		if err != nil {
