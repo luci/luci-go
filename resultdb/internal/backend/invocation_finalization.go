@@ -32,6 +32,47 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
+// Invocation finalization is asynchronous. First, an invocation transitions
+// from ACTIVE to FINALIZING state and transactionally a invocation task is
+// enqueued to try to transition it from FINALIZING to FINALIZED.
+// Then the task tries to finalize the invocation.
+//
+// The task execution has two parts:
+// 1. Check if the invocation is ready to be finalized.
+// 2. Finalize the invocation.
+//
+// The invocation is ready to be finalized iff it is in FINALIZING state and it
+// does not include, directly or indirectly, an active invocation.
+// The latter involves a graph traversal.
+// Given that a client cannot mutate inclusions of a FINALIZING/FINALIZED
+// invocation, this means that once an invocation is ready to be finalized,
+// it cannot become un-ready. This is why the check is done in a ready-only
+// transaction with minimal contention.
+// This check is implemented in readyToFinalize() function.
+//
+// The second part is actual finalization. It is done in a separate read-write
+// transaction. First the task checks again if the invocation is still
+// FINALIZING. If so, the task changes state to FINALIZED, enqueues BQExport
+// tasks and as well as tasks to try to finalize invocations that directly
+// include the current one (more about this below).
+// The finalization is implemented in finalizeInvocation() function.
+//
+// If we have a chain of inclusions A -> B -> C, where A and B are FINALIZING
+// and A is active, then A and B are waiting for C to be finalized.
+// In this state, there maybe tasks to attempt to finalize A and B. Both of them
+// will conclude that they are not ready.
+// Then once we finalize C, a task to try to finalize B is enqueued.
+// B gets finalized and it enqueues a task to try to finalize A.
+// More generally speaking, whenever a node transitions from FINALIZING to
+// FINALIZED, we ping incoming edges. This may cause a chain of pings along
+// the edges.
+//
+// More specifically, given edge (A, B), when finalizing B, A is pinged only if
+// it is FINALIZING. It does not make sense to do it if A is FINALIZED for
+// obvious reasons; and there is no need to do it if A is ACTIVE because
+// a transition ACTIVE->FINALIZING is always accompanied with enqueuing a task
+// to try to finalize it.
+
 // tryFinalizeInvocation finalizes the invocation unless it directly or
 // indirectly includes an ACTIVE invocation.
 // If the invocation is too early to finalize, logs the reason and returns nil.
