@@ -30,23 +30,34 @@ import (
 // Ensures f is not called too often (minInterval) and backs off linearly
 // on errors.
 func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {
+	if maxSleep < minInterval {
+		panic("maxSleep < minInterval")
+	}
+
 	attempt := 0
-	for ctx.Err() == nil {
+	for {
 		start := clock.Now(ctx)
+		sleep := time.Duration(0)
 		if err := f(ctx); err == nil {
 			attempt = 0
 		} else {
 			logging.Errorf(ctx, "Iteration failed: %s", err)
 
 			attempt++
-			sleep := time.Duration(attempt) * time.Second
-			if sleep > maxSleep {
-				sleep = maxSleep
-			}
-			time.Sleep(sleep)
+			sleep = time.Duration(attempt) * time.Second
 		}
-		if sleep := minInterval - clock.Since(ctx, start); sleep > 0 {
-			time.Sleep(sleep)
+
+		if minSleep := minInterval - clock.Since(ctx, start); sleep < minSleep {
+			sleep = minSleep
+		}
+		if sleep > maxSleep {
+			sleep = maxSleep
+		}
+
+		select {
+		case <-time.After(sleep):
+		case <-ctx.Done():
+			return
 		}
 	}
 }
