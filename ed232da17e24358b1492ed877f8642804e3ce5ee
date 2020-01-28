@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45fcf38a_93656de3",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "please don\u0027t try to validate t if startTime was nil. This happens to pass just because time.Unix(0, 0).UTC() is in the past",
+      "range": {
+        "startLine": 104,
+        "startChar": 17,
+        "endLine": 104,
+        "endChar": 18
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ce6c29_024b0a68",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 108,
+        "startChar": 17,
+        "endLine": 108,
+        "endChar": 18
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69386fb0_e6fa572b",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "this name is a too short for a global function.",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 6
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0185d1ee_3150e7c8",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "i don\u0027t see a justification for this complexity. The cases I see below could be just a string literal. \n\ne() is used in conjunction with ShouldErrLike, which accepts a string or error. If it is an error, it just calls its .Error() to convert to a string, then compares string. This means we don\u0027t have to have all this complexity with errors. All we need is to return a string. \n\nthis whole function seems to have a simple job of prefixing a string to an error. Can we make it much much simpler?\n\n  func errString(args ...interface{}) {\n    strs :\u003d make([]string, len(args))\n    for i, a :\u003d range args {\n      strs[i] \u003d fmt.Sprint(a)\n    }\n    return strings.Join(strs, \": \")\n  }",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67c17c62_2515d63a",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "second param of errors.Annotate is a format string. This means, if annotation happens to have %s, then formatting will fail",
+      "range": {
+        "startLine": 87,
+        "startChar": 28,
+        "endLine": 87,
+        "endChar": 38
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d177065d_d2f8e52c",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "how is this better than e(`\"\":\"\": key\", unspecified()) ?",
+      "range": {
+        "startLine": 297,
+        "startChar": 15,
+        "endLine": 297,
+        "endChar": 50
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "553faa5c_1d118481",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T17:09:59Z",
+      "side": 1,
+      "message": "how is this better than just \"fetch_url: missing host\"?",
+      "range": {
+        "startLine": 442,
+        "startChar": 36,
+        "endLine": 442,
+        "endChar": 66
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
