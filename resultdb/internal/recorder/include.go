@@ -60,12 +60,9 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	included := span.MustParseInvocationName(in.IncludedInvocation)
 
 	err := mutateInvocation(ctx, including, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Ensure the included invocation exists and is finalized.
-		switch includedState, err := span.ReadInvocationState(ctx, txn, included); {
-		case err != nil:
+		// Ensure the included invocation exists.
+		if _, err := span.ReadInvocationState(ctx, txn, included); err != nil {
 			return err
-		case includedState != pb.Invocation_FINALIZED:
-			return appstatus.Errorf(codes.FailedPrecondition, "%s is not finalized", in.IncludedInvocation)
 		}
 
 		// Insert a new inclusion.
