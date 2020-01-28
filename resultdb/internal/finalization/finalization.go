@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package finalization
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
@@ -32,11 +33,26 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// tryFinalizeInvocation finalizes the invocation unless it directly or
+// StartInvocationFinalization changes invocation state to FINALIZING
+// and enqueues a TryFinalizeInvocation task.
+//
+// The caller is responsible for ensuring that the invocation is active.
+func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTransaction, id span.InvocationID, interrupted bool) error {
+	return txn.BufferWrite([]*spanner.Mutation{
+		span.UpdateMap("Invocations", map[string]interface{}{
+			"InvocationId": id,
+			"State":        pb.Invocation_FINALIZING,
+			"Interrupted":  interrupted,
+		}),
+		tasks.Enqueue(tasks.TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx)),
+	})
+}
+
+// TryFinalizeInvocation finalizes the invocation unless it directly or
 // indirectly includes an ACTIVE invocation.
 // If the invocation is too early to finalize, logs the reason and returns nil.
 // Idempotent.
-func tryFinalizeInvocation(ctx context.Context, invID span.InvocationID) error {
+func TryFinalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 	// The check whether the invocation is ready to finalize involves traversing
 	// the invocation graph and reading Invocations.State column. Doing so in a
 	// RW transaction will cause contention. Fortunately, once an invocation

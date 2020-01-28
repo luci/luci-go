@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/internal/finalization"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -80,7 +80,7 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 			// Finalize as requested.
 			ret.State = pb.Invocation_FINALIZING
 			ret.Interrupted = in.Interrupted
-			return tasks.StartInvocationFinalization(ctx, txn, invID, in.Interrupted)
+			return finalization.StartInvocationFinalization(ctx, txn, invID, in.Interrupted)
 		}
 	})
 
