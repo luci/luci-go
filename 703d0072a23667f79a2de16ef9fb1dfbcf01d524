@@ -34,6 +34,24 @@
       "revId": "703d0072a23667f79a2de16ef9fb1dfbcf01d524",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f173a0b3_78df4e1f",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T02:37:36Z",
+      "side": 1,
+      "message": "ha, i didn\u0027t even read this through, sorry.",
+      "parentUuid": "4e577dd0_1c5b1e92",
+      "revId": "703d0072a23667f79a2de16ef9fb1dfbcf01d524",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
