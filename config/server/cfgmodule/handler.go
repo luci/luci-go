@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package validation
+package cfgmodule
 
 import (
 	"bytes"
@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -41,7 +43,7 @@ const (
 //
 // It does not implement any authentication checks, thus the passed in
 // router.MiddlewareChain should implement any necessary authentication checks.
-func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *RuleSet) {
+func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
 	r.GET(metadataPath, base, metadataRequestHandler(rules))
 	r.POST(validationPath, base, validationRequestHandler(rules))
 }
@@ -64,7 +66,7 @@ func internalErrStatus(c context.Context, w http.ResponseWriter, msg string, err
 
 // validationRequestHandler handles the validation request from luci-config and
 // responds with the corresponding results.
-func validationRequestHandler(rules *RuleSet) router.Handler {
+func validationRequestHandler(rules *validation.RuleSet) router.Handler {
 	return func(ctx *router.Context) {
 		c, w, r := ctx.Context, ctx.Writer, ctx.Request
 
@@ -81,7 +83,7 @@ func validationRequestHandler(rules *RuleSet) router.Handler {
 			return
 		}
 
-		vc := &Context{Context: c}
+		vc := &validation.Context{Context: c}
 		vc.SetFile(reqBody.GetPath())
 		err := rules.ValidateConfig(vc, reqBody.GetConfigSet(), reqBody.GetPath(), reqBody.GetContent())
 		if err != nil {
@@ -89,13 +91,21 @@ func validationRequestHandler(rules *RuleSet) router.Handler {
 			return
 		}
 
+		var errors errors.MultiError
+		verdict := vc.Finalize()
+		if verr, _ := verdict.(*validation.Error); verr != nil {
+			errors = verr.Errors
+		} else if verdict != nil {
+			errors = append(errors, verdict)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		var msgList []*config.ValidationResponseMessage_Message
-		if len(vc.errors) == 0 {
+		if len(errors) == 0 {
 			logging.Infof(c, "No validation errors")
 		} else {
 			var errorBuffer bytes.Buffer
-			for _, error := range vc.errors {
+			for _, error := range errors {
 				// validation.Context currently only supports ERROR severity
 				err := error.Error()
 				msgList = append(msgList, &config.ValidationResponseMessage_Message{
@@ -114,7 +124,7 @@ func validationRequestHandler(rules *RuleSet) router.Handler {
 
 // metadataRequestHandler handles the metadata request from luci-config and
 // responds with the necessary metadata defined by the given Validator.
-func metadataRequestHandler(rules *RuleSet) router.Handler {
+func metadataRequestHandler(rules *validation.RuleSet) router.Handler {
 	return func(ctx *router.Context) {
 		c, w := ctx.Context, ctx.Writer
 
