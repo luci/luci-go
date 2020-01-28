@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6aa12abc_68e51027",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "nit: \"mu\" is more standard",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 4
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b87590cc_fa2c680a",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "this copied this entire struct each time Beat is called. please use a pointer",
+      "range": {
+        "startLine": 49,
+        "startChar": 9,
+        "endLine": 49,
+        "endChar": 24
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a395a65_e5d0d43e",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "format string, args ...interface{}\n\nis more standard, flexible and easier to implement",
+      "range": {
+        "startLine": 49,
+        "startChar": 52,
+        "endLine": 49,
+        "endChar": 71
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e00cfcc7_6f9c21ee",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "nit: now\n\nstart would make sense if there is some interval, with an end, but I don\u0027t see one?",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 6
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2a578f0_fc06635a",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "so the client of this struct must ensure that format (defined in one place of code) is consistent with args passed in another part of code? i find this error prone. it would be simpler to pass the format string together with args. also this would make this code less conditional",
+      "range": {
+        "startLine": 56,
+        "startChar": 31,
+        "endLine": 56,
+        "endChar": 41
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "54f33921_7d83d971",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "5",
+      "range": {
+        "startLine": 71,
+        "startChar": 27,
+        "endLine": 71,
+        "endChar": 43
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72c206d7_c4ad2672",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "please initialize these two fields inside ThrottelerLogger { ... }",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f1f8026_a304a3bf",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "this is already in the logs",
+      "range": {
+        "startLine": 92,
+        "startChar": 56,
+        "endLine": 92,
+        "endChar": 68
+      },
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "423c9d1d_28a3314c",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T00:42:53Z",
+      "side": 1,
+      "message": "please make it defer (in the beginning) so that it runs even if this panics",
+      "revId": "84e70b5361965059e5dc8114e480e0d78a82029c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
