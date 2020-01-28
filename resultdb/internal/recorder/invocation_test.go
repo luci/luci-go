@@ -52,7 +52,7 @@ func TestMutateInvocation(t *testing.T) {
 
 		Convey("with token", func() {
 			const token = "update token"
-			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(updateTokenMetadataKey, token))
+			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 			Convey(`no invocation`, func() {
 				err := mayMutate()

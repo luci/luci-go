@@ -110,7 +110,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	if err != nil {
 		return nil, err
 	}
-	prpc.SetHeader(ctx, metadata.Pairs(updateTokenMetadataKey, updateToken))
+	prpc.SetHeader(ctx, metadata.Pairs(UpdateTokenMetadataKey, updateToken))
 
 	// Prepare the invocation we will return.
 	inv := &pb.Invocation{
