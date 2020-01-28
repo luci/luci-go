@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "caa33b6a_50a6eb5b",
+        "filename": "server/secrets/module.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T03:16:37Z",
+      "side": 1,
+      "message": "package godoc",
+      "revId": "9db2a2ba84ed246542f46da8e6c5859692aa3e24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06b5f3be_a0e4b5f6",
+        "filename": "server/server.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T03:16:37Z",
+      "side": 1,
+      "message": "nit: i\u0027d move this as a comment between L30 and L31 to make it more likely.",
+      "range": {
+        "startLine": 27,
+        "startChar": 17,
+        "endLine": 27,
+        "endChar": 66
+      },
+      "revId": "9db2a2ba84ed246542f46da8e6c5859692aa3e24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
