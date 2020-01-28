@@ -69,7 +69,7 @@ func runLookupBenchmark(b *testing.B, depth int, cache bool) {
 
 	for round := 0; round < b.N; round++ {
 		// Lookup the value up a few times.
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			v, ok := c.Value(0).(int)
 			if !ok {
 				b.Fatal("failed to lookup 0")
@@ -81,6 +81,50 @@ func runLookupBenchmark(b *testing.B, depth int, cache bool) {
 	}
 }
 
+func runParallelLookupBenchmark(b *testing.B, depth int, cache bool) {
+	c := context.Background()
+	for i := 0; i <= depth; i++ {
+		c = context.WithValue(c, i, i)
+	}
+	if cache {
+		c = Wrap(c)
+	}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			// Lookup the value up a few times.
+			for i := 0; i < 5; i++ {
+				v, ok := c.Value(0).(int)
+				if !ok {
+					b.Fatal("failed to lookup 0")
+				}
+				if v != 0 {
+					b.Fatalf("lookup mismatch (%d != 0)", v)
+				}
+			}
+		}
+	})
+}
+
+// Results of running `go test -bench . -cpu=8`:
+//
+// BenchmarkStandardLookup1-8              12789495      92.0 ns/op
+// BenchmarkStandardLookup10-8              2374756       511 ns/op
+// BenchmarkStandardLookup50-8               401910      2552 ns/op
+// BenchmarkStandardLookup1000-8              22759     52650 ns/op
+// BenchmarkCachedLookup1-8                 5957251       204 ns/op
+// BenchmarkCachedLookup10-8                5783949       203 ns/op
+// BenchmarkCachedLookup50-8                5679669       205 ns/op
+// BenchmarkCachedLookup1000-8              5805810       201 ns/op
+// BenchmarkParallelStandardLookup1-8      44769181      23.4 ns/op
+// BenchmarkParallelStandardLookup10-8      7837178       137 ns/op
+// BenchmarkParallelStandardLookup50-8      1808611       612 ns/op
+// BenchmarkParallelStandardLookup1000-8      92068     12511 ns/op
+// BenchmarkParallelCachedLookup1-8         4062573       300 ns/op
+// BenchmarkParallelCachedLookup10-8        3488845       353 ns/op
+// BenchmarkParallelCachedLookup50-8        3603590       323 ns/op
+// BenchmarkParallelCachedLookup1000-8      3482008       351 ns/op
+
 func BenchmarkStandardLookup1(b *testing.B)    { runLookupBenchmark(b, 1, false) }
 func BenchmarkStandardLookup10(b *testing.B)   { runLookupBenchmark(b, 10, false) }
 func BenchmarkStandardLookup50(b *testing.B)   { runLookupBenchmark(b, 50, false) }
@@ -90,3 +134,13 @@ func BenchmarkCachedLookup1(b *testing.B)    { runLookupBenchmark(b, 1, true) }
 func BenchmarkCachedLookup10(b *testing.B)   { runLookupBenchmark(b, 10, true) }
 func BenchmarkCachedLookup50(b *testing.B)   { runLookupBenchmark(b, 50, true) }
 func BenchmarkCachedLookup1000(b *testing.B) { runLookupBenchmark(b, 1000, true) }
+
+func BenchmarkParallelStandardLookup1(b *testing.B)    { runParallelLookupBenchmark(b, 1, false) }
+func BenchmarkParallelStandardLookup10(b *testing.B)   { runParallelLookupBenchmark(b, 10, false) }
+func BenchmarkParallelStandardLookup50(b *testing.B)   { runParallelLookupBenchmark(b, 50, false) }
+func BenchmarkParallelStandardLookup1000(b *testing.B) { runParallelLookupBenchmark(b, 1000, false) }
+
+func BenchmarkParallelCachedLookup1(b *testing.B)    { runParallelLookupBenchmark(b, 1, true) }
+func BenchmarkParallelCachedLookup10(b *testing.B)   { runParallelLookupBenchmark(b, 10, true) }
+func BenchmarkParallelCachedLookup50(b *testing.B)   { runParallelLookupBenchmark(b, 50, true) }
+func BenchmarkParallelCachedLookup1000(b *testing.B) { runParallelLookupBenchmark(b, 1000, true) }

@@ -27,17 +27,11 @@ import (
 	"sync"
 )
 
-// cacheContext implements a caching context.
+// cacheContext implements a caching context.Context.
 type cacheContext struct {
-	// Context is the underlying wrapped Context.
 	context.Context
 
-	// RWMutex protects access to the cache member.
-	sync.RWMutex
-
-	// cache is a map of Value retrievals.
-	//
-	// Read access requires a read lock, write access requires a write lock.
+	mu    sync.RWMutex
 	cache map[interface{}]interface{}
 }
 
@@ -53,20 +47,22 @@ func Wrap(c context.Context) context.Context {
 
 func (c *cacheContext) Value(key interface{}) interface{} {
 	// Optimistic: the value is cached.
-	c.RLock()
+	c.mu.RLock()
 	if v, ok := c.cache[key]; ok {
-		c.RUnlock()
+		c.mu.RUnlock()
 		return v
 	}
-	c.RUnlock()
+	c.mu.RUnlock()
 
 	// Pessimistic: not in cache, load from Context and cache it.
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if v, ok := c.cache[key]; ok {
+		return v // someone did it already
+	}
 	v := c.Context.Value(key)
-
-	c.Lock()
-	defer c.Unlock()
 	if c.cache == nil {
-		c.cache = make(map[interface{}]interface{})
+		c.cache = make(map[interface{}]interface{}, 1)
 	}
 	c.cache[key] = v
 	return v
