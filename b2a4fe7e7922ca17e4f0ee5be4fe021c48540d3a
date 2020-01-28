@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "55f3e5a0_7d295556",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T03:03:47Z",
+      "side": 1,
+      "message": "this has only one usage. Where else are you thinking of using it?\n\ni generally do not appreciate unnecessary complexity, such as abstractions and generic libs used only in place. This whole struct could be just a variable and an if statement in processingLoop, so what is the justification for this complexity?",
+      "range": {
+        "startLine": 33,
+        "startChar": 5,
+        "endLine": 33,
+        "endChar": 20
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "893c8af5_81f754b9",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T03:03:47Z",
+      "side": 1,
+      "message": "public doc should not mention internal names. lastHeartbeat is not a part of ThrottledLogger API",
+      "range": {
+        "startLine": 40,
+        "startChar": 28,
+        "endLine": 40,
+        "endChar": 41
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5de5a52_9cfcee27",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T03:03:47Z",
+      "side": 1,
+      "message": "name \"Beat\" is specific to our usage of ThrottledLogger. If you are trying to make something generic, please maintain same level of abstraction. At \"ThrottledLogger\" level of abstraction, this should be \"Log\".",
+      "range": {
+        "startLine": 42,
+        "startChar": 27,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbaea7d7_84aee391",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T03:03:47Z",
+      "side": 1,
+      "message": "defer func args are evaluated now (not later), so this is most likely nil\n\nbesides, now this can catch a panic, and ctx.Err() might be nil even function returned",
+      "range": {
+        "startLine": 56,
+        "startChar": 55,
+        "endLine": 56,
+        "endChar": 64
+      },
+      "revId": "b2a4fe7e7922ca17e4f0ee5be4fe021c48540d3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
