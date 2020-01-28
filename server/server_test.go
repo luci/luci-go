@@ -474,7 +474,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.AdminAddr = "admin_addr"
 	opts.RootSecretPath = tmpSecret.Name()
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
-	opts.LimiterMaxConcurrentRPCs = 100000
 
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
