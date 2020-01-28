@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "314c8285_6380c8a1",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T21:37:54Z",
+      "side": 1,
+      "message": "Errrof or remove. Panic will be surfaced in the logs with stack trace and stuff regardless of what we do here",
+      "range": {
+        "startLine": 59,
+        "startChar": 11,
+        "endLine": 59,
+        "endChar": 19
+      },
+      "revId": "239a2a68c7cd04ac3837eebad331fa5ded9e8ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c52058a_e0add18f",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-28T21:37:54Z",
+      "side": 1,
+      "message": "why do we need to pass this? why not\n\n\tdefer func() {\n\t\tif ctx.Err() !\u003d nil {\n\t\t\tlogging.Warningf(ctx, \"Exiting loop due to %v\", ctx.Err())\n\t\t} else {\n\t\t\tlogging.Warningf(ctx, \"Exiting loop due to a panic\")\n\t\t}\n\t}()",
+      "range": {
+        "startLine": 61,
+        "startChar": 3,
+        "endLine": 61,
+        "endChar": 6
+      },
+      "revId": "239a2a68c7cd04ac3837eebad331fa5ded9e8ae7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
