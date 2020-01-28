@@ -49,7 +49,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
-	"go.chromium.org/luci/server/settings"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -292,15 +291,6 @@ func testContextFeatures(ctx context.Context) (err error) {
 		return errors.Reason("unexpectedly got empty secret").Err()
 	}
 
-	// Settings work.
-	var val struct{ Val string }
-	switch err := settings.Get(ctx, "settings-key", &val); {
-	case err != nil:
-		return errors.Annotate(err, "settings").Err()
-	case val.Val != "settings-value":
-		return errors.Reason("unexpectedly got wrong value %q", val.Val).Err()
-	}
-
 	// Client auth works (a test for advanced features is in TestServer).
 	ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes("A", "B"))
 	if err != nil {
@@ -374,10 +364,8 @@ func BenchmarkServer(b *testing.B) {
 
 	// The route we are going to hit from the benchmark.
 	srv.Routes.GET("/test", router.MiddlewareChain{}, func(c *router.Context) {
-		var val struct{ Val string }
 		logging.Infof(c.Context, "Hello, world")
 		secrets.GetSecret(c.Context, "key-name") // e.g. checking XSRF token
-		settings.Get(c.Context, "settings-key", &val)
 		for i := 0; i < 10; i++ {
 			// E.g. calling bunch of Cloud APIs.
 			ts, _ := auth.GetTokenSource(c.Context, auth.AsSelf, auth.WithScopes("A", "B", "C"))
@@ -476,16 +464,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	}
 	cleanup = append(cleanup, tmpSecret)
 
-	tmpSettings, err := tempJSONFile(map[string]interface{}{
-		"settings-key": map[string]string{
-			"Val": "settings-value",
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	cleanup = append(cleanup, tmpSettings)
-
 	var opts Options
 	if o != nil {
 		opts = *o
@@ -495,7 +473,6 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.HTTPAddr = "main_addr"
 	opts.AdminAddr = "admin_addr"
 	opts.RootSecretPath = tmpSecret.Name()
-	opts.SettingsPath = tmpSettings.Name()
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
 	opts.LimiterMaxConcurrentRPCs = 100000
 
