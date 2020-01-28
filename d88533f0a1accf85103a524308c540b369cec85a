@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19722e2b_f8e26eae",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T04:36:34Z",
+      "side": 1,
+      "message": "tbh, i find it hard to believe. Milo installs quite a few contexts.",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 33
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ad6621c_379527c7",
+        "filename": "common/data/caching/cacheContext/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T04:36:34Z",
+      "side": 1,
+      "message": "Oh, sure it\u0027s slower: paying lock acquire + release is certainly worse than deref-ing a dozen L2-cached pointers.\nThis is where a non-resizable open addressing hashtable would have been perfect, though if it is filled lazily, memory barriers would still be required 😞",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 50,
+        "endChar": 13
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13367af8_b55a51f4",
+        "filename": "common/data/caching/cacheContext/context.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T04:36:34Z",
+      "side": 1,
+      "message": "curious, does this actually improve benchmarks?",
+      "range": {
+        "startLine": 60,
+        "startChar": 0,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bac8cc4_90f51bff",
+        "filename": "common/data/caching/cacheContext/context_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T04:36:34Z",
+      "side": 1,
+      "message": "this and above microbenchmark is very likely suffering from unrealistic fitting of all contexts in L1 cache. Having these benchmarks is in this way counterproductive.",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 89,
+        "endChar": 6
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a9c6530_690146d3",
+        "filename": "common/data/caching/cacheContext/context_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-28T04:36:34Z",
+      "side": 1,
+      "message": "I think part is semi-realistic: it\u0027s quite possible that some requests would derive more contexts. In this case, we\u0027d have 2+ caching context, which probably means filling 2+ levels of hashtables.",
+      "range": {
+        "startLine": 89,
+        "startChar": 1,
+        "endLine": 92,
+        "endChar": 0
+      },
+      "revId": "d88533f0a1accf85103a524308c540b369cec85a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
