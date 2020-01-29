@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2c70a95f_34ba7da5",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45fcf38a_93656de3",
+      "range": {
+        "startLine": 104,
+        "startChar": 17,
+        "endLine": 104,
+        "endChar": 18
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c3ce6c29_024b0a68",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4c7ea2f_0b4f2dee",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3ce6c29_024b0a68",
+      "range": {
+        "startLine": 108,
+        "startChar": 17,
+        "endLine": 108,
+        "endChar": 18
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "91018bba_81eef9a6",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "69386fb0_e6fa572b",
+      "range": {
+        "startLine": 74,
+        "startChar": 5,
+        "endLine": 74,
+        "endChar": 6
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0185d1ee_3150e7c8",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 10
@@ -91,6 +163,30 @@
       "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9587c130_e8efae3e",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Replaced with fieldUnspecified() and fieldDoesNotMatch()",
+      "parentUuid": "0185d1ee_3150e7c8",
+      "range": {
+        "startLine": 76,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "4b173ded_a0145b76",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "67c17c62_2515d63a",
+      "range": {
+        "startLine": 87,
+        "startChar": 28,
+        "endLine": 87,
+        "endChar": 38
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d177065d_d2f8e52c",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 10
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "45fcddd5_3022d2c1",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "Replaced with fieldUnspecified()",
+      "parentUuid": "d177065d_d2f8e52c",
+      "range": {
+        "startLine": 297,
+        "startChar": 15,
+        "endLine": 297,
+        "endChar": 50
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "553faa5c_1d118481",
         "filename": "resultdb/pbutil/test_result_test.go",
         "patchSetId": 10
@@ -160,6 +304,30 @@
       "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cb1b156_f7d7136b",
+        "filename": "resultdb/pbutil/test_result_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-01-29T03:03:32Z",
+      "side": 1,
+      "message": "replaced with \"fetch_url: missing host\"",
+      "parentUuid": "553faa5c_1d118481",
+      "range": {
+        "startLine": 442,
+        "startChar": 36,
+        "endLine": 442,
+        "endChar": 66
+      },
+      "revId": "ed232da17e24358b1492ed877f8642804e3ce5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
