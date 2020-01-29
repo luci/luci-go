@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83d8ff30_09ec8f07",
+        "filename": "config/server/cfgmodule/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T21:28:49Z",
+      "side": 1,
+      "message": "nit: symbol comments must start with symbol name",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 4
+      },
+      "revId": "e4ac0c3f9a5a3369d36f742f5f1d4073511442dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3278dedb_18bb2c0b",
+        "filename": "server/module/module.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T21:28:49Z",
+      "side": 1,
+      "message": "so config validation won\u0027t work for an app that calls VirtualHost for its \"primary\" host for whatever reason?",
+      "revId": "e4ac0c3f9a5a3369d36f742f5f1d4073511442dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
