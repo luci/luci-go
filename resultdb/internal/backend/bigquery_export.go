@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -147,9 +148,20 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bq.R
 			Invocation: &bqpb.TestResultRow_Invocation{
 				Id:          string(span.MustParseInvocationName(inv.Name)),
 				Interrupted: inv.Interrupted,
-				Tags:        inv.Tags,
+				Tags:        pbutil.StringPairsToStrings(inv.Tags...),
 			},
-			Result: tr,
+			Result: &bqpb.TestResultRow_TestResult{
+				TestId:          tr.TestId,
+				Variant:         pbutil.VariantToStrings(tr.Variant),
+				Expected:        tr.Expected,
+				Status:          tr.Status,
+				SummaryHtml:     tr.SummaryHtml,
+				StartTime:       tr.StartTime,
+				Duration:        tr.Duration,
+				Tags:            pbutil.StringPairsToStrings(tr.Tags...),
+				InputArtifacts:  tr.InputArtifacts,
+				OutputArtifacts: tr.OutputArtifacts,
+			},
 			Exoneration: &bqpb.TestResultRow_TestExoneration{
 				Exonerated: exonerated,
 			},

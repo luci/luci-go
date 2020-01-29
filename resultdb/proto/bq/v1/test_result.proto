@@ -16,8 +16,9 @@ syntax = "proto3";
 
 package luci.resultdb.bq.v1;
 
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/rpc/v1/test_result.proto";
-import "go.chromium.org/luci/resultdb/proto/type/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/bq/v1;bqpb";
 
@@ -37,16 +38,55 @@ message TestResultRow {
     bool interrupted = 2;
 
     // Invocation-level string key-value pairs.
-    // A key can be repeated.
-    repeated luci.resultdb.type.StringPair tags = 3;
+    // Each tag is saved as a colon separated string within a string array.
+    repeated string tags = 3;
   }
 
   // Invocation level information.
   Invocation invocation = 1;
 
+  // A subset of luci.resultdb.rpc.v1.TestResult message
+  // in ../../rpc/v1/test_result.proto.
+  // For more details, refer to luci.resultdb.rpc.v1.TestResult.
+  message TestResult {
+    // Test id, a unique identifier of the test in a LUCI project.
+    string test_id = 1;
+
+    // Description of one specific way of running the test,
+    // e.g. a specific bucket, builder and a test suite.
+    // Cannot use luci.resultdb.type.Variant here because map is currently
+    // not supported, see https://godoc.org/cloud.google.com/go/bigquery#Schema
+    repeated string variant = 2;
+
+    // Whether the result of test case execution is expected.
+    bool expected = 3;
+
+    // Machine-readable status of the test case.
+    luci.resultdb.rpc.v1.TestStatus status = 4;
+
+    // Human-readable explanation of the result, in HTML.
+    string summary_html = 5;
+
+    // The point in time when the test case started to execute.
+    google.protobuf.Timestamp start_time = 6;
+
+    // Duration of the test case execution.
+    google.protobuf.Duration duration = 7;
+
+    // Metadata for this test result.
+    // It might describe this particular execution or the test case.
+    // Each tag is saved as a colon separated string within a string array.
+    repeated string tags = 8;
+
+    // Artifacts consumed by this test result.
+    repeated luci.resultdb.rpc.v1.Artifact input_artifacts = 9;
+
+    // Artifacts produced by this test result.
+    repeated luci.resultdb.rpc.v1.Artifact output_artifacts = 10;
+  }
+
   // A result of a functional test case.
-  // Refer to ../../rpc/v1/test_result.proto for definition.
-  luci.resultdb.rpc.v1.TestResult result = 2;
+  TestResult result = 2;
 
   message TestExoneration {
     // True if the test subject (e.g. a CL) is absolved from blame for this
