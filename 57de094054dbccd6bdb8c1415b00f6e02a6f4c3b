@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6220c777_c93af7da",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-29T02:02:46Z",
+      "side": 1,
+      "message": "an",
+      "range": {
+        "startLine": 36,
+        "startChar": 55,
+        "endLine": 36,
+        "endChar": 56
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84e2b35e_9cf4a57d",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-29T02:02:46Z",
+      "side": 1,
+      "message": "Please document explicitly what happens if the invocation is not ready for finalization. IIUC, the task is just \"forgotten\", with assumption that it will be recreated again by a currently active included invocation?",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 22
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bece052_b4a32b1e",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-29T02:02:46Z",
+      "side": 1,
+      "message": "there\u0027s some typo here",
+      "range": {
+        "startLine": 56,
+        "startChar": 9,
+        "endLine": 56,
+        "endChar": 48
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f28090_78f4e27e",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-29T02:02:46Z",
+      "side": 1,
+      "message": "How long these chains can be? What is the delay between a task is enqueued and executed? Should we try to execute tasks \"eagerly\" in a loop if the deadline allows? (Like DM did).",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 47
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9f3137a_f2c32140",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-29T02:02:46Z",
+      "side": 1,
+      "message": "In datastore this basically requires a transaction that touches O(N) entity groups (or doing fanout through a separate transactional task queue task). It may be possible Spanner has similar performance challenges here (i.e. these transactions will be slow or flaky).\n\nBut do I understand correctly that we won\u0027t have invocations with many parents?",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 20
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
