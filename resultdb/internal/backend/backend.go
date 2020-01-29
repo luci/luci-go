@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/server"
@@ -61,6 +62,14 @@ func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f 
 		}
 	}()
 
+	// call calls f and catches a panic.
+	call := func(ctx context.Context) error {
+		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
+			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
+		})
+		return f(ctx)
+	}
+
 	attempt := 0
 	var iterationCounter int64
 	tl := ThrottledLogger{MinLogInterval: 5 * time.Minute}
@@ -69,7 +78,7 @@ func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f 
 		tl.Log(ctx, "%d iterations have run since start-up", iterationCounter)
 		start := clock.Now(ctx)
 		sleep := time.Duration(0)
-		if err := f(ctx); err == nil {
+		if err := call(ctx); err == nil {
 			attempt = 0
 		} else {
 			logging.Errorf(ctx, "Iteration failed: %s", err)
