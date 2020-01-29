@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "eade84b0_67380962",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6220c777_c93af7da",
+      "range": {
+        "startLine": 36,
+        "startChar": 55,
+        "endLine": 36,
+        "endChar": 56
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84e2b35e_9cf4a57d",
         "filename": "resultdb/internal/backend/invocation_finalization.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4fa9bda5_9bd3774d",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "that\u0027s right. clarified below.",
+      "parentUuid": "84e2b35e_9cf4a57d",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 22
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bece052_b4a32b1e",
         "filename": "resultdb/internal/backend/invocation_finalization.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e8fd357_87026a94",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "simplified sentence",
+      "parentUuid": "0bece052_b4a32b1e",
+      "range": {
+        "startLine": 56,
+        "startChar": 9,
+        "endLine": 56,
+        "endChar": 48
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "ea0a7596_d2612064",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "\u003e How long these chains can be? \n\nin chromium: 3\nin chrome os: 4\n\n\u003e What is the delay between a task is enqueued and executed? \n\nShould be small, there are workers polling tasks to execute them continuously. We don\u0027t plan to add a metric to track that though. We only have a metric of the oldest task? \n\n\u003e Should we try to execute tasks \"eagerly\" in a loop if the deadline allows? (Like DM did).\n\nGiven the length of queues, I don\u0027t think it matters much. Unlike DM, there is no \"action\" waiting to happen. Noone is eagerly waiting for invocation finalization. I\u0027d keep this code simple for now. Maybe Cloud Spanner will grow queues and THEY have efficient task-push.",
+      "parentUuid": "46f28090_78f4e27e",
+      "range": {
+        "startLine": 60,
+        "startChar": 36,
+        "endLine": 60,
+        "endChar": 47
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c0a0e191_01f37fcd",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "made it explicit",
+      "parentUuid": "42855a5c_eab91c24",
+      "range": {
+        "startLine": 60,
+        "startChar": 14,
+        "endLine": 60,
+        "endChar": 47
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ab574f2_ae039cf1",
         "filename": "resultdb/internal/backend/invocation_finalization.go",
         "patchSetId": 2
@@ -137,6 +257,30 @@
       "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cdc3135_b53d4cbe",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ab574f2_ae039cf1",
+      "range": {
+        "startLine": 61,
+        "startChar": 7,
+        "endLine": 61,
+        "endChar": 8
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "47b41e02_ef818cca",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d93bf8a_1b6b3534",
+      "range": {
+        "startLine": 62,
+        "startChar": 0,
+        "endLine": 63,
+        "endChar": 41
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e8b9f3fe_cfed06b2",
         "filename": "resultdb/internal/backend/invocation_finalization.go",
         "patchSetId": 2
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "01be865e_e78abda1",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8b9f3fe_cfed06b2",
+      "range": {
+        "startLine": 64,
+        "startChar": 3,
+        "endLine": 64,
+        "endChar": 27
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9f3137a_f2c32140",
         "filename": "resultdb/internal/backend/invocation_finalization.go",
         "patchSetId": 2
@@ -206,6 +398,30 @@
       "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98124a63_d4a3fd9e",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T23:03:14Z",
+      "side": 1,
+      "message": "in spanner, locking is done at *cell level*, which is pretty nice here. We lock ONLY on invocation state. \n\nyeah, not a lot of parents. A swarming task deduplication works only for completed tasks. Only CQAttempt:Build invocation applies here and we don\u0027t expect a lot of cq attempts that reuse the same build. The worst case here is a lot CLs in a CrOS CL set with a bunch of trivial rebases and CQDryRuns on each CL. We\u0027d read inv state of all of them.",
+      "parentUuid": "f9f3137a_f2c32140",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 71,
+        "endChar": 20
+      },
+      "revId": "57de094054dbccd6bdb8c1415b00f6e02a6f4c3b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
