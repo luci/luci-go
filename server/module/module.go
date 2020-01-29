@@ -20,6 +20,8 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+
+	"go.chromium.org/luci/server/router"
 )
 
 // Module represents some optional part of a server.
@@ -70,9 +72,17 @@ type HostOptions struct {
 //
 // TODO(vadimsh):
 //  * Allow adding a middleware to the default middleware chain.
-//  * Allow registering HTTP routes.
 //  * Allow registering pRPC servers.
 type Host interface {
+	// Routes returns a router that servers HTTP requests hitting the main port.
+	//
+	// This router is used for all requests whose Host header does not match any
+	// registered per-host routers (see server.VirtualHost). Normally, there are
+	// no per-host routers, so usually Routes is used for all requests.
+	//
+	// The module can use it to register additional request handlers.
+	Routes() *router.Router
+
 	// RunInBackground launches the given callback in a separate goroutine right
 	// before starting the serving loop.
 	//
