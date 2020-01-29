@@ -914,7 +914,6 @@ func (s *Server) waitUntilNotServing() {
 			logging.Warningf(s.Context, "Gave up waiting for the traffic to stop, proceeding with the shutdown...")
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
