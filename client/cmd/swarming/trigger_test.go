@@ -218,7 +218,8 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		c.isolateServer = "http://localhost:10050"
 		c.rawCmd = true
 
-		result := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
+		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
+		So(err, ShouldBeNil)
 		So(result.Properties.Command, ShouldResemble, []string{"arg1", "arg2"})
 		So(result.Properties.ExtraArgs, ShouldResemble, ([]string)(nil))
 		So(result.Properties.InputsRef, ShouldBeNil)
@@ -233,7 +234,8 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 		c.isolateServer = "http://localhost:10050"
 		c.isolated = "1234567890123456789012345678901234567890"
 
-		result := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
+		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
+		So(err, ShouldBeNil)
 		So(result.Properties.Command, ShouldBeNil)
 		So(result.Properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
 		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
@@ -251,7 +253,8 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
-		result := c.processTriggerOptions([]string(nil), nil)
+		result, err := c.processTriggerOptions([]string(nil), nil)
+		So(err, ShouldBeNil)
 		So(result.Properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
 			Packages: []*swarming.SwarmingRpcsCipdPackage{{
 				PackageName: "name",
