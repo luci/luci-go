@@ -16,30 +16,17 @@
 package main
 
 import (
-	"net/http"
-
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/module"
 
 	// Ensure registration of validation rules.
 	_ "go.chromium.org/luci/cq/appengine/config"
 )
 
 func main() {
-	mathrand.SeedRandomly()
-	api := prpc.Server{UnaryServerInterceptor: grpcmon.UnaryServerInterceptor}
-	discovery.Enable(&api)
-
-	r := router.New()
-	mw := standard.Base()
-	api.InstallHandlers(r, mw)
-	standard.InstallHandlers(r)
-	http.DefaultServeMux.Handle("/", r)
-	appengine.Main()
+	modules := []module.Module{
+		cfgmodule.NewModuleFromFlags(),
+	}
+	server.Main(nil, modules, nil)
 }
