@@ -32,6 +32,7 @@ func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validation Rules", t, func() {
+		validation.Rules.Freeze()
 		c := gaetesting.TestingContextWithAppID("commit-queue")
 		patterns, err := validation.Rules.ConfigPatterns(c)
 		So(err, ShouldBeNil)
