@@ -135,10 +135,14 @@ type TestResult struct {
 	Status TestStatus `protobuf:"varint,6,opt,name=status,proto3,enum=luci.resultdb.rpc.v1.TestStatus" json:"status,omitempty"`
 	// Human-readable explanation of the result, in HTML.
 	// MUST be sanitized before rendering in the browser.
+	//
+	// The size of the summary must be equal to or smaller than 4096 bytes in
+	// UTF-8.
 	SummaryHtml string `protobuf:"bytes,7,opt,name=summary_html,json=summaryHtml,proto3" json:"summary_html,omitempty"`
 	// The point in time when the test case started to execute.
 	StartTime *timestamp.Timestamp `protobuf:"bytes,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Duration of the test case execution.
+	// MUST be equal to or greater than 0.
 	Duration *duration.Duration `protobuf:"bytes,9,opt,name=duration,proto3" json:"duration,omitempty"`
 	// Metadata for this test result.
 	// It might describe this particular execution or the test case.
@@ -275,13 +279,14 @@ type Artifact struct {
 	// This must be a plain (curlable) HTTPS URL.
 	//
 	// Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
-	// storage level, but it is converted to an HTTP URL before serving.
+	// storage level, but it is converted to an HTTPS URL before serving.
 	FetchUrl string `protobuf:"bytes,2,opt,name=fetch_url,json=fetchUrl,proto3" json:"fetch_url,omitempty"`
 	// When fetch_url expires. If expired, re-request this Artifact.
 	// If fetch_url does not expire, this is unset.
 	FetchUrlExpiration *timestamp.Timestamp `protobuf:"bytes,3,opt,name=fetch_url_expiration,json=fetchUrlExpiration,proto3" json:"fetch_url_expiration,omitempty"`
 	// Media type of the artifact.
 	// Logs are typically "text/plain" and screenshots are typically "image/png".
+	// Can be omitted.
 	ContentType string `protobuf:"bytes,4,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
 	// Size of the file, in bytes.
 	// Can be used in UI to decide between displaying the artifact inline or only

@@ -88,6 +88,9 @@ message TestResult {
 
   // Human-readable explanation of the result, in HTML.
   // MUST be sanitized before rendering in the browser.
+  //
+  // The size of the summary must be equal to or smaller than 4096 bytes in
+  // UTF-8.
   string summary_html = 7 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // The point in time when the test case started to execute.
@@ -95,6 +98,7 @@ message TestResult {
       [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Duration of the test case execution.
+  // MUST be equal to or greater than 0.
   google.protobuf.Duration duration = 9
       [ (google.api.field_behavior) = IMMUTABLE ];
 
@@ -161,7 +165,7 @@ message Artifact {
   // This must be a plain (curlable) HTTPS URL.
   //
   // Internally, this may have format "isolate://{host}/{ns}/{digest}" at the
-  // storage level, but it is converted to an HTTP URL before serving.
+  // storage level, but it is converted to an HTTPS URL before serving.
   string fetch_url = 2;
 
   // When fetch_url expires. If expired, re-request this Artifact.
@@ -170,6 +174,7 @@ message Artifact {
 
   // Media type of the artifact.
   // Logs are typically "text/plain" and screenshots are typically "image/png".
+  // Can be omitted.
   string content_type = 4 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Size of the file, in bytes.
