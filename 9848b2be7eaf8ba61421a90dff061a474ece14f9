@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9d5e1769_029c7796",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T00:51:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2efae972_5f83637e",
+      "revId": "9848b2be7eaf8ba61421a90dff061a474ece14f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2be8609_d3297942",
         "filename": "resultdb/internal/backend/backend.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "9848b2be7eaf8ba61421a90dff061a474ece14f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a066a93_0bf41195",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-29T00:51:37Z",
+      "side": 1,
+      "message": "swapped order",
+      "parentUuid": "e2be8609_d3297942",
+      "revId": "9848b2be7eaf8ba61421a90dff061a474ece14f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
