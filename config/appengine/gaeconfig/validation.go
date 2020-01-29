@@ -16,6 +16,7 @@ package gaeconfig
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"go.chromium.org/gae/service/info"
@@ -58,7 +59,13 @@ func RegisterValidationVars(rules *validation.RuleSet) {
 // It requires that the hostname, the email of config service and the name of
 // the trusted group have been defined in the appengine app settings page before
 // the installed endpoints are called.
+//
+// Freezes the rule set as a side effect, panicking if some registered rules
+// are invalid.
 func InstallValidationHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
+	if err := rules.Freeze(); err != nil {
+		panic(fmt.Sprintf("Failed to setup validation rules: %s", err))
+	}
 	a := auth.Authenticator{
 		Methods: []auth.Method{
 			&server.OAuth2Method{Scopes: []string{server.EmailScope}},

@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/errors"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -53,6 +55,8 @@ func TestRuleSet(t *testing.T) {
 			r.Add("services/${a}", "paths/${b}", validator("rule_2"))
 			r.Add("services/c", "paths/c", validator("rule_3"))
 			r.Add("regex:services/.*", "paths/c", validator("rule_4"))
+
+			So(r.Freeze(), ShouldBeNil)
 
 			patterns, err := r.ConfigPatterns(ctx)
 			So(err, ShouldBeNil)
@@ -96,6 +100,7 @@ func TestRuleSet(t *testing.T) {
 			r := RuleSet{}
 			r.RegisterVar("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
+			So(r.Freeze(), ShouldBeNil)
 			err := r.ValidateConfig(&Context{Context: ctx}, "services/zzz", "some path", []byte("body"))
 			So(err, ShouldErrLike, "boom")
 		})
@@ -103,18 +108,26 @@ func TestRuleSet(t *testing.T) {
 		Convey("Missing variables", func() {
 			r := RuleSet{}
 			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
-			So(func() { r.Add("${zzz}", "a", validator("1")) }, ShouldPanicWith,
+			r.Add("${zzz}", "a", validator("1"))
+			r.Add("a", "${zzz}", validator("1"))
+			merr, _ := r.Freeze().(errors.MultiError)
+			So(merr, ShouldHaveLength, 2)
+			So(merr[0], ShouldErrLike,
 				`bad config set pattern "exact:${zzz}" - no placeholder named "zzz" is registered`)
-			So(func() { r.Add("a", "${zzz}", validator("1")) }, ShouldPanicWith,
+			So(merr[1], ShouldErrLike,
 				`bad path pattern "exact:${zzz}" - no placeholder named "zzz" is registered`)
 		})
 
 		Convey("Pattern is validated", func() {
 			r := RuleSet{}
 			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
-			So(func() { r.Add("unknown:${a}", "a", validator("1")) }, ShouldPanicWith,
+			r.Add("unknown:${a}", "a", validator("1"))
+			r.Add("a", "unknown:${a}", validator("1"))
+			merr, _ := r.Freeze().(errors.MultiError)
+			So(merr, ShouldHaveLength, 2)
+			So(merr[0], ShouldErrLike,
 				`bad config set pattern "unknown:${a}" - unknown pattern kind: "unknown"`)
-			So(func() { r.Add("a", "unknown:${a}", validator("1")) }, ShouldPanicWith,
+			So(merr[1], ShouldErrLike,
 				`bad path pattern "unknown:${a}" - unknown pattern kind: "unknown"`)
 		})
 

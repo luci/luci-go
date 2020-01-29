@@ -40,6 +40,8 @@ func TestInstallHandlers(t *testing.T) {
 		host := "example.com"
 
 		metaCall := func() *config.ServiceDynamicMetadata {
+			rules.Freeze()
+
 			req, err := http.NewRequest("GET", "https://"+host+metadataPath, nil)
 			So(err, ShouldBeNil)
 			r.ServeHTTP(rr, req)
@@ -50,6 +52,7 @@ func TestInstallHandlers(t *testing.T) {
 			return &resp
 		}
 		valCall := func(configSet, path, content string) *config.ValidationResponseMessage {
+			rules.Freeze()
 			respBodyJSON, err := json.Marshal(config.ValidationRequestMessage{
 				ConfigSet: configSet,
 				Path:      path,

@@ -196,9 +196,9 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			rules.RegisterVar("appid", func(context.Context) (string, error) {
 				return "appid", nil
 			})
-
 			rpc := ImportCAConfigsRPC{}
 			rpc.SetupConfigValidation(&rules)
+			rules.Freeze()
 
 			vctx := validation.Context{Context: ctx}
 

@@ -32,22 +32,22 @@ import (
 var Rules RuleSet
 
 // Func performs the actual config validation and stores the associated results
-// in the validation.Context.
+// in the Context.
 //
 // Returns an error if the validation process itself fails due to causes
 // unrelated to the data being validated. This will result in HTTP Internal
 // Server Error reply, instructing the config service to retry.
 type Func func(ctx *Context, configSet, path string, content []byte) error
 
-// ConfigPattern is a pair of pattern.Pattern of configSets and paths that
-// the importing service is responsible for validating.
+// ConfigPattern is a pair of pattern.Pattern of config sets and paths that
+// the service is responsible for validating.
 type ConfigPattern struct {
 	ConfigSet pattern.Pattern
 	Path      pattern.Pattern
 }
 
 // RuleSet is a helper for building Validator from a set of rules: each rule
-// specifies a pattern for config set and file names, and a validation function
+// specifies a pattern for config sets and file names, and a validation function
 // to apply to corresponding configs.
 //
 // The primary use case is building the list of rules during init() time. Since
@@ -55,9 +55,10 @@ type ConfigPattern struct {
 // App ID is not yet known), the rule patterns can have placeholders (such as
 // "${appid}") that are substituted during actual config validation time.
 type RuleSet struct {
-	l sync.RWMutex
-	v map[string]func(context.Context) (string, error)
-	r []*rule
+	l      sync.RWMutex
+	v      map[string]func(context.Context) (string, error)
+	r      []*rule
+	frozen bool
 }
 
 type rule struct {
@@ -69,17 +70,21 @@ type rule struct {
 // RegisterVar registers a placeholder that can be used in patterns as ${name}.
 //
 // Such placeholder is rendered into an actual value via the given callback
-// before the validation starts. The value of the placeholder is injected into
+// when doing the validation. The value of the placeholder is injected into
 // the pattern string as is. So for example if the pattern is 'regex:...',
 // the placeholder value can be a chunk of regexp.
 //
-// The primary use case for this mechanism is too allow to register rule
+// The primary use case for this mechanism is to allow to register rule
 // patterns that depend on not-yet known values during init() time.
 //
-// Panics if such variable is already registered.
+// Panics if such variable is already registered or the rule set is already
+// frozen via Freeze().
 func (r *RuleSet) RegisterVar(name string, value func(context.Context) (string, error)) {
 	r.l.Lock()
 	defer r.l.Unlock()
+	if r.frozen {
+		panic("RuleSet is already frozen and can't be modified")
+	}
 	if r.v == nil {
 		r.v = make(map[string]func(context.Context) (string, error), 1)
 	}
@@ -89,19 +94,20 @@ func (r *RuleSet) RegisterVar(name string, value func(context.Context) (string, 
 	r.v[name] = value
 }
 
-// Add registers a validation function for given configSet and path patterns.
+// Add registers a validation function for the config set and path patterns.
 //
-// The pattern may contain placeholders (e.g. "${appid}") that will be
-// resolved before the actual validation starts. All such placeholder variables
-// must be registered prior to adding rules that reference them (or 'Add' will
-// panic).
+// Patterns may contain placeholders (e.g. "${appid}") that will be resolved
+// when doing the validation. All such placeholder variables must be registered
+// via RegisterVar before the rule set is used (this is checked in Freeze),
+// but they may be registered after Add calls that reference them.
 //
-// 'Add' will also try to validate the patterns by substituting all placeholders
-// in them with empty strings and trying to render the resulting pattern. It
-// will panic if the pattern is invalid.
+// Panics if the rule set is already frozen via Freeze().
 func (r *RuleSet) Add(configSet, path string, cb Func) {
 	r.l.Lock()
 	defer r.l.Unlock()
+	if r.frozen {
+		panic("RuleSet is already frozen and can't be modified")
+	}
 
 	// Pattern strings without ':' are magical: they are treated like exact
 	// matches. Thus if a variable value has ':', it may change the meaning of the
@@ -112,6 +118,28 @@ func (r *RuleSet) Add(configSet, path string, cb Func) {
 	}
 	if !strings.ContainsRune(path, ':') {
 		path = "exact:" + path
+	}
+
+	r.r = append(r.r, &rule{configSet, path, cb})
+}
+
+// Freeze locks modification to the rule set and prepares it for serving
+// validation requests.
+//
+// Once frozen, the rule set can't be modified: calls to RegisterVar and Add
+// would panic. Calling Freeze again is fine though.
+//
+// Freeze also checks that all registered rules are correct by substituting all
+// placeholders (e.g. "${appid}") in them with empty strings and trying to
+// render the resulting pattern.
+//
+// Returns an error if some rules are not valid (i.e. reference an undefined
+// placeholder).
+func (r *RuleSet) Freeze() error {
+	r.l.Lock()
+	defer r.l.Unlock()
+	if r.frozen {
+		return nil
 	}
 
 	// Validate the patterns syntax by rendering them with some fake variable
@@ -125,23 +153,36 @@ func (r *RuleSet) Add(configSet, path string, cb Func) {
 		// syntax validation.
 		return "", nil
 	}
-	if _, err := renderPatternString(configSet, nilSub); err != nil {
-		panic(fmt.Sprintf("bad config set pattern %q - %s", configSet, err))
+
+	var merr errors.MultiError
+	for _, rule := range r.r {
+		if _, err := renderPatternString(rule.configSet, nilSub); err != nil {
+			merr = append(merr, fmt.Errorf("bad config set pattern %q - %s", rule.configSet, err))
+		}
+		if _, err := renderPatternString(rule.path, nilSub); err != nil {
+			merr = append(merr, fmt.Errorf("bad path pattern %q - %s", rule.path, err))
+		}
 	}
-	if _, err := renderPatternString(path, nilSub); err != nil {
-		panic(fmt.Sprintf("bad path pattern %q - %s", path, err))
+	if len(merr) != 0 {
+		return merr
 	}
 
-	r.r = append(r.r, &rule{configSet, path, cb})
+	r.frozen = true
+	return nil
 }
 
 // ConfigPatterns renders all registered config patterns and returns them.
 //
 // Used by the metadata handler to notify the config service about config files
 // we understand.
+//
+// The rule set must be frozen at this point via Freeze. Panics if it's not.
 func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
 	r.l.RLock()
 	defer r.l.RUnlock()
+	if !r.frozen {
+		panic("RuleSet is not frozen yet and can't be used for validation")
+	}
 
 	out := make([]*ConfigPattern, len(r.r))
 	for i, rule := range r.r {
@@ -160,6 +201,8 @@ func (r *RuleSet) ConfigPatterns(c context.Context) ([]*ConfigPattern, error) {
 // If there's no rule matching the file, the validation is skipped. If there
 // are multiple rules that match the file, they all are used (in order of their)
 // registration.
+//
+// The rule set must be frozen at this point via Freeze. Panics if it's not.
 func (r *RuleSet) ValidateConfig(ctx *Context, configSet, path string, content []byte) error {
 	switch cbs, err := r.matchingFuncs(ctx.Context, configSet, path); {
 	case err != nil:
@@ -182,6 +225,9 @@ func (r *RuleSet) ValidateConfig(ctx *Context, configSet, path string, content [
 func (r *RuleSet) matchingFuncs(c context.Context, configSet, path string) ([]Func, error) {
 	r.l.RLock()
 	defer r.l.RUnlock()
+	if !r.frozen {
+		panic("RuleSet is not frozen yet and can't be used for validation")
+	}
 
 	out := []Func{}
 	for _, rule := range r.r {
