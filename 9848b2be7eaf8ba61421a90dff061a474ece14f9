@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2efae972_5f83637e",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-29T00:22:29Z",
+      "side": 1,
+      "message": "// Sleep at least what\u0027s needed to make minInterval elapse, and do not exceed maxSleep.",
+      "revId": "9848b2be7eaf8ba61421a90dff061a474ece14f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2be8609_d3297942",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-29T00:22:29Z",
+      "side": 1,
+      "message": "nit: Based on the little code I have read, it seems that cases that do not have a return are more readable at the end of the select, as it\u0027s easier to see that the execution code will continue after the select.",
+      "revId": "9848b2be7eaf8ba61421a90dff061a474ece14f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
