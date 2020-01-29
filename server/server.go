@@ -465,6 +465,11 @@ func (h *moduleHostImpl) panicIfInvalid() {
 	}
 }
 
+func (h *moduleHostImpl) Routes() *router.Router {
+	h.panicIfInvalid()
+	return h.srv.Routes
+}
+
 func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context)) {
 	h.panicIfInvalid()
 	h.srv.RunInBackground(activity, f)

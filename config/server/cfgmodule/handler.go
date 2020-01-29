@@ -43,6 +43,8 @@ const (
 //
 // It does not implement any authentication checks, thus the passed in
 // router.MiddlewareChain should implement any necessary authentication checks.
+//
+// TODO(vadimsh): Make it private once only module.go uses it.
 func InstallHandlers(r *router.Router, base router.MiddlewareChain, rules *validation.RuleSet) {
 	r.GET(metadataPath, base, metadataRequestHandler(rules))
 	r.POST(validationPath, base, validationRequestHandler(rules))
