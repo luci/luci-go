@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a03a71c_ebe0d5b2",
+        "filename": "cq/appengine/frontend/.gcloudignore",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-29T21:12:54Z",
+      "side": 1,
+      "message": "t?",
+      "range": {
+        "startLine": 22,
+        "startChar": 19,
+        "endLine": 22,
+        "endChar": 20
+      },
+      "revId": "563431eeb7719c8f4d02ea1dc69c521e506102cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "700c7d0a_002c1770",
+        "filename": "cq/appengine/frontend/cron.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-29T21:12:54Z",
+      "side": 1,
+      "message": "grammar is wrong and i\u0027m not sure what you mean, but assuming you\u0027ll act on this soon, leave as is.",
+      "revId": "563431eeb7719c8f4d02ea1dc69c521e506102cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
