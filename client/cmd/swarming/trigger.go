@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
@@ -233,7 +234,10 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
 
-	request := c.processTriggerOptions(args, env)
+	request, err := c.processTriggerOptions(args, env)
+	if err != nil {
+		return errors.Annotate(err, "failed to process trigger options").Err()
+	}
 
 	invocationTag, err := addInvocationUUIDTags(request)
 	if err != nil {
@@ -294,7 +298,7 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 	return nil
 }
 
-func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *swarming.SwarmingRpcsNewTaskRequest {
+func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
 	var extraArgs []string
@@ -355,6 +359,10 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *
 		}
 		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
+	randomUUID, err := uuid.NewRandom()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get random UUID").Err()
+	}
 
 	return &swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.hardTimeout,
@@ -364,5 +372,6 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *
 		Properties:     &properties,
 		Tags:           c.tags,
 		User:           c.user,
-	}
+		RequestUuid:    randomUUID.String(),
+	}, nil
 }
