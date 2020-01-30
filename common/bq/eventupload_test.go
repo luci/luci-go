@@ -76,6 +76,10 @@ func TestSave(t *testing.T) {
 				OneOf: &testdata.TestMessage_First{First: &testdata.NestedTestMessage{
 					Name: "first",
 				}},
+				StringMap: map[string]string{
+					"map_key_1": "map_value_1",
+					"map_key_2": "map_value_2",
+				},
 			},
 			InsertID: "testid",
 		}
@@ -95,6 +99,10 @@ func TestSave(t *testing.T) {
 			"struct":       `{"num":1,"str":"a"}`,
 			"duration":     2.003,
 			"first":        map[string]bigquery.Value{"name": "first"},
+			"string_map": []interface{}{
+				map[string]bigquery.Value{"key": "map_key_1", "value": "map_value_1"},
+				map[string]bigquery.Value{"key": "map_key_2", "value": "map_value_2"},
+			},
 		})
 	})
 

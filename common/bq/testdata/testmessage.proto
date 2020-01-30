@@ -12,33 +12,35 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
 message TestMessage {
-    string name = 1;
-    google.protobuf.Timestamp timestamp = 2;
-    NestedTestMessage nested = 3;
-    repeated NestedTestMessage repeated_nested = 4;
+  string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  NestedTestMessage nested = 3;
+  repeated NestedTestMessage repeated_nested = 4;
 
-    google.protobuf.Struct struct = 5;
+  google.protobuf.Struct struct = 5;
 
-    enum FOO {
-      X = 0;
-      Y = 1;
-      Z = 2;
-    }
+  enum FOO {
+    X = 0;
+    Y = 1;
+    Z = 2;
+  }
 
-    FOO foo = 6;
+  FOO foo = 6;
 
-    repeated FOO foo_repeated = 7;
+  repeated FOO foo_repeated = 7;
 
-    google.protobuf.Empty empty = 8;
-    repeated google.protobuf.Empty empties = 9;
-    google.protobuf.Duration duration = 10;
+  google.protobuf.Empty empty = 8;
+  repeated google.protobuf.Empty empties = 9;
+  google.protobuf.Duration duration = 10;
 
-    oneof one_of {
-      NestedTestMessage first = 11;
-      NestedTestMessage second = 12;
-    }
+  oneof one_of {
+    NestedTestMessage first = 11;
+    NestedTestMessage second = 12;
+  }
+
+  map<string, string> string_map = 13;
 }
 
 message NestedTestMessage {
-    string name = 1;
+  string name = 1;
 }
