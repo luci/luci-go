@@ -105,26 +105,11 @@ func (c *spawnTasksRun) main(a subcommands.Application, args []string, env subco
 		return err
 	}
 
-	invocationTag, err := addInvocationUUIDTags(requests...)
-	if err != nil {
-		return errors.Annotate(err, "failed to add InvocationUUID tags to requests").Err()
-	}
-	_, err = addRPCUUIDTags(requests...)
-	if err != nil {
-		return errors.Annotate(err, "failed to add RPCUUID tags to requests").Err()
-	}
-
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
-	createStart := float64(time.Now().Unix())
 	results, merr := createNewTasks(ctx, service, requests)
-	if merr == nil && c.cancelExtraTasks {
-		if err = cancelExtraTasks(ctx, service, createStart, invocationTag, results); err != nil {
-			return errors.Annotate(err, "failed to cancel extra tasks for invocation %s", invocationTag).Err()
-		}
-	}
 
 	var output io.Writer
 	if c.jsonOutput != "" {

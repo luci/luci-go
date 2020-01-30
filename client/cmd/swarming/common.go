@@ -25,7 +25,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	"github.com/google/uuid"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/auth"
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -290,71 +288,4 @@ func retryGoogleRPC(ctx context.Context, rpcName string, rpc func() error) error
 		}
 		return err
 	}, retry.LogCallback(ctx, rpcName))
-}
-
-// Generate an "InvocationUUID" tag and adds it to all task requests.
-// This enables determining all tasks that were created as a single invocation.
-func addInvocationUUIDTags(requests ...*swarming.SwarmingRpcsNewTaskRequest) (string, error) {
-	randomUUID, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	invocationTag := "InvocationUUID:" + randomUUID.String()
-	for _, request := range requests {
-		request.Tags = append(request.Tags, invocationTag)
-	}
-	return invocationTag, nil
-}
-
-// Generates unique "RPCUUID" tags per task request, permitting discovery
-// if Swarming triggered the same task twice by accident.
-func addRPCUUIDTags(requests ...*swarming.SwarmingRpcsNewTaskRequest) ([]string, error) {
-	var rpcTags []string
-	for _, request := range requests {
-		randomUUID, err := uuid.NewRandom()
-		if err != nil {
-			return rpcTags, err
-		}
-		rpcTag := "RPCUUID:" + randomUUID.String()
-		rpcTags = append(rpcTags, rpcTag)
-		request.Tags = append(request.Tags, rpcTag)
-	}
-	return rpcTags, nil
-}
-
-// Cancel extra tasks if Swarming triggered the same task twice in a
-// single invocation by accident.
-func cancelExtraTasks(c context.Context, service swarmingService, createStart float64, invocationTag string, results []*swarming.SwarmingRpcsTaskRequestMetadata) error {
-	countResp, err := service.CountTasks(c, createStart, invocationTag)
-	if err != nil {
-		return err
-	}
-	taskCount := countResp.Count
-	if taskCount <= int64(len(results)) {
-		return nil
-	}
-	tasksList, err := service.ListTasks(c, createStart, invocationTag)
-	if err != nil {
-		return err
-	}
-	validTaskIDs := make(map[string]struct{}, len(results))
-	for _, result := range results {
-		validTaskIDs[result.TaskId] = struct{}{}
-	}
-	var invalidTaskIDs []string
-	for _, t := range tasksList.Items {
-		if _, ok := validTaskIDs[t.TaskId]; !ok {
-			invalidTaskIDs = append(invalidTaskIDs, t.TaskId)
-		}
-	}
-	return parallel.WorkPool(8, func(gen chan<- func() error) {
-		for _, t := range invalidTaskIDs {
-			t := t
-			gen <- func() error {
-				req := swarming.SwarmingRpcsTaskCancelRequest{KillRunning: true}
-				_, err := service.CancelTask(c, t, &req)
-				return err
-			}
-		}
-	})
 }
