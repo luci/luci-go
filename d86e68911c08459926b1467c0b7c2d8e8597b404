@@ -16,6 +16,24 @@
       "revId": "d86e68911c08459926b1467c0b7c2d8e8597b404",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a71d5d77_9ec3e309",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T21:11:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "eedf4139_9b72d667",
+      "revId": "d86e68911c08459926b1467c0b7c2d8e8597b404",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
