@@ -52,7 +52,7 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (minInterval) and backs off linearly
 // on errors.
-func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {
+func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
 	if maxSleep < minInterval {
 		panic("maxSleep < minInterval")
 	}
@@ -62,11 +62,13 @@ func processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f 
 		}
 	}()
 
-	// call calls f and catches a panic.
+	// call calls f, catches a panic, and returns an error if f does not return
+	// before iterationTimeout.
 	call := func(ctx context.Context) error {
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
+		ctx, _ = context.WithTimeout(ctx, iterationTimeout)
 		return f(ctx)
 	}
 
