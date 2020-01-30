@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "047775f2_5dff5cf0",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "iteration order is random which makes this func non-deterministic. Please first retrieve all string keys,  then sort them, then iterate over them",
+      "range": {
+        "startLine": 177,
+        "startChar": 12,
+        "endLine": 177,
+        "endChar": 20
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e7f1f28_24e08333",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "can we check it only once and not for each key? https://godoc.org/reflect#Type.Key",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7facd2f7_f096e874",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "i is meaningless to the user here. it is arbitrary. i think we should use key instead. see also comment below",
+      "range": {
+        "startLine": 186,
+        "startChar": 27,
+        "endLine": 186,
+        "endChar": 42
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdbd38e1_c02d2c21",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": ":\u003d\n\n?",
+      "range": {
+        "startLine": 188,
+        "startChar": 20,
+        "endLine": 188,
+        "endChar": 21
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0bc1402_73b91ccb",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "getValue returns an error that already contains the full path to the field (based on vPath that you are passing)",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09f587d4_f8afca61",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "in all cases, we either do this, or exit. Move it back to L203?",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fef428aa_d0846674",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T17:05:27Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 201,
+        "startChar": 34,
+        "endLine": 201,
+        "endChar": 35
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
