@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "514f1252_de821d65",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T20:21:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b3fa444_31c3f6c8",
+      "range": {
+        "startLine": 46,
+        "startChar": 28,
+        "endLine": 46,
+        "endChar": 35
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "636971ff_0f787976",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81181709_c39c182f",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T20:21:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "636971ff_0f787976",
+      "range": {
+        "startLine": 101,
+        "startChar": 52,
+        "endLine": 101,
+        "endChar": 58
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "79735fd9_5252a5de",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T20:21:13Z",
+      "side": 1,
+      "message": "We don\u0027t. Removed.",
+      "parentUuid": "fac9ad58_ee639a02",
+      "range": {
+        "startLine": 227,
+        "startChar": 10,
+        "endLine": 227,
+        "endChar": 23
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39240c07_20609886",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 2
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "590ed4de_a73f82ac",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T20:21:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39240c07_20609886",
+      "range": {
+        "startLine": 232,
+        "startChar": 4,
+        "endLine": 232,
+        "endChar": 11
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6cb2d1_aef5e7a9",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 2
@@ -108,6 +204,24 @@
       "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c7a13e1_25c1e74d",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-01-30T20:21:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3a6cb2d1_aef5e7a9",
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
