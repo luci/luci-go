@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0c6181b5_251af77d",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "047775f2_5dff5cf0",
+      "range": {
+        "startLine": 177,
+        "startChar": 12,
+        "endLine": 177,
+        "endChar": 20
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e7f1f28_24e08333",
         "filename": "common/bq/eventupload.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "927e82d5_2ca9028e",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e7f1f28_24e08333",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "a6896dee_772daf9e",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7facd2f7_f096e874",
+      "range": {
+        "startLine": 186,
+        "startChar": 27,
+        "endLine": 186,
+        "endChar": 42
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fdbd38e1_c02d2c21",
         "filename": "common/bq/eventupload.go",
         "patchSetId": 2
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "dd0ff200_86d89e36",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fdbd38e1_c02d2c21",
+      "range": {
+        "startLine": 188,
+        "startChar": 20,
+        "endLine": 188,
+        "endChar": 21
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0bc1402_73b91ccb",
         "filename": "common/bq/eventupload.go",
         "patchSetId": 2
@@ -105,6 +195,24 @@
     },
     {
       "key": {
+        "uuid": "188d1c8d_977c19e3",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Not always since this is recursive. For example if v is a map with int key, the error message here will just be \"map key must be a string\" so the annotation is helpful.",
+      "parentUuid": "d0bc1402_73b91ccb",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09f587d4_f8afca61",
         "filename": "common/bq/eventupload.go",
         "patchSetId": 2
@@ -119,6 +227,24 @@
       "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e1924a7_75dfbf6f",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09f587d4_f8afca61",
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -142,6 +268,30 @@
       "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8df5d06b_8ce1b958",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T18:23:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fef428aa_d0846674",
+      "range": {
+        "startLine": 201,
+        "startChar": 34,
+        "endLine": 201,
+        "endChar": 35
+      },
+      "revId": "3446a9aeaa6f253011004ca4552ff2de6f03e012",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
