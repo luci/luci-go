@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	tsmoncommon "go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -38,6 +40,13 @@ const maxPurgeTestResultsWorkers = 30
 // variant combinations with unexpected results will not be purged, until
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
+
+var (
+	purgeBacklogMetric = metric.NewInt(
+		"resultdb/expired_results_backlog",
+		"How long in seconds is the oldest invocation overdue to be purged",
+		nil)
+)
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 
@@ -86,6 +95,14 @@ func dispatchExpiredResultDeletionTasks(ctx context.Context, invIDs []span.Invoc
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
 func purgeExpiredResults(ctx context.Context) {
+	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
+		val, err := expiredResultsBacklogSeconds(ctx)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to get purge backlog length: %s", err)
+			return
+		}
+		purgeBacklogMetric.Set(ctx, val)
+	})
 	processingLoop(ctx, 5*time.Second, 5*time.Second, func(ctx context.Context) error {
 		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, clock.Now(ctx), maxPurgeTestResultsWorkers)
 		if err != nil {
@@ -199,4 +216,34 @@ func queryTestVariantsWithUnexpectedResults(ctx context.Context, id span.Invocat
 		return nil, err
 	}
 	return ret, nil
+}
+
+// expiredResultsBacklogSeconds computes the age of the oldest invocation
+// pending to be purged in seconds.
+func expiredResultsBacklogSeconds(ctx context.Context) (int64, error) {
+	st := spanner.NewStatement(`
+		SELECT GREATEST(0, TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MIN(EarliestExpiration), SECOND)) AS BacklogSeconds
+		FROM (
+			SELECT TargetShard, (
+				SELECT ExpectedTestResultsExpirationTime
+				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+				WHERE ShardId = TargetShard
+				AND ExpectedTestResultsExpirationTime IS NOT NULL
+				LIMIT 1
+			) AS EarliestExpiration
+			FROM UNNEST(GENERATE_ARRAY(0, (
+				SELECT MAX(ShardId)
+				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+				WHERE ExpectedTestResultsExpirationTime IS NOT NULL
+			))) AS TargetShard
+		)
+
+	`)
+	var ret int64
+	row, err := span.Client(ctx).Single().Query(ctx, st).Next()
+	if err != nil {
+		return 0, err
+	}
+	err = row.Columns(&ret)
+	return ret, err
 }
