@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -100,13 +101,13 @@ type Row struct {
 
 // Save is used by bigquery.Uploader.Put when inserting values into a table.
 func (r *Row) Save() (map[string]bigquery.Value, string, error) {
-	m, err := mapFromMessage(r.Message, nil)
+	m, err := MapFromMessage(r.Message, nil)
 	return m, r.InsertID, err
 }
 
-// mapFromMessage returns a {BQ Field name: BQ value} map.
+// MapFromMessage returns a {BQ Field name: BQ value} map.
 // path is a slice of Go field names leading to m.
-func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, error) {
+func MapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, error) {
 	sPtr := reflect.ValueOf(m)
 	switch {
 	case sPtr.Kind() != reflect.Ptr:
@@ -158,14 +159,44 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				// omit a repeated field with no elements.
 				continue
 			}
+
 			elems := make([]interface{}, n)
 			vPath := append(path, "")
-			for i := 0; i < len(elems); i++ {
-				vPath[len(vPath)-1] = strconv.Itoa(i)
-				elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
-				if err != nil {
-					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+			switch f.Kind() {
+			case reflect.Slice:
+				for i := 0; i < len(elems); i++ {
+					vPath[len(vPath)-1] = strconv.Itoa(i)
+					elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+					}
 				}
+
+			case reflect.Map:
+				if f.Type().Key().Kind() != reflect.String {
+					return nil, fmt.Errorf("map key must be a string")
+				}
+
+				keys := f.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return keys[i].String() < keys[j].String()
+				})
+
+				for i, k := range keys {
+					kStr := k.String()
+					vPath[len(vPath)-1] = kStr
+					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%s]",  fi.OrigName, kStr).Err()
+					}
+					elems[i] = map[string]bigquery.Value{
+							"key": kStr,
+							"value": elemValue,
+					}
+				}
+
+			default:
+				return nil, fmt.Errorf("kind %s not supported as a repeated field", f.Kind())
 			}
 			bqField = fi.OrigName
 			bqValue = elems
@@ -310,7 +341,7 @@ func getValue(value interface{}, path []string, prop *proto.Properties) (interfa
 		if nested == nil {
 			return nil, nil
 		}
-		m, err := mapFromMessage(nested, path)
+		m, err := MapFromMessage(nested, path)
 		if m == nil {
 			// a nil map is not nil when converted to interface{},
 			// so return nil explicitly.
