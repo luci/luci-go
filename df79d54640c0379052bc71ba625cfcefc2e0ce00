@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cf3efea8_9aa0af14",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T18:46:18Z",
+      "side": 1,
+      "message": "nit: this seems to just make code longer. \na and b are used only once. consider inlining them",
+      "range": {
+        "startLine": 182,
+        "startChar": 5,
+        "endLine": 183,
+        "endChar": 17
+      },
+      "revId": "df79d54640c0379052bc71ba625cfcefc2e0ce00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "135be5ae_4cfee289",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T18:46:18Z",
+      "side": 1,
+      "message": "nit: inline?\nconsistent with L169",
+      "range": {
+        "startLine": 188,
+        "startChar": 5,
+        "endLine": 188,
+        "endChar": 6
+      },
+      "revId": "df79d54640c0379052bc71ba625cfcefc2e0ce00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6c51546_e21224ad",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T18:46:18Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 192,
+        "startChar": 64,
+        "endLine": 192,
+        "endChar": 73
+      },
+      "revId": "df79d54640c0379052bc71ba625cfcefc2e0ce00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0306a8b_484da479",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T18:46:18Z",
+      "side": 1,
+      "message": "reflection is slow. Could you reuse the value we got in L189?",
+      "range": {
+        "startLine": 195,
+        "startChar": 14,
+        "endLine": 195,
+        "endChar": 24
+      },
+      "revId": "df79d54640c0379052bc71ba625cfcefc2e0ce00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "220622e0_a663e23f",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T18:46:18Z",
+      "side": 1,
+      "message": "kind",
+      "range": {
+        "startLine": 201,
+        "startChar": 28,
+        "endLine": 201,
+        "endChar": 32
+      },
+      "revId": "df79d54640c0379052bc71ba625cfcefc2e0ce00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
