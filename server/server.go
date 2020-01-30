@@ -390,18 +390,16 @@ type Server struct {
 	// Routes is a router for requests hitting HTTPAddr port.
 	//
 	// This router is used for all requests whose Host header does not match any
-	// registered per-host routers (see VirtualHost). Normally, there are no
-	// per-host routers, so usually Routes is used for all requests.
+	// specially registered per-host routers (see VirtualHost). Normally, there
+	// are no such per-host routers, so usually Routes is used for all requests.
+	//
+	// This router is also accessible to the server modules and they can install
+	// routes into it.
 	//
 	// Should be populated before ListenAndServe call.
 	Routes *router.Router
 
 	// PRPC is pRPC server with APIs exposed on HTTPAddr port via Routes router.
-	//
-	// If you want to expose pRPC APIs via some VirtualHost(...) router, register
-	// the pRPC server there explicitly:
-	//
-	//  srv.PRPC.InstallHandlers(srv.VirtualHost("..."), router.MiddlewareChain{})
 	//
 	// Should be populated before ListenAndServe call.
 	PRPC *prpc.Server
@@ -463,6 +461,11 @@ func (h *moduleHostImpl) panicIfInvalid() {
 	if h.invalid {
 		panic("module.Host must not be used outside of Initialize")
 	}
+}
+
+func (h *moduleHostImpl) Routes() *router.Router {
+	h.panicIfInvalid()
+	return h.srv.Routes
 }
 
 func (h *moduleHostImpl) RunInBackground(activity string, f func(context.Context)) {
@@ -606,9 +609,23 @@ func (s *Server) AddPort(opts PortOptions) *Port {
 // VirtualHost returns a router (registering it if necessary) used for requests
 // that hit the main port (opts.HTTPAddr) and have the given Host header.
 //
+// Should be used in rare cases when the server is exposed through multiple
+// domain names and requests should be routed differently based on what domain
+// was used. If your server is serving only one domain name, or you don't care
+// what domain name is used to access it, do not use VirtualHost.
+//
 // Note that requests that match some registered virtual host router won't
-// reach the default router (server.Routes), even if the host-specific router
+// reach the default router (server.Routes), even if the virtual host router
 // doesn't have a route for them. Such requests finish with HTTP 404.
+//
+// Also the router created by VirtualHost is initially completely empty: the
+// server and its modules don't install anything into it (there's intentionally
+// no mechanism to do this). For that reason VirtualHost should never by used to
+// register a router for the "main" domain name: it will make the default
+// server.Routes (and all handlers installed there by server modules) useless,
+// probably breaking the server. Put routes for the main server functionality
+// directly into server.Routes instead, using VirtualHost only for routes that
+// critically depend on Host header.
 //
 // Should be called before ListenAndServe (panics otherwise).
 func (s *Server) VirtualHost(host string) *router.Router {
