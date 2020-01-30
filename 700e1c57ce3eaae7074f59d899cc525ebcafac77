@@ -22,6 +22,30 @@
       "revId": "700e1c57ce3eaae7074f59d899cc525ebcafac77",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e103f4ba_d9dc8fcb",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-01-30T19:15:21Z",
+      "side": 1,
+      "message": "I was testing sth and forgot to change it back.",
+      "parentUuid": "b91f968b_1c40b0b6",
+      "range": {
+        "startLine": 110,
+        "startChar": 5,
+        "endLine": 110,
+        "endChar": 6
+      },
+      "revId": "700e1c57ce3eaae7074f59d899cc525ebcafac77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
