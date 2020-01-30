@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
@@ -91,7 +92,7 @@ func tryFinalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 		return nil
 
 	default:
-		logging.Infof(ctx, "finalizing %s...", invID.Name())
+		logging.Infof(ctx, "decided to finalize %s...", invID.Name())
 		return finalizeInvocation(ctx, invID)
 	}
 }
@@ -259,7 +260,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
 		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, ProcessAfter)
-		SELECT @taskType, FORMAT("%s/%s", @invID, including.InvocationId), including.InvocationId, CURRENT_TIMESTAMP()
+		SELECT @taskType, FORMAT("%s/%s", @invID, including.InvocationId), including.InvocationId, @now
 		FROM IncludedInvocations@{FORCE_INDEX=ReversedIncludedInvocations} incl
 		JOIN Invocations including ON incl.InvocationId = including.InvocationId
 		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
@@ -268,6 +269,8 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 		"taskType":   string(tasks.TryFinalizeInvocation),
 		"invID":      invID,
 		"finalizing": pb.Invocation_FINALIZING,
+		// Do not use CURRENT_TIMESTAMP() because integration testing gets hard.
+		"now": clock.Now(ctx),
 	})
 	count, err := txn.Update(ctx, st)
 	if err != nil {
@@ -284,13 +287,15 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
 		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, ProcessAfter)
-		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, CURRENT_TIMESTAMP()
+		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, @now
 		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
 		WHERE inv.InvocationId = @invID
 	`)
 	st.Params = span.ToSpannerMap(map[string]interface{}{
 		"taskType": string(tasks.BQExport),
 		"invID":    invID,
+		// Do not use CURRENT_TIMESTAMP() because integration testing gets hard.
+		"now": clock.Now(ctx),
 	})
 	count, err := txn.Update(ctx, st)
 	if err != nil {

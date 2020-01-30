@@ -32,11 +32,14 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
-func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
+func (b *backend) dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
 	leaseDuration := time.Minute
 	switch taskType {
 	case tasks.TryFinalizeInvocation:
 		leaseDuration = 10 * time.Second
+	}
+	if b.TestMode {
+		leaseDuration = 100 * time.Millisecond
 	}
 
 	var mu sync.Mutex
@@ -55,11 +58,14 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
 				switch {
 				case err == tasks.ErrConflict:
+					logging.Warningf(ctx, "Conflict while trying to lease the task")
 					// It's possible another worker has leased the task, and it's fine, skip.
 					return nil
 				case err != nil:
 					return err
 				}
+
+				logging.Debugf(ctx, "Leased the task")
 
 				switch taskType {
 				case tasks.BQExport:
@@ -93,15 +99,15 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 }
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
-func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
+func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	// TODO(chanli): Add alert on failures.
-	processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+	b.processingLoop(ctx, time.Second, 5*time.Second, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
 		}
 
-		processed, err := dispatchInvocationTasks(ctx, taskType, ids)
+		processed, err := b.dispatchInvocationTasks(ctx, taskType, ids)
 		if len(processed) > 0 {
 			logging.Infof(ctx, "processed tasks: %q", processed)
 		}
