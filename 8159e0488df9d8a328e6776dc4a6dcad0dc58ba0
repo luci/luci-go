@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "49aee4a4_457a0a9c",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "Consider canceling the context explicitly when exiting the function. I believe otherwise there\u0027ll be a goroutine sitting and waiting for b.processingLoopIterationTimeout to pass (which is sort of a leak).",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 9
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "babddfd0_e431cdb3",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "Since you nitpick this a lot, I\u0027ll do the same: \"Comments for public symbols should start with symbol\u0027s name\".",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 11
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34a1658f_c22af360",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "Please double check it works correctly regardless of timezones.\n\nAlso I imagine CURRENT_TIMESTAMP() is always more precise and correlates with internal spanner magic (like when doing stale reads later).\n\nI assume here it doesn\u0027t matter.\n\nAlso consider NOT to mock time in integration tests. I think it would make them more usable overall (they are supposed to be close to the real environment).",
+      "range": {
+        "startLine": 273,
+        "startChar": 2,
+        "endLine": 273,
+        "endChar": 23
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc0da9bd_e6720f01",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "do you really want all this logging in the production deployment?",
+      "range": {
+        "startLine": 68,
+        "startChar": 4,
+        "endLine": 68,
+        "endChar": 42
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97a22f42_5ce85ddc",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "Mocking time here seems wrong, considering there\u0027s a lot of non-mocked time-related calls below anyway.",
+      "range": {
+        "startLine": 30,
+        "startChar": 9,
+        "endLine": 30,
+        "endChar": 39
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd555445_da679ed9",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "0666, no need to make it executable...",
+      "range": {
+        "startLine": 83,
+        "startChar": 65,
+        "endLine": 83,
+        "endChar": 69
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9e30f85_3a4535a5",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "this can be done in parallel to speed up the shutdown",
+      "range": {
+        "startLine": 99,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 3
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ccc28ca_f55cdb48",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-30T23:21:49Z",
+      "side": 1,
+      "message": "This is noop, ListenAndServe exits only after Shutdown has already been called (or if it failed to start at all, in which case Shutdown is also noop).",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 21
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
