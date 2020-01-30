@@ -193,7 +193,7 @@ func (b *Buffer) fromSpanner(row *spanner.Row, col int, goPtr interface{}) error
 	}
 
 	if err := row.Column(col, spanPtr); err != nil {
-		return err
+		return errors.Annotate(err, "failed to read column %q", row.ColumnName(col)).Err()
 	}
 
 	if spanPtr == goPtr {
