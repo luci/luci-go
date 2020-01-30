@@ -144,9 +144,8 @@ type triggerRun struct {
 	expiration int
 
 	// Other.
-	rawCmd           bool
-	dumpJSON         string
-	cancelExtraTasks bool
+	rawCmd   bool
+	dumpJSON string
 }
 
 func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
@@ -182,8 +181,10 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	// Other.
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
+
 	// TODO(https://crbug.com/997221): Remove this option.
-	c.Flags.BoolVar(&c.cancelExtraTasks, "cancel-extra-tasks", false, "Cancel extra spawned tasks.")
+	var cancelExtraTasks bool
+	c.Flags.BoolVar(&cancelExtraTasks, "cancel-extra-tasks", false, "DEPRECATED: This will be removed. Cancel extra spawned tasks.")
 }
 
 func (c *triggerRun) Parse(args []string) error {
@@ -239,30 +240,14 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		return errors.Annotate(err, "failed to process trigger options").Err()
 	}
 
-	invocationTag, err := addInvocationUUIDTags(request)
-	if err != nil {
-		return errors.Annotate(err, "failed to add InvocationUUID tag to request").Err()
-	}
-	_, err = addRPCUUIDTags(request)
-	if err != nil {
-		return errors.Annotate(err, "failed to add RPCUUID tag to request").Err()
-	}
-
 	service, err := c.createSwarmingClient(ctx)
 	if err != nil {
 		return err
 	}
 
-	createStart := float64(time.Now().Unix())
 	result, err := service.NewTask(ctx, request)
 	if err != nil {
 		return err
-	}
-
-	if c.cancelExtraTasks {
-		if err = cancelExtraTasks(ctx, service, createStart, invocationTag, []*swarming.SwarmingRpcsTaskRequestMetadata{result}); err != nil {
-			return errors.Annotate(err, "failed to cancel extra tasks for invocation %s", invocationTag).Err()
-		}
 	}
 
 	if c.dumpJSON != "" {
