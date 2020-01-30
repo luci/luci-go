@@ -91,7 +91,8 @@ def _cache(path, *, name=None, wait_for_warm_cache=None):
         root (in recipes this root is `api.path['cache']`). Must use POSIX
         format (forward slashes). In most cases, it does not need slashes at
         all. Must be unique in the given builder definition (cannot mount
-        multiple caches to the same path). Required.
+        multiple caches to the same path). Required, if empty,
+        wait_for_warm_cache must be set to time.zero.
     name: identifier of the cache to mount to the path. Default is same
         value as `path` itself. Must be unique in the given builder definition
         (cannot mount the same cache to multiple paths).
@@ -100,16 +101,23 @@ def _cache(path, *, name=None, wait_for_warm_cache=None):
         build, before giving up and starting looking for any matching bot
         (regardless whether it has the cache or not). If there are no bots with
         this cache at all, the build will skip waiting and will immediately
-        fallback to any matching bot. By default (if unset or zero), there'll
-        be no attempt to find a bot with this cache already warm: the build
-        may or may not end up on a warm bot, there's no guarantee one way or
-        another.
+        fallback to any matching bot. By default (if unset), there'll be no
+        attempt to find a bot with this cache already warm: the build may or may
+        not end up on a warm bot, there's no guarantee one way or another. The
+        value time.zero can be used in buildbucket to disable a default
+        dimension set via the buildbucket template, like `builder`, but only if
+        path is also empty.
 
   Returns:
     swarming.cache struct with fields `path`, `name` and `wait_for_warm_cache`.
   """
-  path = validate.string('path', path)
   name = validate.string('name', name, default=path, required=False)
+  if path == "" && wait_for_warm_cache == time.zero {
+    return _cache_ctor(
+        path = path,
+        name = name,
+        wait_for_warm_cache = wait_for_warm_cache)
+  path = validate.string('path', path)
   return _cache_ctor(
       path = path,
       name = name,
