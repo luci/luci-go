@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eedf4139_9b72d667",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T21:03:51Z",
+      "side": 1,
+      "message": "if we add another param here, we\u0027d need to make it a struct",
+      "revId": "d86e68911c08459926b1467c0b7c2d8e8597b404",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
