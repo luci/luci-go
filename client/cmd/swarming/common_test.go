@@ -19,12 +19,8 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
-	"time"
-
-	googleapi "google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
-	. "go.chromium.org/luci/common/testing/assertions"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -101,59 +97,4 @@ func mockListTasks(c context.Context, start float64, tags ...string) (*swarming.
 			},
 		},
 	}, nil
-}
-
-func TestCancelExtraTasks(t *testing.T) {
-	t.Parallel()
-
-	invocationTag := "InvocationUUID:abcd1234-abcd-4abc-8abc-abcdef123456"
-	rpcTag := "RPCUUID:dcba4321-dcba-4cba-8cba-fedcba654321"
-	createStart := float64(time.Now().Unix())
-	results := []*swarming.SwarmingRpcsTaskRequestMetadata{
-		{
-			Request: &swarming.SwarmingRpcsTaskRequest{
-				Name: "task1",
-				Tags: []string{invocationTag, rpcTag},
-			},
-		},
-	}
-	c := context.Background()
-
-	duplicatingService := testService{
-		countTasks: mockCountTasks,
-		listTasks:  mockListTasks,
-		cancelTask: func(c context.Context, taskID string, req *swarming.SwarmingRpcsTaskCancelRequest) (*swarming.SwarmingRpcsCancelResponse, error) {
-			return &swarming.SwarmingRpcsCancelResponse{
-				Ok: true,
-			}, nil
-		},
-	}
-
-	Convey(`Test success`, t, func() {
-		err := cancelExtraTasks(c, &duplicatingService, createStart, invocationTag, results)
-		So(err, ShouldBeNil)
-	})
-
-	badCountService := testService{
-		countTasks: func(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTasksCount, error) {
-			return nil, &googleapi.Error{Code: 404}
-		},
-	}
-
-	Convey(`Test fatal count response`, t, func() {
-		err := cancelExtraTasks(c, &badCountService, createStart, invocationTag, results)
-		So(err, ShouldErrLike, "404")
-	})
-
-	badListService := testService{
-		countTasks: mockCountTasks,
-		listTasks: func(c context.Context, start float64, tags ...string) (*swarming.SwarmingRpcsTaskList, error) {
-			return nil, &googleapi.Error{Code: 404}
-		},
-	}
-
-	Convey(`Test fatal list response`, t, func() {
-		err := cancelExtraTasks(c, &badListService, createStart, invocationTag, results)
-		So(err, ShouldErrLike, "404")
-	})
 }
