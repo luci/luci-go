@@ -86,7 +86,7 @@ func dispatchExpiredResultDeletionTasks(ctx context.Context, invIDs []span.Invoc
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
 func purgeExpiredResults(ctx context.Context) {
-	processingLoop(ctx, 5*time.Second, 5*time.Second, func(ctx context.Context) error {
+	processingLoop(ctx, 5*time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, clock.Now(ctx), maxPurgeTestResultsWorkers)
 		if err != nil {
 			return err
