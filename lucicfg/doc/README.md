@@ -2102,6 +2102,10 @@ This means that any LUCI builder has a "personal disk space" on the bot.
 Builder cache is often a good start before customizing caching. In recipes, it
 is available at `api.path['cache'].join('builder')`.
 
+The way to disable this cache is by using:
+
+    swarming.cache('builder', name='', wait_for_warm_cache=time.zero)
+
 In order to share the builder cache directory among multiple builders, some
 explicitly named cache can be mounted to `builder` path on these builders.
 Buildbucket will not try to override it with its auto-generated builder cache.
@@ -2119,8 +2123,8 @@ name with something project-specific, e.g. `v8-`.
 #### Arguments {#swarming.cache-args}
 
 * **path**: path where the cache should be mounted to, relative to some known root (in recipes this root is `api.path['cache']`). Must use POSIX format (forward slashes). In most cases, it does not need slashes at all. Must be unique in the given builder definition (cannot mount multiple caches to the same path). Required.
-* **name**: identifier of the cache to mount to the path. Default is same value as `path` itself. Must be unique in the given builder definition (cannot mount the same cache to multiple paths).
-* **wait_for_warm_cache**: how long to wait (with minutes precision) for a bot that has this named cache already to become available and pick up the build, before giving up and starting looking for any matching bot (regardless whether it has the cache or not). If there are no bots with this cache at all, the build will skip waiting and will immediately fallback to any matching bot. By default (if unset or zero), there'll be no attempt to find a bot with this cache already warm: the build may or may not end up on a warm bot, there's no guarantee one way or another.
+* **name**: identifier of the cache to mount to the path. Must be unique in the given builder definition (cannot mount the same cache to multiple paths). If set to '', wait_for_warm_cache must be set to time.zero. This effectively disable the cache. Otherwise, if unspecified and thus None, it defaults to the same value as `path`.
+* **wait_for_warm_cache**: how long to wait (with minutes precision) for a bot that has this named cache already to become available and pick up the build, before giving up and starting looking for any matching bot (regardless whether it has the cache or not). If there are no bots with this cache at all, the build will skip waiting and will immediately fallback to any matching bot. By default (if unset), there'll be no attempt to find a bot with this cache already warm: the build may or may not end up on a warm bot, there's no guarantee one way or another. The value time.zero can be used in buildbucket to disable a default dimension set via the buildbucket template, like `builder`, but only if path is also empty.
 
 
 #### Returns  {#swarming.cache-returns}
