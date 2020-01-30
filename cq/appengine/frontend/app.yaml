@@ -1,31 +1,16 @@
 service: default
-runtime: go111
+runtime: go113
 
 automatic_scaling:
   min_idle_instances: 1
 
+entrypoint: >
+  /usr/local/bin/start
+  -auth-service-host chrome-infra-auth-dev.appspot.com
+  -config-service-host luci-config.appspot.com
+  -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
+
 handlers:
-- url: /rpcexplorer/?
-  static_files: rpcexplorer/index.html
-  upload: rpcexplorer/index.html
-  secure: always
-
-# The entire subpath is globbed because RPC Explorer uses native URL redirecting
-# for sub-pages, and we want all of them to map to the same HTML file.
-- url: /rpcexplorer/services/.*
-  static_files: rpcexplorer/index.html
-  upload: rpcexplorer/index.html
-  secure: always
-
-- url: /rpcexplorer
-  static_dir: rpcexplorer
-  secure: always
-
-- url: /(internal|admin)/.*
-  script: auto
-  secure: always
-  login: admin
-
 - url: /.*
   script: auto
   secure: always

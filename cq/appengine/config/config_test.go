@@ -15,12 +15,12 @@
 package config
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
 
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config/validation"
 	v2 "go.chromium.org/luci/cq/api/config/v2"
 
@@ -32,9 +32,12 @@ func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
 	Convey("Validation Rules", t, func() {
-		validation.Rules.Freeze()
-		c := gaetesting.TestingContextWithAppID("commit-queue")
-		patterns, err := validation.Rules.ConfigPatterns(c)
+		r := validation.RuleSet{}
+		addRules(&r)
+		r.RegisterVar("appid", func(context.Context) (string, error) { return "commit-queue", nil })
+		r.Freeze()
+
+		patterns, err := r.ConfigPatterns(context.Background())
 		So(err, ShouldBeNil)
 		So(len(patterns), ShouldEqual, 1)
 		Convey("project-scope cq.cfg", func() {
@@ -80,9 +83,10 @@ const validConfigTextPB = `
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	Convey("Validate Config", t, func() {
-		c := gaetesting.TestingContext()
-		vctx := &validation.Context{Context: c}
+		vctx := &validation.Context{Context: ctx}
 		configSet := "projects/foo"
 		path := "cq.cfg"
 
@@ -281,7 +285,7 @@ func TestValidation(t *testing.T) {
 				So(vctx.Finalize(), ShouldErrLike, "url is required")
 
 				g.Url = ":badscheme, bad URL"
-				vctx = &validation.Context{Context: c}
+				vctx = &validation.Context{Context: ctx}
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "failed to parse url")
 			})
@@ -299,7 +303,7 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "only *.googlesource.com hosts supported for now")
 
-				vctx = &validation.Context{Context: c}
+				vctx = &validation.Context{Context: ctx}
 				g.Url = "new-scheme://chromium-review.googlesource.com"
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldErrLike, "only 'https' scheme supported for now")
@@ -328,7 +332,7 @@ func TestValidation(t *testing.T) {
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
 
-				vctx = &validation.Context{Context: c}
+				vctx = &validation.Context{Context: ctx}
 				p.Name = "/prefix-not-allowed/so-is-/-suffix/"
 				validateProjectConfig(vctx, &cfg)
 				So(vctx.Finalize(), ShouldNotBeNil)
@@ -424,10 +428,11 @@ func TestValidation(t *testing.T) {
 func TestTryjobValidation(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	Convey("Validate Tryjob Verifier Config", t, func() {
-		c := gaetesting.TestingContext()
 		validate := func(textPB string) error {
-			vctx := &validation.Context{Context: c}
+			vctx := &validation.Context{Context: ctx}
 			cfg := v2.Verifiers_Tryjob{}
 			if err := proto.UnmarshalText(textPB, &cfg); err != nil {
 				panic(err)
