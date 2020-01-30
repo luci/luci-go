@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9bf89473_b5f338ce",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:34:55Z",
+      "side": 1,
+      "message": "hmmmm all we need to do here is \n\n  ctx, _ :\u003d context.WithTimeout(ctx, iterationTimeout)",
+      "revId": "db1123b73d7c21037b3b269bb488ac85c1c6acad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e178750e_daf947ff",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:34:55Z",
+      "side": 1,
+      "message": "this leaks the goroutine, and will result in eventual memory leak",
+      "revId": "db1123b73d7c21037b3b269bb488ac85c1c6acad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
