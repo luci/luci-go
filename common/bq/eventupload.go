@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -158,14 +159,44 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				// omit a repeated field with no elements.
 				continue
 			}
+
 			elems := make([]interface{}, n)
 			vPath := append(path, "")
-			for i := 0; i < len(elems); i++ {
-				vPath[len(vPath)-1] = strconv.Itoa(i)
-				elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
-				if err != nil {
-					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+			switch f.Kind() {
+			case reflect.Slice:
+				for i := 0; i < len(elems); i++ {
+					vPath[len(vPath)-1] = strconv.Itoa(i)
+					elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+					}
 				}
+
+			case reflect.Map:
+				if f.Type().Key().Kind() != reflect.String {
+					return nil, fmt.Errorf("map key must be a string")
+				}
+
+				keys := f.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return keys[i].String() < keys[j].String()
+				})
+
+				for i, k := range keys {
+					kStr := k.String()
+					vPath[len(vPath)-1] = kStr
+					elemValue, err := getValue(f.MapIndex(k).Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%s]",  fi.OrigName, kStr).Err()
+					}
+					elems[i] = map[string]bigquery.Value{
+							"key": kStr,
+							"value": elemValue,
+					}
+				}
+
+			default:
+				return nil, fmt.Errorf("kind %s not supported as a repeated field", f.Kind())
 			}
 			bqField = fi.OrigName
 			bqValue = elems
