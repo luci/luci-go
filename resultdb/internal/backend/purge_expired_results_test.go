@@ -106,6 +106,13 @@ func TestPurgeExpiredResults(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(expiredResultsInvocationIds), ShouldEqual, 3)
 
+		bls, err := expiredResultsDelaySeconds(ctx)
+		So(err, ShouldBeNil)
+		// The backlog query uses spanner's CURRENT_TIMESTAMP(), and the invocations
+		// above have their results expiration at some constant timestamp in the
+		// past, so all we can assert is that the backlog is positive.
+		So(bls, ShouldBeGreaterThan, 0)
+
 		// Purge expired data.
 		So(dispatchExpiredResultDeletionTasks(ctx, expiredResultsInvocationIds), ShouldBeNil)
 
