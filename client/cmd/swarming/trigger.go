@@ -181,10 +181,6 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	// Other.
 	c.Flags.BoolVar(&c.rawCmd, "raw-cmd", false, "When set, the command after -- is run on the bot. Note that this overrides any command in the .isolated file.")
 	c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Dump details about the triggered task(s) to this file as json.")
-
-	// TODO(https://crbug.com/997221): Remove this option.
-	var cancelExtraTasks bool
-	c.Flags.BoolVar(&cancelExtraTasks, "cancel-extra-tasks", false, "DEPRECATED: This will be removed. Cancel extra spawned tasks.")
 }
 
 func (c *triggerRun) Parse(args []string) error {
