@@ -158,18 +158,48 @@ func mapFromMessage(m proto.Message, path []string) (map[string]bigquery.Value, 
 				// omit a repeated field with no elements.
 				continue
 			}
-			elems := make([]interface{}, n)
-			vPath := append(path, "")
-			for i := 0; i < len(elems); i++ {
-				vPath[len(vPath)-1] = strconv.Itoa(i)
-				elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
-				if err != nil {
-					return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+			switch f.Kind() {
+			case reflect.Slice:
+				elems := make([]interface{}, n)
+				vPath := append(path, "")
+				for i := 0; i < len(elems); i++ {
+					vPath[len(vPath)-1] = strconv.Itoa(i)
+					elems[i], err = getValue(f.Index(i).Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%d]", fi.OrigName, i).Err()
+					}
 				}
+				bqValue = elems
+
+			case reflect.Map:
+				elems := make([]interface{}, n)
+				vPath := append(path, "")
+				it := f.MapRange()
+				i := 0
+				for it.Next() {
+					k := it.Key()
+					if k.Kind() != reflect.String {
+						return nil, errors.Annotate(err, "map key must be a string").Err()
+					}
+
+					v:= it.Value()
+					vPath[len(vPath)-1] = strconv.Itoa(i)
+					var elemValue interface{}
+					elemValue, err = getValue(v.Interface(), vPath, fi.Properties)
+					if err != nil {
+						return nil, errors.Annotate(err, "%s[%s]", fi.OrigName, k.String()).Err()
+					}
+					elems[i] = map[string]bigquery.Value{
+							"key": k.String(),
+							"value": elemValue,
+					}
+					i++
+				}
+				bqValue = elems
+
+			default:
 			}
 			bqField = fi.OrigName
-			bqValue = elems
-
 		default:
 			bqField = fi.OrigName
 			if bqValue, err = getValue(s.FieldByIndex(fi.structIndex).Interface(), path, fi.Properties); err != nil {
