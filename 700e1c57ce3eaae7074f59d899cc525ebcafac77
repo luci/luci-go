@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b91f968b_1c40b0b6",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T19:12:34Z",
+      "side": 1,
+      "message": "why does this need to be public?",
+      "range": {
+        "startLine": 110,
+        "startChar": 5,
+        "endLine": 110,
+        "endChar": 6
+      },
+      "revId": "700e1c57ce3eaae7074f59d899cc525ebcafac77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
