@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b3fa444_31c3f6c8",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:10:39Z",
+      "side": 1,
+      "message": "nit: this reads like it is a number of items in the backlog. How about \"delay\" or \"overdue\"?",
+      "range": {
+        "startLine": 46,
+        "startChar": 28,
+        "endLine": 46,
+        "endChar": 35
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "636971ff_0f787976",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:10:39Z",
+      "side": 1,
+      "message": "delay? overdue?",
+      "range": {
+        "startLine": 101,
+        "startChar": 52,
+        "endLine": 101,
+        "endChar": 58
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fac9ad58_ee639a02",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:10:39Z",
+      "side": 1,
+      "message": "why do we need this?",
+      "range": {
+        "startLine": 227,
+        "startChar": 10,
+        "endLine": 227,
+        "endChar": 23
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39240c07_20609886",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:10:39Z",
+      "side": 1,
+      "message": "nit: since you are not using implicit MIN(), could make it explicit by adding a comment? (or use explicit MIN)",
+      "range": {
+        "startLine": 232,
+        "startChar": 4,
+        "endLine": 232,
+        "endChar": 11
+      },
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a6cb2d1_aef5e7a9",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-30T01:10:39Z",
+      "side": 1,
+      "message": "second time i see we read a single row. consider a function in span package\n\n  func ReadFirstRow(ctx context.Context, txn Txn, st *spanner.Statement, ptrs ...[]interface{}) error\n\nfine to do in a separate CL",
+      "revId": "e26e9b166d41adc51861e13053e8ee07d5f99a00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
