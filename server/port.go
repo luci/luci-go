@@ -37,8 +37,8 @@ type Port struct {
 	// Routes is a router for requests hitting this port.
 	//
 	// This router is used for all requests whose Host header does not match any
-	// registered per-host routers (see VirtualHost). Normally, there are no
-	// per-host routers, so usually Routes is used for all requests.
+	// specially registered per-host routers (see VirtualHost). Normally, there
+	// are no such per-host routers, so usually Routes is used for all requests.
 	//
 	// Should be populated before Server's ListenAndServe call.
 	Routes *router.Router
@@ -52,10 +52,10 @@ type Port struct {
 }
 
 // VirtualHost returns a router (registering it if necessary) used for requests
-// that hit this port and have the given Host header.
+// that have the given Host header.
 //
 // Note that requests that match some registered virtual host router won't
-// reach the default router (port.Routes), even if the host-specific router
+// reach the default router (port.Routes), even if the virtual host router
 // doesn't have a route for them. Such requests finish with HTTP 404.
 //
 // Should be called before Server's ListenAndServe (panics otherwise).
