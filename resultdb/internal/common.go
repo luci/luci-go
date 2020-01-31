@@ -16,6 +16,7 @@ package internal
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -111,5 +112,12 @@ func verifyAccess(ctx context.Context) error {
 
 	default:
 		return nil
+	}
+}
+
+// AssertUTC panics if t is not UTC.
+func AssertUTC(t time.Time) {
+	if t.Location() != time.UTC {
+		panic("not UTC")
 	}
 }

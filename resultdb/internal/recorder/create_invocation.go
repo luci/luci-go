@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -39,6 +40,7 @@ import (
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
 func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
+	internal.AssertUTC(now)
 	switch deadline, err := ptypes.Timestamp(deadline); {
 	case err != nil:
 		return err
@@ -97,7 +99,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 // CreateInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
-	now := clock.Now(ctx)
+	now := clock.Now(ctx).UTC()
 
 	if err := validateCreateInvocationRequest(in, now); err != nil {
 		return nil, appstatus.BadRequest(err)
@@ -116,36 +118,35 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	inv := &pb.Invocation{
 		Name:            invID.Name(),
 		State:           pb.Invocation_ACTIVE,
-		CreateTime:      pbutil.MustTimestampProto(now),
 		Deadline:        in.Invocation.GetDeadline(),
 		Tags:            in.Invocation.GetTags(),
 		BigqueryExports: in.Invocation.GetBigqueryExports(),
 	}
 
-	// Determine the deadline and expiration times.
+	// Ensure the invocation has a deadline.
 	if inv.Deadline == nil {
 		inv.Deadline = pbutil.MustTimestampProto(now.Add(defaultInvocationDeadlineDuration))
 	}
 
 	pbutil.NormalizeInvocation(inv)
 
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Dedup the request if possible.
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Dedupe the request if possible.
 		if in.RequestId != "" {
 			var curRequestID spanner.NullString
 			err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
 				"CreateRequestId": &curRequestID,
 			})
-			s, _ := appstatus.Get(err)
+			st, _ := appstatus.Get(err)
 			switch {
-			case s.Code() == codes.NotFound:
+			case st.Code() == codes.NotFound:
 				// Continue to creation.
 
 			case err != nil:
 				return err
 
 			case curRequestID.Valid && curRequestID.StringVal == in.RequestId:
-				// Dedup the request.
+				// Dedupe the request.
 				inv, err = span.ReadInvocationFull(ctx, txn, invID)
 				return err
 
@@ -155,18 +156,22 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, in.RequestId, s.ExpectedResultsExpiration)),
+			span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, updateToken, in.RequestId)),
 		})
 	})
-
 	switch {
 	case spanner.ErrCode(err) == codes.AlreadyExists:
 		return nil, invocationAlreadyExists(invID)
+
 	case err != nil:
 		return nil, err
-	default:
-		return inv, nil
 	}
+
+	if inv.CreateTime == nil {
+		// The request was not deduped.
+		inv.CreateTime = pbutil.MustTimestampProto(commitTimestamp)
+	}
+	return inv, nil
 }
 
 func invocationAlreadyExists(id span.InvocationID) error {

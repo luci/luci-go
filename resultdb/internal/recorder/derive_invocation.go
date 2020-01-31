@@ -128,7 +128,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+2)
-	ms = append(ms, span.InsertMap("Invocations", rowOfInvocation(ctx, inv, "", "", s.ExpectedResultsExpiration)))
+	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", "")))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
@@ -200,7 +200,7 @@ func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Inv
 				Deadline:     inv.Deadline,
 			}
 			muts = append(muts, span.InsertOrUpdateMap(
-				"Invocations", rowOfInvocation(ctx, batchInv, "", "", s.ExpectedResultsExpiration)),
+				"Invocations", s.rowOfInvocation(ctx, batchInv, "", "")),
 			)
 
 			// Convert the TestResults in the batch.
