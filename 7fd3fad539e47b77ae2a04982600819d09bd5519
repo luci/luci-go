@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "68b29658_649a7075",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T19:52:36Z",
+      "side": 1,
+      "message": "public symbols must have a comment\n\n// ErrNoResult ...",
+      "range": {
+        "startLine": 73,
+        "startChar": 4,
+        "endLine": 73,
+        "endChar": 16
+      },
+      "revId": "7fd3fad539e47b77ae2a04982600819d09bd5519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0489339_7f86937e",
+        "filename": "resultdb/internal/span/util.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 446,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T19:52:36Z",
+      "side": 1,
+      "message": "please mention ErrNoResults in this comment.",
+      "revId": "7fd3fad539e47b77ae2a04982600819d09bd5519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
