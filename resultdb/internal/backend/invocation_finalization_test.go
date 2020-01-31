@@ -20,8 +20,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/clock/testclock"
-
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -102,6 +101,7 @@ func TestShouldFinalize(t *testing.T) {
 func TestFinalizeInvocation(t *testing.T) {
 	Convey(`FinalizeInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
+		start := clock.Now(ctx).UTC()
 
 		Convey(`Changes the state and finalization time`, func() {
 			testutil.MustApply(ctx, testutil.CombineMutations(
@@ -153,7 +153,7 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Enqueues more bq_export tasks`, func() {
 			testutil.MustApply(ctx,
-				testutil.InsertInvocation("x", pb.Invocation_FINALIZING, testclock.TestRecentTimeUTC, map[string]interface{}{
+				testutil.InsertInvocation("x", pb.Invocation_FINALIZING, start, map[string]interface{}{
 					"BigQueryExports": [][]byte{
 						[]byte("bq_export1"),
 						[]byte("bq_export2"),

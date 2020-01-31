@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -80,6 +80,7 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 func TestCreateTestExoneration(t *testing.T) {
 	Convey(`TestCreateTestExoneration`, t, func() {
 		ctx := SpannerTestContext(t)
+		start := clock.Now(ctx).UTC()
 
 		recorder := newTestRecorderServer()
 
@@ -109,7 +110,7 @@ func TestCreateTestExoneration(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, testclock.TestRecentTimeUTC, map[string]interface{}{"UpdateToken": token}))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, start, map[string]interface{}{"UpdateToken": token}))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.CreateTestExonerationRequest{

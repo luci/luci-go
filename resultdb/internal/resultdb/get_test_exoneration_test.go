@@ -46,15 +46,14 @@ func TestValidateGetTestExonerationRequest(t *testing.T) {
 func TestGetTestExoneration(t *testing.T) {
 	Convey(`GetTestExoneration`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		srv := newTestResultDBService()
 
 		invID := span.InvocationID("inv_0")
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, now, nil),
+			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, start, nil),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",

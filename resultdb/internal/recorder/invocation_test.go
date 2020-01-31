@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/clock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -37,7 +37,7 @@ import (
 func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := SpannerTestContext(t)
-		ct := testclock.TestRecentTimeUTC
+		start := clock.Now(ctx).UTC()
 
 		mayMutate := func() error {
 			return mutateInvocation(ctx, "inv", func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -60,19 +60,19 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, ct, map[string]interface{}{"UpdateToken": token}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, start, map[string]interface{}{"UpdateToken": token}))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": "different token"}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, start, map[string]interface{}{"UpdateToken": "different token"}))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, start, map[string]interface{}{"UpdateToken": token}))
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
@@ -84,7 +84,7 @@ func TestMutateInvocation(t *testing.T) {
 func TestReadInvocation(t *testing.T) {
 	Convey(`ReadInvocationFull`, t, func() {
 		ctx := SpannerTestContext(t)
-		ct := testclock.TestRecentTimeUTC
+		start := clock.Now(ctx).UTC()
 
 		readInv := func() *pb.Invocation {
 			txn := span.Client(ctx).ReadOnlyTransaction()
@@ -96,22 +96,22 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`Finalized`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, ct, nil))
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, start, nil))
 
 			inv := readInv()
 			expected := &pb.Invocation{
 				Name:         "invocations/inv",
 				State:        pb.Invocation_FINALIZED,
-				CreateTime:   pbutil.MustTimestampProto(ct),
-				Deadline:     pbutil.MustTimestampProto(ct.Add(time.Hour)),
-				FinalizeTime: pbutil.MustTimestampProto(ct.Add(time.Hour)),
+				CreateTime:   pbutil.MustTimestampProto(start),
+				Deadline:     pbutil.MustTimestampProto(start.Add(time.Hour)),
+				FinalizeTime: pbutil.MustTimestampProto(start.Add(time.Hour)),
 			}
 			So(inv, ShouldResembleProto, expected)
 
 			Convey(`with included invocations`, func() {
 				MustApply(ctx,
-					InsertInvocation("included0", pb.Invocation_FINALIZED, ct, nil),
-					InsertInvocation("included1", pb.Invocation_FINALIZED, ct, nil),
+					InsertInvocation("included0", pb.Invocation_FINALIZED, start, nil),
+					InsertInvocation("included1", pb.Invocation_FINALIZED, start, nil),
 					InsertInclusion("inv", "included0"),
 					InsertInclusion("inv", "included1"),
 				)

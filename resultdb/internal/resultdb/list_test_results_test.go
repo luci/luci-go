@@ -54,11 +54,10 @@ func TestValidateListTestResultsRequest(t *testing.T) {
 func TestListTestResults(t *testing.T) {
 	Convey(`ListTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, now, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, start, nil))
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 

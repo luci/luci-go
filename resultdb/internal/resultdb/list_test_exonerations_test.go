@@ -49,15 +49,14 @@ func TestValidateListTestExonerationsRequest(t *testing.T) {
 func TestListTestExonerations(t *testing.T) {
 	Convey(`ListTestExonerations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		// Insert some TestExonerations.
 		invID := span.InvocationID("inv")
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, now, nil),
+			testutil.InsertInvocation("inv", pb.Invocation_ACTIVE, start, nil),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          testID,

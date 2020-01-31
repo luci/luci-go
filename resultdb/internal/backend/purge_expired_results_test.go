@@ -65,7 +65,7 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 }
 
 func insertInvocationWithTestResults(ctx context.Context, invID span.InvocationID, nTests, nPassingVariants, nFailedVariants int) span.InvocationID {
-	now := clock.Now(ctx)
+	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
 	extraArgs := map[string]interface{}{"ExpectedTestResultsExpirationTime": now.Add(-time.Minute)}

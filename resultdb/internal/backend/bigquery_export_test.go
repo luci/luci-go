@@ -56,9 +56,9 @@ func (i *mockFailInserter) Put(ctx context.Context, src interface{}) error {
 func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, now, nil))
+			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, start, nil))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),

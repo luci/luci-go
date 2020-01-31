@@ -57,8 +57,7 @@ func TestValidateGetTestResultRequest(t *testing.T) {
 func TestGetTestResult(t *testing.T) {
 	Convey(`GetTestResult`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		srv := newTestResultDBService()
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
@@ -71,7 +70,7 @@ func TestGetTestResult(t *testing.T) {
 		invID := span.InvocationID("inv_0")
 		// Insert a TestResult.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, now, nil),
+			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, start, nil),
 			span.InsertMap("TestResults", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
