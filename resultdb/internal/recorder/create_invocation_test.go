@@ -239,9 +239,11 @@ func TestCreateInvocation(t *testing.T) {
 
 			expected := proto.Clone(req.Invocation).(*pb.Invocation)
 			proto.Merge(expected, &pb.Invocation{
-				Name:       "invocations/u:inv",
-				State:      pb.Invocation_ACTIVE,
-				CreateTime: pbutil.MustTimestampProto(now),
+				Name:  "invocations/u:inv",
+				State: pb.Invocation_ACTIVE,
+
+				// we use Spanner commit time, so skip the check
+				CreateTime: inv.CreateTime,
 			})
 			So(inv, ShouldResembleProto, expected)
 

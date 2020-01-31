@@ -30,7 +30,7 @@ import (
 )
 
 // validateUpdateInvocationRequest returns non-nil error if req is invalid.
-func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.Time) error {
+func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, nowUTC time.Time) error {
 	if err := pbutil.ValidateInvocationName(req.Invocation.GetName()); err != nil {
 		return errors.Annotate(err, "invocation: name").Err()
 	}
@@ -42,10 +42,10 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 	for _, path := range req.UpdateMask.GetPaths() {
 		switch path {
 		// The cases in this switch statement must be synchronized with a
-		// similar switch statement in UpdateInvocation implementaiton.
+		// similar switch statement in UpdateInvocation implementation.
 
 		case "deadline":
-			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), now); err != nil {
+			if err := validateInvocationDeadline(req.Invocation.GetDeadline(), nowUTC); err != nil {
 				return errors.Annotate(err, "invocation: deadline").Err()
 			}
 
@@ -59,7 +59,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 
 // UpdateInvocation implements pb.RecorderServer.
 func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvocationRequest) (*pb.Invocation, error) {
-	if err := validateUpdateInvocationRequest(in, clock.Now(ctx)); err != nil {
+	if err := validateUpdateInvocationRequest(in, clock.Now(ctx).UTC()); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
