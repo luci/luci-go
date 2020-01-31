@@ -70,6 +70,30 @@
       "revId": "86c38000a16bfb3aca1ccb225bdcc6b82ada9126",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2b92e2a_131a81e2",
+        "filename": "common/clock/external.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:15:04Z",
+      "side": 1,
+      "message": "i removed AfterClock",
+      "parentUuid": "eabddc93_c81c2471",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 13
+      },
+      "revId": "86c38000a16bfb3aca1ccb225bdcc6b82ada9126",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
