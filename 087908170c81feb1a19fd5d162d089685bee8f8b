@@ -34,6 +34,24 @@
       "revId": "087908170c81feb1a19fd5d162d089685bee8f8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6d5673c_1b127208",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-31T07:57:09Z",
+      "side": 1,
+      "message": "https://golang.org/pkg/os/#Stat\nreturns\nhttps://golang.org/pkg/os/#PathError\nso I still think including filename here too is redundant.",
+      "parentUuid": "c4182a18_6f4857b8",
+      "revId": "087908170c81feb1a19fd5d162d089685bee8f8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
