@@ -21,16 +21,21 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
-// TestingContext returns a context to be used in tests.
-func TestingContext() context.Context {
+func testingContext(mockClock bool) context.Context {
 	ctx := context.Background()
 
 	// Enable logging to stdout/stderr.
 	logCfg := gologger.StdConfig
 	ctx = logCfg.Use(ctx)
 
-	// Mock time.
-	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+	if mockClock {
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+	}
 
 	return ctx
+}
+
+// TestingContext returns a context to be used in tests.
+func TestingContext() context.Context {
+	return testingContext(true)
 }

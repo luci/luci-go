@@ -27,7 +27,6 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/spantest"
@@ -64,7 +63,9 @@ func SpannerTestContext(tb testing.TB) context.Context {
 		tb.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
 	}
 
-	ctx := TestingContext()
+	// Do not mock clock in integration tests because we cannot mock Spanner's
+	// clock.
+	ctx := testingContext(false)
 	err := cleanupDatabase(ctx, spannerClient)
 	if err != nil {
 		tb.Fatal(err)
@@ -198,7 +199,7 @@ func fatalIf(err error) {
 }
 
 // InsertInvocation returns a spanner mutation that inserts an invocation.
-func InsertInvocation(id span.InvocationID, state pb.Invocation_State, ct time.Time, extraValues map[string]interface{}) *spanner.Mutation {
+func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValues map[string]interface{}) *spanner.Mutation {
 	future := time.Date(2050, 1, 1, 0, 0, 0, 0, time.UTC)
 	values := map[string]interface{}{
 		"InvocationId":                      id,
@@ -208,16 +209,16 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, ct time.T
 		"UpdateToken":                       "",
 		"InvocationExpirationTime":          future,
 		"ExpectedTestResultsExpirationTime": future,
-		"CreateTime":                        ct,
-		"Deadline":                          ct.Add(time.Hour),
+		"CreateTime":                        spanner.CommitTimestamp,
+		"Deadline":                          future,
 		"Interrupted":                       false,
 	}
 
+	if state == pb.Invocation_FINALIZED {
+		values["FinalizeTime"] = spanner.CommitTimestamp
+	}
 	for k, v := range extraValues {
 		values[k] = v
-	}
-	if state == pb.Invocation_FINALIZED {
-		values["FinalizeTime"] = ct.Add(time.Hour)
 	}
 	return span.InsertMap("Invocations", values)
 }
@@ -229,8 +230,7 @@ func InsertFinalizedInvocationWithInclusions(id span.InvocationID, included ...s
 
 // InsertInvocationWithInclusions returns mutations to insert an invocation with inclusions.
 func InsertInvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, included ...span.InvocationID) []*spanner.Mutation {
-	t := testclock.TestRecentTimeUTC
-	ms := []*spanner.Mutation{InsertInvocation(id, state, t, nil)}
+	ms := []*spanner.Mutation{InsertInvocation(id, state, nil)}
 	for _, incl := range included {
 		ms = append(ms, InsertInclusion(id, incl))
 	}

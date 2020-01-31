@@ -37,7 +37,6 @@ import (
 func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := SpannerTestContext(t)
-		ct := testclock.TestRecentTimeUTC
 
 		mayMutate := func() error {
 			return mutateInvocation(ctx, "inv", func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
@@ -60,19 +59,19 @@ func TestMutateInvocation(t *testing.T) {
 			})
 
 			Convey(`with finalized invocation`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, ct, map[string]interface{}{"UpdateToken": token}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{"UpdateToken": token}))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": "different token"}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": "different token"}))
 				err := mayMutate()
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}))
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
 
 				err := mayMutate()
 				So(err, ShouldBeNil)
@@ -96,7 +95,11 @@ func TestReadInvocation(t *testing.T) {
 		}
 
 		Convey(`Finalized`, func() {
-			MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, ct, nil))
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
+				"CreateTime":   ct,
+				"Deadline":     ct.Add(time.Hour),
+				"FinalizeTime": ct.Add(time.Hour),
+			}))
 
 			inv := readInv()
 			expected := &pb.Invocation{
@@ -110,8 +113,8 @@ func TestReadInvocation(t *testing.T) {
 
 			Convey(`with included invocations`, func() {
 				MustApply(ctx,
-					InsertInvocation("included0", pb.Invocation_FINALIZED, ct, nil),
-					InsertInvocation("included1", pb.Invocation_FINALIZED, ct, nil),
+					InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
+					InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
 					InsertInclusion("inv", "included0"),
 					InsertInclusion("inv", "included1"),
 				)
