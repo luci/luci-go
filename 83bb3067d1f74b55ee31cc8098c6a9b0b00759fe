@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1804de1a_60af9592",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:38:16Z",
+      "side": 1,
+      "message": "len(pairs) \u003d\u003d 0",
+      "range": {
+        "startLine": 115,
+        "startChar": 4,
+        "endLine": 115,
+        "endChar": 16
+      },
+      "revId": "83bb3067d1f74b55ee31cc8098c6a9b0b00759fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8aff00d_b4b1eb70",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:38:16Z",
+      "side": 1,
+      "message": "len(vr.GetDef()) \u003d\u003d 0",
+      "range": {
+        "startLine": 131,
+        "startChar": 4,
+        "endLine": 131,
+        "endChar": 13
+      },
+      "revId": "83bb3067d1f74b55ee31cc8098c6a9b0b00759fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "decf477f_be0fa12b",
+        "filename": "resultdb/pbutil/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:38:16Z",
+      "side": 1,
+      "message": "nit: remove",
+      "revId": "83bb3067d1f74b55ee31cc8098c6a9b0b00759fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
