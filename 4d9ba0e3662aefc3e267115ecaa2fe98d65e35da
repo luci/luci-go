@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "622787e2_ef76d57a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:16:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0dbae9e2_b9da980a",
+      "range": {
+        "startLine": 9,
+        "startChar": 36,
+        "endLine": 9,
+        "endChar": 39
+      },
+      "revId": "4d9ba0e3662aefc3e267115ecaa2fe98d65e35da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d169f99c_1d73cbda",
         "filename": "resultdb/internal/recorder/create_invocation.go",
         "patchSetId": 6
