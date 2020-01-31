@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
-
 	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/errors"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -55,8 +54,6 @@ func TestRuleSet(t *testing.T) {
 			r.Add("services/${a}", "paths/${b}", validator("rule_2"))
 			r.Add("services/c", "paths/c", validator("rule_3"))
 			r.Add("regex:services/.*", "paths/c", validator("rule_4"))
-
-			So(r.Freeze(), ShouldBeNil)
 
 			patterns, err := r.ConfigPatterns(ctx)
 			So(err, ShouldBeNil)
@@ -100,7 +97,6 @@ func TestRuleSet(t *testing.T) {
 			r := RuleSet{}
 			r.RegisterVar("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
 			r.Add("services/${a}", "paths/a", validator("rule_1"))
-			So(r.Freeze(), ShouldBeNil)
 			err := r.ValidateConfig(&Context{Context: ctx}, "services/zzz", "some path", []byte("body"))
 			So(err, ShouldErrLike, "boom")
 		})
@@ -110,12 +106,22 @@ func TestRuleSet(t *testing.T) {
 			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
 			r.Add("${zzz}", "a", validator("1"))
 			r.Add("a", "${zzz}", validator("1"))
-			merr, _ := r.Freeze().(errors.MultiError)
+
+			_, err := r.ConfigPatterns(ctx)
+			merr := err.(errors.MultiError)
 			So(merr, ShouldHaveLength, 2)
 			So(merr[0], ShouldErrLike,
-				`bad config set pattern "exact:${zzz}" - no placeholder named "zzz" is registered`)
+				`config set pattern "exact:${zzz}": no placeholder named "zzz" is registered`)
 			So(merr[1], ShouldErrLike,
-				`bad path pattern "exact:${zzz}" - no placeholder named "zzz" is registered`)
+				`path pattern "exact:${zzz}": no placeholder named "zzz" is registered`)
+
+			err = r.ValidateConfig(&Context{Context: ctx}, "set", "path", nil)
+			merr = err.(errors.MultiError)
+			So(merr, ShouldHaveLength, 2)
+			So(merr[0], ShouldErrLike,
+				`config set pattern "exact:${zzz}": no placeholder named "zzz" is registered`)
+			So(merr[1], ShouldErrLike,
+				`path pattern "exact:${zzz}": no placeholder named "zzz" is registered`)
 		})
 
 		Convey("Pattern is validated", func() {
@@ -123,12 +129,22 @@ func TestRuleSet(t *testing.T) {
 			r.RegisterVar("a", func(context.Context) (string, error) { return "a_val", nil })
 			r.Add("unknown:${a}", "a", validator("1"))
 			r.Add("a", "unknown:${a}", validator("1"))
-			merr, _ := r.Freeze().(errors.MultiError)
+
+			_, err := r.ConfigPatterns(ctx)
+			merr := err.(errors.MultiError)
 			So(merr, ShouldHaveLength, 2)
 			So(merr[0], ShouldErrLike,
-				`bad config set pattern "unknown:${a}" - unknown pattern kind: "unknown"`)
+				`config set pattern "unknown:${a}": unknown pattern kind: "unknown"`)
 			So(merr[1], ShouldErrLike,
-				`bad path pattern "unknown:${a}" - unknown pattern kind: "unknown"`)
+				`path pattern "unknown:${a}": unknown pattern kind: "unknown"`)
+
+			err = r.ValidateConfig(&Context{Context: ctx}, "set", "path", nil)
+			merr = err.(errors.MultiError)
+			So(merr, ShouldHaveLength, 2)
+			So(merr[0], ShouldErrLike,
+				`config set pattern "unknown:${a}": unknown pattern kind: "unknown"`)
+			So(merr[1], ShouldErrLike,
+				`path pattern "unknown:${a}": unknown pattern kind: "unknown"`)
 		})
 
 		Convey("Duplicated variable", func() {

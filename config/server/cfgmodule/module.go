@@ -42,8 +42,8 @@ type ModuleOptions struct {
 	// If nil, the module uses global &validation.Rules. This is usually what
 	// you want.
 	//
-	// During the initialization the module freezes the rule set after registering
-	// the following vars:
+	// During the initialization the module registers the following vars in the
+	// rule set:
 	//   ${appid}: value of -cloud-project server flag.
 	//   ${config_service_appid}: app ID of the LUCI Config service.
 	Rules *validation.RuleSet
@@ -97,7 +97,6 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 		m.opts.Rules = &validation.Rules
 	}
 	m.registerVars(opts)
-	m.opts.Rules.Freeze()
 
 	// Enable authentication and authorization only when running in production
 	// (i.e. not on a developer workstation).

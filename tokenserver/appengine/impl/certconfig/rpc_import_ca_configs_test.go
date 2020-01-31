@@ -198,7 +198,6 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			})
 			rpc := ImportCAConfigsRPC{}
 			rpc.SetupConfigValidation(&rules)
-			rules.Freeze()
 
 			vctx := validation.Context{Context: ctx}
 

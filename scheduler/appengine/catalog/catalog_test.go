@@ -382,7 +382,6 @@ func TestValidateConfig(t *testing.T) {
 		return "luci-scheduler", nil
 	})
 	catalog.RegisterConfigRules(&rules)
-	rules.Freeze()
 
 	Convey("Patterns are correct", t, func() {
 		patterns, err := rules.ConfigPatterns(context.Background())
