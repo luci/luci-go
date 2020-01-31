@@ -15,17 +15,18 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
 	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/errors"
 )
 
 func cmdCheck() *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "check <options>",
-		ShortDesc: "checks that all the inputs are present and generates .isolated",
+		ShortDesc: "checks that all the inputs are present",
 		LongDesc:  "",
 		CommandRun: func() subcommands.CommandRun {
 			c := checkRun{}
@@ -53,7 +54,7 @@ func (c *checkRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 0 {
-		return errors.New("position arguments not expected")
+		return errors.Reason("position arguments not expected").Err()
 	}
 	return nil
 }
@@ -67,7 +68,19 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 		fmt.Printf("Path:      %s\n", c.PathVariables)
 		fmt.Printf("Extra:     %s\n", c.ExtraVariables)
 	}
-	return errors.New("TODO")
+
+	deps, _, _, err := isolate.ProcessIsolate(&c.ArchiveOptions)
+	if err != nil {
+		return errors.Annotate(err, "failed to process isolate").Err()
+	}
+
+	for _, dep := range deps {
+		_, err := os.Stat(dep)
+		if err != nil {
+			return errors.Annotate(err, "failed to stat input file: %s", dep).Err()
+		}
+	}
+	return nil
 }
 
 func (c *checkRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
