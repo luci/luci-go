@@ -63,8 +63,31 @@ var oauthChecksCache = layered.Cache{
 
 // GoogleOAuth2Method implements Method on top of Google's OAuth2 endpoint.
 //
-// It is useful for development verification (e.g., "dev_appserver") or
-// verification in environments without the User API (e.g., Flex).
+// It is useful for development verification (e.g. "dev_appserver") or
+// verification in environments without the User API (e.g. Flex or GKE).
+//
+// Note that it currently uses /tokeninfo endpoint which "has no SLA and is not
+// intended for production use". The closest alternative is /userinfo endpoint,
+// but it doesn't return the token expiration time (so we can't cache the result
+// of the check) nor the list of OAuth scopes the token has.
+//
+// The general Google's recommendation is to use access tokens only for
+// accessing Google APIs and use OpenID Connect Identity tokens for
+// authentication in your own services instead (they are locally verifiable
+// JWTs).
+//
+// Unfortunately, using OpenID tokens for LUCI services and OAuth2 access token
+// for Google services significantly complicates clients, especially in
+// non-trivial cases (like authenticating from a Swarming job): they now must
+// support two token kinds and know which one to use when.
+//
+// There's no solution currently that preserves all of correctness, performance,
+// usability and availability:
+//   * Using /tokeninfo (like is done currently) sacrifices availability.
+//   * Using /userinfo sacrifices correctness or performance (depending on
+//     whether we cache the result of the check or not; if we do, we'd have to
+//     pick some arbitrary cache expiration time which will be generally wrong).
+//   * Using OpenID ID tokens scarifies usability for the clients.
 type GoogleOAuth2Method struct {
 	// Scopes is a list of OAuth scopes to check when authenticating the token.
 	Scopes []string

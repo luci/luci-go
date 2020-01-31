@@ -30,7 +30,7 @@ import (
 
 const (
 	// TokeninfoEndpoint is Google's token info endpoint.
-	TokeninfoEndpoint = "https://www.googleapis.com/oauth2/v3/tokeninfo"
+	TokeninfoEndpoint = "https://oauth2.googleapis.com/tokeninfo"
 )
 
 // ErrBadToken is returned by GetTokenInfo if the passed token is invalid.
