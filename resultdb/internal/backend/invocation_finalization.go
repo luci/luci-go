@@ -91,7 +91,7 @@ func tryFinalizeInvocation(ctx context.Context, invID span.InvocationID) error {
 		return nil
 
 	default:
-		logging.Infof(ctx, "finalizing %s...", invID.Name())
+		logging.Infof(ctx, "decided to finalize %s...", invID.Name())
 		return finalizeInvocation(ctx, invID)
 	}
 }

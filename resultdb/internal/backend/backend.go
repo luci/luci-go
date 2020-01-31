@@ -49,13 +49,27 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 	tl.mu.Unlock()
 }
 
+type backend struct {
+	*Options
+
+	// if >0, timeout for each processingLoop() iteration.
+	processingLoopIterationTimeout time.Duration
+}
+
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (minInterval) and backs off linearly
 // on errors.
-func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
+//
+// minInterval is ignored if b.TestMode is true.
+func (b *backend) processingLoop(ctx context.Context, minInterval, maxSleep time.Duration, f func(context.Context) error) {
 	if maxSleep < minInterval {
 		panic("maxSleep < minInterval")
 	}
+
+	if b.TestMode {
+		minInterval = 0
+	}
+
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
@@ -67,7 +81,11 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
-		ctx, _ = context.WithTimeout(ctx, iterationTimeout)
+		if b.processingLoopIterationTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, b.processingLoopIterationTimeout)
+			defer cancel()
+		}
 		return f(ctx)
 	}
 
@@ -105,12 +123,21 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 
 // Options is backend server configuration.
 type Options struct {
-	// Whether to purge expired results.
+	// PurgeExiredResults instructs backend to purge expired results.
 	PurgeExiredResults bool
+
+	// TestMode instructs all background loops and tasks to run much faster than
+	// one would want in production.
+	TestMode bool
 }
 
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
+	b := &backend{
+		Options:                        &opts,
+		processingLoopIterationTimeout: 10 * time.Second,
+	}
+
 	for _, taskType := range tasks.AllTypes {
 
 		// TODO(chanli): remove this if statement.
@@ -122,10 +149,10 @@ func InitServer(srv *server.Server, opts Options) {
 		taskType := taskType
 		activity := fmt.Sprintf("resultdb.task.%s", taskType)
 		srv.RunInBackground(activity, func(ctx context.Context) {
-			runInvocationTasks(ctx, taskType)
+			b.runInvocationTasks(ctx, taskType)
 		})
 	}
 	if opts.PurgeExiredResults {
-		srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
+		srv.RunInBackground("resultdb.purge_expired_results", b.purgeExpiredResults)
 	}
 }
