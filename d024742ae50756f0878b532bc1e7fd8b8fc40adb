@@ -105,6 +105,24 @@
       "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36935f90_c304d7a0",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-31T07:48:01Z",
+      "side": 1,
+      "message": "I see.\ncrrev.com/c/2032649",
+      "parentUuid": "d7d676c9_1e1714a7",
+      "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
