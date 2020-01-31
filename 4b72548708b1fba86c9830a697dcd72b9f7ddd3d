@@ -22,6 +22,30 @@
       "revId": "4b72548708b1fba86c9830a697dcd72b9f7ddd3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3b0399b9_c864b6e1",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-01-31T23:45:05Z",
+      "side": 1,
+      "message": "I realized that we can\u0027t use /userinfo at all since it doesn\u0027t return the audience of the token, which means that if I login into some random web site, it can then forward my tokens to LUCI and LUCI will not know how to reject them (they\u0027ll pass /userinfo check just fine).\n\nWith /tokeninfo it is prevented by checking `aud` field in the response, which is OAuth client ID. We have a whitelist of IDs control and trust. Tokens from random web sites will have different client IDs (this is guaranteed by Google\u0027s OAuth2 login flow implementation).\n\nIf /tokeninfo stops working, we are basically dooomed.",
+      "parentUuid": "64a55476_1f4605ec",
+      "range": {
+        "startLine": 88,
+        "startChar": 56,
+        "endLine": 89,
+        "endChar": 80
+      },
+      "revId": "4b72548708b1fba86c9830a697dcd72b9f7ddd3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
