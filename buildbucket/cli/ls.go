@@ -16,6 +16,7 @@ package cli
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -24,9 +25,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/flag/protomsgsliceflag"
 	"go.chromium.org/luci/common/system/pager"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -42,9 +46,9 @@ func cmdLS(p Params) *subcommands.Command {
 			Listed builds are sorted by creation time, descending.
 
 			A PATH argument can be one of
-			 - "<project>"
-			 - "<project>/<bucket>"
-			 - "<project>/<bucket>/<builder>"
+				- "<project>"
+				- "<project>/<bucket>"
+				- "<project>/<bucket>/<builder>"
 
 			Multiple PATHs are connected with logical OR.
 			Printed builds are deduplicated.
@@ -56,6 +60,7 @@ func cmdLS(p Params) *subcommands.Command {
 			r.RegisterFieldFlags()
 			r.clsFlag.Register(&r.Flags, doc(`
 				CL URLs that builds must be associated with.
+				Can't be used with -predicate flag at the same time
 
 				Example: list builds of CL 1539021.
 					bb ls -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1539021/1
@@ -63,15 +68,19 @@ func cmdLS(p Params) *subcommands.Command {
 			r.tagsFlag.Register(&r.Flags, doc(`
 				Tags that builds must have. Can be specified multiple times.
 				All tags must be present.
+				Can't be used with -predicate flag at the same time.
 
 				Example: list builds with tags "a:1" and "b:2".
 					bb ls -t a:1 -t b:2
 			`))
 			r.Flags.BoolVar(&r.includeExperimental, "exp", false, doc(`
-				Print experimental builds too
+				Print experimental builds too.
+				Can't be used with -predicate flag at the same time.
 			`))
 			r.Flags.Var(StatusFlag(&r.status), "status",
-				fmt.Sprintf("Build status. Valid values: %s.", strings.Join(statusFlagValuesName, ", ")))
+				fmt.Sprintf("Build status. Valid values: %s.\n"+
+					"Can't be used with -predicate flag at the same time",
+					strings.Join(statusFlagValuesName, ", ")))
 			r.Flags.IntVar(&r.limit, "n", 0, doc(`
 				Limit the number of builds to print. If 0, then unlimited.
 				Can be passed as "-<number>", e.g. "ls -10".
@@ -79,6 +88,22 @@ func cmdLS(p Params) *subcommands.Command {
 			r.Flags.BoolVar(&r.noPager, "nopage", false, doc(`
 				Disable paging.
 			`))
+			r.Flags.Var(protomsgsliceflag.MessageSliceFlag(&r.predicates),
+				"predicate", doc(`
+				BuildPredicate that all builds in the response should match.
+
+				Predicate is expressed in JSON format with characters escaped.
+				It will be deserialized to pb.BuildPredicate message:
+					http://shortn/_wCltZ9IY7H
+
+				Multiple predicates are supported and connected with logical OR.
+				This flag can't be used with -cl, -t, -exp, -status flags and
+				any PATH arguments at the sametime
+
+				Example: list builds that is either with tag "a:1" or of builder
+				"a/b/c"
+					bb ls -predicate "{\"tags\":[{\"key\":\"a\",\"value\":\"1\"}]}" \
+						-predicate "{\"builder\":{\"project\":\"a\",\"bucket\":\"b\",\"builder\":\"c\"}}"`))
 			return r
 		},
 	}
@@ -89,11 +114,15 @@ type lsRun struct {
 	clsFlag
 	tagsFlag
 
-	status              pb.Status
+	predicates []*pb.BuildPredicate
+	status     pb.Status
+
 	includeExperimental bool
 	limit               int
 	noPager             bool
 }
+
+const defaultPageSize int32 = 100
 
 func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
@@ -146,55 +175,88 @@ func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.En
 
 // parseSearchRequests converts flags and arguments to search requests.
 func (r *lsRun) parseSearchRequests(ctx context.Context, args []string) ([]*pb.SearchBuildsRequest, error) {
-	baseReq, err := r.parseBaseRequest(ctx)
+	predicates, err := r.parseBuildPredicates(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(args) == 0 {
-		return []*pb.SearchBuildsRequest{baseReq}, nil
+	ret := make([]*pb.SearchBuildsRequest, len(predicates))
+
+	var pageSize int32
+	if pageSize = defaultPageSize; r.limit > 0 && r.limit < int(pageSize) {
+		pageSize = int32(r.limit)
 	}
 
-	ret := make([]*pb.SearchBuildsRequest, len(args))
-	for i, path := range args {
-		ret[i] = proto.Clone(baseReq).(*pb.SearchBuildsRequest)
-		var err error
-		if ret[i].Predicate.Builder, err = r.parsePath(path); err != nil {
-			return nil, fmt.Errorf("invalid path %q: %s", path, err)
+	var fields *field_mask.FieldMask
+	if fields, err = r.FieldMask(); err != nil {
+		return nil, err
+	}
+	for i, p := range fields.Paths {
+		fields.Paths[i] = "builds.*." + p
+	}
+
+	for i, predicate := range predicates {
+		ret[i] = &pb.SearchBuildsRequest{
+			// TODO: See if defensive copy needed
+			Predicate: predicate,
+			PageSize:  pageSize,
+			// Creating defensive copy. Search method do mutate the field mask
+			// append next_page_token
+			Fields: proto.Clone(fields).(*field_mask.FieldMask),
 		}
 	}
 	return ret, nil
 }
 
-// parseBaseRequest returns a base SearchBuildsRequest without builder filter.
-func (r *lsRun) parseBaseRequest(ctx context.Context) (*pb.SearchBuildsRequest, error) {
-	ret := &pb.SearchBuildsRequest{
-		Predicate: &pb.BuildPredicate{
-			Tags:                r.Tags(),
-			Status:              r.status,
-			IncludeExperimental: r.includeExperimental,
-		},
-		PageSize: 100,
+// parseBuildPredicates converts flags and args to slice of pb.BuildPredicate
+func (r *lsRun) parseBuildPredicates(ctx context.Context, args []string) ([]*pb.BuildPredicate, error) {
+	// Get all flags that have been set with value provided in command line
+	setFlags := stringset.New(r.Flags.NFlag())
+	r.Flags.Visit(func(flag *flag.Flag) {
+		setFlags.Add(flag.Name)
+	})
+
+	// User supplied BuildPredicate message instance
+	if setFlags.Has("predicate") {
+		invalidFlags := setFlags.Intersect(stringset.NewFromSlice(
+			"cl", "t", "exp", "status"))
+		if invalidFlags.Len() > 0 {
+			return nil, fmt.Errorf("-predicate flag is mutually exclusive with"+
+				"-cl, -t, -exp, -status flags. In reality, Flags: %s are declared",
+				strings.Join(invalidFlags.ToSlice(), ", "))
+		} else if len(args) > 0 {
+			return nil, fmt.Errorf("-predicate flag is mutually exclusive with"+
+				" PATH arugment. Got PATH: %s", strings.Join(args, ", "))
+		} else {
+			return r.predicates, nil
+		}
 	}
 
-	if r.limit > 0 && r.limit < int(ret.PageSize) {
-		ret.PageSize = int32(r.limit)
-	}
-
-	// Prepare a field mask.
 	var err error
-	ret.Fields, err = r.FieldMask()
-	if err != nil {
-		return nil, err
-	}
-	for i, p := range ret.Fields.Paths {
-		ret.Fields.Paths[i] = "builds.*." + p
+	basePredicate := &pb.BuildPredicate{
+		Tags:                r.Tags(),
+		Status:              r.status,
+		IncludeExperimental: r.includeExperimental,
 	}
 
-	if ret.Predicate.GerritChanges, err = r.clsFlag.retrieveCLs(ctx, r.httpClient, kRequirePatchset); err != nil {
+	if basePredicate.GerritChanges, err = r.clsFlag.retrieveCLs(
+		ctx, r.httpClient, kRequirePatchset); err != nil {
 		return nil, err
 	}
-	return ret, nil
+
+	if len(args) == 0 {
+		return []*pb.BuildPredicate{basePredicate}, nil
+	}
+
+	// PATH arguments
+	predicates := make([]*pb.BuildPredicate, len(args))
+	for i, path := range args {
+		predicates[i] = proto.Clone(basePredicate).(*pb.BuildPredicate)
+		if predicates[i].Builder, err = r.parsePath(path); err != nil {
+			return nil, fmt.Errorf("invalid path %q: %s", path, err)
+		}
+	}
+	return predicates, nil
 }
 
 func (r *lsRun) parsePath(path string) (*pb.BuilderID, error) {
