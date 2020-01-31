@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c7c4dcc_b291e52e",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "what does this mean? are you referring to bash? If so, I think this can be omitted because it is bash-specific. For example, it is irrelevant if the user creates a bb subprocess programmtically",
+      "range": {
+        "startLine": 95,
+        "startChar": 42,
+        "endLine": 95,
+        "endChar": 65
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae6856ed_4bc1ea31",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "ideally we don\u0027t use internal urls in public code. how about bit.ly?",
+      "range": {
+        "startLine": 97,
+        "startChar": 12,
+        "endLine": 97,
+        "endChar": 18
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4726635c_47a86852",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "more concise:\n\n  Mutually exclusive with flags -cl, -t, -exp, -status.\n\nconsider using the same language above",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 102,
+        "endChar": 0
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43b9eb46_452b81bc",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "using \u0027 would be much simpler",
+      "range": {
+        "startLine": 105,
+        "startChar": 22,
+        "endLine": 105,
+        "endChar": 23
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8bae218_7d4ebadd",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "nit: it would be simpler to do int32 conversion in L202 than writing \"int32\" here AND in L125",
+      "range": {
+        "startLine": 187,
+        "startChar": 13,
+        "endLine": 187,
+        "endChar": 18
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9ad8ed4_22b16fe9",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "i think not",
+      "range": {
+        "startLine": 200,
+        "startChar": 3,
+        "endLine": 200,
+        "endChar": 40
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b91fb5f_f0dfe5ac",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "i think this part can be omitted. The caller knows what they are passing.\nalternatively, consider printing the exact list after \"mutually exclusive with\" part",
+      "range": {
+        "startLine": 225,
+        "startChar": 35,
+        "endLine": 225,
+        "endChar": 69
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75259d13_8e80ed0d",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "q\n\nthen you don\u0027t have to do strings.Join\n\nalso, this will do proper escaping",
+      "range": {
+        "startLine": 229,
+        "startChar": 32,
+        "endLine": 229,
+        "endChar": 33
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab246ab4_1c925980",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "these 4 cases here. Consider a switch instead of a chain of else-ifs and/or nested ifs",
+      "range": {
+        "startLine": 230,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 8
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47887664_433c0120",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T20:45:27Z",
+      "side": 1,
+      "message": "move closer to the usage",
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
