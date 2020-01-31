@@ -22,6 +22,30 @@
       "revId": "1e3696b26a66f8a89c3fdf3584e6c11da7bc969e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fbe97db_8e30fbc1",
+        "filename": "common/clock/external.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T19:59:02Z",
+      "side": 1,
+      "message": "err, i meant to remove after(). PTAL again",
+      "parentUuid": "8e5c1646_2f80da14",
+      "range": {
+        "startLine": 73,
+        "startChar": 0,
+        "endLine": 75,
+        "endChar": 16
+      },
+      "revId": "1e3696b26a66f8a89c3fdf3584e6c11da7bc969e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
