@@ -20,8 +20,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock/testclock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -53,14 +51,16 @@ func TestFinalizeInvocation(t *testing.T) {
 	Convey(`TestFinalizeInvocation`, t, func() {
 		ctx := SpannerTestContext(t)
 		recorder := newTestRecorderServer()
-		ct := testclock.TestRecentTimeUTC
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`finalized failed`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_FINALIZED, ct, map[string]interface{}{"Interrupted": true, "UpdateToken": token}),
+				InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
+					"Interrupted": true,
+					"UpdateToken": token,
+				}),
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `has already been finalized with different interrupted flag`)
@@ -68,7 +68,9 @@ func TestFinalizeInvocation(t *testing.T) {
 
 		Convey(`Idempotent`, func() {
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+				InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{
+					"UpdateToken": token,
+				}),
 			)
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
@@ -81,11 +83,10 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Success`, func() {
-			extra := map[string]interface{}{
-				"UpdateToken": token,
-			}
 			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, extra),
+				InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{
+					"UpdateToken": token,
+				}),
 			)
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)

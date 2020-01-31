@@ -22,8 +22,6 @@ import (
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
-	"go.chromium.org/luci/common/clock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -55,10 +53,8 @@ func TestListTestResults(t *testing.T) {
 	Convey(`ListTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		now := clock.Now(ctx)
-
 		// Insert some TestResults.
-		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, now, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("req", pb.Invocation_ACTIVE, nil))
 		trs := insertTestResults(ctx, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 
