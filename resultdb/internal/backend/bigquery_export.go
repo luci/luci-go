@@ -25,7 +25,6 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
-	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -33,7 +32,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
-	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -141,28 +139,9 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	return tvs, nil
 }
 
-func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bq.Row {
-	return &bq.Row{
-		Message: &bqpb.TestResultRow{
-			Invocation: &bqpb.TestResultRow_Invocation{
-				Id:          string(span.MustParseInvocationName(inv.Name)),
-				Interrupted: inv.Interrupted,
-				Tags:        inv.Tags,
-			},
-			Result: tr,
-			Exoneration: &bqpb.TestResultRow_TestExoneration{
-				Exonerated: exonerated,
-			},
-		},
-		InsertID: tr.Name,
-	}
-}
-
-func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bq.Row) error {
-	rows := make([]*bq.Row, 0, maxBatchSize)
+func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
+	rows := make([]*bigquery.StructSaver, 0, maxBatchSize)
 	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
-		trimTestResultForBigQuery(tr)
-
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
 		rows = append(rows, generateBQRow(inv, tr, exonerated))
 		if len(rows) >= maxBatchSize {
@@ -171,7 +150,7 @@ func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransac
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]*bq.Row, 0, maxBatchSize)
+			rows = make([]*bigquery.StructSaver, 0, maxBatchSize)
 		}
 		return nil
 	})
@@ -191,7 +170,7 @@ func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransac
 	return nil
 }
 
-func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bq.Row) error {
+func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
 	return parallel.WorkPool(10, func(workC chan<- func() error) {
 		for rows := range batchC {
 			rows := rows
@@ -234,7 +213,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	}
 
 	// Query test results and export to BigQuery.
-	batchC := make(chan []*bq.Row)
+	batchC := make(chan []*bigquery.StructSaver)
 
 	// Batch exports rows to BigQuery.
 	eg, ctx := errgroup.WithContext(ctx)
@@ -280,15 +259,4 @@ func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, paylo
 
 	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
 	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchSize)
-}
-
-// trimTestResultForBigQuery trims fields that should not go to BigQuery.
-func trimTestResultForBigQuery(tr *pb.TestResult) {
-	trimArts := func(arts []*pb.Artifact) {
-		for _, a := range arts {
-			a.FetchUrl = ""
-		}
-	}
-	trimArts(tr.InputArtifacts)
-	trimArts(tr.OutputArtifacts)
 }

@@ -17,7 +17,12 @@ package backend
 import (
 	"time"
 
+	"cloud.google.com/go/bigquery"
+
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // A copy of typepb.StringPair, suitable for representing a key:value pair in
@@ -103,4 +108,89 @@ type TestResultRow struct {
 
 	// Artifacts produced by this test result.
 	OutputArtifacts []*Artifact
+}
+
+// stringPairProtosToStringPairs returns a slice of *StringPair derived from *typepb.StringPair.
+func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []*StringPair {
+	if pairs == nil {
+		return nil
+	}
+
+	sp := make([]*StringPair, len(pairs))
+	for i, p := range pairs {
+		sp[i] = &StringPair{
+			Key:   p.Key,
+			Value: p.Value,
+		}
+	}
+	return sp
+}
+
+// variantToStringPairs returns a slice of *StringPair derived from *typepb.Variant.
+func variantToStringPairs(vr *typepb.Variant) []*StringPair {
+	if vr == nil {
+		return nil
+	}
+
+	keys := pbutil.SortedVariantKeys(vr)
+	defMap := vr.GetDef()
+	sp := make([]*StringPair, len(keys))
+	for i, k := range keys {
+		sp[i] = &StringPair{
+			Key:   k,
+			Value: defMap[k],
+		}
+	}
+	return sp
+}
+
+// artifactProtosToArtifacts returns a slice of *Artifact derived from *pb.Artifact.
+func artifactProtosToArtifacts(ap []*pb.Artifact) []*Artifact {
+	if ap == nil {
+		return nil
+	}
+
+	artifacts := make([]*Artifact, len(ap))
+	for i, a := range ap {
+		artifacts[i] = &Artifact{
+			Name:        a.Name,
+			ContentType: a.ContentType,
+		}
+	}
+	return artifacts
+}
+
+// generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
+func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
+	trr := &TestResultRow{
+		Invocation: Invocation{
+			Id:          string(span.MustParseInvocationName(inv.Name)),
+			Interrupted: inv.Interrupted,
+			Tags:        stringPairProtosToStringPairs(inv.Tags),
+		},
+		TestExoneration: TestExoneration{
+			Exonerated: exonerated,
+		},
+		TestId:          tr.TestId,
+		Variant:         variantToStringPairs(tr.Variant),
+		Expected:        tr.Expected,
+		Status:          tr.Status,
+		SummaryHtml:     tr.SummaryHtml,
+		Tags:            stringPairProtosToStringPairs(tr.Tags),
+		InputArtifacts:  artifactProtosToArtifacts(tr.InputArtifacts),
+		OutputArtifacts: artifactProtosToArtifacts(tr.OutputArtifacts),
+	}
+
+	if tr.StartTime != nil {
+		trr.StartTime = pbutil.MustTimestamp(tr.StartTime)
+	}
+
+	if tr.Duration != nil {
+		trr.Duration = pbutil.MustDuration(tr.Duration)
+	}
+
+	return &bigquery.StructSaver{
+		InsertID: tr.Name,
+		Struct:   trr,
+	}
 }
