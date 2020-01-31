@@ -105,6 +105,30 @@
     },
     {
       "key": {
+        "uuid": "96bb87d6_5f552fb2",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:37:17Z",
+      "side": 1,
+      "message": "also we are missing test result\u0027s own invocation",
+      "parentUuid": "a19a6962_048b6f02",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 11
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8aec09bb_88269788",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 4
