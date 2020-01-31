@@ -17,6 +17,7 @@ package span
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/klauspost/compress/zstd"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -439,6 +441,21 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 		}
 		return err
 	})
+}
+
+// OneRowQuery executes a query, reads the first row into ptrs and stops the iterator.
+func OneRowQuery(ctx context.Context, txn Txn, st spanner.Statement, ptrs ...interface{}) error {
+	st.Params = ToSpannerMap(st.Params)
+	it := txn.Query(ctx, st)
+	defer it.Stop()
+	row, err := it.Next()
+	if err == iterator.Done {
+		return fmt.Errorf("Query has no results: %s", st)
+	}
+	if err != nil {
+		return err
+	}
+	return row.Columns(ptrs...)
 }
 
 // Query executes a query.
