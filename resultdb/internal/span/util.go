@@ -26,6 +26,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/klauspost/compress/zstd"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
@@ -69,6 +70,7 @@ type Compressed []byte
 // type-switches.
 type CompressedProto struct{ Message proto.Message }
 
+var ErrNoResults = iterator.Done
 var zstdHeader = []byte("ztd\n")
 
 // Globally shared zstd encoder and decoder. We use only their EncodeAll and
@@ -439,6 +441,18 @@ func ReadWriteTransaction(ctx context.Context, f func(context.Context, *spanner.
 		}
 		return err
 	})
+}
+
+// QueryFirstRow executes a query, reads the first row into ptrs and stops the iterator.
+func QueryFirstRow(ctx context.Context, txn Txn, st spanner.Statement, ptrs ...interface{}) error {
+	st.Params = ToSpannerMap(st.Params)
+	it := txn.Query(ctx, st)
+	defer it.Stop()
+	row, err := it.Next()
+	if err != nil {
+		return err
+	}
+	return FromSpanner(row, ptrs...)
 }
 
 // Query executes a query.

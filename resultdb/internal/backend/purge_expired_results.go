@@ -118,20 +118,17 @@ func purgeExpiredResults(ctx context.Context) {
 // sampleExpiredResultsInvocations selects a random set of invocations that have
 // expired test results.
 func sampleExpiredResultsInvocations(ctx context.Context, expirationTime time.Time, sampleSize int64) ([]span.InvocationID, error) {
-	var maxShard int64
-	row, err := span.Client(ctx).Single().Query(ctx, spanner.NewStatement(`
+	st := spanner.NewStatement(`
 		SELECT ShardId
 		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
 		ORDER BY ShardID DESC
 		LIMIT 1
-	`)).Next()
-	if err != nil {
+	`)
+	var maxShard int64
+	if err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &maxShard); err != nil {
 		return nil, err
 	}
-	if err := row.Columns(&maxShard); err != nil {
-		return nil, err
-	}
-	st := spanner.NewStatement(`
+	st = spanner.NewStatement(`
 		WITH expiringInvocations AS (
 			SELECT InvocationId
 			FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
@@ -146,7 +143,7 @@ func sampleExpiredResultsInvocations(ctx context.Context, expirationTime time.Ti
 	st.Params["sampleSize"] = sampleSize
 	ret := make([]span.InvocationID, 0, sampleSize)
 	var b span.Buffer
-	err = span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id span.InvocationID
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
@@ -238,10 +235,8 @@ func expiredResultsDelaySeconds(ctx context.Context) (int64, error) {
 		)
 	`)
 	var ret int64
-	row, err := span.Client(ctx).Single().Query(ctx, st).Next()
-	if err != nil {
+	if err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &ret); err != nil {
 		return 0, err
 	}
-	err = row.Columns(&ret)
-	return ret, err
+	return ret, nil
 }
