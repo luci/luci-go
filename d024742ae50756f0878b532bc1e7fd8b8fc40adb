@@ -34,6 +34,41 @@
       "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dbd37ed_15544450",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-01-31T07:21:59Z",
+      "side": 1,
+      "message": "Ok, it\u0027s just existence check.",
+      "parentUuid": "c78dccd0_ebcf2484",
+      "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "df71c217_a2f351d2",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-01-31T07:21:59Z",
+      "side": 1,
+      "message": "nit: so the log message could be just \"failed to find a file\" or something.",
+      "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
