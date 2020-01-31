@@ -16,6 +16,24 @@
       "revId": "087908170c81feb1a19fd5d162d089685bee8f8b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4182a18_6f4857b8",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-01-31T07:53:48Z",
+      "side": 1,
+      "message": "Ah this is for stacktrace. Now I understand why you wanted add the message.\nMaybe \"failed to check file: %s\"?. The original message is fine to me, though.",
+      "parentUuid": "70516c56_eb94da57",
+      "revId": "087908170c81feb1a19fd5d162d089685bee8f8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
