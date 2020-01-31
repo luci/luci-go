@@ -40,6 +40,6 @@ func StartInvocationFinalization(ctx context.Context, txn *spanner.ReadWriteTran
 			"State":        pb.Invocation_FINALIZING,
 			"Interrupted":  interrupted,
 		}),
-		Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx)),
+		Enqueue(TryFinalizeInvocation, "finalize/"+id.RowID(), id, nil, clock.Now(ctx).UTC()),
 	})
 }

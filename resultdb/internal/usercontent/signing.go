@@ -42,7 +42,7 @@ func (s *Server) generateSignedURL(ctx context.Context, urlPath string) (u *url.
 	urlPath = path.Clean(urlPath)
 
 	const ttl = time.Hour
-	now := clock.Now(ctx)
+	now := clock.Now(ctx).UTC()
 
 	state := []byte(urlPath)
 	tok, err := pathTokenKind.Generate(ctx, state, nil, ttl)

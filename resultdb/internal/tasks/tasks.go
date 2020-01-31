@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -55,6 +56,7 @@ var AllTypes = []Type{BQExport, TryFinalizeInvocation}
 
 // Enqueue inserts one row to InvocationTasks.
 func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface{}, processAfter time.Time) *spanner.Mutation {
+	internal.AssertUTC(processAfter)
 	return span.InsertMap("InvocationTasks", map[string]interface{}{
 		"TaskType":     string(typ),
 		"TaskId":       taskID,
@@ -113,7 +115,7 @@ var ErrConflict = fmt.Errorf("the task is already leased")
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		now := clock.Now(ctx)
+		now := clock.Now(ctx).UTC()
 		var processAfter time.Time
 		err := span.ReadRow(ctx, txn, "InvocationTasks", typ.Key(id), map[string]interface{}{
 			"InvocationId": &invID,
