@@ -27,7 +27,6 @@ type testClock struct {
 	nowCallback      func() time.Time
 	sleepCallback    func() TimerResult
 	newTimerCallback func() Timer
-	afterCallback    func() <-chan TimerResult
 }
 
 func (tc *testClock) Now() time.Time {
@@ -40,10 +39,6 @@ func (tc *testClock) Sleep(context.Context, time.Duration) TimerResult {
 
 func (tc *testClock) NewTimer(context.Context) Timer {
 	return tc.newTimerCallback()
-}
-
-func (tc *testClock) After(context.Context, time.Duration) <-chan TimerResult {
-	return tc.afterCallback()
 }
 
 func TestExternal(t *testing.T) {
@@ -84,17 +79,6 @@ func TestExternal(t *testing.T) {
 			}
 
 			NewTimer(c)
-			So(used, ShouldBeTrue)
-		})
-
-		Convey(`After() will use testClock's After().`, func() {
-			used := false
-			tc.afterCallback = func() <-chan TimerResult {
-				used = true
-				return nil
-			}
-
-			After(c, time.Second)
 			So(used, ShouldBeTrue)
 		})
 	})
