@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "70516c56_eb94da57",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-31T07:47:29Z",
+      "side": 1,
+      "message": "I want to keep errors.Annotate to capture stacktrace.\nBut I don\u0027t come up good message better than this.",
+      "revId": "087908170c81feb1a19fd5d162d089685bee8f8b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
