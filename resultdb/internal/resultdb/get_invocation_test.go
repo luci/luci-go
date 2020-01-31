@@ -53,14 +53,13 @@ func TestValidateGetInvocationRequest(t *testing.T) {
 func TestGetInvocation(t *testing.T) {
 	Convey(`GetInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, now, nil),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, now, nil),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, now, nil),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, nil),
+			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -73,10 +72,11 @@ func TestGetInvocation(t *testing.T) {
 		So(inv, ShouldResembleProto, &pb.Invocation{
 			Name:                "invocations/including",
 			State:               pb.Invocation_ACTIVE,
-			CreateTime:          pbutil.MustTimestampProto(now),
-			Deadline:            pbutil.MustTimestampProto(now.Add(time.Hour)),
+			CreateTime:          inv.CreateTime,
+			Deadline:            inv.Deadline,
 			Interrupted:         false,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})
+		So(pbutil.MustTimestamp(inv.CreateTime), ShouldHappenWithin, time.Second, start)
 	})
 }

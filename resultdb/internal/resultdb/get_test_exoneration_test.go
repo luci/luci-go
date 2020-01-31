@@ -17,8 +17,6 @@ package resultdb
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/clock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -47,14 +45,12 @@ func TestGetTestExoneration(t *testing.T) {
 	Convey(`GetTestExoneration`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 
-		now := clock.Now(ctx)
-
 		srv := newTestResultDBService()
 
 		invID := span.InvocationID("inv_0")
 		// Insert a TestExoneration.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, now, nil),
+			testutil.InsertInvocation("inv_0", pb.Invocation_ACTIVE, nil),
 			span.InsertMap("TestExonerations", map[string]interface{}{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",

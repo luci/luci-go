@@ -18,7 +18,6 @@ import (
 	"sort"
 	"testing"
 
-	"go.chromium.org/luci/common/clock"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -34,9 +33,7 @@ func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := SpannerTestContext(t)
 
-		now := clock.Now(ctx)
-
-		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, now, nil))
+		MustApply(ctx, InsertInvocation("inv1", pb.Invocation_ACTIVE, nil))
 		q := span.TestResultQuery{
 			Predicate:     &pb.TestResultPredicate{},
 			PageSize:      100,
@@ -78,8 +75,8 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_FAIL,
 			)
 			MustApply(ctx,
-				InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil),
-				InsertInvocation("inv2", pb.Invocation_ACTIVE, now, nil),
+				InsertInvocation("inv0", pb.Invocation_ACTIVE, nil),
+				InsertInvocation("inv2", pb.Invocation_ACTIVE, nil),
 			)
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
@@ -92,7 +89,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Expectancy filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
@@ -118,7 +115,7 @@ func TestQueryTestResults(t *testing.T) {
 		})
 
 		Convey(`Test id filter`, func() {
-			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, nil))
 			MustApply(ctx, CombineMutations(
 				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),
