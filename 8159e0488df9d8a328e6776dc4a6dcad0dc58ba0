@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0f02a0f5_fb83c081",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49aee4a4_457a0a9c",
+      "range": {
+        "startLine": 85,
+        "startChar": 8,
+        "endLine": 85,
+        "endChar": 9
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "babddfd0_e431cdb3",
         "filename": "resultdb/internal/backend/backend.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45cf10c0_01afbf16",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "babddfd0_e431cdb3",
+      "range": {
+        "startLine": 127,
+        "startChar": 3,
+        "endLine": 127,
+        "endChar": 11
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "7619bfbc_852f3a33",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "removed mocking",
+      "parentUuid": "d494d004_51422515",
+      "range": {
+        "startLine": 273,
+        "startChar": 2,
+        "endLine": 273,
+        "endChar": 23
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dc0da9bd_e6720f01",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 9
@@ -115,6 +187,30 @@
       "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d6d5e8c_62dff800",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc0da9bd_e6720f01",
+      "range": {
+        "startLine": 68,
+        "startChar": 4,
+        "endLine": 68,
+        "endChar": 42
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "cc6751f5_86f9260c",
+        "filename": "resultdb/internal/integrationtests/invocation_finalization_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2033611",
+      "parentUuid": "97a22f42_5ce85ddc",
+      "range": {
+        "startLine": 30,
+        "startChar": 9,
+        "endLine": 30,
+        "endChar": 39
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd555445_da679ed9",
         "filename": "resultdb/internal/integrationtests/testapp_test.go",
         "patchSetId": 9
@@ -164,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "87bf33a7_7116b28b",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fd555445_da679ed9",
+      "range": {
+        "startLine": 83,
+        "startChar": 65,
+        "endLine": 83,
+        "endChar": 69
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9e30f85_3a4535a5",
         "filename": "resultdb/internal/integrationtests/testapp_test.go",
         "patchSetId": 9
@@ -184,6 +328,30 @@
       "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f661c12a_a26e64fa",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T23:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9e30f85_3a4535a5",
+      "range": {
+        "startLine": 99,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 3
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
