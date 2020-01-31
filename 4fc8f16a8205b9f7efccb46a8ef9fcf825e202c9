@@ -93,6 +93,30 @@
       "revId": "4fc8f16a8205b9f7efccb46a8ef9fcf825e202c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a93f3846_2c9a6a06",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-31T04:15:17Z",
+      "side": 1,
+      "message": "oh, +1, this is what I meant in my comment on latest ps.",
+      "parentUuid": "de595e77_b074369b",
+      "range": {
+        "startLine": 84,
+        "startChar": 3,
+        "endLine": 85,
+        "endChar": 30
+      },
+      "revId": "4fc8f16a8205b9f7efccb46a8ef9fcf825e202c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
