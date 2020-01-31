@@ -33,9 +33,9 @@ func TestValidationRules(t *testing.T) {
 
 	Convey("Validation Rules", t, func() {
 		r := validation.RuleSet{}
-		addRules(&r)
 		r.RegisterVar("appid", func(context.Context) (string, error) { return "commit-queue", nil })
-		r.Freeze()
+
+		addRules(&r)
 
 		patterns, err := r.ConfigPatterns(context.Background())
 		So(err, ShouldBeNil)
