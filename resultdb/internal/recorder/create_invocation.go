@@ -38,15 +38,15 @@ import (
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
-func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
+func validateInvocationDeadline(deadline *tspb.Timestamp, nowUTC time.Time) error {
 	switch deadline, err := ptypes.Timestamp(deadline); {
 	case err != nil:
 		return err
 
-	case deadline.Sub(now) < 10*time.Second:
+	case deadline.Sub(nowUTC) < 10*time.Second:
 		return errors.Reason("must be at least 10 seconds in the future").Err()
 
-	case deadline.Sub(now) > 2*24*time.Hour:
+	case deadline.Sub(nowUTC) > 2*24*time.Hour:
 		return errors.Reason("must be before 48h in the future").Err()
 
 	default:
@@ -56,7 +56,7 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, nowUTC time.Time) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
@@ -81,7 +81,7 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 	}
 
 	if inv.GetDeadline() != nil {
-		if err := validateInvocationDeadline(inv.Deadline, now); err != nil {
+		if err := validateInvocationDeadline(inv.Deadline, nowUTC); err != nil {
 			return errors.Annotate(err, "invocation: deadline").Err()
 		}
 	}
@@ -97,9 +97,9 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 // CreateInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
-	now := clock.Now(ctx)
+	nowUTC := clock.Now(ctx).UTC()
 
-	if err := validateCreateInvocationRequest(in, now); err != nil {
+	if err := validateCreateInvocationRequest(in, nowUTC); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
@@ -116,20 +116,19 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	inv := &pb.Invocation{
 		Name:            invID.Name(),
 		State:           pb.Invocation_ACTIVE,
-		CreateTime:      pbutil.MustTimestampProto(now),
 		Deadline:        in.Invocation.GetDeadline(),
 		Tags:            in.Invocation.GetTags(),
 		BigqueryExports: in.Invocation.GetBigqueryExports(),
 	}
 
-	// Determine the deadline and expiration times.
+	// Ensure the invocation has a deadline.
 	if inv.Deadline == nil {
-		inv.Deadline = pbutil.MustTimestampProto(now.Add(defaultInvocationDeadlineDuration))
+		inv.Deadline = pbutil.MustTimestampProto(nowUTC.Add(defaultInvocationDeadlineDuration))
 	}
 
 	pbutil.NormalizeInvocation(inv)
 
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		// Dedup the request if possible.
 		if in.RequestId != "" {
 			var curRequestID spanner.NullString
@@ -155,18 +154,22 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Invocations", rowOfInvocation(ctx, inv, updateToken, in.RequestId, s.ExpectedResultsExpiration)),
+			span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, updateToken, in.RequestId)),
 		})
 	})
-
 	switch {
 	case spanner.ErrCode(err) == codes.AlreadyExists:
 		return nil, invocationAlreadyExists(invID)
+
 	case err != nil:
 		return nil, err
-	default:
-		return inv, nil
 	}
+
+	if inv.CreateTime == nil {
+		// The request was not deduped.
+		inv.CreateTime = pbutil.MustTimestampProto(commitTimestamp)
+	}
+	return inv, nil
 }
 
 func invocationAlreadyExists(id span.InvocationID) error {
