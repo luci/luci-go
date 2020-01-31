@@ -99,7 +99,7 @@ func TestPurgeExpiredResults(t *testing.T) {
 			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
 			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001)}
 
-		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, clock.Now(ctx), 100)
+		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, 100)
 		So(err, ShouldBeNil)
 		So(len(expiredResultsInvocationIds), ShouldEqual, 3)
 

@@ -20,7 +20,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -104,7 +103,7 @@ func purgeExpiredResults(ctx context.Context) {
 		expiredResultsDelayMetric.Set(ctx, val)
 	})
 	processingLoop(ctx, 5*time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
-		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, clock.Now(ctx), maxPurgeTestResultsWorkers)
+		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, maxPurgeTestResultsWorkers)
 		if err != nil {
 			return err
 		}
@@ -117,7 +116,7 @@ func purgeExpiredResults(ctx context.Context) {
 
 // sampleExpiredResultsInvocations selects a random set of invocations that have
 // expired test results.
-func sampleExpiredResultsInvocations(ctx context.Context, expirationTime time.Time, sampleSize int64) ([]span.InvocationID, error) {
+func sampleExpiredResultsInvocations(ctx context.Context, sampleSize int64) ([]span.InvocationID, error) {
 	st := spanner.NewStatement(`
 		SELECT ShardId
 		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
