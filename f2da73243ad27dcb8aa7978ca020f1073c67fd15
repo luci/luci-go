@@ -1,0 +1,285 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4f93de5a_af1a4884",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "i am not sure about this. This means, if we make a bug in our code after we released, and we make a wrong schema, we will start loosing tasks. Let\u0027s either not mark as permanent, or panic (this should never happen)",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 98,
+        "endChar": 49
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2ccf526_b9a9a86f",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "nit: here and below, please start the comment with the symbol name",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64fc6543_0750fabd",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "does this create column \"Key\" or \"key\"? Looking at all bq tables, ours and GCP\u0027s, the convention is to use camelCase starting with lower-case letter. You may need to use `bigquery: \"key\"`",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e4810da_b31a0e88",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "it is not really a subset because there is invocation in L67. Let\u0027s emphasize that this is the bq row",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 11
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a19a6962_048b6f02",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "users of bq will not see the comment above. they will this name which is misguiding given that we have TestID below. Let\u0027s make it more obvious: ExportedInvocation",
+      "range": {
+        "startLine": 67,
+        "startChar": 1,
+        "endLine": 67,
+        "endChar": 11
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8aec09bb_88269788",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "let\u0027s inline this, now that we can. I think it would be simpler. if we ever need to add a list of exonerations, we can do so also here",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 32
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f704f879_361b54fd",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "golint likes TestID",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 7
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68531e2c_b821ad7b",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "where ResultID?",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "309ba58a_e56f2277",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "is this going to be a number or string? we need a string",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 21
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4e26287_3eeb7612",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "golang likes abbreviations capitalized: SummaryHTML",
+      "range": {
+        "startLine": 89,
+        "startChar": 8,
+        "endLine": 89,
+        "endChar": 12
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed547aaf_d02c6cae",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "what will this turn into? we need number of seconds as a float",
+      "range": {
+        "startLine": 95,
+        "startChar": 10,
+        "endLine": 95,
+        "endChar": 23
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee738368_47b251ef",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "why this is nullable and variant isn\u0027t? same with artifacts\n\ni am not sure this is needed because it is repeated",
+      "range": {
+        "startLine": 99,
+        "startChar": 32,
+        "endLine": 99,
+        "endChar": 40
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78e41b59_6543b9fb",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T22:32:34Z",
+      "side": 1,
+      "message": "let\u0027s omit this *for now*. I don\u0027t see how artifact and content type can help analysis",
+      "range": {
+        "startLine": 100,
+        "startChar": 0,
+        "endLine": 105,
+        "endChar": 28
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
