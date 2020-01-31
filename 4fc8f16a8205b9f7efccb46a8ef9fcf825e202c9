@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f780d165_63d3baa0",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-31T03:00:57Z",
+      "side": 1,
+      "message": "typo: closest",
+      "range": {
+        "startLine": 70,
+        "startChar": 37,
+        "endLine": 70,
+        "endChar": 43
+      },
+      "revId": "4fc8f16a8205b9f7efccb46a8ef9fcf825e202c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b8b647f_3ddb4392",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-31T03:00:57Z",
+      "side": 1,
+      "message": "gross :(",
+      "range": {
+        "startLine": 84,
+        "startChar": 3,
+        "endLine": 85,
+        "endChar": 30
+      },
+      "revId": "4fc8f16a8205b9f7efccb46a8ef9fcf825e202c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
