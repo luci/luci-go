@@ -77,7 +77,7 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 	for _, dep := range deps {
 		_, err := os.Stat(dep)
 		if err != nil {
-			return errors.Annotate(err, "failed to stat input file: %s", dep).Err()
+			return errors.Annotate(err, "failed to call stat").Err()
 		}
 	}
 	return nil
