@@ -73,18 +73,12 @@ func (c *testClock) Now() time.Time {
 }
 
 func (c *testClock) Sleep(ctx context.Context, d time.Duration) clock.TimerResult {
-	return <-c.After(ctx, d)
+	return <-clock.AfterClock(ctx, c, d)
 }
 
 func (c *testClock) NewTimer(ctx context.Context) clock.Timer {
 	t := newTimer(ctx, c)
 	return t
-}
-
-func (c *testClock) After(ctx context.Context, d time.Duration) <-chan clock.TimerResult {
-	t := newTimer(ctx, c)
-	t.Reset(d)
-	return t.afterC
 }
 
 func (c *testClock) Set(t time.Time) {

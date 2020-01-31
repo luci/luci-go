@@ -65,9 +65,20 @@ func NewTimer(ctx context.Context) Timer {
 	return Get(ctx).NewTimer(ctx)
 }
 
-// After calls Clock.After on the Clock instance stored in the supplied Context.
+// After calls AfterClock on the Clock instance stored in the supplied
+// Context.
 func After(ctx context.Context, d time.Duration) <-chan TimerResult {
-	return Get(ctx).After(ctx, d)
+	return AfterClock(ctx, Get(ctx), d)
+}
+
+// AfterClock waits a duration and then sends the current time over the
+// returned channel.
+//
+// If the supplied Context is canceled, the timer will expire immediately.
+func AfterClock(ctx context.Context, c Clock, d time.Duration) <-chan TimerResult {
+	t := c.NewTimer(ctx)
+	t.Reset(d)
+	return t.GetC()
 }
 
 // Since is an equivalent of time.Since.
