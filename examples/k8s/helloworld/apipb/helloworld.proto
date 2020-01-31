@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package luci.examples.k8s.helloworld;
+package luci.examples.helloworld;
 
-option go_package = "go.chromium.org/luci/examples/k8s/helloworld/apipb";
+option go_package = "apipb";
 
 import "google/protobuf/empty.proto";
 
