@@ -25,13 +25,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -121,9 +121,11 @@ func validateUserUpdateToken(updateToken spanner.NullString, userToken string) e
 	return nil
 }
 
-func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string, expectedResultsExpiration time.Duration) map[string]interface{} {
-	createTime := pbutil.MustTimestamp(inv.CreateTime)
-
+// rowOfInvocation returns Invocation row values to be inserted to create the
+// invocation.
+// inv.CreateTime is ignored in favor of spanner.CommitTime.
+func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
+	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
 		"InvocationId": span.MustParseInvocationName(inv.Name),
 		"ShardId":      mathrand.Intn(ctx, span.InvocationShards),
@@ -131,12 +133,12 @@ func rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, creat
 		"Interrupted":  inv.Interrupted,
 		"Realm":        chromium.Realm, // TODO(crbug.com/1013316): accept realm in the proto
 
-		"InvocationExpirationTime":          createTime.Add(invocationExpirationDuration),
-		"ExpectedTestResultsExpirationTime": createTime.Add(expectedResultsExpiration),
+		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
+		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),
 
 		"UpdateToken": updateToken,
 
-		"CreateTime": inv.CreateTime,
+		"CreateTime": spanner.CommitTimestamp,
 		"Deadline":   inv.Deadline,
 
 		"Tags": inv.Tags,
