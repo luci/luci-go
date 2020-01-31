@@ -47,10 +47,11 @@ func Main(init func(srv *server.Server) error) {
 	}
 
 	spannerDB := flag.String("spanner-database", "", "Name of the spanner database to connect to")
+	prodMode := flag.Bool("resultdb-prod", false, "Run ResultDB in production mode")
 
 	server.Main(nil, modules, func(srv *server.Server) error {
 		var err error
-		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB); err != nil {
+		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB, !*prodMode); err != nil {
 			return err
 		}
 
@@ -59,7 +60,7 @@ func Main(init func(srv *server.Server) error) {
 }
 
 // TODO(vadimsh): Move to a module.Module.
-func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context, error) {
+func withProdSpannerClient(ctx context.Context, dbFlag string, trackSessionHandles bool) (context.Context, error) {
 	if dbFlag == "" {
 		return ctx, errors.Reason("-spanner-database flag is required").Err()
 	}
@@ -71,7 +72,12 @@ func withProdSpannerClient(ctx context.Context, dbFlag string) (context.Context,
 	}
 
 	// Init a Spanner client.
-	spannerClient, err := spanner.NewClient(ctx, dbFlag, option.WithTokenSource(ts))
+	cfg := spanner.ClientConfig{
+		SessionPoolConfig: spanner.SessionPoolConfig{
+			TrackSessionHandles: trackSessionHandles,
+		},
+	}
+	spannerClient, err := spanner.NewClientWithConfig(ctx, dbFlag, cfg, option.WithTokenSource(ts))
 	if err != nil {
 		return ctx, err
 	}
