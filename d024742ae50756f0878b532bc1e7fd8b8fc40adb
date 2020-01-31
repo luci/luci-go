@@ -69,6 +69,24 @@
       "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77744bf5_cf0a3994",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-01-31T07:25:24Z",
+      "side": 1,
+      "message": "I just want to skip checking with os.IsNotExist, and message in err is sufficient?",
+      "parentUuid": "df71c217_a2f351d2",
+      "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
