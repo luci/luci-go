@@ -49,7 +49,7 @@ CREATE TABLE Invocations (
   UpdateToken STRING(64),
 
   -- When the invocation was created.
-  CreateTime TIMESTAMP NOT NULL,
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- When the invocation was finalized.
   FinalizeTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
