@@ -87,6 +87,24 @@
       "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7d676c9_1e1714a7",
+        "filename": "client/cmd/isolate/check.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-01-31T07:33:31Z",
+      "side": 1,
+      "message": "I confirmed that the message in the stat error is \"state {filename}: no such file or directory\"\nSo don\u0027t think the additional message \"failed to stat input ...\" is necessary in this context.",
+      "parentUuid": "77744bf5_cf0a3994",
+      "revId": "d024742ae50756f0878b532bc1e7fd8b8fc40adb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
