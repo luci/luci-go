@@ -52,13 +52,9 @@ func (t *systemTimer) Reset(d time.Duration) (running bool) {
 	running = t.Stop()
 
 	// If our Context is already done, finish immediately.
-	if done := t.ctx.Done(); done != nil {
-		select {
-		case <-done:
-			t.timerC <- TimerResult{Time: time.Now(), Err: t.ctx.Err()}
-			return
-		default:
-		}
+	if err := t.ctx.Err(); err != nil {
+		t.timerC <- TimerResult{Time: time.Now(), Err: err}
+		return
 	}
 
 	// Start a monitor goroutine and our actual timer. Copy our channels, since
@@ -85,6 +81,7 @@ func (t *systemTimer) Reset(d time.Duration) (running bool) {
 
 		case <-t.ctx.Done():
 			t.timerC <- TimerResult{Time: time.Now(), Err: t.ctx.Err()}
+
 		case now := <-realTimer.C:
 			t.timerC <- TimerResult{Time: now, Err: nil}
 		}
