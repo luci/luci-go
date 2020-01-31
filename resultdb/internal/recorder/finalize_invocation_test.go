@@ -16,12 +16,10 @@ package recorder
 
 import (
 	"testing"
-	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -66,28 +64,6 @@ func TestFinalizeInvocation(t *testing.T) {
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `has already been finalized with different interrupted flag`)
-		})
-
-		Convey(`Interrupt expired invocation passed`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-			)
-			// Mock now to be after deadline.
-			clock.Get(ctx).(testclock.TestClock).Add(2 * time.Hour)
-
-			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{
-				Name:        "invocations/inv",
-				Interrupted: true,
-			})
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
-			So(inv.Interrupted, ShouldEqual, true)
-
-			// Read the invocation from Spanner to confirm it's really interrupted.
-			inv, err = span.ReadInvocationFull(ctx, span.Client(ctx).Single(), "inv")
-			So(err, ShouldBeNil)
-			So(inv.Interrupted, ShouldBeTrue)
-
 		})
 
 		Convey(`Idempotent`, func() {
