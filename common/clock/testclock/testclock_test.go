@@ -62,7 +62,7 @@ func TestTestClock(t *testing.T) {
 		})
 
 		Convey(`Awakens after a period of time.`, func() {
-			afterC := clk.After(ctx, 2*time.Second)
+			afterC := clock.After(ctx, 2*time.Second)
 
 			clk.Set(now.Add(1 * time.Second))
 			clk.Set(now.Add(2 * time.Second))

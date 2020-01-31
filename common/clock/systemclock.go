@@ -37,16 +37,10 @@ func (systemClock) Now() time.Time {
 	return time.Now()
 }
 
-func (sc systemClock) Sleep(c context.Context, d time.Duration) TimerResult {
-	return <-sc.After(c, d)
+func (sc systemClock) Sleep(ctx context.Context, d time.Duration) TimerResult {
+	return <-after(ctx, sc, d)
 }
 
 func (systemClock) NewTimer(ctx context.Context) Timer {
 	return newSystemTimer(ctx)
-}
-
-func (sc systemClock) After(ctx context.Context, d time.Duration) <-chan TimerResult {
-	t := sc.NewTimer(ctx)
-	t.Reset(d)
-	return t.GetC()
 }

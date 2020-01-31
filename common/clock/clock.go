@@ -41,9 +41,4 @@ type Clock interface {
 	//
 	// If the supplied Context is canceled, the timer will expire immediately.
 	NewTimer(c context.Context) Timer
-
-	// Waits a duration, then sends the current time over the returned channel.
-	//
-	// If the supplied Context is canceled, the timer will expire immediately.
-	After(context.Context, time.Duration) <-chan TimerResult
 }
