@@ -86,10 +86,7 @@ func countTestResults(ctx context.Context, invID span.InvocationID) int64 {
 		WHERE InvocationId = @invocationId`)
 	st.Params["invocationId"] = span.ToSpanner(invID)
 	var res int64
-	row, err := span.Client(ctx).Single().Query(ctx, st).Next()
-	So(err, ShouldBeNil)
-	err = row.Columns(&res)
-	So(err, ShouldBeNil)
+	So(span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &res), ShouldBeNil)
 	return res
 }
 
