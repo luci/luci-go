@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1cdf38c_a56bce1e",
+        "filename": "common/clock/external.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-01-31T20:01:03Z",
+      "side": 1,
+      "message": "does anything actually need this? I kinda suspect that all callers are going to be using After",
+      "range": {
+        "startLine": 74,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 13
+      },
+      "revId": "86c38000a16bfb3aca1ccb225bdcc6b82ada9126",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
