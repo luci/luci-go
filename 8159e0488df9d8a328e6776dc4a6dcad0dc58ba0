@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "d494d004_51422515",
+        "filename": "resultdb/internal/backend/invocation_finalization.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T01:07:57Z",
+      "side": 1,
+      "message": "TIL clock.Now returns local time. Somehow I thought it is always UTC, perhaps a habit from utils.utcnow() in buildbucket.\n\nI don\u0027t think CURRENT_TIMESTAMP() is magical. There is PENDING_COMMIT_TIME() and https://godoc.org/cloud.google.com/go/spanner#CommitTimestamp. Those are magical, but you cannot actually read them. They are placeholders.\n\nmixing mocked time with commit-time or CURRENT_TIMESTAMP() has been bothering me for some time. Maybe we should not mock time at all in tests that talk to an external system (spanner). WDYT?",
+      "parentUuid": "34a1658f_c22af360",
+      "range": {
+        "startLine": 273,
+        "startChar": 2,
+        "endLine": 273,
+        "endChar": 23
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dc0da9bd_e6720f01",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 9
@@ -183,6 +207,30 @@
       "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b64dfce9_a11467ef",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-01-31T01:07:57Z",
+      "side": 1,
+      "message": "this is t.Shutdown, not s.Shutdown. The point is to shutdown all servers when any of them exits",
+      "parentUuid": "7ccc28ca_f55cdb48",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 21
+      },
+      "revId": "8159e0488df9d8a328e6776dc4a6dcad0dc58ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
