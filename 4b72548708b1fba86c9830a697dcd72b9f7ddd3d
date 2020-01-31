@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64a55476_1f4605ec",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-01-31T04:14:28Z",
+      "side": 1,
+      "message": "i think this is least bad, perhaps with 30s expiration.",
+      "range": {
+        "startLine": 88,
+        "startChar": 56,
+        "endLine": 89,
+        "endChar": 80
+      },
+      "revId": "4b72548708b1fba86c9830a697dcd72b9f7ddd3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
