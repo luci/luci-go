@@ -98,13 +98,14 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 func TestUpdateInvocation(t *testing.T) {
 	Convey(`TestUpdateInvocation`, t, func() {
 		ctx := SpannerTestContext(t)
+		start := clock.Now(ctx).UTC()
 
 		recorder := newTestRecorderServer()
 
 		const token = "update token"
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
-		validDeadline := pbutil.MustTimestampProto(clock.Now(ctx).Add(day))
+		validDeadline := pbutil.MustTimestampProto(start.Add(day))
 		updateMask := &field_mask.FieldMask{
 			Paths: []string{"deadline"},
 		}
@@ -128,7 +129,7 @@ func TestUpdateInvocation(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, testclock.TestRecentTimeUTC, map[string]interface{}{"UpdateToken": token}))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{

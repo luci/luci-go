@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/prpc"
@@ -150,9 +151,7 @@ func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := SpannerTestContext(t)
 
-		// Mock time.
-		now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)
-		ctx, _ = testclock.UseTime(ctx, now)
+		start := clock.Now(ctx).UTC()
 
 		// Setup a full HTTP server in order to retrieve response headers.
 		server := &prpctest.Server{}
@@ -180,7 +179,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`already exists`, func() {
 			_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
-				InsertInvocation("u:inv", 1, testclock.TestRecentTimeUTC, nil),
+				InsertInvocation("u:inv", 1, nil),
 			})
 			So(err, ShouldBeNil)
 
@@ -216,7 +215,7 @@ func TestCreateInvocation(t *testing.T) {
 		})
 
 		Convey(`end to end`, func() {
-			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
 			headers := &metadata.MD{}
 			bqExport := &pb.BigQueryExport{
 				Project:     "project",
@@ -263,8 +262,8 @@ func TestCreateInvocation(t *testing.T) {
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})
 			So(err, ShouldBeNil)
-			So(expectedResultsExpirationTime, ShouldEqual, time.Date(2019, 3, 2, 0, 0, 0, 0, time.UTC))
-			So(invExpirationTime, ShouldEqual, time.Date(2020, 12, 31, 0, 0, 0, 0, time.UTC))
+			So(expectedResultsExpirationTime, ShouldHappenWithin, time.Second, start.Add(expectedResultExpiration))
+			So(invExpirationTime, ShouldHappenWithin, time.Second, start.Add(invocationExpirationDuration))
 		})
 	})
 }

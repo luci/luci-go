@@ -20,8 +20,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock/testclock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
@@ -75,7 +73,6 @@ func TestInclude(t *testing.T) {
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		insInv := InsertInvocation
-		ct := testclock.TestRecentTimeUTC
 
 		assertIncluded := func(includedInvID span.InvocationID) {
 			var throwAway span.InvocationID
@@ -101,7 +98,7 @@ func TestInclude(t *testing.T) {
 
 		Convey(`no included invocation`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included not found`)
@@ -109,8 +106,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`included invocation is active`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-				insInv("included", pb.Invocation_ACTIVE, ct, nil),
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_ACTIVE, nil),
 			)
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldBeNil)
@@ -118,8 +115,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`idempotent`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-				insInv("included", pb.Invocation_FINALIZED, ct, nil),
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, nil),
 			)
 
 			_, err := recorder.Include(ctx, req)
@@ -131,8 +128,8 @@ func TestInclude(t *testing.T) {
 
 		Convey(`success`, func() {
 			MustApply(ctx,
-				insInv("including", pb.Invocation_ACTIVE, ct, map[string]interface{}{"UpdateToken": token}),
-				insInv("included", pb.Invocation_FINALIZED, ct, nil),
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, nil),
 			)
 
 			_, err := recorder.Include(ctx, req)

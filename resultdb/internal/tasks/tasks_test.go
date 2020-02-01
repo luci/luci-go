@@ -30,18 +30,18 @@ import (
 func TestTasks(t *testing.T) {
 	Convey(`TestTasks`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		Convey(`Sample`, func() {
 			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task1", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task2", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task3", "inv", "payload", now.Add(-time.Hour)),
-				Enqueue(BQExport, "task4", "inv", "payload", now),
-				Enqueue(BQExport, "task5", "inv", "payload", now.Add(time.Hour)),
+				Enqueue(BQExport, "task1", "inv", "payload", start.Add(-time.Hour)),
+				Enqueue(BQExport, "task2", "inv", "payload", start.Add(-time.Hour)),
+				Enqueue(BQExport, "task3", "inv", "payload", start.Add(-time.Hour)),
+				Enqueue(BQExport, "task4", "inv", "payload", start),
+				Enqueue(BQExport, "task5", "inv", "payload", start.Add(time.Hour)),
 			)
 
-			rows, err := Sample(ctx, BQExport, now, 3)
+			rows, err := Sample(ctx, BQExport, start, 3)
 			So(err, ShouldBeNil)
 			So(rows, ShouldHaveLength, 3)
 			So(rows, ShouldNotContain, "task5")
@@ -65,15 +65,15 @@ func TestTasks(t *testing.T) {
 					"ProcessAfter": &newProcessAfter,
 				})
 				So(err, ShouldBeNil)
-				So(newProcessAfter, ShouldEqual, expectedProcessAfter)
+				So(newProcessAfter, ShouldHappenWithin, time.Second, expectedProcessAfter)
 			}
 
 			Convey(`succeeded`, func() {
-				test(now.Add(-time.Hour), now.Add(time.Second), nil)
+				test(start.Add(-time.Hour), start.Add(time.Second), nil)
 			})
 
 			Convey(`skipped`, func() {
-				test(now.Add(time.Hour), now.Add(time.Hour), ErrConflict)
+				test(start.Add(time.Hour), start.Add(time.Hour), ErrConflict)
 			})
 
 			Convey(`Non-existing task`, func() {
@@ -84,7 +84,7 @@ func TestTasks(t *testing.T) {
 
 		Convey(`Delete`, func() {
 			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task", "inv", "payload", now.Add(-time.Hour)),
+				Enqueue(BQExport, "task", "inv", "payload", start.Add(-time.Hour)),
 			)
 
 			err := Delete(ctx, BQExport, "task")

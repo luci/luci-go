@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -53,14 +53,17 @@ func TestValidateGetInvocationRequest(t *testing.T) {
 func TestGetInvocation(t *testing.T) {
 	Convey(`GetInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		ct := testclock.TestRecentTimeUTC
+		deadline := ct.Add(time.Hour)
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, now, nil),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, now, nil),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, now, nil),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+				"CreateTime": ct,
+				"Deadline":   deadline,
+			}),
+			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -73,8 +76,8 @@ func TestGetInvocation(t *testing.T) {
 		So(inv, ShouldResembleProto, &pb.Invocation{
 			Name:                "invocations/including",
 			State:               pb.Invocation_ACTIVE,
-			CreateTime:          pbutil.MustTimestampProto(now),
-			Deadline:            pbutil.MustTimestampProto(now.Add(time.Hour)),
+			CreateTime:          pbutil.MustTimestampProto(ct),
+			Deadline:            pbutil.MustTimestampProto(deadline),
 			Interrupted:         false,
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})

@@ -35,14 +35,16 @@ import (
 func TestReadInvocationFull(t *testing.T) {
 	Convey(`ReadInvocationFull`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-
-		now := clock.Now(ctx)
+		start := clock.Now(ctx).UTC()
 
 		// Insert some Invocations.
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, now, nil),
-			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, now, nil),
-			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, now, nil),
+			testutil.InsertInvocation("including", pb.Invocation_ACTIVE, map[string]interface{}{
+				"CreateTime": start,
+				"Deadline":   start.Add(time.Hour),
+			}),
+			testutil.InsertInvocation("included0", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("included1", pb.Invocation_FINALIZED, nil),
 			testutil.InsertInclusion("including", "included0"),
 			testutil.InsertInclusion("including", "included1"),
 		)
@@ -56,8 +58,8 @@ func TestReadInvocationFull(t *testing.T) {
 		So(inv, ShouldResembleProto, &pb.Invocation{
 			Name:                "invocations/including",
 			State:               pb.Invocation_ACTIVE,
-			CreateTime:          pbutil.MustTimestampProto(now),
-			Deadline:            pbutil.MustTimestampProto(now.Add(time.Hour)),
+			CreateTime:          pbutil.MustTimestampProto(start),
+			Deadline:            pbutil.MustTimestampProto(start.Add(time.Hour)),
 			IncludedInvocations: []string{"invocations/included0", "invocations/included1"},
 		})
 	})
@@ -162,12 +164,11 @@ func BenchmarkChainFetch(b *testing.B) {
 func TestQueryInvocations(t *testing.T) {
 	Convey(`TestQueryInvocations`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		now := clock.Now(ctx)
 
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("inv0", pb.Invocation_FINALIZED, now, nil),
-			testutil.InsertInvocation("inv1", pb.Invocation_FINALIZED, now, nil),
-			testutil.InsertInvocation("inv2", pb.Invocation_FINALIZED, now, nil),
+			testutil.InsertInvocation("inv0", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("inv1", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("inv2", pb.Invocation_FINALIZED, nil),
 		)
 
 		txn := span.Client(ctx).ReadOnlyTransaction()

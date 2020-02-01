@@ -65,11 +65,14 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 }
 
 func insertInvocationWithTestResults(ctx context.Context, invID span.InvocationID, nTests, nPassingVariants, nFailedVariants int) span.InvocationID {
-	now := clock.Now(ctx)
+	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
-	extraArgs := map[string]interface{}{"ExpectedTestResultsExpirationTime": now.Add(-time.Minute)}
-	testutil.MustApply(ctx, testutil.InsertInvocation(invID, pb.Invocation_FINALIZED, now.Add(-time.Hour), extraArgs))
+	testutil.MustApply(ctx, testutil.InsertInvocation(invID, pb.Invocation_FINALIZED, map[string]interface{}{
+		"ExpectedTestResultsExpirationTime": now.Add(-time.Minute),
+		"CreateTime":                        now.Add(-time.Hour),
+		"FinalizeTime":                      now.Add(-time.Hour),
+	}))
 
 	inserts := []*spanner.Mutation{}
 	for i := 0; i < nTests; i++ {

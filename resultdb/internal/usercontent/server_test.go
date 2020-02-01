@@ -93,7 +93,7 @@ func TestIsolate(t *testing.T) {
 			}
 			u, exp, err := s.GenerateSignedIsolateURL(ctx, "isolate.example.com", "default-gzip", "deadbeef")
 			So(err, ShouldBeNil)
-			So(exp, ShouldResemble, clock.Now(ctx).Add(time.Hour))
+			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
 
 			status, actualContents := fetch(u.String())
 			So(status, ShouldEqual, http.StatusOK)

@@ -26,9 +26,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
@@ -97,9 +97,8 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 func TestDeriveInvocation(t *testing.T) {
 	Convey(`TestDeriveInvocation`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		ct := testclock.TestRecentTimeUTC
 
-		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, ct, nil))
+		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, nil))
 
 		Convey(`calling to shouldWriteInvocation works`, func() {
 			Convey(`if we already have the invocation written`, func() {
@@ -256,13 +255,13 @@ func TestDeriveInvocation(t *testing.T) {
 func TestBatchInsertTestResults(t *testing.T) {
 	Convey(`TestBatchInsertTestResults`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
-		now := pbutil.MustTimestampProto(testclock.TestRecentTimeUTC)
+		startTS := ptypes.TimestampNow()
 
 		inv := &pb.Invocation{
 			State:        pb.Invocation_FINALIZED,
-			CreateTime:   now,
-			FinalizeTime: now,
-			Deadline:     now,
+			CreateTime:   startTS,
+			FinalizeTime: startTS,
+			Deadline:     startTS,
 		}
 		results := []*pb.TestResult{
 			{TestId: "Foo.DoBar", ResultId: "0", Status: pb.TestStatus_PASS},

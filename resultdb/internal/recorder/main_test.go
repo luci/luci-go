@@ -20,12 +20,14 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
+const expectedResultExpiration = 60 * day
+
 func TestMain(m *testing.M) {
 	testutil.SpannerTestMain(m)
 }
 
 func newTestRecorderServer() *recorderServer {
 	return &recorderServer{
-		Options: &Options{ExpectedResultsExpiration: 60 * day},
+		Options: &Options{ExpectedResultsExpiration: expectedResultExpiration},
 	}
 }

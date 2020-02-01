@@ -21,8 +21,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock/testclock"
-
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -149,7 +147,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, testclock.TestRecentTimeUTC, map[string]interface{}{"UpdateToken": token}))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.BatchCreateTestExonerationsRequest{

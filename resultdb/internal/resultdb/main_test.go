@@ -37,7 +37,7 @@ func newTestResultDBService() *resultDBServer {
 				Host:   "results.usercontent.example.com",
 				Path:   fmt.Sprintf("/isolate/%s/%s/%s", host, ns, digest),
 			}
-			expiration = clock.Now(ctx).Add(time.Hour)
+			expiration = clock.Now(ctx).UTC().Add(time.Hour)
 			return
 		},
 	}
