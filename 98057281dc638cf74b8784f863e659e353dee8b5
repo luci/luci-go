@@ -115,6 +115,29 @@
       "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7110972_29ed2592",
+        "filename": "vpython/venv/assets/assets_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-01T00:33:04Z",
+      "side": 1,
+      "message": "oh, derp.",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 30
+      },
+      "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
