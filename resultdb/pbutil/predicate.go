@@ -72,8 +72,8 @@ func validateRegexp(re string) error {
 // invalid.
 func ValidateVariantPredicate(p *pb.VariantPredicate) error {
 	switch pr := p.Predicate.(type) {
-	case *pb.VariantPredicate_Exact:
-		return errors.Annotate(ValidateVariant(pr.Exact), "exact").Err()
+	case *pb.VariantPredicate_Equals:
+		return errors.Annotate(ValidateVariant(pr.Equals), "equals").Err()
 	case *pb.VariantPredicate_Contains:
 		return errors.Annotate(ValidateVariant(pr.Contains), "contains").Err()
 	case nil:
