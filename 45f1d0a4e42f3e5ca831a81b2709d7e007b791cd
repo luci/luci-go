@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "218e911b_cd09af25",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "in seconds",
+      "range": {
+        "startLine": 73,
+        "startChar": 39,
+        "endLine": 73,
+        "endChar": 40
+      },
+      "revId": "45f1d0a4e42f3e5ca831a81b2709d7e007b791cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bb5e0d5_208891a2",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "consider shorter name in BQ: \"exported\" here and \"parent\" in L87",
+      "range": {
+        "startLine": 83,
+        "startChar": 42,
+        "endLine": 83,
+        "endChar": 61
+      },
+      "revId": "45f1d0a4e42f3e5ca831a81b2709d7e007b791cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fd0e73c_abbcef38",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "can we put invocations as first two columns, assuming the table column order matches field declaration order? in other places we try to follow parent-child order so putting ContainingInvocation before TestID would be consistent with that. I agree that ExportedInvocation should be before ContainingInvocation",
+      "revId": "45f1d0a4e42f3e5ca831a81b2709d7e007b791cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05c01e6a_29c7afe2",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "can we drop this? In TestResultRow context, any exoneration is a test exoneration",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 6
+      },
+      "revId": "45f1d0a4e42f3e5ca831a81b2709d7e007b791cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

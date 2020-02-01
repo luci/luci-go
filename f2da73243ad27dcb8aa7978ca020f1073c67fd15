@@ -284,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "22449b88_f3e5b950",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "TestResultRow is still extensible? e.g. we could add exoneration_reason column later.\nIts just it is bit weird to write `WHERE NOT test_exoneration.exonerated` compared to `WHERE NOT exonerated`.\n\nbut it is a big deal",
+      "parentUuid": "01ebf9c5_eecfae21",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 32
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f704f879_361b54fd",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 4
@@ -360,6 +384,24 @@
       "side": 1,
       "message": "I don\u0027t think we need ResultID in BQ?",
       "parentUuid": "68531e2c_b821ad7b",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3293071e_2209edb8",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T14:49:33Z",
+      "side": 1,
+      "message": "without result id we cannot pinpoint a specific result in APIs. \n\nconsider a situation where we retry same test case over and over in an invocation for deflaking purposes. Then, for whatever reason, we analyze that (and perhaps many tasks) to find specific results. Without result id, we cannot identify a result because all tests in a task have same test id. We cannot fetch artifacts, logs.\n\neventually we want to export log lines to bq. Without result id, we wouldn\u0027t be able to join the two tables",
+      "parentUuid": "b10616e8_68e07ad0",
       "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
