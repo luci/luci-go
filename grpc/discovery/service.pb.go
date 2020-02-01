@@ -139,11 +139,11 @@ var fileDescriptor_4a913a37d47b1277 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // DiscoveryClient is the client API for Discovery service.
 //
@@ -171,10 +171,10 @@ func (c *discoveryPRPCClient) Describe(ctx context.Context, in *Void, opts ...gr
 }
 
 type discoveryClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewDiscoveryClient(cc *grpc.ClientConn) DiscoveryClient {
+func NewDiscoveryClient(cc grpc.ClientConnInterface) DiscoveryClient {
 	return &discoveryClient{cc}
 }
 

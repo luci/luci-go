@@ -1277,11 +1277,11 @@ var fileDescriptor_6551d9ae29a9e5a9 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // BuildsClient is the client API for Builds service.
 //
@@ -1399,10 +1399,10 @@ func (c *buildsPRPCClient) Batch(ctx context.Context, in *BatchRequest, opts ...
 }
 
 type buildsClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewBuildsClient(cc *grpc.ClientConn) BuildsClient {
+func NewBuildsClient(cc grpc.ClientConnInterface) BuildsClient {
 	return &buildsClient{cc}
 }
 

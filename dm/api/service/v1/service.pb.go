@@ -55,11 +55,11 @@ var fileDescriptor_68bd6a527f0765eb = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // DepsClient is the client API for Deps service.
 //
@@ -119,10 +119,10 @@ func (c *depsPRPCClient) WalkGraph(ctx context.Context, in *WalkGraphReq, opts .
 }
 
 type depsClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewDepsClient(cc *grpc.ClientConn) DepsClient {
+func NewDepsClient(cc grpc.ClientConnInterface) DepsClient {
 	return &depsClient{cc}
 }
 

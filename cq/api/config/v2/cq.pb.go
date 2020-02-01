@@ -232,7 +232,9 @@ func (m *SubmitOptions) GetBurstDelay() *duration.Duration {
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
 type ConfigGroup struct {
-	// The human-readable name (unique within this project) of this config group.
+	// The human- and machine-readable name (unique within this project) of this
+	// config group. This is used in messages posted to users and in monitoring
+	// data.
 	Name string `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
 	// At least 1 Gerrit instance with repositories to work with is required.
 	Gerrit []*ConfigGroup_Gerrit `protobuf:"bytes,1,rep,name=gerrit,proto3" json:"gerrit,omitempty"`
@@ -773,8 +775,8 @@ func (m *Verifiers_TreeStatus) GetUrl() string {
 type Verifiers_Tryjob struct {
 	// Builders on which tryjobs should be triggered.
 	//
-	// TODO(crbug/937080): CQ won't allow adding any builder via `CQ-Include-Trybots:`
-	// in CL description except those in this list.
+	// CQ won't allow adding any builder via `CQ-Include-Trybots:` in CL
+	// description except those in this list.
 	Builders []*Verifiers_Tryjob_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// Optional, defaulting to no retries whatsoever.
 	RetryConfig *Verifiers_Tryjob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
@@ -885,10 +887,8 @@ type Verifiers_Tryjob_Builder struct {
 	//
 	// Failure/Retry semantics:
 	//   * If `triggered_by` (parent) builder succeeds, but doesn't set
-	//     the right `triggered_build_ids` s.t. CQ can't find this (child)
-	//     builder among triggered builds, then CQ will wait till
-	//     TRYJOB_PENDING_TIMEOUT is reached, currently hardcoded at 2 hours.
-	//     TODO(tandrii,sergiyb): improve this.
+	//     the right `triggered_build_ids` then CQ will wait for this child
+	//     build to complete for as long as parent build result remains valid.
 	//   * If this (child) builder fails and CQ still has retry budget,
 	//     CQ will retry a parent builder.
 	//

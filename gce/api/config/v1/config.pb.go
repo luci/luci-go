@@ -5,11 +5,10 @@ package config
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	_ "go.chromium.org/luci/common/proto"
 	dayofweek "google.golang.org/genproto/googleapis/type/dayofweek"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

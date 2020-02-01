@@ -3133,11 +3133,11 @@ var fileDescriptor_d3887eaa0fa60818 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // BotAPIClient is the client API for BotAPI service.
 //
@@ -3164,10 +3164,10 @@ func (c *botAPIPRPCClient) Events(ctx context.Context, in *BotEventsRequest, opt
 }
 
 type botAPIClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewBotAPIClient(cc *grpc.ClientConn) BotAPIClient {
+func NewBotAPIClient(cc grpc.ClientConnInterface) BotAPIClient {
 	return &botAPIClient{cc}
 }
 
