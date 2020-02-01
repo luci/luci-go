@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "740ed864_48a16a2a",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-01T04:23:40Z",
+      "side": 1,
+      "message": "Question: should we call cancel() here?\n\nReferrence: https://golang.org/pkg/context/#example_WithTimeout",
+      "revId": "75f74ad93087cd7b0cc773897e0057f7b22ec7c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
