@@ -39,6 +39,30 @@
       "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "13e63b2a_cbdcb97f",
+        "filename": "buildbucket/proto/rpc.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1405,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-01T00:30:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b92680ba_a72940f0",
+      "range": {
+        "startLine": 1405,
+        "startChar": 24,
+        "endLine": 1405,
+        "endChar": 49
+      },
+      "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
