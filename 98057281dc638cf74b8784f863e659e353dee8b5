@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e3bd6e91_52877618",
+        "filename": "buildbucket/proto/pb.discovery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-01T00:26:55Z",
+      "side": 1,
+      "message": "I have no idea why this file has changed.",
+      "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b92680ba_a72940f0",
+        "filename": "buildbucket/proto/rpc.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1405,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-01T00:26:55Z",
+      "side": 1,
+      "message": "strictly speaking we can now get rid of auto-generated *PRPCClient (see above) by making prpc.Client implement grpc.ClientConnInterface (it almost does already).",
+      "range": {
+        "startLine": 1405,
+        "startChar": 24,
+        "endLine": 1405,
+        "endChar": 49
+      },
+      "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
