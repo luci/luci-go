@@ -70,7 +70,7 @@ func TestQueryTestResults(t *testing.T) {
 		}
 
 		Convey(`Does not fetch test results of other invocations`, func() {
-			expected := makeTestResults("inv1", "DoBaz",
+			expected := makeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL,
@@ -82,9 +82,9 @@ func TestQueryTestResults(t *testing.T) {
 				InsertInvocation("inv2", pb.Invocation_ACTIVE, now, nil),
 			)
 			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "X", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 				insertTestResults(expected),
-				insertTestResults(makeTestResults("inv2", "Y", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
 			)...)
 
 			actual, _ := mustRead(q)
@@ -94,12 +94,12 @@ func TestQueryTestResults(t *testing.T) {
 		Convey(`Expectancy filter`, func() {
 			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
 			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "T1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "T2", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T1", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T2", pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv1", "T3", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "T4", pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "T2", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T1", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T2", nil, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv1", "T3", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "T4", nil, pb.TestStatus_FAIL)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -120,11 +120,11 @@ func TestQueryTestResults(t *testing.T) {
 		Convey(`Test id filter`, func() {
 			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
 			MustApply(ctx, CombineMutations(
-				insertTestResults(makeTestResults("inv0", "1-1", pb.TestStatus_PASS, pb.TestStatus_FAIL)),
-				insertTestResults(makeTestResults("inv0", "1-2", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "1-1", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2-1", pb.TestStatus_PASS)),
-				insertTestResults(makeTestResults("inv1", "2", pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "1-2", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "1-1", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2-1", nil, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2", nil, pb.TestStatus_FAIL)),
 			)...)
 
 			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
@@ -138,8 +138,58 @@ func TestQueryTestResults(t *testing.T) {
 			})
 		})
 
+		Convey(`Variant equals`, func() {
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
+
+			v1 := pbutil.Variant("k", "1")
+			v2 := pbutil.Variant("k", "2")
+			MustApply(ctx, CombineMutations(
+				insertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "1-2", v2, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
+			)...)
+
+			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.Predicate.Variant = &pb.VariantPredicate{
+				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
+			}
+
+			So(mustReadNames(q), ShouldResemble, []string{
+				"invocations/inv0/tests/1-1/results/0",
+				"invocations/inv0/tests/1-1/results/1",
+				"invocations/inv1/tests/1-1/results/0",
+			})
+		})
+
+		Convey(`Variant contains`, func() {
+			MustApply(ctx, InsertInvocation("inv0", pb.Invocation_ACTIVE, now, nil))
+
+			v1 := pbutil.Variant("k", "1")
+			v11 := pbutil.Variant("k", "1", "k2", "1")
+			v2 := pbutil.Variant("k", "2")
+			MustApply(ctx, CombineMutations(
+				insertTestResults(makeTestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL)),
+				insertTestResults(makeTestResults("inv0", "1-2", v11, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "1-1", v1, pb.TestStatus_PASS)),
+				insertTestResults(makeTestResults("inv1", "2-1", v2, pb.TestStatus_PASS)),
+			)...)
+
+			q.InvocationIDs = span.NewInvocationIDSet("inv0", "inv1")
+			q.Predicate.Variant = &pb.VariantPredicate{
+				Predicate: &pb.VariantPredicate_Contains{Contains: v1},
+			}
+
+			So(mustReadNames(q), ShouldResemble, []string{
+				"invocations/inv0/tests/1-1/results/0",
+				"invocations/inv0/tests/1-1/results/1",
+				"invocations/inv0/tests/1-2/results/0",
+				"invocations/inv1/tests/1-1/results/0",
+			})
+		})
+
 		Convey(`Paging`, func() {
-			trs := makeTestResults("inv1", "DoBaz",
+			trs := makeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL,

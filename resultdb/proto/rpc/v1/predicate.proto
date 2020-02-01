@@ -76,7 +76,7 @@ message TestExonerationPredicate {
 message VariantPredicate {
   oneof predicate {
     // A variant must be equal this definition exactly.
-    luci.resultdb.type.Variant exact = 1;
+    luci.resultdb.type.Variant equals = 1;
 
     // A variant's key-value pairs must contain those in this one.
     luci.resultdb.type.Variant contains = 2;
