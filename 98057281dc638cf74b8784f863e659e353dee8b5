@@ -80,6 +80,24 @@
       "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "617539af_08f341a8",
+        "filename": "vpython/venv/assets/assets_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-01T00:32:02Z",
+      "side": 1,
+      "message": "I just ran `go generate ./...`. This file is generated and the copyright has a year it was generated.",
+      "parentUuid": "dc52672f_ab0b207e",
+      "revId": "98057281dc638cf74b8784f863e659e353dee8b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
