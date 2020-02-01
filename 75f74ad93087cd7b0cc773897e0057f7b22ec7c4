@@ -16,6 +16,24 @@
       "revId": "75f74ad93087cd7b0cc773897e0057f7b22ec7c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51d813ba_099b1d6b",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-01T13:09:35Z",
+      "side": 1,
+      "message": "yes, we should. done in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2024183/11/resultdb/internal/backend/backend.go#87",
+      "parentUuid": "740ed864_48a16a2a",
+      "revId": "75f74ad93087cd7b0cc773897e0057f7b22ec7c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
