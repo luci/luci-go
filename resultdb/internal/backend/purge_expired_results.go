@@ -102,7 +102,7 @@ func purgeExpiredResults(ctx context.Context) {
 		}
 		expiredResultsDelayMetric.Set(ctx, val)
 	})
-	processingLoop(ctx, 5*time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+	processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, maxPurgeTestResultsWorkers)
 		if err != nil {
 			return err
