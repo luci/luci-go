@@ -244,3 +244,13 @@ func NormalizeTestResultSlice(trs []*pb.TestResult) {
 func NormalizeArtifactSlice(arts []*pb.Artifact) {
 	sort.Slice(arts, func(i, j int) bool { return arts[i].Name < arts[j].Name })
 }
+
+// InvocationIDFromTestResultName returns invocationID from result name.
+// It panics if failing.
+func InvocationIDFromTestResultName(name string) string {
+	invID, _, _, err := ParseTestResultName(name)
+	if err != nil {
+		panic(err)
+	}
+	return invID
+}

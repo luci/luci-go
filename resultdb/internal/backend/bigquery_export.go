@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -145,11 +146,12 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	return tvs, nil
 }
 
-func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
+func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, invID span.InvocationID, invs map[span.InvocationID]*pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
 	rows := make([]*bigquery.StructSaver, 0, maxBatchSize)
 	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
-		rows = append(rows, generateBQRow(inv, tr, exonerated))
+		containingInvId := span.InvocationID(pbutil.InvocationIDFromTestResultName(tr.Name))
+		rows = append(rows, generateBQRow(invs[invID], invs[containingInvId], tr, exonerated))
 		if len(rows) >= maxBatchSize {
 			select {
 			case <-ctx.Done():
@@ -213,6 +215,11 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 		return err
 	}
 
+	invs, err := span.ReadInvocationsFull(ctx, txn, invIDs)
+	if err != nil {
+		return err
+	}
+
 	exoneratedTestVariants, err := queryExoneratedTestVariants(ctx, txn, invIDs)
 	if err != nil {
 		return err
@@ -235,7 +242,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return queryTestResultsStreaming(ctx, txn, inv, q, exoneratedTestVariants, maxBatchSize, batchC)
+		return queryTestResultsStreaming(ctx, txn, invID, invs, q, exoneratedTestVariants, maxBatchSize, batchC)
 	})
 
 	return eg.Wait()
