@@ -50,12 +50,8 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 }
 
 // processingLoop runs f repeatedly, until the context is cancelled.
-// Ensures f is not called too often (minInterval) and backs off linearly
-// on errors.
-func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
-	if maxSleep < minInterval {
-		panic("maxSleep < minInterval")
-	}
+// Ensures f is not called too often (1s) and backs off linearly on errors.
+func processingLoop(ctx context.Context, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
@@ -70,6 +66,8 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 		ctx, _ = context.WithTimeout(ctx, iterationTimeout)
 		return f(ctx)
 	}
+
+	minInterval := time.Second
 
 	attempt := 0
 	var iterationCounter int64
