@@ -441,11 +441,11 @@ var fileDescriptor_64b66e62512000da = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // BuildbotClient is the client API for Buildbot service.
 //
@@ -483,10 +483,10 @@ func (c *buildbotPRPCClient) Schedule(ctx context.Context, in *ScheduleRequest, 
 }
 
 type buildbotClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewBuildbotClient(cc *grpc.ClientConn) BuildbotClient {
+func NewBuildbotClient(cc grpc.ClientConnInterface) BuildbotClient {
 	return &buildbotClient{cc}
 }
 

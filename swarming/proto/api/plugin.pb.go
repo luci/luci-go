@@ -859,11 +859,11 @@ var fileDescriptor_50a0efb5b206d6dd = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // ExternalSchedulerClient is the client API for ExternalScheduler service.
 //
@@ -926,10 +926,10 @@ func (c *externalSchedulerPRPCClient) GetCallbacks(ctx context.Context, in *GetC
 }
 
 type externalSchedulerClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewExternalSchedulerClient(cc *grpc.ClientConn) ExternalSchedulerClient {
+func NewExternalSchedulerClient(cc grpc.ClientConnInterface) ExternalSchedulerClient {
 	return &externalSchedulerClient{cc}
 }
 

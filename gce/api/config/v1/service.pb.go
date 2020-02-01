@@ -3,25 +3,17 @@
 
 package config
 
+import prpc "go.chromium.org/luci/grpc/prpc"
+
 import (
-	prpc "go.chromium.org/luci/grpc/prpc"
-
 	context "context"
-
 	fmt "fmt"
-
 	proto "github.com/golang/protobuf/proto"
-
 	empty "github.com/golang/protobuf/ptypes/empty"
-
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-
 	grpc "google.golang.org/grpc"
-
 	codes "google.golang.org/grpc/codes"
-
 	status "google.golang.org/grpc/status"
-
 	math "math"
 )
 
@@ -375,11 +367,11 @@ var fileDescriptor_4344ecc87758d8d4 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // ConfigurationClient is the client API for Configuration service.
 //
@@ -453,10 +445,10 @@ func (c *configurationPRPCClient) Update(ctx context.Context, in *UpdateRequest,
 }
 
 type configurationClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewConfigurationClient(cc *grpc.ClientConn) ConfigurationClient {
+func NewConfigurationClient(cc grpc.ClientConnInterface) ConfigurationClient {
 	return &configurationClient{cc}
 }
 

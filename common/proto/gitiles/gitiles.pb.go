@@ -662,11 +662,11 @@ var fileDescriptor_4cdf9f15dd6bc12a = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // GitilesClient is the client API for Gitiles service.
 //
@@ -731,10 +731,10 @@ func (c *gitilesPRPCClient) DownloadFile(ctx context.Context, in *DownloadFileRe
 }
 
 type gitilesClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewGitilesClient(cc *grpc.ClientConn) GitilesClient {
+func NewGitilesClient(cc grpc.ClientConnInterface) GitilesClient {
 	return &gitilesClient{cc}
 }
 

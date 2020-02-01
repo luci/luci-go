@@ -36,11 +36,11 @@ var fileDescriptor_ff8f45238be6f422 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // S2_0Client is the client API for S2_0 service.
 //
@@ -56,10 +56,10 @@ func NewS2_0PRPCClient(client *prpc.Client) S2_0Client {
 }
 
 type s2_0Client struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewS2_0Client(cc *grpc.ClientConn) S2_0Client {
+func NewS2_0Client(cc grpc.ClientConnInterface) S2_0Client {
 	return &s2_0Client{cc}
 }
 
@@ -97,10 +97,10 @@ func NewS2_1PRPCClient(client *prpc.Client) S2_1Client {
 }
 
 type s2_1Client struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewS2_1Client(cc *grpc.ClientConn) S2_1Client {
+func NewS2_1Client(cc grpc.ClientConnInterface) S2_1Client {
 	return &s2_1Client{cc}
 }
 

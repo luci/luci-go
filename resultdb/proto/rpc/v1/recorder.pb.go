@@ -812,11 +812,11 @@ var fileDescriptor_16d7c422285c4f93 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // RecorderClient is the client API for Recorder service.
 //
@@ -945,10 +945,10 @@ func (c *recorderPRPCClient) DeriveInvocation(ctx context.Context, in *DeriveInv
 }
 
 type recorderClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewRecorderClient(cc *grpc.ClientConn) RecorderClient {
+func NewRecorderClient(cc grpc.ClientConnInterface) RecorderClient {
 	return &recorderClient{cc}
 }
 

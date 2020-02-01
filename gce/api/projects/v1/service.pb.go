@@ -302,11 +302,11 @@ var fileDescriptor_bb7a04e4c879cc9a = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // ProjectsClient is the client API for Projects service.
 //
@@ -369,10 +369,10 @@ func (c *projectsPRPCClient) List(ctx context.Context, in *ListRequest, opts ...
 }
 
 type projectsClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewProjectsClient(cc *grpc.ClientConn) ProjectsClient {
+func NewProjectsClient(cc grpc.ClientConnInterface) ProjectsClient {
 	return &projectsClient{cc}
 }
 

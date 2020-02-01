@@ -132,11 +132,11 @@ var fileDescriptor_cd20db8c12ae006e = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // HelloClient is the client API for Hello service.
 //
@@ -162,10 +162,10 @@ func (c *helloPRPCClient) Greet(ctx context.Context, in *HelloRequest, opts ...g
 }
 
 type helloClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewHelloClient(cc *grpc.ClientConn) HelloClient {
+func NewHelloClient(cc grpc.ClientConnInterface) HelloClient {
 	return &helloClient{cc}
 }
 

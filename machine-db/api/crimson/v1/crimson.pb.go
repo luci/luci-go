@@ -82,11 +82,11 @@ var fileDescriptor_46e41eaf4c273b9a = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // CrimsonClient is the client API for Crimson service.
 //
@@ -410,10 +410,10 @@ func (c *crimsonPRPCClient) DeleteHost(ctx context.Context, in *DeleteHostReques
 }
 
 type crimsonClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewCrimsonClient(cc *grpc.ClientConn) CrimsonClient {
+func NewCrimsonClient(cc grpc.ClientConnInterface) CrimsonClient {
 	return &crimsonClient{cc}
 }
 

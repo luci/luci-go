@@ -1144,11 +1144,11 @@ var fileDescriptor_42e88bcc2e6ba8be = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // ServicesClient is the client API for Services service.
 //
@@ -1260,10 +1260,10 @@ func (c *servicesPRPCClient) DeleteArchiveTasks(ctx context.Context, in *DeleteR
 }
 
 type servicesClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewServicesClient(cc *grpc.ClientConn) ServicesClient {
+func NewServicesClient(cc grpc.ClientConnInterface) ServicesClient {
 	return &servicesClient{cc}
 }
 

@@ -134,11 +134,11 @@ var fileDescriptor_ae14c1e85e2b805e = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // AdminClient is the client API for Admin service.
 //
@@ -166,10 +166,10 @@ func (c *adminPRPCClient) SetConfig(ctx context.Context, in *SetConfigRequest, o
 }
 
 type adminClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewAdminClient(cc *grpc.ClientConn) AdminClient {
+func NewAdminClient(cc grpc.ClientConnInterface) AdminClient {
 	return &adminClient{cc}
 }
 
