@@ -16,6 +16,13 @@ package backend
 
 import (
 	"time"
+
+	"cloud.google.com/go/bigquery"
+
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
 // StringPair is a copy of typepb.StringPair, suitable for representing a
@@ -89,4 +96,71 @@ type TestResultRow struct {
 	// TestExoneration contains info of the test exoneration.
 	// Note: the exoneration is at the test variant level, not result level.
 	TestExoneration TestExoneration `bigquery:"test_exoneration"`
+}
+
+// stringPairProtosToStringPairs returns a slice of StringPair derived from *typepb.StringPair.
+func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
+	if len(pairs) == 0 {
+		return nil
+	}
+
+	sp := make([]StringPair, len(pairs))
+	for i, p := range pairs {
+		sp[i] = StringPair{
+			Key:   p.Key,
+			Value: p.Value,
+		}
+	}
+	return sp
+}
+
+// variantToStringPairs returns a slice of StringPair derived from *typepb.Variant.
+func variantToStringPairs(vr *typepb.Variant) []StringPair {
+	defMap := vr.GetDef()
+	if len(defMap) == 0 {
+		return nil
+	}
+
+	keys := pbutil.SortedVariantKeys(vr)
+	sp := make([]StringPair, len(keys))
+	for i, k := range keys {
+		sp[i] = StringPair{
+			Key:   k,
+			Value: defMap[k],
+		}
+	}
+	return sp
+}
+
+// generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
+func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
+	trr := &TestResultRow{
+		TestID:      tr.TestId,
+		Variant:     variantToStringPairs(tr.Variant),
+		Expected:    tr.Expected,
+		Status:      tr.Status.String(),
+		SummaryHTML: tr.SummaryHtml,
+		Tags:        stringPairProtosToStringPairs(tr.Tags),
+		ExportedInvocation: Invocation{
+			ID:          string(span.MustParseInvocationName(inv.Name)),
+			Interrupted: inv.Interrupted,
+			Tags:        stringPairProtosToStringPairs(inv.Tags),
+		},
+		TestExoneration: TestExoneration{
+			Exonerated: exonerated,
+		},
+	}
+
+	if tr.StartTime != nil {
+		trr.StartTime = pbutil.MustTimestamp(tr.StartTime)
+	}
+
+	if tr.Duration != nil {
+		trr.Duration = pbutil.MustDuration(tr.Duration).Seconds()
+	}
+
+	return &bigquery.StructSaver{
+		InsertID: tr.Name,
+		Struct:   trr,
+	}
 }
