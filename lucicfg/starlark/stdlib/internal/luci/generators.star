@@ -717,7 +717,6 @@ def gen_cq_cfg(ctx):
   cfg = cq_pb.Config(
       cq_status_host =  cq_node.props.status_host if cq_node else None,
       draining_start_time = cq_node.props.draining_start_time if cq_node else None,
-      project_scoped_account = _cq_toggle(cq_node.props.project_scoped_account) if cq_node else None,
   )
   set_config(ctx, 'commit-queue.cfg', cfg)
 
