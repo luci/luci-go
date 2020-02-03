@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b5c74c5_d77d204a",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-03T18:45:17Z",
+      "side": 1,
+      "message": "it is already span.InvocationID\n\nin fact this code wouldn\u0027t compile if this wasn\u0027t the case",
+      "revId": "1d4dc0d870fee82aa3ff7aa2d59847ecdafaf7cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01014795_e0eb36c5",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-03T18:45:17Z",
+      "side": 1,
+      "message": "this duplicates L144-147. Could you add a helper func that converts *pb.Invocation to Invocation?",
+      "range": {
+        "startLine": 149,
+        "startChar": 20,
+        "endLine": 153,
+        "endChar": 3
+      },
+      "revId": "1d4dc0d870fee82aa3ff7aa2d59847ecdafaf7cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
