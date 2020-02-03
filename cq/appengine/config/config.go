@@ -58,6 +58,10 @@ func validateProject(ctx *validation.Context, configSet, path string, content []
 }
 
 func validateProjectConfig(ctx *validation.Context, cfg *v2.Config) {
+	if cfg.ProjectScopedAccount != v2.Toggle_UNSET {
+		ctx.Errorf("project_scoped_account for just CQ isn't supported. " +
+			"Use project-wide config for all LUCI services in luci-config/projects.cfg")
+	}
 	if cfg.DrainingStartTime != "" {
 		if _, err := time.Parse(time.RFC3339, cfg.DrainingStartTime); err != nil {
 			ctx.Errorf("failed to parse draining_start_time %q as RFC3339 format: %s", cfg.DrainingStartTime, err)
