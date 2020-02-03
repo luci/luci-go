@@ -86,8 +86,6 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	c.ArchiveOptions.Init()
 	f.StringVar(&c.Isolate, "isolate", "", ".isolate file to load the dependency data from")
 	f.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
-	f.StringVar(&c.Isolated, "isolated", "", ".isolated file to generate or read")
-	f.StringVar(&c.Isolated, "s", "", "Alias for --isolated")
 	f.Var(&c.Blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
 	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
