@@ -133,7 +133,7 @@ func variantToStringPairs(vr *typepb.Variant) []StringPair {
 }
 
 // generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
+func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
 	trr := &TestResultRow{
 		TestID:      tr.TestId,
 		Variant:     variantToStringPairs(tr.Variant),
@@ -142,9 +142,14 @@ func generateBQRow(inv *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigq
 		SummaryHTML: tr.SummaryHtml,
 		Tags:        stringPairProtosToStringPairs(tr.Tags),
 		ExportedInvocation: Invocation{
-			ID:          string(span.MustParseInvocationName(inv.Name)),
-			Interrupted: inv.Interrupted,
-			Tags:        stringPairProtosToStringPairs(inv.Tags),
+			ID:          string(span.MustParseInvocationName(exported.Name)),
+			Interrupted: exported.Interrupted,
+			Tags:        stringPairProtosToStringPairs(exported.Tags),
+		},
+		ParentInvocation: Invocation{
+			ID:          string(span.MustParseInvocationName(parent.Name)),
+			Interrupted: parent.Interrupted,
+			Tags:        stringPairProtosToStringPairs(parent.Tags),
 		},
 		Exoneration: Exoneration{
 			Exonerated: exonerated,
