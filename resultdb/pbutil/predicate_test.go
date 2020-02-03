@@ -60,18 +60,18 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 				})
 			}
 
-			Convey(`Exact`, func() {
+			Convey(`Equals`, func() {
 				Convey(`Valid`, func() {
 					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Exact{Exact: validVariant},
+						Predicate: &pb.VariantPredicate_Equals{Equals: validVariant},
 					})
 					So(err, ShouldBeNil)
 				})
 				Convey(`Invalid`, func() {
 					err := validate(&pb.VariantPredicate{
-						Predicate: &pb.VariantPredicate_Exact{Exact: invalidVariant},
+						Predicate: &pb.VariantPredicate_Equals{Equals: invalidVariant},
 					})
-					So(err, ShouldErrLike, `variant: exact: "":"": key: unspecified`)
+					So(err, ShouldErrLike, `variant: equals: "":"": key: unspecified`)
 				})
 			})
 

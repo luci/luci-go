@@ -59,13 +59,13 @@ func TestExportToBigQuery(t *testing.T) {
 			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, nil))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),
-			testutil.InsertTestExonerations("a", "A", pbutil.Variant("k1", "v1", "k2", "v2"), 1),
+			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("a", "A", pbutil.Variant("k", "v"), 1),
 			// Test results and exonerations have different variants.
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pb.TestStatus_CRASH, pb.TestStatus_PASS)),
-			testutil.InsertTestExonerations("a", "B", pbutil.Variant("k1", "v1"), 1),
+			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("a", "B", pbutil.Variant("k", "different"), 1),
 			// Passing test result without exoneration.
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "C", pb.TestStatus_PASS)),
+			testutil.InsertTestResults(testutil.MakeTestResults("a", "C", nil, pb.TestStatus_PASS)),
 		)...)
 
 		bqExport := &pb.BigQueryExport{

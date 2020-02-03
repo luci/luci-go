@@ -286,7 +286,7 @@ func InsertTestExonerations(invID span.InvocationID, testID string, variant *typ
 }
 
 // MakeTestResults creates test results.
-func MakeTestResults(invID, testID string, statuses ...pb.TestStatus) []*pb.TestResult {
+func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
 		resultID := fmt.Sprintf("%d", i)
@@ -294,7 +294,7 @@ func MakeTestResults(invID, testID string, statuses ...pb.TestStatus) []*pb.Test
 			Name:     pbutil.TestResultName(invID, testID, resultID),
 			TestId:   testID,
 			ResultId: resultID,
-			Variant:  pbutil.Variant("k1", "v1", "k2", "v2"),
+			Variant:  v,
 			Expected: status == pb.TestStatus_PASS,
 			Status:   status,
 			Duration: &durpb.Duration{Seconds: int64(i), Nanos: 234567000},
