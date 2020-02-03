@@ -88,9 +88,9 @@ func TestQueryTestResults(t *testing.T) {
 			insertInv("a", "b"),
 			insertInv("b", "c"),
 			insertInv("c"),
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pb.TestStatus_FAIL, pb.TestStatus_PASS)),
-			testutil.InsertTestResults(testutil.MakeTestResults("b", "B", pb.TestStatus_CRASH, pb.TestStatus_PASS)),
-			testutil.InsertTestResults(testutil.MakeTestResults("c", "C", pb.TestStatus_PASS)),
+			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS)),
+			testutil.InsertTestResults(testutil.MakeTestResults("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS)),
+			testutil.InsertTestResults(testutil.MakeTestResults("c", "C", nil, pb.TestStatus_PASS)),
 		)...)
 
 		srv := newTestResultDBService()

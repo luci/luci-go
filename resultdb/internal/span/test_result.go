@@ -153,18 +153,39 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 				(tr.InvocationId = @afterInvocationId AND tr.TestId = @afterTestId AND tr.ResultId > @afterResultId)
 			)
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
+			AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
+			AND (@variantContains IS NULL OR (
+				SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
+				FROM UNNEST(@variantContains) kv
+			))
 		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
 		%s
 	`, extraSelect, from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 
+	// Filter by test id.
 	testIDRegexp := q.Predicate.GetTestIdRegexp()
 	if testIDRegexp == "" {
 		testIDRegexp = ".*"
 	}
 	st.Params["TestIdRegexp"] = fmt.Sprintf("^%s$", testIDRegexp)
 
+	// Filter by variant.
+	st.Params["variantHashEquals"] = spanner.NullString{}
+	st.Params["variantContains"] = []string(nil)
+	switch p := q.Predicate.GetVariant().GetPredicate().(type) {
+	case *pb.VariantPredicate_Equals:
+		st.Params["variantHashEquals"] = pbutil.VariantHash(p.Equals)
+	case *pb.VariantPredicate_Contains:
+		st.Params["variantContains"] = pbutil.VariantToStrings(p.Contains)
+	case nil:
+		// No filter.
+	default:
+		panic(errors.Reason("unexpected variant predicate %q", q.Predicate.GetVariant()).Err())
+	}
+
+	// Apply page token.
 	var err error
 	st.Params["afterInvocationId"],
 		st.Params["afterTestId"],
@@ -174,11 +195,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		return err
 	}
 
-	if q.Predicate.GetVariant() != nil {
-		// TODO(nodir): add support for q.Predicate.Variant.
-		return appstatus.Errorf(codes.Unimplemented, "filtering by variant is not implemented yet")
-	}
-
+	// Read the results.
 	var summaryHTML Compressed
 	var b Buffer
 	return Query(ctx, txn, st, func(row *spanner.Row) error {
