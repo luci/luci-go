@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/examples/k8s/helloworld/apipb"
 )
@@ -38,8 +39,9 @@ import (
 func main() {
 	// Additional modules that extend the server functionality.
 	modules := []module.Module{
-		redisconn.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		redisconn.NewModuleFromFlags(),
+		secrets.NewModuleFromFlags(),
 	}
 
 	server.Main(nil, modules, func(srv *server.Server) error {
