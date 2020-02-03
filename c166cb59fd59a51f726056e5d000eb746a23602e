@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "90b71ecd_c8b391f5",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Right. I\u0027m referring to bash script only. Thanks for bringing this up. I\u0027ve removed this.",
+      "parentUuid": "2c7c4dcc_b291e52e",
+      "range": {
+        "startLine": 95,
+        "startChar": 42,
+        "endLine": 95,
+        "endChar": 65
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae6856ed_4bc1ea31",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "656761b0_c777cffd",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Done! Changed to bit.ly",
+      "parentUuid": "ae6856ed_4bc1ea31",
+      "range": {
+        "startLine": 97,
+        "startChar": 12,
+        "endLine": 97,
+        "endChar": 18
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "efd12f26_1f49fe93",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Changed all occurrences",
+      "parentUuid": "4726635c_47a86852",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 102,
+        "endChar": 0
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43b9eb46_452b81bc",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf3d8eed_5af110c0",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Ah.. Then I don\u0027t need to escape. Changed!",
+      "parentUuid": "43b9eb46_452b81bc",
+      "range": {
+        "startLine": 105,
+        "startChar": 22,
+        "endLine": 105,
+        "endChar": 23
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "f9ce6749_07add7ce",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8bae218_7d4ebadd",
+      "range": {
+        "startLine": 187,
+        "startChar": 13,
+        "endLine": 187,
+        "endChar": 18
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9ad8ed4_22b16fe9",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 1
@@ -137,6 +257,30 @@
       "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50902d87_fc8b7978",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Oh..  This is a self-remainder and I forget to delete it before I upload. Removed",
+      "parentUuid": "f9ad8ed4_22b16fe9",
+      "range": {
+        "startLine": 200,
+        "startChar": 3,
+        "endLine": 200,
+        "endChar": 40
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "6c18849e_6223d181",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "That sounds the right thing to do. Printed only the offended flags.",
+      "parentUuid": "3b91fb5f_f0dfe5ac",
+      "range": {
+        "startLine": 225,
+        "startChar": 35,
+        "endLine": 225,
+        "endChar": 69
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75259d13_8e80ed0d",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 1
@@ -183,6 +351,30 @@
       "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5d742d1_761ff8a4",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Great suggestion. Changed to `%q`",
+      "parentUuid": "75259d13_8e80ed0d",
+      "range": {
+        "startLine": 229,
+        "startChar": 32,
+        "endLine": 229,
+        "endChar": 33
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "be316219_0930a32f",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab246ab4_1c925980",
+      "range": {
+        "startLine": 230,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 8
+      },
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47887664_433c0120",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 1
@@ -223,6 +439,24 @@
       "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b9fc102_087260d1",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-03T22:16:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47887664_433c0120",
+      "revId": "c166cb59fd59a51f726056e5d000eb746a23602e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
