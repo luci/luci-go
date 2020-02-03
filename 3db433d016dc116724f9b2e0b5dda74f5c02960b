@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "03e4c285_4c66b004",
+        "filename": "server/secrets/gsm.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T22:56:48Z",
+      "side": 1,
+      "message": "s.project can be just a name, but AccessSecretVersion(...).Name always contains the number (GSM resolves the project name to project number internally). It\u0027s not essential here. Replaced \u003cnumber\u003e with \u0027...\u0027.",
+      "parentUuid": "c9fdad5f_cfb5d94c",
+      "range": {
+        "startLine": 85,
+        "startChar": 42,
+        "endLine": 85,
+        "endChar": 48
+      },
+      "revId": "3db433d016dc116724f9b2e0b5dda74f5c02960b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d9248f1_1e687598",
         "filename": "server/secrets/module.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "de0b89ba_b0f913b0",
+        "filename": "server/secrets/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T22:56:48Z",
+      "side": 1,
+      "message": "Removed \u0027Path\u0027, but don\u0027t want to add URL, because we don\u0027t support arbitrary URLs. The first thing that comes to mind when reading \"root secret URL\" is some https://....\n\nAlso this is now a breaking change. I\u0027ll update k8s.git accordingly.",
+      "parentUuid": "1d9248f1_1e687598",
+      "range": {
+        "startLine": 53,
+        "startChar": 11,
+        "endLine": 53,
+        "endChar": 15
+      },
+      "revId": "3db433d016dc116724f9b2e0b5dda74f5c02960b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "847ef267_82530d36",
         "filename": "server/secrets/module.go",
         "patchSetId": 2
@@ -59,6 +107,30 @@
       "writtenOn": "2020-02-01T23:36:45Z",
       "side": 1,
       "message": "nit: that\u0027s where text.Doc is useful",
+      "range": {
+        "startLine": 72,
+        "startChar": 37,
+        "endLine": 72,
+        "endChar": 39
+      },
+      "revId": "3db433d016dc116724f9b2e0b5dda74f5c02960b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "450fe194_c51297b7",
+        "filename": "server/secrets/module.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T22:56:48Z",
+      "side": 1,
+      "message": "Ack. I still think simple string literals are more appropriate.",
+      "parentUuid": "847ef267_82530d36",
       "range": {
         "startLine": 72,
         "startChar": 37,
@@ -91,6 +163,30 @@
       "revId": "3db433d016dc116724f9b2e0b5dda74f5c02960b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b875e19e_70e45eac",
+        "filename": "server/secrets/source.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T22:56:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a0ef705_a7d5c6cb",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 9
+      },
+      "revId": "3db433d016dc116724f9b2e0b5dda74f5c02960b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
