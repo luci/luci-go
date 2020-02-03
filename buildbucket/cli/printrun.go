@@ -23,6 +23,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/flag/stringsetflag"
 	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/common/sync/parallel"
@@ -40,6 +42,7 @@ type printRun struct {
 	properties bool
 	steps      bool
 	id         bool
+	fields     stringset.Set
 }
 
 func (r *printRun) RegisterDefaultFlags(p Params) {
@@ -57,7 +60,7 @@ func (r *printRun) RegisterIDFlag() {
 	`))
 }
 
-// RegisterFieldFlags registers -A, -steps and -p flags.
+// RegisterFieldFlags registers -A, -steps, -p and -field flags.
 func (r *printRun) RegisterFieldFlags() {
 	r.Flags.BoolVar(&r.all, "A", false, doc(`
 		Print builds in their entirety.
@@ -66,10 +69,25 @@ func (r *printRun) RegisterFieldFlags() {
 	`))
 	r.Flags.BoolVar(&r.steps, "steps", false, "Print steps")
 	r.Flags.BoolVar(&r.properties, "p", false, "Print input/output properties")
+	r.Flags.Var(&stringsetflag.Flag{Data: r.fields}, "field", `
+		Print only provided fields.
+		Can't be used with with -A, -p, -steps and -id flags at the same time.
+
+		Example: Request only filed id and status from the build
+			bb ls -field id -field status
+	`)
 }
 
 // FieldMask returns the field mask to use in buildbucket requests.
 func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
+	if r.fields != nil && r.fields.Len() > 0 {
+		if r.all || r.properties || r.steps || r.id {
+			return nil, fmt.Errorf("-field is mutually exclusive with -A, -p," +
+				" -steps and -id")
+		}
+		return &field_mask.FieldMask{Paths: r.fields.ToSlice()}, nil
+	}
+
 	if r.id {
 		if r.all || r.properties || r.steps {
 			return nil, fmt.Errorf("-id is mutually exclusive with -A, -p and -steps")
