@@ -102,6 +102,8 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 	args = convertPyToGoArchiveCMDArgs(args)
 	base := subcommands.CommandRunBase{}
 	i := isolateFlags{}
+	base.Flags.StringVar(&i.Isolated, "isolated", "", ".isolated file to generate")
+	base.Flags.StringVar(&i.Isolated, "s", "", "Alias for --isolated")
 	i.Init(&base.Flags)
 	if err := base.GetFlags().Parse(args); err != nil {
 		return nil, err
