@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f9c7549e_49c74466",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-03T18:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "074b2635_46711682",
+      "range": {
+        "startLine": 149,
+        "startChar": 111,
+        "endLine": 149,
+        "endChar": 152
+      },
+      "revId": "77d544bfff9dd4fd98e01ff36e40013d028820f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92d32a41_72798ac1",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "a0ffbd21_98e65692",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-03T18:31:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92d32a41_72798ac1",
+      "range": {
+        "startLine": 136,
+        "startChar": 19,
+        "endLine": 136,
+        "endChar": 52
+      },
+      "revId": "77d544bfff9dd4fd98e01ff36e40013d028820f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f79af8d3_70a9d09e",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "77d544bfff9dd4fd98e01ff36e40013d028820f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32427066_4021e06a",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-03T18:31:46Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "f79af8d3_70a9d09e",
+      "range": {
+        "startLine": 253,
+        "startChar": 2,
+        "endLine": 253,
+        "endChar": 7
+      },
+      "revId": "77d544bfff9dd4fd98e01ff36e40013d028820f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
