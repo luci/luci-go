@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84557120_5d55dce5",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T20:00:21Z",
+      "side": 1,
+      "message": "instead of doing TestMode, it would be more readable to move leaseDuration (and other paramters that depend on TestMode) to be fields in Options. Then it is immediately obvious how test mode differs from non-test mode (since all test mode parameters will be initialized in a single place)",
+      "range": {
+        "startLine": 41,
+        "startChar": 1,
+        "endLine": 43,
+        "endChar": 2
+      },
+      "revId": "bfd74b473b92f7340c36cafe019a62138cdc66c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e46fd755_ddcb2128",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T20:00:21Z",
+      "side": 1,
+      "message": "magic constants...",
+      "range": {
+        "startLine": 105,
+        "startChar": 23,
+        "endLine": 105,
+        "endChar": 51
+      },
+      "revId": "bfd74b473b92f7340c36cafe019a62138cdc66c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f4e006c_a083c69f",
+        "filename": "resultdb/internal/integrationtests/testapp_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-03T20:00:21Z",
+      "side": 1,
+      "message": "Generally speaking this is not safe. IIRC, go runs multiple test binaries in parallel. So if there\u0027s another integration test, they may clash trying to sit on same ports. A better alternative is to use port \u00270\u0027 (i.e. bind to any available port), but server.Server has no public API currently to get back the port. server.Server own tests do it somewhat correctly, but they use private symbols.",
+      "range": {
+        "startLine": 139,
+        "startChar": 68,
+        "endLine": 139,
+        "endChar": 78
+      },
+      "revId": "bfd74b473b92f7340c36cafe019a62138cdc66c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
