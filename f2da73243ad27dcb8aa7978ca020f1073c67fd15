@@ -332,6 +332,30 @@
     },
     {
       "key": {
+        "uuid": "60ed1b40_a6367d47",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-03T21:16:50Z",
+      "side": 1,
+      "message": "I see your point. Yeah it feels unnecessary to keep the struct.",
+      "parentUuid": "46bea111_ed0466d6",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 32
+      },
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f704f879_361b54fd",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 4
@@ -447,6 +471,24 @@
       "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "376ce031_86b51adf",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-03T21:16:50Z",
+      "side": 1,
+      "message": "In the previous versions, artifacts are included in this table then removed. Based on this comment, they will be exported to a separate bq table instead?\n\nThough this indeed sounds like a clearer design.\n\nAdded ResultID.",
+      "parentUuid": "171d70c8_46f0ea9c",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
