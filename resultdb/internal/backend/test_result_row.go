@@ -130,22 +130,27 @@ func variantToStringPairs(vr *typepb.Variant) []StringPair {
 	return sp
 }
 
+func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
+	return Invocation{
+		ID:          string(span.MustParseInvocationName(inv.Name)),
+		Interrupted: inv.Interrupted,
+		Tags:        stringPairProtosToStringPairs(inv.Tags),
+	}
+}
+
 // generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func generateBQRow(exported *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
+func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
 	trr := &TestResultRow{
-		ExportedInvocation: Invocation{
-			ID:          string(span.MustParseInvocationName(exported.Name)),
-			Interrupted: exported.Interrupted,
-			Tags:        stringPairProtosToStringPairs(exported.Tags),
-		},
-		TestID:      tr.TestId,
-		ResultID:    tr.ResultId,
-		Variant:     variantToStringPairs(tr.Variant),
-		Expected:    tr.Expected,
-		Status:      tr.Status.String(),
-		SummaryHTML: tr.SummaryHtml,
-		Tags:        stringPairProtosToStringPairs(tr.Tags),
-		Exonerated:  exonerated,
+		ExportedInvocation: invocationProtoToInvocation(exported),
+		ParentInvocation:   invocationProtoToInvocation(parent),
+		TestID:             tr.TestId,
+		ResultID:           tr.ResultId,
+		Variant:            variantToStringPairs(tr.Variant),
+		Expected:           tr.Expected,
+		Status:             tr.Status.String(),
+		SummaryHTML:        tr.SummaryHtml,
+		Tags:               stringPairProtosToStringPairs(tr.Tags),
+		Exonerated:         exonerated,
 	}
 
 	if tr.StartTime != nil {

@@ -55,16 +55,21 @@ func TestExportToBigQuery(t *testing.T) {
 	Convey(`TestExportTestResultsToBigQuery`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		testutil.MustApply(ctx,
-			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, nil))
+			testutil.InsertInvocation("a", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInvocation("b", pb.Invocation_FINALIZED, nil),
+			testutil.InsertInclusion("a", "b"))
 		testutil.MustApply(ctx, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS)),
 			testutil.InsertTestExonerations("a", "A", pbutil.Variant("k", "v"), 1),
 			// Test results and exonerations have different variants.
-			testutil.InsertTestResults(testutil.MakeTestResults("a", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS)),
-			testutil.InsertTestExonerations("a", "B", pbutil.Variant("k", "different"), 1),
+			testutil.InsertTestResults(testutil.MakeTestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("b", "B", pbutil.Variant("k", "different"), 1),
 			// Passing test result without exoneration.
 			testutil.InsertTestResults(testutil.MakeTestResults("a", "C", nil, pb.TestStatus_PASS)),
+			// Test results' parent is different from exported.
+			testutil.InsertTestResults(testutil.MakeTestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS)),
+			testutil.InsertTestExonerations("b", "D", pbutil.Variant("k", "v"), 1),
 		)...)
 
 		bqExport := &pb.BigQueryExport{
@@ -81,15 +86,16 @@ func TestExportToBigQuery(t *testing.T) {
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 5)
+			So(len(i.insertedMessages), ShouldEqual, 7)
 
-			expectedTestIDs := []string{"A", "B", "C"}
+			expectedTestIDs := []string{"A", "B", "C", "D"}
 			for _, m := range i.insertedMessages {
 				invID, testID, _ := span.MustParseTestResultName(m.InsertID)
-				So(invID, ShouldEqual, "a")
 				So(testID, ShouldBeIn, expectedTestIDs)
 				tr := m.Struct.(*TestResultRow)
-				So(tr.Exonerated, ShouldEqual, testID == "A")
+				So(tr.ExportedInvocation.ID, ShouldEqual, "a")
+				So(tr.ParentInvocation.ID, ShouldEqual, invID)
+				So(tr.Exonerated, ShouldEqual, testID == "A" || testID == "D")
 			}
 		})
 
