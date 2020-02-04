@@ -16,6 +16,24 @@
       "revId": "2f78475f3585e94897fda242dec8c885f5b5f85f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "178cef30_83f7ac0e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-02-04T07:04:17Z",
+      "side": 1,
+      "message": "For dimensions and envs, every key has one corresponding value.\nBut for env prefixes, some key may have multiple values.\n\nSo that inconsistency is natural here.",
+      "parentUuid": "17d3bf08_a524069d",
+      "revId": "2f78475f3585e94897fda242dec8c885f5b5f85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
