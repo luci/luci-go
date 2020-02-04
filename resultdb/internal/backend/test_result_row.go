@@ -82,10 +82,10 @@ type TestResultRow struct {
 	SummaryHTML string `bigquery:"summary_html"`
 
 	// StartTime is the point in time when the test case started to execute.
-	StartTime time.Time `bigquery:"start_time"`
+	StartTime time.Time `bigquery:"start_time,nullable"`
 
 	// Duration of the test case execution in seconds.
-	Duration float64 `bigquery:"duration"`
+	Duration float64 `bigquery:"duration,nullable"`
 
 	// Tags contains metadata for this test result.
 	// It might describe this particular execution or the test case.
