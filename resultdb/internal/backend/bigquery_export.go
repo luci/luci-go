@@ -93,7 +93,13 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 	}
 
 	// Table doesn't exist. Create one.
-	err = t.Create(ctx, nil)
+	var schema bigquery.Schema
+	if schema, err = bigquery.InferSchema(&TestResultRow{}); err != nil {
+		panic(err)
+	}
+	err = t.Create(ctx, &bigquery.TableMetadata{
+		Schema: schema,
+	})
 	apiErr, ok = err.(*googleapi.Error)
 	switch {
 	case err == nil:
