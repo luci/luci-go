@@ -16,32 +16,61 @@ package secrets
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
-	"os"
+	"math"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
 
-// TODO(vadimsh): Add support for fetching the root secret from Cloud Secret
-// Manager (https://cloud.google.com/secret-manager/docs/).
-
 // ModuleOptions contain configuration of the secrets server module.
 type ModuleOptions struct {
-	RootSecretPath string // path to a JSON file with the root secret key
+	// RootSecret points to the root secret key used to derive all other secrets.
+	//
+	// It can be either a local file system path, a reference to a Google Secret
+	// Manager secret (in a form "sm://<project>/<secret>"), or a literal ":dev"
+	// (that indicates to use fake insecure secret).
+	//
+	// When it is a local file system path, it should point to a JSON file with
+	// the following structure (see Secret struct):
+	//
+	//   {
+	//     "current": <base64-encoded blob>,
+	//     "previous": [<base64-encoded blob>, <base64-encoded blob>, ...]
+	//   }
+	//
+	// When using Google Secret Manager, the secret version "latest" is used to
+	// get the current value of the secret, and a single immediately preceding
+	// previous version (if it is still enabled) is used to get the previous
+	// version of the secret. This allows graceful rotation of secrets.
+	RootSecret string
+
+	// Source produces the root secret to use by the module.
+	//
+	// If given, overrides RootSecret. This is useful when the secrets module
+	// is initialized programmatically rather than through flags.
+	//
+	// The module will periodically use Source's ReadSecret to refresh the root
+	// secret it stores in memory. This allows the secret to be rotated without
+	// restarting all servers that use it.
+	Source Source
 }
 
 // Register registers the command line flags.
 func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.StringVar(
-		&o.RootSecretPath,
-		"root-secret-path",
-		o.RootSecretPath,
-		`Path to a JSON file with the root secret key, or literal ":dev" for development not-really-a-secret`,
+		&o.RootSecret,
+		"root-secret",
+		o.RootSecret,
+		`Either a local path to JSON file, `+
+			`or "sm://<project>/<secret>" to use Google Secret Manager, `+
+			`or literal ":dev" for development not-really-a-secret`,
 	)
 }
 
@@ -75,8 +104,7 @@ func NewModuleFromFlags() module.Module {
 
 // serverModule implements module.Module.
 type serverModule struct {
-	opts  *ModuleOptions
-	store *DerivedStore // nil if RootSecretPath is not set
+	opts *ModuleOptions
 }
 
 // Name is part of module.Module interface.
@@ -86,58 +114,89 @@ func (*serverModule) Name() string {
 
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
-	secret, err := m.readRootSecret(opts.Prod)
-	switch {
-	case err != nil:
-		return nil, err
-	case secret == nil:
-		return ctx, nil // not configured, this is fine
+	// Prepare a Source based on RootSecret.
+	source := m.opts.Source
+	if source == nil {
+		if m.opts.RootSecret == "" {
+			return ctx, nil // secrets are not configured, this is fine
+		}
+		var err error
+		source, err = initSource(ctx, m.opts.RootSecret, opts.Prod)
+		if err != nil {
+			return nil, errors.Annotate(err, "can't initialize the secret source").Err()
+		}
 	}
-	m.store = NewDerivedStore(*secret)
 
+	// This is mostly useful for SecretManagerSource to gracefully shutdown
+	// the gRPC connection.
+	host.RegisterCleanup(func(context.Context) { source.Close() })
+
+	// Read the initial value of the secret, can't start without it.
+	secret, err := source.ReadSecret(ctx)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read the initial value of the root secret").Err()
+	}
+	store := NewDerivedStore(*secret)
+
+	// Periodically re-read the secret from the source to support rotation.
 	host.RunInBackground("luci.secrets", func(ctx context.Context) {
+		attempt := 0
 		for {
-			if r := <-clock.After(ctx, time.Minute); r.Err != nil {
+			sleep := secretReadInterval(ctx, attempt)
+			if attempt > 0 {
+				logging.Errorf(ctx, "Will attempt to read the secret again in %s", sleep)
+			}
+			if r := <-clock.After(ctx, sleep); r.Err != nil {
 				return // the context is canceled
 			}
-			secret, err := m.readRootSecret(opts.Prod)
-			if secret == nil {
-				logging.WithError(err).Errorf(ctx, "Failed to re-read the root secret, using the cached one")
+			secret, err := source.ReadSecret(ctx)
+			if err != nil {
+				attempt += 1
+				logging.Errorf(ctx, "Failed to re-read the root secret (attempt %d): %s", attempt, err)
 			} else {
-				m.store.SetRoot(*secret)
+				attempt = 0
+				store.SetRoot(*secret)
 			}
 		}
 	})
 
-	return Set(ctx, m.store), nil
+	return Set(ctx, store), nil
 }
 
-// readRootSecret reads the secret from a path specified in the options.
-//
-// Returns nil if the secret is not configured. Returns an error if the secret
-// is configured, but could not be loaded.
-func (m *serverModule) readRootSecret(prod bool) (*Secret, error) {
+// initSource initializes a correct Source based on rootSecret.
+func initSource(ctx context.Context, rootSecret string, prod bool) (Source, error) {
 	switch {
-	case m.opts.RootSecretPath == "":
-		return nil, nil // not configured, this is fine
-	case m.opts.RootSecretPath == ":dev" && !prod:
-		return &Secret{Current: []byte("dev-non-secret")}, nil
-	case m.opts.RootSecretPath == ":dev" && prod:
-		return nil, errors.Reason("-root-secret-path \":dev\" is not allowed in production mode").Err()
-	}
+	case rootSecret == ":dev":
+		if prod {
+			return nil, errors.Reason("-root-secret-path \":dev\" is not allowed in production mode").Err()
+		}
+		return &StaticSource{Secret: &Secret{Current: []byte("dev-non-secret")}}, nil
 
-	f, err := os.Open(m.opts.RootSecretPath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+	case strings.HasPrefix(rootSecret, "sm://"):
+		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get the token source").Err()
+		}
+		return NewSecretManagerSource(ctx, rootSecret, ts)
 
-	secret := &Secret{}
-	if err = json.NewDecoder(f).Decode(secret); err != nil {
-		return nil, errors.Annotate(err, "not a valid JSON").Err()
+	default:
+		return &FileSource{Path: rootSecret}, nil
 	}
-	if len(secret.Current) == 0 {
-		return nil, errors.Reason("`current` field in the root secret is empty, this is not allowed").Err()
+}
+
+// secretReadInterval tells how long to sleep between ReadSecret calls.
+//
+// When there are no read errors, sleep 10-15 min (randomized).
+// When there are errors, do exponential backoff with jitter.
+func secretReadInterval(ctx context.Context, attempt int) time.Duration {
+	if attempt == 0 {
+		return 10*time.Minute + time.Duration(mathrand.Int63n(ctx, int64(5*time.Minute)))
 	}
-	return secret, nil
+	factor := math.Pow(2.0, float64(attempt)) // 2, 4, 8, ...
+	factor += 10 * mathrand.Float64(ctx)
+	dur := time.Duration(float64(time.Second) * factor)
+	if dur > 30*time.Minute {
+		dur = 30 * time.Minute
+	}
+	return dur
 }
