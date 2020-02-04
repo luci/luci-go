@@ -40,6 +40,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Commands: []*subcommands.Command{
 			cmdBots(defaultAuthOpts),
 			cmdCollect(defaultAuthOpts),
+			cmdQuery(defaultAuthOpts),
 			cmdRequestShow(defaultAuthOpts),
 			cmdSpawnTasks(defaultAuthOpts),
 			cmdTasks(defaultAuthOpts),
