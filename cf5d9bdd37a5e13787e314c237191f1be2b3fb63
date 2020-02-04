@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a962a51d_48c045bf",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:00:58Z",
+      "side": 1,
+      "message": "please add a TODO(crbug.com/1035707) to remove it\n\nnobody uses this yet, so DEPRECATED is unnecessary",
+      "range": {
+        "startLine": 55,
+        "startChar": 5,
+        "endLine": 55,
+        "endChar": 15
+      },
+      "revId": "cf5d9bdd37a5e13787e314c237191f1be2b3fb63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46db31c2_3ba5fe96",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:00:58Z",
+      "side": 1,
+      "message": "just UpdateIncludedInvocations\n\nthis is a custom RPC, it does not have to try to follow https://aip.dev/234",
+      "range": {
+        "startLine": 59,
+        "startChar": 6,
+        "endLine": 59,
+        "endChar": 36
+      },
+      "revId": "cf5d9bdd37a5e13787e314c237191f1be2b3fb63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22b96a10_ef1d1958",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:00:58Z",
+      "side": 1,
+      "message": "drop",
+      "range": {
+        "startLine": 144,
+        "startChar": 8,
+        "endLine": 144,
+        "endChar": 13
+      },
+      "revId": "cf5d9bdd37a5e13787e314c237191f1be2b3fb63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a90e563_ef6e013d",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:00:58Z",
+      "side": 1,
+      "message": "please remove. this line was stale",
+      "revId": "cf5d9bdd37a5e13787e314c237191f1be2b3fb63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e440ea24_ac2b4d94",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:00:58Z",
+      "side": 1,
+      "message": "ending \"ed\" may be interpreted as a new value of Invocations.included_invocations.\nlet\u0027s rename to \"include_invocations\" or even \"add_invocations\" to make it obviously separate",
+      "range": {
+        "startLine": 155,
+        "startChar": 24,
+        "endLine": 155,
+        "endChar": 26
+      },
+      "revId": "cf5d9bdd37a5e13787e314c237191f1be2b3fb63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
