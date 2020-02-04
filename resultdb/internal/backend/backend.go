@@ -110,13 +110,6 @@ type Options struct {
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
 	for _, taskType := range tasks.AllTypes {
-
-		// TODO(chanli): remove this if statement.
-		if taskType == tasks.BQExport {
-			// BQExport is panicking, killing backend and blocking development.
-			continue
-		}
-
 		taskType := taskType
 		activity := fmt.Sprintf("resultdb.task.%s", taskType)
 		srv.RunInBackground(activity, func(ctx context.Context) {
