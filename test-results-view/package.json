@@ -1,0 +1,50 @@
+{
+  "name": "milo",
+  "version": "0.0.1",
+  "description": "Milo Prototype",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@adobe/lit-mobx": "0.0.2",
+    "@chopsui/prpc-client": "^1.0.0",
+    "@material/card": "^4.0.0",
+    "@material/menu": "^4.0.0",
+    "@material/mwc-button": "^0.10.0",
+    "@material/mwc-checkbox": "^0.12.0",
+    "@material/mwc-formfield": "^0.12.0",
+    "@material/mwc-icon": "^0.11.1",
+    "@material/mwc-icon-button": "^0.12.0",
+    "@vaadin/router": "^1.6.0",
+    "@webcomponents/webcomponentsjs": "^2.4.1",
+    "lit-element": "^2.2.1",
+    "lit-html": "^1.1.2",
+    "lodash": "^4.17.15",
+    "mobx": "^5.15.1",
+    "moment": "^2.24.0"
+  },
+  "devDependencies": {
+    "@teamsupercell/typings-for-css-modules-loader": "^2.1.0",
+    "@types/gapi": "0.0.39",
+    "@types/gapi.auth2": "0.0.51",
+    "@types/lodash": "^4.14.149",
+    "@types/node": "^12.12.24",
+    "@types/webpack": "^4.41.2",
+    "@types/webpack-dev-server": "^3.9.0",
+    "@types/webpack-env": "^1.15.0",
+    "css-loader": "^3.4.1",
+    "loader-utils": "^1.2.3",
+    "style-loader": "^1.1.2",
+    "to-string-loader": "^1.1.6",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.6.0",
+    "typescript": "^3.7.4",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.1"
+  },
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -w",
+    "dev": "webpack-dev-server"
+  }
+}
