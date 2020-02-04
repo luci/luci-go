@@ -70,6 +70,30 @@
       "revId": "5f61c239b3354d58a991c184fb8aac2f610dbb61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4213f4f6_59f5a8d9",
+        "filename": "test-results-view/readme.md",
+        "patchSetId": 7
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T22:46:24Z",
+      "side": 1,
+      "message": "ha, i also somehow interpreted this as already-committed",
+      "parentUuid": "73b051ad_78544b01",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 40
+      },
+      "revId": "5f61c239b3354d58a991c184fb8aac2f610dbb61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
