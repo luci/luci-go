@@ -15,8 +15,6 @@
 package backend
 
 import (
-	"time"
-
 	"cloud.google.com/go/bigquery"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -82,10 +80,10 @@ type TestResultRow struct {
 	SummaryHTML string `bigquery:"summary_html"`
 
 	// StartTime is the point in time when the test case started to execute.
-	StartTime time.Time `bigquery:"start_time,nullable"`
+	StartTime bigquery.NullTimestamp `bigquery:"start_time"`
 
 	// Duration of the test case execution in seconds.
-	Duration float64 `bigquery:"duration,nullable"`
+	Duration bigquery.NullFloat64 `bigquery:"duration"`
 
 	// Tags contains metadata for this test result.
 	// It might describe this particular execution or the test case.
@@ -154,11 +152,17 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 	}
 
 	if tr.StartTime != nil {
-		trr.StartTime = pbutil.MustTimestamp(tr.StartTime)
+		trr.StartTime = bigquery.NullTimestamp{
+			Timestamp: pbutil.MustTimestamp(tr.StartTime),
+			Valid: true,
+		}
 	}
 
 	if tr.Duration != nil {
-		trr.Duration = pbutil.MustDuration(tr.Duration).Seconds()
+		trr.Duration = bigquery.NullFloat64{
+			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
+			Valid: true,
+		}
 	}
 
 	return &bigquery.StructSaver{
