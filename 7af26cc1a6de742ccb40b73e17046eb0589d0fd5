@@ -1,0 +1,262 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21566fa8_ce514c1a",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "not for this CL: we have accumulated quite a bit of symbols in this package that have \"bq\" in their name. This is a sign that it might be a good time to make a separate bq-specific package",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 48,
+        "endChar": 6
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b85dd06_2f646651",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "this is another example where a bq package might be nice. In golang, symbols are defined at the package level, not file level. So this is \"backend.table\" which is a bit abstract (unlike backend.bqTable or bqexport.table).",
+      "range": {
+        "startLine": 68,
+        "startChar": 5,
+        "endLine": 68,
+        "endChar": 10
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d3b3239_d92a278a",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "from this it is unclear what true/false return value. the fact it is uses cache is impl detail. I find it more important to focus on the meaning/purpose of the func",
+      "range": {
+        "startLine": 97,
+        "startChar": 16,
+        "endLine": 97,
+        "endChar": 77
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a2fa24f_0f2f33ea",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "nit: this line is a bit long. consider extracting this to variable \"cacheKey\"",
+      "range": {
+        "startLine": 100,
+        "startChar": 50,
+        "endLine": 100,
+        "endChar": 144
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fa83108_16231eca",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "this is the only place where this type is used. please define it *inside* this function\n\nsame for bqTableCacheEntry",
+      "range": {
+        "startLine": 100,
+        "startChar": 50,
+        "endLine": 100,
+        "endChar": 65
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdfa2616_e88f58fd",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "\"is not a special case\" or \"is not among special cases\"",
+      "range": {
+        "startLine": 112,
+        "startChar": 14,
+        "endLine": 112,
+        "endChar": 34
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3a8aa2a_97ec54ea",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "nit: comment for consistency with above?",
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56c37152_ff559ad5",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "nit: if we use\n\n  switch shouldCreateTable, err :\u003d checkBqTable(ctx, bqExport, t); {...}\n\nthen we can reduce the scope of the shouldCreateTable variable",
+      "range": {
+        "startLine": 139,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 3
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38e9922a_e568ea21",
+        "filename": "resultdb/internal/backend/bigquery_export_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "t.Parallel()",
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56cf67f5_26036802",
+        "filename": "resultdb/internal/backend/bigquery_export_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "testutil.TestingContext()",
+      "range": {
+        "startLine": 125,
+        "startChar": 9,
+        "endLine": 126,
+        "endChar": 64
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd764237_721112fd",
+        "filename": "resultdb/internal/backend/bigquery_export_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "unnecessary? we\u0027d have update this code if we update BigQueryExport to use oneof (one day we will)\n\nsame below",
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d7b1464_aea9445e",
+        "filename": "resultdb/internal/backend/bigquery_export_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:41:21Z",
+      "side": 1,
+      "message": "ShouldBeTrue",
+      "range": {
+        "startLine": 142,
+        "startChar": 25,
+        "endLine": 142,
+        "endChar": 42
+      },
+      "revId": "7af26cc1a6de742ccb40b73e17046eb0589d0fd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
