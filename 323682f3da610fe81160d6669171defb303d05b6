@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "c5d345b5_c4546d91",
+        "filename": "logdog/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-04T20:52:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "810367de_e188d102",
+      "range": {
+        "startLine": 188,
+        "startChar": 0,
+        "endLine": 188,
+        "endChar": 22
+      },
+      "revId": "323682f3da610fe81160d6669171defb303d05b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a26cb5e7_a9a53bc1",
         "filename": "logdog/server/cmd/logdog_archivist/Dockerfile",
         "patchSetId": 1
@@ -91,6 +115,30 @@
       "revId": "323682f3da610fe81160d6669171defb303d05b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edf338ac_b463f330",
+        "filename": "logdog/server/cmd/logdog_archivist/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-04T20:52:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a26cb5e7_a9a53bc1",
+      "range": {
+        "startLine": 1,
+        "startChar": 2,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "323682f3da610fe81160d6669171defb303d05b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +165,30 @@
     },
     {
       "key": {
+        "uuid": "77ad9c14_a4bfbf13",
+        "filename": "logdog/server/cmd/logdog_archivist/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-04T20:52:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3e585ec2_cc70314c",
+      "range": {
+        "startLine": 6,
+        "startChar": 28,
+        "endLine": 6,
+        "endChar": 30
+      },
+      "revId": "323682f3da610fe81160d6669171defb303d05b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4afa4e4_027581bc",
         "filename": "logdog/server/cmd/logdog_archivist/run.sh",
         "patchSetId": 1
@@ -140,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "f4ac8063_26a7ffc3",
+        "filename": "logdog/server/cmd/logdog_archivist/run.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-04T20:52:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d4afa4e4_027581bc",
+      "range": {
+        "startLine": 6,
+        "startChar": 2,
+        "endLine": 6,
+        "endChar": 12
+      },
+      "revId": "323682f3da610fe81160d6669171defb303d05b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9213889_5c9c1665",
         "filename": "logdog/server/cmd/logdog_collector/Dockerfile",
         "patchSetId": 1
@@ -160,6 +256,30 @@
       "revId": "323682f3da610fe81160d6669171defb303d05b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbd78d19_be430311",
+        "filename": "logdog/server/cmd/logdog_collector/Dockerfile",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-04T20:52:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9213889_5c9c1665",
+      "range": {
+        "startLine": 1,
+        "startChar": 2,
+        "endLine": 1,
+        "endChar": 12
+      },
+      "revId": "323682f3da610fe81160d6669171defb303d05b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
