@@ -20,12 +20,11 @@ import (
 	"sync"
 	"testing"
 
-	"go.chromium.org/luci/common/bq"
+	"cloud.google.com/go/bigquery"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
-	bqpb "go.chromium.org/luci/resultdb/proto/bq/v1"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -33,12 +32,12 @@ import (
 )
 
 type mockPassInserter struct {
-	insertedMessages []*bq.Row
+	insertedMessages []*bigquery.StructSaver
 	mu               sync.Mutex
 }
 
 func (i *mockPassInserter) Put(ctx context.Context, src interface{}) error {
-	messages := src.([]*bq.Row)
+	messages := src.([]*bigquery.StructSaver)
 	i.mu.Lock()
 	i.insertedMessages = append(i.insertedMessages, messages...)
 	i.mu.Unlock()
@@ -89,8 +88,8 @@ func TestExportToBigQuery(t *testing.T) {
 				invID, testID, _ := span.MustParseTestResultName(m.InsertID)
 				So(invID, ShouldEqual, "a")
 				So(testID, ShouldBeIn, expectedTestIDs)
-				tr := m.Message.(*bqpb.TestResultRow)
-				So(tr.Exoneration.Exonerated, ShouldEqual, testID == "A")
+				tr := m.Struct.(*TestResultRow)
+				So(tr.Exonerated, ShouldEqual, testID == "A")
 			}
 		})
 
