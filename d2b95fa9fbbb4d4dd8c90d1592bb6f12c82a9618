@@ -79,6 +79,63 @@
       "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3b9a266_1ca8d4b2",
+        "filename": "test-results-view/features.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:54:11Z",
+      "side": 1,
+      "message": "This should probably just be in your personal notes rather than checked into the repo.",
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f555a5a_663359bf",
+        "filename": "test-results-view/src/lib/array-utils.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:54:11Z",
+      "side": 1,
+      "message": "This looks empty, consider removing?",
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31f1c335_08ed56e2",
+        "filename": "test-results-view/src/lib/components/paginator.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:54:11Z",
+      "side": 1,
+      "message": "Style nit: comments should always start with a capital letter and end in a fullstop. Same elsewhere in the CL.",
+      "range": {
+        "startLine": 13,
+        "startChar": 7,
+        "endLine": 13,
+        "endChar": 15
+      },
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
