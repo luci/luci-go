@@ -1,3 +1,5 @@
+# DEPRECATED! See docker/Dockerfile instead.
+
 # Dockerfile extending the generic Go image with application files for a
 # single application.
 FROM golang:1.9-alpine
