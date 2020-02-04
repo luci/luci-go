@@ -492,6 +492,24 @@
     },
     {
       "key": {
+        "uuid": "2d3fd771_cfa7781e",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:13:46Z",
+      "side": 1,
+      "message": "i meant that their *contents* will be exported. Also, this is specific to logs artifacts: log lines will be exported, so that they are searchable viq BQ. This is not something we could achieve in this table anyway because a single log may not fit in one BQ row.",
+      "parentUuid": "376ce031_86b51adf",
+      "revId": "f2da73243ad27dcb8aa7978ca020f1073c67fd15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "309ba58a_e56f2277",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 4
