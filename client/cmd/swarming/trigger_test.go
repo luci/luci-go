@@ -20,6 +20,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -83,18 +84,19 @@ func TestMapToArray(t *testing.T) {
 	})
 }
 
-func TestMapToStringListPairArray(t *testing.T) {
-	Convey(`TestMapToStringListPairArray`, t, func() {
-		input := stringmapflag.Value{
-			"x": "a:b",
-			"y": "c",
+func TestListToStringListPairArray(t *testing.T) {
+	Convey(`TestListToStringListPairArray`, t, func() {
+		input := stringlistflag.Flag{
+			"x=a",
+			"y=c",
+			"x=b",
 		}
 		expected := []*swarming.SwarmingRpcsStringListPair{
 			{Key: "x", Value: []string{"a", "b"}},
 			{Key: "y", Value: []string{"c"}},
 		}
 
-		So(mapToStringListPairArray(input), ShouldResemble, expected)
+		So(listToStringListPairArray(input), ShouldResemble, expected)
 	})
 }
 

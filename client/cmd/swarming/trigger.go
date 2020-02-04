@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/system/signals"
 )
@@ -73,18 +74,27 @@ func mapToArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringPair {
 	return a
 }
 
-// mapTo converts a stringmapflag.Value into an array of
-// swarming.SwarmingRpcsStringListPair, sorted by key and then value.
-func mapToStringListPairArray(m stringmapflag.Value) []*swarming.SwarmingRpcsStringListPair {
-	a := make([]*swarming.SwarmingRpcsStringListPair, 0, len(m))
+// listToStringListPairArray converts a stringlistflag.Flag into an array of
+// swarming.SwarmingRpcsStringListPair, sorted by key.
+func listToStringListPairArray(m stringlistflag.Flag) []*swarming.SwarmingRpcsStringListPair {
+	prefixes := make(map[string][]string)
+	for _, f := range m {
+		kv := strings.SplitN(f, "=", 2)
+		prefixes[kv[0]] = append(prefixes[kv[0]], kv[1])
+	}
 
-	// Let mapToArray sorts by Key and Value.
-	for _, v := range mapToArray(m) {
+	a := make([]*swarming.SwarmingRpcsStringListPair, 0, len(prefixes))
+
+	for key, value := range prefixes {
 		a = append(a, &swarming.SwarmingRpcsStringListPair{
-			Key:   v.Key,
-			Value: strings.Split(v.Value, ":"),
+			Key:   key,
+			Value: value,
 		})
 	}
+
+	sort.Slice(a, func(i, j int) bool {
+		return a[i].Key < a[j].Key
+	})
 	return a
 }
 
@@ -125,7 +135,7 @@ type triggerRun struct {
 	isolated                  string
 	dimensions                stringmapflag.Value
 	env                       stringmapflag.Value
-	envPrefix                 stringmapflag.Value
+	envPrefix                 stringlistflag.Flag
 	idempotent                bool
 	lowerPriority             bool
 	containmentType           containmentType
@@ -309,7 +319,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Command:              commands,
 		Dimensions:           mapToArray(c.dimensions),
 		Env:                  mapToArray(c.env),
-		EnvPrefixes:          mapToStringListPairArray(c.envPrefix),
+		EnvPrefixes:          listToStringListPairArray(c.envPrefix),
 		ExecutionTimeoutSecs: c.hardTimeout,
 		ExtraArgs:            extraArgs,
 		GracePeriodSecs:      30,
