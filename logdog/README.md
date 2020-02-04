@@ -35,7 +35,7 @@ Most applications will interact with a LogDog Coordinator instance via its
 [Coordinator Logs API](api/endpoints/coordinator/logs/v1).
 
 Chrome Operations currently runs a LogDog instance serving *.chromium.org
-which is located at logs.chromium.org. You can view it's RPC explorer 
+which is located at logs.chromium.org. You can view it's RPC explorer
 [here](https://logs.chromium.org/rpcexplorer/services/).
 Access it through the command line with the prpc from depot_tools with
 `prpc show logs.chromium.org`
@@ -181,39 +181,3 @@ staging, dev), you will need to add your BigTable service account JSON to the
 service's settings. Currently this cannot be done without a command-line tool.
 Hopefully a proper settings page will be added to enable this, or alternatively
 Cloud BigTable will be updated to support IAM.
-
-### Microservices
-
-Microservices are hosted in Google Container Engine, and use Google Compute
-Engine metadata for configuration.
-
-The following metadata parameters **must** be set for deployed microservices
-to work:
-
-* `logdog_coordinator_host`, the host name of the Coordinator service.
-
-All deployed microservices use the following optional metadata parameters for
-configuration:
-
-* `logdog_storage_auth_json`, an optional file containing the authentication
-  credentials for intermediate storage (i.e., BigTable). This isn't necessary
-  if the BigTable node is hosted in the same cloud project as the microservice
-  is running, and the microservice's container has BigTable Read/Write
-  permissions.
-* `tsmon_endpoint`, an optional endpoint for timeseries monitoring data.
-
-#### Collector
-
-The Collector instance is fully command-line compatible. Its [entry point
-script](server/cmd/logdog_collector/run.sh) uses Google Compute Engine metadata
-to populate the command line in a production environment:
-
-* `logdog_collector_log_level`, an optional `-log-level` flag value.
-
-#### Archivist
-
-The Archivist instance is fully command-line compatible. Its [entry point
-script](server/cmd/logdog_archivist/run.sh) uses Google Compute Engine metadata
-to populate the command line in a production environment:
-
-* `logdog_archivist_log_level`, an optional `-log-level` flag value.
