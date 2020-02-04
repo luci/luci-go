@@ -80,3 +80,8 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	}
 	return &empty.Empty{}, err
 }
+
+// BatchUpdateIncludedInvocations implements pb.RecorderServer.
+func (s *recorderServer) BatchUpdateIncludedInvocations(ctx context.Context, in *pb.BatchUpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
+}
