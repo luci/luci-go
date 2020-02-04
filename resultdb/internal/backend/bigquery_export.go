@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/spanner"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -42,10 +44,30 @@ const (
 	maxBatchSize           = 500
 )
 
+// bqTableCacheKey -> bqTableCacheEntry
+var bqTableCache = caching.RegisterLRUCache(50)
+
+type bqTableCacheKey struct {
+	Project string
+	Dataset string
+	Table   string
+}
+
+// bqTableCacheEntry saves results of checking the existence of one bq table.
+type bqTableCacheEntry struct {
+	// Err is the error returned from bigquery.
+	Err error
+}
+
 // inserter is implemented by bigquery.Inserter.
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
 	Put(ctx context.Context, src interface{}) error
+}
+
+type table interface {
+	// Metadata fetches the metadata for the table.
+	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
 }
 
 func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
@@ -72,29 +94,55 @@ func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryE
 	}))
 }
 
+// checkBqTable looks for the table in cache, if not cached, checks bigquery.
+func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bool, error) {
+	shouldCreateTable := false
+	v, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, bqTableCacheKey{Project: bqExport.Project, Dataset: bqExport.Dataset, Table: bqExport.Dataset}, func() (interface{}, time.Duration, error) {
+		_, err := t.Metadata(ctx)
+		apiErr, ok := err.(*googleapi.Error)
+		switch {
+		case ok && apiErr.Code == http.StatusNotFound:
+			// Table doesn't exist, no need to cache this.
+			shouldCreateTable = true
+			return nil, 0, err
+		case ok && apiErr.Code == http.StatusForbidden:
+			// No read table permission.
+			return bqTableCacheEntry{Err: permanentInvocationTaskErrTag.Apply(err)}, time.Minute, nil
+		case err != nil:
+			// The err is not special cases above, no need to cache this.
+			return nil, 0, err
+		default:
+			return bqTableCacheEntry{Err: nil}, 5 * time.Minute, nil
+		}
+	})
+
+	if shouldCreateTable {
+		return true, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return false, v.(bqTableCacheEntry).Err
+}
+
 // ensureBQTable creates a BQ table if it doesn't exist.
 func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.BigQueryExport) error {
 	t := client.Dataset(bqExport.Dataset).Table(bqExport.Table)
 
 	// Check the existence of table.
-	// TODO(chanli): Cache the check result.
-	_, err := t.Metadata(ctx)
-	apiErr, ok := err.(*googleapi.Error)
-	switch {
-	case ok && apiErr.Code == http.StatusNotFound:
-		// Table doesn't exist.
-		break
-	case ok && apiErr.Code == http.StatusForbidden:
-		// No read table permission.
-		return permanentInvocationTaskErrTag.Apply(err)
-	default:
-		// Either no err or the err is not special cases above, simply return.
+	shouldCreateTable, err := checkBqTable(ctx, bqExport, t)
+	if err != nil {
 		return err
+	}
+	if !shouldCreateTable {
+		return nil
 	}
 
 	// Table doesn't exist. Create one.
 	err = t.Create(ctx, nil)
-	apiErr, ok = err.(*googleapi.Error)
+	apiErr, ok := err.(*googleapi.Error)
 	switch {
 	case err == nil:
 		logging.Infof(ctx, "Created BigQuery table %s.%s.%s", bqExport.Project, bqExport.Dataset, bqExport.Table)
