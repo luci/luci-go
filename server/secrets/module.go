@@ -16,6 +16,7 @@ package secrets
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	"math"
 	"strings"
@@ -34,8 +35,10 @@ type ModuleOptions struct {
 	// RootSecret points to the root secret key used to derive all other secrets.
 	//
 	// It can be either a local file system path, a reference to a Google Secret
-	// Manager secret (in a form "sm://<project>/<secret>"), or a literal ":dev"
-	// (that indicates to use fake insecure secret).
+	// Manager secret (in a form "sm://<project>/<secret>"), or a literal secret
+	// value (in a form "devsecret://<base64-encoded secret>"). The latter is
+	// supposed to be used **only** during development (e.g. locally or in
+	// development deployments).
 	//
 	// When it is a local file system path, it should point to a JSON file with
 	// the following structure (see Secret struct):
@@ -70,7 +73,7 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		o.RootSecret,
 		`Either a local path to JSON file, `+
 			`or "sm://<project>/<secret>" to use Google Secret Manager, `+
-			`or literal ":dev" for development not-really-a-secret`,
+			`or "devsecret://<base64-encoded value>" for static development secret`,
 	)
 }
 
@@ -166,11 +169,12 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 // initSource initializes a correct Source based on rootSecret.
 func initSource(ctx context.Context, rootSecret string, prod bool) (Source, error) {
 	switch {
-	case rootSecret == ":dev":
-		if prod {
-			return nil, errors.Reason("-root-secret-path \":dev\" is not allowed in production mode").Err()
+	case strings.HasPrefix(rootSecret, "devsecret://"):
+		value, err := base64.RawStdEncoding.DecodeString(strings.TrimPrefix(rootSecret, "devsecret://"))
+		if err != nil {
+			return nil, errors.Annotate(err, "bad devsecret://, not base64 encoding").Err()
 		}
-		return &StaticSource{Secret: &Secret{Current: []byte("dev-non-secret")}}, nil
+		return &StaticSource{Secret: &Secret{Current: value}}, nil
 
 	case strings.HasPrefix(rootSecret, "sm://"):
 		ts, err := auth.GetTokenSource(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
@@ -178,6 +182,9 @@ func initSource(ctx context.Context, rootSecret string, prod bool) (Source, erro
 			return nil, errors.Annotate(err, "failed to get the token source").Err()
 		}
 		return NewSecretManagerSource(ctx, rootSecret, ts)
+
+	case strings.Contains(rootSecret, "://"):
+		return nil, errors.Reason("not supported secret reference %q", rootSecret).Err()
 
 	default:
 		return &FileSource{Path: rootSecret}, nil
