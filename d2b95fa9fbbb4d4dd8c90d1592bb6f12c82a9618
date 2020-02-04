@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66645d31_aaac8355",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:44:40Z",
+      "side": 1,
+      "message": "Can you add some more details to the commit message so that people outside the team know what this CL is for?",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 36
+      },
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65a9ff53_68d24e3c",
+        "filename": "node_modules/@chopsui/prpc-client/prpc-client.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:44:40Z",
+      "side": 1,
+      "message": "Should this be removed?",
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dff6414_df191f57",
+        "filename": "package-lock.json",
+        "patchSetId": 5
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-04T05:44:40Z",
+      "side": 1,
+      "message": "Move this into test-results-view?",
+      "range": {
+        "startLine": 5,
+        "startChar": 6,
+        "endLine": 5,
+        "endChar": 25
+      },
+      "revId": "d2b95fa9fbbb4d4dd8c90d1592bb6f12c82a9618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
