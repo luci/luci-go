@@ -1,0 +1,360 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cca5b6ec_96f9aae6",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "can this be placed on the prev line to be consistent with code above?",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 15
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c13198ad_b429b819",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "nit: maybe add \\ here too so that predicates are aligned are easier to read",
+      "range": {
+        "startLine": 104,
+        "startChar": 10,
+        "endLine": 104,
+        "endChar": 11
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "017b3268_5af59c4c",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 124,
+        "startChar": 22,
+        "endLine": 124,
+        "endChar": 25
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "211b73c1_ab533c06",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "please move this all the way down, closer to the usage",
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b13631d1_5f31e6d4",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "i think it would be less code if we\n\n  fields, err :\u003d r.FieldMask()\n  if err !\u003d nil {",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 31
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d047e8e_9cd7b0d6",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "a slice",
+      "range": {
+        "startLine": 209,
+        "startChar": 51,
+        "endLine": 209,
+        "endChar": 56
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc31c693_ae69116e",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "on the command line.",
+      "range": {
+        "startLine": 211,
+        "startChar": 57,
+        "endLine": 211,
+        "endChar": 72
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fa28b14_df4ac7b1",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "i think len(r.predicates) \u003e 0 would be simpler and not additionally hardcode the flag name\n\nthen we can move L212-215 inside the if statement and not compute when -predicate is passed",
+      "range": {
+        "startLine": 218,
+        "startChar": 4,
+        "endLine": 218,
+        "endChar": 29
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43ac68d9_61852aac",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "consider making this a global var, somewhere close to where these flags are defined, e.g. L38",
+      "range": {
+        "startLine": 219,
+        "startChar": 44,
+        "endLine": 220,
+        "endChar": 30
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b8d5f37_adcf8849",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "missing space. Let\u0027s not break the line. it would make it simpler. its ok to exceed 80 columns in golang",
+      "range": {
+        "startLine": 222,
+        "startChar": 65,
+        "endLine": 222,
+        "endChar": 69
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14ddceba_11357a3b",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "ToSlice is non-determinstic. please apply https://godoc.org/sort#Strings, or add stringset.ToSortedSlice or stringset.ToSliceSorted",
+      "range": {
+        "startLine": 223,
+        "startChar": 17,
+        "endLine": 223,
+        "endChar": 39
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1b4c228_8f370cb1",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "same here, let\u0027s not break this line",
+      "range": {
+        "startLine": 225,
+        "startChar": 70,
+        "endLine": 226,
+        "endChar": 5
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acdee9e5_991238fe",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 226,
+        "startChar": 11,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "206db266_2492304b",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "the caller knows that arguments i passed. e.g. we don\u0027t pass *values* of cl/t/exp/status flags. i think it would be simpler to just say\n\n  fmt.Errorf(\"-predicate flag is mutually exclusive with positional arguments\")",
+      "range": {
+        "startLine": 226,
+        "startChar": 21,
+        "endLine": 226,
+        "endChar": 41
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73b4a236_e1675e5c",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "nit: move this line on line up. it is related to to L239 more than to L232-237 block",
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f80fc51f_9651d581",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T17:55:33Z",
+      "side": 1,
+      "message": "nit: i think it would be more readable if we didn\u0027t break this line",
+      "range": {
+        "startLine": 239,
+        "startChar": 61,
+        "endLine": 240,
+        "endChar": 2
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
