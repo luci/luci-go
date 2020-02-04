@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/system/signals"
 )
 
@@ -47,10 +48,11 @@ func cmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
 
 type botsRun struct {
 	commonFlags
-	outfile string
-	mp      bool
-	nomp    bool
-	fields  []googleapi.Field
+	outfile    string
+	mp         bool
+	nomp       bool
+	dimensions stringmapflag.Value
+	fields     []googleapi.Field
 }
 
 func (b *botsRun) Init(defaultAuthOpts auth.Options) {
@@ -59,7 +61,9 @@ func (b *botsRun) Init(defaultAuthOpts auth.Options) {
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
 	b.Flags.BoolVar(&b.mp, "mp", false, "Only fetch Machine Provider bots.")
 	b.Flags.BoolVar(&b.nomp, "nomp", false, "Exclude Machine Provider bots.")
+	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
+
 }
 
 func (b *botsRun) Parse() error {
@@ -96,6 +100,13 @@ func (b *botsRun) main(a subcommands.Application) error {
 	} else if b.nomp {
 		call.IsMp("FALSE")
 	}
+
+	var dims []string
+	for k, v := range b.dimensions {
+		dims = append(dims, k+":"+v)
+	}
+	call.Dimensions(dims...)
+
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(b.fields) > 0 {
