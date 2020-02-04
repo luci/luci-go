@@ -1,0 +1,440 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9bf0f275_3ac012ff",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "i know it can be confusing, but new flags are added directly to \"common/flag\" rather than package-per-function common/flag/bar.\n\ncould you move this file to common/flag?",
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6490fd4_f9446379",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "let\u0027s keep it simple:\n\n msgSliceValue is the slice pointer...",
+      "range": {
+        "startLine": 33,
+        "startChar": 18,
+        "endLine": 33,
+        "endChar": 46
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b2960f3_49e9a2ee",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "typo\nperiod",
+      "range": {
+        "startLine": 34,
+        "startChar": 27,
+        "endLine": 34,
+        "endChar": 33
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f80d21c8_aa6a7316",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "is a zero...",
+      "range": {
+        "startLine": 36,
+        "startChar": 11,
+        "endLine": 36,
+        "endChar": 17
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bb29027_7ef5393c",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "purposes.",
+      "range": {
+        "startLine": 37,
+        "startChar": 63,
+        "endLine": 37,
+        "endChar": 64
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e88c249_e7c0d0b7",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "returns a",
+      "range": {
+        "startLine": 41,
+        "startChar": 20,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0a39bbb_124d5122",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "this doc must say that a flag value must be JSON",
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c0f9ca2_9db0ce4c",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "...of the slice to implement...",
+      "range": {
+        "startLine": 53,
+        "startChar": 39,
+        "endLine": 53,
+        "endChar": 44
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7387529_0e4a471b",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "unnecessary\n\n%s already does this\n\napplies to many places in this file",
+      "range": {
+        "startLine": 54,
+        "startChar": 35,
+        "endLine": 54,
+        "endChar": 44
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98414f32_01357c91",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 72,
+        "startChar": 45,
+        "endLine": 72,
+        "endChar": 53
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee64a83a_b229b214",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "returns all messages....",
+      "range": {
+        "startLine": 72,
+        "startChar": 10,
+        "endLine": 72,
+        "endChar": 14
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afd27b56_d9d0c5bc",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "appends",
+      "range": {
+        "startLine": 86,
+        "startChar": 58,
+        "endLine": 86,
+        "endChar": 64
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56d38855_60d9b259",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "deserializes",
+      "range": {
+        "startLine": 86,
+        "startChar": 7,
+        "endLine": 86,
+        "endChar": 18
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d81a35c4_a9e7ac72",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "period",
+      "range": {
+        "startLine": 87,
+        "startChar": 14,
+        "endLine": 87,
+        "endChar": 15
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e870d34_c7b8091c",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "remove. it does not add value",
+      "range": {
+        "startLine": 102,
+        "startChar": 18,
+        "endLine": 102,
+        "endChar": 37
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94648f3c_da459918",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "period in the end",
+      "range": {
+        "startLine": 103,
+        "startChar": 34,
+        "endLine": 103,
+        "endChar": 35
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "525a9926_3643be53",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "nit: assertKind\n\n\"same\" would make sense if both params had same type, e.g. \n\n  asseretSameKind(actual, expected reflect.Type)",
+      "range": {
+        "startLine": 104,
+        "startChar": 5,
+        "endLine": 104,
+        "endChar": 19
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b77e862f_0e54af76",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "\\n between non-luci and luci import blocks",
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "635a49a0_2c48226b",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "dot imports be in a separate import block that goes last",
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "063a8c45_88531623",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-04T00:56:23Z",
+      "side": 1,
+      "message": "this assumes proto impl details which will change when we switch to the new proto lib. Please add a \n\n  proto_test.proto\n\nwhich cproto would compile to proto.pb_test.go\n\nand then you can use it here",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
