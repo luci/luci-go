@@ -48,8 +48,6 @@ func cmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
 type botsRun struct {
 	commonFlags
 	outfile string
-	mp      bool
-	nomp    bool
 	fields  []googleapi.Field
 }
 
@@ -57,17 +55,12 @@ func (b *botsRun) Init(defaultAuthOpts auth.Options) {
 	b.commonFlags.Init(defaultAuthOpts)
 
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	b.Flags.BoolVar(&b.mp, "mp", false, "Only fetch Machine Provider bots.")
-	b.Flags.BoolVar(&b.nomp, "nomp", false, "Exclude Machine Provider bots.")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
 }
 
 func (b *botsRun) Parse() error {
 	if err := b.commonFlags.Parse(); err != nil {
 		return err
-	}
-	if b.mp && b.nomp {
-		return errors.Reason("at most one of -mp and -nomp must be specified").Err()
 	}
 	if b.defaultFlags.Quiet && b.outfile == "" {
 		return errors.Reason("specify -json when using -quiet").Err()
@@ -91,11 +84,6 @@ func (b *botsRun) main(a subcommands.Application) error {
 	}
 	s.BasePath = b.commonFlags.serverURL + "/_ah/api/swarming/v1/"
 	call := s.Bots.List()
-	if b.mp {
-		call.IsMp("TRUE")
-	} else if b.nomp {
-		call.IsMp("FALSE")
-	}
 	// If no fields are specified, all fields will be returned. If any fields are
 	// specified, ensure the cursor is specified so we can get subsequent pages.
 	if len(b.fields) > 0 {
