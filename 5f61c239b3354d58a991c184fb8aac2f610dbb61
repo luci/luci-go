@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "75f607c0_b031e00a",
+        "filename": "test-results-view/readme.md",
+        "patchSetId": 7
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-04T18:32:36Z",
+      "side": 1,
+      "message": "What was the reason for checking this into luci-go as a top level folder? If there was a need to get it in SOME repo, there are experimental places to put it. If it must go in luci-go specifically, it should probably go into an experimental folder.\n\nAll the code here does need to have complete code review before it can go into production, and it also needs to have documentation on how to do that deployment from source.",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 40
+      },
+      "revId": "5f61c239b3354d58a991c184fb8aac2f610dbb61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
