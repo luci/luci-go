@@ -93,6 +93,23 @@ func (s *DecoratedRecorder) Include(ctx context.Context, req *IncludeRequest) (r
 	return
 }
 
+func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *empty.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "UpdateIncludedInvocations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.UpdateIncludedInvocations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "UpdateIncludedInvocations", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) CreateTestResult(ctx context.Context, req *CreateTestResultRequest) (rsp *TestResult, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
