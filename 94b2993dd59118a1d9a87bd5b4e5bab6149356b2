@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "de8d0b5f_631520e5",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cca5b6ec_96f9aae6",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 15
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c13198ad_b429b819",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb40d1b4_fc69a721",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c13198ad_b429b819",
+      "range": {
+        "startLine": 104,
+        "startChar": 10,
+        "endLine": 104,
+        "endChar": 11
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "755fbc8a_818b4ca6",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "017b3268_5af59c4c",
+      "range": {
+        "startLine": 124,
+        "startChar": 22,
+        "endLine": 124,
+        "endChar": 25
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "211b73c1_ab533c06",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0e65ce8_10f4dfd5",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "211b73c1_ab533c06",
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "101125fb_b7b3e2df",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Correct! I thought err is declared above so you can\u0027t do double declaration but apparently you can in \"multi-variable\" situation. Changed",
+      "parentUuid": "b13631d1_5f31e6d4",
+      "range": {
+        "startLine": 189,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 31
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d047e8e_9cd7b0d6",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -131,6 +245,30 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0af1bf37_651d8948",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d047e8e_9cd7b0d6",
+      "range": {
+        "startLine": 209,
+        "startChar": 51,
+        "endLine": 209,
+        "endChar": 56
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "37606867_025f8eb5",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc31c693_ae69116e",
+      "range": {
+        "startLine": 211,
+        "startChar": 57,
+        "endLine": 211,
+        "endChar": 72
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6fa28b14_df4ac7b1",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -177,6 +339,30 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba0ef8f0_719c8576",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Make sense!",
+      "parentUuid": "6fa28b14_df4ac7b1",
+      "range": {
+        "startLine": 218,
+        "startChar": 4,
+        "endLine": 218,
+        "endChar": 29
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "20c49a33_a3d469d2",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done. var created right after all flags are declared as the reader can gain more context about this variable after read through the doc.",
+      "parentUuid": "43ac68d9_61852aac",
+      "range": {
+        "startLine": 219,
+        "startChar": 44,
+        "endLine": 220,
+        "endChar": 30
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b8d5f37_adcf8849",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "43ca384a_b512b7e4",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "I see. May I ask why it is special for golang? Is it because of the tab-indent?",
+      "parentUuid": "3b8d5f37_adcf8849",
+      "range": {
+        "startLine": 222,
+        "startChar": 65,
+        "endLine": 222,
+        "endChar": 69
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14ddceba_11357a3b",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -246,6 +480,30 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "257654e0_1aa849fc",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Added new `ToSortedSlice` method for `stringset` as I think that\u0027s gonna be useful in the future.",
+      "parentUuid": "14ddceba_11357a3b",
+      "range": {
+        "startLine": 223,
+        "startChar": 17,
+        "endLine": 223,
+        "endChar": 39
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -318,6 +576,78 @@
     },
     {
       "key": {
+        "uuid": "67d8f0a7_c900ef03",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1b4c228_8f370cb1",
+      "range": {
+        "startLine": 225,
+        "startChar": 70,
+        "endLine": 226,
+        "endChar": 5
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6b6e43d6_d7e15bbb",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Fixed",
+      "parentUuid": "acdee9e5_991238fe",
+      "range": {
+        "startLine": 226,
+        "startChar": 11,
+        "endLine": 226,
+        "endChar": 19
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "699ba031_50c62134",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "206db266_2492304b",
+      "range": {
+        "startLine": 226,
+        "startChar": 21,
+        "endLine": 226,
+        "endChar": 41
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73b4a236_e1675e5c",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 3
@@ -332,6 +662,24 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e6eed58_f7b5d5ce",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73b4a236_e1675e5c",
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -355,6 +703,30 @@
       "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b082985_14ebc90b",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-04T21:03:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f80fc51f_9651d581",
+      "range": {
+        "startLine": 239,
+        "startChar": 61,
+        "endLine": 240,
+        "endChar": 2
+      },
+      "revId": "94b2993dd59118a1d9a87bd5b4e5bab6149356b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
