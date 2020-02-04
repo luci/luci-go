@@ -145,11 +145,17 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	return tvs, nil
 }
 
-func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv *pb.Invocation, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
+func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, exportedID span.InvocationID, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
+	invs, err := span.ReadInvocationsFull(ctx, txn, q.InvocationIDs)
+	if err != nil {
+		return err
+	}
+
 	rows := make([]*bigquery.StructSaver, 0, maxBatchSize)
-	err := span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
+	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
-		rows = append(rows, generateBQRow(inv, tr, exonerated))
+		parentID, _, _ := span.MustParseTestResultName(tr.Name)
+		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr, exonerated))
 		if len(rows) >= maxBatchSize {
 			select {
 			case <-ctx.Done():
@@ -235,7 +241,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return queryTestResultsStreaming(ctx, txn, inv, q, exoneratedTestVariants, maxBatchSize, batchC)
+		return queryTestResultsStreaming(ctx, txn, invID, q, exoneratedTestVariants, maxBatchSize, batchC)
 	})
 
 	return eg.Wait()
