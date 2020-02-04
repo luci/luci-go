@@ -115,6 +115,26 @@ func (mr *MockRecorderClientMockRecorder) Include(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Include", reflect.TypeOf((*MockRecorderClient)(nil).Include), varargs...)
 }
 
+// UpdateIncludedInvocations mocks base method
+func (m *MockRecorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateIncludedInvocations", varargs...)
+	ret0, _ := ret[0].(*empty.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateIncludedInvocations indicates an expected call of UpdateIncludedInvocations
+func (mr *MockRecorderClientMockRecorder) UpdateIncludedInvocations(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIncludedInvocations", reflect.TypeOf((*MockRecorderClient)(nil).UpdateIncludedInvocations), varargs...)
+}
+
 // CreateTestResult mocks base method
 func (m *MockRecorderClient) CreateTestResult(ctx context.Context, in *CreateTestResultRequest, opts ...grpc.CallOption) (*TestResult, error) {
 	m.ctrl.T.Helper()
@@ -296,6 +316,21 @@ func (m *MockRecorderServer) Include(arg0 context.Context, arg1 *IncludeRequest)
 func (mr *MockRecorderServerMockRecorder) Include(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Include", reflect.TypeOf((*MockRecorderServer)(nil).Include), arg0, arg1)
+}
+
+// UpdateIncludedInvocations mocks base method
+func (m *MockRecorderServer) UpdateIncludedInvocations(arg0 context.Context, arg1 *UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateIncludedInvocations", arg0, arg1)
+	ret0, _ := ret[0].(*empty.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateIncludedInvocations indicates an expected call of UpdateIncludedInvocations
+func (mr *MockRecorderServerMockRecorder) UpdateIncludedInvocations(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIncludedInvocations", reflect.TypeOf((*MockRecorderServer)(nil).UpdateIncludedInvocations), arg0, arg1)
 }
 
 // CreateTestResult mocks base method

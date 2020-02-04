@@ -52,8 +52,13 @@ service Recorder {
   // Transitions the given invocation to the state FINALIZED.
   rpc FinalizeInvocation(FinalizeInvocationRequest) returns (Invocation) {};
 
+  // TODO(crbug.com/1035707): Remove.
   // Includes an invocation in the given non-finalized invocation.
   rpc Include(IncludeRequest) returns (google.protobuf.Empty) {};
+
+  // Updates inclusions for a non-finalized invocation.
+  rpc UpdateIncludedInvocations(UpdateIncludedInvocationsRequest)
+      returns (google.protobuf.Empty) {};
 
   // == Test results ===========================================================
 
@@ -134,6 +139,26 @@ message IncludeRequest {
   // buildbucket build invocation.
   // This invocation MUST be finalized.
   string included_invocation = 2 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+// A request message for UpdateIncludedInvocations RPC.
+message UpdateIncludedInvocationsRequest {
+  // Name of the invocation to add/remove inclusions to/from,
+  // see Invocation.name.
+  // For example, name of the buildbucket build invocation that should include
+  // a swarming task invocation.
+  string including_invocation = 1 [ (google.api.field_behavior) = REQUIRED ];
+
+  // Names of the invocations to include, see Invocation.name.
+  // If any of these invocations are already included, they will be silently
+  // ignored for idempotency.
+  repeated string add_invocations = 2;
+
+  // Names of the previously included invocations to remove, see
+  // Invocation.name.
+  // If any of these invocations are not included already, they will be silently
+  // ignored for idempotency.
+  repeated string remove_invocations = 3;
 }
 
 // A request message for CreateTestResult RPC.
