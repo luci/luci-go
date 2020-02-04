@@ -34,6 +34,24 @@
       "revId": "2f78475f3585e94897fda242dec8c885f5b5f85f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1eea32d7_1bd19e5a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-02-04T07:26:50Z",
+      "side": 1,
+      "message": "Ok only the --env-prefix has \"x\u003da:c\" form.",
+      "parentUuid": "178cef30_83f7ac0e",
+      "revId": "2f78475f3585e94897fda242dec8c885f5b5f85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
