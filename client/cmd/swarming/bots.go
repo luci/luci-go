@@ -49,8 +49,6 @@ func cmdBots(defaultAuthOpts auth.Options) *subcommands.Command {
 type botsRun struct {
 	commonFlags
 	outfile    string
-	mp         bool
-	nomp       bool
 	dimensions stringmapflag.Value
 	fields     []googleapi.Field
 }
@@ -59,8 +57,6 @@ func (b *botsRun) Init(defaultAuthOpts auth.Options) {
 	b.commonFlags.Init(defaultAuthOpts)
 
 	b.Flags.StringVar(&b.outfile, "json", "", "Path to output JSON results. Implies quiet.")
-	b.Flags.BoolVar(&b.mp, "mp", false, "Only fetch Machine Provider bots.")
-	b.Flags.BoolVar(&b.nomp, "nomp", false, "Exclude Machine Provider bots.")
 	b.Flags.Var(&b.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
 	b.Flags.Var(flag.FieldSlice(&b.fields), "field", "Fields to include in a partial response. May be repeated.")
 
@@ -69,9 +65,6 @@ func (b *botsRun) Init(defaultAuthOpts auth.Options) {
 func (b *botsRun) Parse() error {
 	if err := b.commonFlags.Parse(); err != nil {
 		return err
-	}
-	if b.mp && b.nomp {
-		return errors.Reason("at most one of -mp and -nomp must be specified").Err()
 	}
 	if b.defaultFlags.Quiet && b.outfile == "" {
 		return errors.Reason("specify -json when using -quiet").Err()
@@ -95,11 +88,6 @@ func (b *botsRun) main(a subcommands.Application) error {
 	}
 	s.BasePath = b.commonFlags.serverURL + "/_ah/api/swarming/v1/"
 	call := s.Bots.List()
-	if b.mp {
-		call.IsMp("TRUE")
-	} else if b.nomp {
-		call.IsMp("FALSE")
-	}
 
 	var dims []string
 	for k, v := range b.dimensions {

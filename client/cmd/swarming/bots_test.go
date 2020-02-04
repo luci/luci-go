@@ -24,14 +24,6 @@ import (
 )
 
 func TestBotsParse(t *testing.T) {
-	Convey(`Make sure that Parse fails with -mp and -nomp.`, t, func() {
-		b := botsRun{}
-		b.Init(auth.Options{})
-		err := b.GetFlags().Parse([]string{"-server", "http://localhost:9050", "-mp", "-nomp"})
-		So(err, ShouldBeNil)
-		err = b.Parse()
-		So(err, ShouldErrLike, "at most one of")
-	})
 	Convey(`Make sure that Parse fails with -quiet without -json.`, t, func() {
 		b := botsRun{}
 		b.Init(auth.Options{})
