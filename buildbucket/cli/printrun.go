@@ -40,6 +40,7 @@ type printRun struct {
 	properties bool
 	steps      bool
 	id         bool
+	fields     string
 }
 
 func (r *printRun) RegisterDefaultFlags(p Params) {
@@ -57,7 +58,7 @@ func (r *printRun) RegisterIDFlag() {
 	`))
 }
 
-// RegisterFieldFlags registers -A, -steps and -p flags.
+// RegisterFieldFlags registers -A, -steps, -p and -field flags.
 func (r *printRun) RegisterFieldFlags() {
 	r.Flags.BoolVar(&r.all, "A", false, doc(`
 		Print builds in their entirety.
@@ -66,10 +67,37 @@ func (r *printRun) RegisterFieldFlags() {
 	`))
 	r.Flags.BoolVar(&r.steps, "steps", false, "Print steps")
 	r.Flags.BoolVar(&r.properties, "p", false, "Print input/output properties")
+	r.Flags.StringVar(&r.fields, "fields", "", doc(`
+		Print only provided fields. Fields should be passed as a comma separated
+		string to match the JSON encoding schema of FieldMask.
+
+		This flag is mutually exclusive with -A, -p, -steps and -id.
+
+		See: https://developers.google.com/protocol-buffers/docs/proto3#json
+
+		Example: print id and status for all builds
+			bb ls -fields id,status
+`))
 }
 
 // FieldMask returns the field mask to use in buildbucket requests.
 func (r *printRun) FieldMask() (*field_mask.FieldMask, error) {
+	if r.fields != "" {
+		if r.all || r.properties || r.steps || r.id {
+			return nil, fmt.Errorf("-fields is mutually exclusive with -A, -p, -steps and -id")
+		}
+
+		// TODO(crbug/1039823): Use Unmarshal feature in JSONPB when protobuf v2
+		// API is released. Currently, there's an existing issue in Go JSONPB
+		// implementation which results in serialization and deserialization of
+		// FieldMask not working as expected.
+		// See: https://github.com/golang/protobuf/issues/745
+		fieldMask := &field_mask.FieldMask{
+			Paths: strings.Split(r.fields, ","),
+		}
+		return fieldMask, nil
+	}
+
 	if r.id {
 		if r.all || r.properties || r.steps {
 			return nil, fmt.Errorf("-id is mutually exclusive with -A, -p and -steps")
