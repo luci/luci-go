@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "234897c7_0e3288af",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T21:10:22Z",
+      "side": 1,
+      "message": "Updated. I\u0027ve also moved the buildbucket/protoutil above down to make the block clearer.",
+      "parentUuid": "c77d39db_ead2dfde",
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "417dcaa6_409e7bdc",
         "filename": "buildbucket/cli/ls.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1942a543_c6a9c5a5",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T21:10:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "417dcaa6_409e7bdc",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 9
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "3e44ce1f_f67e0c7e",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T21:10:22Z",
+      "side": 1,
+      "message": "Done! Also added for the method doc.",
+      "parentUuid": "78681ea2_bd97d39d",
+      "range": {
+        "startLine": 216,
+        "startChar": 76,
+        "endLine": 216,
+        "endChar": 77
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "046e4fc6_afada954",
         "filename": "common/data/stringset/stringset.go",
         "patchSetId": 4
@@ -85,6 +151,30 @@
       "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c29ba534_e55ac223",
+        "filename": "common/data/stringset/stringset.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T21:10:22Z",
+      "side": 1,
+      "message": "Sounds right!",
+      "parentUuid": "046e4fc6_afada954",
+      "range": {
+        "startLine": 125,
+        "startChar": 39,
+        "endLine": 125,
+        "endChar": 44
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
