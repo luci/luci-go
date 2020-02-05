@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "42cfdc21_836091c1",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T20:50:29Z",
+      "side": 1,
+      "message": "unnecessary. Unlike added/removed invocations, there is only one including inv\n\nthis would be consistent with the rest of the code base",
+      "range": {
+        "startLine": 89,
+        "startChar": 51,
+        "endLine": 89,
+        "endChar": 81
+      },
+      "revId": "966dcfbe2b71c6621a1ca5b4abba3cbe7ac6fc6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7532a90c_4709ed52",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T20:50:29Z",
+      "side": 1,
+      "message": "nit: \\n before this line",
+      "revId": "966dcfbe2b71c6621a1ca5b4abba3cbe7ac6fc6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb89598f_49d6e4a2",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T20:50:29Z",
+      "side": 1,
+      "message": "nit: wouldn\u0027t need this explanatory comment if we did\n\n  both :\u003d stringset.NewFromSlice(req.AddInvocations...).Intersect(stringset.NewFromSlice(req.RemoveInvocations...)).ToSortedSlice()\n  if len(both) \u003e 0 {\n\nafter the loop",
+      "range": {
+        "startLine": 105,
+        "startChar": 3,
+        "endLine": 106,
+        "endChar": 68
+      },
+      "revId": "966dcfbe2b71c6621a1ca5b4abba3cbe7ac6fc6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c392fef_49d38345",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T20:50:29Z",
+      "side": 1,
+      "message": "ToSortedSlice\n\notherwise it is non-determinstic\n\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2032437/4/common/data/stringset/stringset.go",
+      "range": {
+        "startLine": 107,
+        "startChar": 80,
+        "endLine": 107,
+        "endChar": 87
+      },
+      "revId": "966dcfbe2b71c6621a1ca5b4abba3cbe7ac6fc6c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
