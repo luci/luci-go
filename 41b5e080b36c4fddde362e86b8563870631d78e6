@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "192c7e66_8ff493e1",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T20:46:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6eb9ef75_79719cbf",
+      "range": {
+        "startLine": 30,
+        "startChar": 30,
+        "endLine": 30,
+        "endChar": 37
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4840da2d_b8ec99a1",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T20:46:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a312500_73de6c41",
+      "range": {
+        "startLine": 30,
+        "startChar": 64,
+        "endLine": 30,
+        "endChar": 70
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "39d6f2cf_ed08ef46",
         "filename": "common/flag/protomsgsliceflag.go",
         "patchSetId": 4
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f727b024_850e8202",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T20:46:05Z",
+      "side": 1,
+      "message": "Ah.. I was not aware of that before. Changed this error message to single sentence and remove the line break. I will try to follow this convention in the future. Thanks for pointing this out!",
+      "parentUuid": "39d6f2cf_ed08ef46",
+      "range": {
+        "startLine": 51,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 7
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ef77387_5a821938",
         "filename": "common/flag/protomsgsliceflag.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7b679d8_e85833bf",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T20:46:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ef77387_5a821938",
+      "range": {
+        "startLine": 69,
+        "startChar": 53,
+        "endLine": 69,
+        "endChar": 61
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
