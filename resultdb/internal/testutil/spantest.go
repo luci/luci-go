@@ -65,7 +65,7 @@ func SpannerTestContext(tb testing.TB) context.Context {
 
 	// Do not mock clock in integration tests because we cannot mock Spanner's
 	// clock.
-	ctx := testingContext(false)
+	ctx, _ := testingContext(false)
 	err := cleanupDatabase(ctx, spannerClient)
 	if err != nil {
 		tb.Fatal(err)

@@ -17,25 +17,27 @@ package testutil
 import (
 	"context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 )
 
-func testingContext(mockClock bool) context.Context {
+func testingContext(mockClock bool) (context.Context, testclock.TestClock) {
 	ctx := context.Background()
+	tc := clock.GetSystemClock()
 
 	// Enable logging to stdout/stderr.
 	logCfg := gologger.StdConfig
 	ctx = logCfg.Use(ctx)
 
 	if mockClock {
-		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx, tc = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	}
 
-	return ctx
+	return ctx, tc
 }
 
-// TestingContext returns a context to be used in tests.
-func TestingContext() context.Context {
+// TestingContext returns a context and the Clock set in that context to be used in tests.
+func TestingContext() (context.Context, testclock.TestClock) {
 	return testingContext(true)
 }

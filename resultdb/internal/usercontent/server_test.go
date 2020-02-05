@@ -38,7 +38,7 @@ import (
 func TestIsolate(t *testing.T) {
 	t.Parallel()
 	Convey(`TestIsolate`, t, func(c C) {
-		ctx := testutil.TestingContext()
+		ctx, _ := testutil.TestingContext()
 
 		ctx = authtest.MockAuthConfig(ctx)
 		authState := &authtest.FakeState{}

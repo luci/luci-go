@@ -17,10 +17,16 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/googleapi"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -104,6 +110,85 @@ func TestExportToBigQuery(t *testing.T) {
 		Convey(`fail`, func() {
 			err := exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport, 2)
 			So(err, ShouldErrLike, "some error")
+		})
+	})
+}
+
+type mockTable struct {
+	err       error
+	callCount int
+}
+
+func (t *mockTable) Metadata(ctx context.Context) (*bigquery.TableMetadata, error) {
+	t.callCount++
+	return nil, t.err
+}
+
+func TestBqTableCache(t *testing.T) {
+	t.Parallel()
+	Convey(`TestCheckBqTableCache`, t, func() {
+		ctx, tc := testutil.TestingContext()
+		ctx = caching.WithEmptyProcessCache(ctx)
+
+		Convey(`table not exist`, func() {
+			t := &mockTable{
+				err: &googleapi.Error{
+					Code: http.StatusNotFound,
+				},
+			}
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "not_exist",
+			}
+			shouldCreateTable, err := checkBqTable(ctx, bqExport, t)
+			So(shouldCreateTable, ShouldBeTrue)
+			So(err, ShouldBeNil)
+		})
+
+		// Random error should not be cached.
+		Convey(`random error`, func() {
+			t := &mockTable{
+				err: fmt.Errorf("random error"),
+			}
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "random",
+			}
+			_, err := checkBqTable(ctx, bqExport, t)
+			So(err, ShouldErrLike, "random error")
+			So(t.callCount, ShouldEqual, 1)
+
+			// Confirms the error is expired in a very short time.
+			_, err = checkBqTable(ctx, bqExport, t)
+			So(err, ShouldErrLike, "random error")
+			So(t.callCount, ShouldEqual, 2)
+		})
+
+		Convey(`no error`, func() {
+			t := &mockTable{
+				err: nil,
+			}
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "pass",
+			}
+			_, err := checkBqTable(ctx, bqExport, t)
+			So(err, ShouldBeNil)
+			So(t.callCount, ShouldEqual, 1)
+
+			// Confirms the cache is working.
+			_, err = checkBqTable(ctx, bqExport, t)
+			So(err, ShouldBeNil)
+			So(t.callCount, ShouldEqual, 1)
+
+			// Confirms the cache is expired as expected.
+			tc.Add(6 * time.Minute)
+			_, err = checkBqTable(ctx, bqExport, t)
+			So(err, ShouldBeNil)
+			So(t.callCount, ShouldEqual, 2)
 		})
 	})
 }
