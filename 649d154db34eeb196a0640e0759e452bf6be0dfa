@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c77d39db_ead2dfde",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:59:25Z",
+      "side": 1,
+      "message": "nit: please move this up. This block is for buildbucket imports",
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "417dcaa6_409e7bdc",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:59:25Z",
+      "side": 1,
+      "message": "nit: please move this up too. see all doc() calls above",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 92,
+        "endChar": 9
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78681ea2_bd97d39d",
+        "filename": "buildbucket/cli/ls.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:59:25Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 216,
+        "startChar": 76,
+        "endLine": 216,
+        "endChar": 77
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "046e4fc6_afada954",
+        "filename": "common/data/stringset/stringset.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:59:25Z",
+      "side": 1,
+      "message": "let\u0027s be concise: sorted slice\n\nthen we don\u0027t need the \"then sort elements in ascending order\" them.",
+      "range": {
+        "startLine": 125,
+        "startChar": 39,
+        "endLine": 125,
+        "endChar": 44
+      },
+      "revId": "649d154db34eeb196a0640e0759e452bf6be0dfa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
