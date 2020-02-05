@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6eb9ef75_79719cbf",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "nit: pointers",
+      "range": {
+        "startLine": 30,
+        "startChar": 30,
+        "endLine": 30,
+        "endChar": 37
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a312500_73de6c41",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "nit: structs",
+      "range": {
+        "startLine": 30,
+        "startChar": 64,
+        "endLine": 30,
+        "endChar": 70
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39d6f2cf_ed08ef46",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "nit: i\u0027ve noticed Golang stdlib tries to make entire error message a single sentence and often uses \";\" to make it so. consider",
+      "range": {
+        "startLine": 51,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 7
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ef77387_5a821938",
+        "filename": "common/flag/protomsgsliceflag.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 69,
+        "startChar": 53,
+        "endLine": 69,
+        "endChar": 61
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23454171_11bd4ec3",
+        "filename": "common/flag/protomsgsliceflag_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "nit: period in the end",
+      "range": {
+        "startLine": 66,
+        "startChar": 65,
+        "endLine": 66,
+        "endChar": 66
+      },
+      "revId": "41b5e080b36c4fddde362e86b8563870631d78e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

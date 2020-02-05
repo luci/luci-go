@@ -891,6 +891,30 @@
       "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "738dcaf2_67d558ec",
+        "filename": "common/flag/protomsgsliceflag/protomsgsliceflag_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:53:08Z",
+      "side": 1,
+      "message": "i see, i misinterpreted the intention.\n\ni find these cases a bit unrealistic for someone to deliberately try to implement a proto.Message themselves. They would have troubles before they even try to use our package. So if I was implementing this, I probably wouldn\u0027t so thoroughly test unrealistic use cases.\n\nbut you already write this code, so at this it does not matter. LGTM",
+      "parentUuid": "9ba07b48_6302849c",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "40927b153d58edc31f2533804b3b41a3caea713a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
