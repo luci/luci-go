@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -81,7 +82,38 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	return &empty.Empty{}, err
 }
 
+// validateUpdateIncludedInvocationsRequest returns a non-nil error if req is
+// determined to be invalid.
+func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsRequest) error {
+	if _, err := pbutil.ParseInvocationName(req.IncludingInvocation); err != nil {
+		return errors.Annotate(err, "including_invocation").Err()
+	}
+	for _, name := range req.AddInvocations {
+		if name == req.IncludingInvocation {
+			return errors.Reason("cannot include itself").Err()
+		}
+		if _, err := pbutil.ParseInvocationName(name); err != nil {
+			return errors.Annotate(err, "add_invocations: %q", name).Err()
+		}
+	}
+
+	for _, name := range req.RemoveInvocations {
+		if _, err := pbutil.ParseInvocationName(name); err != nil {
+			return errors.Annotate(err, "remove_invocations: %q", name).Err()
+		}
+	}
+
+	both := stringset.NewFromSlice(req.AddInvocations...).Intersect(stringset.NewFromSlice(req.RemoveInvocations...)).ToSortedSlice()
+	if len(both) > 0 {
+		return errors.Reason("cannot add and remove the same invocation(s) at the same time: %q", both).Err()
+	}
+	return nil
+}
+
 // UpdateIncludedInvocations implements pb.RecorderServer.
 func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+	if err := validateUpdateIncludedInvocationsRequest(in); err != nil {
+		return nil, appstatus.BadRequest(err)
+	}
 	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
 }

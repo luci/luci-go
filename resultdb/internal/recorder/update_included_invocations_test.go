@@ -28,6 +28,61 @@ import (
 	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
+func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
+	t.Parallel()
+	Convey(`TestValidateUpdateIncludedInvocationsRequest`, t, func() {
+		Convey(`Valid`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Invalid including_invocation`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "x",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `including_invocation: does not match`)
+		})
+		Convey(`Invalid add_invocations`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"x"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `add_invocations: "x": does not match`)
+		})
+		Convey(`Invalid remove_invocations`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"x"},
+			})
+			So(err, ShouldErrLike, `remove_invocations: "x": does not match`)
+		})
+		Convey(`Include itself`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/a"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `cannot include itself`)
+		})
+		Convey(`Add and remove same invocation`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/b"},
+			})
+			So(err, ShouldErrLike, `cannot add and remove the same invocation(s) at the same time: ["invocations/b"]`)
+		})
+	})
+}
+
 func TestValidateIncludeRequest(t *testing.T) {
 	Convey(`TestValidateIncludeRequest`, t, func() {
 		Convey(`Valid`, func() {
@@ -54,7 +109,7 @@ func TestValidateIncludeRequest(t *testing.T) {
 			So(err, ShouldErrLike, `included_invocation: does not match`)
 		})
 
-		Convey(`include itself`, func() {
+		Convey(`Include itself`, func() {
 			err := validateIncludeRequest(&pb.IncludeRequest{
 				IncludingInvocation: "invocations/a",
 				IncludedInvocation:  "invocations/a",
@@ -81,7 +136,7 @@ func TestInclude(t *testing.T) {
 			})
 		}
 
-		Convey(`invalid request`, func() {
+		Convey(`Invalid request`, func() {
 			_, err := recorder.Include(ctx, &pb.IncludeRequest{})
 			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: including_invocation: unspecified`)
 		})
@@ -91,12 +146,12 @@ func TestInclude(t *testing.T) {
 			IncludedInvocation:  "invocations/included",
 		}
 
-		Convey(`no including invocation`, func() {
+		Convey(`No including invocation`, func() {
 			_, err := recorder.Include(ctx, req)
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
 		})
 
-		Convey(`no included invocation`, func() {
+		Convey(`No included invocation`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
 			)
@@ -104,7 +159,7 @@ func TestInclude(t *testing.T) {
 			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included not found`)
 		})
 
-		Convey(`included invocation is active`, func() {
+		Convey(`Included invocation is active`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
 				insInv("included", pb.Invocation_ACTIVE, nil),
@@ -113,7 +168,7 @@ func TestInclude(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey(`idempotent`, func() {
+		Convey(`Idempotent`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
 				insInv("included", pb.Invocation_FINALIZED, nil),
@@ -126,7 +181,7 @@ func TestInclude(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey(`success`, func() {
+		Convey(`Success`, func() {
 			MustApply(ctx,
 				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
 				insInv("included", pb.Invocation_FINALIZED, nil),
