@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "81698f33_364bf028",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-05T19:37:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a63cacca_9aa9d279",
+      "revId": "f4dcb27f2abcb70e20a6c8c8aac87790ad2b3d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6c806e6_7f92e0d2",
         "filename": "resultdb/internal/backend/bigquery_export.go",
         "patchSetId": 4
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "f56b640c_5d1b799d",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-05T19:37:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6c806e6_7f92e0d2",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "f4dcb27f2abcb70e20a6c8c8aac87790ad2b3d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6d7c0946_9d04e716",
         "filename": "resultdb/internal/backend/bigquery_export.go",
         "patchSetId": 4
@@ -62,6 +104,30 @@
       "revId": "f4dcb27f2abcb70e20a6c8c8aac87790ad2b3d4c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d040bbb_c48090c0",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-05T19:37:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d7c0946_9d04e716",
+      "range": {
+        "startLine": 128,
+        "startChar": 16,
+        "endLine": 128,
+        "endChar": 41
+      },
+      "revId": "f4dcb27f2abcb70e20a6c8c8aac87790ad2b3d4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
