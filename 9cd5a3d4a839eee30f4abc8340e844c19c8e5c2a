@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "20d23318_e0820aec",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T21:47:14Z",
+      "side": 1,
+      "message": "simpler and more explicit:\n\n  SELECT MIN(CreateTime)\n  FROM InvocationTasks\n  WHERE TaskType \u003d \"bq_export\"\n\nsee also https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/backend/purge_expired_results.go;l\u003d224?q\u003dQueryFirstRow",
+      "range": {
+        "startLine": 164,
+        "startChar": 2,
+        "endLine": 165,
+        "endChar": 9
+      },
+      "revId": "9cd5a3d4a839eee30f4abc8340e844c19c8e5c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52256c45_4c412117",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T21:47:14Z",
+      "side": 1,
+      "message": "nit: span.QueryFirstRow does this",
+      "range": {
+        "startLine": 168,
+        "startChar": 18,
+        "endLine": 168,
+        "endChar": 30
+      },
+      "revId": "9cd5a3d4a839eee30f4abc8340e844c19c8e5c2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
