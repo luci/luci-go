@@ -28,6 +28,61 @@ import (
 	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
+func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
+	Convey(`TestValidateUpdateIncludedInvocationsRequest`, t, func() {
+		Convey(`Valid`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Invalid including_invocation`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "x",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `including_invocation: does not match`)
+		})
+		Convey(`Invalid add_invocations`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"x"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `add_invocations: does not match`)
+		})
+		Convey(`Invalid remove_invocations`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"x"},
+			})
+			So(err, ShouldErrLike, `remove_invocations: does not match`)
+		})
+		Convey(`include itself`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/a"},
+				RemoveInvocations:   []string{"invocations/c"},
+			})
+			So(err, ShouldErrLike, `cannot include itself`)
+		})
+		Convey(`add and remove same invocation`, func() {
+			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/a",
+				AddInvocations:      []string{"invocations/b"},
+				RemoveInvocations:   []string{"invocations/b"},
+			})
+			So(err, ShouldErrLike, `cannot add and remove the same invocation at the same time`)
+		})
+
+	})
+}
+
 func TestValidateIncludeRequest(t *testing.T) {
 	Convey(`TestValidateIncludeRequest`, t, func() {
 		Convey(`Valid`, func() {
