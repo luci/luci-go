@@ -14,6 +14,8 @@
 
 package stringset
 
+import "sort"
+
 // Set is the base type. make(Set) can be used too.
 type Set map[string]struct{}
 
@@ -117,6 +119,13 @@ func (s Set) ToSlice() []string {
 	for k := range s {
 		ret = append(ret, k)
 	}
+	return ret
+}
+
+// ToSortedSlice renders this set to a sorted slice of all values, ascending.
+func (s Set) ToSortedSlice() []string {
+	ret := s.ToSlice()
+	sort.Strings(ret)
 	return ret
 }
 
