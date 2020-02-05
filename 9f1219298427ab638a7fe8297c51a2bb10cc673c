@@ -1,0 +1,210 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0fbf51a8_d886b713",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "don\u0027t forget to rename this file to update_included_invocations.go eventually. Consider a TODO as a reminder.",
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50ad2eeb_f2f6c6a3",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "we never do lookups in this. Why not just iterate req.AddInvocations in L109?",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 6
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "429f8db8_eac8fb48",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "we should say which invocation we are talking about\n\nto be consistent with the rest of the code:\n\n  return errors.Annotate(err, \"add_invocations: %q\", name).Err()",
+      "range": {
+        "startLine": 97,
+        "startChar": 32,
+        "endLine": 97,
+        "endChar": 47
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31dec0cb_dc83fe55",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "stringset.NewFromSlice(req.RemoveInvocations...)",
+      "range": {
+        "startLine": 101,
+        "startChar": 12,
+        "endLine": 101,
+        "endChar": 33
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf5edb68_2b5d9979",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/data/stringset#Set.Intersect",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 17
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7353773_c34f3a4c",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "ideally the error message should say which invocation is in both",
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f9562a3_729cf3d5",
+        "filename": "resultdb/internal/recorder/include.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "appstatus.BadRequest(err)\n\nsee L56",
+      "range": {
+        "startLine": 120,
+        "startChar": 14,
+        "endLine": 120,
+        "endChar": 17
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2732c178_d5d293be",
+        "filename": "resultdb/internal/recorder/include_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "t.Parallel()",
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7306117c_7e112457",
+        "filename": "resultdb/internal/recorder/include_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "inconsistency in the casing of the first letter of test-case names.\n\nlet\u0027s use capital letters everywhere",
+      "range": {
+        "startLine": 66,
+        "startChar": 10,
+        "endLine": 66,
+        "endChar": 11
+      },
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03dffba9_c17259b9",
+        "filename": "resultdb/internal/recorder/include_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-05T16:38:19Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "9f1219298427ab638a7fe8297c51a2bb10cc673c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
