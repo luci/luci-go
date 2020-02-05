@@ -163,9 +163,12 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 
 	// Task properties.
 	c.Flags.StringVar(&c.isolateServer, "isolate-server", "", "URL of the Isolate Server to use.")
+	c.Flags.StringVar(&c.isolateServer, "I", "", "Alias for -isolate-server.")
 	c.Flags.StringVar(&c.namespace, "namespace", "default-gzip", "The namespace to use on the Isolate Server.")
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
+	c.Flags.StringVar(&c.isolated, "s", "", "Alias for -isolated.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to select the right kind of bot. In the form of `key=value`")
+	c.Flags.Var(&c.dimensions, "d", "Alias for -dimension.")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
 	c.Flags.Var(&c.envPrefix, "env-prefix", "Environment prefixes to set.")
 	c.Flags.BoolVar(&c.idempotent, "idempotent", false, "When set, the server will actively try to find a previous task with the same parameter and return this result instead if possible.")

@@ -226,6 +226,7 @@ func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
+	c.Flags.StringVar(&c.serverURL, "S", os.Getenv("SWARMING_SERVER"), "Alias for -server.")
 	c.Flags.IntVar(&c.worker, "worker", 8, "Number of workers used to download isolated files.")
 }
 
