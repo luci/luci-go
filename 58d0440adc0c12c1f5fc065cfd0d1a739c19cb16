@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ebbeb554_89c43d28",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T02:50:25Z",
+      "side": 1,
+      "message": "Deleted as fields is no longer a stringset",
+      "parentUuid": "5e300a85_bd95c32c",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 49
+      },
+      "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52cbbb29_405017ac",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4d81912_95c0cba5",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T02:50:25Z",
+      "side": 1,
+      "message": "Yep! Changed.",
+      "parentUuid": "52cbbb29_405017ac",
+      "range": {
+        "startLine": 74,
+        "startChar": 2,
+        "endLine": 74,
+        "endChar": 72
+      },
+      "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ebc3e46a_a1d721e6",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T02:50:25Z",
+      "side": 1,
+      "message": "That indeed looks clearer. I\u0027ve implemented this way but not using the native jsonpb pkg because I\u0027ve found that it is not working as what is documented. See: https://github.com/golang/protobuf/issues/745",
+      "parentUuid": "efae1e3d_8a1698b4",
+      "range": {
+        "startLine": 77,
+        "startChar": 9,
+        "endLine": 77,
+        "endChar": 32
+      },
+      "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a91edcfc_88ff8189",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "f38eeeb4_b8e36eb9",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T02:50:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a91edcfc_88ff8189",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 23
+      },
+      "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "67162bab_985cb407",
         "filename": "buildbucket/cli/printrun.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4cdfcd8_807eeeb4",
+        "filename": "buildbucket/cli/printrun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-05T02:50:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67162bab_985cb407",
+      "range": {
+        "startLine": 85,
+        "startChar": 68,
+        "endLine": 86,
+        "endChar": 5
+      },
+      "revId": "58d0440adc0c12c1f5fc065cfd0d1a739c19cb16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
