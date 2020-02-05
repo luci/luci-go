@@ -81,7 +81,43 @@ func (s *recorderServer) Include(ctx context.Context, in *pb.IncludeRequest) (*e
 	return &empty.Empty{}, err
 }
 
+// validateUpdateIncludedInvocationsRequest returns a non-nil error if req is
+// determined to be invalid.
+func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsRequest) error {
+	if _, err := pbutil.ParseInvocationName(req.IncludingInvocation); err != nil {
+		return errors.Annotate(err, "including_invocation").Err()
+	}
+	added := make(map[string]bool)
+	for _, name := range req.AddInvocations {
+		id, err := pbutil.ParseInvocationName(name)
+		if err != nil {
+			return errors.Annotate(err, "add_invocations").Err()
+		}
+		if name == req.IncludingInvocation {
+			return errors.Reason("cannot include itself").Err()
+		}
+		added[id] = true
+	}
+	removed := make(map[string]bool)
+	for _, name := range req.RemoveInvocations {
+		id, err := pbutil.ParseInvocationName(name)
+		if err != nil {
+			return errors.Annotate(err, "remove_invocations").Err()
+		}
+		removed[id] = true
+	}
+	for k, _ := range added {
+		if removed[k] {
+			return errors.Reason("cannot add and remove the same invocation at the same time").Err()
+		}
+	}
+	return nil
+}
+
 // UpdateIncludedInvocations implements pb.RecorderServer.
 func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
+	if err := validateUpdateIncludedInvocationsRequest(in); err != nil {
+		return nil, err
+	}
 	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
 }
