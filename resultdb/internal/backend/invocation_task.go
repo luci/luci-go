@@ -94,7 +94,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
 func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
-	// TODO(chanli): Add alert on failures.
+	recordOldestTaskMetric(ctx, taskType)
 	processingLoop(ctx, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
