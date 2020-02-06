@@ -23,8 +23,6 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
-	tsmoncommon "go.chromium.org/luci/common/tsmon"
-	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -39,13 +37,6 @@ const maxPurgeTestResultsWorkers = 30
 // variant combinations with unexpected results will not be purged, until
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
-
-var (
-	expiredResultsDelayMetric = metric.NewInt(
-		"resultdb/expired_results_delay",
-		"How long overdue in seconds are the earliest results not yet purged",
-		nil)
-)
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 
@@ -94,14 +85,7 @@ func dispatchExpiredResultDeletionTasks(ctx context.Context, invIDs []span.Invoc
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
 func purgeExpiredResults(ctx context.Context) {
-	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
-		val, err := expiredResultsDelaySeconds(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to get purge backlog delay: %s", err)
-			return
-		}
-		expiredResultsDelayMetric.Set(ctx, val)
-	})
+	recordExpiredResultsDelayMetric(ctx)
 	processingLoop(ctx, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, maxPurgeTestResultsWorkers)
 		if err != nil {
