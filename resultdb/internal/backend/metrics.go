@@ -31,6 +31,10 @@ var (
 		"resultdb/expired_results_delay",
 		"How long overdue in seconds are the earliest results not yet purged",
 		nil)
+	purgedInvocationsMetric = metric.NewCounter(
+		"resultdb/purged_invocations",
+		"How many invocations have had their expected test results purged",
+		nil)
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {
