@@ -46,3 +46,16 @@ The [static](static/) service hosts static content, including:
 * The LogDog Web Application
 * The LogDog Lightweight Stream Viewer
 * `rpcexplorer`
+
+## Deployment
+
+Similar to other LUCI GAE apps:
+
+```shell
+cd coordinator
+gae.py upload -A luci-logdog-dev
+gae.py switch -A luci-logdog-dev
+
+# Or if you want to update a single module only, e.g. "logs".
+gae.py upload -A luci-logdog-dev logs
+```
