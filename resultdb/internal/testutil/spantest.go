@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/spantest"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -189,6 +190,13 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
 	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
 	So(err, ShouldBeNil)
+}
+
+// MustNotFindRow is a shortcut to do a single row read in a single transaction
+// using the current client, and assert the row was not found.
+func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
+	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
+	So(err, ShouldErrLike, "NotFound")
 }
 
 func fatalIf(err error) {
