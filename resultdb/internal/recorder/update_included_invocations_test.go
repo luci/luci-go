@@ -193,3 +193,79 @@ func TestInclude(t *testing.T) {
 		})
 	})
 }
+
+// This is a direct port of the tests above using the new RPC.
+func TestUpdateIncludedInvocations(t *testing.T) {
+	Convey(`TestIncludedInvocations`, t, func() {
+		ctx := SpannerTestContext(t)
+		recorder := newTestRecorderServer()
+
+		const token = "update token"
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+
+		insInv := InsertInvocation
+
+		assertIncluded := func(includedInvID span.InvocationID) {
+			var throwAway span.InvocationID
+			MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+				"IncludedInvocationID": &throwAway,
+			})
+		}
+
+		Convey(`Invalid request`, func() {
+			_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{})
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: including_invocation: unspecified`)
+		})
+
+		req := &pb.UpdateIncludedInvocationsRequest{
+			IncludingInvocation: "invocations/including",
+			AddInvocations:      []string{"invocations/included"},
+		}
+
+		Convey(`No including invocation`, func() {
+			_, err := recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
+		})
+
+		Convey(`No included invocation`, func() {
+			MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+			)
+			_, err := recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/included not found`)
+		})
+
+		Convey(`Included invocation is active`, func() {
+			MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_ACTIVE, nil),
+			)
+			_, err := recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Idempotent`, func() {
+			MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, nil),
+			)
+
+			_, err := recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldBeNil)
+
+			_, err = recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`Success`, func() {
+			MustApply(ctx,
+				insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+				insInv("included", pb.Invocation_FINALIZED, nil),
+			)
+
+			_, err := recorder.UpdateIncludedInvocations(ctx, req)
+			So(err, ShouldBeNil)
+			assertIncluded("included")
+		})
+	})
+}
