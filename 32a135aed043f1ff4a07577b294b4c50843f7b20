@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dad8a784_ef74f8fe",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-06T08:07:05Z",
+      "side": 1,
+      "message": "IIUC, this will add some delay to all monitoring data points, because the age of the oldest task will be ported when the next task with the same TaskType is dispatched.\n\nIt will be fine, as long as all types of tasks are dispatched at a frequent rate. However, a bug may cause a certain type of tasks not dispatched for a while, like a few hours, but the graph won\u0027t show any age-growth of the task type, during the period.\n\nAlternatively, this can report the create_time of the oldest task to the metric instead of the age.\n\n```\n  oldestTaskMetric \u003d metric.NewFloat(\n    \"resultdb/task/oldest_create_time\",\n    \"The creation time of the oldest task\",\n    ...\n  )\n\n  func recordMaxTaskAgeMetric(..) {\n    ..\n    oldestTaskMetric.Set(ctx, ct, typStr)\n  }\n```\n\nIf the monitoring data is the create_time of the oldest task, then he alert graph can actually calculate the age, based on the *last-reported* data point.\ni.e., m.TimestampMicros()/1000000 - m.VAL\n\nAs a result, the age of the oldest task will continue growing smoothly until the next data point is reported. Let\u0027s say that a certain type of tasks are not dispatched at all for a few hours due to a bug. With the new metric schema, the calculated age will continue growing during the period, and the alert will tell you that something is going wrong. However, with the current metric schema, the alert won\u0027t give you any signal, until the next task with the type is dispatched. (bug fixed?)\n\nAlso, you may move this report into a separate cron job. For such metrics, like \u0027grpc/server/count\u0027 or \u0027http/server/response_status\u0027, the overhead of updating the metric is pretty minor. It\u0027s just a variable update in memory.\n\nIn this CL, \"SELECT MIN()\" query is executed, each time a new Invocation task is dispatched, just to update the in-memory status of the metric. It\u0027s probably a very minor issue, as it\u0027s an indexed, read-only query, and if the rate of incoming invocation task requests is not crazy high.\n\nHowever, if it\u0027s easy and simple, then I\u0027d just create a cron job that queries and reports the oldest create_time for all task types every minute.",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 23
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
