@@ -16,14 +16,19 @@ package backend
 
 import (
 	"context"
+	"time"
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
 var (
@@ -31,6 +36,12 @@ var (
 		"resultdb/expired_results_delay",
 		"How long overdue in seconds are the earliest results not yet purged",
 		nil)
+
+	maxTaskAgeMetric = metric.NewFloat(
+		"resultdb/task/max_age",
+		"Age of the oldest task in seconds, per type.",
+		&types.MetricMetadata{Units: types.Seconds},
+		field.String("type"))
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {
@@ -68,4 +79,35 @@ func expiredResultsDelaySeconds(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return ret, nil
+}
+
+func recordMaxTaskAgeMetric(ctx context.Context, typ tasks.Type) {
+	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
+		ct, err := queryOldestTask(ctx, typ)
+		typStr := string(typ)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to get the age of the oldest task of type %s: %s", typStr, err)
+			return
+		}
+
+		maxTaskAgeMetric.Set(ctx, clock.Now(ctx).UTC().Sub(ct).Seconds(), typStr)
+	})
+}
+
+// queryOldestTask gets the create time of the oldest task of typ, in UTC.
+func queryOldestTask(ctx context.Context, typ tasks.Type) (time.Time, error) {
+	st := spanner.NewStatement(`
+		SELECT MIN(CreateTime)
+		FROM InvocationTasks
+		WHERE TaskType = @taskType
+	`)
+
+	st.Params = map[string]interface{}{
+		"taskType": string(typ),
+	}
+
+	var createTime time.Time
+	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &createTime)
+
+	return createTime.UTC(), err
 }
