@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -91,7 +92,7 @@ func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bo
 	key := cacheKey{
 		project: bqExport.Project,
 		dataset: bqExport.Dataset,
-		table: bqExport.Table,
+		table:   bqExport.Table,
 	}
 
 	v, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, key, func() (interface{}, time.Duration, error) {
@@ -300,6 +301,10 @@ func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, paylo
 	bqExport := &pb.BigQueryExport{}
 	if err := proto.Unmarshal(payload, bqExport); err != nil {
 		return err
+	}
+
+	if bqExport.Table == "all-test-results-staging" {
+		return permanentInvocationTaskErrTag.Apply(fmt.Errorf("invalid table name"))
 	}
 
 	luciProject, err := getLUCIProject(ctx, invID)
