@@ -70,6 +70,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"cloud.google.com/go/profiler"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -188,11 +189,14 @@ type Options struct {
 	AuthDBSigner    string             // service account that signs AuthDB dumps
 
 	CloudProject  string // name of the hosting Google Cloud Project
-	TraceSampling string // what portion of traces to upload to StackDriver (ignored on GAE)
+	TraceSampling string // what portion of traces to upload to Stackdriver (ignored on GAE)
 
 	TsMonAccount     string // service account to flush metrics as
 	TsMonServiceName string // service name of tsmon target
 	TsMonJobName     string // job name of tsmon target
+
+	ProfilingDisable   bool   // set to true to explicitly disable Stackdriver Profiler
+	ProfilingServiceID string // service name to associated with profiles in Stackdriver Profiler
 
 	ContainerImageID string // ID of the container image with this binary, for logs (optional)
 
@@ -266,7 +270,7 @@ func (o *Options) Register(f *flag.FlagSet) {
 		&o.TraceSampling,
 		"trace-sampling",
 		o.TraceSampling,
-		"What portion of traces to upload to StackDriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE. Default is 0.1qps.",
+		"What portion of traces to upload to Stackdriver. Either a percent (i.e. '0.1%') or a QPS (i.e. '1qps'). Ignored on GAE. Default is 0.1qps.",
 	)
 	f.StringVar(
 		&o.TsMonAccount,
@@ -285,6 +289,18 @@ func (o *Options) Register(f *flag.FlagSet) {
 		"ts-mon-job-name",
 		o.TsMonJobName,
 		"Job name of tsmon target (disables tsmon if not set)",
+	)
+	f.BoolVar(
+		&o.ProfilingDisable,
+		"profiling-disable",
+		o.ProfilingDisable,
+		"Pass to explicitly disable Stackdriver Profiler",
+	)
+	f.StringVar(
+		&o.ProfilingServiceID,
+		"profiling-service-id",
+		o.ProfilingServiceID,
+		"Service name to associated with profiles in Stackdriver Profiler. Defaults to the value of -ts-mon-job-name.",
 	)
 	f.StringVar(
 		&o.ContainerImageID,
@@ -359,6 +375,22 @@ func (o *Options) shouldEnableTracing() bool {
 		return false // nowhere to upload traces to
 	case !o.Prod && o.TraceSampling == "":
 		return false // in dev mode don't upload samples by default
+	default:
+		return true
+	}
+}
+
+// shouldEnableProfiling is true to enable continuous profiling.
+func (o *Options) shouldEnableProfiling() bool {
+	switch {
+	case o.CloudProject == "":
+		return false // nowhere to upload profiles to
+	case !o.Prod:
+		return false // not running in production
+	case o.ProfilingDisable:
+		return false // explicitly disabled
+	case o.ProfilingServiceID == "" && o.TsMonJobName == "":
+		return false // don't know how to label uploaded profiles
 	default:
 		return true
 	}
@@ -555,6 +587,9 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	}
 	if err := srv.initTracing(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize tracing").Err()
+	}
+	if err := srv.initProfiling(); err != nil {
+		return srv, errors.Annotate(err, "failed to initialize profiling").Err()
 	}
 	if err := srv.initMainPort(); err != nil {
 		return srv, errors.Annotate(err, "failed to initialize the main port").Err()
@@ -1450,7 +1485,7 @@ func (s *Server) initTSMon() error {
 	return nil
 }
 
-// initTracing initialized StackDriver opencensus.io trace exporter.
+// initTracing initialized Stackdriver opencensus.io trace exporter.
 func (s *Server) initTracing() error {
 	if !s.Options.shouldEnableTracing() {
 		return nil
@@ -1462,7 +1497,7 @@ func (s *Server) initTracing() error {
 		if sampling == "" {
 			sampling = "0.1qps"
 		}
-		logging.Infof(s.Context, "Setting up StackDriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
+		logging.Infof(s.Context, "Setting up Stackdriver trace exports to %q (%s)", s.Options.CloudProject, sampling)
 		var err error
 		if s.sampler, err = internal.Sampler(sampling); err != nil {
 			return errors.Annotate(err, "bad -trace-sampling").Err()
@@ -1472,13 +1507,13 @@ func (s *Server) initTracing() error {
 		// a trace, it will let us know through options of the parent span in
 		// X-Cloud-Trace-Context. We will collect only traces from requests that
 		// GAE wants to sample itself.
-		logging.Infof(s.Context, "Setting up StackDriver trace exports to %q using GAE sampling strategy", s.Options.CloudProject)
+		logging.Infof(s.Context, "Setting up Stackdriver trace exports to %q using GAE sampling strategy", s.Options.CloudProject)
 		s.sampler = func(p octrace.SamplingParameters) octrace.SamplingDecision {
 			return octrace.SamplingDecision{Sample: p.ParentContext.IsSampled()}
 		}
 	}
 
-	// Grab the token source to call StackDriver API.
+	// Grab the token source to call Stackdriver API.
 	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return errors.Annotate(err, "failed to initialize token source").Err()
@@ -1500,7 +1535,7 @@ func (s *Server) initTracing() error {
 			"cr.dev/host":    s.Options.Hostname,
 		},
 		OnError: func(err error) {
-			logging.Errorf(s.Context, "StackDriver error: %s", err)
+			logging.Errorf(s.Context, "Stackdriver error: %s", err)
 		},
 	})
 	if err != nil {
@@ -1516,6 +1551,43 @@ func (s *Server) initTracing() error {
 	// Do the final flush before exiting.
 	s.RegisterCleanup(func(context.Context) { exporter.Flush() })
 	return nil
+}
+
+// initProfiling initialized Stackdriver Profiler.
+func (s *Server) initProfiling() error {
+	if !s.Options.shouldEnableProfiling() {
+		return nil
+	}
+
+	// Prefer ProfilingServiceID if given, fall back to TsMonJobName. Replace
+	// forbidden '/' symbol.
+	serviceID := s.Options.ProfilingServiceID
+	if serviceID == "" {
+		serviceID = s.Options.TsMonJobName
+	}
+	serviceID = strings.ReplaceAll(serviceID, "/", "-")
+
+	cfg := profiler.Config{
+		ProjectID:      s.Options.CloudProject,
+		Service:        serviceID,
+		ServiceVersion: s.Options.imageVersion(),
+		Instance:       s.Options.Hostname,
+		// Note: these two options may potentially have impact on performance, but
+		// it is likely small enough not to bother.
+		MutexProfiling: true,
+		AllocForceGC:   true,
+	}
+
+	// Authentication for the profiling agent.
+	ts, err := auth.GetTokenSource(s.Context, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
+	if err != nil {
+		return errors.Annotate(err, "failed to initialize token source").Err()
+	}
+
+	// Launch the agent that runs in the background and periodically collects and
+	// uploads profiles.
+	logging.Infof(s.Context, "Setting up Stackdriver profiler (service %q, version %q)", cfg.Service, cfg.ServiceVersion)
+	return profiler.Start(cfg, option.WithTokenSource(ts))
 }
 
 // initMainPort initializes the server on options.HTTPAddr port.
@@ -1631,7 +1703,7 @@ func (s *Server) startRequestSpan(ctx context.Context, r *http.Request, skipSamp
 		)
 	}
 
-	// Request info (these are recognized by StackDriver natively).
+	// Request info (these are recognized by Stackdriver natively).
 	span.AddAttributes(
 		octrace.StringAttribute("/http/host", r.Host),
 		octrace.StringAttribute("/http/method", r.Method),
