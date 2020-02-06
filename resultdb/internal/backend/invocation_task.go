@@ -47,6 +47,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 			workC <- func() (err error) {
 				// Annotate the returned error with the task id.
 				defer func() {
+					attemptMetric.Add(ctx, 1, string(taskType), getTaskStatus(err))
 					if err != nil {
 						err = errors.Annotate(err, "failed to process task %s", id).Err()
 					}
