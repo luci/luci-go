@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9cccfb51_b2987d1e",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T01:45:18Z",
+      "side": 1,
+      "message": "Move this function here since it\u0027s querying invocations.\n\nIf you have a better idea on where should this function belong to, please let me know.",
+      "revId": "114453f475a726d0120ff4b9995b7a186a170d67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
