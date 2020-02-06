@@ -126,6 +126,5 @@ func TestPurgeExpiredResults(t *testing.T) {
 		// Too many test variants with unexpected results (1001), so no deletions happen.
 		// 1 test * 1002 variants * 2 results per test variants
 		So(countTestResults(ctx, invocations[2]), ShouldEqual, 2004)
-
 	})
 }
