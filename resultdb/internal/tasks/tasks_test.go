@@ -97,29 +97,5 @@ func TestTasks(t *testing.T) {
 			})
 			So(err, ShouldErrLike, "row not found")
 		})
-
-		Convey(`QueryOldestTaskAge`, func() {
-			// Save the tasks to Spanner separately so they have different create time.
-			testutil.MustApply(ctx,
-				Enqueue(TryFinalizeInvocation, "task1", "inv", "payload", start.Add(-2*time.Hour)),
-			)
-			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task2", "inv", "payload", start.Add(-time.Hour)),
-			)
-			testutil.MustApply(ctx,
-				Enqueue(BQExport, "task3", "inv", "payload", start.Add(time.Hour)),
-			)
-
-			ct, err := QueryOldestTaskAge(ctx, BQExport)
-			So(err, ShouldBeNil)
-
-			// The oldest BQExport task age should be task2's age.
-			var expectedCT time.Time
-			err = span.ReadRow(ctx, span.Client(ctx).Single(), "InvocationTasks", BQExport.Key("task2"), map[string]interface{}{
-				"CreateTime": &expectedCT,
-			})
-			So(err, ShouldBeNil)
-			So(ct, ShouldEqual, expectedCT)
-		})
 	})
 }

@@ -166,9 +166,11 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 
 // MustApply applies the mutations to the spanner client in the context.
 // Asserts that application succeeds.
-func MustApply(ctx context.Context, ms ...*spanner.Mutation) {
-	_, err := span.Client(ctx).Apply(ctx, ms)
+// Returns the commit timestamp.
+func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
+	ct, err := span.Client(ctx).Apply(ctx, ms)
 	So(err, ShouldBeNil)
+	return ct
 }
 
 // CombineMutations concatenates mutations
