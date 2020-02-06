@@ -168,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "e4a3ffb9_0dd05ca5",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-06T21:40:11Z",
+      "side": 1,
+      "message": "oops. I didn\u0027t realise that it was invoked inside a tsmon callback. nvm, then",
+      "parentUuid": "f1ddc96f_c1a598ad",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 23
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "293b2dae_07bb6864",
         "filename": "resultdb/internal/backend/metrics_test.go",
         "patchSetId": 2
