@@ -154,3 +154,21 @@ func Delete(ctx context.Context, typ Type, id string) error {
 	})
 	return err
 }
+
+// QueryOldestTaskAge gets the age of the oldest task of typ.
+func QueryOldestTaskAge(ctx context.Context, typ Type) (time.Time, error) {
+	st := spanner.NewStatement(`
+		SELECT MIN(CreateTime)
+		FROM InvocationTasks
+		WHERE TaskType = @taskType
+	`)
+
+	st.Params = map[string]interface{}{
+		"taskType": string(typ),
+	}
+
+	var createTime time.Time
+	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &createTime)
+
+	return createTime, err
+}

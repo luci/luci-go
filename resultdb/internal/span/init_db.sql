@@ -225,3 +225,8 @@ CREATE TABLE InvocationTasks (
   -- work on this task to prevent other workers picking up the same one.
   ProcessAfter TIMESTAMP
 ) PRIMARY KEY (TaskType, TaskId);
+
+-- Index of invocation tasks by task type and create time.
+-- Used by a cron job that periodically looks for the oldest task of each type.
+CREATE INDEX TasksByTypeAndCreateTime
+  ON InvocationTasks (TaskType, CreateTime);
