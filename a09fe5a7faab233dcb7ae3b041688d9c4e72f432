@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc1cac60_52494791",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T23:53:04Z",
+      "side": 1,
+      "message": "i am not sure about getTaskStatus. its impl seems pretty specific to the impl of this func.\ni think it would be simpler to have \n\n  taskStatus :\u003d permanentFailure\n\nbefore this defer. Then\n\n  taskStatus \u003d transientFailure\n\nafter L76\n\nand \n\n  taskStatus \u003d success\n\nbefore L91\n\nit would be less code and less branching (e.g. we check permanentInvocationTaskErrTag.In(err) only once)",
+      "range": {
+        "startLine": 50,
+        "startChar": 49,
+        "endLine": 50,
+        "endChar": 62
+      },
+      "revId": "a09fe5a7faab233dcb7ae3b041688d9c4e72f432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0979143_76c3dd47",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T23:53:04Z",
+      "side": 1,
+      "message": "unnecessary?\n\nsame below",
+      "range": {
+        "startLine": 36,
+        "startChar": 9,
+        "endLine": 36,
+        "endChar": 15
+      },
+      "revId": "a09fe5a7faab233dcb7ae3b041688d9c4e72f432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dde4116_090c4cda",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T23:53:04Z",
+      "side": 1,
+      "message": "nit: taskAttemptMetric\notherwise ambiguous",
+      "range": {
+        "startLine": 57,
+        "startChar": 1,
+        "endLine": 57,
+        "endChar": 14
+      },
+      "revId": "a09fe5a7faab233dcb7ae3b041688d9c4e72f432",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
