@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4abc1243_4c68843a",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T19:03:09Z",
+      "side": 1,
+      "message": "Not yet, this CL is only adding one metric, and there\u0027re 2 more in plan.",
+      "parentUuid": "33773e54_72a3030d",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 8
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dad8a784_ef74f8fe",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "f1ddc96f_c1a598ad",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T19:03:09Z",
+      "side": 1,
+      "message": "Changed the metric to use timestamp.",
+      "parentUuid": "345fea89_4d1c3b7c",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 23
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "293b2dae_07bb6864",
         "filename": "resultdb/internal/backend/metrics_test.go",
         "patchSetId": 2
@@ -92,6 +140,30 @@
       "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "285801fc_7f59b8d1",
+        "filename": "resultdb/internal/backend/metrics_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T19:03:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "293b2dae_07bb6864",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 54,
+        "endChar": 23
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
