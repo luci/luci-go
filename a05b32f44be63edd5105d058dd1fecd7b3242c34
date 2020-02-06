@@ -1,0 +1,176 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d9340c7_909eaad5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "Included",
+      "range": {
+        "startLine": 7,
+        "startChar": 27,
+        "endLine": 7,
+        "endChar": 34
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a2cb2c3_6cc1fd9f",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "span.MustParseInvocationNames\n\n(plural)",
+      "range": {
+        "startLine": 120,
+        "startChar": 10,
+        "endLine": 128,
+        "endChar": 2
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60f00ce1_7ab15a6b",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "unnecessary (and complex): spanner.Delete WILL check if these keys are there, so this is redundant\nhttps://godoc.org/cloud.google.com/go/spanner#Delete",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 143,
+        "endChar": 3
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42748299_65ba4ac8",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "this makes O(added) sequential RPCs instead of O(added) parallel.\n\nplease either add ReadInvocatoinStates that accepts span.InvocatoinIDSet, or use a parallel.WorkPool to make RPCs in parallel",
+      "range": {
+        "startLine": 146,
+        "startChar": 17,
+        "endLine": 148,
+        "endChar": 40
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ded656b_b77320d3",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "essentially same here. Insert does check if the row is already there. Let\u0027s use InsertOrUpdateMap and then we don\u0027t need to fetch \"existing\" which is O(all invocations) as opposed O(request)",
+      "range": {
+        "startLine": 152,
+        "startChar": 29,
+        "endLine": 152,
+        "endChar": 38
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4102e0be_beaaa9b3",
+        "filename": "resultdb/internal/recorder/update_included_invocations_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "feec7940_9d40b4f7",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "move to L40",
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a59519fa_f38d6368",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:42:24Z",
+      "side": 1,
+      "message": "So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)",
+      "range": {
+        "startLine": 199,
+        "startChar": 4,
+        "endLine": 199,
+        "endChar": 35
+      },
+      "revId": "a05b32f44be63edd5105d058dd1fecd7b3242c34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
