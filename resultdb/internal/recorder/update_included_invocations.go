@@ -115,5 +115,48 @@ func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.U
 	if err := validateUpdateIncludedInvocationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	return nil, appstatus.Errorf(codes.Unimplemented, "RPC is not implemented yet")
+	including := span.MustParseInvocationName(in.IncludingInvocation)
+
+	added := make([]span.InvocationID, len(in.AddInvocations))
+	for i, inv := range in.AddInvocations {
+		added[i] = span.MustParseInvocationName(inv)
+	}
+
+	removed := make([]span.InvocationID, len(in.RemoveInvocations))
+	for i, inv := range in.RemoveInvocations {
+		removed[i] = span.MustParseInvocationName(inv)
+	}
+
+	err := mutateInvocation(ctx, including, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Read current inclusions to only apply required changes.
+		existing, err := span.ReadIncludedInvocations(ctx, txn, including)
+		if err != nil {
+			return err
+		}
+
+		// Accumulate keys to remove in a single KeySet.
+		ks := spanner.KeySets()
+		for _, rInv := range removed {
+			if existing.Has(rInv) {
+				ks = spanner.KeySets(spanner.Key{including, rInv}, ks)
+			}
+		}
+		muts := []*spanner.Mutation{spanner.Delete("IncludedInvocations", ks)}
+
+		for _, aInv := range added {
+			// Ensure every included invocation exists.
+			if _, err := span.ReadInvocationState(ctx, txn, aInv); err != nil {
+				return err
+			}
+			if !existing.Has(aInv) {
+				muts = append(muts, span.InsertMap("IncludedInvocations", map[string]interface{}{
+					"InvocationId":         including,
+					"IncludedInvocationId": aInv,
+				}))
+			}
+		}
+		return txn.BufferWrite(muts)
+	})
+
+	return &empty.Empty{}, err
 }
