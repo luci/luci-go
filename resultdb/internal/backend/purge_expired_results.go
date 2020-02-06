@@ -16,7 +16,6 @@ package backend
 
 import (
 	"context"
-	"time"
 
 	"cloud.google.com/go/spanner"
 
@@ -84,9 +83,9 @@ func dispatchExpiredResultDeletionTasks(ctx context.Context, invIDs []span.Invoc
 
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
-func purgeExpiredResults(ctx context.Context) {
+func (b *backend) purgeExpiredResults(ctx context.Context) {
 	recordExpiredResultsDelayMetric(ctx)
-	processingLoop(ctx, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+	b.processingLoop(ctx, func(ctx context.Context) error {
 		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, maxPurgeTestResultsWorkers)
 		if err != nil {
 			return err

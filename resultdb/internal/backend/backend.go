@@ -49,9 +49,16 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 	tl.mu.Unlock()
 }
 
+type backend struct {
+	*Options
+
+	// if >0, timeout for each processingLoop() iteration.
+	processingLoopIterationTimeout time.Duration
+}
+
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (1s) and backs off linearly on errors.
-func processingLoop(ctx context.Context, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
+func (b *backend) processingLoop(ctx context.Context, f func(context.Context) error) {
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
@@ -63,11 +70,18 @@ func processingLoop(ctx context.Context, maxSleep, iterationTimeout time.Duratio
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
-		ctx, _ = context.WithTimeout(ctx, iterationTimeout)
+		if b.processingLoopIterationTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, b.processingLoopIterationTimeout)
+			defer cancel()
+		}
 		return f(ctx)
 	}
 
 	minInterval := time.Second
+	if b.NoLoopingInterval {
+		minInterval = 0
+	}
 
 	attempt := 0
 	var iterationCounter int64
@@ -89,6 +103,8 @@ func processingLoop(ctx context.Context, maxSleep, iterationTimeout time.Duratio
 		if minSleep := minInterval - clock.Since(ctx, start); sleep < minSleep {
 			sleep = minSleep
 		}
+
+		const maxSleep = 5 * time.Second
 		if sleep > maxSleep {
 			sleep = maxSleep
 		}
@@ -103,20 +119,34 @@ func processingLoop(ctx context.Context, maxSleep, iterationTimeout time.Duratio
 
 // Options is backend server configuration.
 type Options struct {
-	// Whether to purge expired results.
+	// PurgeExiredResults instructs backend to purge expired results.
 	PurgeExiredResults bool
+
+	// NoLoopingInterval instructs backend loops to spin as fast as possible.
+	// Useful in integration tests to reduce the test time.
+	NoLoopingInterval bool
+
+	// ForceLeaseDuration is the duration to use instead of task-type-specific
+	// durations, if ForceLeaseDuration > 0.
+	// Useful in integration tests to reduce the test time.
+	ForceLeaseDuration time.Duration
 }
 
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
+	b := &backend{
+		Options:                        &opts,
+		processingLoopIterationTimeout: 10 * time.Second,
+	}
+
 	for _, taskType := range tasks.AllTypes {
 		taskType := taskType
 		activity := fmt.Sprintf("resultdb.task.%s", taskType)
 		srv.RunInBackground(activity, func(ctx context.Context) {
-			runInvocationTasks(ctx, taskType)
+			b.runInvocationTasks(ctx, taskType)
 		})
 	}
 	if opts.PurgeExiredResults {
-		srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
+		srv.RunInBackground("resultdb.purge_expired_results", b.purgeExpiredResults)
 	}
 }
