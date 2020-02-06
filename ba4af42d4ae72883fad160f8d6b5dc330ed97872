@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5aaa361d_15d62f80",
+        "filename": "resultdb/internal/span/init_db.sql",
+        "patchSetId": 8
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T04:54:09Z",
+      "side": 1,
+      "message": "this will create a hotspot https://cloud.google.com/spanner/docs/schema-design#primary-key-prevent-hotspots \nand is not strictly needed. It is cheaper to scan entire table occasionally, then add work for every request that adds/removes task\n\ni just ran it without an index on 4600580 tasks. it completed in ~2s. this latency is ok for an background task.",
+      "revId": "ba4af42d4ae72883fad160f8d6b5dc330ed97872",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
