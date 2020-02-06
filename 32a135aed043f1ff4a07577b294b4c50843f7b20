@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "de31b098_47eafd3a",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T20:42:21Z",
+      "side": 1,
+      "message": "The TODO is not correct actually, I meant to add metrics. Any way, since I\u0027m actually working on adding metrics now, I don\u0027t really need this TODO to remind me anything. Removed.",
+      "parentUuid": "fa5d8b08_ad1ae1ec",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 8
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dad8a784_ef74f8fe",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 2
