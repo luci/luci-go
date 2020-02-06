@@ -104,6 +104,15 @@ func (s InvocationIDSet) String() string {
 	return fmt.Sprintf("%q", strs)
 }
 
+// Keys returns a spanner.KeySet.
+func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
+	ret := spanner.KeySets()
+	for id := range s {
+		ret = spanner.KeySets(id.Key(suffix...), ret)
+	}
+	return ret
+}
+
 // MustParseInvocationNames converts invocation names to InvocationIDSet.
 // Panics if a name is invalid. Useful for situations when names were already
 // validated.
