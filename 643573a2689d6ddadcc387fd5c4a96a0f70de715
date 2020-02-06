@@ -22,6 +22,29 @@
       "revId": "643573a2689d6ddadcc387fd5c4a96a0f70de715",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a930674a_4bc2782d",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T23:56:07Z",
+      "side": 1,
+      "message": "clock.Since\n\nnot sure it works with .UTC()",
+      "range": {
+        "startLine": 56,
+        "startChar": 25,
+        "endLine": 56,
+        "endChar": 60
+      },
+      "revId": "643573a2689d6ddadcc387fd5c4a96a0f70de715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
