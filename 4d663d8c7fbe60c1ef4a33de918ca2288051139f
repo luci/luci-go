@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9f03e8d8_908899e9",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-06T19:33:15Z",
+      "side": 1,
+      "message": "Done. Moved it to its only call site. Don\u0027t like to return errors for non-errors.",
+      "parentUuid": "1bf02533_72731ac4",
+      "range": {
+        "startLine": 387,
+        "startChar": 19,
+        "endLine": 387,
+        "endChar": 47
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cce0c255_93b95523",
         "filename": "server/server.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2020-02-06T17:10:46Z",
       "side": 1,
       "message": "the L569 logic is missing here",
+      "range": {
+        "startLine": 1574,
+        "startChar": 28,
+        "endLine": 1574,
+        "endChar": 36
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64b81644_3dd6fce7",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1574,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-06T19:33:15Z",
+      "side": 1,
+      "message": "What do you mean by that? s.Options.Hostname is same as srv.Options.Hostname there.",
+      "parentUuid": "cce0c255_93b95523",
       "range": {
         "startLine": 1574,
         "startChar": 28,
@@ -68,6 +116,30 @@
       "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "640b3e12_f6588f4a",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1586,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-06T19:33:15Z",
+      "side": 1,
+      "message": "It\u0027s essentially 1 line, and a stable pattern in code, so no. I\u0027ll reconsider when there are more than 2 occurrences. https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)",
+      "parentUuid": "c73770e3_619e7a3b",
+      "range": {
+        "startLine": 1581,
+        "startChar": 1,
+        "endLine": 1586,
+        "endChar": 0
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
