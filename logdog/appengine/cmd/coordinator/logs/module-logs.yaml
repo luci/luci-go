@@ -37,15 +37,19 @@ handlers:
   script: _go_app
   secure: always
 
+liveness_check:
+  path: "/_ah/health"
+  check_interval_sec: 20
+  timeout_sec: 10
+  # Restart after 200 sec of unhealthiness.
+  failure_threshold: 10
+  success_threshold: 1
 
-# Have some more liberal health check parameters, as we've observed "nginx"
-# timing out in production.
-health_check:
-  enable_health_check: True
-  check_interval_sec: 5
-  timeout_sec: 4
-  # Stop accepting requests after 20 sec of unhealthiness.
-  unhealthy_threshold: 4
-  healthy_threshold: 1
-  # Restart after 2 min of unhealthiness.
-  restart_threshold: 24
+readiness_check:
+  path: "/_ah/health"
+  check_interval_sec: 20
+  timeout_sec: 10
+  # Stop accepting requests after 80 sec of unhealthiness.
+  failure_threshold: 4
+  success_threshold: 1
+  app_start_timeout_sec: 300
