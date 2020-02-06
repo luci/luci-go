@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e2a45fc_e908da7e",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T19:15:46Z",
+      "side": 1,
+      "message": "UNIX timestamp\n\n?",
+      "range": {
+        "startLine": 41,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 20
+      },
+      "revId": "acdc3abe8b5fd0bf11eba4c5b3e44fd836ff2ce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56708a8c_133d13f1",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T19:15:46Z",
+      "side": 1,
+      "message": "nit: inline\n\nlogging.Errorf would work with just \"typ\" because %s is smart enough, so this would be inlined only into L92",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 8
+      },
+      "revId": "acdc3abe8b5fd0bf11eba4c5b3e44fd836ff2ce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "becd7527_474060b7",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T19:15:46Z",
+      "side": 1,
+      "message": "why not just return it in MustApply? it is not a breaking change: the caller does not have to use the return value",
+      "range": {
+        "startLine": 175,
+        "startChar": 5,
+        "endLine": 175,
+        "endChar": 27
+      },
+      "revId": "acdc3abe8b5fd0bf11eba4c5b3e44fd836ff2ce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

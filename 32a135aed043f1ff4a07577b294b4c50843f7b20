@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "fa5d8b08_ad1ae1ec",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T19:15:46Z",
+      "side": 1,
+      "message": "i mean. it wouldn\u0027t be done in this codebase anyway. All we can do here is a metric and that\u0027s what this CL does. There will no other CL in the future where you DO this and remove this TODO.\n\nif you need a method to track alerts specifically, consider a bug.",
+      "parentUuid": "4abc1243_4c68843a",
+      "range": {
+        "startLine": 97,
+        "startChar": 4,
+        "endLine": 97,
+        "endChar": 8
+      },
+      "revId": "32a135aed043f1ff4a07577b294b4c50843f7b20",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dad8a784_ef74f8fe",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 2
