@@ -41,6 +41,11 @@ var (
 		"The creation UNIX timestamp of the oldest task.",
 		&types.MetricMetadata{Units: types.Seconds},
 		field.String("type"))
+
+	purgedInvocationsMetric = metric.NewCounter(
+		"resultdb/purged_invocations",
+		"How many invocations have had their expected test results purged",
+		nil)
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {

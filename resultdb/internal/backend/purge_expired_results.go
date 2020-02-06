@@ -165,6 +165,7 @@ func deleteTestResults(ctx context.Context, id span.InvocationID, except []testV
 		return err
 	}
 	logging.Infof(ctx, "Deleted %d expired test result rows in %s", count, id.Name())
+	purgedInvocationsMetric.Add(ctx, 1)
 	return nil
 }
 
