@@ -45,8 +45,11 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 			id := id
 			ctx := logging.SetField(ctx, "task_id", id)
 			workC <- func() (err error) {
-				// Annotate the returned error with the task id.
 				defer func() {
+					// Send metrics to tsmon.
+					attemptMetric.Add(ctx, 1, string(taskType), getTaskStatus(err))
+
+					// Annotate the returned error with the task id.
 					if err != nil {
 						err = errors.Annotate(err, "failed to process task %s", id).Err()
 					}
