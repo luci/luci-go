@@ -5850,10 +5850,6 @@ substep: <
       seconds: 1507651971
       nanos: 251466881
     >
-    property: <
-      name: "failure_hash"
-      value: "\"06ef69ba814934114b05bee1a43f963a745661e9\""
-    >
   >
 >
 substep: <
