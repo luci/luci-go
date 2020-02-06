@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "807238e2_e1b520c5",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1574,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:31:16Z",
+      "side": 1,
+      "message": "misread the code 😞",
+      "parentUuid": "64b81644_3dd6fce7",
+      "range": {
+        "startLine": 1574,
+        "startChar": 28,
+        "endLine": 1574,
+        "endChar": 36
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c73770e3_619e7a3b",
         "filename": "server/server.go",
         "patchSetId": 2
@@ -131,6 +155,30 @@
       "side": 1,
       "message": "It\u0027s essentially 1 line, and a stable pattern in code, so no. I\u0027ll reconsider when there are more than 2 occurrences. https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)",
       "parentUuid": "c73770e3_619e7a3b",
+      "range": {
+        "startLine": 1581,
+        "startChar": 1,
+        "endLine": 1586,
+        "endChar": 0
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a5a65a1c_83db1394",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1586,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:31:16Z",
+      "side": 1,
+      "message": "rule of 3 sgtm.\n\n\u003e 1 line\n\ni meant we could initialize Server.cloudTokenSource once and then reuse it here",
+      "parentUuid": "640b3e12_f6588f4a",
       "range": {
         "startLine": 1581,
         "startChar": 1,
