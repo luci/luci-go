@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e4bc6f5_1e972920",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-06T23:56:20Z",
+      "side": 1,
+      "message": "If there is no row matching with the `where-clause`, does PartitionedUpdate() return an error, like ErrNoSuchEntity, or nil with 0 in count?\n\nIf no rows were deleted (count \u003d\u003d 0), shouldn\u0027t be this purgeInvocationMetric.Add() skipped?",
+      "range": {
+        "startLine": 163,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 36
+      },
+      "revId": "8deb193c1727c551e2ba6cb7e0485203df3d9c66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
