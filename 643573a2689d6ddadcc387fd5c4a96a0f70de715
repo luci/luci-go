@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b31ee151_3d745871",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-06T23:40:24Z",
+      "side": 1,
+      "message": "is UTC really necessary if you only care about the delta?",
+      "range": {
+        "startLine": 49,
+        "startChar": 31,
+        "endLine": 49,
+        "endChar": 37
+      },
+      "revId": "643573a2689d6ddadcc387fd5c4a96a0f70de715",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
