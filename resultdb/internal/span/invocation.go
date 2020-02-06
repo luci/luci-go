@@ -291,3 +291,29 @@ func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string,
 	err := ReadInvocation(ctx, txn, id, map[string]interface{}{"Realm": &realm})
 	return realm, err
 }
+
+// ExpiredResultsDelaySeconds computes the age of the oldest invocation
+// pending to be purged in seconds.
+func ExpiredResultsDelaySeconds(ctx context.Context) (int64, error) {
+	st := spanner.NewStatement(`
+		SELECT GREATEST(0, TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MIN(EarliestExpiration), SECOND)) AS BacklogSeconds
+		FROM (
+			SELECT (
+				SELECT MIN(ExpectedTestResultsExpirationTime)
+				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+				WHERE ShardId = TargetShard
+				AND ExpectedTestResultsExpirationTime IS NOT NULL
+			) AS EarliestExpiration
+			FROM UNNEST(GENERATE_ARRAY(0, (
+				SELECT MAX(ShardId)
+				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+				WHERE ExpectedTestResultsExpirationTime IS NOT NULL
+			))) AS TargetShard
+		)
+	`)
+	var ret int64
+	if err := QueryFirstRow(ctx, Client(ctx).Single(), st, &ret); err != nil {
+		return 0, err
+	}
+	return ret, nil
+}

@@ -106,7 +106,7 @@ func TestPurgeExpiredResults(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(expiredResultsInvocationIds), ShouldEqual, 3)
 
-		bls, err := expiredResultsDelaySeconds(ctx)
+		bls, err := span.ExpiredResultsDelaySeconds(ctx)
 		So(err, ShouldBeNil)
 		// The backlog query uses spanner's CURRENT_TIMESTAMP(), and the invocations
 		// above have their results expiration at some constant timestamp in the
@@ -126,6 +126,5 @@ func TestPurgeExpiredResults(t *testing.T) {
 		// Too many test variants with unexpected results (1001), so no deletions happen.
 		// 1 test * 1002 variants * 2 results per test variants
 		So(countTestResults(ctx, invocations[2]), ShouldEqual, 2004)
-
 	})
 }
