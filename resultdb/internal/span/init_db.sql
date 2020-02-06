@@ -215,6 +215,9 @@ CREATE TABLE InvocationTasks (
   -- Depends on task type. See "taskType" type in the Go code for examples.
   Payload BYTES(MAX),
 
+  -- When the task was created.
+  CreateTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+
   -- When to process the task.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
   -- or a future time indicating the invocation is not available to process yet.

@@ -258,8 +258,8 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
-		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, ProcessAfter)
-		SELECT @taskType, FORMAT("%s/%s", @invID, including.InvocationId), including.InvocationId, CURRENT_TIMESTAMP()
+		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, CreateTime, ProcessAfter)
+		SELECT @taskType, FORMAT("%s/%s", @invID, including.InvocationId), including.InvocationId, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 		FROM IncludedInvocations@{FORCE_INDEX=ReversedIncludedInvocations} incl
 		JOIN Invocations including ON incl.InvocationId = including.InvocationId
 		WHERE IncludedInvocationId = @invID AND including.State = @finalizing
@@ -283,8 +283,8 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()
 	// in "INSERT INTO ... SELECT" queries.
 	st := spanner.NewStatement(`
-		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, ProcessAfter)
-		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, CURRENT_TIMESTAMP()
+		INSERT INTO InvocationTasks (TaskType, TaskId, InvocationId, Payload, CreateTime, ProcessAfter)
+		SELECT @taskType, FORMAT("%s:%d",  @invID, i), @invID, payload, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()
 		FROM Invocations inv, UNNEST(inv.BigQueryExports) payload WITH OFFSET AS i
 		WHERE inv.InvocationId = @invID
 	`)
