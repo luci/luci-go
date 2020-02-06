@@ -16,6 +16,24 @@
       "revId": "114453f475a726d0120ff4b9995b7a186a170d67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c5bb097_b3bcf982",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T03:49:11Z",
+      "side": 1,
+      "message": "no need in the newer patches.\n\nThough talked with nodir@ offline, and since this function will only used by this package, it is better to keep it closer here.",
+      "parentUuid": "9cccfb51_b2987d1e",
+      "revId": "114453f475a726d0120ff4b9995b7a186a170d67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
