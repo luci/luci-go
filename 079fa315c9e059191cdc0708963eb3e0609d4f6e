@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c2dd98a_81222ff5",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T20:44:02Z",
+      "side": 1,
+      "message": "nit: omit this. metric names usually don\u0027t describe their fields (because does not scale with the number of fields)",
+      "range": {
+        "startLine": 41,
+        "startChar": 49,
+        "endLine": 41,
+        "endChar": 59
+      },
+      "revId": "079fa315c9e059191cdc0708963eb3e0609d4f6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
