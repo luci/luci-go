@@ -164,11 +164,18 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	return err
 }
 
-// MustApply applies the mutations to the spanner client in the context.
-// Asserts that application succeeds.
+// MustApply is the same as MustApplyWithTimeStamp without return parameters.
 func MustApply(ctx context.Context, ms ...*spanner.Mutation) {
-	_, err := span.Client(ctx).Apply(ctx, ms)
+	MustApplyWithTimeStamp(ctx, ms...)
+}
+
+// MustApplyWithTimeStamp applies the mutations to the spanner client in the context.
+// Asserts that application succeeds.
+// Returns the commit time.
+func MustApplyWithTimeStamp(ctx context.Context, ms ...*spanner.Mutation) time.Time {
+	ct, err := span.Client(ctx).Apply(ctx, ms)
 	So(err, ShouldBeNil)
+	return ct
 }
 
 // CombineMutations concatenates mutations
