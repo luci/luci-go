@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1bf02533_72731ac4",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 387,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T17:10:46Z",
+      "side": 1,
+      "message": "if profiling does not get enabled, it might be difficult to tell which of these reasons applied. Consider turning these comments into return fmt.Errorf(\"\u003creason\u003e\") and logging at the callsite",
+      "range": {
+        "startLine": 387,
+        "startChar": 19,
+        "endLine": 387,
+        "endChar": 47
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cce0c255_93b95523",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1574,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T17:10:46Z",
+      "side": 1,
+      "message": "the L569 logic is missing here",
+      "range": {
+        "startLine": 1574,
+        "startChar": 28,
+        "endLine": 1574,
+        "endChar": 36
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c73770e3_619e7a3b",
+        "filename": "server/server.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1586,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-06T17:10:46Z",
+      "side": 1,
+      "message": "we have two AsSelf GCP TSs: here and in L1517. Refactor?",
+      "range": {
+        "startLine": 1581,
+        "startChar": 1,
+        "endLine": 1586,
+        "endChar": 0
+      },
+      "revId": "4d663d8c7fbe60c1ef4a33de918ca2288051139f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
