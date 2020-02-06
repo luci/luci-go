@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "989b1842_86a7a1b7",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T23:56:08Z",
+      "side": 1,
+      "message": "nit: move this comment to before L136?",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 45
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c74f7bd_94546706",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-06T23:56:08Z",
+      "side": 1,
+      "message": "Nit: Should we return nil as ret if err !\u003d nil?",
+      "range": {
+        "startLine": 302,
+        "startChar": 8,
+        "endLine": 302,
+        "endChar": 11
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
