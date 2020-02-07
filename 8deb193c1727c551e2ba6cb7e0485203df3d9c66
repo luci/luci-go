@@ -45,6 +45,54 @@
       "revId": "8deb193c1727c551e2ba6cb7e0485203df3d9c66",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32a7e487_e7ee7f47",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-07T03:52:09Z",
+      "side": 1,
+      "message": "I have moved this to the end of unsetInvocationResultExpiration so that we only count it when it succeeds.",
+      "parentUuid": "ada5233e_43287c79",
+      "range": {
+        "startLine": 168,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 24
+      },
+      "revId": "8deb193c1727c551e2ba6cb7e0485203df3d9c66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf681f91_c0355586",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-07T03:52:09Z",
+      "side": 1,
+      "message": "Well, if there are no test results to purge that\u0027s okay, we\u0027ll still unset the expiration time column in the invocation so that we don\u0027t process it again, and that\u0027s what we want to count.",
+      "parentUuid": "1e4bc6f5_1e972920",
+      "range": {
+        "startLine": 163,
+        "startChar": 1,
+        "endLine": 168,
+        "endChar": 36
+      },
+      "revId": "8deb193c1727c551e2ba6cb7e0485203df3d9c66",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
