@@ -216,7 +216,7 @@ CREATE TABLE InvocationTasks (
   Payload BYTES(MAX),
 
   -- When the task was created.
-  CreateTime TIMESTAMP OPTIONS (allow_commit_timestamp=true),
+  CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 
   -- When to process the task.
   -- ProcessAfter can be set to NOW indicating the invocation can be processed
