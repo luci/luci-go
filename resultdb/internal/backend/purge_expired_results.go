@@ -46,7 +46,11 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 			"ExpectedTestResultsExpirationTime": nil,
 		}),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	purgedInvocationsMetric.Add(ctx, 1)
+	return nil
 }
 
 // purgeOneInvocation finds test variants with unexpected results and drops the

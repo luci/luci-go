@@ -60,6 +60,11 @@ var (
 		nil,
 		field.String("type"),   // tasks.Type
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
+
+	purgedInvocationsMetric = metric.NewCounter(
+		"resultdb/purged_invocations",
+		"How many invocations have had their expected test results purged",
+		nil)
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {
