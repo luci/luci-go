@@ -29,7 +29,7 @@ import (
 
 // maxPurgeTestResultsWorkers is the number of concurrent invocations to purge of expired
 // results.
-const maxPurgeTestResultsWorkers = 30
+const maxPurgeTestResultsWorkers = 100
 
 // maxTestVariantsToFilter is the maximum number of test variants to include
 // in the exclusion clause of the paritioned delete statement used to purge
