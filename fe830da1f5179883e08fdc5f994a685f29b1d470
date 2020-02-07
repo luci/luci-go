@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b470c950_3b2f4dd8",
+        "filename": "resultdb/internal/backend/metrics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T04:41:31Z",
+      "side": 1,
+      "message": "nit: tasks",
+      "range": {
+        "startLine": 115,
+        "startChar": 27,
+        "endLine": 115,
+        "endChar": 31
+      },
+      "revId": "fe830da1f5179883e08fdc5f994a685f29b1d470",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
