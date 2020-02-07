@@ -39,14 +39,18 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 		leaseDuration = 10 * time.Second
 	}
 
+	taskStatus := transientFailure
 	var mu sync.Mutex
 	err = parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
 			ctx := logging.SetField(ctx, "task_id", id)
 			workC <- func() (err error) {
-				// Annotate the returned error with the task id.
 				defer func() {
+					// Send metrics to tsmon.
+					taskAttemptMetric.Add(ctx, 1, string(taskType), taskStatus)
+
+					// Annotate the returned error with the task id.
 					if err != nil {
 						err = errors.Annotate(err, "failed to process task %s", id).Err()
 					}
@@ -72,6 +76,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				if err != nil {
 					if permanentInvocationTaskErrTag.In(err) {
 						logging.Errorf(ctx, "permanent failure to process the task: %s", err)
+						taskStatus = permanentFailure
 						return tasks.Delete(ctx, taskType, id)
 					}
 					return err
@@ -85,6 +90,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 				mu.Lock()
 				processed = append(processed, id)
 				mu.Unlock()
+				taskStatus = success
 				return nil
 			}
 		}
