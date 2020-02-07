@@ -100,7 +100,11 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
 func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
-	recordOldestTaskMetric(ctx, taskType)
+	ec := recordOldestTaskMetric(ctx, taskType)
+	defer func() {
+		// ensure that the metric report has been completed
+		<-ec
+	}()
 	processingLoop(ctx, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {

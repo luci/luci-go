@@ -21,7 +21,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/logging"
-	tsmoncommon "go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -62,14 +62,16 @@ var (
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
 )
 
-func recordExpiredResultsDelayMetric(ctx context.Context) {
-	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
+func recordExpiredResultsDelayMetric(ctx context.Context) <-chan error {
+	r := parallel.Runner{}
+	return r.RunOne(func() error {
 		val, err := expiredResultsDelaySeconds(ctx)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to get purge backlog delay: %s", err)
-			return
+			return err
 		}
 		expiredResultsDelayMetric.Set(ctx, val)
+		return nil
 	})
 }
 
@@ -99,15 +101,17 @@ func expiredResultsDelaySeconds(ctx context.Context) (int64, error) {
 	return ret, nil
 }
 
-func recordOldestTaskMetric(ctx context.Context, typ tasks.Type) {
-	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
+func recordOldestTaskMetric(ctx context.Context, typ tasks.Type) <-chan error {
+	r := parallel.Runner{}
+	return r.RunOne(func() error {
 		ct, err := queryOldestTask(ctx, typ)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to get the creation time of the oldest task of type %s: %s", typ, err)
-			return
+			return err
 		}
 
 		oldestTaskMetric.Set(ctx, ct.Unix(), string(typ))
+		return nil
 	})
 }
 
