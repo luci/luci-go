@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
@@ -57,6 +58,14 @@ var (
 		"resultdb/task/attempts",
 		"Counts of invocation task attempts.",
 		nil,
+		field.String("type"),   // tasks.Type
+		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
+
+	durationMetric = metric.NewCumulativeDistribution(
+		"resultdb/task/duration",
+		"Distribution of an attempt’s execution duration.",
+		&types.MetricMetadata{Units: types.Microseconds},
+		distribution.DefaultBucketer,
 		field.String("type"),   // tasks.Type
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
 
