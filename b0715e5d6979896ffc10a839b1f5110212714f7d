@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "a31c8b97_7e7952ba",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "remove",
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07363780_85cb5387",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "nit: \"add\" to be consistent with the field name\n\nsame below: \"remove\"",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 6
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "811af21f_438d6cff",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "nit: preallocate: make([]*spanner.Mutation, 0, 1+len(added))",
+      "range": {
+        "startLine": 129,
+        "startChar": 10,
+        "endLine": 129,
+        "endChar": 29
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "989b1842_86a7a1b7",
         "filename": "resultdb/internal/recorder/update_included_invocations.go",
         "patchSetId": 7
@@ -18,6 +81,121 @@
         "startChar": 2,
         "endLine": 131,
         "endChar": 45
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0cdd81f_52c651a0",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "nit:\n\n  switch (states, err :\u003d span.ReadInvocationStates(ctx, txn, added)); {\n     ...2 cases...\n  }",
+      "range": {
+        "startLine": 136,
+        "startChar": 2,
+        "endLine": 136,
+        "endChar": 4
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80804c62_02c9f984",
+        "filename": "resultdb/internal/recorder/update_included_invocations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "in go, errors must not start with upper case letter",
+      "range": {
+        "startLine": 137,
+        "startChar": 44,
+        "endLine": 137,
+        "endChar": 45
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "772b7073_3a52e5d7",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "this isn\u0027t really usable because the order is arbitrary. which state correspond to which id?\nconsider returning a map[InvocationID]pb.Invocation_State",
+      "range": {
+        "startLine": 290,
+        "startChar": 78,
+        "endLine": 290,
+        "endChar": 99
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd862ee7_3973022b",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "nit: inline\n\n    .. Read(...).Do(...)",
+      "range": {
+        "startLine": 291,
+        "startChar": 1,
+        "endLine": 291,
+        "endChar": 4
+      },
+      "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38a5c324_2a48dc18",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T00:10:19Z",
+      "side": 1,
+      "message": "nit: consolidate",
+      "range": {
+        "startLine": 295,
+        "startChar": 2,
+        "endLine": 296,
+        "endChar": 6
       },
       "revId": "b0715e5d6979896ffc10a839b1f5110212714f7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
