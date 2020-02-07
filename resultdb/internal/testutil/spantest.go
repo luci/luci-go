@@ -26,6 +26,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	durpb "github.com/golang/protobuf/ptypes/duration"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -191,6 +192,13 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
 	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
 	So(err, ShouldBeNil)
+}
+
+// MustNotFindRow is a shortcut to do a single row read in a single transaction
+// using the current client, and assert the row was not found.
+func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]interface{}) {
+	err := span.ReadRow(ctx, span.Client(ctx).Single(), table, key, ptrMap)
+	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
 }
 
 func fatalIf(err error) {
