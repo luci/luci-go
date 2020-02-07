@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -46,9 +47,16 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 			id := id
 			ctx := logging.SetField(ctx, "task_id", id)
 			workC <- func() (err error) {
+				startTime := clock.Now(ctx)
+
 				defer func() {
 					// Send metrics to tsmon.
-					taskAttemptMetric.Add(ctx, 1, string(taskType), taskStatus)
+					typeStr := string(taskType)
+
+					duration := float64(time.Since(startTime).Microseconds())
+					durationMetric.Add(ctx, duration, typeStr, taskStatus)
+
+					taskAttemptMetric.Add(ctx, 1, typeStr, taskStatus)
 
 					// Annotate the returned error with the task id.
 					if err != nil {
