@@ -285,6 +285,24 @@ func ReadInvocationState(ctx context.Context, txn Txn, id InvocationID) (pb.Invo
 	return state, err
 }
 
+// ReadInvocationStates reads the states of invocations.
+func ReadInvocationStates(ctx context.Context, txn Txn, ids InvocationIDSet) (map[InvocationID]pb.Invocation_State, error) {
+	ret := make(map[InvocationID]pb.Invocation_State)
+	err := txn.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationID", "State"}).Do(func(r *spanner.Row) error {
+		var id InvocationID
+		var s pb.Invocation_State
+		if err := FromSpanner(r, &id, &s); err != nil {
+			return errors.Annotate(err, "failed to fetch %s", ids).Err()
+		}
+		ret[id] = s
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 // ReadInvocationRealm returns the invocation's realm.
 func ReadInvocationRealm(ctx context.Context, txn Txn, id InvocationID) (string, error) {
 	var realm string
