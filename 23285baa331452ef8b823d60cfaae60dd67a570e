@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2814bc66_3319e803",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:38:50Z",
+      "side": 1,
+      "message": "shorter and does not repeat information already obvious from the function signature\n\n// ReadInvocationStates returns the states of the invocations.",
+      "range": {
+        "startLine": 288,
+        "startChar": 3,
+        "endLine": 289,
+        "endChar": 38
+      },
+      "revId": "23285baa331452ef8b823d60cfaae60dd67a570e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a3aa04c_b51c78b0",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 289,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:38:50Z",
+      "side": 1,
+      "message": "nit: this applies to most functions that do more than one thing, which is vast majority functions written in Go. They don\u0027t explicitly document this, so for consistency let\u0027s not do it here either.",
+      "range": {
+        "startLine": 289,
+        "startChar": 40,
+        "endLine": 289,
+        "endChar": 80
+      },
+      "revId": "23285baa331452ef8b823d60cfaae60dd67a570e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b697dd4_b094d5a3",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:38:50Z",
+      "side": 1,
+      "message": "nit: move up, so that id, s order corresponds to the order of columns in L292",
+      "revId": "23285baa331452ef8b823d60cfaae60dd67a570e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0261eb39_e367781a",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 300,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:38:50Z",
+      "side": 1,
+      "message": "nit: combining an assignment and a condition in one if statement is more readable when the assignment is just one line, but here i think makes it less readable",
+      "range": {
+        "startLine": 300,
+        "startChar": 3,
+        "endLine": 300,
+        "endChar": 16
+      },
+      "revId": "23285baa331452ef8b823d60cfaae60dd67a570e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
