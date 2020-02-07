@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 // Downloader is a high level interface to an isolatedclient.Client.
@@ -427,7 +428,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 
 		if d.options.Cache == nil {
-			if err := retry.Retry(d.ctx, retry.Default, func() error {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 				// no cache use case.
 				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 				if err != nil {
@@ -458,7 +459,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 			}
 			retryCnt := 0
 			var lastRetryErr error
-			if err := retry.Retry(d.ctx, retry.Default, func() error {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 				// cache miss case
 				pr, pw := io.Pipe()
 
@@ -502,7 +503,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 
 	d.pool.Schedule(tarType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := retry.Retry(d.ctx, retry.Default, func() error {
+		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
 			return d.c.Fetch(d.ctx, hash, d.track(&buf))
 		}, nil); err != nil {
@@ -584,7 +585,7 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 func (d *Downloader) scheduleIsolatedJob(hash isolated.HexDigest) {
 	d.pool.Schedule(isolatedType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := retry.Retry(d.ctx, retry.Default, func() error {
+		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
 			return d.c.Fetch(d.ctx, hash, &buf)
 		}, nil); err != nil {

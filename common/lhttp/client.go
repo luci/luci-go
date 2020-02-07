@@ -117,11 +117,6 @@ func NewRequest(ctx context.Context, c *http.Client, rFn retry.Factory, rgen Req
 				// The HTTP status code means the request should be retried.
 				err = errors.Reason("http request failed: %s (HTTP %d)", http.StatusText(status), status).
 					Tag(transient.Tag).Err()
-			case status == 404 && strings.HasPrefix(req.URL.Path, "/_ah/api/"):
-				// Endpoints occasionally return 404 on valid requests!
-				logging.Infof(ctx, "lhttp.Do() got a Cloud Endpoints 404: %#v", resp.Header)
-				err = errors.Reason("http request failed (endpoints): %s (HTTP %d)", http.StatusText(status), status).
-					Tag(transient.Tag).Err()
 			case status >= 400:
 				// Any other failure code is a hard failure.
 				err = fmt.Errorf("http request failed: %s (HTTP %d)", http.StatusText(status), status)

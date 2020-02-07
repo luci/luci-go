@@ -295,8 +295,6 @@ func TestNewRequestDefaultFactory(t *testing.T) {
 		// Immediate failure codes.
 		{statusCode: 403, wantErr: true, wantCalls: 1},
 		{statusCode: 404, wantErr: true, wantCalls: 1},
-		// Special 404 case which will retry.
-		{statusCode: 404, path: "/_ah/api/foo/bar", wantErr: false, wantCalls: 3},
 	}
 
 	ctx := context.Background()
