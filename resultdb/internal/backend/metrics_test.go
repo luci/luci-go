@@ -27,26 +27,35 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	Convey(`TestQueries`, t, func() {
+	Convey(`TestQueryOldestTaskAge`, t, func() {
 		ctx := testutil.SpannerTestContext(t)
 		start := clock.Now(ctx).UTC()
-		Convey(`QueryOldestTaskAge`, func() {
-			// Save the tasks to Spanner separately so they have different create time.
-			// task1 is the oldest of all tasks, but it's not of the requested type.
-			testutil.MustApply(ctx,
-				tasks.Enqueue(tasks.TryFinalizeInvocation, "task1", "inv", "payload", start.Add(-2*time.Hour)),
-			)
-			// The oldest BQExport task should be task2.
-			expectedCT := testutil.MustApply(ctx,
-				tasks.Enqueue(tasks.BQExport, "task2", "inv", "payload", start.Add(-time.Hour)),
-			)
-			testutil.MustApply(ctx,
-				tasks.Enqueue(tasks.BQExport, "task3", "inv", "payload", start.Add(time.Hour)),
-			)
 
+		// Save the tasks to Spanner separately so they have different create time.
+		// task1 is the oldest of all tasks, but it's not of the requested type.
+		testutil.MustApply(ctx,
+			tasks.Enqueue(tasks.TryFinalizeInvocation, "task1", "inv", "payload", start.Add(-2*time.Hour)),
+		)
+		// The oldest BQExport task should be task2.
+		expectedCT := testutil.MustApply(ctx,
+			tasks.Enqueue(tasks.BQExport, "task2", "inv", "payload", start.Add(-time.Hour)),
+		)
+		testutil.MustApply(ctx,
+			tasks.Enqueue(tasks.BQExport, "task3", "inv", "payload", start.Add(time.Hour)),
+		)
+
+		Convey(`successfully get the oldest task`, func() {
 			ct, err := queryOldestTask(ctx, tasks.BQExport)
 			So(err, ShouldBeNil)
-			So(ct, ShouldEqual, expectedCT)
+			So(ct.IsNull(), ShouldBeFalse)
+			So(ct.Time, ShouldEqual, expectedCT)
+		})
+
+		Convey(`no task of a type`, func() {
+			randomType := tasks.Type("random")
+			ct, err := queryOldestTask(ctx, randomType)
+			So(err, ShouldBeNil)
+			So(ct.IsNull(), ShouldBeTrue)
 		})
 	})
 }
