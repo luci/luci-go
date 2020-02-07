@@ -193,3 +193,89 @@ func TestInclude(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdateIncludedInvocations(t *testing.T) {
+	Convey(`TestIncludedInvocations`, t, func() {
+		ctx := SpannerTestContext(t)
+		recorder := newTestRecorderServer()
+
+		const token = "update token"
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
+
+		insInv := InsertInvocation
+
+		assertIncluded := func(includedInvID span.InvocationID) {
+			var throwAway span.InvocationID
+			MustReadRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+				"IncludedInvocationID": &throwAway,
+			})
+		}
+		assertNotIncluded := func(includedInvID span.InvocationID) {
+			var throwAway span.InvocationID
+			MustNotFindRow(ctx, "IncludedInvocations", span.InclusionKey("including", includedInvID), map[string]interface{}{
+				"IncludedInvocationID": &throwAway,
+			})
+		}
+
+		Convey(`Invalid request`, func() {
+			_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{})
+			So(err, ShouldHaveAppStatus, codes.InvalidArgument, `bad request: including_invocation: unspecified`)
+		})
+
+		Convey(`With valid request`, func() {
+			req := &pb.UpdateIncludedInvocationsRequest{
+				IncludingInvocation: "invocations/including",
+				AddInvocations: []string{
+					"invocations/included",
+					"invocations/included2",
+				},
+				RemoveInvocations: []string{
+					"invocations/toberemoved",
+					"invocations/neverexisted",
+				},
+			}
+
+			Convey(`No including invocation`, func() {
+				_, err := recorder.UpdateIncludedInvocations(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/including not found`)
+			})
+
+			Convey(`With existing inclusion`, func() {
+				MustApply(ctx,
+					insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+					insInv("toberemoved", pb.Invocation_FINALIZED, nil),
+				)
+				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
+					IncludingInvocation: "invocations/including",
+					AddInvocations:      []string{"invocations/toberemoved"},
+				})
+				So(err, ShouldBeNil)
+				assertIncluded("toberemoved")
+
+				Convey(`No included invocation`, func() {
+					_, err := recorder.UpdateIncludedInvocations(ctx, req)
+					So(err, ShouldHaveAppStatus, codes.NotFound, `one of the included invocations does not exist`)
+				})
+
+				Convey(`Success - idempotent`, func() {
+					MustApply(ctx,
+						insInv("included", pb.Invocation_FINALIZED, nil),
+						insInv("included2", pb.Invocation_FINALIZED, nil),
+					)
+
+					_, err := recorder.UpdateIncludedInvocations(ctx, req)
+					So(err, ShouldBeNil)
+					assertIncluded("included")
+					assertIncluded("included2")
+					assertNotIncluded("toberemoved")
+
+					_, err = recorder.UpdateIncludedInvocations(ctx, req)
+					So(err, ShouldBeNil)
+					assertIncluded("included")
+					assertIncluded("included2")
+					assertNotIncluded("toberemoved")
+				})
+			})
+		})
+	})
+}
