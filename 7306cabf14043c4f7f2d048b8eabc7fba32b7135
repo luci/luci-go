@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a688a21e_ac5baf83",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:13:02Z",
+      "side": 1,
+      "message": "this isn\u0027t smaller though? this is exactly 10 MB?\n\nNote that MB\u003d\u003d10^6, unlike MiB\u003d2^20\nhttps://simple.wikipedia.org/wiki/Mebibyte",
+      "range": {
+        "startLine": 46,
+        "startChar": 10,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "7306cabf14043c4f7f2d048b8eabc7fba32b7135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f37f5fc9_b4f2a9e1",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-07T22:13:02Z",
+      "side": 1,
+      "message": "it is inconsistent that we pass max count, but not max size.\nplease either pass both, or use the constants inside the func",
+      "range": {
+        "startLine": 201,
+        "startChar": 192,
+        "endLine": 201,
+        "endChar": 208
+      },
+      "revId": "7306cabf14043c4f7f2d048b8eabc7fba32b7135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
