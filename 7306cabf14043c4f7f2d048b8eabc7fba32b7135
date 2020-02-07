@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8e048eb6_3e4e4b83",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-07T22:48:04Z",
+      "side": 1,
+      "message": "I was talking about 10MiB really.\n\nBecause in the error message: \"Error 400: Request payload size exceeds the limit: 10485760 bytes.\"\n\nThough if so https://cloud.google.com/bigquery/quotas#streaming_inserts may not be accurate. Probably I should remove it.\n\nUpdated the comment.",
+      "parentUuid": "a688a21e_ac5baf83",
+      "range": {
+        "startLine": 46,
+        "startChar": 10,
+        "endLine": 46,
+        "endChar": 17
+      },
+      "revId": "7306cabf14043c4f7f2d048b8eabc7fba32b7135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f37f5fc9_b4f2a9e1",
         "filename": "resultdb/internal/backend/bigquery_export.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "7306cabf14043c4f7f2d048b8eabc7fba32b7135",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aac835fe_f69983a8",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-07T22:48:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f37f5fc9_b4f2a9e1",
+      "range": {
+        "startLine": 201,
+        "startChar": 192,
+        "endLine": 201,
+        "endChar": 208
+      },
+      "revId": "7306cabf14043c4f7f2d048b8eabc7fba32b7135",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
