@@ -16,7 +16,6 @@ package backend
 
 import (
 	"context"
-	"time"
 
 	"cloud.google.com/go/spanner"
 
@@ -112,12 +111,17 @@ func recordOldestTaskMetric(ctx context.Context, typ tasks.Type) {
 			return
 		}
 
-		oldestTaskMetric.Set(ctx, ct.Unix(), string(typ))
+		if ct.IsNull() {
+			logging.Debugf(ctx, "No tasks of type %s.", typ)
+			return
+		}
+
+		oldestTaskMetric.Set(ctx, ct.Time.Unix(), string(typ))
 	})
 }
 
 // queryOldestTask gets the create time of the oldest task of typ, in UTC.
-func queryOldestTask(ctx context.Context, typ tasks.Type) (time.Time, error) {
+func queryOldestTask(ctx context.Context, typ tasks.Type) (spanner.NullTime, error) {
 	st := spanner.NewStatement(`
 		SELECT MIN(CreateTime)
 		FROM InvocationTasks
@@ -128,8 +132,8 @@ func queryOldestTask(ctx context.Context, typ tasks.Type) (time.Time, error) {
 		"taskType": string(typ),
 	}
 
-	var createTime time.Time
+	var createTime spanner.NullTime
 	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &createTime)
 
-	return createTime.UTC(), err
+	return createTime, err
 }
