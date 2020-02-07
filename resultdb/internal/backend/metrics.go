@@ -30,6 +30,18 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
+// Statuses of invocation tasks.
+const (
+	// The task completes successfully.
+	success = "SUCCESS"
+
+	// The task runs into a failure that can be resolved by retrying.
+	transientFailure = "TRANSIENT_FAILURE"
+
+	// The task runs into a permanent failure.
+	permanentFailure = "PERMANENT_FAILURE"
+)
+
 var (
 	expiredResultsDelayMetric = metric.NewInt(
 		"resultdb/expired_results_delay",
@@ -40,7 +52,14 @@ var (
 		"resultdb/task/oldest_create_time",
 		"The creation UNIX timestamp of the oldest task.",
 		&types.MetricMetadata{Units: types.Seconds},
-		field.String("type"))
+		field.String("type")) // tasks.Type
+
+	taskAttemptMetric = metric.NewCounter(
+		"resultdb/task/attempts",
+		"Counts of invocation task attempts.",
+		nil,
+		field.String("type"),   // tasks.Type
+		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {
