@@ -31,6 +31,7 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/clock"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 // Downloader is a high level interface to an isolatedclient.Client.
@@ -413,6 +415,16 @@ func (d *Downloader) doSymlink(filename, name string, details *isolated.File) {
 	d.completeFile(name, details)
 }
 
+func tagTransientGoogleAPIError(err error) error {
+	// Responses with HTTP codes < 500, if we got them, indicate fatal errors.
+	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code < 500 {
+		return err
+	}
+	// Everything else (HTTP code >= 500, timeouts, DNS issues, etc) is considered
+	// a transient error.
+	return transient.Tag.Apply(err)
+}
+
 func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.File) {
 	d.pool.Schedule(fileType.Priority(), func() {
 		// Ensure dir exists.
@@ -427,7 +439,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 		}
 
 		if d.options.Cache == nil {
-			if err := retry.Retry(d.ctx, retry.Default, func() error {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 				// no cache use case.
 				f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 				if err != nil {
@@ -438,7 +450,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 				if err := d.c.Fetch(d.ctx, details.Digest, d.track(f)); err != nil {
 					f.Close()
 					os.Remove(filename)
-					return err
+					return tagTransientGoogleAPIError(err)
 				}
 				return nil
 			}, nil); err != nil {
@@ -458,7 +470,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 			}
 			retryCnt := 0
 			var lastRetryErr error
-			if err := retry.Retry(d.ctx, retry.Default, func() error {
+			if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 				// cache miss case
 				pr, pw := io.Pipe()
 
@@ -468,7 +480,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 					if perr := pw.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe writer").Err()
 					}
-					return err
+					return tagTransientGoogleAPIError(err)
 				})
 
 				wg.Go(func() error {
@@ -476,7 +488,7 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 					if perr := pr.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe reader").Err()
 					}
-					return err
+					return tagTransientGoogleAPIError(err)
 				})
 				return wg.Wait()
 			}, func(err error, duration time.Duration) {
@@ -502,9 +514,9 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 
 	d.pool.Schedule(tarType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := retry.Retry(d.ctx, retry.Default, func() error {
+		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
-			return d.c.Fetch(d.ctx, hash, d.track(&buf))
+			return tagTransientGoogleAPIError(d.c.Fetch(d.ctx, hash, d.track(&buf)))
 		}, nil); err != nil {
 			d.addError(tarType, string(hash), err)
 			return
@@ -584,9 +596,9 @@ func (d *Downloader) scheduleTarballJob(tarname string, details *isolated.File) 
 func (d *Downloader) scheduleIsolatedJob(hash isolated.HexDigest) {
 	d.pool.Schedule(isolatedType.Priority(), func() {
 		var buf bytes.Buffer
-		if err := retry.Retry(d.ctx, retry.Default, func() error {
+		if err := retry.Retry(d.ctx, transient.Only(retry.Default), func() error {
 			buf.Reset()
-			return d.c.Fetch(d.ctx, hash, &buf)
+			return tagTransientGoogleAPIError(d.c.Fetch(d.ctx, hash, &buf))
 		}, nil); err != nil {
 			d.addError(isolatedType, string(hash), err)
 			return
