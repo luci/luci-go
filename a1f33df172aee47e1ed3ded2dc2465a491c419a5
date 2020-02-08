@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "25b17041_94bf163f",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "i don\u0027t think we need this constant anymore",
+      "range": {
+        "startLine": 30,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 0
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a182873_e1ae7ac3",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "we no longer need this complexity",
+      "range": {
+        "startLine": 76,
+        "startChar": 0,
+        "endLine": 87,
+        "endChar": 1
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7f845d14_3cbf3805",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "this blocks, so only the first worker is working",
+      "range": {
+        "startLine": 99,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e910271_5e461991",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "let\u0027s select only one",
+      "range": {
+        "startLine": 100,
+        "startChar": 3,
+        "endLine": 100,
+        "endChar": 30
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d667f5d4_b2740c84",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "missing \n\n  i :\u003d i\n\noutside of the func",
+      "range": {
+        "startLine": 100,
+        "startChar": 112,
+        "endLine": 100,
+        "endChar": 113
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67febdb2_c9095f2b",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "let\u0027s make this 1",
+      "range": {
+        "startLine": 124,
+        "startChar": 25,
+        "endLine": 124,
+        "endChar": 36
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "863fc0fb_3c1f4bd2",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:23:44Z",
+      "side": 1,
+      "message": "not necessarily recently. an invocation may not be purged for 2y",
+      "range": {
+        "startLine": 41,
+        "startChar": 63,
+        "endLine": 41,
+        "endChar": 71
+      },
+      "revId": "a1f33df172aee47e1ed3ded2dc2465a491c419a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
