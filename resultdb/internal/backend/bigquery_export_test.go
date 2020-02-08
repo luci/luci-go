@@ -139,9 +139,9 @@ func TestBqTableCache(t *testing.T) {
 				},
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "not_exist",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "not_exist",
 			}
 			shouldCreateTable, err := checkBqTable(ctx, bqExport, t)
 			So(shouldCreateTable, ShouldBeTrue)
@@ -154,9 +154,9 @@ func TestBqTableCache(t *testing.T) {
 				err: fmt.Errorf("random error"),
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "random",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "random",
 			}
 			_, err := checkBqTable(ctx, bqExport, t)
 			So(err, ShouldErrLike, "random error")
@@ -173,9 +173,9 @@ func TestBqTableCache(t *testing.T) {
 				err: nil,
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "pass",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "pass",
 			}
 			_, err := checkBqTable(ctx, bqExport, t)
 			So(err, ShouldBeNil)
