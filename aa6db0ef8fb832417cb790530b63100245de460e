@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8ba7197_f66bbfef",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-08T01:51:19Z",
+      "side": 1,
+      "message": "Thanks!",
+      "revId": "aa6db0ef8fb832417cb790530b63100245de460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "28a9a9ab_4d478274",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-08T01:51:19Z",
+      "side": 1,
+      "message": "Do we need this forced index here?",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 66
+      },
+      "revId": "aa6db0ef8fb832417cb790530b63100245de460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
