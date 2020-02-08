@@ -20,7 +20,6 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/logging"
-	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -76,14 +75,12 @@ var (
 )
 
 func recordExpiredResultsDelayMetric(ctx context.Context) {
-	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
-		val, err := expiredResultsDelaySeconds(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to get purge backlog delay: %s", err)
-			return
-		}
-		expiredResultsDelayMetric.Set(ctx, val)
-	})
+	val, err := expiredResultsDelaySeconds(ctx)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to get purge backlog delay: %s", err)
+		return
+	}
+	expiredResultsDelayMetric.Set(ctx, val)
 }
 
 // expiredResultsDelaySeconds computes the age of the oldest invocation
@@ -113,20 +110,18 @@ func expiredResultsDelaySeconds(ctx context.Context) (int64, error) {
 }
 
 func recordOldestTaskMetric(ctx context.Context, typ tasks.Type) {
-	tsmoncommon.RegisterCallbackIn(ctx, func(ctx context.Context) {
-		ct, err := queryOldestTask(ctx, typ)
-		if err != nil {
-			logging.Errorf(ctx, "Failed to get the creation time of the oldest task of type %s: %s", typ, err)
-			return
-		}
+	ct, err := queryOldestTask(ctx, typ)
+	if err != nil {
+		logging.Errorf(ctx, "Failed to get the creation time of the oldest task of type %s: %s", typ, err)
+		return
+	}
 
-		if ct.IsNull() {
-			logging.Debugf(ctx, "No tasks of type %s.", typ)
-			return
-		}
+	if ct.IsNull() {
+		logging.Debugf(ctx, "No tasks of type %s.", typ)
+		return
+	}
 
-		oldestTaskMetric.Set(ctx, ct.Time.Unix(), string(typ))
-	})
+	oldestTaskMetric.Set(ctx, ct.Time.Unix(), string(typ))
 }
 
 // queryOldestTask gets the create time of the oldest task of typ, in UTC.

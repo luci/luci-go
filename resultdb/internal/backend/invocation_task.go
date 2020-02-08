@@ -108,8 +108,14 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
 func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
-	recordOldestTaskMetric(ctx, taskType)
-	processingLoop(ctx, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+	mCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	go processingLoop(ctx, time.Minute, time.Minute, time.Minute, func(ctx context.Context) error {
+		recordOldestTaskMetric(mCtx, taskType)
+		return nil
+	})
+
+	processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
