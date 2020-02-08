@@ -198,16 +198,3 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 }`)
 	})
 }
-
-func TestCollectRunFailure(t *testing.T) {
-	Convey(`Collect failure`, t, func() {
-		service := &testService{
-			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
-				return nil, &googleapi.Error{Code: 404}
-			},
-		}
-		runner := &collectRun{taskOutput: taskOutputConsole}
-		err := runner.mainInner(context.Background(), service, []string{"123"})
-		So(err, ShouldHaveSameTypeAs, (*googleapi.Error)(nil))
-	})
-}

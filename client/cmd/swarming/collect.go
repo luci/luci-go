@@ -382,11 +382,7 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 		ctx, cancel = clock.WithTimeout(ctx, c.timeout)
 		defer cancel()
 	}
-	return c.mainInner(ctx, service, taskIDs)
-}
 
-// mainInner is extracted out to help with testing.
-func (c *collectRun) mainInner(ctx context.Context, service swarmingService, taskIDs []string) error {
 	// Aggregate results by polling and fetching across multiple goroutines.
 	results := make([]taskResult, len(taskIDs))
 	var wg sync.WaitGroup
@@ -409,15 +405,10 @@ func (c *collectRun) mainInner(ctx context.Context, service swarmingService, tas
 			return err
 		}
 	}
-	var err error
 	for _, result := range results {
-		if result.err != nil {
-			err = result.err
-			continue
-		}
-		if c.taskOutput.includesConsole() {
+		if c.taskOutput.includesConsole() || result.err != nil {
 			result.Print(os.Stdout)
 		}
 	}
-	return err
+	return nil
 }
