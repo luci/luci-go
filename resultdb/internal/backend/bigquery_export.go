@@ -39,7 +39,12 @@ import (
 
 const (
 	maxInvocationGraphSize = 1000
-	maxBatchSize           = 500
+	maxBatchRowCount       = 500
+
+	// HTTP request size limit is 10 MiB according to
+	// https://cloud.google.com/bigquery/quotas#streaming_inserts
+	// Use a smaller size as the limit since we can only estimate the payload size.
+	maxBatchSize = 10000000
 )
 
 var bqTableCache = caching.RegisterLRUCache(50)
@@ -91,7 +96,7 @@ func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bo
 	key := cacheKey{
 		project: bqExport.Project,
 		dataset: bqExport.Dataset,
-		table: bqExport.Table,
+		table:   bqExport.Table,
 	}
 
 	v, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, key, func() (interface{}, time.Duration, error) {
@@ -193,24 +198,34 @@ func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTrans
 	return tvs, nil
 }
 
-func queryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransaction, exportedID span.InvocationID, q span.TestResultQuery, exoneratedTestVariants map[testVariantKey]struct{}, maxBatchSize int, batchC chan []*bigquery.StructSaver) error {
+func queryTestResultsStreaming(
+	ctx context.Context,
+	txn *spanner.ReadOnlyTransaction,
+	exportedID span.InvocationID,
+	q span.TestResultQuery,
+	exoneratedTestVariants map[testVariantKey]struct{},
+	maxBatchRowCount int,
+	maxBatchSize int,
+	batchC chan []*bigquery.StructSaver) error {
 	invs, err := span.ReadInvocationsFull(ctx, txn, q.InvocationIDs)
 	if err != nil {
 		return err
 	}
 
-	rows := make([]*bigquery.StructSaver, 0, maxBatchSize)
+	rows := make([]*bigquery.StructSaver, 0, maxBatchRowCount)
+	batchSize := 0 // Estimated size of rows in bytes.
 	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
 		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr, exonerated))
-		if len(rows) >= maxBatchSize {
+		batchSize += proto.Size(tr)
+		if len(rows) >= maxBatchRowCount || batchSize >= maxBatchSize {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case batchC <- rows:
 			}
-			rows = make([]*bigquery.StructSaver, 0, maxBatchSize)
+			rows = make([]*bigquery.StructSaver, 0, maxBatchRowCount)
 		}
 		return nil
 	})
@@ -246,7 +261,7 @@ func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
-func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport, maxBatchSize int) error {
+func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport, maxBatchRowCount int, maxBatchSize int) error {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
@@ -289,7 +304,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	}
 	eg.Go(func() error {
 		defer close(batchC)
-		return queryTestResultsStreaming(ctx, txn, invID, q, exoneratedTestVariants, maxBatchSize, batchC)
+		return queryTestResultsStreaming(ctx, txn, invID, q, exoneratedTestVariants, maxBatchRowCount, maxBatchSize, batchC)
 	})
 
 	return eg.Wait()
@@ -318,5 +333,5 @@ func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, paylo
 	}
 
 	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
-	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchSize)
+	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchRowCount, maxBatchSize)
 }

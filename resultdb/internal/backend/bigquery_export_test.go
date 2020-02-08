@@ -88,7 +88,7 @@ func TestExportToBigQuery(t *testing.T) {
 
 		Convey(`success`, func() {
 			i := &mockPassInserter{}
-			err := exportTestResultsToBigQuery(ctx, i, "a", bqExport, 2)
+			err := exportTestResultsToBigQuery(ctx, i, "a", bqExport, 2, maxBatchSize)
 			So(err, ShouldBeNil)
 
 			i.mu.Lock()
@@ -109,7 +109,7 @@ func TestExportToBigQuery(t *testing.T) {
 		// To check when encountering an error, the test can run to the end
 		// without hanging, or race detector does not detect anything.
 		Convey(`fail`, func() {
-			err := exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport, 2)
+			err := exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport, 2, maxBatchSize)
 			So(err, ShouldErrLike, "some error")
 		})
 	})
@@ -139,9 +139,9 @@ func TestBqTableCache(t *testing.T) {
 				},
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "not_exist",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "not_exist",
 			}
 			shouldCreateTable, err := checkBqTable(ctx, bqExport, t)
 			So(shouldCreateTable, ShouldBeTrue)
@@ -154,9 +154,9 @@ func TestBqTableCache(t *testing.T) {
 				err: fmt.Errorf("random error"),
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "random",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "random",
 			}
 			_, err := checkBqTable(ctx, bqExport, t)
 			So(err, ShouldErrLike, "random error")
@@ -173,9 +173,9 @@ func TestBqTableCache(t *testing.T) {
 				err: nil,
 			}
 			bqExport := &pb.BigQueryExport{
-				Project:     "project",
-				Dataset:     "dataset",
-				Table:       "pass",
+				Project: "project",
+				Dataset: "dataset",
+				Table:   "pass",
 			}
 			_, err := checkBqTable(ctx, bqExport, t)
 			So(err, ShouldBeNil)
