@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff663436_47f6e033",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:12:04Z",
+      "side": 1,
+      "message": "was this change a part of this CL intentionally? it looks like you had an old checkout",
+      "revId": "a232978820211eb433a3197adb3583b9e8296a5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66d9e97c_cde7f34d",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T00:12:04Z",
+      "side": 1,
+      "message": "would be simpler to have a separate background activity for this (in backend.go) than reimplementing this.",
+      "range": {
+        "startLine": 111,
+        "startChar": 1,
+        "endLine": 112,
+        "endChar": 15
+      },
+      "revId": "a232978820211eb433a3197adb3583b9e8296a5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
