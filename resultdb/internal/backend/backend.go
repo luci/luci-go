@@ -102,7 +102,7 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 // Options is backend server configuration.
 type Options struct {
 	// Whether to purge expired results.
-	PurgeExiredResults bool
+	PurgeExpiredResults bool
 }
 
 // InitServer initializes a backend server.
@@ -114,7 +114,7 @@ func InitServer(srv *server.Server, opts Options) {
 			runInvocationTasks(ctx, taskType)
 		})
 	}
-	if opts.PurgeExiredResults {
+	if opts.PurgeExpiredResults {
 		srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
 	}
 }
