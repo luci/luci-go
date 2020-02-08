@@ -102,10 +102,6 @@ func TestPurgeExpiredResults(t *testing.T) {
 			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
 			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001)}
 
-		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, 100)
-		So(err, ShouldBeNil)
-		So(len(expiredResultsInvocationIds), ShouldEqual, 3)
-
 		bls, err := expiredResultsDelaySeconds(ctx)
 		So(err, ShouldBeNil)
 		// The backlog query uses spanner's CURRENT_TIMESTAMP(), and the invocations
@@ -114,7 +110,11 @@ func TestPurgeExpiredResults(t *testing.T) {
 		So(bls, ShouldBeGreaterThan, 0)
 
 		// Purge expired data.
-		So(dispatchExpiredResultDeletionTasks(ctx, expiredResultsInvocationIds), ShouldBeNil)
+		for _ = range invocations {
+			id, err := sampleExpiredResultsInvocations(ctx, 0)
+			So(err, ShouldBeNil)
+			So(purgeOneInvocation(ctx, id), ShouldBeNil)
+		}
 
 		// Count remaining results
 		// 10 tests * 1 variant with unexpected results * 2 results per test variant
