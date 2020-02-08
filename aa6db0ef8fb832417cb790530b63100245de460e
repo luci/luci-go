@@ -19,6 +19,52 @@
     },
     {
       "key": {
+        "uuid": "fd75a4f3_7adc6126",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T22:14:09Z",
+      "side": 1,
+      "message": "as i wrote earlier, this is a blocking call, i.e. this func does not return until the server is down, so your loop is not proceeding to the second iteration. You need to start a goroutine per worker",
+      "range": {
+        "startLine": 88,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 16
+      },
+      "revId": "aa6db0ef8fb832417cb790530b63100245de460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65a5850f_862b9fec",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-08T22:14:09Z",
+      "side": 1,
+      "message": "it returns only one, so remove? also consider \"randomExpiredResultsInvocation\". Using the word \"sample\" with a sample size 1 may be surprising to a future reader.",
+      "range": {
+        "startLine": 104,
+        "startChar": 35,
+        "endLine": 104,
+        "endChar": 36
+      },
+      "revId": "aa6db0ef8fb832417cb790530b63100245de460e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "28a9a9ab_4d478274",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 3
