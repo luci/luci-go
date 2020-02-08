@@ -43,8 +43,9 @@ const (
 
 	// HTTP request size limit is 10 MiB according to
 	// https://cloud.google.com/bigquery/quotas#streaming_inserts
-	// Use a smaller size as the limit since we can only estimate the payload size.
-	maxBatchSize = 10000000
+	// Use a smaller size as the limit since we are only using the size of
+	// test results to estimate the whole payload size.
+	maxBatchSize = 6000000
 )
 
 var bqTableCache = caching.RegisterLRUCache(50)
