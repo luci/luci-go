@@ -106,7 +106,7 @@ func redirectLUCIBuild(c *router.Context) error {
 		numberOrID = fmt.Sprintf("b%d", id)
 	}
 
-	u := fmt.Sprintf("/p/%s/builders/%s/%s/%s", builder.Project, builder.Bucket, builder.Builder, numberOrID)
+	u := fmt.Sprintf("/p/%s/builders/%s/%s/%s?%s", builder.Project, builder.Bucket, builder.Builder, numberOrID, c.Request.URL.RawQuery)
 	http.Redirect(c.Writer, c.Request, u, http.StatusMovedPermanently)
 	return nil
 }
