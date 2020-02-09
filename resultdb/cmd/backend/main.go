@@ -25,7 +25,7 @@ import (
 
 func main() {
 	var opts backend.Options
-	flag.BoolVar(&opts.PurgeExiredResults, "purge-expired-results", false,
+	flag.BoolVar(&opts.PurgeExpiredResults, "purge-expired-results", false,
 		"Whether to purge expired test results belonging to test variants that have only expected results")
 
 	internal.Main(func(srv *server.Server) error {

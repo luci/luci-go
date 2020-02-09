@@ -54,6 +54,7 @@ func Main(init func(srv *server.Server) error) {
 		if srv.Context, err = withProdSpannerClient(srv.Context, *spannerDB, !*prodMode); err != nil {
 			return err
 		}
+		srv.RegisterCleanup(func(ctx context.Context) { span.Client(ctx).Close() })
 
 		return init(srv)
 	})
