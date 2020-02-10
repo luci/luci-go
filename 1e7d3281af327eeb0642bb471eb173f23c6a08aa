@@ -16,6 +16,24 @@
       "revId": "1e7d3281af327eeb0642bb471eb173f23c6a08aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35d3fe17_57cf9c8e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-02-10T09:33:34Z",
+      "side": 1,
+      "message": "I think processing isolate file is the most important work in remap, but want to avoid doing more than that in this command.",
+      "parentUuid": "2981e5d9_53f7bc35",
+      "revId": "1e7d3281af327eeb0642bb471eb173f23c6a08aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
