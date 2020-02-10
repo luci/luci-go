@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7509e764_1a169e31",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-10T22:23:05Z",
+      "side": 1,
+      "message": "this will be called soon after goroutines start, so they will die. In other words, this does not work. Did you try it yourself? this func needs to block until all child goroutines exit, e.g. using error group or wait group",
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "418af267_8a746fe5",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-10T22:23:05Z",
+      "side": 1,
+      "message": "golint likes \"ID\"",
+      "range": {
+        "startLine": 104,
+        "startChar": 62,
+        "endLine": 104,
+        "endChar": 64
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "620f0f4d_73de8f99",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-10T22:23:05Z",
+      "side": 1,
+      "message": "why not int which is simpler?",
+      "range": {
+        "startLine": 104,
+        "startChar": 65,
+        "endLine": 104,
+        "endChar": 70
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6ae3fac_89fdbfde",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-10T22:23:05Z",
+      "side": 1,
+      "message": "this is a bit unconventional and adds complexity to the callsite. Why not int?",
+      "range": {
+        "startLine": 42,
+        "startChar": 43,
+        "endLine": 42,
+        "endChar": 48
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
