@@ -95,12 +95,12 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 
 	// Verify we have a change ID if the command requires one.
 	if c.changeID && len(c.input.ChangeID) == 0 {
-		return errors.New("change-id is required")
+		return errors.New("change_id is required")
 	}
 
 	// Verify we have a revision ID if the command requires one.
 	if c.revisionID && len(c.input.RevisionID) == 0 {
-		return errors.New("revision-id is required")
+		return errors.New("revision_id is required")
 	}
 	return nil
 }
@@ -168,7 +168,7 @@ func cmdChangeAbandon(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID and optionally a JSON payload, e.g.
 {
-  "change-id": <change-id>,
+  "change_id": <change-id>,
   "input": <JSON payload>
 }
 
@@ -253,7 +253,7 @@ func cmdChangeDetail(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID and optionally query parameters, e.g.
 {
-  "change-id": <change-id>,
+  "change_id": <change-id>,
   "params": <query parameters as JSON>
 }
 
@@ -287,7 +287,7 @@ func cmdChangesSubmittedTogether(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID and optionally query parameters, e.g.
 {
-  "change-id": <change-id>,
+  "change_id": <change-id>,
   "params": <query parameters as JSON>
 }
 
@@ -321,8 +321,8 @@ func cmdSetReview(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID, a revision ID, and a JSON payload, e.g.
 {
-  "change-id": <change-id>,
-  "revision-id": <revision-id>,
+  "change_id": <change-id>,
+  "revision_id": <revision-id>,
   "input": <JSON payload>
 }
 
@@ -360,7 +360,7 @@ func cmdSubmit(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID, e.g.
 {
-  "change-id": <change-id>,
+  "change_id": <change-id>,
 }
 
 For more information on change-id, see
@@ -390,7 +390,7 @@ func cmdRestore(authOpts auth.Options) *subcommands.Command {
 
 Input should contain a change ID, and optionally a JSON payload, e.g.
 {
-  "change-id": <change-id>,
+  "change_id": <change-id>,
   "input": <JSON payload>
 }
 
