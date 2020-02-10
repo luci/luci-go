@@ -34,6 +34,41 @@
       "revId": "1e7d3281af327eeb0642bb471eb173f23c6a08aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a87fece6_50027e8f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-02-10T09:42:15Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "35d3fe17_57cf9c8e",
+      "revId": "1e7d3281af327eeb0642bb471eb173f23c6a08aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cde7c33d_5fc24b43",
+        "filename": "client/cmd/isolate/remap.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1366072
+      },
+      "writtenOn": "2020-02-10T09:42:15Z",
+      "side": 1,
+      "message": "nit: Is this function order a convention in this repo? If so, why?\nThe following order is natural to me.\n\nfunc Parse\nfunc Run\nfunc main",
+      "revId": "1e7d3281af327eeb0642bb471eb173f23c6a08aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
