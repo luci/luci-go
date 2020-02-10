@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2fbf3ce2_614aab9a",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-10T23:46:20Z",
+      "side": 1,
+      "message": "This is embarrassing. I have fixed it, and added a test, PTAL.",
+      "parentUuid": "7509e764_1a169e31",
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a11fc00_4d5368d6",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 4
@@ -30,6 +48,30 @@
       "writtenOn": "2020-02-10T23:13:03Z",
       "side": 1,
       "message": "I\u0027m not sure about panicing here... Are we very certain that CurrentMaxShard will not fail? I think we don\u0027t panic on other Spanner queries?",
+      "range": {
+        "startLine": 83,
+        "startChar": 2,
+        "endLine": 83,
+        "endChar": 7
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a9e57f0_adf17925",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-10T23:46:20Z",
+      "side": 1,
+      "message": "We panic here because this is supposed to be a continuous loop and no result is expected, so we can\u0027t just return an error. Also, we cannot continue without this information, and the error is bad enough that there\u0027s probably something else going wrong if we get to this point.",
+      "parentUuid": "2a11fc00_4d5368d6",
       "range": {
         "startLine": 83,
         "startChar": 2,
@@ -88,6 +130,54 @@
     },
     {
       "key": {
+        "uuid": "3880e0fd_d12949de",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-10T23:46:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "418af267_8a746fe5",
+      "range": {
+        "startLine": 104,
+        "startChar": 62,
+        "endLine": 104,
+        "endChar": 64
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85ab00bd_730cf968",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-10T23:46:20Z",
+      "side": 1,
+      "message": "Done. I had used int64 because that\u0027s what spanner uses, I moved the int() cast to CurrentMaxShard",
+      "parentUuid": "620f0f4d_73de8f99",
+      "range": {
+        "startLine": 104,
+        "startChar": 65,
+        "endLine": 104,
+        "endChar": 70
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6ae3fac_89fdbfde",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 4
@@ -122,6 +212,30 @@
       "writtenOn": "2020-02-10T23:13:03Z",
       "side": 1,
       "message": "Are we expecting to use this elsewhere besides purge_expired_results?\n\nIf not, should we move it to backend?",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "1e2a18c0f9e72cf5d16ab39d4e2178afd4aeded7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2582563_3f550179",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-10T23:46:20Z",
+      "side": 1,
+      "message": "That\u0027s a good point. I think this belongs here because it\u0027s a generic query. But I could be convinced otherwise.",
+      "parentUuid": "d8592947_8a071c4e",
       "range": {
         "startLine": 42,
         "startChar": 5,
