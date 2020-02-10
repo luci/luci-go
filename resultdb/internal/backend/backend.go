@@ -51,7 +51,11 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 
 // processingLoop runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often and backs off linearly on errors.
-func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
+// If provided, calls a niladic callback upon exiting the loop.
+func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, cb func(), f func(context.Context) error) {
+	if cb != nil {
+		defer cb()
+	}
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
