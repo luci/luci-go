@@ -53,7 +53,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 					// Send metrics to tsmon.
 					typeStr := string(taskType)
 
-					duration := float64(time.Since(startTime).Microseconds())
+					duration := float64(time.Since(startTime).Seconds())
 					durationMetric.Add(ctx, duration, typeStr, taskStatus)
 
 					taskAttemptMetric.Add(ctx, 1, typeStr, taskStatus)
