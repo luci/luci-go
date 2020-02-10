@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bfa079b0_ee8479ff",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-10T19:03:34Z",
+      "side": 1,
+      "message": "Seconds() is already float",
+      "range": {
+        "startLine": 56,
+        "startChar": 17,
+        "endLine": 56,
+        "endChar": 25
+      },
+      "revId": "4835e10adfb8273584c3b960867917a8ac82ca8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
