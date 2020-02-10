@@ -1,0 +1,123 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/filesystem"
+)
+
+func cmdRemap() *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "remap <options>",
+
+		ShortDesc: "Creates a directory with all the dependencies mapped into it.",
+		LongDesc: `Creates a directory with all the dependencies mapped into it.
+
+Useful to test manually why a test is failing. The target executable is not run.`,
+		CommandRun: func() subcommands.CommandRun {
+			r := remapRun{}
+			r.commonFlags.Init()
+			r.isolateFlags.Init(&r.Flags)
+			r.Flags.StringVar(&r.outdir, "outdir", "", "Directory used to recreate the tree.")
+			return &r
+		},
+	}
+}
+
+type remapRun struct {
+	commonFlags
+	isolateFlags
+
+	outdir string
+}
+
+func (r *remapRun) Parse(a subcommands.Application, args []string) error {
+	if err := r.commonFlags.Parse(); err != nil {
+		return err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	if err := r.isolateFlags.Parse(cwd, RequireIsolateFile); err != nil {
+		return err
+	}
+
+	if len(args) != 0 {
+		return errors.Reason("position arguments not expected").Err()
+	}
+
+	if r.outdir == "" {
+		return errors.Reason("-outdir is not specified").Err()
+	}
+
+	return nil
+}
+
+func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+	if err := r.Parse(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	cl, err := r.defaultFlags.StartTracing()
+	if err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	defer cl.Close()
+	if err := r.main(a, args); err != nil {
+		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		return 1
+	}
+	return 0
+}
+
+func (r *remapRun) main(a subcommands.Application, args []string) error {
+	deps, rootDir, _, err := isolate.ProcessIsolate(&r.ArchiveOptions)
+	if err != nil {
+		return errors.Annotate(err, "failed to process isolate").Err()
+	}
+
+	if err := filesystem.MakeDirs(r.outdir); err != nil {
+		return errors.Annotate(err, "failed to create directory: %s", r.outdir).Err()
+	}
+
+	createdDirs := make(map[string]struct{})
+
+	for _, dep := range deps {
+		dst := filepath.Join(r.outdir, dep[len(rootDir):])
+
+		dstDir := filepath.Dir(dst)
+		if _, ok := createdDirs[dstDir]; !ok {
+			if err := filesystem.MakeDirs(dstDir); err != nil {
+				return errors.Annotate(err, "failed to call MakeDirs(%s)", dstDir).Err()
+			}
+			createdDirs[dstDir] = struct{}{}
+		}
+
+		err := filesystem.HardlinkRecursively(dep, dst)
+		if err != nil {
+			return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", dep, dst).Err()
+		}
+	}
+	return nil
+}
