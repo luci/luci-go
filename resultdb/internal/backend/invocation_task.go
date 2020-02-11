@@ -59,7 +59,7 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 					// Send metrics to tsmon.
 					typeStr := string(taskType)
 
-					duration := float64(time.Since(startTime).Microseconds())
+					duration := float64(time.Since(startTime).Milliseconds())
 					durationMetric.Add(ctx, duration, typeStr, taskStatus)
 
 					taskAttemptMetric.Add(ctx, 1, typeStr, taskStatus)

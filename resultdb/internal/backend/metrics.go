@@ -63,7 +63,7 @@ var (
 	durationMetric = metric.NewCumulativeDistribution(
 		"resultdb/task/duration",
 		"Distribution of an attempt’s execution duration.",
-		&types.MetricMetadata{Units: types.Microseconds},
+		&types.MetricMetadata{Units: types.Milliseconds},
 		distribution.DefaultBucketer,
 		field.String("type"),   // tasks.Type
 		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
