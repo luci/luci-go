@@ -37,6 +37,19 @@ import (
 // Column Invocations.ShardId is a value in range [0, InvocationShards).
 const InvocationShards = 100
 
+// CurrentMaxShard reads the highest shard id in the Invocations table.
+// This may differ from the constant above when it has changed recently.
+func CurrentMaxShard(ctx context.Context) (int, error) {
+	var ret int64
+	err := QueryFirstRow(ctx, Client(ctx).Single(), spanner.NewStatement(`
+		SELECT ShardId
+		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
+		ORDER BY ShardID DESC
+		LIMIT 1
+	`), &ret)
+	return int(ret), err
+}
+
 // ReadInvocation reads one invocation from Spanner.
 // If the invocation does not exist, the returned error is annotated with
 // NotFound GRPC code.
