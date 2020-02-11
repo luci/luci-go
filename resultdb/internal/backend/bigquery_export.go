@@ -91,7 +91,7 @@ func checkBqTable(ctx context.Context, bqExport *pb.BigQueryExport, t table) (bo
 	key := cacheKey{
 		project: bqExport.Project,
 		dataset: bqExport.Dataset,
-		table: bqExport.Table,
+		table:   bqExport.Table,
 	}
 
 	v, err := bqTableCache.LRU(ctx).GetOrCreate(ctx, key, func() (interface{}, time.Duration, error) {
