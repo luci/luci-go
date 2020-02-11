@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04217427_f6d5974c",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T17:38:09Z",
+      "side": 1,
+      "message": "eg, ctx :\u003d errgroup.WithContext(ctx)",
+      "range": {
+        "startLine": 256,
+        "startChar": 1,
+        "endLine": 257,
+        "endChar": 36
+      },
+      "revId": "dba75cf2da4219ec0ee97d7628dfd349b4669983",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afa2d778_f2c10d89",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T17:38:09Z",
+      "side": 1,
+      "message": "let\u0027s drop this. Fewer branching is simpler\n\nip :\u003d \u0026invocationProcessor {\n  bqExporter: bqExporter { ... }\n}",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 33
+      },
+      "revId": "dba75cf2da4219ec0ee97d7628dfd349b4669983",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
