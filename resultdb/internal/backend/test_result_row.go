@@ -154,14 +154,14 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 	if tr.StartTime != nil {
 		trr.StartTime = bigquery.NullTimestamp{
 			Timestamp: pbutil.MustTimestamp(tr.StartTime),
-			Valid: true,
+			Valid:     true,
 		}
 	}
 
 	if tr.Duration != nil {
 		trr.Duration = bigquery.NullFloat64{
 			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
-			Valid: true,
+			Valid:   true,
 		}
 	}
 
