@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "f048b708_735198b3",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:57:07Z",
+      "side": 1,
+      "message": "why this complexity? why not create another group inside this func.\nas soon as any of goroutines in L252 fails, the local group will fail, batchExportRows will return an error and in L298 (Base patchset) and then outer errgroup exits too",
+      "range": {
+        "startLine": 249,
+        "startChar": 92,
+        "endLine": 249,
+        "endChar": 111
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "997ed276_d41cd03a",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:57:07Z",
+      "side": 1,
+      "message": "is time to make a struct, move this data there, and make exportTestResultsToBigQuery a method?\nthen you don\u0027t need to propagate it in exportResultsToBigQuery",
+      "range": {
+        "startLine": 271,
+        "startChar": 1,
+        "endLine": 273,
+        "endChar": 20
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "690ba1eb_0979c4b4",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:57:07Z",
+      "side": 1,
+      "message": "i don\u0027t understand what \"limit\" means at *this* level of abstraction. Also it assumes that there is only limit. Consider \n\n  type invocationProcessor struct {\n     bqExporter\n  }\n\n  type bqExporter struct {\n    bqPutLimit *rate.Limiter\n  }\n\n  func (p *invocationPorcessor) dispatchInvocationTasks(....) {\n     ...p.bqExporter.exportResults\n  }",
+      "range": {
+        "startLine": 38,
+        "startChar": 85,
+        "endLine": 38,
+        "endChar": 90
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0a082a32_7aab946d",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 1
