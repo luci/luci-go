@@ -66,7 +66,11 @@ func MessageSliceFlag(msgSlicePtr interface{}) flag.Getter {
 }
 
 // String returns all messages serailzed in JSON and separated by a new line.
+// Empty string will be returned if flag is a zero value.
 func (m messageSliceFlag) String() string {
+	if !m.msgSliceVal.IsValid() {
+		return ""
+	}
 	var sb strings.Builder
 	marshaler := &jsonpb.Marshaler{Indent: "  "}
 	for i := 0; i < m.msgSliceVal.Len(); i++ {
