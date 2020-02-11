@@ -16,20 +16,16 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
 
-	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
-
-// maxPurgeTestResultsWorkers is the number of concurrent invocations to purge of expired
-// results.
-const maxPurgeTestResultsWorkers = 100
 
 // maxTestVariantsToFilter is the maximum number of test variants to include
 // in the exclusion clause of the paritioned delete statement used to purge
@@ -73,19 +69,6 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 	return unsetInvocationResultsExpiration(ctx, id)
 }
 
-// dispatchExpiredResultDeletionTasks uses a pool of workers for purging results
-// for several invocations in parallel.
-func dispatchExpiredResultDeletionTasks(ctx context.Context, invIDs []span.InvocationID) error {
-	return parallel.FanOutIn(func(workC chan<- func() error) {
-		for _, id := range invIDs {
-			id := id
-			workC <- func() error {
-				return purgeOneInvocation(ctx, id)
-			}
-		}
-	})
-}
-
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
 func purgeExpiredResults(ctx context.Context) {
@@ -96,32 +79,37 @@ func purgeExpiredResults(ctx context.Context) {
 		return nil
 	})
 
-	processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
-		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, maxPurgeTestResultsWorkers)
-		if err != nil {
-			return err
-		}
-		if len(expiredResultsInvocationIds) == 0 {
-			return nil
-		}
-		return dispatchExpiredResultDeletionTasks(ctx, expiredResultsInvocationIds)
-	})
+	maxShard, err := span.CurrentMaxShard(ctx)
+	if err != nil {
+		panic(errors.Annotate(err, "failed to determine number of shards").Err())
+	}
+	// Start one processing loop for each shard of the database.
+	var wg sync.WaitGroup
+	for i := 0; i <= maxShard; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+				id, err := randomExpiredResultsInvocation(ctx, i)
+				switch err {
+				case span.ErrNoResults:
+					return nil
+				case nil:
+					return purgeOneInvocation(ctx, id)
+				default:
+					return err
+				}
+			})
+		}()
+	}
+	wg.Wait()
 }
 
-// sampleExpiredResultsInvocations selects a random set of invocations that have
-// expired test results.
-func sampleExpiredResultsInvocations(ctx context.Context, sampleSize int64) ([]span.InvocationID, error) {
+// randomExpiredResultsInvocation selects a random invocation that has expired
+// test results.
+func randomExpiredResultsInvocation(ctx context.Context, shardID int) (span.InvocationID, error) {
 	st := spanner.NewStatement(`
-		SELECT ShardId
-		FROM Invocations@{FORCE_INDEX=InvocationsByInvocationExpiration}
-		ORDER BY ShardID DESC
-		LIMIT 1
-	`)
-	var maxShard int64
-	if err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &maxShard); err != nil {
-		return nil, err
-	}
-	st = spanner.NewStatement(`
 		WITH expiringInvocations AS (
 			SELECT InvocationId
 			FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
@@ -130,24 +118,12 @@ func sampleExpiredResultsInvocations(ctx context.Context, sampleSize int64) ([]s
 			AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP())
 		SELECT *
 		FROM expiringInvocations
-		TABLESAMPLE RESERVOIR (@sampleSize ROWS)
+		TABLESAMPLE RESERVOIR (1 ROWS)
 	`)
-	st.Params["shardId"] = mathrand.Int63n(ctx, maxShard+1)
-	st.Params["sampleSize"] = sampleSize
-	ret := make([]span.InvocationID, 0, sampleSize)
-	var b span.Buffer
-	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
-		var id span.InvocationID
-		if err := b.FromSpanner(row, &id); err != nil {
-			return err
-		}
-		ret = append(ret, id)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	st.Params["shardId"] = shardID
+	var ret span.InvocationID
+	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &ret)
+	return ret, err
 }
 
 // testVariantID is a simple pair-of-strings struct with no spanner columnnames.

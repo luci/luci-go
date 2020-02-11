@@ -102,10 +102,6 @@ func TestPurgeExpiredResults(t *testing.T) {
 			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
 			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001)}
 
-		expiredResultsInvocationIds, err := sampleExpiredResultsInvocations(ctx, 100)
-		So(err, ShouldBeNil)
-		So(len(expiredResultsInvocationIds), ShouldEqual, 3)
-
 		bls, err := expiredResultsDelaySeconds(ctx)
 		So(err, ShouldBeNil)
 		// The backlog query uses spanner's CURRENT_TIMESTAMP(), and the invocations
@@ -114,7 +110,11 @@ func TestPurgeExpiredResults(t *testing.T) {
 		So(bls, ShouldBeGreaterThan, 0)
 
 		// Purge expired data.
-		So(dispatchExpiredResultDeletionTasks(ctx, expiredResultsInvocationIds), ShouldBeNil)
+		for range invocations {
+			id, err := randomExpiredResultsInvocation(ctx, 0)
+			So(err, ShouldBeNil)
+			So(purgeOneInvocation(ctx, id), ShouldBeNil)
+		}
 
 		// Count remaining results
 		// 10 tests * 1 variant with unexpected results * 2 results per test variant
@@ -126,5 +126,21 @@ func TestPurgeExpiredResults(t *testing.T) {
 		// Too many test variants with unexpected results (1001), so no deletions happen.
 		// 1 test * 1002 variants * 2 results per test variants
 		So(countTestResults(ctx, invocations[2]), ShouldEqual, 2004)
+		Convey(`Test loop exit condition`, func() {
+			mCtx, cancel := context.WithCancel(ctx)
+			exited := make(chan bool, 1)
+			go func() {
+				purgeExpiredResults(mCtx)
+				exited <- true
+			}()
+			time.Sleep(500 * time.Millisecond)
+			So(exited, ShouldHaveLength, 0)
+			cancel()
+			select {
+			case <-exited:
+			case <-time.After(time.Second):
+				So("Loop did not exit after context cancellation", ShouldBeNil)
+			}
+		})
 	})
 }
