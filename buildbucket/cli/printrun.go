@@ -31,6 +31,7 @@ import (
 )
 
 var idFieldMask = &field_mask.FieldMask{Paths: []string{"id"}}
+var jsonPrintOption = JSONOption{compact: true}
 
 // printRun is a base command run for subcommands that print
 // builds.
@@ -149,7 +150,7 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 			p.f(`{"id": "%d"}`, build.Id)
 			p.f("\n")
 		} else {
-			p.JSONPB(build)
+			p.JSONPB(build, jsonPrintOption)
 		}
 	} else {
 		if r.id {
