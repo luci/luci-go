@@ -47,7 +47,7 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 	}
 
 	var mu sync.Mutex
-	err = parallel.WorkPool(10, func(workC chan<- func() error) {
+	err = parallel.FanOutIn(func(workC chan<- func() error) {
 		for _, id := range ids {
 			id := id
 			ctx := logging.SetField(ctx, "task_id", id)
