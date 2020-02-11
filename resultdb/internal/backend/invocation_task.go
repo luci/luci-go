@@ -46,7 +46,6 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 		leaseDuration = 10 * time.Second
 	}
 
-	taskStatus := transientFailure
 	var mu sync.Mutex
 	err = parallel.WorkPool(10, func(workC chan<- func() error) {
 		for _, id := range ids {
@@ -54,6 +53,7 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 			ctx := logging.SetField(ctx, "task_id", id)
 			workC <- func() (err error) {
 				startTime := clock.Now(ctx)
+				taskStatus := transientFailure
 
 				defer func() {
 					// Send metrics to tsmon.
