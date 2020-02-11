@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b21c04a_db8df956",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:47:00Z",
+      "side": 1,
+      "message": "this is already int",
+      "range": {
+        "startLine": 88,
+        "startChar": 18,
+        "endLine": 88,
+        "endChar": 31
+      },
+      "revId": "021037063f19eb9190670258d124362bd75a3346",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ac18b05_eec160e5",
+        "filename": "resultdb/internal/backend/purge_expired_results_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:47:00Z",
+      "side": 1,
+      "message": "for range invocations {",
+      "range": {
+        "startLine": 113,
+        "startChar": 2,
+        "endLine": 113,
+        "endChar": 29
+      },
+      "revId": "021037063f19eb9190670258d124362bd75a3346",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dac8042_9483f2ca",
+        "filename": "resultdb/internal/backend/purge_expired_results_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:47:00Z",
+      "side": 1,
+      "message": "developers will wait for this in real time. Can we reduce it a bit?",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 26
+      },
+      "revId": "021037063f19eb9190670258d124362bd75a3346",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "441b126e_109aa86e",
+        "filename": "resultdb/internal/backend/purge_expired_results_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-11T00:47:00Z",
+      "side": 1,
+      "message": "select {\n  case \u003c-exited:\n  case \u003c-time.After(time.Second):\n    So(true, ShouldBeFalse)\n}\n\nto exit asap",
+      "range": {
+        "startLine": 139,
+        "startChar": 3,
+        "endLine": 140,
+        "endChar": 34
+      },
+      "revId": "021037063f19eb9190670258d124362bd75a3346",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
