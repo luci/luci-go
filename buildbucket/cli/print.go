@@ -109,20 +109,41 @@ func (p *printer) fw(minWidth int, format string, args ...interface{}) {
 	p.f("%s%s", s, strings.Repeat(" ", pad))
 }
 
-// JSONPB prints pb in JSON format, indented.
-func (p *printer) JSONPB(pb proto.Message) {
+// JSONOption defines various options for printing JSON object
+type JSONOption struct {
+	// Compact is a boolean that indicates whether to print the JSON object
+	// in a compacted form or indented form.
+	// Indent and Prefix options will be meaningless if Compact is set to true.
+	Compact bool
+	// Indent is the string that successive level will be indented by.
+	// This option only works when Compact is set to false
+	Indent string
+	// prefix is the prefix for all lines
+	// This option only works when Compact is set to false
+	Prefix string
+}
+
+// JSONPB prints pb in JSON format according to the given JSON print option
+func (p *printer) JSONPB(pb proto.Message, option JSONOption) {
 	m := &jsonpb.Marshaler{}
 	buf := &bytes.Buffer{}
 	if err := m.Marshal(buf, pb); err != nil {
 		panic(fmt.Errorf("failed to marshal a message: %s", err))
 	}
 
-	// Note: json.Marshal indents JSON more nicely than jsonpb.Marshaler.Indent.
-	indented := &bytes.Buffer{}
-	if err := json.Indent(indented, buf.Bytes(), "", "  "); err != nil {
+	out := &bytes.Buffer{}
+	var err error
+	if option.Compact {
+		err = json.Compact(out, buf.Bytes())
+	} else {
+		// Note: json.Marshal indents JSON more nicely than jsonpb.Marshaler.Indent.
+		err = json.Indent(out, buf.Bytes(), option.Prefix, option.Indent)
+	}
+
+	if err != nil {
 		panic(err)
 	}
-	p.f("%s\n", indented.Bytes())
+	p.f("%s\n", out.Bytes())
 }
 
 // Build prints b.
@@ -188,12 +209,12 @@ func (p *printer) Build(b *pb.Build) {
 	// Properties
 	if props := b.Input.GetProperties(); props != nil {
 		p.attr("Input properties")
-		p.JSONPB(props)
+		p.JSONPB(props, JSONOption{Indent: "  "})
 	}
 
 	if props := b.Output.GetProperties(); props != nil {
 		p.attr("Output properties")
-		p.JSONPB(props)
+		p.JSONPB(props, JSONOption{Indent: "  "})
 	}
 
 	// Steps
