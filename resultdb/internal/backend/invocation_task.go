@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -27,13 +29,17 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
+type invocationProcessor struct {
+	bqExporter
+}
+
 // permanentInvocationTaskErrTag set in an error indicates that the err is not
 // resolvable by retry.
 var permanentInvocationTaskErrTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
-func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
+func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
 	leaseDuration := time.Minute
 	switch taskType {
 	case tasks.TryFinalizeInvocation:
@@ -75,7 +81,7 @@ func dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []str
 
 				switch taskType {
 				case tasks.BQExport:
-					err = exportResultsToBigQuery(ctx, invID, payload)
+					err = ip.exportResultsToBigQuery(ctx, invID, payload)
 				case tasks.TryFinalizeInvocation:
 					err = tryFinalizeInvocation(ctx, invID)
 				default:
@@ -121,7 +127,14 @@ func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
 		}
 
-		processed, err := dispatchInvocationTasks(ctx, taskType, ids)
+		ip := &invocationProcessor{
+			bqExporter: bqExporter{
+				maxBatchRowCount: maxBatchRowCount,
+				maxBatchSize:     maxBatchSize,
+				limit:            rate.NewLimiter(100, 1),
+			},
+		}
+		processed, err := ip.dispatchInvocationTasks(ctx, taskType, ids)
 		if len(processed) > 0 {
 			logging.Infof(ctx, "processed tasks: %q", processed)
 		}
