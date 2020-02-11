@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"
@@ -86,9 +87,15 @@ func TestExportToBigQuery(t *testing.T) {
 			TestResults: &pb.BigQueryExport_TestResults{},
 		}
 
+		b := &bqExporter{
+			maxBatchRowCount: 2,
+			maxBatchSize:     maxBatchSize,
+			limit:            rate.NewLimiter(100, 1),
+		}
+
 		Convey(`success`, func() {
 			i := &mockPassInserter{}
-			err := exportTestResultsToBigQuery(ctx, i, "a", bqExport, 2, maxBatchSize)
+			err := b.exportTestResultsToBigQuery(ctx, i, "a", bqExport)
 			So(err, ShouldBeNil)
 
 			i.mu.Lock()
@@ -109,7 +116,7 @@ func TestExportToBigQuery(t *testing.T) {
 		// To check when encountering an error, the test can run to the end
 		// without hanging, or race detector does not detect anything.
 		Convey(`fail`, func() {
-			err := exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport, 2, maxBatchSize)
+			err := b.exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
 			So(err, ShouldErrLike, "some error")
 		})
 	})
