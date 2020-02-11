@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a082a32_7aab946d",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-11T00:45:18Z",
+      "side": 1,
+      "message": "Is there any specific reason for this limit?",
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
