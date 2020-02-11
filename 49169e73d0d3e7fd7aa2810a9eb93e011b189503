@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6eb7048d_78e373dd",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-11T06:27:45Z",
+      "side": 1,
+      "message": "Done.\n\nI thought about it as well and didn\u0027t have a strong opinion on either.",
+      "parentUuid": "f048b708_735198b3",
+      "range": {
+        "startLine": 249,
+        "startChar": 92,
+        "endLine": 249,
+        "endChar": 111
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "997ed276_d41cd03a",
         "filename": "resultdb/internal/backend/bigquery_export.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fc8b333_a42cd186",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-11T06:27:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "997ed276_d41cd03a",
+      "range": {
+        "startLine": 271,
+        "startChar": 1,
+        "endLine": 273,
+        "endChar": 20
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "532e3106_738fa654",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-11T06:27:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "690ba1eb_0979c4b4",
+      "range": {
+        "startLine": 38,
+        "startChar": 85,
+        "endLine": 38,
+        "endChar": 90
+      },
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a082a32_7aab946d",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 1
@@ -85,6 +157,24 @@
       "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f4d8ad6_2a6781e3",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-11T06:27:45Z",
+      "side": 1,
+      "message": "Before we have a fix sized workpool, which means when all the fast tasks complete, the slow one is using a limited resources. By using limiter here, the slow ones can use more workers.",
+      "parentUuid": "0a082a32_7aab946d",
+      "revId": "49169e73d0d3e7fd7aa2810a9eb93e011b189503",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
