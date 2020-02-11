@@ -131,12 +131,19 @@ func (p *printer) Build(b *pb.Build) {
 	p.f("%s%s%shttp://ci.chromium.org/b/%d", ansiWhiteBold, ansiWhiteUnderline, ansiStatus[b.Status], b.Id)
 	// Undo underline.
 	p.f("%s%s%s ", ansi.Reset, ansiWhiteBold, ansiStatus[b.Status])
-	p.fw(10, "%s", b.Status)
-	p.f("'%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
-	if b.Number != 0 {
-		p.f("/%d", b.Number)
+
+	if b.Status != pb.Status_STATUS_UNSPECIFIED {
+		p.fw(10, "%s", b.Status)
 	}
-	p.f("'%s\n", ansi.Reset)
+
+	if b.Builder != nil {
+		p.f("'%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder)
+		if b.Number != 0 {
+			p.f("/%d", b.Number)
+		}
+		p.f("'")
+	}
+	p.f("%s\n", ansi.Reset)
 
 	// Summary.
 	if b.SummaryMarkdown != "" {
@@ -162,8 +169,11 @@ func (p *printer) Build(b *pb.Build) {
 	}
 
 	// Timing.
-	p.buildTime(b)
-	p.f("\n")
+	if b.CreateTime != nil {
+		p.buildTime(b)
+		p.f("\n")
+	}
+
 	if b.CreatedBy != "" {
 		p.attr("By")
 		p.f("%s\n", b.CreatedBy)

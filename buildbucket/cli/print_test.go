@@ -189,6 +189,16 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
 <green+h>Step "second"   SUCCESS   59ms      Logs: "stdout", "stderr"<reset>
 `
 
+func ansifyTemplate(template string) string {
+	return regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
+		template,
+		func(style string) string {
+			style = strings.TrimPrefix(style, "<")
+			style = strings.TrimSuffix(style, ">")
+			return ansi.ColorCode(style)
+		})
+}
+
 func TestPrint(t *testing.T) {
 	Convey("Print", t, func() {
 		buf := &bytes.Buffer{}
@@ -200,13 +210,20 @@ func TestPrint(t *testing.T) {
 			build := &pb.Build{}
 			So(jsonpb.UnmarshalString(buildJSON, build), ShouldBeNil)
 
-			expectedBuildPrinted := regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
-				expectedBuildPrintedTemplate,
-				func(style string) string {
-					style = strings.TrimPrefix(style, "<")
-					style = strings.TrimSuffix(style, ">")
-					return ansi.ColorCode(style)
-				})
+			expectedBuildPrinted := ansifyTemplate(expectedBuildPrintedTemplate)
+			p.Build(build)
+
+			So(p.Err, ShouldBeNil)
+			So(buf.String(), ShouldEqual, expectedBuildPrinted)
+		})
+
+		Convey("Field masked build", func() {
+			// Only Id and Status are available
+			build := &pb.Build{
+				Id:     8917899588926498064,
+				Status: pb.Status_STARTED,
+			}
+			expectedBuildPrinted := ansifyTemplate("<white+b><white+u><yellow+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><yellow+h> STARTED   <reset>\n")
 			p.Build(build)
 
 			So(p.Err, ShouldBeNil)
