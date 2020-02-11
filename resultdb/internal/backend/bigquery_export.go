@@ -23,12 +23,12 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
@@ -59,6 +59,12 @@ type inserter interface {
 type table interface {
 	// Metadata fetches the metadata for the table.
 	Metadata(ctx context.Context) (md *bigquery.TableMetadata, err error)
+}
+
+type bqExporter struct {
+	maxBatchRowCount int
+	maxBatchSize     int
+	limit            *rate.Limiter
 }
 
 func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
@@ -246,23 +252,28 @@ func queryTestResultsStreaming(
 	return nil
 }
 
-func batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
-	return parallel.WorkPool(10, func(workC chan<- func() error) {
-		for rows := range batchC {
-			rows := rows
-			workC <- func() error {
-				err := ins.Put(ctx, rows)
-				if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
-					err = permanentInvocationTaskErrTag.Apply(err)
-				}
+func (b bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	for rows := range batchC {
+		rows := rows
+		eg.Go(func() error {
+			if err := b.limit.Wait(ctx); err != nil {
 				return err
 			}
-		}
-	})
+			err := ins.Put(ctx, rows)
+			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+				err = permanentInvocationTaskErrTag.Apply(err)
+			}
+			return err
+		})
+	}
+
+	return eg.Wait()
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
-func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport, maxBatchRowCount int, maxBatchSize int) error {
+func (b bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.InvocationID, bqExport *pb.BigQueryExport) error {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
@@ -295,7 +306,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		return batchExportRows(ctx, ins, batchC)
+		return b.batchExportRows(ctx, ins, batchC)
 	})
 
 	q := span.TestResultQuery{
@@ -312,7 +323,7 @@ func exportTestResultsToBigQuery(ctx context.Context, ins inserter, invID span.I
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, payload []byte) error {
+func (b bqExporter) exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, payload []byte) error {
 	bqExport := &pb.BigQueryExport{}
 	if err := proto.Unmarshal(payload, bqExport); err != nil {
 		return err
@@ -334,5 +345,5 @@ func exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, paylo
 	}
 
 	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
-	return exportTestResultsToBigQuery(ctx, ins, invID, bqExport, maxBatchRowCount, maxBatchSize)
+	return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
 }
