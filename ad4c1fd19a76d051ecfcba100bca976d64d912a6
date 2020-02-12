@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ccd56d87_981d8862",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:24:42Z",
+      "side": 1,
+      "message": "that\u0027s not how nulls are represented in spanner. The code above would fail because it isn\u0027t using spanner.NullTime",
+      "range": {
+        "startLine": 62,
+        "startChar": 4,
+        "endLine": 62,
+        "endChar": 27
+      },
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e9a2405_2e4dc6f5",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:24:42Z",
+      "side": 1,
+      "message": "so, a backend replica would \"successfully\" start without workers to purge results? \n\nwhy this code was added? i.e. why do we expect the query to be canceled on server startup?",
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6222060b_8828dc24",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:24:42Z",
+      "side": 1,
+      "message": "i find it weird for this function to hardcode this number. It seems to be callsites\u0027s decision.\nplease make it a parameter",
+      "range": {
+        "startLine": 131,
+        "startChar": 18,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
