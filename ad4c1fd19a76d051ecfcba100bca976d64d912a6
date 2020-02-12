@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e3c0061f_a9d87890",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-12T01:15:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ccd56d87_981d8862",
+      "range": {
+        "startLine": 62,
+        "startChar": 4,
+        "endLine": 62,
+        "endChar": 27
+      },
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e9a2405_2e4dc6f5",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2020-02-12T00:24:42Z",
       "side": 1,
       "message": "so, a backend replica would \"successfully\" start without workers to purge results? \n\nwhy this code was added? i.e. why do we expect the query to be canceled on server startup?",
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9bbc355_00ee2753",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-12T01:15:45Z",
+      "side": 1,
+      "message": "This is intended to handle context cancellation.\n\nI added this code because Chan observed that the test (since replaced by integrationtests) I had added about checking that the routine exits after context cancellation (but not before) was flaking, i.e. sometimes failing with due to context cancellation. I noticed that the code sometimes made it after checking the current shard, and sometimes it wouldn\u0027t.\n\nDocumentation says in[1] that it\u0027s expected that the routine will _exit_ shortly after the context is canceled, and panic doesn\u0027t seem a reasonable way to handle a routine context cancellation.\n\n[1]: https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/server/server.go;l\u003d702",
+      "parentUuid": "6e9a2405_2e4dc6f5",
       "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -62,6 +104,30 @@
       "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab5d52a8_1640b8c9",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-12T01:15:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6222060b_8828dc24",
+      "range": {
+        "startLine": 131,
+        "startChar": 18,
+        "endLine": 131,
+        "endChar": 20
+      },
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
