@@ -21,6 +21,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/luci/common/data/stringset"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -141,9 +143,14 @@ func searchBuilds(ctx context.Context, buildC chan<- *pb.Build, client pb.Builds
 func searchResponses(ctx context.Context, resC chan<- *pb.SearchBuildsResponse, client pb.BuildsClient, req *pb.SearchBuildsRequest) error {
 	req = proto.Clone(req).(*pb.SearchBuildsRequest)
 
-	// Ensure next_page_token and build id are requested.
-	if len(req.GetFields().GetPaths()) > 0 {
-		req.Fields.Paths = append(req.Fields.Paths, "next_page_token", "builds.*.id")
+	// Ensure next_page_token and build id, builder, status are requested.
+	if paths := req.GetFields().GetPaths(); len(paths) > 0 {
+		pathSet := stringset.NewFromSlice(paths...)
+		pathSet.Add("next_page_token")
+		pathSet.Add("builds.*.id")
+		pathSet.Add("builds.*.builder")
+		pathSet.Add("builds.*.status")
+		req.Fields.Paths = pathSet.ToSortedSlice()
 	}
 
 	// Page through results.
