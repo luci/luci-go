@@ -166,7 +166,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	backend.InitServer(recorderServer, backend.Options{
-		NoLoopingInterval:   true,
+		NoCronInterval:      true,
 		ForceLeaseDuration:  100 * time.Millisecond,
 		PurgeExpiredResults: true,
 	})
