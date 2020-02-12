@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/clock"
@@ -161,8 +162,8 @@ func InitServer(srv *server.Server, opts Options) {
 			// Use a smaller size as the limit since we are only using the size of
 			// test results to estimate the whole payload size.
 			maxBatchSize: 6e6,
-
-			limit: rate.NewLimiter(100, 1),
+			putLimiter:   rate.NewLimiter(100, 1),
+			batchSem:     semaphore.NewWeighted(100),
 		},
 	}
 
