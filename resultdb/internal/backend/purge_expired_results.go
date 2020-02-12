@@ -74,7 +74,7 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 func (b *backend) purgeExpiredResults(ctx context.Context) {
 	mCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go b.processingLoop(ctx, time.Minute, func(ctx context.Context) error {
+	go b.cron(ctx, time.Minute, func(ctx context.Context) error {
 		recordExpiredResultsDelayMetric(mCtx)
 		return nil
 	})
@@ -90,7 +90,7 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			b.processingLoop(ctx, time.Second, func(ctx context.Context) error {
+			b.cron(ctx, time.Second, func(ctx context.Context) error {
 				id, err := randomExpiredResultsInvocation(ctx, i)
 				switch err {
 				case span.ErrNoResults:
