@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "f5b485ff_88e73fa9",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T07:00:40Z",
+      "side": 1,
+      "message": "i also observed flakiness, but a different reason. It was fixed in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2051723\n\nthis code runs on server startup. Why would context be canceled on startup? i.e. how is that routine?\nalso spanner.ErrCode(err) \u003d\u003d canceled does not provide a guarantee that ctx.Err() !\u003d nil.",
+      "parentUuid": "f9bbc355_00ee2753",
+      "revId": "ad4c1fd19a76d051ecfcba100bca976d64d912a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6222060b_8828dc24",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 2

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ec135b65_7b3697d2",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T07:00:40Z",
+      "side": 1,
+      "message": "now that this code was refactored, please make it a field in backend struct or a new struct purger embedded in backend (like bqExport is embedded). The value should be set in InitServer.\n\nlet\u0027s try value 100. i think you are right that spanner currently spends a lot of time sampling",
+      "range": {
+        "startLine": 42,
+        "startChar": 6,
+        "endLine": 42,
+        "endChar": 16
+      },
+      "revId": "b74a3e5ad403d8604a00ad48c53d8ef4580d3f1f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
