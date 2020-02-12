@@ -22,6 +22,30 @@
       "revId": "8da2912c9641db12c2b963416a49513de6ba77f9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4008479_991b5a2f",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 275,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T19:30:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d8942ed_7ee09d24",
+      "range": {
+        "startLine": 274,
+        "startChar": 1,
+        "endLine": 275,
+        "endChar": 33
+      },
+      "revId": "8da2912c9641db12c2b963416a49513de6ba77f9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
