@@ -17,6 +17,8 @@ package span
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -34,14 +36,26 @@ import (
 
 // MustParseTestResultName retrieves the invocation ID, unescaped test id, and
 // result ID.
-// Panics if the name is invalid. Useful for situations when name was already
-// validated.
+//
+// Panics if the name is invalid. Should be used only with trusted data.
+//
+// MustParseTestResultName is faster than pbutil.ParseTestResultName.
 func MustParseTestResultName(name string) (invID InvocationID, testID, resultID string) {
-	invIDStr, testID, resultID, err := pbutil.ParseTestResultName(name)
-	if err != nil {
-		panic(err)
+	parts := strings.Split(name, "/")
+	if len(parts) != 6 || parts[0] != "invocations" || parts[2] != "tests" || parts[4] != "results" {
+		panic(errors.Reason("malformed test result name: %q", name).Err())
 	}
-	invID = InvocationID(invIDStr)
+
+	invID = InvocationID(parts[1])
+	testID = parts[3]
+	resultID = parts[5]
+
+	unescaped, err := url.PathUnescape(testID)
+	if err != nil {
+		panic(errors.Annotate(err, "malformed test id %q", testID).Err())
+	}
+	testID = unescaped
+
 	return
 }
 
