@@ -80,7 +80,10 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 	})
 
 	maxShard, err := span.CurrentMaxShard(ctx)
-	if err != nil {
+	switch {
+	case err == span.ErrNoResults:
+		maxShard = span.InvocationShards - 1
+	case err != nil:
 		panic(errors.Annotate(err, "failed to determine number of shards").Err())
 	}
 	// Start one processing loop for each shard of the database.
