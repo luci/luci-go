@@ -316,6 +316,9 @@ func (b *bqExporter) exportTestResultsToBigQuery(ctx context.Context, ins insert
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
 func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID span.InvocationID, payload []byte) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
 	bqExport := &pb.BigQueryExport{}
 	if err := proto.Unmarshal(payload, bqExport); err != nil {
 		return err
