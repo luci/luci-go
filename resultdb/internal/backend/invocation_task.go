@@ -118,12 +118,12 @@ func (b *backend) dispatchInvocationTasks(ctx context.Context, taskType tasks.Ty
 func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	mCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go b.processingLoop(ctx, time.Minute, func(ctx context.Context) error {
+	go b.cron(ctx, time.Minute, func(ctx context.Context) error {
 		recordOldestTaskMetric(mCtx, taskType)
 		return nil
 	})
 
-	b.processingLoop(ctx, time.Second, func(ctx context.Context) error {
+	b.cron(ctx, time.Second, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
