@@ -29,6 +29,31 @@ import (
 	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
+func TestMustParseTestResultName(t *testing.T) {
+	t.Parallel()
+
+	Convey("MustParseTestResultName", t, func() {
+		Convey("Parse", func() {
+			invID, testID, resultID := span.MustParseTestResultName(
+				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+			So(invID, ShouldEqual, "a")
+			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
+			So(resultID, ShouldEqual, "result5")
+		})
+
+		Convey("Invalid", func() {
+			invalidNames := []string{
+				"invocations/a/tests/b",
+				"invocations/a/tests/b/exonerations/c",
+			}
+			for _, name := range invalidNames {
+				name := name
+				So(func() { span.MustParseTestResultName(name) }, ShouldPanic)
+			}
+		})
+	})
+}
+
 func TestQueryTestResults(t *testing.T) {
 	Convey(`QueryTestResults`, t, func() {
 		ctx := SpannerTestContext(t)
