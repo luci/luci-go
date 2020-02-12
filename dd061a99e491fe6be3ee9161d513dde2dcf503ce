@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8820e870_47cd1111",
+        "filename": "vpython/application/application.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-12T19:27:55Z",
+      "side": 1,
+      "message": "In true vpython fashion, there are TWO almost-identical configuration structs to control vpython\u0027s behavior.",
+      "range": {
+        "startLine": 398,
+        "startChar": 21,
+        "endLine": 398,
+        "endChar": 33
+      },
+      "revId": "dd061a99e491fe6be3ee9161d513dde2dcf503ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "52500370_74809a54",
+        "filename": "vpython/run.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-12T19:27:55Z",
+      "side": 1,
+      "message": "I considered making this \u0027VpythonOptOut\u0027, but that would have the behavior of generating a new `vpython` binary which got this wrong for python2 (i.e. when this CL rolls to infra.git, it would generate new builds of vpython which disabled this behavior for python2, which we don\u0027t want because it would break lots of stuff). Hence the negation here.",
+      "range": {
+        "startLine": 67,
+        "startChar": 11,
+        "endLine": 67,
+        "endChar": 23
+      },
+      "revId": "dd061a99e491fe6be3ee9161d513dde2dcf503ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
