@@ -149,7 +149,7 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 			p.f(`{"id": "%d"}`, build.Id)
 			p.f("\n")
 		} else {
-			p.JSONPB(build)
+			p.JSONPB(build, true)
 		}
 	} else {
 		if r.id {
