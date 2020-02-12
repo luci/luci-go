@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6921ad89_7e58aa60",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T22:53:54Z",
+      "side": 1,
+      "message": "can extract this code into a function\n\n  func hasReason(err *googleapi.Error, reason string) bool\n\nand reuse it in L292?",
+      "range": {
+        "startLine": 259,
+        "startChar": 4,
+        "endLine": 264,
+        "endChar": 5
+      },
+      "revId": "84d1b2049f7eb18fe78a91371c6745f3aa3498d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
