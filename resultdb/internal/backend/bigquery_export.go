@@ -43,6 +43,11 @@ const (
 
 var bqTableCache = caching.RegisterLRUCache(50)
 
+// bqHTTPClientCache is a {luciProject => httpClient} cache used for BigQuery
+// clients. It ensures that workers reuse HTTP connections.
+// Cap 64 means covers 64 LUCI projects.
+var bqHTTPClientCache = caching.RegisterLRUCache(64)
+
 // inserter is implemented by bigquery.Inserter.
 type inserter interface {
 	// Put uploads one or more rows to the BigQuery service.
@@ -74,14 +79,18 @@ func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error
 }
 
 func getBQClient(ctx context.Context, luciProject string, bqExport *pb.BigQueryExport) (*bigquery.Client, error) {
-	tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(bigquery.Scope))
+	httpClient, err := bqHTTPClientCache.LRU(ctx).GetOrCreate(ctx, luciProject, func() (v interface{}, exp time.Duration, err error) {
+		tr, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject), auth.WithScopes(bigquery.Scope))
+		if err != nil {
+			return nil, 0, err
+		}
+		return &http.Client{Transport: tr}, 0, nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return bigquery.NewClient(ctx, bqExport.Project, option.WithHTTPClient(&http.Client{
-		Transport: tr,
-	}))
+	return bigquery.NewClient(ctx, bqExport.Project, option.WithHTTPClient(httpClient.(*http.Client)))
 }
 
 // checkBqTable returns true if the table should be created.
