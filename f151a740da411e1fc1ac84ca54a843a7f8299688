@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "363f221f_89757e20",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:29:39Z",
+      "side": 1,
+      "message": "why do we need all of this complexity? we have only two cases: \n- pretty: we don\u0027t compact and we indent it\n- not pretty: we compact and we don\u0027t indent\n\nwouldn\u0027t it be simpler to have boolean \"pretty\" parameter in JSONPB?",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 0
+      },
+      "revId": "f151a740da411e1fc1ac84ca54a843a7f8299688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
