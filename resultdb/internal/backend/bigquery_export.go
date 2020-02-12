@@ -248,6 +248,15 @@ func (b *bqExporter) queryTestResultsStreaming(
 	return nil
 }
 
+func hasReason(apiErr *googleapi.Error, reason string) bool {
+	for _, e := range apiErr.Errors {
+		if e.Reason == reason {
+			return true
+		}
+	}
+	return false
+}
+
 func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
@@ -255,7 +264,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 		rows := rows
 		eg.Go(func() error {
 			err := b.insertRowsWithRetries(ctx, ins, rows)
-			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "accessDenied") {
 				err = permanentInvocationTaskErrTag.Apply(err)
 			}
 			return err
@@ -272,13 +281,18 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 		return err
 	}
 
-	// ins.Put has retries for most errors, but it does not retry
-	// "http2: stream closed" error. Retry only on that.
-	// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
-	// is fixed.
 	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := ins.Put(ctx, rows)
+
+		// ins.Put has retries for most errors, but it does not retry
+		// "http2: stream closed" error. Retry only on that.
+		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
+		// is fixed.
 		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
+			err = transient.Tag.Apply(err)
+		}
+
+		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "quotaExceeded") {
 			err = transient.Tag.Apply(err)
 		}
 		return err
