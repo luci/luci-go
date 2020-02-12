@@ -255,7 +255,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 		rows := rows
 		eg.Go(func() error {
 			err := b.insertRowsWithRetries(ctx, ins, rows)
-			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+			if bqe, ok := err.(*bigquery.Error); ok && bqe.Reason == "accessDenied" {
 				err = permanentInvocationTaskErrTag.Apply(err)
 			}
 			return err
