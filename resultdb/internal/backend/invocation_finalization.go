@@ -266,7 +266,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 	`)
 	st.Params = span.ToSpannerMap(map[string]interface{}{
 		"taskType":   string(tasks.TryFinalizeInvocation),
-		"invID":      invID,
+		"invID":      invID.RowID(),
 		"finalizing": pb.Invocation_FINALIZING,
 	})
 	count, err := txn.Update(ctx, st)
@@ -290,7 +290,7 @@ func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction,
 	`)
 	st.Params = span.ToSpannerMap(map[string]interface{}{
 		"taskType": string(tasks.BQExport),
-		"invID":    invID,
+		"invID":    invID.RowID(),
 	})
 	count, err := txn.Update(ctx, st)
 	if err != nil {
