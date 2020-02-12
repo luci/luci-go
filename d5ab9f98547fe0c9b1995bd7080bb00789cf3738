@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "eabafb11_de861d8a",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-12T01:40:06Z",
+      "side": 1,
+      "message": "I think `id` is guaranteed to present even if it is not supplied in the field mask. We do append id specifically in the field mask: https://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/06c298b73a83eb802b892a6d6db6a8aca5fac808:buildbucket/protoutil/search.go;l\u003d146;drc\u003d2c7e375557100cda0f363ffa7da891397b0dcb52",
+      "parentUuid": "248fe540_3d3d2979",
+      "range": {
+        "startLine": 131,
+        "startChar": 99,
+        "endLine": 131,
+        "endChar": 103
+      },
+      "revId": "d5ab9f98547fe0c9b1995bd7080bb00789cf3738",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6efd1682_a16eb822",
         "filename": "buildbucket/cli/print.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2020-02-12T00:34:59Z",
       "side": 1,
       "message": "what if any of these are not present?\n\nconsider an alternative for this and id: force them to be present",
+      "range": {
+        "startLine": 141,
+        "startChar": 19,
+        "endLine": 141,
+        "endChar": 73
+      },
+      "revId": "d5ab9f98547fe0c9b1995bd7080bb00789cf3738",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96483e31_d0fa4dee",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-12T01:40:06Z",
+      "side": 1,
+      "message": "Are you inferring that we should panic if either `id` or any field in `builder` is missing? \n\nI would definitely agree that we should panic when id is missing since that seems to be an invalid state. However, I\u0027m think not requesting for builder is a legit use case (May be user are just interested in id and status). \n\n\nMy idea would be we can print following the order of `project-\u003ebucket-\u003ebuilder-\u003enumber`. If any field on the chain is missing, we\u0027ll stop at that point. That means if only `project` and `builder` are present but `bucket` is missing, we will only print `project`. What do you think?",
+      "parentUuid": "6efd1682_a16eb822",
       "range": {
         "startLine": 141,
         "startChar": 19,
