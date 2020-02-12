@@ -158,7 +158,7 @@ type Options struct {
 func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
 		Options:              &opts,
-		cronIterationTimeout: 10 * time.Minute,
+		cronIterationTimeout: time.Hour,
 		taskWorkers:          100,
 		bqExporter: bqExporter{
 			maxBatchRowCount: 500,
