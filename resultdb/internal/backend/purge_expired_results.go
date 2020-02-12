@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -32,6 +33,11 @@ import (
 // variant combinations with unexpected results will not be purged, until
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
+
+var purgedInvocationsMetric = metric.NewCounter(
+	"resultdb/purged_invocations",
+	"How many invocations have had their expected test results purged",
+	nil)
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 
@@ -71,14 +77,6 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 // purgeExpiredResults purges expired test results and exports metrics.
 // It blocks until context is canceled.
 func (b *backend) purgeExpiredResults(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	go b.cron(ctx, time.Minute, func(ctx context.Context) error {
-		recordExpiredResultsDelayMetric(ctx)
-		return nil
-	})
-
 	maxShard, err := span.CurrentMaxShard(ctx)
 	switch {
 	case err == span.ErrNoResults:
