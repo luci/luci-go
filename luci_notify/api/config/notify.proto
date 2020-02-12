@@ -14,6 +14,7 @@ package notify;
 
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
+import "go.chromium.org/luci/buildbucket/proto/step.proto";
 import "go.chromium.org/luci/common/proto/options.proto";
 
 option go_package = "config";
@@ -46,20 +47,26 @@ message Notifier {
 
   // Builders is a list of buildbucket builders this Notifier should watch.
   repeated Builder builders = 3;
+
+  // A list of tree closing rules to execute for this notifier.
+  repeated TreeCloser tree_closers = 4;
 }
 
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
 //
-// Next ID: 11.
+// Next ID: 13.
 message Notification {
   reserved 8;
 
-  // Email is a message representing a set of mail recipients (email
-  // addresses).
+  // Email is a message representing a set of mail recipients.
   message Email {
     // Recipients is a list of email addresses to notify.
     repeated string recipients = 1;
+
+    // A list of rotations, for each of which we should notify the currently
+    // active member.
+    repeated string rota_ng_rotations = 2;
   }
 
   // Blamelist is a message representing configuration for notifying the
@@ -98,6 +105,16 @@ message Notification {
   // one.
   repeated buildbucket.v2.Status on_new_status = 10;
 
+  // Notify only on builds which had a failing step matching this regular
+  // expression. Mutually exclusive with "on_new_status".
+  string failed_step_regexp = 11;
+
+  // Notify only on builds which don't have a failing step matching this regular
+  // expression. May be combined with "failed_step_regexp", in which case it
+  // must also have a failed step matching that regular expression. Mutually
+  // exclusive with "on_new_status".
+  string failed_step_regexp_exclude = 12;
+
   // Email is the set of email addresses to notify.
   //
   // Optional.
@@ -118,6 +135,26 @@ message Notification {
   //
   // Optional.
   Blamelist notify_blamelist = 6;
+}
+
+// TreeCloser represents an action which closes a tree, by interfacing with an
+// instance of the tree-status app.
+message TreeCloser {
+  // The URL of the tree-status instance which this rule opens and closes.
+  string tree_url = 1;
+
+  // Close the tree only on builds which had a failing step matching this
+  // regular expression.
+  string failed_step_regexp = 2;
+
+  // Close the tree only on builds which don't have a failing step matching this
+  // regular expression. May be combined with "failed_step_regexp", in which
+  // case it must also have a failed step matching that regular expression.
+  string failed_step_regexp_exclude = 3;
+
+  // Refers to which project template name to use to format this email.
+  // If not present, "default_tree_status" will be used.
+  string template = 4;
 }
 
 // Builder references a buildbucket builder in the current project.
@@ -174,4 +211,8 @@ message TemplateInput {
   buildbucket.v2.Build build = 2;
   // State of the previous build in this builder.
   buildbucket.v2.Status old_status = 3;
+  // The failed steps that passed the given regexes (see the fields
+  // "failed_step_regexp" and "failed_step_regexp_exclude" above). If that field
+  // wasn't supplied, this will be empty.
+  repeated buildbucket.v2.Step matching_failed_steps = 4;
 }
