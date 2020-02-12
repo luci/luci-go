@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6e6374e3_ecf0153a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-12T06:38:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "771fd5e7_fea26799",
+      "range": {
+        "startLine": 107,
+        "startChar": 12,
+        "endLine": 107,
+        "endChar": 26
+      },
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e87cdfc_06a6d219",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 3
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "be30473d_9b461e3b",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-12T06:38:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6e87cdfc_06a6d219",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3785b819_99328a52",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 3
@@ -56,6 +98,24 @@
       "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "054f4afd_ac348324",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-12T06:38:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3785b819_99328a52",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -82,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "c6a6cd3b_c36f262a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-12T06:38:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dffb0f35_15f19434",
+      "range": {
+        "startLine": 154,
+        "startChar": 22,
+        "endLine": 154,
+        "endChar": 36
+      },
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ea779883_d919b134",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 3
@@ -96,6 +180,24 @@
       "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fcaea3be_1a5d5b59",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-12T06:38:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ea779883_d919b134",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
