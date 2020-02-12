@@ -22,6 +22,30 @@
       "revId": "cb13edcf43ad2279e202a1104f71fa2b8c71fbfc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52c8f66a_0d38dfcd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T04:49:09Z",
+      "side": 1,
+      "message": "idk how it happened... i meant that the task might be leased many times and processed many times.",
+      "parentUuid": "8bfd38c5_e0fd5bf2",
+      "range": {
+        "startLine": 9,
+        "startChar": 31,
+        "endLine": 9,
+        "endChar": 40
+      },
+      "revId": "cb13edcf43ad2279e202a1104f71fa2b8c71fbfc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
