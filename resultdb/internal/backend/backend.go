@@ -55,14 +55,14 @@ type backend struct {
 	*Options
 	bqExporter
 
-	// processingLoopIterationTimeout is the timeout for each processingLoop()
-	// iteration. Ignored if <=0.
-	processingLoopIterationTimeout time.Duration
+	// cronIterationTimeout is the timeout for each cron() iteration.
+	// Ignored if <=0.
+	cronIterationTimeout time.Duration
 }
 
-// processingLoop runs f repeatedly, until the context is cancelled.
+// cron runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (1s) and backs off linearly on errors.
-func (b *backend) processingLoop(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
+func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
@@ -74,9 +74,9 @@ func (b *backend) processingLoop(ctx context.Context, minInterval time.Duration,
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
-		if b.processingLoopIterationTimeout > 0 {
+		if b.cronIterationTimeout > 0 {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, b.processingLoopIterationTimeout)
+			ctx, cancel = context.WithTimeout(ctx, b.cronIterationTimeout)
 			defer cancel()
 		}
 		return f(ctx)
@@ -138,8 +138,8 @@ type Options struct {
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
-		Options:                        &opts,
-		processingLoopIterationTimeout: 10 * time.Second,
+		Options:              &opts,
+		cronIterationTimeout: 10 * time.Second,
 		bqExporter: bqExporter{
 			maxBatchRowCount: 500,
 			// HTTP request size limit is 10 MiB according to
