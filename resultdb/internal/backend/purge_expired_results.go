@@ -71,10 +71,10 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 
 // purgeExpiredResults is a loop that repeatedly polls a random shard and purges
 // expired test results for a number of its invocations.
-func purgeExpiredResults(ctx context.Context) {
+func (b *backend) purgeExpiredResults(ctx context.Context) {
 	mCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go processingLoop(ctx, time.Minute, time.Minute, time.Minute, func(ctx context.Context) error {
+	go b.processingLoop(ctx, time.Minute, func(ctx context.Context) error {
 		recordExpiredResultsDelayMetric(mCtx)
 		return nil
 	})
@@ -90,7 +90,7 @@ func purgeExpiredResults(ctx context.Context) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+			b.processingLoop(ctx, time.Second, func(ctx context.Context) error {
 				id, err := randomExpiredResultsInvocation(ctx, i)
 				switch err {
 				case span.ErrNoResults:
