@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 
@@ -88,9 +89,10 @@ func TestExportToBigQuery(t *testing.T) {
 		}
 
 		b := &bqExporter{
-			maxBatchRowCount: 2,
-			maxBatchSize:     500,
-			limit:            rate.NewLimiter(100, 1),
+			maxBatchRowCount: 500,
+			maxBatchSize:     6e6,
+			putLimiter:       rate.NewLimiter(100, 1),
+			batchSem:         semaphore.NewWeighted(100),
 		}
 
 		Convey(`success`, func() {
