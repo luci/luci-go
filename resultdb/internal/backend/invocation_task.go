@@ -38,10 +38,10 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 }
 
 func (b *backend) dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
-	leaseDuration := time.Minute
+	leaseDuration := 10 * time.Minute
 	switch taskType {
 	case tasks.TryFinalizeInvocation:
-		leaseDuration = 10 * time.Second
+		leaseDuration = time.Minute
 	}
 	if b.ForceLeaseDuration > 0 {
 		leaseDuration = b.ForceLeaseDuration
