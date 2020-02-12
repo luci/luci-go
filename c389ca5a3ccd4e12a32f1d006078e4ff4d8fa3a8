@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a3939cb_d671ed9a",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 82,
+        "startChar": 66,
+        "endLine": 82,
+        "endChar": 68
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13fab605_10ef7853",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "Enums should have first value as \u003cEnum\u003e_UNSET and equal to 0. See https://cloud.google.com/apis/design/design_patterns#enum_default_value",
+      "range": {
+        "startLine": 86,
+        "startChar": 12,
+        "endLine": 86,
+        "endChar": 13
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96acff7f_db151035",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "how about Full?",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 86,
+        "endChar": 9
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f295a27a_08299ec7",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "capitalize each enum value.",
+      "range": {
+        "startLine": 89,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 12
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ae22798_3d934fe9",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 364,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 364,
+        "startChar": 72,
+        "endLine": 364,
+        "endChar": 74
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c833724_35750f8c",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-12T22:07:09Z",
+      "side": 1,
+      "message": "result_visibility (otherwise, I\u0027m afraid will confuse people wrt owners_whitelist)",
+      "range": {
+        "startLine": 366,
+        "startChar": 28,
+        "endLine": 366,
+        "endChar": 38
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
