@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -33,6 +34,12 @@ import (
 // variant combinations with unexpected results will not be purged, until
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
+
+// sampleSize is the number of expired invocations to query at a time for a
+// given shard. If we make it too big we increase the likelihood that multiple
+// workers try to purge the same invocation, if we make it too small, we
+// increase the overhead caused by running sampling queries.
+const sampleSize = 10
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 
@@ -52,7 +59,16 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 // purgeOneInvocation finds test variants with unexpected results and drops the
 // complement, if there aren't too many of them.
 func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
-
+	// Check that invocation hasn't been purged already.
+	var expirationTime spanner.NullTime
+	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
+	if err := span.ReadInvocation(ctx, span.Client(ctx).Single(), id, ptrs); err != nil {
+		return err
+	}
+	if expirationTime.IsNull() {
+		// Invocation was purged by other worker.
+		return nil
+	}
 	// Get the test variants that have one or more unexpected results (up to limit + 1).
 	testVariantsToKeep, err := queryTestVariantsWithUnexpectedResults(ctx, id, maxTestVariantsToFilter+1)
 	if err != nil {
@@ -81,6 +97,10 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 
 	maxShard, err := span.CurrentMaxShard(ctx)
 	if err != nil {
+		if spanner.ErrCode(err) == codes.Canceled {
+			// Do not panic, just bail.
+			return
+		}
 		panic(errors.Annotate(err, "failed to determine number of shards").Err())
 	}
 	// Start one processing loop for each shard of the database.
@@ -91,12 +111,17 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 		go func() {
 			defer wg.Done()
 			b.cron(ctx, time.Second, func(ctx context.Context) error {
-				id, err := randomExpiredResultsInvocation(ctx, i)
+				ids, err := randomExpiredResultsInvocations(ctx, i, sampleSize)
 				switch err {
 				case span.ErrNoResults:
 					return nil
 				case nil:
-					return purgeOneInvocation(ctx, id)
+					for _, id := range ids {
+						if err := purgeOneInvocation(ctx, id); err != nil {
+							return err
+						}
+					}
+					return nil
 				default:
 					return err
 				}
@@ -106,9 +131,9 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 	wg.Wait()
 }
 
-// randomExpiredResultsInvocation selects a random invocation that has expired
-// test results.
-func randomExpiredResultsInvocation(ctx context.Context, shardID int) (span.InvocationID, error) {
+// randomExpiredResultsInvocations selects a random set of invocations that have
+// expired test results.
+func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize int) ([]span.InvocationID, error) {
 	st := spanner.NewStatement(`
 		WITH expiringInvocations AS (
 			SELECT InvocationId
@@ -118,11 +143,19 @@ func randomExpiredResultsInvocation(ctx context.Context, shardID int) (span.Invo
 			AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP())
 		SELECT *
 		FROM expiringInvocations
-		TABLESAMPLE RESERVOIR (1 ROWS)
+		TABLESAMPLE RESERVOIR (@sampleSize ROWS)
 	`)
 	st.Params["shardId"] = shardID
-	var ret span.InvocationID
-	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &ret)
+	st.Params["sampleSize"] = sampleSize
+	ret := make([]span.InvocationID, 0, sampleSize)
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+		var res span.InvocationID
+		if err := span.FromSpanner(row, &res); err != nil {
+			return err
+		}
+		ret = append(ret, res)
+		return nil
+	})
 	return ret, err
 }
 

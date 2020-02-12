@@ -110,9 +110,9 @@ func TestPurgeExpiredResults(t *testing.T) {
 		So(bls, ShouldBeGreaterThan, 0)
 
 		// Purge expired data.
-		for range invocations {
-			id, err := randomExpiredResultsInvocation(ctx, 0)
-			So(err, ShouldBeNil)
+		ids, err := randomExpiredResultsInvocations(ctx, 0, 10)
+		So(err, ShouldBeNil)
+		for _, id := range ids {
 			So(purgeOneInvocation(ctx, id), ShouldBeNil)
 		}
 
