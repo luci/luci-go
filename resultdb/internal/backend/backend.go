@@ -67,6 +67,7 @@ type backend struct {
 func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
 	var wg sync.WaitGroup
 	for i := 0; i < replicas; i++ {
+		ctx := logging.SetField(ctx, "cron_replica", i)
 		i := i
 		wg.Add(1)
 		go func() {
@@ -82,11 +83,7 @@ func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.
 // cron runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (1s) and backs off linearly on errors.
 func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
-	defer func() {
-		if ctx.Err() != nil {
-			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
-		}
-	}()
+	defer logging.Warningf(ctx, "Exiting cron")
 
 	// call calls f with a timeout and catches a panic.
 	call := func(ctx context.Context) error {
@@ -101,7 +98,7 @@ func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(co
 		return f(ctx)
 	}
 
-	if b.NoLoopingInterval {
+	if b.NoCronInterval {
 		minInterval = 0
 	}
 
@@ -144,9 +141,9 @@ type Options struct {
 	// PurgeExpiredResults instructs backend to purge expired results.
 	PurgeExpiredResults bool
 
-	// NoLoopingInterval instructs backend loops to spin as fast as possible.
+	// NoCronInterval instructs cron jobs to spin as fast as possible.
 	// Useful in integration tests to reduce the test time.
-	NoLoopingInterval bool
+	NoCronInterval bool
 
 	// ForceLeaseDuration is the duration to use instead of task-type-specific
 	// durations, if ForceLeaseDuration > 0.

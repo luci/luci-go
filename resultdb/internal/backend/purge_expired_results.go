@@ -68,13 +68,14 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 	return unsetInvocationResultsExpiration(ctx, id)
 }
 
-// purgeExpiredResults is a loop that repeatedly polls a random shard and purges
-// expired test results for a number of its invocations.
+// purgeExpiredResults purges expired test results and exports metrics.
+// It blocks until context is canceled.
 func (b *backend) purgeExpiredResults(ctx context.Context) {
-	mCtx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	go b.cron(ctx, time.Minute, func(ctx context.Context) error {
-		recordExpiredResultsDelayMetric(mCtx)
+		recordExpiredResultsDelayMetric(ctx)
 		return nil
 	})
 
