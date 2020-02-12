@@ -139,7 +139,7 @@ type Options struct {
 func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
 		Options:              &opts,
-		cronIterationTimeout: 10 * time.Second,
+		cronIterationTimeout: 10 * time.Minute,
 		bqExporter: bqExporter{
 			maxBatchRowCount: 500,
 			// HTTP request size limit is 10 MiB according to
