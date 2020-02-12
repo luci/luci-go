@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
@@ -249,20 +250,35 @@ func (b *bqExporter) queryTestResultsStreaming(
 }
 
 func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
-	eg, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	for rows := range batchC {
-		rows := rows
-		eg.Go(func() error {
-			err := b.insertRowsWithRetries(ctx, ins, rows)
-			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
-				err = permanentInvocationTaskErrTag.Apply(err)
+	// Do not use errgroup here, otherwise we accept all batches and it allocates
+	// memory uncontrollably => OOM.
+	return parallel.FanOutIn(func(work chan<- func() error) {
+		for {
+			select {
+			case <-ctx.Done():
+				// Ensure we return ctx.Err().
+				work <- func() error { return ctx.Err() }
+				return
+
+			case rows := <-batchC:
+				work <- func() error {
+					err := b.insertRowsWithRetries(ctx, ins, rows)
+					if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+						err = permanentInvocationTaskErrTag.Apply(err)
+					}
+
+					// Cancel all batches if any of them failed.
+					if err != nil {
+						cancel()
+					}
+					return err
+				}
 			}
-			return err
-		})
-	}
-
-	return eg.Wait()
+		}
+	})
 }
 
 // insertRowsWithRetries inserts rows into BigQuery.
