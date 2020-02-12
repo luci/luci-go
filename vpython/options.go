@@ -79,6 +79,14 @@ type Options struct {
 	// TODO(iannucci): Delete this once we're satisfied that PYTHONPATH exports
 	// are under control.
 	ClearPythonPath bool
+
+	// VpythonOptIn, if true, means that users must explicitly chose to enter/stay
+	// in the vpython environment when invoking subprocesses. For example, they
+	// would need to use sys.executable or 'vpython' for the subprocess.
+	//
+	// Practically, when this is true, the virtualenv's bin directory will NOT be
+	// added to $PATH for the subprocess.
+	VpythonOptIn bool
 }
 
 func (o *Options) resolve(c context.Context) error {

@@ -64,9 +64,11 @@ func Run(c context.Context, opts Options) error {
 		python.IsolateEnvironment(&e, !opts.ClearPythonPath)
 
 		e.Set("VIRTUAL_ENV", ve.Root) // Set by VirtualEnv script.
-		// Prepend BinDir to $PATH
-		e.Set("PATH", strings.Join(
-			[]string{ve.BinDir, e.GetEmpty("PATH")}, string(os.PathListSeparator)))
+		if !opts.VpythonOptIn {
+			// Prepend BinDir to $PATH
+			e.Set("PATH", strings.Join(
+				[]string{ve.BinDir, e.GetEmpty("PATH")}, string(os.PathListSeparator)))
+		}
 
 		// Run our bootstrapped Python command.
 		logging.Debugf(c, "Python environment:\nWorkDir: %s\nEnv: %s", opts.WorkDir, e)
