@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -29,6 +30,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
@@ -250,10 +253,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 	for rows := range batchC {
 		rows := rows
 		eg.Go(func() error {
-			if err := b.limit.Wait(ctx); err != nil {
-				return err
-			}
-			err := ins.Put(ctx, rows)
+			err := b.insertRowsWithRetries(ctx, ins, rows)
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
 				err = permanentInvocationTaskErrTag.Apply(err)
 			}
@@ -262,6 +262,26 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 	}
 
 	return eg.Wait()
+}
+
+// insertRowsWithRetries inserts rows into BigQuery.
+// Retries on transient errors.
+func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bigquery.StructSaver) error {
+	if err := b.limit.Wait(ctx); err != nil {
+		return err
+	}
+
+	// ins.Put has retries for most errors, but it does not retry
+	// "http2: stream closed" error. Retry only on that.
+	// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
+	// is fixed.
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		err := ins.Put(ctx, rows)
+		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
+			err = transient.Tag.Apply(err)
+		}
+		return err
+	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
