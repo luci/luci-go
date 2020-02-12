@@ -228,6 +228,7 @@ func (b *bqExporter) queryTestResultsStreaming(
 			case batchC <- rows:
 			}
 			rows = make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
+			batchSize = 0
 		}
 		return nil
 	})
