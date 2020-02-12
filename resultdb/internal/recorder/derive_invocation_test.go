@@ -239,7 +239,7 @@ func TestDeriveInvocation(t *testing.T) {
 			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
 
 			// Read InvocationTask to confirm it's added.
-			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name)))
+			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name).RowID()))
 			var payload []byte
 			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,

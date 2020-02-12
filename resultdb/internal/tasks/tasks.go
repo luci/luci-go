@@ -69,7 +69,7 @@ func Enqueue(typ Type, taskID string, invID span.InvocationID, payload interface
 
 // EnqueueBQExport inserts one row to InvocationTasks for a bq export task.
 func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, processAfter time.Time) *spanner.Mutation {
-	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID), invID, payload, processAfter)
+	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID.RowID()), invID, payload, processAfter)
 }
 
 // Sample randomly picks sampleSize of tasks of a given type
