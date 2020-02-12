@@ -58,10 +58,6 @@ type backend struct {
 
 	// taskWorkers is the number of goroutines that process invocation tasks.
 	taskWorkers int
-
-	// cronIterationTimeout is the timeout for each cron() iteration.
-	// Ignored if <=0.
-	cronIterationTimeout time.Duration
 }
 
 // cronGroup runs multiple cron jobs concurrently.
@@ -94,11 +90,6 @@ func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(co
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
-		if b.cronIterationTimeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, b.cronIterationTimeout)
-			defer cancel()
-		}
 		return f(ctx)
 	}
 
@@ -164,9 +155,8 @@ type Options struct {
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
-		Options:              &opts,
-		cronIterationTimeout: time.Hour,
-		taskWorkers:          100,
+		Options:     &opts,
+		taskWorkers: 100,
 		bqExporter: bqExporter{
 			maxBatchRowCount: 500,
 			// HTTP request size limit is 10 MiB according to
