@@ -60,6 +60,22 @@ type backend struct {
 	cronIterationTimeout time.Duration
 }
 
+// cronGroup runs multiple cron jobs concurrently.
+func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
+	var wg sync.WaitGroup
+	for i := 0; i < replicas; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			b.cron(ctx, minInterval, func(ctx context.Context) error {
+				return f(ctx, i)
+			})
+		}()
+	}
+	wg.Wait()
+}
+
 // cron runs f repeatedly, until the context is cancelled.
 // Ensures f is not called too often (1s) and backs off linearly on errors.
 func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
