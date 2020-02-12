@@ -20,12 +20,14 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
+	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/tasks"
-	"go.chromium.org/luci/server"
 )
 
 // ThrottledLogger emits a log item at most every MinLogInterval.
@@ -49,9 +51,18 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 	tl.mu.Unlock()
 }
 
+type backend struct {
+	*Options
+	bqExporter
+
+	// processingLoopIterationTimeout is the timeout for each processingLoop()
+	// iteration. Ignored if <=0.
+	processingLoopIterationTimeout time.Duration
+}
+
 // processingLoop runs f repeatedly, until the context is cancelled.
-// Ensures f is not called too often and backs off linearly on errors.
-func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout time.Duration, f func(context.Context) error) {
+// Ensures f is not called too often (1s) and backs off linearly on errors.
+func (b *backend) processingLoop(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
 	defer func() {
 		if ctx.Err() != nil {
 			logging.Warningf(ctx, "Exiting loop due to %v", ctx.Err())
@@ -63,8 +74,16 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
-		ctx, _ = context.WithTimeout(ctx, iterationTimeout)
+		if b.processingLoopIterationTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, b.processingLoopIterationTimeout)
+			defer cancel()
+		}
 		return f(ctx)
+	}
+
+	if b.NoLoopingInterval {
+		minInterval = 0
 	}
 
 	attempt := 0
@@ -87,6 +106,8 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 		if minSleep := minInterval - clock.Since(ctx, start); sleep < minSleep {
 			sleep = minSleep
 		}
+
+		const maxSleep = 5 * time.Second
 		if sleep > maxSleep {
 			sleep = maxSleep
 		}
@@ -101,20 +122,39 @@ func processingLoop(ctx context.Context, minInterval, maxSleep, iterationTimeout
 
 // Options is backend server configuration.
 type Options struct {
-	// Whether to purge expired results.
+	// PurgeExpiredResults instructs backend to purge expired results.
 	PurgeExpiredResults bool
+
+	// NoLoopingInterval instructs backend loops to spin as fast as possible.
+	// Useful in integration tests to reduce the test time.
+	NoLoopingInterval bool
+
+	// ForceLeaseDuration is the duration to use instead of task-type-specific
+	// durations, if ForceLeaseDuration > 0.
+	// Useful in integration tests to reduce the test time.
+	ForceLeaseDuration time.Duration
 }
 
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
+	b := &backend{
+		Options:                        &opts,
+		processingLoopIterationTimeout: 10 * time.Second,
+		bqExporter: bqExporter{
+			maxBatchRowCount: maxBatchRowCount,
+			maxBatchSize:     maxBatchSize,
+			limit:            rate.NewLimiter(100, 1),
+		},
+	}
+
 	for _, taskType := range tasks.AllTypes {
 		taskType := taskType
 		activity := fmt.Sprintf("resultdb.task.%s", taskType)
 		srv.RunInBackground(activity, func(ctx context.Context) {
-			runInvocationTasks(ctx, taskType)
+			b.runInvocationTasks(ctx, taskType)
 		})
 	}
 	if opts.PurgeExpiredResults {
-		srv.RunInBackground("resultdb.purge_expired_results", purgeExpiredResults)
+		srv.RunInBackground("resultdb.purge_expired_results", b.purgeExpiredResults)
 	}
 }

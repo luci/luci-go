@@ -126,21 +126,5 @@ func TestPurgeExpiredResults(t *testing.T) {
 		// Too many test variants with unexpected results (1001), so no deletions happen.
 		// 1 test * 1002 variants * 2 results per test variants
 		So(countTestResults(ctx, invocations[2]), ShouldEqual, 2004)
-		Convey(`Test loop exit condition`, func() {
-			mCtx, cancel := context.WithCancel(ctx)
-			exited := make(chan bool, 1)
-			go func() {
-				purgeExpiredResults(mCtx)
-				exited <- true
-			}()
-			time.Sleep(500 * time.Millisecond)
-			So(exited, ShouldHaveLength, 0)
-			cancel()
-			select {
-			case <-exited:
-			case <-time.After(time.Second):
-				So("Loop did not exit after context cancellation", ShouldBeNil)
-			}
-		})
 	})
 }

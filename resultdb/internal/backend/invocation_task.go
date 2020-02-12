@@ -19,8 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -39,11 +37,14 @@ var permanentInvocationTaskErrTag = errors.BoolTag{
 	Key: errors.NewTagKey("permanent failure to process invocation task"),
 }
 
-func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
+func (b *backend) dispatchInvocationTasks(ctx context.Context, taskType tasks.Type, ids []string) (processed []string, err error) {
 	leaseDuration := time.Minute
 	switch taskType {
 	case tasks.TryFinalizeInvocation:
 		leaseDuration = 10 * time.Second
+	}
+	if b.ForceLeaseDuration > 0 {
+		leaseDuration = b.ForceLeaseDuration
 	}
 
 	var mu sync.Mutex
@@ -73,6 +74,7 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 				invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
 				switch {
 				case err == tasks.ErrConflict:
+					logging.Warningf(ctx, "Conflict while trying to lease the task")
 					// It's possible another worker has leased the task, and it's fine, skip.
 					return nil
 				case err != nil:
@@ -81,7 +83,7 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 
 				switch taskType {
 				case tasks.BQExport:
-					err = ip.exportResultsToBigQuery(ctx, invID, payload)
+					err = b.exportResultsToBigQuery(ctx, invID, payload)
 				case tasks.TryFinalizeInvocation:
 					err = tryFinalizeInvocation(ctx, invID)
 				default:
@@ -113,28 +115,21 @@ func (ip *invocationProcessor) dispatchInvocationTasks(ctx context.Context, task
 }
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
-func runInvocationTasks(ctx context.Context, taskType tasks.Type) {
+func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	mCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go processingLoop(ctx, time.Minute, time.Minute, time.Minute, func(ctx context.Context) error {
+	go b.processingLoop(ctx, time.Minute, func(ctx context.Context) error {
 		recordOldestTaskMetric(mCtx, taskType)
 		return nil
 	})
 
-	processingLoop(ctx, time.Second, 5*time.Second, 10*time.Minute, func(ctx context.Context) error {
+	b.processingLoop(ctx, time.Second, func(ctx context.Context) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
 		}
 
-		ip := &invocationProcessor{
-			bqExporter: bqExporter{
-				maxBatchRowCount: maxBatchRowCount,
-				maxBatchSize:     maxBatchSize,
-				limit:            rate.NewLimiter(100, 1),
-			},
-		}
-		processed, err := ip.dispatchInvocationTasks(ctx, taskType, ids)
+		processed, err := b.dispatchInvocationTasks(ctx, taskType, ids)
 		if len(processed) > 0 {
 			logging.Infof(ctx, "processed tasks: %q", processed)
 		}
