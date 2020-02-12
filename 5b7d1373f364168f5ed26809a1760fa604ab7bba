@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "391590ab_f0e07fdf",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T22:43:16Z",
+      "side": 1,
+      "message": "now placement of this comment is not accurate. please move it closer to L281",
+      "range": {
+        "startLine": 275,
+        "startChar": 2,
+        "endLine": 278,
+        "endChar": 13
+      },
+      "revId": "5b7d1373f364168f5ed26809a1760fa604ab7bba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da656dad_74ec846b",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T22:43:16Z",
+      "side": 1,
+      "message": "i think we need to check googleapi.Error.Errors[i].Reason",
+      "range": {
+        "startLine": 284,
+        "startChar": 22,
+        "endLine": 284,
+        "endChar": 30
+      },
+      "revId": "5b7d1373f364168f5ed26809a1760fa604ab7bba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
