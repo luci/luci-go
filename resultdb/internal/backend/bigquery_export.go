@@ -24,6 +24,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
@@ -60,7 +61,16 @@ type table interface {
 type bqExporter struct {
 	maxBatchRowCount int
 	maxBatchSize     int
-	limit            *rate.Limiter
+
+	// putLimiter limits the rate of bigquery.Inserter.Put calls.
+	putLimiter *rate.Limiter
+
+	// batchSem limits the number of batches we hold in memory at a time.
+	//
+	// Strictly speaking, this is not the exact number of batches.
+	// The exact number is batchSemWeight + taskWorkers*2,
+	// but this is good enough.
+	batchSem *semaphore.Weighted
 }
 
 func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
@@ -250,10 +260,16 @@ func (b *bqExporter) queryTestResultsStreaming(
 
 func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC chan []*bigquery.StructSaver) error {
 	eg, ctx := errgroup.WithContext(ctx)
+	defer eg.Wait()
 
 	for rows := range batchC {
 		rows := rows
+		if err := b.batchSem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+
 		eg.Go(func() error {
+			defer b.batchSem.Release(1)
 			err := b.insertRowsWithRetries(ctx, ins, rows)
 			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
 				err = permanentInvocationTaskErrTag.Apply(err)
@@ -268,7 +284,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 // insertRowsWithRetries inserts rows into BigQuery.
 // Retries on transient errors.
 func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bigquery.StructSaver) error {
-	if err := b.limit.Wait(ctx); err != nil {
+	if err := b.putLimiter.Wait(ctx); err != nil {
 		return err
 	}
 
