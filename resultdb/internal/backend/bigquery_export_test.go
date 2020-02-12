@@ -89,7 +89,7 @@ func TestExportToBigQuery(t *testing.T) {
 
 		b := &bqExporter{
 			maxBatchRowCount: 2,
-			maxBatchSize:     maxBatchSize,
+			maxBatchSize:     500,
 			limit:            rate.NewLimiter(100, 1),
 		}
 
