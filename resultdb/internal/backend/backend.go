@@ -141,9 +141,14 @@ func InitServer(srv *server.Server, opts Options) {
 		Options:                        &opts,
 		processingLoopIterationTimeout: 10 * time.Second,
 		bqExporter: bqExporter{
-			maxBatchRowCount: maxBatchRowCount,
-			maxBatchSize:     maxBatchSize,
-			limit:            rate.NewLimiter(100, 1),
+			maxBatchRowCount: 500,
+			// HTTP request size limit is 10 MiB according to
+			// https://cloud.google.com/bigquery/quotas#streaming_inserts
+			// Use a smaller size as the limit since we are only using the size of
+			// test results to estimate the whole payload size.
+			maxBatchSize: 6e6,
+
+			limit: rate.NewLimiter(100, 1),
 		},
 	}
 
