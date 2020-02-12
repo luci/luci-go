@@ -255,7 +255,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 		rows := rows
 		eg.Go(func() error {
 			err := b.insertRowsWithRetries(ctx, ins, rows)
-			if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden {
+			if bqe, ok := err.(*bigquery.Error); ok && bqe.Reason == "accessDenied" {
 				err = permanentInvocationTaskErrTag.Apply(err)
 			}
 			return err
@@ -279,6 +279,9 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		err := ins.Put(ctx, rows)
 		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
+			err = transient.Tag.Apply(err)
+		}
+		if bqe, ok := err.(*bigquery.Error); ok && bqe.Reason == "quotaExceeded" {
 			err = transient.Tag.Apply(err)
 		}
 		return err
