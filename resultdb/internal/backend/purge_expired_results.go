@@ -16,7 +16,6 @@ package backend
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -86,27 +85,19 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 	case err != nil:
 		panic(errors.Annotate(err, "failed to determine number of shards").Err())
 	}
-	// Start one processing loop for each shard of the database.
-	var wg sync.WaitGroup
-	for i := 0; i <= maxShard; i++ {
-		i := i
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			b.cron(ctx, time.Second, func(ctx context.Context) error {
-				id, err := randomExpiredResultsInvocation(ctx, i)
-				switch err {
-				case span.ErrNoResults:
-					return nil
-				case nil:
-					return purgeOneInvocation(ctx, id)
-				default:
-					return err
-				}
-			})
-		}()
-	}
-	wg.Wait()
+
+	// Start one cron job for each shard of the database.
+	b.cronGroup(ctx, maxShard+1, time.Second, func(ctx context.Context, shard int) error {
+		id, err := randomExpiredResultsInvocation(ctx, shard)
+		switch err {
+		case span.ErrNoResults:
+			return nil
+		case nil:
+			return purgeOneInvocation(ctx, id)
+		default:
+			return err
+		}
+	})
 }
 
 // randomExpiredResultsInvocation selects a random invocation that has expired
