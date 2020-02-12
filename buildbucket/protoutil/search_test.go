@@ -97,15 +97,15 @@ func TestSearch(t *testing.T) {
 			So(actualBuilds, ShouldBeEmpty)
 		})
 
-		Convey("Ensure NextPageToken", func() {
+		Convey("Ensure Required fields", func() {
 			client.EXPECT().
 				SearchBuilds(gomock.Any(), &pb.SearchBuildsRequest{
-					Fields: &field_mask.FieldMask{Paths: []string{"builds.*.status", "next_page_token", "builds.*.id"}},
+					Fields: &field_mask.FieldMask{Paths: []string{"builds.*.builder", "builds.*.created_by", "builds.*.id", "builds.*.status", "next_page_token"}},
 				}).
 				Return(&pb.SearchBuildsResponse{}, nil)
 
 			actualBuilds, err := search(&pb.SearchBuildsRequest{
-				Fields: &field_mask.FieldMask{Paths: []string{"builds.*.status"}},
+				Fields: &field_mask.FieldMask{Paths: []string{"builds.*.created_by"}},
 			})
 			So(err, ShouldBeNil)
 			So(actualBuilds, ShouldBeEmpty)
