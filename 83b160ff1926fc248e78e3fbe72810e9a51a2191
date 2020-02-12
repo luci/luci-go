@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef7e34c2_a7ed3a87",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T22:47:54Z",
+      "side": 1,
+      "message": "please move after L132",
+      "revId": "83b160ff1926fc248e78e3fbe72810e9a51a2191",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
