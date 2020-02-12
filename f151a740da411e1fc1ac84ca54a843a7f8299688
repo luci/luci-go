@@ -22,6 +22,30 @@
       "revId": "f151a740da411e1fc1ac84ca54a843a7f8299688",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "824f0ffb_4e5fdfcc",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-02-12T01:19:43Z",
+      "side": 1,
+      "message": "Yep.. It would be a lot easier. My thought while implementing this is that I\u0027m afraid that the method signature will need to be changed every time we want to make a change to output json format. So why not encapsulates all the variance inside one struct. But, I guess there\u0027s no need to over engineer at this moment so I\u0027ve made the change as you suggested.",
+      "parentUuid": "363f221f_89757e20",
+      "range": {
+        "startLine": 112,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 0
+      },
+      "revId": "f151a740da411e1fc1ac84ca54a843a7f8299688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
