@@ -116,22 +116,20 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
 		}
 
-		var processed []string
-		defer func() {
-			if len(processed) > 0 {
-				logging.Infof(ctx, "processed tasks: %q", processed)
-			}
-		}()
-
 		for _, id := range ids {
 			ctx := logging.SetField(ctx, "task_id", id)
 			switch err := b.runTask(ctx, taskType, id); {
+
 			case err == tasks.ErrConflict:
 				logging.Warningf(ctx, "Conflict while trying to lease the task")
+
 			case err != nil:
-				return errors.Annotate(err, "failed to process task %s", id).Err()
+				// Do not bail on other task ids, otherwise we sample tasks too often
+				// which is expensive.
+				logging.Errorf(ctx, "Task failed: %s", err)
+
 			default:
-				processed = append(processed, id)
+				logging.Infof(ctx, "Task succeeded")
 			}
 		}
 		return nil
