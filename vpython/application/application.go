@@ -134,6 +134,14 @@ type Config struct {
 
 	// DefaultSpec is the default spec to use when one is not otherwise found.
 	DefaultSpec vpythonAPI.Spec
+
+	// VpythonOptIn, if true, means that users must explicitly chose to enter/stay
+	// in the vpython environment when invoking subprocesses. For example, they
+	// would need to use sys.executable or 'vpython' for the subprocess.
+	//
+	// Practically, when this is true, the virtualenv's bin directory will NOT be
+	// added to $PATH for the subprocess.
+	VpythonOptIn bool
 }
 
 type application struct {
@@ -382,11 +390,12 @@ func (cfg *Config) Main(c context.Context, argv []string, env environ.Env) int {
 				MaxPrunesPerSweep: cfg.MaxPrunesPerSweep,
 				Loader:            cfg.PackageLoader,
 			},
-			BaseWheels: cfg.BaseWheels,
-			WaitForEnv: true,
-			SpecLoader: cfg.SpecLoader,
-			Environ:    env,
-			DefaultSpec: cfg.DefaultSpec,
+			BaseWheels:   cfg.BaseWheels,
+			WaitForEnv:   true,
+			SpecLoader:   cfg.SpecLoader,
+			Environ:      env,
+			DefaultSpec:  cfg.DefaultSpec,
+			VpythonOptIn: cfg.VpythonOptIn,
 		},
 		logConfig: logging.Config{
 			Level: defaultLogLevel,
