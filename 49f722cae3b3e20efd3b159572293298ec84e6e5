@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "771fd5e7_fea26799",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T06:16:40Z",
+      "side": 1,
+      "message": "i find this inaccurate because we won\u0027t be notifying each build that faile don astep matching this regular expression. There are more conditions that must be satisfied.\n\nalso strictly speaking, we don\u0027t \"build failed on step\" is not something well defined in buildbucket.\n\nConsider more precise wording \"The build must have a failed step matching this regular expression\"\n\nsame concern with failed_step_regexp_exclude and in TreeCloser",
+      "range": {
+        "startLine": 107,
+        "startChar": 12,
+        "endLine": 107,
+        "endChar": 26
+      },
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e87cdfc_06a6d219",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T06:16:40Z",
+      "side": 1,
+      "message": "Mutually exclusive with on_new_status",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3785b819_99328a52",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T06:16:40Z",
+      "side": 1,
+      "message": "Mutually exclusive with on_new_status",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dffb0f35_15f19434",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T06:16:40Z",
+      "side": 1,
+      "message": "template namespace is global, not in the context of tree status. At that level it may be unclear what is \"default_status\". A build also has a status. Consider \"default_tree_status\"",
+      "range": {
+        "startLine": 154,
+        "startChar": 22,
+        "endLine": 154,
+        "endChar": 36
+      },
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea779883_d919b134",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T06:16:40Z",
+      "side": 1,
+      "message": "i think the doc should explain what \"matching\" means here, i.e. that it should match failed_step_regexp[_exclude]",
+      "revId": "49f722cae3b3e20efd3b159572293298ec84e6e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
