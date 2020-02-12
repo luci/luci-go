@@ -23,6 +23,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/server"
@@ -97,8 +98,7 @@ func (b *backend) processingLoop(ctx context.Context, minInterval time.Duration,
 		if err := call(ctx); err == nil {
 			attempt = 0
 		} else {
-			logging.Errorf(ctx, "Iteration failed: %s", err)
-
+			logging.Errorf(ctx, "Iteration failed: %s", errors.Annotate(err, "loop body returned error").Err())
 			attempt++
 			sleep = time.Duration(attempt) * time.Second
 		}
