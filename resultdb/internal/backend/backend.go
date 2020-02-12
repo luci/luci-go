@@ -23,6 +23,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/server"
@@ -130,6 +131,8 @@ func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(co
 		if sleep > maxSleep {
 			sleep = maxSleep
 		}
+		// Add jitter: +-10% of sleep time to desynchronize cron jobs.
+		sleep = sleep - sleep/10 + time.Duration(mathrand.Intn(ctx, int(sleep/5)))
 
 		select {
 		case <-time.After(sleep):
