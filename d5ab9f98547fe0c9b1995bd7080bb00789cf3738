@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "248fe540_3d3d2979",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:34:59Z",
+      "side": 1,
+      "message": "what if id is not present?",
+      "range": {
+        "startLine": 131,
+        "startChar": 99,
+        "endLine": 131,
+        "endChar": 103
+      },
+      "revId": "d5ab9f98547fe0c9b1995bd7080bb00789cf3738",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6efd1682_a16eb822",
+        "filename": "buildbucket/cli/print.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-12T00:34:59Z",
+      "side": 1,
+      "message": "what if any of these are not present?\n\nconsider an alternative for this and id: force them to be present",
+      "range": {
+        "startLine": 141,
+        "startChar": 19,
+        "endLine": 141,
+        "endChar": 73
+      },
+      "revId": "d5ab9f98547fe0c9b1995bd7080bb00789cf3738",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
