@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8761540d_ee5eae1b",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-12T22:17:12Z",
+      "side": 1,
+      "message": "we should still probably wait for eg.Wait(). Abandoning running goroutines is rarely a good idea, even if they are supposed to finish soon.",
+      "range": {
+        "startLine": 267,
+        "startChar": 3,
+        "endLine": 267,
+        "endChar": 13
+      },
+      "revId": "63ad5d612ff7e7d127ae3896647273a774952f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
