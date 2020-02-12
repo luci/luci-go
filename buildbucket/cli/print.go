@@ -125,8 +125,22 @@ func (p *printer) JSONPB(pb proto.Message) {
 	p.f("%s\n", indented.Bytes())
 }
 
-// Build prints b.
+// Build prints b. Panic when id, status or any fields under builder is missing
 func (p *printer) Build(b *pb.Build) {
+	// Id, Status and Builder are explicitly added to field mask so they should
+	// always be present. Doing defensive check here to avoid any unexpected
+	// conditions to corrupt the printed build.
+	if b.Id == 0 {
+		panic(fmt.Errorf("expect non zero id present in the build"))
+	}
+	if b.Status == pb.Status_STATUS_UNSPECIFIED {
+		panic(fmt.Errorf("expect non zero value status present in the build"))
+	}
+	if builder := b.Builder; builder == nil ||
+		builder.Project == "" || builder.Bucket == "" || builder.Builder == "" {
+		panic(fmt.Errorf("expect builder present in the build and all fields under builder should be non zero value. Got: %v", builder))
+	}
+
 	// Print the build URL bold, underline and a color matching the status.
 	p.f("%s%s%shttp://ci.chromium.org/b/%d", ansiWhiteBold, ansiWhiteUnderline, ansiStatus[b.Status], b.Id)
 	// Undo underline.
@@ -162,8 +176,11 @@ func (p *printer) Build(b *pb.Build) {
 	}
 
 	// Timing.
-	p.buildTime(b)
-	p.f("\n")
+	if b.CreateTime != nil {
+		p.buildTime(b)
+		p.f("\n")
+	}
+
 	if b.CreatedBy != "" {
 		p.attr("By")
 		p.f("%s\n", b.CreatedBy)

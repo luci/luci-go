@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/mgutz/ansi"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -189,6 +190,16 @@ const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chrom
 <green+h>Step "second"   SUCCESS   59ms      Logs: "stdout", "stderr"<reset>
 `
 
+func ansifyTemplate(template string) string {
+	return regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
+		template,
+		func(style string) string {
+			style = strings.TrimPrefix(style, "<")
+			style = strings.TrimSuffix(style, ">")
+			return ansi.ColorCode(style)
+		})
+}
+
 func TestPrint(t *testing.T) {
 	Convey("Print", t, func() {
 		buf := &bytes.Buffer{}
@@ -200,17 +211,56 @@ func TestPrint(t *testing.T) {
 			build := &pb.Build{}
 			So(jsonpb.UnmarshalString(buildJSON, build), ShouldBeNil)
 
-			expectedBuildPrinted := regexp.MustCompile("<[^>]+>").ReplaceAllStringFunc(
-				expectedBuildPrintedTemplate,
-				func(style string) string {
-					style = strings.TrimPrefix(style, "<")
-					style = strings.TrimSuffix(style, ">")
-					return ansi.ColorCode(style)
-				})
+			expectedBuildPrinted := ansifyTemplate(expectedBuildPrintedTemplate)
 			p.Build(build)
 
 			So(p.Err, ShouldBeNil)
 			So(buf.String(), ShouldEqual, expectedBuildPrinted)
+		})
+
+		Convey("Partial build", func() {
+			// Only Id, Status and Builder are available
+			build := &pb.Build{
+				Id:     8917899588926498064,
+				Status: pb.Status_STARTED,
+				Builder: &pb.BuilderID{
+					Project: "chromium",
+					Bucket:  "try",
+					Builder: "linux-rel",
+				},
+			}
+			expectedBuildPrinted := ansifyTemplate("<white+b><white+u><yellow+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><yellow+h> STARTED   'chromium/try/linux-rel'<reset>\n")
+			p.Build(build)
+
+			So(p.Err, ShouldBeNil)
+			So(buf.String(), ShouldEqual, expectedBuildPrinted)
+		})
+
+		Convey("Build error when any of required fields is missing", func() {
+			validBuild := &pb.Build{
+				Id:     8917899588926498064,
+				Status: pb.Status_STARTED,
+				Builder: &pb.BuilderID{
+					Project: "chromium",
+					Bucket:  "try",
+					Builder: "linux-rel",
+				},
+			}
+			// Make sure Build can be printed
+			p.Build(validBuild)
+			So(p.Err, ShouldBeNil)
+
+			buildWithoutID := proto.Clone(validBuild).(*pb.Build)
+			buildWithoutID.Id = 0
+			So(func() { p.Build(buildWithoutID) }, ShouldPanic)
+
+			buildWithoutStatus := proto.Clone(validBuild).(*pb.Build)
+			buildWithoutStatus.Status = pb.Status_STATUS_UNSPECIFIED
+			So(func() { p.Build(buildWithoutStatus) }, ShouldPanic)
+
+			buildWithoutBuilder := proto.Clone(validBuild).(*pb.Build)
+			buildWithoutBuilder.Builder = nil
+			So(func() { p.Build(buildWithoutBuilder) }, ShouldPanic)
 		})
 
 		Convey("Chromium commit", func() {
