@@ -22,6 +22,30 @@
       "revId": "6ec7c242e9cb07398af582fdb2b7f1b2099fad63",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9b9e928_8892d8b5",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T23:33:40Z",
+      "side": 1,
+      "message": "Done.\n\nAfter the change, we don\u0027t need chained retries in our use case.",
+      "parentUuid": "e5d42c92_acf75687",
+      "range": {
+        "startLine": 308,
+        "startChar": 3,
+        "endLine": 308,
+        "endChar": 6
+      },
+      "revId": "6ec7c242e9cb07398af582fdb2b7f1b2099fad63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
