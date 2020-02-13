@@ -16,6 +16,24 @@
       "revId": "e7f465e58e2c3565a2d6c2d528b909e3fb6c19c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dda039ac_746ffa2f",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-13T04:29:25Z",
+      "side": 1,
+      "message": "ah, never mind. this block is not to catch and log all types of errors. It\u0027s to treat specific errors with special care.",
+      "parentUuid": "dd22a381_6c69512b",
+      "revId": "e7f465e58e2c3565a2d6c2d528b909e3fb6c19c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
