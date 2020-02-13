@@ -389,6 +389,7 @@ luci.cq_group(
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = 'linux try builder',
+            result_visibility=cq.RESTRICTED_VISIBILITY,
             location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
