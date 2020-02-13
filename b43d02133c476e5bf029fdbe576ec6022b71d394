@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d01f1b1_e7cc2bd3",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T23:27:38Z",
+      "side": 1,
+      "message": "This inconsistency (cq.ACTION_* and cq.RETRY_*, but cq.*_VISIBILITY) is due to violation of protobuf style guide that says (https://developers.google.com/protocol-buffers/docs/style#enums) that enums should have from FOO_*. Maybe it\u0027s not too late to fix the *.proto?",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d9d4eae_10ea080a",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T23:27:38Z",
+      "side": 1,
+      "message": "please document the default behavior",
+      "range": {
+        "startLine": 166,
+        "startChar": 39,
+        "endLine": 167,
+        "endChar": 45
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06440514_f9c8c7f6",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T23:27:38Z",
+      "side": 1,
+      "message": "spaces around \u003d",
+      "range": {
+        "startLine": 392,
+        "startChar": 29,
+        "endLine": 392,
+        "endChar": 30
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b9ecb51_98e9b728",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T23:27:38Z",
+      "side": 1,
+      "message": "this test shows that result_visibility doens\u0027t actually propagate to the output config, you need to modify generators.star",
+      "range": {
+        "startLine": 443,
+        "startChar": 2,
+        "endLine": 443,
+        "endChar": 17
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
