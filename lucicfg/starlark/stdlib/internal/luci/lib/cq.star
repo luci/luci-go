@@ -168,6 +168,10 @@ def _validate_retry_config(attr, val, default=None, required=True):
 #     considered "twice as heavy" as non-timeout failures (e.g. one retried
 #     timeout failure immediately exhausts all retry quota for the CQ attempt).
 #     This is to avoid adding more requests to an already overloaded system.
+#
+# `cq.FULL_VISIBILITY` and `cq.RESTRICTED_VISIBILITY` constants define possible
+# values for `result_visibility` field of luci.cq_group(...). See the proto for
+# the description.
 cq = struct(
     refset = _refset,
     retry_config = _retry_config,
@@ -191,6 +195,9 @@ cq = struct(
         transient_failure_weight = 1,
         timeout_weight = 2,
     ),
+
+    FULL_VISIBILITY = cq_pb.FULL_VISIBILITY,
+    RESTRICTED_VISIBILITY = cq_pb.RESTRICTED_VISIBILITY,
 )
 
 cqimpl = struct(
