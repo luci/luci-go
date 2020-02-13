@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "1b1b3634_934425c5",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T21:21:42Z",
+      "side": 1,
+      "message": "I don\u0027t see b.cron() being used anywhere? Maybe I missed something.",
+      "parentUuid": "a8e4dc09_6e64ca1b",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 1
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e19daf22_f80b5791",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 7
@@ -172,6 +196,24 @@
       "side": 1,
       "message": "hmm which line?",
       "parentUuid": "c5595feb_1d3a6828",
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26e81e05_c6ee6326",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T21:21:42Z",
+      "side": 1,
+      "message": "between L16 \u0026 17",
+      "parentUuid": "ec04050a_5e129823",
       "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
