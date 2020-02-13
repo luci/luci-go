@@ -56,9 +56,6 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 type backend struct {
 	*Options
 	bqExporter
-
-	// taskWorkers is the number of goroutines that process invocation tasks.
-	taskWorkers int
 }
 
 // cronGroup runs multiple cron jobs concurrently.
@@ -133,13 +130,15 @@ type Options struct {
 	// durations, if ForceLeaseDuration > 0.
 	// Useful in integration tests to reduce the test time.
 	ForceLeaseDuration time.Duration
+
+	// TaskWorkers is the number of goroutines that process invocation tasks.
+	TaskWorkers int
 }
 
 // InitServer initializes a backend server.
 func InitServer(srv *server.Server, opts Options) {
 	b := &backend{
-		Options:     &opts,
-		taskWorkers: 100,
+		Options: &opts,
 		bqExporter: bqExporter{
 			// TODO(nodir): move all these constants to Options and bind them to flags.
 

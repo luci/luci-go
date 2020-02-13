@@ -166,6 +166,7 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	backend.InitServer(recorderServer, backend.Options{
+		TaskWorkers:         1,
 		ForceCronInterval:   100 * time.Millisecond,
 		ForceLeaseDuration:  100 * time.Millisecond,
 		PurgeExpiredResults: true,
