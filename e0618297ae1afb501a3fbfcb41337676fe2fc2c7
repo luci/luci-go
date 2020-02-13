@@ -70,6 +70,24 @@
       "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b95deb78_b4cbc795",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T19:42:17Z",
+      "side": 1,
+      "message": "LGTM to unblock this CL, but perhaps we should invest in gae2 indeed",
+      "parentUuid": "c9606417_738e06b0",
+      "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
