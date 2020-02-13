@@ -109,20 +109,28 @@ func (p *printer) fw(minWidth int, format string, args ...interface{}) {
 	p.f("%s%s", s, strings.Repeat(" ", pad))
 }
 
-// JSONPB prints pb in JSON format, indented.
-func (p *printer) JSONPB(pb proto.Message) {
+// JSONPB prints pb in either compact or indented JSON format according to the
+// provided compact boolean
+func (p *printer) JSONPB(pb proto.Message, compact bool) {
 	m := &jsonpb.Marshaler{}
 	buf := &bytes.Buffer{}
 	if err := m.Marshal(buf, pb); err != nil {
 		panic(fmt.Errorf("failed to marshal a message: %s", err))
 	}
 
-	// Note: json.Marshal indents JSON more nicely than jsonpb.Marshaler.Indent.
-	indented := &bytes.Buffer{}
-	if err := json.Indent(indented, buf.Bytes(), "", "  "); err != nil {
+	out := &bytes.Buffer{}
+	var err error
+	if compact {
+		err = json.Compact(out, buf.Bytes())
+	} else {
+		// Note: json.Marshal indents JSON more nicely than jsonpb.Marshaler.Indent.
+		err = json.Indent(out, buf.Bytes(), "", "  ")
+	}
+	if err != nil {
 		panic(err)
 	}
-	p.f("%s\n", indented.Bytes())
+
+	p.f("%s\n", out.Bytes())
 }
 
 // Build prints b. Panic when id, status or any fields under builder is missing
@@ -205,12 +213,12 @@ func (p *printer) Build(b *pb.Build) {
 	// Properties
 	if props := b.Input.GetProperties(); props != nil {
 		p.attr("Input properties")
-		p.JSONPB(props)
+		p.JSONPB(props, false)
 	}
 
 	if props := b.Output.GetProperties(); props != nil {
 		p.attr("Output properties")
-		p.JSONPB(props)
+		p.JSONPB(props, false)
 	}
 
 	// Steps
