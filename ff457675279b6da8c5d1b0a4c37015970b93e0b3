@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bfcb4d3_920bfaad",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T07:15:55Z",
+      "side": 1,
+      "message": "this is just `delay * 2`",
+      "range": {
+        "startLine": 47,
+        "startChar": 13,
+        "endLine": 47,
+        "endChar": 46
+      },
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9febeaf6_cb0fccc6",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T07:15:55Z",
+      "side": 1,
+      "message": "jitter is especially good when it adds up. here we add it only to the return value, but it.delay grows exactly 2x. ideally jitter is accumulated in it.delay",
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fef4534b_d9866a62",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T07:15:55Z",
+      "side": 1,
+      "message": "i don\u0027t think this actually works. iters is a slice of structs, not pointers. this means on each iteration we make a copy of internalIter and the mutation we do in L47 is applied to the copy, and not rt.iters element",
+      "range": {
+        "startLine": 103,
+        "startChar": 23,
+        "endLine": 103,
+        "endChar": 28
+      },
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "337734ab_b538a67b",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T07:15:55Z",
+      "side": 1,
+      "message": "i think this func could be generalized and placed in the retry package:\n\n  func Chain(iters ...Iterator) Iterator\n  func ChainFactories(factories ...Factory) Factory\n\nexcept checking if an iterator returned Stop\n\n  for _, it :\u003d range iterators {\n    if dur :\u003d it(ctx, err); dur !\u003d Stop {\n      return dur\n    }\n  }\n  return Stop\n\nthen we can use it to combine a custom iterator for quota errors and transieny.Only(retry.Default) for transient errors. Then our retryIter becomes simpler because no longer has to account for two cases (quota errors and streamClosed errors). Then wouldn\u0027t need addJitter flag because we\u0027d be adding jitter unconditionally. Then we can move \"is it a quota error\" logic from bigquery_export.go:314 to the itereator for quota errors, so they are closed to each other. then you don\u0027t need the quota errors tag.",
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
