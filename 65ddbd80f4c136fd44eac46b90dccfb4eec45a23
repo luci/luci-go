@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24c7195d_9cb95a1d",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-13T20:35:00Z",
+      "side": 1,
+      "message": "i\u0027m really sorry, final nit: we\u0027re trying to use \u0027tryjob\u0027 as a word throughout CQ, hence:\nTryjobResultCommentLevel...\nand TRYJOB_RESULT below.",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 9
+      },
+      "revId": "65ddbd80f4c136fd44eac46b90dccfb4eec45a23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
