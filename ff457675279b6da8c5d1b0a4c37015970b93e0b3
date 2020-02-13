@@ -163,6 +163,24 @@
       "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51a71dfe_97d4f63f",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T15:15:54Z",
+      "side": 1,
+      "message": "\u003e Thanks for the suggestion. I have some questions:\n\u003e \n\u003e \u003e i think this func could be generalized and placed in the retry package:\n\u003e \u003e \n\u003e \u003e   func Chain(iters ...Iterator) Iterator\n\u003e \u003e   func ChainFactories(factories ...Factory) Factory\n\u003e \u003e \n\u003e \u003e except checking if an iterator returned Stop \n\u003e  \n\u003e \u003e \n\u003e \u003e   for _, it :\u003d range iterators {\n\u003e \u003e     if dur :\u003d it(ctx, err); dur !\u003d Stop {\n\u003e \n\u003e for example, if it is transieny.Only(retry.Default), and we get a quota error, then dur will be Stop, right?\n\nyes, it would return Stop, and the loop will proceed to the iterator for quota errors, which will return something other than Stop. The factory creation would look like: \n  \n  retry.ChainFactories(transient.Only(retry.Default), newQuotaIterator)\n\n\u003e \n\u003e So we may still need it.supportError() somehow?\n\u003e \n\u003e \n\u003e \u003e then we can use it to combine a custom iterator for quota errors and transieny.Only(retry.Default) for transient errors.\n\u003e \n\u003e This means except quota errors, other errors will be retried up to 10 times. I think it should be fine because if the error is really transient, then we shouldn\u0027t use up all 10 retries.\n\nwdym by \"use up all 10 retries\". I think once an iterator returns a Stop and we continue to the next one, we should reset the current one. Thinking about this more, it seems we want only Chain(factories) and don\u0027t need chaining with iterators. I mean something like this\n\n iters :\u003d make(Iterator, len(factories))\n ...\n\n for i, f :\u003d range factories {\n   if iters[i] \u003d\u003d nil {\n     iters[i] \u003d f()\n   }\n   if delay :\u003d iters[i]; delay !\u003d Stop {\n     return delay\n   }\n   iters[i] \u003d nil\n }",
+      "parentUuid": "751048bd_a5e081e1",
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
