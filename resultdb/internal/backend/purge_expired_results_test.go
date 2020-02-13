@@ -102,13 +102,6 @@ func TestPurgeExpiredResults(t *testing.T) {
 			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
 			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001)}
 
-		bls, err := expiredResultsDelaySeconds(ctx)
-		So(err, ShouldBeNil)
-		// The backlog query uses spanner's CURRENT_TIMESTAMP(), and the invocations
-		// above have their results expiration at some constant timestamp in the
-		// past, so all we can assert is that the backlog is positive.
-		So(bls, ShouldBeGreaterThan, 0)
-
 		// Purge expired data.
 		for range invocations {
 			id, err := randomExpiredResultsInvocation(ctx, 0)
