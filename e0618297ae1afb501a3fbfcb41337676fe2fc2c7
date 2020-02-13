@@ -52,6 +52,24 @@
       "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9606417_738e06b0",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T18:04:23Z",
+      "side": 1,
+      "message": "There\u0027s a lot of things that don\u0027t yet work on GAEv2. For Buildbucket most important missing bits are LUCI Config client library, a replacement for transactional task queues (and a task queues client library to begin with), a datastore caching layer, a sane way to provide per-environment configuration (since we can\u0027t use /admin/ APIs to bootstrap it anymore). \n\nImplementing this for GAEv2 is not in any OKRs (which presumably means it is not important), but Buildbucket migration work is in OKRs (which means it is important). We should not block important work on unimportant, or we should raise importance of GAEv2 migration.",
+      "parentUuid": "ae31468d_3f4abf73",
+      "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
