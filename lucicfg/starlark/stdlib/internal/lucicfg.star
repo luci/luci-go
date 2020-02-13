@@ -212,7 +212,7 @@ def _current_module():
 _var_ctor = __native__.genstruct('lucicfg.var')
 
 
-def _var(*, default=None, validator=None, expose_as=None):
+def _var(*, default=None, validator=None, expose_as=None, idempotent=False):
   """Declares a variable.
 
   A variable is a slot that can hold some frozen value. Initially this slot is
@@ -300,7 +300,8 @@ def _var(*, default=None, validator=None, expose_as=None):
         variable is auto-initialized to its default value (which must be string
         or None). Variables declared with `expose_as` are not settable via
         `set()` at all, they appear as "set" already the moment they are
-        declared.
+        declared. If multiple vars use the same `expose_as` identifier, they
+        will all be initialized to the same value.
 
   Returns:
     A struct with two methods: `set(value)` and `get(): value`.
@@ -327,9 +328,9 @@ def _var(*, default=None, validator=None, expose_as=None):
 
   # This declares the variable and pre-sets it to validated value passed via
   # CLI flags (if expose_as is not None). This also marks the corresponding
-  # -var flag as "consumed". If it was "consumed" before, this call fails.
-  # At the end of the script execution all -var flags provided on the command
-  # line must be consumed (the run fails otherwise).
+  # -var flag as "consumed" (it is fine if it was "consumed" before). At the end
+  # of the script execution all -var flags provided on the command line must be
+  # consumed (the run fails otherwise).
   var_id = __native__.declare_var(expose_as or "", preset_value)
 
   return _var_ctor(

@@ -50,10 +50,13 @@ func (v ID) Hash() (uint32, error) { return uint32(v), nil }
 // made to vars state within a scope (i.e. within single exec-ed module) are
 // discarded when the scope is closed.
 type Vars struct {
-	next      ID                  // index of the next variable to produce
-	scopes    []*scope            // stack of scopes, the "active" is last
-	bottom    scope               // fixed bottom of the stack, with preset var values (see Declare)
-	exposedAs map[string]varValue // "exposeAs" value as passed to Declare => corresponding pre-set value
+	// DeclaredExposeAsAliases is a set of all `exposeAs` passed to Declare.
+	DeclaredExposeAsAliases stringset.Set
+
+	next      ID            // index of the next variable to produce
+	scopes    []*scope      // stack of scopes, the "active" is last
+	bottom    scope         // fixed bottom of the stack, with preset var values (see Declare)
+	exposedAs stringset.Set // aliases of all vars exposed via 'expose_as' feature
 }
 
 // scope holds values that were set within the currently exec-ing module.
@@ -117,26 +120,15 @@ func (v *Vars) CloseScope(th *starlark.Thread) {
 	}
 }
 
-// DeclaredExposeAsAliases is a set of all `exposeAs` passed to Declare.
-//
-// Used to detect what available var values haven't been "consumed".
-func (v *Vars) DeclaredExposeAsAliases() stringset.Set {
-	s := stringset.New(len(v.exposedAs))
-	for k := range v.exposedAs {
-		s.Add(k)
-	}
-	return s
-}
-
 // ClearValues resets values of all variables, in all scopes.
 //
 // Should be used only from tests that want a clean slate.
 func (v *Vars) ClearValues() {
+	v.DeclaredExposeAsAliases = nil
 	for _, s := range v.scopes {
 		s.values = nil
 	}
 	v.bottom.values = nil
-	v.exposedAs = nil
 }
 
 // Declare allocates a new variable, setting it right away to 'presetVal' value
@@ -153,24 +145,20 @@ func (v *Vars) Declare(th *starlark.Thread, exposeAs string, presetVal starlark.
 	v.next++
 
 	if exposeAs != "" {
-		// 'exposeAs' alias can't be reused between multiple vars.
-		if val, ok := v.exposedAs[exposeAs]; ok {
-			return 0, fmt.Errorf("lucicfg.var: there's already a var exposed as %q, it was declared at: %s", exposeAs, val.trace)
-		}
-
 		// Put a preset value of the var at the bottom of the scope stack, to
 		// indicate it was set "before" Starlark execution. v.lookup() will find it
 		// there, thus forbidding reassignments.
-		val, err := v.bottom.assign(th, id, varValue{value: presetVal, exposeAs: exposeAs})
+		_, err := v.bottom.assign(th, id, varValue{value: presetVal, exposeAs: exposeAs})
 		if err != nil {
 			return 0, err
 		}
 
-		// Remember that we exposed a var under 'exposeAs' alias.
-		if v.exposedAs == nil {
-			v.exposedAs = make(map[string]varValue, 1)
+		// Remember that we exposed a var under this 'exposeAs' alias. This is
+		// eventually used to verify all passed '-var' flag were "consumed".
+		if v.DeclaredExposeAsAliases == nil {
+			v.DeclaredExposeAsAliases = stringset.New(1)
 		}
-		v.exposedAs[exposeAs] = val
+		v.DeclaredExposeAsAliases.Add(exposeAs)
 	}
 
 	return id, nil
