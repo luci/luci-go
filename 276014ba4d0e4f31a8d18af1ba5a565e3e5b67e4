@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ffd6c92e_9d4bf5a0",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T20:32:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38af13d1_349f838a",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 87,
+        "endChar": 26
+      },
+      "revId": "276014ba4d0e4f31a8d18af1ba5a565e3e5b67e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30e0dee1_4ee4af41",
         "filename": "cq/appengine/config/config_test.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "276014ba4d0e4f31a8d18af1ba5a565e3e5b67e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "348e3321_58fb42f2",
+        "filename": "cq/appengine/config/config_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 474,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T20:32:42Z",
+      "side": 1,
+      "message": "The other test cases are implicitly validating that not specifying the field works. This one only verifies the string.",
+      "parentUuid": "30e0dee1_4ee4af41",
+      "range": {
+        "startLine": 474,
+        "startChar": 7,
+        "endLine": 474,
+        "endChar": 18
+      },
+      "revId": "276014ba4d0e4f31a8d18af1ba5a565e3e5b67e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
