@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffea5c0e_d230c5b9",
+        "filename": "resultdb/cmd/globalmetrics/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T20:49:08Z",
+      "side": 1,
+      "message": "nit: 2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcd58e14_95810bf8",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T20:49:08Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 1
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e19daf22_f80b5791",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T20:49:08Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 0
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5595feb_1d3a6828",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T20:49:08Z",
+      "side": 1,
+      "message": "Nit: empty line below?",
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5be0f59_75ec5080",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T20:49:08Z",
+      "side": 1,
+      "message": "Nit: change this to Unix to be consistent with L37?",
+      "range": {
+        "startLine": 42,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
