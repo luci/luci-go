@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/caching"
 
@@ -297,7 +296,7 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 		return err
 	}
 
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+	return retry.Retry(ctx, newRetryIter, func() error {
 		err := ins.Put(ctx, rows)
 
 		// ins.Put has retries for most errors, but it does not retry
@@ -305,11 +304,11 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
 		// is fixed.
 		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
-			err = transient.Tag.Apply(err)
+			err = streamClosed.Apply(err)
 		}
 
 		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "quotaExceeded") {
-			err = transient.Tag.Apply(err)
+			err = quotaExceeded.Apply(err)
 		}
 		return err
 	}, retry.LogCallback(ctx, "bigquery_put"))
