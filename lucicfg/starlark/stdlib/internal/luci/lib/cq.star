@@ -191,6 +191,10 @@ cq = struct(
         transient_failure_weight = 1,
         timeout_weight = 2,
     ),
+
+    TRYJOB_RESULT_COMMENT_LEVEL_UNSET = cq_pb.TRYJOB_RESULT_COMMENT_LEVEL_UNSET,
+    FULL_VISIBILITY = cq_pb.FULL_VISIBILITY,
+    RESTRICTED_VISIBILITY = cq_pb.RESTRICTED_VISIBILITY,
 )
 
 cqimpl = struct(

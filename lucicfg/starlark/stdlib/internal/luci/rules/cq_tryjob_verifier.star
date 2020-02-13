@@ -17,6 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/lib/cq.star', 'cq', 'cqimpl')
 
 
 def _cq_tryjob_verifier(
@@ -25,6 +26,7 @@ def _cq_tryjob_verifier(
       *,
       cq_group=None,
       includable_only=None,
+      result_visibility=None,
       disable_reuse=None,
       experiment_percentage=None,
       location_regexp=None,
@@ -160,6 +162,8 @@ def _cq_tryjob_verifier(
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
         declaration.
+    result_visibility: can be used to restrict the visibility of the results in
+        comments on Gerrit.
     includable_only: if True, this builder will only be triggered by CQ if it is
         also specified via `CQ-Include-Trybots:` on CL description. Default is
         False. See the explanation above for all details.
@@ -247,6 +251,9 @@ def _cq_tryjob_verifier(
     if equivalent_builder_whitelist != None:
       fail('"equivalent_builder_whitelist" can be used only together with "equivalent_builder"')
 
+  if result_visibility:
+    fail('not yet implemented')
+
   if includable_only:
     if location_regexp:
       fail('"includable_only" can not be used together with "location_regexp"')
@@ -261,6 +268,12 @@ def _cq_tryjob_verifier(
   key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
   graph.add_node(key, props = {
       'disable_reuse': validate.bool('disable_reuse', disable_reuse, required=False),
+      'result_visibility': validate.int(
+          'result_visibility',
+          result_visibility,
+          default=cq.TRYJOB_RESULT_COMMENT_LEVEL_UNSET,
+          required=False,
+      ),
       'includable_only': validate.bool('includable_only', includable_only, required=False),
       'experiment_percentage': validate.float(
           'experiment_percentage',
