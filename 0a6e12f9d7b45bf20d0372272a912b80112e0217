@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f48d0269_04b6e023",
+        "filename": "resultdb/cmd/globalmetrics/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T21:03:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ffea5c0e_d230c5b9",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bcd58e14_95810bf8",
         "filename": "resultdb/internal/backend/backend.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8e4dc09_6e64ca1b",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T21:03:15Z",
+      "side": 1,
+      "message": "we still need L50-53",
+      "parentUuid": "bcd58e14_95810bf8",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 1
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "137a0627_71ee331d",
+        "filename": "resultdb/internal/backend/invocation_task.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T21:03:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e19daf22_f80b5791",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 0
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c5595feb_1d3a6828",
         "filename": "resultdb/internal/globalmetrics/metrics.go",
         "patchSetId": 7
@@ -82,6 +154,24 @@
       "writtenOn": "2020-02-13T20:49:08Z",
       "side": 1,
       "message": "Nit: empty line below?",
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec04050a_5e129823",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T21:03:15Z",
+      "side": 1,
+      "message": "hmm which line?",
+      "parentUuid": "c5595feb_1d3a6828",
       "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -108,6 +198,30 @@
       "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55b744d8_83b8a2fc",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T21:03:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5be0f59_75ec5080",
+      "range": {
+        "startLine": 42,
+        "startChar": 16,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
