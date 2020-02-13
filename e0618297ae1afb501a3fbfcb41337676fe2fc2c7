@@ -106,6 +106,24 @@
       "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e504830b_6b580a70",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-13T23:39:32Z",
+      "side": 1,
+      "message": "Discussed with Sana offline. We should target GAE V2. If this means we need to implement GAEv2 components, so then it is in scope of BB work.\nThe most time-sensitive part of rewrite is speeding GET RPCs, which doesn\u0027t need task queue tasks nor integration with LUCI config, since config can be loaded from Datastore (written by existing Py code).",
+      "parentUuid": "09aae84b_960d4910",
+      "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
