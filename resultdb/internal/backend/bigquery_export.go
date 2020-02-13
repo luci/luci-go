@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -308,11 +309,34 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 			err = transient.Tag.Apply(err)
 		}
 
-		if apiErr, ok := err.(*googleapi.Error); ok && apiErr.Code == http.StatusForbidden && hasReason(apiErr, "quotaExceeded") {
-			err = transient.Tag.Apply(err)
+		switch e := err.(type) {
+		case *googleapi.Error:
+			if e.Code == http.StatusForbidden && hasReason(e, "quotaExceeded") {
+				err = transient.Tag.Apply(err)
+			}
+
+		case bigquery.PutMultiError:
+			// TODO(nodir): increment a counter.
+			logging.Errorf(ctx, "bigquery.PutMultiError: %s", putMultiErrorToMessage(e, rows))
 		}
+
 		return err
 	}, retry.LogCallback(ctx, "bigquery_put"))
+}
+
+func putMultiErrorToMessage(err bigquery.PutMultiError, rows []*bigquery.StructSaver) string {
+	ret := &strings.Builder{}
+	fmt.Fprintf(ret, "%d errors\n", len(err))
+
+	// Print up to 10 errors.
+	for i := 0; i < 10 && i < len(err); i++ {
+		fmt.Fprintf(ret, "%d: %s\ninsertID: %s\nrow: %#v\n", i, err[i].Errors, err[i].InsertID, rows[err[i].RowIndex].Struct)
+	}
+	if len(err) > 10 {
+		ret.WriteString("...")
+	}
+
+	return ret.String()
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
