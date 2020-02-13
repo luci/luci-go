@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "015cbefb_158d0e59",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T08:23:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2bfcb4d3_920bfaad",
+      "range": {
+        "startLine": 47,
+        "startChar": 13,
+        "endLine": 47,
+        "endChar": 46
+      },
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9febeaf6_cb0fccc6",
         "filename": "resultdb/internal/backend/retry.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fba78d31_13a93629",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T08:23:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9febeaf6_cb0fccc6",
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "707bf791_4b489932",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T08:23:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fef4534b_d9866a62",
+      "range": {
+        "startLine": 103,
+        "startChar": 23,
+        "endLine": 103,
+        "endChar": 28
+      },
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "337734ab_b538a67b",
         "filename": "resultdb/internal/backend/retry.go",
         "patchSetId": 3
@@ -76,6 +142,24 @@
       "writtenOn": "2020-02-13T07:15:55Z",
       "side": 1,
       "message": "i think this func could be generalized and placed in the retry package:\n\n  func Chain(iters ...Iterator) Iterator\n  func ChainFactories(factories ...Factory) Factory\n\nexcept checking if an iterator returned Stop\n\n  for _, it :\u003d range iterators {\n    if dur :\u003d it(ctx, err); dur !\u003d Stop {\n      return dur\n    }\n  }\n  return Stop\n\nthen we can use it to combine a custom iterator for quota errors and transieny.Only(retry.Default) for transient errors. Then our retryIter becomes simpler because no longer has to account for two cases (quota errors and streamClosed errors). Then wouldn\u0027t need addJitter flag because we\u0027d be adding jitter unconditionally. Then we can move \"is it a quota error\" logic from bigquery_export.go:314 to the itereator for quota errors, so they are closed to each other. then you don\u0027t need the quota errors tag.",
+      "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "751048bd_a5e081e1",
+        "filename": "resultdb/internal/backend/retry.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-13T08:23:34Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. I have some questions:\n\n\u003e i think this func could be generalized and placed in the retry package:\n\u003e \n\u003e   func Chain(iters ...Iterator) Iterator\n\u003e   func ChainFactories(factories ...Factory) Factory\n\u003e \n\u003e except checking if an iterator returned Stop \n \n\u003e \n\u003e   for _, it :\u003d range iterators {\n\u003e     if dur :\u003d it(ctx, err); dur !\u003d Stop {\n\nfor example, if it is transieny.Only(retry.Default), and we get a quota error, then dur will be Stop, right?\n\nSo we may still need it.supportError() somehow?\n\n\n\u003e then we can use it to combine a custom iterator for quota errors and transieny.Only(retry.Default) for transient errors.\n\nThis means except quota errors, other errors will be retried up to 10 times. I think it should be fine because if the error is really transient, then we shouldn\u0027t use up all 10 retries.",
+      "parentUuid": "337734ab_b538a67b",
       "revId": "ff457675279b6da8c5d1b0a4c37015970b93e0b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
