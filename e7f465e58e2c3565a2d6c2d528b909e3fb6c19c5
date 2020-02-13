@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dd22a381_6c69512b",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-13T04:25:12Z",
+      "side": 1,
+      "message": "could be there any other type of errors here? then, it may be safer to have default to log the unknown type of errors.",
+      "revId": "e7f465e58e2c3565a2d6c2d528b909e3fb6c19c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
