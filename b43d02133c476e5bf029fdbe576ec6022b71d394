@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "86033b1b_24d217fc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T23:56:01Z",
+      "side": 1,
+      "message": "It\u0027s not too late. It\u0027s very verbose though. Done.",
+      "parentUuid": "5d01f1b1_e7cc2bd3",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 63
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d9d4eae_10ea080a",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9ef11a5_cd32d6af",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T23:56:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d9d4eae_10ea080a",
+      "range": {
+        "startLine": 166,
+        "startChar": 39,
+        "endLine": 167,
+        "endChar": 45
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "0bfbcebc_973d8e32",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T23:56:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06440514_f9c8c7f6",
+      "range": {
+        "startLine": 392,
+        "startChar": 29,
+        "endLine": 392,
+        "endChar": 30
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b9ecb51_98e9b728",
         "filename": "lucicfg/testdata/full_example.star",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "783ed9f6_1dca7fc6",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T23:56:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b9ecb51_98e9b728",
+      "range": {
+        "startLine": 443,
+        "startChar": 2,
+        "endLine": 443,
+        "endChar": 17
+      },
+      "revId": "b43d02133c476e5bf029fdbe576ec6022b71d394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
