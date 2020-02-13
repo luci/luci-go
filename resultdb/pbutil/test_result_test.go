@@ -92,13 +92,13 @@ func validTestResult(now time.Time) *pb.TestResult {
 	}
 }
 
-// fieldDoesNotMatch returns the string of unspecified error with the field name.
-func fieldUnspecified(fieldName string) string {
+// FieldDoesNotMatch returns the string of unspecified error with the field name.
+func FieldUnspecified(fieldName string) string {
 	return fmt.Sprintf("%s: %s", fieldName, unspecified())
 }
 
-// fieldDoesNotMatch returns the string of doesNotMatch error with the field name.
-func fieldDoesNotMatch(fieldName string, re *regexp.Regexp) string {
+// FieldDoesNotMatch returns the string of doesNotMatch error with the field name.
+func FieldDoesNotMatch(fieldName string, re *regexp.Regexp) string {
 	return fmt.Sprintf("%s: %s", fieldName, doesNotMatch(re))
 }
 
@@ -213,7 +213,7 @@ func TestValidateTestResult(t *testing.T) {
 
 		Convey("with empty TestID", func() {
 			msg.TestId = ""
-			So(validate(msg), ShouldErrLike, fieldUnspecified("test_id"))
+			So(validate(msg), ShouldErrLike, FieldUnspecified("test_id"))
 		})
 
 		Convey("with invalid TestID", func() {
@@ -224,13 +224,13 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.TestId = in
-				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("test_id", testIDRe))
+				So(validate(msg), ShouldErrLike, FieldDoesNotMatch("test_id", testIDRe))
 			}
 		})
 
 		Convey("with empty ResultID", func() {
 			msg.ResultId = ""
-			So(validate(msg), ShouldErrLike, fieldUnspecified("result_id"))
+			So(validate(msg), ShouldErrLike, FieldUnspecified("result_id"))
 		})
 
 		Convey("with invalid ResultID", func() {
@@ -241,7 +241,7 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.ResultId = in
-				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("result_id", resultIDRe))
+				So(validate(msg), ShouldErrLike, FieldDoesNotMatch("result_id", resultIDRe))
 			}
 		})
 
@@ -252,7 +252,7 @@ func TestValidateTestResult(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				msg.Variant = in
-				So(validate(msg), ShouldErrLike, fieldUnspecified("key"))
+				So(validate(msg), ShouldErrLike, FieldUnspecified("key"))
 			}
 		})
 
@@ -294,7 +294,7 @@ func TestValidateTestResult(t *testing.T) {
 
 		Convey("with invalid artifacts", func() {
 			bart1, bart2 := invalidArtifacts(now)
-			nameErr := fieldDoesNotMatch("name", artifactNameRe)
+			nameErr := FieldDoesNotMatch("name", artifactNameRe)
 
 			Convey("in InputArtifacts", func() {
 				msg.InputArtifacts = []*pb.Artifact{bart1}
@@ -339,7 +339,7 @@ func TestValidateArtifacts(t *testing.T) {
 	})
 
 	Convey("Fails", t, func() {
-		expected := fieldDoesNotMatch("name", artifactNameRe)
+		expected := FieldDoesNotMatch("name", artifactNameRe)
 
 		Convey("with duplicate names", func() {
 			art2.Name = art1.Name
@@ -396,7 +396,7 @@ func TestValidateArtifact(t *testing.T) {
 
 		Convey("with empty Name", func() {
 			art.Name = ""
-			So(validate(art), ShouldErrLike, fieldUnspecified("name"))
+			So(validate(art), ShouldErrLike, FieldUnspecified("name"))
 		})
 
 		Convey("with invalid Name", func() {
@@ -406,7 +406,7 @@ func TestValidateArtifact(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				art.Name = in
-				So(validate(art), ShouldErrLike, fieldDoesNotMatch("name", artifactNameRe))
+				So(validate(art), ShouldErrLike, FieldDoesNotMatch("name", artifactNameRe))
 			}
 		})
 
