@@ -15,6 +15,9 @@
 package backend
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
+
 	"cloud.google.com/go/bigquery"
 
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -165,8 +168,12 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 		}
 	}
 
+	// InsertID cannot exceed 128 bytes.
+	// https://cloud.google.com/bigquery/quotas#streaming_inserts
+	// Use SHA512 which is exactly 128 bytes in hex.
+	insertID := sha512.Sum512([]byte(tr.Name))
 	return &bigquery.StructSaver{
-		InsertID: tr.Name,
+		InsertID: hex.EncodeToString(insertID[:]),
 		Struct:   trr,
 	}
 }

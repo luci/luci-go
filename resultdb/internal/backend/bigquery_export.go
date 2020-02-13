@@ -330,7 +330,7 @@ func putMultiErrorToMessage(err bigquery.PutMultiError, rows []*bigquery.StructS
 
 	// Print up to 10 errors.
 	for i := 0; i < 10 && i < len(err); i++ {
-		fmt.Fprintf(ret, "%d: %s\ninsertID: %s\nrow: %#v\n", i, err[i].Errors, err[i].InsertID, rows[err[i].RowIndex].Struct)
+		fmt.Fprintf(ret, "%d: %s\nrow: %#v\n", i, err[i].Errors, rows[err[i].RowIndex].Struct)
 	}
 	if len(err) > 10 {
 		ret.WriteString("...")
