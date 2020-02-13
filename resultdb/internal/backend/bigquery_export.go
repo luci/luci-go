@@ -16,7 +16,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -317,27 +316,22 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 
 		case bigquery.PutMultiError:
 			// TODO(nodir): increment a counter.
-			logging.Errorf(ctx, "bigquery.PutMultiError: %s", putMultiErrorToMessage(e, rows))
+			logPutMultiError(ctx, e, rows)
 		}
 
 		return err
 	}, retry.LogCallback(ctx, "bigquery_put"))
 }
 
-func putMultiErrorToMessage(err bigquery.PutMultiError, rows []*bigquery.StructSaver) string {
-	ret := &strings.Builder{}
-	fmt.Fprintf(ret, "%d errors\n", len(err))
-
+func logPutMultiError(ctx context.Context, err bigquery.PutMultiError, rows []*bigquery.StructSaver) {
 	// Print up to 10 errors.
 	for i := 0; i < 10 && i < len(err); i++ {
 		tr := rows[err[i].RowIndex].Struct.(*TestResultRow)
-		fmt.Fprintf(ret, "%s: %s\n", tr.Name(), err[i].Errors)
+		logging.Errorf(ctx, "failed to insert row for %s: %s", tr.Name(), err[i].Error())
 	}
 	if len(err) > 10 {
-		ret.WriteString("...")
+		logging.Errorf(ctx, "%d more row insertions failed", len(err)-10)
 	}
-
-	return ret.String()
 }
 
 // exportTestResultsToBigQuery queries test results in Spanner then exports them to BigQuery.
