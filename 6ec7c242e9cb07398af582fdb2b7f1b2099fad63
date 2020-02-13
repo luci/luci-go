@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e5d42c92_acf75687",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-13T17:10:20Z",
+      "side": 1,
+      "message": "Since inserter appears to be an interface, why not put the \"http2: stream closed\" retries within the implementation of that? This TODO implies an implementation-level bug so I wouldn\u0027t expect all implementations of \u0027inserter\u0027 to all have this bug, right?",
+      "range": {
+        "startLine": 308,
+        "startChar": 3,
+        "endLine": 308,
+        "endChar": 6
+      },
+      "revId": "6ec7c242e9cb07398af582fdb2b7f1b2099fad63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
