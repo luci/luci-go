@@ -16,6 +16,24 @@
       "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bb18f50_3d5bf4f2",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-13T17:47:13Z",
+      "side": 1,
+      "message": "Yes, but it seems Buildbucket currently targets GAEv1.",
+      "parentUuid": "117367f4_ba2b5bd7",
+      "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
