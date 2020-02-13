@@ -45,7 +45,10 @@ const (
 	maxInvocationGraphSize = 1000
 )
 
-var bqTableCache = caching.RegisterLRUCache(50)
+var (
+	bqTableCache   = caching.RegisterLRUCache(50)
+	quotaExceedTag = errors.BoolTag{Key: errors.NewTagKey("quota exceed")}
+)
 
 // inserter is implemented by bigquery.Inserter.
 type inserter interface {
@@ -297,7 +300,8 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 		return err
 	}
 
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+	quotaExceedFactory := nonLimitedFactory(quotaExceedTag, time.Second, 10*time.Second)
+	return retry.Retry(ctx, retry.ChainFactories(transient.Only(retry.Default), quotaExceedFactory), func() error {
 		err := ins.Put(ctx, rows)
 
 		// ins.Put has retries for most errors, but it does not retry
@@ -311,7 +315,7 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 		switch e := err.(type) {
 		case *googleapi.Error:
 			if e.Code == http.StatusForbidden && hasReason(e, "quotaExceeded") {
-				err = transient.Tag.Apply(err)
+				err = quotaExceedTag.Apply(err)
 			}
 
 		case bigquery.PutMultiError:
