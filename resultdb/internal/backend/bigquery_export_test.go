@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/caching"
 
-	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -106,12 +105,11 @@ func TestExportToBigQuery(t *testing.T) {
 
 			expectedTestIDs := []string{"A", "B", "C", "D"}
 			for _, m := range i.insertedMessages {
-				invID, testID, _ := span.MustParseTestResultName(m.InsertID)
-				So(testID, ShouldBeIn, expectedTestIDs)
 				tr := m.Struct.(*TestResultRow)
+				So(tr.TestID, ShouldBeIn, expectedTestIDs)
+				So(tr.ParentInvocation.ID, ShouldBeIn, []string{"a", "b"})
 				So(tr.ExportedInvocation.ID, ShouldEqual, "a")
-				So(tr.ParentInvocation.ID, ShouldEqual, invID)
-				So(tr.Exonerated, ShouldEqual, testID == "A" || testID == "D")
+				So(tr.Exonerated, ShouldEqual, tr.TestID == "A" || tr.TestID == "D")
 			}
 		})
 
