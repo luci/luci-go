@@ -168,6 +168,16 @@ def _validate_retry_config(attr, val, default=None, required=True):
 #     considered "twice as heavy" as non-timeout failures (e.g. one retried
 #     timeout failure immediately exhausts all retry quota for the CQ attempt).
 #     This is to avoid adding more requests to an already overloaded system.
+#
+# `cq.TRYJOB_RESULT_COMMENT_LEVEL_*` constants define possible values for
+# `result_visibility` field of luci.cq_group(...):
+#   * **cq.TRYJOB_RESULT_COMMENT_LEVEL_UNSET**: Equivalent to
+#     cq.TRYJOB_RESULT_COMMENT_LEVEL_FULL for now.
+#   * **cq.TRYJOB_RESULT_COMMENT_LEVEL_FULL**: The CQ reports the summary
+#     markdown and a link to the buildbucket build id in Milo with the builder
+#     name in the URL in a Gerrit comment.
+#   * **cq.TRYJOB_RESULT_COMMENT_LEVEL_RESTRICTED**: The CQ reports a generic
+#     "Build failed: https://ci.chromium.org/b/1234" with no summary markdown.
 cq = struct(
     refset = _refset,
     retry_config = _retry_config,
@@ -191,6 +201,10 @@ cq = struct(
         transient_failure_weight = 1,
         timeout_weight = 2,
     ),
+
+    TRYJOB_RESULT_COMMENT_LEVEL_UNSET = cq_pb.TRYJOB_RESULT_COMMENT_LEVEL_UNSET,
+    TRYJOB_RESULT_COMMENT_LEVEL_FULL = cq_pb.TRYJOB_RESULT_COMMENT_LEVEL_FULL,
+    TRYJOB_RESULT_COMMENT_LEVEL_RESTRICTED = cq_pb.TRYJOB_RESULT_COMMENT_LEVEL_RESTRICTED,
 )
 
 cqimpl = struct(
