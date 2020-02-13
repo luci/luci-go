@@ -16,6 +16,29 @@
       "revId": "b6450fe1ef0ef4825bd8302cb237ac2ba768b1f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4085a366_7098ffe5",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1325055
+      },
+      "writtenOn": "2020-02-13T16:13:20Z",
+      "side": 1,
+      "message": "Maybe change the name / make more clear in comments that this is only referring to the Gerrit comment posted by CQ when verification fails? At first glance, \"BuildResultVisibility\" makes me think this might control Gerrit chips or something like that.\n\nNot sure of a great alternative name, but a comment making clear this doesn\u0027t affect Gerrit chips would probably be helpful.",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 26
+      },
+      "revId": "b6450fe1ef0ef4825bd8302cb237ac2ba768b1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
