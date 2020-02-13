@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "130c8bd4_e4c19daf",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T21:54:55Z",
+      "side": 1,
+      "message": "But it makes grepping harder :(",
+      "parentUuid": "eb49201f_f7e0ddd2",
+      "range": {
+        "startLine": 172,
+        "startChar": 6,
+        "endLine": 172,
+        "endChar": 54
+      },
+      "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ef123067_a3a2596b",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "e175db74_b4bbd678",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/cq.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T21:54:55Z",
+      "side": 1,
+      "message": "Done. I just don\u0027t like copying doc, it invariably get stale.",
+      "parentUuid": "ef123067_a3a2596b",
+      "range": {
+        "startLine": 173,
+        "startChar": 62,
+        "endLine": 174,
+        "endChar": 18
+      },
+      "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36dd39dd_ccf882c2",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 3
@@ -59,6 +107,24 @@
       "writtenOn": "2020-02-13T21:41:38Z",
       "side": 1,
       "message": "defaults to FULL_VISIBILITY.",
+      "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff18ab99_49ea141b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T21:54:55Z",
+      "side": 1,
+      "message": "I didn\u0027t want to force a lot of spam on the configs.\nAlso the new text protos will require the CQ code to be updated before this works.",
+      "parentUuid": "36dd39dd_ccf882c2",
       "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -79,6 +145,24 @@
       "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce4f23d1_d6bb8591",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T21:54:55Z",
+      "side": 1,
+      "message": "Added a use in full_example.star.",
+      "parentUuid": "0dfa9ff4_0997cc51",
+      "revId": "541ede5ca77813edaab9d2c26b8cbb6f2a6860e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
