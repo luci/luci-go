@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "f4168ab4_0ac65de5",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-13T06:20:16Z",
+      "side": 1,
+      "message": "no, RESTRICTED, FULL, BUILD_RESULT_VISIBILITY_UNSET\n\nsee https://cloud.google.com/apis/design/design_patterns#enum_default_value for an example as well as nearby proto files for CQ.",
+      "parentUuid": "93616533_d19b907a",
+      "range": {
+        "startLine": 89,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 12
+      },
+      "revId": "c389ca5a3ccd4e12a32f1d006078e4ff4d8fa3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1ae22798_3d934fe9",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 1
