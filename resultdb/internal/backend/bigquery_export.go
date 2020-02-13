@@ -45,7 +45,10 @@ const (
 	maxInvocationGraphSize = 1000
 )
 
-var bqTableCache = caching.RegisterLRUCache(50)
+var (
+	bqTableCache   = caching.RegisterLRUCache(50)
+	quotaExceedTag = errors.BoolTag{Key: errors.NewTagKey("quota exceed")}
+)
 
 // inserter is implemented by bigquery.Inserter.
 type inserter interface {
@@ -72,6 +75,30 @@ type bqExporter struct {
 	// but this is good enough.
 	batchSem *semaphore.Weighted
 }
+
+// bqInserter is an implementation of inserter.
+// It's a wrapper around bigquery.Inserter to retry transient errors that are
+// not currently retried by bigquery.Inserter.
+type bqInserter struct {
+	inserter *bigquery.Inserter
+}
+
+// Put implements inserter.
+func (i *bqInserter) Put(ctx context.Context, src interface{}) error {
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		err := i.inserter.Put(ctx, src)
+
+		// ins.Put has retries for most errors, but it does not retry
+		// "http2: stream closed" error. Retry only on that.
+		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
+		// is fixed.
+		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
+			err = transient.Tag.Apply(err)
+		}
+		return err
+	}, retry.LogCallback(ctx, "bigquery_put"))
+}
+
 
 func getLUCIProject(ctx context.Context, invID span.InvocationID) (string, error) {
 	realm, err := span.ReadInvocationRealm(ctx, span.Client(ctx).Single(), invID)
@@ -291,27 +318,19 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 }
 
 // insertRowsWithRetries inserts rows into BigQuery.
-// Retries on transient errors.
+// Retries on quotaExceeded errors.
 func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bigquery.StructSaver) error {
 	if err := b.putLimiter.Wait(ctx); err != nil {
 		return err
 	}
 
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+	return retry.Retry(ctx, unLimitedFactory(quotaExceedTag, time.Second, 10*time.Second), func() error {
 		err := ins.Put(ctx, rows)
-
-		// ins.Put has retries for most errors, but it does not retry
-		// "http2: stream closed" error. Retry only on that.
-		// TODO(nodir): remove this code when https://github.com/googleapis/google-api-go-client/issues/450
-		// is fixed.
-		if err != nil && strings.Contains(err.Error(), "http2: stream closed") {
-			err = transient.Tag.Apply(err)
-		}
 
 		switch e := err.(type) {
 		case *googleapi.Error:
 			if e.Code == http.StatusForbidden && hasReason(e, "quotaExceeded") {
-				err = transient.Tag.Apply(err)
+				err = quotaExceedTag.Apply(err)
 			}
 
 		case bigquery.PutMultiError:
@@ -409,6 +428,8 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID span.Inv
 		return err
 	}
 
-	ins := client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter()
+	ins := &bqInserter{
+		inserter: client.Dataset(bqExport.Dataset).Table(bqExport.Table).Inserter(),
+	}
 	return b.exportTestResultsToBigQuery(ctx, ins, invID, bqExport)
 }
