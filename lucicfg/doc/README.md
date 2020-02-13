@@ -692,7 +692,7 @@ not depend on undetermined values passed via CLI flags.
 
 * **default**: a value to auto-set to the variable in `get()` if it was unset.
 * **validator**: a callback called as `validator(value)` from `set(value)` and inside [lucicfg.var(...)](#lucicfg.var) declaration itself (to validate `default` or a value passed via CLI flags). Must be a side-effect free idempotent function that returns the value to be assigned to the variable (usually just `value` itself, but conversions are allowed, including type changes).
-* **expose_as**: an optional string identifier to make this var settable via CLI flags as `-var <expose_as>=<value>`. If there's no such flag, the variable is auto-initialized to its default value (which must be string or None). Variables declared with `expose_as` are not settable via `set()` at all, they appear as "set" already the moment they are declared.
+* **expose_as**: an optional string identifier to make this var settable via CLI flags as `-var <expose_as>=<value>`. If there's no such flag, the variable is auto-initialized to its default value (which must be string or None). Variables declared with `expose_as` are not settable via `set()` at all, they appear as "set" already the moment they are declared. If multiple vars use the same `expose_as` identifier, they will all be initialized to the same value.
 
 
 #### Returns  {#lucicfg.var-returns}
