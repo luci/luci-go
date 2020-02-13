@@ -22,6 +22,30 @@
       "revId": "65ddbd80f4c136fd44eac46b90dccfb4eec45a23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2829cfb4_f48c63a9",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T20:40:05Z",
+      "side": 1,
+      "message": "Done. It\u0027s quite interesting from an etymology perspective. :)",
+      "parentUuid": "24c7195d_9cb95a1d",
+      "range": {
+        "startLine": 86,
+        "startChar": 8,
+        "endLine": 86,
+        "endChar": 9
+      },
+      "revId": "65ddbd80f4c136fd44eac46b90dccfb4eec45a23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
