@@ -65,9 +65,8 @@ func (s *State) checkUncosumedVars() (errs []error) {
 	}
 	sort.Strings(keys)
 
-	consumed := s.vars.DeclaredExposeAsAliases()
 	for _, k := range keys {
-		if !consumed.Has(k) {
+		if !s.vars.DeclaredExposeAsAliases.Has(k) {
 			errs = append(errs, fmt.Errorf("value set by \"-var %s=...\" was not used by Starlark code", k))
 		}
 	}

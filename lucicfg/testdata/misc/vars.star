@@ -62,10 +62,12 @@ def test_expose_as_bad_default_type():
 
 
 def test_expose_as_duplicate():
-  lucicfg.var(expose_as='another_var')
-  assert.fails(
-      lambda: lucicfg.var(expose_as='another_var'),
-      'there\'s already a var exposed as "another_var"')
+  v1 = lucicfg.var(expose_as='another_var')
+  v2 = lucicfg.var(expose_as='another_var')
+  assert.eq(v1.get(), 'def')
+  assert.eq(v2.get(), 'def')
+  # Still "physically" different vars though, just have the exact same value.
+  assert.true(v1 != v2)
 
 
 test_vars_basics()
