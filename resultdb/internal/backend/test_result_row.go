@@ -97,6 +97,11 @@ type TestResultRow struct {
 	Exonerated bool `bigquery:"exonerated"`
 }
 
+// Name returns test result name.
+func (tr *TestResultRow) Name() string {
+	return pbutil.TestResultName(tr.ParentInvocation.ID, tr.TestID, tr.ResultID)
+}
+
 // stringPairProtosToStringPairs returns a slice of StringPair derived from *typepb.StringPair.
 func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
 	if len(pairs) == 0 {
