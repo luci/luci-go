@@ -27,6 +27,8 @@ func main() {
 	var opts backend.Options
 	flag.BoolVar(&opts.PurgeExpiredResults, "purge-expired-results", false,
 		"Whether to purge expired test results belonging to test variants that have only expected results")
+	flag.IntVar(&opts.TaskWorkers, "task-workers", 100,
+		"Number of goroutines that process invocation tasks")
 
 	internal.Main(func(srv *server.Server) error {
 		backend.InitServer(srv, opts)

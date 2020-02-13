@@ -106,7 +106,7 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 		return nil
 	})
 
-	workers := b.taskWorkers
+	workers := b.TaskWorkers
 	if workers == 0 {
 		workers = 1
 	}
