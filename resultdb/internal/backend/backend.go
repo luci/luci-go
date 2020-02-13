@@ -79,7 +79,9 @@ func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.
 }
 
 // cron runs f repeatedly, until the context is cancelled.
-// Ensures f is not called too often (1s) and backs off linearly on errors.
+//
+// Ensures f is not called too often (minInterval).
+// minInterval is ignored if b.ForceCronInterval is >0.
 func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
 	defer logging.Warningf(ctx, "Exiting cron")
 
@@ -91,46 +93,29 @@ func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(co
 		return f(ctx)
 	}
 
-	if b.NoCronInterval {
-		minInterval = 0
+	if b.ForceCronInterval > 0 {
+		minInterval = b.ForceCronInterval
 	}
 
-	attempt := 0
-	var iterationCounter int64
+	var iterationCounter int
 	tl := ThrottledLogger{MinLogInterval: 5 * time.Minute}
 	for {
 		iterationCounter++
 		tl.Log(ctx, "%d iterations have run since start-up", iterationCounter)
 		start := clock.Now(ctx)
-		sleep := time.Duration(0)
-		if err := call(ctx); err == nil {
-			attempt = 0
-		} else {
+		if err := call(ctx); err != nil {
 			logging.Errorf(ctx, "Iteration failed: %s", err)
-
-			attempt++
-			sleep = time.Duration(attempt) * time.Second
 		}
 
-		if minSleep := minInterval - clock.Since(ctx, start); sleep < minSleep {
-			sleep = minSleep
-		}
-
-		const maxSleep = 5 * time.Second
-		if sleep > maxSleep {
-			sleep = maxSleep
-		}
-
-		// Add jitter: +-10% of sleep time to desynchronize cron jobs.
-		if sleep > 0 {
-			// Sleep can be 0 in integration tests.
+		// Ensure minInterval between iterations.
+		if sleep := minInterval - clock.Since(ctx, start); sleep > 0 {
+			// Add jitter: +-10% of sleep time to desynchronize cron jobs.
 			sleep = sleep - sleep/10 + time.Duration(mathrand.Intn(ctx, int(sleep/5)))
-		}
-
-		select {
-		case <-time.After(sleep):
-		case <-ctx.Done():
-			return
+			select {
+			case <-time.After(sleep):
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 }
@@ -140,9 +125,9 @@ type Options struct {
 	// PurgeExpiredResults instructs backend to purge expired results.
 	PurgeExpiredResults bool
 
-	// NoCronInterval instructs cron jobs to spin as fast as possible.
+	// ForceCronInterval forces minimum interval in cron jobs.
 	// Useful in integration tests to reduce the test time.
-	NoCronInterval bool
+	ForceCronInterval time.Duration
 
 	// ForceLeaseDuration is the duration to use instead of task-type-specific
 	// durations, if ForceLeaseDuration > 0.
