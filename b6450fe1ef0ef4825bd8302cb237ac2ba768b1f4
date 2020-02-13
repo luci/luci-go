@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0ad83a1d_39868148",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T17:52:42Z",
+      "side": 1,
+      "message": "Done but bogus values can\u0027t be tested without more significant refactoring because the current test intentionally panic() instead.\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1408857/4/cq/appengine/config/config_test.go#363",
+      "parentUuid": "035568d8_68b7246a",
+      "revId": "b6450fe1ef0ef4825bd8302cb237ac2ba768b1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4085a366_7098ffe5",
         "filename": "cq/api/config/v2/cq.proto",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "b6450fe1ef0ef4825bd8302cb237ac2ba768b1f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74e1cfd1_41418141",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-13T17:52:42Z",
+      "side": 1,
+      "message": "Improved comment and changed the name to TryJobResultCommentLevel.",
+      "parentUuid": "4085a366_7098ffe5",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 26
+      },
+      "revId": "b6450fe1ef0ef4825bd8302cb237ac2ba768b1f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
