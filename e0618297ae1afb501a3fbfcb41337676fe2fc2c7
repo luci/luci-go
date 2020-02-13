@@ -34,6 +34,24 @@
       "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae31468d_3f4abf73",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-13T17:56:12Z",
+      "side": 1,
+      "message": "GAE version is specified in app.yaml which is per service. FWIU this means that a single Cloud Project can host GAEv1 and GAEv2 services. How did we decide between gaeV1 and gaev2 for buildbucket-in-go? Did we decide? I didn\u0027t see such a discussion anywhere (and this CL is not the right place for it)",
+      "parentUuid": "1bb18f50_3d5bf4f2",
+      "revId": "e0618297ae1afb501a3fbfcb41337676fe2fc2c7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
