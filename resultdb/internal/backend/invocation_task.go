@@ -110,7 +110,7 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	if workers == 0 {
 		workers = 1
 	}
-	b.cronGroup(ctx, workers, time.Second, func(ctx context.Context, replica int) error {
+	b.cronGroup(ctx, workers, time.Minute, func(ctx context.Context, replica int) error {
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()

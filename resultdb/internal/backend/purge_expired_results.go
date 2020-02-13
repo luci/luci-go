@@ -88,7 +88,7 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 	}
 
 	// Start one cron job for each shard of the database.
-	b.cronGroup(ctx, maxShard+1, time.Second, func(ctx context.Context, shard int) error {
+	b.cronGroup(ctx, maxShard+1, time.Minute, func(ctx context.Context, shard int) error {
 		id, err := randomExpiredResultsInvocation(ctx, shard)
 		switch err {
 		case span.ErrNoResults:
