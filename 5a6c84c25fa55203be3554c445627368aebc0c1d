@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4993392f_7b649613",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-14T02:06:14Z",
+      "side": 1,
+      "message": "Obsolete. per _cq_visibility func, this will be TRYJOB_RESULT_COMMENT_LEVEL_UNSET, but it doesn\u0027t matter since 0\u0027s are already omitted from resulting proto.",
+      "range": {
+        "startLine": 272,
+        "startChar": 6,
+        "endLine": 273,
+        "endChar": 14
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
