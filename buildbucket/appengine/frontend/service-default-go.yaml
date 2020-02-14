@@ -1,13 +1,20 @@
 service: default-go
-runtime: go111
+runtime: go113
+
+automatic_scaling:
+  min_idle_instances: 1
 
 instance_class: F4
+
+entrypoint: >
+  /usr/local/bin/start
+  -auth-service-host chrome-infra-auth-dev.appspot.com
+  -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
 handlers:
 - url: /admin/.*
   script: auto
   secure: always
-  login: admin
 
 - url: /rpcexplorer/?
   static_files: rpcexplorer/index.html
