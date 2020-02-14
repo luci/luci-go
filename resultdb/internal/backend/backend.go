@@ -31,6 +31,7 @@ import (
 type backend struct {
 	*Options
 	bqExporter
+	expectedResultsPurger
 }
 
 // cronGroup runs multiple cron jobs concurrently.
@@ -78,6 +79,9 @@ func InitServer(srv *server.Server, opts Options) {
 			// 1 batch is ~6Mb (see above).
 			// Allow ~2Gb => 2Gb/6Mb = 333 batches
 			batchSem: semaphore.NewWeighted(300),
+		},
+		expectedResultsPurger: expectedResultsPurger{
+			SampleSize: 100,
 		},
 	}
 

@@ -57,6 +57,16 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 // purgeOneInvocation finds test variants with unexpected results and drops the
 // complement, if there aren't too many of them.
 func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
+	// Check that invocation hasn't been purged already.
+	var expirationTime spanner.NullTime
+	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
+	if err := span.ReadInvocation(ctx, span.Client(ctx).Single(), id, ptrs); err != nil {
+		return err
+	}
+	if expirationTime.IsNull() {
+		// Invocation was purged by other worker.
+		return nil
+	}
 
 	// Get the test variants that have one or more unexpected results (up to limit + 1).
 	testVariantsToKeep, err := queryTestVariantsWithUnexpectedResults(ctx, id, maxTestVariantsToFilter+1)
@@ -74,6 +84,12 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 	return unsetInvocationResultsExpiration(ctx, id)
 }
 
+type expectedResultsPurger struct {
+	// SampleSize says how many expired invocations to sample at a time from
+	// any given shard.
+	SampleSize int
+}
+
 // purgeExpiredResults purges expired test results and exports metrics.
 // It blocks until context is canceled.
 func (b *backend) purgeExpiredResults(ctx context.Context) {
@@ -87,21 +103,26 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 
 	// Start one cron job for each shard of the database.
 	b.cronGroup(ctx, maxShard+1, time.Minute, func(ctx context.Context, shard int) error {
-		id, err := randomExpiredResultsInvocation(ctx, shard)
+		ids, err := randomExpiredResultsInvocations(ctx, shard, b.SampleSize)
 		switch err {
 		case span.ErrNoResults:
 			return nil
 		case nil:
-			return purgeOneInvocation(ctx, id)
+			for _, id := range ids {
+				if err := purgeOneInvocation(ctx, id); err != nil {
+					logging.Errorf(ctx, "error when trying to purge %s: %s", id, err)
+				}
+			}
+			return nil
 		default:
 			return err
 		}
 	})
 }
 
-// randomExpiredResultsInvocation selects a random invocation that has expired
-// test results.
-func randomExpiredResultsInvocation(ctx context.Context, shardID int) (span.InvocationID, error) {
+// randomExpiredResultsInvocations selects a random set of invocations that have
+// expired test results.
+func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize int) ([]span.InvocationID, error) {
 	st := spanner.NewStatement(`
 		WITH expiringInvocations AS (
 			SELECT InvocationId
@@ -111,11 +132,19 @@ func randomExpiredResultsInvocation(ctx context.Context, shardID int) (span.Invo
 			AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP())
 		SELECT *
 		FROM expiringInvocations
-		TABLESAMPLE RESERVOIR (1 ROWS)
+		TABLESAMPLE RESERVOIR (@sampleSize ROWS)
 	`)
 	st.Params["shardId"] = shardID
-	var ret span.InvocationID
-	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &ret)
+	st.Params["sampleSize"] = sampleSize
+	ret := make([]span.InvocationID, 0, sampleSize)
+	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+		var res span.InvocationID
+		if err := span.FromSpanner(row, &res); err != nil {
+			return err
+		}
+		ret = append(ret, res)
+		return nil
+	})
 	return ret, err
 }
 
