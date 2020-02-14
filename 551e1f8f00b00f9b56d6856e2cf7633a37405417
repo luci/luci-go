@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e065abd_991c8d95",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T23:16:13Z",
+      "side": 1,
+      "message": "nit: delay",
+      "range": {
+        "startLine": 151,
+        "startChar": 6,
+        "endLine": 151,
+        "endChar": 9
+      },
+      "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
