@@ -22,7 +22,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 )
@@ -34,10 +36,17 @@ import (
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
 
-var purgedInvocationsMetric = metric.NewCounter(
-	"resultdb/purged_invocations",
-	"How many invocations have had their expected test results purged",
-	nil)
+var (
+	purgedInvocationsMetric = metric.NewCounter(
+		"resultdb/purged_invocations/count",
+		"How many invocations have had their expected test results purged",
+		nil)
+	purgedInvocationsDelay = metric.NewCumulativeDistribution(
+		"resultdb/purged_invocations/sampled_delay",
+		"How long overdue for purging is each invocation sampled.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.DefaultBucketer)
+)
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 
@@ -125,7 +134,7 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize int) ([]span.InvocationID, error) {
 	st := spanner.NewStatement(`
 		WITH expiringInvocations AS (
-			SELECT InvocationId
+			SELECT InvocationId, TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), ExpectedTestResultsExpirationTime, SECOND)
 			FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
 			WHERE ShardId = @shardId
 			AND ExpectedTestResultsExpirationTime IS NOT NULL
@@ -139,10 +148,12 @@ func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize in
 	ret := make([]span.InvocationID, 0, sampleSize)
 	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var res span.InvocationID
-		if err := span.FromSpanner(row, &res); err != nil {
+		var delay int64
+		if err := span.FromSpanner(row, &res, &delay); err != nil {
 			return err
 		}
 		ret = append(ret, res)
+		purgedInvocationsDelay.Add(ctx, float64(delay))
 		return nil
 	})
 	return ret, err
