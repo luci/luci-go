@@ -25,8 +25,8 @@ import (
 	"go.chromium.org/luci/common/retry"
 )
 
-// quotaErrorIterator is an retry.Iterator implementation that only retries errors
-// if they are tagged with errTag.
+// quotaErrorIterator is an retry.Iterator implementation that only retries
+// Google API quota errors.
 type quotaErrorIterator struct {
 	delay    time.Duration
 	maxDelay time.Duration
@@ -41,10 +41,9 @@ func (it *quotaErrorIterator) Next(ctx context.Context, err error) time.Duration
 	}
 
 	delay := it.delay
-	switch {
-	case delay > it.maxDelay:
+	if  delay > it.maxDelay {
 		delay = it.maxDelay
-	default:
+	} else {
 		nextDelay := delay * 2
 		// +-10% of next delay.
 		nextDelay = nextDelay - nextDelay/10 + time.Duration(mathrand.Intn(ctx, int(nextDelay/5)))
