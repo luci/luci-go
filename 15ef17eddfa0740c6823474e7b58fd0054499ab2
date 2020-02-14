@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2b9b173_d7d09864",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T22:13:15Z",
+      "side": 1,
+      "message": "this uses local timezone, so it won\u0027t be correct. I think you have to do time.Now().UTC().Sub(exp)\n\nalternatively: TIMESTAMP_DIFF(ExpectedTestResultsExpirationTime, CURRENT_TIMESTAMP(), SECONDS) in L137",
+      "range": {
+        "startLine": 156,
+        "startChar": 39,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "15ef17eddfa0740c6823474e7b58fd0054499ab2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
