@@ -262,6 +262,24 @@
     },
     {
       "key": {
+        "uuid": "b5febaed_3ef2e2eb",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-14T17:38:13Z",
+      "side": 1,
+      "message": "Ah, got it.",
+      "parentUuid": "34ed7631_f42dbe39",
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a5be0f59_75ec5080",
         "filename": "resultdb/internal/globalmetrics/metrics.go",
         "patchSetId": 7
