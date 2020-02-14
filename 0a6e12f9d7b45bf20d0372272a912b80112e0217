@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "1d01857a_77aef06b",
+        "filename": "resultdb/internal/backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T16:51:26Z",
+      "side": 1,
+      "message": "i see. done",
+      "parentUuid": "1b1b3634_934425c5",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 1
+      },
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e19daf22_f80b5791",
         "filename": "resultdb/internal/backend/invocation_task.go",
         "patchSetId": 7
@@ -217,6 +241,24 @@
       "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34ed7631_f42dbe39",
+        "filename": "resultdb/internal/globalmetrics/metrics.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T16:51:26Z",
+      "side": 1,
+      "message": "you mean *add* empty line? if i add an empty line, the comment will not show up a package-level documentation. https://blog.golang.org/godoc-documenting-go-code",
+      "parentUuid": "26e81e05_c6ee6326",
+      "revId": "0a6e12f9d7b45bf20d0372272a912b80112e0217",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
