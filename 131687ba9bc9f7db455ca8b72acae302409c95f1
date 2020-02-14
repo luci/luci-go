@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "17c01795_c5cac025",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T20:09:55Z",
+      "side": 1,
+      "message": "nit: \\n after this",
+      "revId": "131687ba9bc9f7db455ca8b72acae302409c95f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2b75be2_bfe1298a",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T20:09:55Z",
+      "side": 1,
+      "message": "randomExpiredResultsInvocations is expensive. returning error here means we rerun the expensive query each time we encounter an error. please log the error and move on. we do the same in invocation tasks",
+      "revId": "131687ba9bc9f7db455ca8b72acae302409c95f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
