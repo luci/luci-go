@@ -41,7 +41,7 @@ func (it *quotaErrorIterator) Next(ctx context.Context, err error) time.Duration
 	}
 
 	delay := it.delay
-	if  delay > it.maxDelay {
+	if delay > it.maxDelay {
 		delay = it.maxDelay
 	} else {
 		nextDelay := delay * 2
