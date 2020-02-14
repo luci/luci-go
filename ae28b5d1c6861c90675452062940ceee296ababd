@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "306f1ddb_9e103de3",
+        "filename": "resultdb/internal/recorder/batch_create_test_results.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-14T05:38:55Z",
+      "side": 1,
+      "message": "Nit: 2020.\n\nSame for other new files.",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "ae28b5d1c6861c90675452062940ceee296ababd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
