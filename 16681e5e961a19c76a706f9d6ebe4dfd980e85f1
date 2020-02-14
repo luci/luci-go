@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb80dc35_b9d34c14",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T21:44:40Z",
+      "side": 1,
+      "message": "1) name must mention purging because it is specific to purging.\n2) same issue as with other \"delay\" metrics. Scott made a good point that we should use absolute times, not relative.\n\nshould we combine the metrics? \"resultdb/purged_invocations/count\" and \"resultdb/purged_invocations/sampled_expiration_time\"?\n\n+Scott",
+      "range": {
+        "startLine": 45,
+        "startChar": 12,
+        "endLine": 45,
+        "endChar": 37
+      },
+      "revId": "16681e5e961a19c76a706f9d6ebe4dfd980e85f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cfcbc12_1fcd2b14",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T21:44:40Z",
+      "side": 1,
+      "message": "how can it be null if we explicitly filter nulls out?",
+      "range": {
+        "startLine": 151,
+        "startChar": 10,
+        "endLine": 151,
+        "endChar": 26
+      },
+      "revId": "16681e5e961a19c76a706f9d6ebe4dfd980e85f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
