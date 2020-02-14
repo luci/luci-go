@@ -17,6 +17,7 @@ load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
 load('@stdlib//internal/luci/common.star', 'keys', 'kinds')
+load('@stdlib//internal/luci/lib/cq.star', 'cq', 'cqimpl')
 
 
 def _cq_tryjob_verifier(
@@ -25,6 +26,7 @@ def _cq_tryjob_verifier(
       *,
       cq_group=None,
       includable_only=None,
+      result_visibility=None,
       disable_reuse=None,
       experiment_percentage=None,
       location_regexp=None,
@@ -160,6 +162,11 @@ def _cq_tryjob_verifier(
     cq_group: a CQ group to add the verifier to. Can be omitted if
         `cq_tryjob_verifier` is used inline inside some luci.cq_group(...)
         declaration.
+    result_visibility: can be used to restrict the visibility of the tryjob
+        results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL`
+        and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full
+        visibility: builder name and full summary markdown are included in the
+        Gerrit comment.
     includable_only: if True, this builder will only be triggered by CQ if it is
         also specified via `CQ-Include-Trybots:` on CL description. Default is
         False. See the explanation above for all details.
@@ -261,6 +268,12 @@ def _cq_tryjob_verifier(
   key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
   graph.add_node(key, props = {
       'disable_reuse': validate.bool('disable_reuse', disable_reuse, required=False),
+      'result_visibility': validate.int(
+          'result_visibility',
+          result_visibility,
+          default=cq.COMMENT_LEVEL_UNSET,
+          required=False,
+      ),
       'includable_only': validate.bool('includable_only', includable_only, required=False),
       'experiment_percentage': validate.float(
           'experiment_percentage',
