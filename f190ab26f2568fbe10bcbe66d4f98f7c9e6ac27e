@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "05dfddcf_de2aea16",
+        "filename": "resultdb/internal/recorder/batch_create_test_results.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T02:25:40Z",
+      "side": 1,
+      "message": "Name",
+      "range": {
+        "startLine": 38,
+        "startChar": 36,
+        "endLine": 38,
+        "endChar": 38
+      },
+      "revId": "f190ab26f2568fbe10bcbe66d4f98f7c9e6ac27e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02223f6f_68b1c580",
+        "filename": "resultdb/internal/recorder/create_test_result.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T02:25:40Z",
+      "side": 1,
+      "message": "msg.Invocation is a name, not id. we should use ValidateInvocationName",
+      "range": {
+        "startLine": 30,
+        "startChar": 36,
+        "endLine": 30,
+        "endChar": 39
+      },
+      "revId": "f190ab26f2568fbe10bcbe66d4f98f7c9e6ac27e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
