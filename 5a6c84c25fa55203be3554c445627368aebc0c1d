@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c69df6ca_a721c2ed",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-14T15:03:22Z",
+      "side": 1,
+      "message": "I like it. Done.",
+      "parentUuid": "18e3b478_1e53e2c6",
+      "range": {
+        "startLine": 86,
+        "startChar": 5,
+        "endLine": 86,
+        "endChar": 17
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e85932d_ee84e1dc",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "3e19d4fc_d60a1ed5",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-14T15:03:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e85932d_ee84e1dc",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 17
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4993392f_7b649613",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "524a2e9f_e727a56b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 273,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2020-02-14T15:03:22Z",
+      "side": 1,
+      "message": "Ok, replaced to use the constant.",
+      "parentUuid": "4993392f_7b649613",
+      "range": {
+        "startLine": 272,
+        "startChar": 6,
+        "endLine": 273,
+        "endChar": 14
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
