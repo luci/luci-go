@@ -389,6 +389,7 @@ luci.cq_group(
     verifiers = [
         luci.cq_tryjob_verifier(
             builder = 'linux try builder',
+            result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
             location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
         ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
@@ -497,6 +498,7 @@ lucicfg.emit(
 #       >
 #       builders: <
 #         name: "infra/try/linux try builder"
+#         result_visibility: COMMENT_LEVEL_RESTRICTED
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
 #       >

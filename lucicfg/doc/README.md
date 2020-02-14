@@ -1823,6 +1823,7 @@ luci.cq_tryjob_verifier(
 
     # Optional arguments.
     cq_group = None,
+    result_visibility = None,
     includable_only = None,
     disable_reuse = None,
     experiment_percentage = None,
@@ -1958,6 +1959,7 @@ For example:
 
 * **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
+* **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
@@ -2376,6 +2378,15 @@ field of [luci.cq_group(...)](#luci.cq_group):
     considered "twice as heavy" as non-timeout failures (e.g. one retried
     timeout failure immediately exhausts all retry quota for the CQ attempt).
     This is to avoid adding more requests to an already overloaded system.
+
+`cq.COMMENT_LEVEL_*` constants define possible values for `result_visibility`
+field of [luci.cq_group(...)](#luci.cq_group):
+  * **cq.COMMENT_LEVEL_UNSET**: Equivalent to cq.COMMENT_LEVEL_FULL for now.
+  * **cq.COMMENT_LEVEL_FULL**: The CQ reports the summary markdown and a link
+    to the buildbucket build id in Milo with the builder name in the URL in a
+    Gerrit comment.
+  * **cq.COMMENT_LEVEL_RESTRICTED**: The CQ reports a generic "Build failed:
+    https://ci.chromium.org/b/1234" with no summary markdown.
 
 
 ### cq.refset {#cq.refset}

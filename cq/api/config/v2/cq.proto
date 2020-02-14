@@ -83,14 +83,15 @@ enum Toggle {
 // comments.
 //
 // This doesn't affect the buildbucket plugin (green/red chips).
-enum TryjobResultCommentLevel {
-  TRYJOB_RESULT_COMMENT_LEVEL_UNSET = 0;
+enum CommentLevel {
+  // Currently default to full visibility.
+  COMMENT_LEVEL_UNSET = 0;
   // The CQ reports the summary markdown and a link to the buildbucket build id
   // in Milo with the builder name in the URL in a Gerrit comment.
-  FULL_VISIBILITY = 1;
+  COMMENT_LEVEL_FULL = 1;
   // The CQ reports a generic "Build failed: https://ci.chromium.org/b/1234"
   // with no summary markdown.
-  RESTRICTED_VISIBILITY = 2;
+  COMMENT_LEVEL_RESTRICTED = 2;
 }
 
 
@@ -369,7 +370,7 @@ message Verifiers {
       // Gerrit for this tryjob.
       //
       // This doesn't affect the buildbucket plugin (green/red chips).
-      TryjobResultCommentLevel result_visibility = 10;
+      CommentLevel result_visibility = 10;
 
       // Optional. If true, a fresh build will be required for each CQ attempt.
       //

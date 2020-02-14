@@ -470,13 +470,13 @@ func TestTryjobValidation(t *testing.T) {
 
 		Convey("result_visibility", func() {
 			So(validate(`
-				builders {name: "a/b/c" result_visibility: TRYJOB_RESULT_COMMENT_LEVEL_UNSET}
+				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_UNSET}
 			`), ShouldBeNil)
 			So(validate(`
-				builders {name: "a/b/c" result_visibility: FULL_VISIBILITY}
+				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_FULL}
 			`), ShouldBeNil)
 			So(validate(`
-				builders {name: "a/b/c" result_visibility: RESTRICTED_VISIBILITY}
+				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_RESTRICTED}
 			`), ShouldBeNil)
 		})
 

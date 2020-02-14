@@ -715,7 +715,7 @@ def gen_cq_cfg(ctx):
   # still allow to specify luci.cq(...) in this case (it is just ignored).
   cq_node = graph.node(keys.cq())
   cfg = cq_pb.Config(
-      cq_status_host =  cq_node.props.status_host if cq_node else None,
+      cq_status_host = cq_node.props.status_host if cq_node else None,
       draining_start_time = cq_node.props.draining_start_time if cq_node else None,
   )
   set_config(ctx, 'commit-queue.cfg', cfg)
@@ -874,6 +874,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
 
   return cq_pb.Verifiers.Tryjob.Builder(
       name = name,
+      result_visibility = _cq_visibility(verifier.props.result_visibility),
       includable_only = verifier.props.includable_only,
       disable_reuse = verifier.props.disable_reuse,
       experiment_percentage = verifier.props.experiment_percentage,
@@ -949,6 +950,13 @@ def _cq_toggle(val):
   if val == None:
     return cq_pb.UNSET
   return cq_pb.YES if val else cq_pb.NO
+
+
+def _cq_visibility(val):
+  """Visibility|None => cq_pb.Visibility."""
+  if val == None:
+    return cq_pb.COMMENT_LEVEL_UNSET
+  return val
 
 
 ################################################################################
