@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "18e3b478_1e53e2c6",
+        "filename": "cq/api/config/v2/cq.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-14T02:32:06Z",
+      "side": 1,
+      "message": "Maybe we can drop TryjobResult (and TRYJOB_RESULT_*) prefix? It will be clear it applies to the tryjob results from the context. Then enums won\u0027t be such ugly.",
+      "range": {
+        "startLine": 86,
+        "startChar": 5,
+        "endLine": 86,
+        "endChar": 17
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e85932d_ee84e1dc",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-14T02:32:06Z",
+      "side": 1,
+      "message": "included",
+      "range": {
+        "startLine": 170,
+        "startChar": 8,
+        "endLine": 170,
+        "endChar": 17
+      },
+      "revId": "5a6c84c25fa55203be3554c445627368aebc0c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4993392f_7b649613",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 5
