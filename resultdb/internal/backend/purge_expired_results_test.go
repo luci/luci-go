@@ -103,9 +103,9 @@ func TestPurgeExpiredResults(t *testing.T) {
 			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001)}
 
 		// Purge expired data.
-		for range invocations {
-			id, err := randomExpiredResultsInvocation(ctx, 0)
-			So(err, ShouldBeNil)
+		ids, err := randomExpiredResultsInvocations(ctx, 0, 10)
+		So(err, ShouldBeNil)
+		for _, id := range ids {
 			So(purgeOneInvocation(ctx, id), ShouldBeNil)
 		}
 
