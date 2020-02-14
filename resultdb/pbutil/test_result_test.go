@@ -73,7 +73,7 @@ func invalidArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 }
 
 // validTestResult returns a valid TestResult sample.
-func validTestResult(now time.Time) *pb.TestResult {
+func ValidTestResult(now time.Time) *pb.TestResult {
 	st, _ := ptypes.TimestampProto(now.Add(-2 * time.Minute))
 	art1, art2 := validArtifacts(now)
 	return &pb.TestResult{
