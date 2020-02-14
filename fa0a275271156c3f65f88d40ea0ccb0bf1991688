@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de08f514_ad3255c3",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T01:02:20Z",
+      "side": 1,
+      "message": "gofmt",
+      "revId": "fa0a275271156c3f65f88d40ea0ccb0bf1991688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "145cb3bf_fad65a88",
+        "filename": "resultdb/internal/backend/unlimited.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-14T01:02:20Z",
+      "side": 1,
+      "message": "do you intend to reuse it for anything else? if not, it would be simpler to make it less generic, by renaming to quotaErrorRetrier (or something like that), removing errTag and moving bigquery_export.go:331-334 logic into L38.\n\nThen it becomes OK to hardcode specific values for delay and maxDelay, and then it becomes simpler.",
+      "range": {
+        "startLine": 28,
+        "startChar": 5,
+        "endLine": 28,
+        "endChar": 14
+      },
+      "revId": "fa0a275271156c3f65f88d40ea0ccb0bf1991688",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
