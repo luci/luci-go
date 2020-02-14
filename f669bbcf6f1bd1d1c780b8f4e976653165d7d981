@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "350a6c91_66e0118e",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-14T04:15:09Z",
+      "side": 1,
+      "message": "Note that enabling Datastore API will require few more lines of code. See gaeemulation usage in https://chromium.googlesource.com/infra/luci/luci-go/+/refs/heads/master/examples/appengine/helloworld_v2/main.go#39.",
+      "range": {
+        "startLine": 26,
+        "startChar": 18,
+        "endLine": 26,
+        "endChar": 21
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fb5e16e1_62b6d2ea",
+        "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-14T04:15:09Z",
+      "side": 1,
+      "message": "We must make a note somewhere to NEVER upload this code to cr-buildbucket.appspot.com, bad things will happen.",
+      "range": {
+        "startLine": 11,
+        "startChar": 20,
+        "endLine": 11,
+        "endChar": 54
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dbb35346_d0b51345",
+        "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-14T04:15:09Z",
+      "side": 1,
+      "message": "All this stuff is not necessary, there are no \"login: admin\" handlers any more (thus \"/admin/.*\" route is useless), and the RPC explorer is embedded into the binary (so no need for static_dir and static_files). RPC explorer symlinks can also be delete from frontend/* if they are there.\n\nJust make it\n\nhandlers:\n- url: /.*\n  secure: always\n  script: auto",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 16
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
