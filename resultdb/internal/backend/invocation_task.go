@@ -21,13 +21,42 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/resultdb/internal/tasks"
 )
 
-type invocationProcessor struct {
-	bqExporter
-}
+// Statuses of invocation tasks.
+const (
+	// The task completes successfully.
+	success = "SUCCESS"
+
+	// The task runs into a failure that can be resolved by retrying.
+	transientFailure = "TRANSIENT_FAILURE"
+
+	// The task runs into a permanent failure.
+	permanentFailure = "PERMANENT_FAILURE"
+)
+
+var (
+	taskAttemptMetric = metric.NewCounter(
+		"resultdb/task/attempts",
+		"Counts of invocation task attempts.",
+		nil,
+		field.String("type"),   // tasks.Type
+		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
+
+	taskDurationMetric = metric.NewCumulativeDistribution(
+		"resultdb/task/duration",
+		"Distribution of an attempt’s execution duration.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		field.String("type"),   // tasks.Type
+		field.String("status")) // SUCCESS || TRANSIENT_FAILURE || PERMANENT_FAILURE
+)
 
 // permanentInvocationTaskErrTag set in an error indicates that the err is not
 // resolvable by retry.
@@ -99,13 +128,6 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 
 // runInvocationTasks gets invocation tasks and dispatches them to workers.
 func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
-	mCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go b.cron(ctx, time.Minute, func(ctx context.Context) error {
-		recordOldestTaskMetric(mCtx, taskType)
-		return nil
-	})
-
 	workers := b.TaskWorkers
 	if workers == 0 {
 		workers = 1
