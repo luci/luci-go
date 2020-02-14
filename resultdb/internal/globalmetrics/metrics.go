@@ -42,6 +42,12 @@ var (
 		"The creation Unix timestamp of the oldest task.",
 		&types.MetricMetadata{Units: types.Seconds},
 		field.String("type")) // tasks.Type
+
+	taskCountMetric = metric.NewInt(
+		"resultdb/task/count",
+		"Current number of tasks.",
+		nil,
+		field.String("type")) // tasks.Type
 )
 
 // Options is global metrics server configuration.
@@ -57,8 +63,8 @@ func InitServer(srv *server.Server, opts Options) {
 		interval = 5 * time.Minute
 	}
 
-	srv.RunInBackground("resultdb.oldest_task", func(ctx context.Context) {
-		cron.Run(ctx, interval, updateOldestTask)
+	srv.RunInBackground("resultdb.tasks", func(ctx context.Context) {
+		cron.Run(ctx, interval, updateTaskMetrics)
 	})
 
 	srv.RunInBackground("resultdb.oldest_expired_result", func(ctx context.Context) {
@@ -66,9 +72,9 @@ func InitServer(srv *server.Server, opts Options) {
 	})
 }
 
-func updateOldestTask(ctx context.Context) error {
+func updateTaskMetrics(ctx context.Context) error {
 	st := spanner.NewStatement(`
-		SELECT TaskType, MIN(CreateTime)
+		SELECT TaskType, MIN(CreateTime), COUNT(*)
 		FROM InvocationTasks
 		GROUP BY TaskType
 	`)
@@ -77,10 +83,12 @@ func updateOldestTask(ctx context.Context) error {
 	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var taskType string
 		var minCreateTime time.Time
-		if err := b.FromSpanner(row, &taskType, &minCreateTime); err != nil {
+		var count int64
+		if err := b.FromSpanner(row, &taskType, &minCreateTime, &count); err != nil {
 			return err
 		}
 		oldestTaskMetric.Set(ctx, minCreateTime.Unix(), taskType)
+		taskCountMetric.Set(ctx, count, taskType)
 		return nil
 	})
 }
