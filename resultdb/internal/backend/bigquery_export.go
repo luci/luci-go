@@ -42,7 +42,8 @@ import (
 )
 
 const (
-	maxInvocationGraphSize = 1000
+	maxInvocationGraphSize  = 1000
+	partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 )
 
 var bqTableCache = caching.RegisterLRUCache(50)
@@ -185,6 +186,10 @@ func ensureBQTable(ctx context.Context, client *bigquery.Client, bqExport *pb.Bi
 		panic(err)
 	}
 	err = t.Create(ctx, &bigquery.TableMetadata{
+		TimePartitioning: &bigquery.TimePartitioning{
+			Field:      "partition_time",
+			Expiration: partitionExpirationTime,
+		},
 		Schema: schema,
 	})
 	apiErr, ok := err.(*googleapi.Error)
@@ -252,7 +257,7 @@ func (b *bqExporter) queryTestResultsStreaming(
 	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {
 		_, exonerated := exoneratedTestVariants[testVariantKey{testID: tr.TestId, variantHash: variantHash}]
 		parentID, _, _ := span.MustParseTestResultName(tr.Name)
-		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr, exonerated))
+		rows = append(rows, generateBQRow(invs[exportedID], invs[parentID], tr, exonerated, variantHash))
 		batchSize += proto.Size(tr)
 		if len(rows) >= b.maxBatchRowCount || batchSize >= b.maxBatchSize {
 			select {

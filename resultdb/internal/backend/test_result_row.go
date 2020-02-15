@@ -17,6 +17,7 @@ package backend
 import (
 	"crypto/sha512"
 	"encoding/hex"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 
@@ -72,6 +73,9 @@ type TestResultRow struct {
 	//  e.g. a specific bucket, builder and a test suite.
 	Variant []StringPair `bigquery:"variant"`
 
+	// A hex-encoded sha256 of concatenated "<key>:<value>\n" variant pairs.
+	VariantHash string `bigquery:"variant_hash"`
+
 	// Expected is a flag indicating whether the result of test case execution is expected.
 	// Refer to pb.TestResult.Expected for details.
 	Expected bool `bigquery:"expected"`
@@ -95,6 +99,13 @@ type TestResultRow struct {
 	// If the failures of the test variant are exonerated.
 	// Note: the exoneration is at the test variant level, not result level.
 	Exonerated bool `bigquery:"exonerated"`
+
+	// PartitionTime is used to partition the table.
+	// It is the time when exported invocation was created.
+	// https://cloud.google.com/bigquery/docs/creating-column-partitions#limitations
+	// mentions "The partitioning column must be a top-level field."
+	// So we keep this column here instead of adding the CreateTime to Invocation.
+	PartitionTime time.Time `bigquery:"partition_time"`
 }
 
 // Name returns test result name.
@@ -145,18 +156,20 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 }
 
 // generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool) *bigquery.StructSaver {
+func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string) *bigquery.StructSaver {
 	trr := &TestResultRow{
 		ExportedInvocation: invocationProtoToInvocation(exported),
 		ParentInvocation:   invocationProtoToInvocation(parent),
 		TestID:             tr.TestId,
 		ResultID:           tr.ResultId,
 		Variant:            variantToStringPairs(tr.Variant),
+		VariantHash:        variantHash,
 		Expected:           tr.Expected,
 		Status:             tr.Status.String(),
 		SummaryHTML:        tr.SummaryHtml,
 		Tags:               stringPairProtosToStringPairs(tr.Tags),
 		Exonerated:         exonerated,
+		PartitionTime:      pbutil.MustTimestamp(exported.CreateTime),
 	}
 
 	if tr.StartTime != nil {
