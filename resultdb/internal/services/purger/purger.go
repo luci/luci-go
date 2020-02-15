@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+// Package purger deletes expired test results from Spanner.
+package purger
 
 import (
 	"context"
@@ -22,7 +23,12 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
+	"go.chromium.org/luci/server"
 
+	"go.chromium.org/luci/resultdb/internal/cron"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
@@ -33,8 +39,37 @@ import (
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
 
-func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
+var (
+	purgedInvocationsMetric = metric.NewCounter(
+		"resultdb/purged_invocations/count",
+		"How many invocations have had their expected test results purged",
+		nil)
+	purgedInvocationsDelay = metric.NewCumulativeDistribution(
+		"resultdb/purged_invocations/sampled_delay",
+		"How long overdue for purging is each invocation sampled.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.DefaultBucketer)
+)
 
+// Options is purger server configuration.
+type Options struct {
+	// ForceCronInterval forces minimum interval in cron jobs.
+	// Useful in integration tests to reduce the test time.
+	ForceCronInterval time.Duration
+
+	// SampleSize is the number of expired invocations to sample at a time from
+	// any given shard.
+	SampleSize int
+}
+
+// InitServer initializes a purger server.
+func InitServer(srv *server.Server, opts Options) {
+	srv.RunInBackground("resultdb.purge_expired_results", func(ctx context.Context) {
+		run(ctx, opts)
+	})
+}
+
+func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
 	_, err := span.Client(ctx).Apply(ctx, []*spanner.Mutation{
 		span.UpdateMap("Invocations", map[string]interface{}{
 			"InvocationID":                      id,
@@ -44,6 +79,7 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 	if err != nil {
 		return err
 	}
+	purgedInvocationsMetric.Add(ctx, 1)
 	return nil
 }
 
@@ -77,15 +113,9 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 	return unsetInvocationResultsExpiration(ctx, id)
 }
 
-type expectedResultsPurger struct {
-	// SampleSize says how many expired invocations to sample at a time from
-	// any given shard.
-	SampleSize int
-}
-
-// purgeExpiredResults purges expired test results and exports metrics.
+// run continuously purges expired test results.
 // It blocks until context is canceled.
-func (b *backend) purgeExpiredResults(ctx context.Context) {
+func run(ctx context.Context, opts Options) {
 	maxShard, err := span.CurrentMaxShard(ctx)
 	switch {
 	case err == span.ErrNoResults:
@@ -95,8 +125,12 @@ func (b *backend) purgeExpiredResults(ctx context.Context) {
 	}
 
 	// Start one cron job for each shard of the database.
-	b.cronGroup(ctx, maxShard+1, time.Minute, func(ctx context.Context, shard int) error {
-		ids, err := randomExpiredResultsInvocations(ctx, shard, b.SampleSize)
+	minInterval := time.Minute
+	if opts.ForceCronInterval > 0 {
+		minInterval = opts.ForceCronInterval
+	}
+	cron.Group(ctx, maxShard+1, minInterval, func(ctx context.Context, shard int) error {
+		ids, err := randomExpiredResultsInvocations(ctx, shard, opts.SampleSize)
 		switch err {
 		case span.ErrNoResults:
 			return nil
@@ -137,6 +171,7 @@ func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize in
 			return err
 		}
 		ret = append(ret, res)
+		purgedInvocationsDelay.Add(ctx, float64(delay))
 		return nil
 	})
 	return ret, err
