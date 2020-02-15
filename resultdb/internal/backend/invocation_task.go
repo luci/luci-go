@@ -147,8 +147,12 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 
 			case err != nil:
 				// Do not bail on other task ids, otherwise we sample tasks too often
-				// which is expensive.
-				logging.Errorf(ctx, "Task failed: %s", err)
+				// which is expensive. Just log the error and move on to the next task.
+				how := "transiently"
+				if permanentInvocationTaskErrTag.In(err) {
+					how = "permanently"
+				}
+				logging.Errorf(ctx, "Task failed %s: %s", how, err)
 
 			default:
 				logging.Infof(ctx, "Task succeeded")
