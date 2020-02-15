@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium/formats"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/testutil"

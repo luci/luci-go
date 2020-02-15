@@ -20,7 +20,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/resultdb"
+	"go.chromium.org/luci/resultdb/internal/services/resultdb"
 )
 
 func main() {

@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/recorder/chromium"
+	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )

@@ -29,7 +29,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/recorder/chromium"
+	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"

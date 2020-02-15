@@ -23,7 +23,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/recorder"
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 

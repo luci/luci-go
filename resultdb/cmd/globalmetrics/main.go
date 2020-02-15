@@ -21,7 +21,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
-	"go.chromium.org/luci/resultdb/internal/globalmetrics"
+	"go.chromium.org/luci/resultdb/internal/services/globalmetrics"
 )
 
 func main() {
