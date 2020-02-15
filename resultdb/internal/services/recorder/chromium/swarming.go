@@ -42,8 +42,8 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/recorder/chromium/formats"
-	"go.chromium.org/luci/resultdb/internal/recorder/chromium/util"
+	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium/formats"
+	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium/util"
 	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"

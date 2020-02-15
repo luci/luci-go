@@ -33,9 +33,9 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 
-	"go.chromium.org/luci/resultdb/internal/backend"
-	"go.chromium.org/luci/resultdb/internal/recorder"
-	"go.chromium.org/luci/resultdb/internal/resultdb"
+	"go.chromium.org/luci/resultdb/internal/services/backend"
+	"go.chromium.org/luci/resultdb/internal/services/recorder"
+	"go.chromium.org/luci/resultdb/internal/services/resultdb"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
