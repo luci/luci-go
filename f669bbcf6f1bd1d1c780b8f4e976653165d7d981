@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "36e8f69d_ac95240c",
+        "filename": "buildbucket/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-02-15T01:27:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "350a6c91_66e0118e",
+      "range": {
+        "startLine": 26,
+        "startChar": 18,
+        "endLine": 26,
+        "endChar": 21
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb5e16e1_62b6d2ea",
         "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2020-02-14T04:15:09Z",
       "side": 1,
       "message": "We must make a note somewhere to NEVER upload this code to cr-buildbucket.appspot.com, bad things will happen.",
+      "range": {
+        "startLine": 11,
+        "startChar": 20,
+        "endLine": 11,
+        "endChar": 54
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "252d2bec_6e979d3f",
+        "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-02-15T01:27:46Z",
+      "side": 1,
+      "message": "I changed it to the prod host by default. Accidentally screwing up cr-buildbucket-dev ACLs (and probably only tightening them) seems not as bad as what could happen right now. Added comment as well.",
+      "parentUuid": "fb5e16e1_62b6d2ea",
       "range": {
         "startLine": 11,
         "startChar": 20,
@@ -68,6 +116,30 @@
       "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92c4623b_697ed2d8",
+        "filename": "buildbucket/appengine/frontend/service-default-go.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-02-15T01:27:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dbb35346_d0b51345",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 16
+      },
+      "revId": "f669bbcf6f1bd1d1c780b8f4e976653165d7d981",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
