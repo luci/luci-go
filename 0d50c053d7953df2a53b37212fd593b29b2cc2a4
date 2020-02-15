@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "ba1ac60f_6c76a851",
+        "filename": "resultdb/internal/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-15T02:25:55Z",
+      "side": 1,
+      "message": "please make a const in the top\nalso please add a comment that this is ~1.5y",
+      "range": {
+        "startLine": 190,
+        "startChar": 15,
+        "endLine": 190,
+        "endChar": 35
+      },
+      "revId": "0d50c053d7953df2a53b37212fd593b29b2cc2a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6133403d_3dd40ce4",
         "filename": "resultdb/internal/backend/test_result_row.go",
         "patchSetId": 2
@@ -16,6 +39,24 @@
       "revId": "0d50c053d7953df2a53b37212fd593b29b2cc2a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a1964b4_dd979189",
+        "filename": "resultdb/internal/backend/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-15T02:25:55Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6133403d_3dd40ce4",
+      "revId": "0d50c053d7953df2a53b37212fd593b29b2cc2a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
