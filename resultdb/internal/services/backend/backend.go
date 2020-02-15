@@ -31,7 +31,6 @@ import (
 type backend struct {
 	*Options
 	bqExporter
-	expectedResultsPurger
 }
 
 // cronGroup runs multiple cron jobs concurrently.
@@ -45,9 +44,6 @@ func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.
 
 // Options is backend server configuration.
 type Options struct {
-	// PurgeExpiredResults instructs backend to purge expired results.
-	PurgeExpiredResults bool
-
 	// ForceCronInterval forces minimum interval in cron jobs.
 	// Useful in integration tests to reduce the test time.
 	ForceCronInterval time.Duration
@@ -80,9 +76,6 @@ func InitServer(srv *server.Server, opts Options) {
 			// Allow ~2Gb => 2Gb/6Mb = 333 batches
 			batchSem: semaphore.NewWeighted(300),
 		},
-		expectedResultsPurger: expectedResultsPurger{
-			SampleSize: 100,
-		},
 	}
 
 	for _, taskType := range tasks.AllTypes {
@@ -91,8 +84,5 @@ func InitServer(srv *server.Server, opts Options) {
 		srv.RunInBackground(activity, func(ctx context.Context) {
 			b.runInvocationTasks(ctx, taskType)
 		})
-	}
-	if opts.PurgeExpiredResults {
-		srv.RunInBackground("resultdb.purge_expired_results", b.purgeExpiredResults)
 	}
 }
