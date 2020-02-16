@@ -392,6 +392,12 @@ luci.cq_group(
             builder = 'linux try builder',
             location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
         ),
+        # An experimental verifier with location_regexp_exclude.
+        luci.cq_tryjob_verifier(
+            builder = 'experimental linux try builder',
+            location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
+            experiment_percentage = 50,
+        ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {'builder': 'try/generically named builder', 'disable_reuse': True},
         # An alias for luci.cq_tryjob_verifier(<builder>).
@@ -498,6 +504,12 @@ lucicfg.emit(
 #       >
 #       builders: <
 #         name: "infra/try/linux try builder"
+#         location_regexp: ".*"
+#         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#       >
+#       builders: <
+#         name: "infra/try/experimental linux try builder"
+#         experiment_perentage: 50
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
 #       >
