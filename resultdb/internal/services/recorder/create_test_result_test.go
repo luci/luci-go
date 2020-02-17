@@ -18,12 +18,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/common/clock/testclock"
 
+	"go.chromium.org/luci/resultdb/internal/span"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
@@ -86,6 +93,62 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 				req.RequestId = string(rune(244))
 				err := validateCreateTestResultRequest(req, now)
 				So(err, ShouldErrLike, "request_id: does not match")
+			})
+		})
+	})
+}
+
+func TestCreateTestResult(t *testing.T) {
+	now := testclock.TestRecentTimeUTC
+
+	Convey(`CreateTestResult`, t, func() {
+		ctx := SpannerTestContext(t)
+		recorder := newTestRecorderServer()
+		req := validCreateTestResultRequest(now)
+		invID, err := pbutil.ParseInvocationName(req.Invocation)
+		So(err, ShouldBeNil)
+
+		createTestResult := func(req *pb.CreateTestResultRequest) {
+			tr := req.TestResult
+			expected := proto.Clone(tr).(*pb.TestResult)
+			expected.Name = pbutil.TestResultName(invID, tr.TestId, tr.ResultId)
+			res, err := recorder.CreateTestResult(ctx, req)
+
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, expected)
+			// TODO(crbug/1045693): retrieve the test result from DB and perform a check
+			// against the expected result.
+		}
+
+		// Insert a sample invocation
+		const tok = "update token"
+		vs := map[string]interface{}{"UpdateToken": tok}
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
+		MustApply(ctx, InsertInvocation(span.InvocationID(invID), pb.Invocation_ACTIVE, vs))
+
+		Convey("succeeds", func() {
+			Convey("with a request ID", func() {
+				createTestResult(req)
+			})
+
+			Convey("without a request ID", func() {
+				req.RequestId = ""
+				createTestResult(req)
+			})
+		})
+
+		Convey("fails", func() {
+			Convey("with an invalid request", func() {
+				req.Invocation = "this is an invalid invocation name"
+				_, err := recorder.CreateTestResult(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bad request: invocation: does not match")
+			})
+
+			Convey("with an non-existing invocation", func() {
+				req := validCreateTestResultRequest(now)
+				req.Invocation = "invocations/inv"
+				_, err := recorder.CreateTestResult(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
 			})
 		})
 	})
