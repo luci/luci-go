@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "844c199b_e489e149",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-17T02:15:13Z",
+      "side": 1,
+      "message": "nit; why purgedInvocationsMetric is named with \"Metric\" suffix, whereas this isn\u0027t?\n\nperhaps, it\u0027s a better alternative to rename purgedInvocationsMetric with purgedInovcationsCount",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f30d9e8_ca5ba64d",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-17T02:15:13Z",
+      "side": 1,
+      "message": "I\u0027m not sure if it\u0027s reasonable to name the metric with \"sampled\" prefix. The purger randomly samples invocations that has expired test results, and then reports\n- the total number of the randomly selected invocations into the count metric.\n- the purge delay of the randomly selected invocations into the delay metric.\n\nI would not name the delay metric with \"sampled\" prefix. Both metrics report the status/health/extra_information of the invocations that purger performed its work against. It doesn\u0027t matter how the purger selected the reported invocations.",
+      "range": {
+        "startLine": 45,
+        "startChar": 31,
+        "endLine": 45,
+        "endChar": 38
+      },
+      "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3e065abd_991c8d95",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 5
