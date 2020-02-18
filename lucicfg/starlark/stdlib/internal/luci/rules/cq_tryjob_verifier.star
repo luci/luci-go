@@ -76,7 +76,6 @@ def _cq_tryjob_verifier(
 
   This filtering currently cannot be used in any of the following cases:
 
-    * For experimental verifiers (when `experiment_percentage` is non-zero).
     * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
 
   Please talk to CQ owners if these restrictions are limiting you.
@@ -184,7 +183,8 @@ def _cq_tryjob_verifier(
         experimental. Such verifier is only triggered on a given percentage of
         the CLs and the outcome does not affect the decicion whether a CL can
         land or not. This is typically used to test new builders and estimate
-        their capacity requirements.
+        their capacity requirements. May be combined with location_regexp
+        and location_regexp_exclude.
     location_regexp: a list of regexps that define a set of files whose
         modification trigger this verifier. See the explanation above for all
         details.
