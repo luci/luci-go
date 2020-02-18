@@ -61,9 +61,9 @@ func (c *testClient) GetState(ctx context.Context, name string) pb.Invocation_St
 
 func (c *testClient) Include(ctx context.Context, including, included string) {
 	ctx = c.withUpdateTokenFor(ctx, including)
-	_, err := c.app.Recorder.Include(ctx, &pb.IncludeRequest{
+	_, err := c.app.Recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{
 		IncludingInvocation: including,
-		IncludedInvocation:  included,
+		AddInvocations:      []string{included},
 	})
 	So(err, ShouldBeNil)
 }

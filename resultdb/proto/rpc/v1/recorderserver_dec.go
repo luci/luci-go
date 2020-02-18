@@ -76,23 +76,6 @@ func (s *DecoratedRecorder) FinalizeInvocation(ctx context.Context, req *Finaliz
 	return
 }
 
-func (s *DecoratedRecorder) Include(ctx context.Context, req *IncludeRequest) (rsp *empty.Empty, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "Include", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.Include(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "Include", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedRecorder) UpdateIncludedInvocations(ctx context.Context, req *UpdateIncludedInvocationsRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
