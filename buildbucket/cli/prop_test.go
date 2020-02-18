@@ -77,6 +77,14 @@ func TestPropertiesFlag(t *testing.T) {
 				`)
 			})
 
+			Convey("Trims spaces", func() {
+				So(f.Set("array = [1]"), ShouldBeNil)
+				So(props, ShouldResembleProtoJSON, `{
+					"foo": "bar",
+					"array": [1]}
+				`)
+			})
+
 			Convey("Dup", func() {
 				So(f.Set("foo=bar"), ShouldErrLike, `duplicate property "foo`)
 			})
