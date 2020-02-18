@@ -16,6 +16,24 @@
       "revId": "e644f44a5a822202c5f3c386f8afb8758c6b2b01",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f57a9176_3ddff38b",
+        "filename": "resultdb/internal/services/backend/purge_expired_results.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T18:28:14Z",
+      "side": 0,
+      "message": "have you read https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2058588/7//COMMIT_MSG#20\n?",
+      "parentUuid": "713e2cfa_d6e246d0",
+      "revId": "e644f44a5a822202c5f3c386f8afb8758c6b2b01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
