@@ -22,6 +22,30 @@
       "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dea564f5_7c78dcbc",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:46:18Z",
+      "side": 1,
+      "message": "if we don\u0027t accept a result id from the client, then the client may have problems inserting multiple results for the same (invocation_id, test_id) in the same request. This is a fairly typical case, while multiple exonerations for the same (invocation_id, test_id) is very atypical (because one is enough to exonerate).\n\nWDYT about making ResultId in Spanner a string \"{short_request_id_hash}:{result_id}\"? if the client did not provide request_id, then generate something random yourself. When reading ResultID column, we\u0027d strip the hash.\n\nseparate CL is fine",
+      "parentUuid": "fb145d3d_d4fd1668",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
