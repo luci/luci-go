@@ -61,6 +61,9 @@ message Attempt {
 
   // Final status of the Attempt.
   AttemptStatus status = 9;
+
+  // A more fine-grained status the explains more details about the status.
+  AttemptSubstatus substatus = 10;
 }
 
 // GerritChange represents one revision (patchset) of one Gerrit change
@@ -177,4 +180,32 @@ enum AttemptStatus {
   FAILURE = 4;
   // Failure in CQ itself caused the Attempt to be dropped.
   INFRA_FAILURE = 5;
+}
+
+enum AttemptSubstatus {
+  // Default, never set.
+  ATTEMPT_SUBSTATUS_UNSPECIFIED = 0;
+  // There is no more detailed status set, e.g. if everything was successful.
+  NO_SUBSTATUS = 1;
+  // Failed at least one critical tryjob.
+  FAILURE_TRYJOBS = 2;
+  // Failed an initial quick check of CL state, e.g. footer flags.
+  FAILURE_LINT = 3;
+  // A CL owner doesn't have permission to trigger CQ.
+  FAILURE_NO_ACCESS = 4;
+  // A CL didn't get sufficient approval for submitting via CQ.
+  FAILURE_UNAPPROVED = 5;
+  // Some dependencies are either not submitted or not grouped
+  // together in this attempt.
+  FAILURE_DEPENDENCY = 6;
+  // Exhausted retry quota across all builders for this Attempt.
+  FAILURE_TOO_MANY_RETRIES = 7;
+  // Unknown failure type.
+  FAILURE_UNKNOWN = 8;
+  // After passing all checks, submit of one or more CLs failed.
+  SUCCESS_SUBMIT_FAILED = 9;
+  // Aborted because of a manual cancelation.
+  ABORTED_MANUAL= 10;
+  // CQ didn't have permission to trigger builds in some buckets.
+  INFRA_FAILURE_BUILDBUCKET= 11;
 }
