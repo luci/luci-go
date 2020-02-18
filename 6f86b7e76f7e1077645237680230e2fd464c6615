@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb145d3d_d4fd1668",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-18T02:31:40Z",
+      "side": 1,
+      "message": "I feel like this should be generated inside this handler in order to create a key associated with the request ID.\n\n`result_id` is a required field in the proto message.\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/e644f44a5a822202c5f3c386f8afb8758c6b2b01:resultdb/proto/rpc/v1/test_result.proto;l\u003d64-69;drc\u003d0b06bcf1aa3f98a67490aad018f9feda534f9b3f\n\nHowever, the column description in init_db.sql states that the value is generated in server.\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/e644f44a5a822202c5f3c386f8afb8758c6b2b01:resultdb/internal/span/init_db.sql;l\u003d116;drc\u003d35d5a2e02b10b8fd14871264a38ec3bc394b2e9d\n\nIf it makes sense to generate resultID inside this function and change resultID to be an OUTPUT_ONLT field, just like insertTestExoneration() does, then I will add the logic with handling requestID, in a follow up CL.",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
