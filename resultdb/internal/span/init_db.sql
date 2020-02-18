@@ -137,7 +137,7 @@ CREATE TABLE TestResults (
   Status INT64 NOT NULL,
 
   -- Compressed summary of the test result for humans, in HTML.
-  -- See span.Compress type for details of compression.
+  -- See span.Compressed type for details of compression.
   SummaryHTML BYTES(MAX),
 
   -- When the test execution started.
