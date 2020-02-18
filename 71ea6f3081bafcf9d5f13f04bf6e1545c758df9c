@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "8f55d6c8_e72ba82a",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-18T22:03:14Z",
+      "side": 1,
+      "message": "deep enough. I don\u0027t have much better solution so go ahead.",
+      "parentUuid": "9461f4a0_98f26cb6",
+      "revId": "71ea6f3081bafcf9d5f13f04bf6e1545c758df9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0760c4b_3e795ab2",
         "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
         "patchSetId": 2
