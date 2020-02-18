@@ -170,11 +170,11 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	switch {
 	case msg == nil:
 		return unspecified()
-	// skip `Name`
+	// skip `Name` - OUTPUT_ONLY
 	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
-	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
+	// skip `ResultId` - OUTPUT_ONLY
 	case ec.isErr(ValidateVariant(msg.Variant), "variant"):
-	// skip `Expected`
+	// skip `Expected` - all possible values are valid
 	case ec.isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
 	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
 	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
