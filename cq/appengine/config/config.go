@@ -406,18 +406,27 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 	visitBuilders(func(b *v2.Verifiers_Tryjob_Builder) {
 		validateBuilderName(ctx, b.Name, names)
 		specialities := make([]string, 0, 1)
+		uniqueSpecials := make([]string, 0, 1)
 		if b.TriggeredBy != "" {
 			specialities = append(specialities, "triggered_by")
+			uniqueSpecials = append(uniqueSpecials, "triggered_by")
 			// Don't validate TriggeredBy as builder name, it should just match
 			// another main builder name, which will be validated anyway.
 			triggersMap[b.TriggeredBy] = append(triggersMap[b.TriggeredBy], b.Name)
 			if b.IncludableOnly {
 				ctx.Errorf("includable_only is not combinable with triggered_by")
 			}
+			if b.ExperimentPercentage != 0 {
+				ctx.Errorf("experiment_percentage is not combinable with triggered_by")
+			}
 		}
 		if b.EquivalentTo != nil {
 			specialities = append(specialities, "equivalent_to")
+			uniqueSpecials = append(uniqueSpecials, "equivalent_to")
 			validateEquivalentBuilder(ctx, b.EquivalentTo, equi)
+			if b.ExperimentPercentage != 0 {
+				ctx.Errorf("experiment_percentage is not combinable with equivalent_to")
+			}
 		}
 		if b.ExperimentPercentage != 0 {
 			specialities = append(specialities, "experiment_percentage")
@@ -430,6 +439,7 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		}
 		if len(b.LocationRegexp)+len(b.LocationRegexpExclude) > 0 {
 			specialities = append(specialities, "location_regexp[_exclude]")
+			uniqueSpecials = append(uniqueSpecials, "location_regexp[_exclude]")
 			validateLocationRegexp(ctx, "location_regexp", b.LocationRegexp)
 			validateLocationRegexp(ctx, "location_regexp_exclude", b.LocationRegexpExclude)
 			if b.IncludableOnly {
@@ -438,6 +448,10 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		}
 		if len(b.OwnerWhitelistGroup) > 0 {
 			specialities = append(specialities, "owner_whitelist_group")
+			uniqueSpecials = append(uniqueSpecials, "owner_whitelist_group")
+			if b.ExperimentPercentage != 0 {
+				ctx.Errorf("experiment_percentage is not combinable with owner_whitelist_group")
+			}
 			for i, g := range b.OwnerWhitelistGroup {
 				if g == "" {
 					ctx.Enter("owner_whitelist_group #%d", i+1)
@@ -458,7 +472,9 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		case 0:
 			canStartTriggeringTree = append(canStartTriggeringTree, b.Name)
 		default:
-			ctx.Errorf("combining %s features not yet allowed", specialities)
+			if len(uniqueSpecials) > 1 {
+				ctx.Errorf("combining %s features not yet allowed", uniqueSpecials)
+			}
 		}
 	})
 
