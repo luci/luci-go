@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bae95cc_93b66d57",
+        "filename": "cq/appengine/config/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-18T19:37:22Z",
+      "side": 1,
+      "message": "have you thought deeply whether `specialities` is never necessary any more?",
+      "revId": "71ea6f3081bafcf9d5f13f04bf6e1545c758df9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0760c4b_3e795ab2",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-18T19:37:22Z",
+      "side": 1,
+      "message": "please update version.go by bumping patch-level version of lucicfg",
+      "revId": "71ea6f3081bafcf9d5f13f04bf6e1545c758df9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06176c13_4ba83f78",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/cq_tryjob_verifier.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-18T19:37:22Z",
+      "side": 1,
+      "message": "nit: tabs -\u003e spaces",
+      "revId": "71ea6f3081bafcf9d5f13f04bf6e1545c758df9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b912e412_3a12fca2",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-18T19:37:22Z",
+      "side": 1,
+      "message": "👍",
+      "revId": "71ea6f3081bafcf9d5f13f04bf6e1545c758df9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
