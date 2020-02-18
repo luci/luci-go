@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80029fa5_8b71c09e",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:34:46Z",
+      "side": 1,
+      "message": "i am not sure this is safe.. there are XXX_* fields that are not supposed to be copied.\nConsider either using proto.Clone() (which is a deep copy), or create a new struct and copy fields manually 😞",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 67,
+        "endChar": 13
+      },
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3effb73_8e8fd580",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:34:46Z",
+      "side": 1,
+      "message": "nit: omit. These are defaults",
+      "range": {
+        "startLine": 72,
+        "startChar": 34,
+        "endLine": 72,
+        "endChar": 56
+      },
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c6fd7dd_3cc1e969",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:34:46Z",
+      "side": 1,
+      "message": "internal.MustDuration",
+      "range": {
+        "startLine": 75,
+        "startChar": 22,
+        "endLine": 75,
+        "endChar": 23
+      },
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c67a58a_fe9abb3d",
+        "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:34:46Z",
+      "side": 1,
+      "message": "invID :\u003d internal.MustParseInvocationName(req.Invocation)",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 22
+      },
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "685df8dc_1f4f2ba0",
+        "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:34:46Z",
+      "side": 1,
+      "message": "nit: move 1 line up, so that computation of res/err and check of res/err where in one block, like you do it in L121",
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
