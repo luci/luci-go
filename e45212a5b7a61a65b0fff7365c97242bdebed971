@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9995761d_a306474c",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-02-18T23:51:35Z",
+      "side": 1,
+      "message": "Correct. And now this CL is updated somewhat to have other tentative values.",
+      "parentUuid": "e4beac9f_6069e130",
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a8cb086_50a49376",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 5
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "072ad212_519a0618",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-02-18T23:51:35Z",
+      "side": 1,
+      "message": "Yeah, that name would be clearer -- One note though is that if decide to have this specific failure type, we should probably also differentiate between the different kinds of \"linter\" check failures.\n\nBut if we don\u0027t expect the specific type of linter failure to be important, then we could also group them together with FAILURE_LINT. I\u0027m now leaning towards generally keeping the substatus values simpler, and not keeping values that we don\u0027t currently need, since it should be possible to expand the list of possible values later on when the need arises.",
+      "parentUuid": "0a8cb086_50a49376",
+      "range": {
+        "startLine": 192,
+        "startChar": 2,
+        "endLine": 192,
+        "endChar": 27
+      },
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "299bcbf7_6c79cff7",
         "filename": "cq/api/bigquery/attempt.proto",
         "patchSetId": 5
@@ -53,6 +95,30 @@
       "writtenOn": "2020-01-16T00:30:28Z",
       "side": 1,
       "message": "nit: out of scope doesn\u0027t make sense to me. I don\u0027t really know what it means from this context. Dunno if you really need to document this here, but it\u0027s not obvious to me.",
+      "range": {
+        "startLine": 201,
+        "startChar": 2,
+        "endLine": 201,
+        "endChar": 33
+      },
+      "revId": "e45212a5b7a61a65b0fff7365c97242bdebed971",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a995609b_5f135669",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-02-18T23:51:35Z",
+      "side": 1,
+      "message": "Agreed that \"out of scope\" isn\u0027t clear, and if we keep this then it should have a better description. As of the latest change, I\u0027ve added FAILURE_DEPENDENCY to include all types of failures that are due to any issues with dependencies.",
+      "parentUuid": "299bcbf7_6c79cff7",
       "range": {
         "startLine": 201,
         "startChar": 2,
