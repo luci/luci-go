@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "630f2d02_1acce291",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:54:36Z",
+      "side": 1,
+      "message": "same as https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2058947/4/resultdb/internal/services/recorder/create_test_result_test.go#107",
+      "range": {
+        "startLine": 143,
+        "startChar": 43,
+        "endLine": 143,
+        "endChar": 46
+      },
+      "revId": "ca244866f28d57abb5eaeb0d1133531ff6200edf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e02dbe5a_44ecb557",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:54:36Z",
+      "side": 1,
+      "message": "invID :\u003d internal.MustParseInvocationName(req.Invocation)",
+      "range": {
+        "startLine": 144,
+        "startChar": 2,
+        "endLine": 145,
+        "endChar": 22
+      },
+      "revId": "ca244866f28d57abb5eaeb0d1133531ff6200edf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7c650a5_ed2f293d",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:54:36Z",
+      "side": 1,
+      "message": "this and L155 just repeats the code under test. This does not really help. How we do know that this test code correct and how we make sure we don\u0027t make a bug here. How would this test catch a bug in VariantHash, or TestResultName, etc.\n\nI\u0027d prefer *dumb* tests with literal hashes and literal test result names.",
+      "range": {
+        "startLine": 170,
+        "startChar": 33,
+        "endLine": 170,
+        "endChar": 66
+      },
+      "revId": "ca244866f28d57abb5eaeb0d1133531ff6200edf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
