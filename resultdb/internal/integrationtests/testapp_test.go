@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/services/backend"
+	"go.chromium.org/luci/resultdb/internal/services/purger"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/internal/services/resultdb"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -165,16 +166,25 @@ func (t *testApp) initServers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	backend.InitServer(recorderServer, backend.Options{
+	backend.InitServer(backendServer, backend.Options{
 		TaskWorkers:         1,
 		ForceCronInterval:   100 * time.Millisecond,
 		ForceLeaseDuration:  100 * time.Millisecond,
 		PurgeExpiredResults: true,
 	})
 
+	// Init purger server.
+	purgerServer, _, err := t.serverClientPair(ctx, 8030, 8031)
+	if err != nil {
+		return err
+	}
+	purger.InitServer(purgerServer, purger.Options{
+		ForceCronInterval: 100 * time.Millisecond,
+	})
+
 	t.ResultDB = pb.NewResultDBPRPCClient(resultdbPRPCClient)
 	t.Recorder = pb.NewRecorderPRPCClient(recorderPRPCClient)
-	t.servers = []*server.Server{resultdbServer, recorderServer, backendServer}
+	t.servers = []*server.Server{resultdbServer, recorderServer, backendServer, purgerServer}
 	return nil
 }
 
