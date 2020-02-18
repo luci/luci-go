@@ -71,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "4d5b4046_2f7cb72a",
+        "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-18T17:51:31Z",
+      "side": 1,
+      "message": "we decided not to mock time in integration tests, that is all tests that use SpannerTestContext\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2033611\n\nPlease use clock.Now(now) or time.Now() here",
+      "range": {
+        "startLine": 107,
+        "startChar": 38,
+        "endLine": 107,
+        "endChar": 41
+      },
+      "revId": "707a739e12b2356ae04abb78d2a1c88644bb5a9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c67a58a_fe9abb3d",
         "filename": "resultdb/internal/services/recorder/create_test_result_test.go",
         "patchSetId": 4
