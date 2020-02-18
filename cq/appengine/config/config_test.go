@@ -505,6 +505,15 @@ func TestTryjobValidation(t *testing.T) {
 					location_regexp: "b"
 					location_regexp_exclude: "redundant/but/not/caught"
 				}`), ShouldBeNil)
+
+			So(validate(`
+				builders {
+					name: "a/b/c"
+					experiment_percentage: 50
+					location_regexp: "a/.+"
+					location_regexp: "b"
+					location_regexp_exclude: "redundant/but/not/caught"
+				}`), ShouldBeNil)
 		})
 
 		Convey("equivalent_to", func() {
@@ -565,7 +574,7 @@ func TestTryjobValidation(t *testing.T) {
 					experiment_percentage: 1
 					equivalent_to {name: "c/d/e"}}`),
 				ShouldErrLike,
-				"combining [equivalent_to experiment_percentage] features not yet allowed")
+				"experiment_percentage is not combinable with equivalent_to")
 			So(validate(`
 				builders {
 					name: "a/b/c"
@@ -573,7 +582,7 @@ func TestTryjobValidation(t *testing.T) {
 					owner_whitelist_group: "owners"
 				}`),
 				ShouldErrLike,
-				"combining [experiment_percentage owner_whitelist_group] features not yet allowed")
+				"experiment_percentage is not combinable with owner_whitelist_group")
 			So(validate(`
 				builders {
 					name: "a/b/c"

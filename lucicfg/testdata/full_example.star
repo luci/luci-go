@@ -197,6 +197,12 @@ luci.builder(
 )
 
 luci.builder(
+    name = 'linux try builder 2',
+    bucket = 'try',
+    executable = 'main/recipe',
+)
+
+luci.builder(
     name = 'generically named builder',
     bucket = 'try',
     executable = 'main/recipe',
@@ -392,6 +398,12 @@ luci.cq_group(
             result_visibility = cq.COMMENT_LEVEL_RESTRICTED,
             location_regexp_exclude = ['https://example.com/repo/[+]/all/one.txt'],
         ),
+        # An experimental verifier with location_regexp_exclude.
+        luci.cq_tryjob_verifier(
+            builder = 'linux try builder 2',
+            location_regexp_exclude = ['https://example.com/repo/[+]/all/two.txt'],
+            experiment_percentage = 50,
+        ),
         # An alias for luci.cq_tryjob_verifier(**{...}).
         {'builder': 'try/generically named builder', 'disable_reuse': True},
         # An alias for luci.cq_tryjob_verifier(<builder>).
@@ -501,6 +513,12 @@ lucicfg.emit(
 #         result_visibility: COMMENT_LEVEL_RESTRICTED
 #         location_regexp: ".*"
 #         location_regexp_exclude: "https://example.com/repo/[+]/all/one.txt"
+#       >
+#       builders: <
+#         name: "infra/try/linux try builder 2"
+#         experiment_percentage: 50
+#         location_regexp: ".*"
+#         location_regexp_exclude: "https://example.com/repo/[+]/all/two.txt"
 #       >
 #       builders: <
 #         name: "infra/try/main cq builder"
@@ -710,6 +728,15 @@ lucicfg.emit(
 #     >
 #     builders: <
 #       name: "linux try builder"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "main/recipe"
+#         cipd_package: "recipe/bundles/main"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "linux try builder 2"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
 #         name: "main/recipe"
