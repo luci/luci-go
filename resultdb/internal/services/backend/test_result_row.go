@@ -156,7 +156,7 @@ func invocationProtoToInvocation(inv *pb.Invocation) Invocation {
 }
 
 // generateBQRow returns a *bigquery.StructSaver to be inserted into BQ.
-func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string) *bigquery.StructSaver {
+func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerated bool, variantHash string, includeSummary bool) *bigquery.StructSaver {
 	trr := &TestResultRow{
 		ExportedInvocation: invocationProtoToInvocation(exported),
 		ParentInvocation:   invocationProtoToInvocation(parent),
@@ -166,7 +166,6 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 		VariantHash:        variantHash,
 		Expected:           tr.Expected,
 		Status:             tr.Status.String(),
-		SummaryHTML:        tr.SummaryHtml,
 		Tags:               stringPairProtosToStringPairs(tr.Tags),
 		Exonerated:         exonerated,
 		PartitionTime:      pbutil.MustTimestamp(exported.CreateTime),
@@ -184,6 +183,10 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
 			Valid:   true,
 		}
+	}
+
+	if includeSummary {
+		trr.SummaryHTML = tr.SummaryHtml
 	}
 
 	// InsertID cannot exceed 128 bytes.

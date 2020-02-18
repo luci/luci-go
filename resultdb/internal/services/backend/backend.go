@@ -74,7 +74,9 @@ func InitServer(srv *server.Server, opts Options) {
 			// Use a smaller size as the limit since we are only using the size of
 			// test results to estimate the whole payload size.
 			maxBatchSize: 6e6,
-			putLimiter:   rate.NewLimiter(100, 1),
+			// Row size limit is 1Mib. Also use a smaller size as limit.
+			maxRowSize: 6e5,
+			putLimiter: rate.NewLimiter(100, 1),
 
 			// 1 batch is ~6Mb (see above).
 			// Allow ~2Gb => 2Gb/6Mb = 333 batches
