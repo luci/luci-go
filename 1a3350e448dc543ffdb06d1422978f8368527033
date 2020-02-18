@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "69aec47c_aac6e181",
+        "filename": "resultdb/cmd/backend/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-18T18:40:08Z",
+      "side": 0,
+      "message": "Are we still passing this flag after this change?",
+      "revId": "1a3350e448dc543ffdb06d1422978f8368527033",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
