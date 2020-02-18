@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1975e8a1_25f55b9a",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-18T21:44:18Z",
+      "side": 1,
+      "message": "Done here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2063348",
+      "parentUuid": "844c199b_e489e149",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5f30d9e8_ca5ba64d",
         "filename": "resultdb/internal/backend/purge_expired_results.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a42d7573_5b9bb5e6",
+        "filename": "resultdb/internal/backend/purge_expired_results.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-18T21:44:18Z",
+      "side": 1,
+      "message": "Will do later. Filed crbug.com/1053690 to track this.",
+      "parentUuid": "5f30d9e8_ca5ba64d",
+      "range": {
+        "startLine": 45,
+        "startChar": 31,
+        "endLine": 45,
+        "endChar": 38
+      },
+      "revId": "551e1f8f00b00f9b56d6856e2cf7633a37405417",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
