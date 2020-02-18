@@ -16,13 +16,18 @@ package recorder
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/google/uuid"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -65,6 +70,8 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 	// create a shallow copy of the input message with the OUTPUT_ONLY fields to be used in
 	// the response
 	ret := *body
+	vHash := pbutil.VariantHash(ret.Variant)
+	ret.ResultId = genTestResultID(ctx, requestID, vHash, 0)
 	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
 
 	// handle values for nullable columns
@@ -76,14 +83,18 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 		runDuration.Valid = true
 	}
 
-	mutation := spanner.InsertOrUpdateMap(
+	mutFn := spanner.InsertMap
+	if requestID == "" {
+		mutFn = spanner.InsertOrUpdateMap
+	}
+	mutation := mutFn(
 		"TestResults",
 		span.ToSpannerMap(map[string]interface{}{
 			"InvocationId":    invID,
 			"TestId":          ret.TestId,
 			"ResultId":        ret.ResultId,
 			"Variant":         ret.Variant,
-			"VariantHash":     pbutil.VariantHash(ret.Variant),
+			"VariantHash":     vHash,
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"IsUnexpected":    isUnexpected,
 			"Status":          ret.Status,
@@ -96,4 +107,19 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 		}),
 	)
 	return &ret, mutation
+}
+
+func genTestResultID(ctx context.Context, reqID string, vHash string, ord int) string {
+	if reqID == "" {
+		return fmt.Sprintf("%s:r:%s", vHash, uuid.New().String())
+	}
+
+	h := sha512.New()
+	// include the current identity to distinguish requests with the same request ID, but
+	// from different clients.
+	fmt.Fprintln(h, auth.CurrentIdentity(ctx))
+	fmt.Fprintln(h, reqID)
+	fmt.Fprintln(h, ord)
+	suffix := hex.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("%s:d:%s", vHash, suffix)
 }
