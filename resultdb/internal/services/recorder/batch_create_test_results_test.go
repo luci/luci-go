@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -149,11 +150,24 @@ func TestBatchCreateTestResults(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			for i, r := range req.Requests {
-				spanClient := span.Client(ctx).Single()
 				reqTR := r.TestResult
 				resTR := response.TestResults[i]
+
 				expected := proto.Clone(reqTR).(*pb.TestResult)
-				expected.Name = pbutil.TestResultName(invID, reqTR.TestId, reqTR.ResultId)
+				vHash := pbutil.VariantHash(expected.Variant)
+				switch req.RequestId {
+				case "":
+					// if the request doesn't contain a request ID, then validate the ID
+					// without the suffix, as the suffix is random.
+					expected.ResultId = resTR.ResultId
+					segments := strings.Split(expected.ResultId, ":")
+					So(segments[0], ShouldEqual, vHash)
+					So(segments[1], ShouldEqual, "r")
+				default:
+					expected.ResultId = genTestResultID(ctx, req.RequestId, vHash, i)
+				}
+				spanClient := span.Client(ctx).Single()
+				expected.Name = pbutil.TestResultName(invID, reqTR.TestId, expected.ResultId)
 				So(resTR, ShouldResembleProto, expected)
 
 				// double-check it with the database
@@ -162,12 +176,12 @@ func TestBatchCreateTestResults(t *testing.T) {
 				So(row, ShouldResembleProto, expected)
 
 				// variant hash
-				key := span.InvocationID(invID).Key(reqTR.TestId, reqTR.ResultId)
+				key := span.InvocationID(invID).Key(reqTR.TestId, expected.ResultId)
 				var variantHash string
 				MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 					"VariantHash": &variantHash,
 				})
-				So(variantHash, ShouldEqual, pbutil.VariantHash(reqTR.Variant))
+				So(variantHash, ShouldEqual, vHash)
 			}
 		}
 

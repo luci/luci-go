@@ -62,10 +62,10 @@ message TestResult {
   string test_id = 2 [ (google.api.field_behavior) = IMMUTABLE ];
 
   // Identifies a test result in a given invocation and test id.
-  // Regex: ^[[:ascii:]]{1,32}$
+  // It is server-generated.
   string result_id = 3 [
-    (google.api.field_behavior) = IMMUTABLE,
-    (google.api.field_behavior) = REQUIRED
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
   ];
 
   // Description of one specific way of running the test,

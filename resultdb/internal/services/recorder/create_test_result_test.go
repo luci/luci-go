@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -42,7 +43,6 @@ func validCreateTestResultRequest(now time.Time) *pb.CreateTestResultRequest {
 		TestResult: &pb.TestResult{
 			Name:     "invocations/a/tests/invocation_id1/results/result_id1",
 			TestId:   "this is a testID",
-			ResultId: "result_id1",
 			Expected: true,
 			Status:   pb.TestStatus_PASS,
 		},
@@ -110,10 +110,22 @@ func TestCreateTestResult(t *testing.T) {
 
 		createTestResult := func(req *pb.CreateTestResultRequest) {
 			tr := req.TestResult
-			expected := proto.Clone(tr).(*pb.TestResult)
-			expected.Name = pbutil.TestResultName(invID, tr.TestId, tr.ResultId)
 			res, err := recorder.CreateTestResult(ctx, req)
 
+			expected := proto.Clone(tr).(*pb.TestResult)
+			vHash := pbutil.VariantHash(expected.Variant)
+			switch req.RequestId {
+			case "":
+				// if the request doesn't contain a request ID, then validate the ID
+				// without the suffix, as the suffix is random.
+				expected.ResultId = res.ResultId
+				segments := strings.Split(expected.ResultId, ":")
+				So(segments[0], ShouldEqual, vHash)
+				So(segments[1], ShouldEqual, "r")
+			default:
+				expected.ResultId = genTestResultID(ctx, req.RequestId, vHash, 0)
+			}
+			expected.Name = pbutil.TestResultName(invID, tr.TestId, expected.ResultId)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expected)
 
@@ -128,7 +140,7 @@ func TestCreateTestResult(t *testing.T) {
 			MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
-			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))
+			So(variantHash, ShouldEqual, vHash)
 		}
 
 		// Insert a sample invocation

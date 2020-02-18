@@ -16,13 +16,18 @@ package recorder
 
 import (
 	"context"
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/google/uuid"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -51,7 +56,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	}
 
 	invID := span.MustParseInvocationName(in.Invocation)
-	ret, mutation := insertTestResult(ctx, invID, in.RequestId, in.TestResult)
+	ret, mutation := insertTestResult(ctx, invID, in.RequestId, 0, in.TestResult)
 	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		return txn.BufferWrite([]*spanner.Mutation{mutation})
 	})
@@ -61,10 +66,12 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	return ret, nil
 }
 
-func insertTestResult(ctx context.Context, invID span.InvocationID, requestID string, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
+func insertTestResult(ctx context.Context, invID span.InvocationID, requestID string, ordinal int, body *pb.TestResult) (*pb.TestResult, *spanner.Mutation) {
 	// create a shallow copy of the input message with the OUTPUT_ONLY fields to be used in
 	// the response
 	ret := *body
+	vHash := pbutil.VariantHash(ret.Variant)
+	ret.ResultId = genTestResultID(ctx, requestID, vHash, ordinal)
 	ret.Name = pbutil.TestResultName(string(invID), ret.TestId, ret.ResultId)
 
 	// handle values for nullable columns
@@ -76,14 +83,18 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 		runDuration.Valid = true
 	}
 
-	mutation := spanner.InsertOrUpdateMap(
+	mutFn := spanner.InsertMap
+	if requestID == "" {
+		mutFn = spanner.InsertOrUpdateMap
+	}
+	mutation := mutFn(
 		"TestResults",
 		span.ToSpannerMap(map[string]interface{}{
 			"InvocationId":    invID,
 			"TestId":          ret.TestId,
 			"ResultId":        ret.ResultId,
 			"Variant":         ret.Variant,
-			"VariantHash":     pbutil.VariantHash(ret.Variant),
+			"VariantHash":     vHash,
 			"CommitTimestamp": spanner.CommitTimestamp,
 			"IsUnexpected":    isUnexpected,
 			"Status":          ret.Status,
@@ -96,4 +107,19 @@ func insertTestResult(ctx context.Context, invID span.InvocationID, requestID st
 		}),
 	)
 	return &ret, mutation
+}
+
+func genTestResultID(ctx context.Context, reqID string, vHash string, ordinal int) string {
+	if reqID == "" {
+		return fmt.Sprintf("%s:r:%s", vHash, uuid.New().String())
+	}
+
+	h := sha512.New()
+	// include the current identity to distinguish requests with the same request ID, but
+	// from different clients.
+	fmt.Fprintln(h, auth.CurrentIdentity(ctx))
+	fmt.Fprintln(h, reqID)
+	fmt.Fprintln(h, ordinal)
+	suffix := hex.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("%s:d:%s", vHash, suffix)
 }

@@ -79,7 +79,6 @@ func validTestResult(now time.Time) *pb.TestResult {
 	return &pb.TestResult{
 		Name:            "invocations/a/tests/invocation_id1/results/result_id1",
 		TestId:          "this is testID",
-		ResultId:        "result_id1",
 		Variant:         Variant("a", "b"),
 		Expected:        true,
 		Status:          pb.TestStatus_PASS,
@@ -225,23 +224,6 @@ func TestValidateTestResult(t *testing.T) {
 			for _, in := range badInputs {
 				msg.TestId = in
 				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("test_id", testIDRe))
-			}
-		})
-
-		Convey("with empty ResultID", func() {
-			msg.ResultId = ""
-			So(validate(msg), ShouldErrLike, fieldUnspecified("result_id"))
-		})
-
-		Convey("with invalid ResultID", func() {
-			badInputs := []string{
-				strings.Repeat("1", 32+1),
-				// [[:ascii:]] matches with a char in [\x00-\x7F]
-				string(163),
-			}
-			for _, in := range badInputs {
-				msg.ResultId = in
-				So(validate(msg), ShouldErrLike, fieldDoesNotMatch("result_id", resultIDRe))
 			}
 		})
 
