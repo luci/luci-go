@@ -101,8 +101,8 @@ func (f *propertiesFlag) Set(s string) error {
 	if len(parts) == 1 {
 		return fmt.Errorf("invalid property %q: no equals sign", s)
 	}
-	name := parts[0]
-	value := parts[1]
+	name := strings.TrimSpace(parts[0])
+	value := strings.TrimSpace(parts[1])
 
 	if f.explicitlySet.Has(name) {
 		return fmt.Errorf("duplicate property %q", name)
