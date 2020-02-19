@@ -16,31 +16,16 @@
 package main
 
 import (
-	"net/http"
-
-	"google.golang.org/appengine"
-
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/proto/access"
-	"go.chromium.org/luci/grpc/discovery"
-	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func main() {
-	mathrand.SeedRandomly()
-	api := prpc.Server{UnaryServerInterceptor: grpcmon.UnaryServerInterceptor}
-	access.RegisterAccessServer(&api, &access.UnimplementedAccessServer{})
-	buildbucketpb.RegisterBuildsServer(&api, &buildbucketpb.UnimplementedBuildsServer{})
-	discovery.Enable(&api)
-
-	r := router.New()
-	api.InstallHandlers(r, standard.Base())
-	http.DefaultServeMux.Handle("/", r)
-	standard.InstallHandlers(r)
-	appengine.Main()
+	server.Main(nil, nil, func(srv *server.Server) error {
+		access.RegisterAccessServer(srv.PRPC, &access.UnimplementedAccessServer{})
+		buildbucketpb.RegisterBuildsServer(srv.PRPC, &buildbucketpb.UnimplementedBuildsServer{})
+		return nil
+	})
 }
