@@ -46,6 +46,30 @@
       "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9548bd0_d1f75dc7",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-19T06:27:41Z",
+      "side": 1,
+      "message": "SGTM.\n\nQ. Should Recorder/Sink check if a single request with multiple TestResult(s) has duplicate ResultIDs?\n\ncraete_test_exoneration takes param `ordinal` to generate different keys for multiple TestExoneration(s) with the same variant in the same request. Multiple TestResult(s) in the same requests can also have the same ResultIDs, if Recorder generates a key with `ordinal` for each of the TestResult(s).\n\n\u003e\u003e When reading ResultID column, we\u0027d strip the hash.\nSure. Then, in response, TestResult.Name will contain the full ResultID value, and TestResult.ResultID will have the value without the hash. Please correct me if not.",
+      "parentUuid": "dea564f5_7c78dcbc",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
