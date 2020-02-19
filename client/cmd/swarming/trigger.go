@@ -145,6 +145,7 @@ type triggerRun struct {
 	ioTimeout                 int64
 	cipdPackage               stringmapflag.Value
 	outputs                   common.Strings
+	serviceAccount            string
 
 	// Task request.
 	taskName   string
@@ -183,6 +184,9 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
 	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
+
+	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
+		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
 
 	// Task request.
 	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
@@ -364,6 +368,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
 		Priority:       c.priority,
 		Properties:     &properties,
+		ServiceAccount: c.serviceAccount,
 		Tags:           c.tags,
 		User:           c.user,
 		RequestUuid:    randomUUID.String(),
