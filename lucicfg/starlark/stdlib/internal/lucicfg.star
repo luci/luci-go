@@ -127,6 +127,26 @@ def _config(
     __native__.set_meta('fail_on_warnings', fail_on_warnings)
 
 
+def _enable_experiment(experiment):
+  """Enables an experimental feature.
+
+  Can be used to experiment with not yet released features that may later change
+  in a non-backwards compatible way or even be removed completely. Primarily
+  intended for lucicfg developers to test their features before they are
+  "frozen" to be backward compatible. If you rely on an experimental feature
+  and a lucicfg update breaks your config, this is a problem in your config, not
+  in lucicfg.
+
+  Enabling an experiment that doesn't exist logs a warning, but doesn't fail
+  the execution. Refer to the documentation and the source code for the list of
+  available experiments.
+
+  Args:
+    experiment: a string ID of the experimental feature to enable. Required.
+  """
+  __native__.enable_experiment(experiment)
+
+
 def _generator(impl):
   """Registers a callback that is called at the end of the config generation
   stage to modify/append/delete generated configs in an arbitrary way.
@@ -382,6 +402,7 @@ lucicfg = struct(
     version = _version,
     check_version = _check_version,
     config = _config,
+    enable_experiment = _enable_experiment,
     generator = _generator,
     emit = _emit,
     current_module = _current_module,
