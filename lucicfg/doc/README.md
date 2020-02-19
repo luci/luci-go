@@ -511,6 +511,34 @@ assigning to a variable.
 
 
 
+### lucicfg.enable_experiment {#lucicfg.enable_experiment}
+
+```python
+lucicfg.enable_experiment(experiment)
+```
+
+
+
+Enables an experimental feature.
+
+Can be used to experiment with not yet released features that may later change
+in a non-backwards compatible way or even be removed completely. Primarily
+intended for lucicfg developers to test their features before they are
+"frozen" to be backward compatible. If you rely on an experimental feature
+and a lucicfg update breaks your config, this is a problem in your config, not
+in lucicfg.
+
+Enabling an experiment that doesn't exist logs a warning, but doesn't fail
+the execution. Refer to the documentation and the source code for the list of
+available experiments.
+
+#### Arguments {#lucicfg.enable_experiment-args}
+
+* **experiment**: a string ID of the experimental feature to enable. Required.
+
+
+
+
 ### lucicfg.generator {#lucicfg.generator}
 
 ```python
@@ -1878,7 +1906,6 @@ and `$`, so there is no need add them.
 
 This filtering currently cannot be used in any of the following cases:
 
-  * For experimental verifiers (when `experiment_percentage` is non-zero).
   * For verifiers in CQ groups with `allow_submit_with_open_deps = True`.
 
 Please talk to CQ owners if these restrictions are limiting you.
@@ -1962,7 +1989,7 @@ For example:
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
 * **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
-* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
+* **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with location_regexp and location_regexp_exclude.
 * **location_regexp**: a list of regexps that define a set of files whose modification trigger this verifier. See the explanation above for all details.
 * **location_regexp_exclude**: a list of regexps that define a set of files to completely skip when evaluating whether the verifier should be applied to a CL or not. See the explanation above for all details.
 * **owner_whitelist**: a list of groups with accounts of CL owners to enable this builder for. If set, only CLs owned by someone from any one of these groups will be verified by this builder.
