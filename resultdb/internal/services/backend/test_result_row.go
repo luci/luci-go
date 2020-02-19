@@ -27,6 +27,12 @@ import (
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
+// Row size limit is 1Mib according to
+// https://cloud.google.com/bigquery/quotas#streaming_inserts
+// Cap the summaryHTML's length to 0.6M to ensure the row size is under
+// limit.
+const maxSummaryLength = 6e5
+
 // StringPair is a copy of typepb.StringPair, suitable for representing a
 // key:value pair in a BQ table.
 // Inferred to be a field of type RECORD with Key and Value string fields.
@@ -184,6 +190,10 @@ func generateBQRow(exported, parent *pb.Invocation, tr *pb.TestResult, exonerate
 			Float64: pbutil.MustDuration(tr.Duration).Seconds(),
 			Valid:   true,
 		}
+	}
+
+	if len(trr.SummaryHTML) > maxSummaryLength {
+		trr.SummaryHTML = "[Trimmed] " + trr.SummaryHTML[:maxSummaryLength]
 	}
 
 	// InsertID cannot exceed 128 bytes.
