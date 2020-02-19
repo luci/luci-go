@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcff3b54_cfd2c596",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T22:16:12Z",
+      "side": 1,
+      "message": "run is internal function. it is not available in godoc. please restore \"Run\"",
+      "range": {
+        "startLine": 53,
+        "startChar": 56,
+        "endLine": 53,
+        "endChar": 59
+      },
+      "revId": "9d14ecafc76540dbef5174b83e3f6cf3f42398e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db82242a_2c1f33a8",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T22:16:12Z",
+      "side": 1,
+      "message": "not sure this makes a big diff since all cron jobs use the same rate limiter.\nbesides, this code runs only once during startup, as opposed in each iteration.\n\nnow that we have a global rate limiter, i am not sure we need this. idk",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 97
+      },
+      "revId": "9d14ecafc76540dbef5174b83e3f6cf3f42398e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ab5115_8bee725b",
+        "filename": "resultdb/internal/cron/cron.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T22:16:12Z",
+      "side": 1,
+      "message": "now this can be removed and L99 could be changed to\n\n  for ctx.Err() \u003d\u003d nil {",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 110,
+        "endChar": 3
+      },
+      "revId": "9d14ecafc76540dbef5174b83e3f6cf3f42398e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
