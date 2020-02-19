@@ -43,11 +43,12 @@ type State struct {
 	Output Output // all generated config files, populated at the end
 	Meta   Meta   // lucicfg parameters, settable through Starlark
 
-	vars       vars.Vars         // holds state of lucicfg.var() variables
-	seq        sequences         // holds state for __native__.sequence_next()
-	errors     errors.MultiError // all errors emitted during the generation (if any)
-	seenErrs   stringset.Set     // set of all string backtraces in 'errors', for deduping
-	failOnErrs bool              // if true, 'emit_error' aborts the execution
+	vars        vars.Vars         // holds state of lucicfg.var() variables
+	seq         sequences         // holds state for __native__.sequence_next()
+	experiments experiments       // holds the set of registered/enabled experiments
+	errors      errors.MultiError // all errors emitted during the generation (if any)
+	seenErrs    stringset.Set     // set of all string backtraces in 'errors', for deduping
+	failOnErrs  bool              // if true, 'emit_error' aborts the execution
 
 	generators generators    // callbacks that generate config files based on state
 	graph      graph.Graph   // the graph with config entities defined so far
