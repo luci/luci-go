@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "532798c8_21ec1c21",
+        "filename": "resultdb/internal/services/backend/test_result_row.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T20:15:25Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 33,
+        "startChar": 7,
+        "endLine": 33,
+        "endChar": 8
+      },
+      "revId": "8a9f18a8bbe8c34313ef163377789ed14289062e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
