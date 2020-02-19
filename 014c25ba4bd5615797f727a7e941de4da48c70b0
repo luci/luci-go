@@ -22,6 +22,30 @@
       "revId": "014c25ba4bd5615797f727a7e941de4da48c70b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a60aace_5f9cbff2",
+        "filename": "lucicfg/starlark/stdlib/internal/lucicfg.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-19T19:01:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99c0b70a_08882c1a",
+      "range": {
+        "startLine": 137,
+        "startChar": 51,
+        "endLine": 137,
+        "endChar": 54
+      },
+      "revId": "014c25ba4bd5615797f727a7e941de4da48c70b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
