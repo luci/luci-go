@@ -40,7 +40,7 @@ import (
 const maxTestVariantsToFilter = 1000
 
 var (
-	purgedInvocationsMetric = metric.NewCounter(
+	purgedInvocationsCount = metric.NewCounter(
 		"resultdb/purged_invocations/count",
 		"How many invocations have had their expected test results purged",
 		nil)
@@ -231,6 +231,6 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 	if err != nil {
 		return err
 	}
-	purgedInvocationsMetric.Add(ctx, 1)
+	purgedInvocationsCount.Add(ctx, 1)
 	return nil
 }
