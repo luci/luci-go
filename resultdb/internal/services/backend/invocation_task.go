@@ -91,12 +91,7 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 	}()
 
 	invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
-	switch {
-	case err == tasks.ErrConflict:
-		logging.Warningf(ctx, "Conflict while trying to lease the task")
-		// It's possible another worker has leased the task, and it's fine, skip.
-		return nil
-	case err != nil:
+	if err != nil {
 		return err
 	}
 
@@ -143,6 +138,7 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 			switch err := b.runTask(ctx, taskType, id); {
 
 			case err == tasks.ErrConflict:
+				// It's possible another worker has leased the task, and it's fine, skip.
 				logging.Warningf(ctx, "Conflict while trying to lease the task")
 
 			case err != nil:
