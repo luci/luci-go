@@ -70,6 +70,30 @@
       "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a836ea81_de35996b",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T17:35:18Z",
+      "side": 1,
+      "message": "\u003e SGTM.\n\u003e \n\u003e Q. Should Recorder/Sink check if a single request with multiple TestResult(s) has duplicate ResultIDs?\n\nRecorder: yeah, that\u0027s a good idea.\n\nSink: we could keep a hashset of all seen result ids. It would be even better.\n\n\u003e \n\u003e craete_test_exoneration takes param `ordinal` to generate different keys for multiple TestExoneration(s) with the same variant in the same request. Multiple TestResult(s) in the same requests can also have the same ResultIDs, if Recorder generates a key with `ordinal` for each of the TestResult(s).\n\ndo you mean, it would ignore user-supplied result id? if do we that, then the user cannot refer to the test result later, e.g. generate a URL to a result id.\n\n\u003e \n\u003e \u003e\u003e When reading ResultID column, we\u0027d strip the hash.\n\u003e Sure. Then, in response, TestResult.Name will contain the full ResultID value, and TestResult.ResultID will have the value without the hash. Please correct me if not.\n\ni just realized that this won\u0027t work. This means GetTestResult won\u0027t work because it does not (and should not) accept request id.\n\nwe could do something like this \nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/creation.py;l\u003d312?q\u003dcr-buildbucket%2Fcrea\nusing either Cloud Memorystore (https://godoc.org/go.chromium.org/luci/server/redisconn) or Spanner itself (a new table interleaved in Invocations table). The latter means we\u0027d be storing some trash in spanner (not a lot though), but it also means strong consistency, which is very nice.\n\n+Vadim for thoughts.",
+      "parentUuid": "e9548bd0_d1f75dc7",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
