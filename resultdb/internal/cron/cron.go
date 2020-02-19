@@ -20,8 +20,11 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
@@ -47,16 +50,17 @@ func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...inter
 	tl.mu.Unlock()
 }
 
-// Group runs multiple cron jobs concurrently. See also Run function.
+// Group runs multiple cron jobs concurrently. See also run function.
 func Group(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
 	var wg sync.WaitGroup
+	l := limiter(ctx, minInterval)
 	for i := 0; i < replicas; i++ {
 		i := i
 		ctx := logging.SetField(ctx, "cron_replica", i)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			Run(ctx, minInterval, func(ctx context.Context) error {
+			run(ctx, l, func(ctx context.Context) error {
 				return f(ctx, i)
 			})
 		}()
@@ -68,6 +72,16 @@ func Group(ctx context.Context, replicas int, minInterval time.Duration, f func(
 //
 // Ensures f is not called too often (minInterval).
 func Run(ctx context.Context, minInterval time.Duration, f func(context.Context) error) {
+	run(ctx, limiter(ctx, minInterval), f)
+}
+
+func limiter(ctx context.Context, minInterval time.Duration) *rate.Limiter {
+	// Add jitter: +-10% of interval to desynchronize cron jobs.
+	interval := minInterval - minInterval/10 + time.Duration(mathrand.Intn(ctx, int(minInterval/5)))
+	return rate.NewLimiter(rate.Every(interval), 1)
+}
+
+func run(ctx context.Context, limiter *rate.Limiter, f func(context.Context) error) {
 	defer logging.Warningf(ctx, "Exiting cron")
 
 	// call calls f with a timeout and catches a panic.
@@ -75,6 +89,9 @@ func Run(ctx context.Context, minInterval time.Duration, f func(context.Context)
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
 			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
 		})
+		if err := limiter.Wait(ctx); err != nil {
+			return errors.Annotate(err, "failed waiting limiter").Err()
+		}
 		return f(ctx)
 	}
 
@@ -83,20 +100,13 @@ func Run(ctx context.Context, minInterval time.Duration, f func(context.Context)
 	for {
 		iterationCounter++
 		tl.Log(ctx, "%d iterations have run since start-up", iterationCounter)
-		start := clock.Now(ctx)
 		if err := call(ctx); err != nil {
 			logging.Errorf(ctx, "Iteration failed: %s", err)
 		}
 
-		// Ensure minInterval between iterations.
-		if sleep := minInterval - clock.Since(ctx, start); sleep > 0 {
-			// Add jitter: +-10% of sleep time to desynchronize cron jobs.
-			sleep = sleep - sleep/10 + time.Duration(mathrand.Intn(ctx, int(sleep/5)))
-			select {
-			case <-time.After(sleep):
-			case <-ctx.Done():
-				return
-			}
+		select {
+		case <-ctx.Done():
+			return
 		}
 	}
 }
