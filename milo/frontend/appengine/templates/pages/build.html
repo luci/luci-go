@@ -121,6 +121,7 @@
   <div id="modal-overlay">
     <div id="retry-build-modal" class="modal-content">
       <h1>Retry Build</h1>
+      <p>Note: this doesn't trigger anything else (e.g. CQ).</p>
       <form id="retry-build-form" action="/actions/retry_build" method="POST" style="overflow: auto;">
         {{ .XsrfTokenField }}
         <input name="buildbucket-id" type="hidden" value="{{.BuildPage.Id}}">
