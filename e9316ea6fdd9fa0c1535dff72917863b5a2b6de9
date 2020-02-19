@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "320042cd_e7bb1e17",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-19T23:00:52Z",
+      "side": 1,
+      "message": "I\u0027m wondering if it\u0027s worth being a little clearer here and giving more explicit guidance, e.g.:\n\nNote: this will not re-trigger the CQ. If you want a new CQ attempt, you must trigger it from the Gerrit UI.",
+      "range": {
+        "startLine": 124,
+        "startChar": 9,
+        "endLine": 124,
+        "endChar": 60
+      },
+      "revId": "e9316ea6fdd9fa0c1535dff72917863b5a2b6de9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
