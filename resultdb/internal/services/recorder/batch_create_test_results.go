@@ -18,10 +18,13 @@ import (
 	"context"
 	"time"
 
+	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -59,10 +62,25 @@ func validateBatchCreateTestResultsRequest(msg *pb.BatchCreateTestResultsRequest
 }
 
 // BatchCreateTestResults implements pb.RecorderServer.
-func (s *recorderServer) BatchCreateTestResults(ctx context.Context, req *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
-	if err := validateBatchCreateTestResultsRequest(req, now); err != nil {
+	if err := validateBatchCreateTestResultsRequest(in, now); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-	return nil, nil
+
+	invID := span.MustParseInvocationName(in.Invocation)
+	ret := &pb.BatchCreateTestResultsResponse{
+		TestResults: make([]*pb.TestResult, len(in.Requests)),
+	}
+	ms := make([]*spanner.Mutation, len(in.Requests))
+	for i, r := range in.Requests {
+		ret.TestResults[i], ms[i] = insertTestResult(ctx, invID, in.RequestId, r.TestResult)
+	}
+	err := mutateInvocation(ctx, invID, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		return txn.BufferWrite(ms)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

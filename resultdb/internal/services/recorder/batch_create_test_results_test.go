@@ -15,26 +15,35 @@
 package recorder
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	"go.chromium.org/luci/resultdb/internal/span"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	. "go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 // validBatchCreateTestResultsRequest returns a valid BatchCreateTestResultsRequest message.
-func validBatchCreateTestResultRequest(now time.Time) *pb.BatchCreateTestResultsRequest {
-	tr := validCreateTestResultRequest(now)
-	tr.Invocation = "invocations/u:build-abc"
-	tr.RequestId = "request-id-123"
+func validBatchCreateTestResultRequest(now time.Time, invName, testID string) *pb.BatchCreateTestResultsRequest {
+	tr1 := validCreateTestResultRequest(now, invName, testID)
+	tr2 := validCreateTestResultRequest(now, invName, testID)
+	tr1.TestResult.ResultId = "result-id-0"
+	tr2.TestResult.ResultId = "result-id-1"
 
 	return &pb.BatchCreateTestResultsRequest{
-		Invocation: "invocations/u:build-abc",
-		Requests:   []*pb.CreateTestResultRequest{tr},
+		Invocation: invName,
+		Requests:   []*pb.CreateTestResultRequest{tr1, tr2},
 		RequestId:  "request-id-123",
 	}
 }
@@ -44,7 +53,7 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 
 	now := testclock.TestRecentTimeUTC
 	Convey("ValidateBatchCreateTestResultsRequest", t, func() {
-		req := validBatchCreateTestResultRequest(now)
+		req := validBatchCreateTestResultRequest(now, "invocations/u:build-1", "test-id")
 
 		Convey("suceeeds", func() {
 			So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
@@ -52,16 +61,19 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 			Convey("with empty request_id", func() {
 				Convey("in requests", func() {
 					req.Requests[0].RequestId = ""
+					req.Requests[1].RequestId = ""
 					So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
 				})
 				Convey("in both batch-level and requests", func() {
 					req.Requests[0].RequestId = ""
+					req.Requests[1].RequestId = ""
 					req.RequestId = ""
 					So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
 				})
 			})
 			Convey("with empty invocation in requests", func() {
 				req.Requests[0].Invocation = ""
+				req.Requests[1].Invocation = ""
 				So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
 			})
 		})
@@ -112,6 +124,80 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 					err := validateBatchCreateTestResultsRequest(req, now)
 					So(err, ShouldErrLike, "requests: 0: request_id must be either empty or equal")
 				})
+			})
+		})
+	})
+}
+
+func TestBatchCreateTestResults(t *testing.T) {
+	Convey(`BatchCreateTestResults`, t, func() {
+		ctx := SpannerTestContext(t)
+		recorder := newTestRecorderServer()
+		req := validBatchCreateTestResultRequest(
+			clock.Now(ctx).UTC(), "invocations/u:build-1", "test-id",
+		)
+
+		createTestResults := func(req *pb.BatchCreateTestResultsRequest) {
+			response, err := recorder.BatchCreateTestResults(ctx, req)
+			So(err, ShouldBeNil)
+
+			for i, r := range req.Requests {
+				resultID := fmt.Sprintf("result-id-%d", i)
+				expected := proto.Clone(r.TestResult).(*pb.TestResult)
+				expected.Name = "invocations/u:build-1/tests/test-id/results/" + resultID
+				So(response.TestResults[i], ShouldResembleProto, expected)
+
+				// double-check it with the database
+				spanClient := span.Client(ctx).Single()
+				row, err := span.ReadTestResult(ctx, spanClient, expected.Name)
+				So(err, ShouldBeNil)
+				So(row, ShouldResembleProto, expected)
+
+				// variant hash
+				key := span.InvocationID("u:build-1").Key("test-id", resultID)
+				var variantHash string
+				MustReadRow(ctx, "TestResults", key, map[string]interface{}{
+					"VariantHash": &variantHash,
+				})
+				So(variantHash, ShouldEqual, "c8643f74854d84b4")
+			}
+		}
+
+		// Insert a sample invocation
+		const tok = "update token"
+		vs := map[string]interface{}{"UpdateToken": tok}
+		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
+		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, vs)
+		MustApply(ctx, mut)
+
+		Convey("succeeds", func() {
+			Convey("with a request ID", func() {
+				createTestResults(req)
+			})
+
+			Convey("without a request ID", func() {
+				req.RequestId = ""
+				req.Requests[0].RequestId = ""
+				req.Requests[1].RequestId = ""
+				createTestResults(req)
+			})
+		})
+
+		Convey("fails", func() {
+			Convey("with an invalid request", func() {
+				req.Invocation = "this is an invalid invocation name"
+				req.Requests[0].Invocation = ""
+				req.Requests[1].Invocation = ""
+				_, err := recorder.BatchCreateTestResults(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "bad request: invocation: does not match")
+			})
+
+			Convey("with an non-existing invocation", func() {
+				req.Invocation = "invocations/inv"
+				req.Requests[0].Invocation = ""
+				req.Requests[1].Invocation = ""
+				_, err := recorder.BatchCreateTestResults(ctx, req)
+				So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv not found")
 			})
 		})
 	})
