@@ -95,26 +95,6 @@ func (mr *MockRecorderClientMockRecorder) FinalizeInvocation(ctx, in interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderClient)(nil).FinalizeInvocation), varargs...)
 }
 
-// Include mocks base method
-func (m *MockRecorderClient) Include(ctx context.Context, in *IncludeRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Include", varargs...)
-	ret0, _ := ret[0].(*empty.Empty)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Include indicates an expected call of Include
-func (mr *MockRecorderClientMockRecorder) Include(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Include", reflect.TypeOf((*MockRecorderClient)(nil).Include), varargs...)
-}
-
 // UpdateIncludedInvocations mocks base method
 func (m *MockRecorderClient) UpdateIncludedInvocations(ctx context.Context, in *UpdateIncludedInvocationsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	m.ctrl.T.Helper()
@@ -301,21 +281,6 @@ func (m *MockRecorderServer) FinalizeInvocation(arg0 context.Context, arg1 *Fina
 func (mr *MockRecorderServerMockRecorder) FinalizeInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalizeInvocation", reflect.TypeOf((*MockRecorderServer)(nil).FinalizeInvocation), arg0, arg1)
-}
-
-// Include mocks base method
-func (m *MockRecorderServer) Include(arg0 context.Context, arg1 *IncludeRequest) (*empty.Empty, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Include", arg0, arg1)
-	ret0, _ := ret[0].(*empty.Empty)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Include indicates an expected call of Include
-func (mr *MockRecorderServerMockRecorder) Include(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Include", reflect.TypeOf((*MockRecorderServer)(nil).Include), arg0, arg1)
 }
 
 // UpdateIncludedInvocations mocks base method
