@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e0f62697_86a48e04",
+        "filename": "resultdb/internal/services/backend/test_result_row.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-19T17:40:54Z",
+      "side": 1,
+      "message": "users might interpret an empty summary html as a resultdb bug. Ideally we somehow explicitly indicate that the summary was trimmed. For example, Cloud Logging saves \"[Trimmed] \u003cactual log message, but trimmed\u003e\" when the message is too long. Could do something like that? e.g.\n\n  if len(trr.SummaryHTML) \u003e limit {\n    trr.SummaryHTML \u003d \"[Trimmed] \" + trr.SummaryHTML[:limit]\n  }\n\nthen this CL becomes 3 LOC",
+      "range": {
+        "startLine": 189,
+        "startChar": 6,
+        "endLine": 189,
+        "endChar": 17
+      },
+      "revId": "7b17e02b1e54ac11e6010628f1b68d8b83bf9f4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
