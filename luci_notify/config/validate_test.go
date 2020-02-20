@@ -148,6 +148,24 @@ func TestValidation(t *testing.T) {
 				}
 			}`,
 			"", "")
+
+		testValidation(`bad failed_step_regexp`, `
+			notifiers {
+				name: "invalid"
+				notifications: {
+					failed_step_regexp: "["
+				}
+			}`,
+			badRegexError, "failed_step_regexp", "error parsing regexp: missing closing ]: `[`")
+
+		testValidation(`bad failed_step_regexp_exclude`, `
+			notifiers {
+				name: "invalid"
+				notifications: {
+					failed_step_regexp_exclude: "x{3,2}"
+				}
+			}`,
+			badRegexError, "failed_step_regexp_exclude", "error parsing regexp: invalid repeat count: `{3,2}`")
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {
