@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -42,10 +44,9 @@ const (
 
 	// The task runs into a permanent failure.
 	permanentFailure = "PERMANENT_FAILURE"
-
-	// Minimum interval between cron jobs in the same group.
-	minInterval = 8 * time.Second
 )
+
+var taskSamplingLimit = rate.Every(8 * time.Second)
 
 var (
 	taskAttemptMetric = metric.NewCounter(
@@ -136,7 +137,13 @@ func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	if workers == 0 {
 		workers = 1
 	}
-	b.cronGroup(ctx, workers, minInterval, func(ctx context.Context, replica int) error {
+
+	samplingLimiter := rate.NewLimiter(taskSamplingLimit, 1)
+	b.cronGroup(ctx, workers, time.Minute, func(ctx context.Context, replica int) error {
+		// Task sampling is expensive. Do not sample too often.
+		if err := samplingLimiter.Wait(ctx); err != nil {
+			return err
+		}
 		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
 		if err != nil {
 			return errors.Annotate(err, "failed to query invocation tasks").Err()
