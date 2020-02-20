@@ -152,7 +152,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 
 	// Helper function for notifying.
 	notifyNoBlame := func(n notifypb.Notifications, oldStatus buildbucketpb.Status) error {
-		n = n.Filter(oldStatus, build.Status)
+		n = n.Filter(oldStatus, &build.Build)
 		recipients = append(recipients, ComputeRecipients(n, nil, nil)...)
 		templateInput.OldStatus = oldStatus
 		return Notify(c, d, recipients, templateInput)
@@ -293,7 +293,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		}
 
 		// Notify, and include the blamelist.
-		n := builder.Notifications.Filter(builder.Status, build.Status)
+		n := builder.Notifications.Filter(builder.Status, &build.Build)
 		recipients = append(recipients, ComputeRecipients(n, commits[:index], aggregateLogs)...)
 		templateInput.OldStatus = builder.Status
 		if err := Notify(c, d, recipients, templateInput); err != nil {

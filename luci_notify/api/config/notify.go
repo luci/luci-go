@@ -15,11 +15,15 @@
 package config
 
 import (
+	"regexp"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // ShouldNotify is the predicate function for whether a trigger's conditions have been met.
-func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) bool {
+func (n *Notification) ShouldNotify(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) bool {
+	newStatus := newBuild.Status
+
 	switch {
 
 	case newStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
@@ -36,16 +40,43 @@ func (n *Notification) ShouldNotify(oldStatus, newStatus buildbucketpb.Status) b
 	default:
 		return false
 	}
-	return true
+
+	var includeRegex *regexp.Regexp = nil
+	if n.FailedStepRegexp != "" {
+		// We should never get an invalid regex here, as our validation should catch this.
+		// If we do, includeRegex will be nil and hence ignored below.
+		includeRegex, _ = regexp.Compile(n.FailedStepRegexp)
+	}
+
+	var excludeRegex *regexp.Regexp = nil
+	if n.FailedStepRegexpExclude != "" {
+		// Ditto.
+		excludeRegex, _ = regexp.Compile(n.FailedStepRegexpExclude)
+	}
+
+	// Don't scan steps if we have no regexes.
+	if includeRegex == nil && excludeRegex == nil {
+		return true
+	}
+
+	for _, step := range newBuild.Steps {
+		if step.Status == buildbucketpb.Status_FAILURE {
+			if (includeRegex == nil || includeRegex.MatchString(step.Name)) &&
+				(excludeRegex == nil || !excludeRegex.MatchString(step.Name)) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Filter filters out Notification objects from Notifications by checking if we ShouldNotify
 // based on two build statuses.
-func (n *Notifications) Filter(oldStatus, newStatus buildbucketpb.Status) Notifications {
+func (n *Notifications) Filter(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build) Notifications {
 	notifications := n.GetNotifications()
 	filtered := make([]*Notification, 0, len(notifications))
 	for _, notification := range notifications {
-		if notification.ShouldNotify(oldStatus, newStatus) {
+		if notification.ShouldNotify(oldStatus, newBuild) {
 			filtered = append(filtered, notification)
 		}
 	}
