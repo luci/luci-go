@@ -22,32 +22,10 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
-
-// ThrottledLogger emits a log item at most every MinLogInterval.
-//
-// Its zero-value emits a debug-level log every time Log() is called.
-type ThrottledLogger struct {
-	MinLogInterval time.Duration
-	Level          logging.Level
-	lastLog        time.Time
-	mu             sync.Mutex
-}
-
-// Log emits a log item at most once every MinLogInterval.
-func (tl *ThrottledLogger) Log(ctx context.Context, format string, args ...interface{}) {
-	now := clock.Now(ctx)
-	tl.mu.Lock()
-	if now.Sub(tl.lastLog) > tl.MinLogInterval {
-		logging.Logf(ctx, tl.Level, format, args...)
-		tl.lastLog = now
-	}
-	tl.mu.Unlock()
-}
 
 // Group runs multiple cron jobs concurrently. See also Run function.
 func Group(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
@@ -89,10 +67,13 @@ func run(ctx context.Context, l *rate.Limiter, f func(context.Context) error) {
 	}
 
 	var iterationCounter int
-	tl := ThrottledLogger{MinLogInterval: 5 * time.Minute}
+	logLimiter := rate.NewLimiter(rate.Every(5*time.Minute), 1)
 	for ctx.Err() == nil {
 		iterationCounter++
-		tl.Log(ctx, "%d iterations have run since start-up", iterationCounter)
+		if logLimiter.Allow() {
+			logging.Debugf(ctx, "%d iterations have run since start-up", iterationCounter)
+		}
+
 		if err := call(ctx); err != nil {
 			logging.Errorf(ctx, "Iteration failed: %s", err)
 		}
