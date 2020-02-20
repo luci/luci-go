@@ -36,6 +36,10 @@ var (
 		"resultdb/oldest_expired_result",
 		"Unix timestamp of the earliest result not yet purged",
 		nil)
+	expiredResultsPendingInvocationCount = metric.NewInt(
+		"resultdb/expired_results/pending_invocations",
+		"Number of pending invocations where expired results were not yet purged",
+		nil)
 
 	oldestTaskMetric = metric.NewInt(
 		"resultdb/task/oldest_create_time",
@@ -68,7 +72,7 @@ func InitServer(srv *server.Server, opts Options) {
 	})
 
 	srv.RunInBackground("resultdb.oldest_expired_result", func(ctx context.Context) {
-		cron.Run(ctx, interval, updateExpiredResultsDelayMetric)
+		cron.Run(ctx, interval, updateExpiredResultsMetrics)
 	})
 }
 
@@ -93,38 +97,36 @@ func updateTaskMetrics(ctx context.Context) error {
 	})
 }
 
-func updateExpiredResultsDelayMetric(ctx context.Context) error {
-	switch val, err := oldestExpiredResult(ctx); {
+func updateExpiredResultsMetrics(ctx context.Context) error {
+	switch oldest, count, err := expiredResultStats(ctx); {
 	case err == span.ErrNoResults:
 		return nil
 	case err != nil:
 		return err
 	default:
-		oldestExpiredResultMetric.Set(ctx, val.Unix())
+		oldestExpiredResultMetric.Set(ctx, oldest.Unix())
+		expiredResultsPendingInvocationCount.Set(ctx, count)
 		return nil
 	}
 }
 
-// oldestExpiredResult computes the creation time of the oldest invocation
+// expiredResultStats computes the creation time of the oldest invocation
 // pending to be purged in seconds.
-func oldestExpiredResult(ctx context.Context) (time.Time, error) {
+func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInvocationsCount int64, err error) {
 	st := spanner.NewStatement(`
-		SELECT MIN(EarliestExpiration)
-		FROM (
-			SELECT (
-				SELECT MIN(ExpectedTestResultsExpirationTime)
-				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
-				WHERE ShardId = TargetShard
-				AND ExpectedTestResultsExpirationTime IS NOT NULL
-			) AS EarliestExpiration
-			FROM UNNEST(GENERATE_ARRAY(0, (
-				SELECT MAX(ShardId)
-				FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
-				WHERE ExpectedTestResultsExpirationTime IS NOT NULL
-			))) AS TargetShard
-		)
+		SELECT
+			MIN(ExpectedTestResultsExpirationTime) as EarliestExpiration,
+			COUNT(*) as pending_count
+		FROM UNNEST(GENERATE_ARRAY(0, (
+			SELECT MAX(ShardId)
+			FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+			WHERE ExpectedTestResultsExpirationTime IS NOT NULL
+		))) AS TargetShard
+		JOIN Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+			ON ShardId = TargetShard
+		WHERE ExpectedTestResultsExpirationTime IS NOT NULL
+			AND ExpectedTestResultsExpirationTime < CURRENT_TIMESTAMP()
 	`)
-	var ret time.Time
-	err := span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &ret)
-	return ret, err
+	err = span.QueryFirstRow(ctx, span.Client(ctx).Single(), st, &oldestResult, &pendingInvocationsCount)
+	return
 }
