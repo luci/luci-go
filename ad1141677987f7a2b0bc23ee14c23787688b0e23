@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c9de7c4_6c2027a4",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-20T20:56:21Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 163,
+        "startChar": 3,
+        "endLine": 164,
+        "endChar": 22
+      },
+      "revId": "ad1141677987f7a2b0bc23ee14c23787688b0e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5eeab452_60a18568",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-20T20:56:21Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 243,
+        "startChar": 24,
+        "endLine": 243,
+        "endChar": 35
+      },
+      "revId": "ad1141677987f7a2b0bc23ee14c23787688b0e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
