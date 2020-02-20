@@ -1,4 +1,12 @@
 runtime: go113
 
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+luci_gae_vars:
+  example-app-id-dev:
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+  example-app-id-prod:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+
 entrypoint: >
-  /usr/local/bin/start -auth-service-host chrome-infra-auth-dev.appspot.com
+  /usr/local/bin/start -auth-service-host ${AUTH_SERVICE_HOST}

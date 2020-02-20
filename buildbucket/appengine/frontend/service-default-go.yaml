@@ -1,16 +1,22 @@
 service: default-go
 runtime: go113
 
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+luci_gae_vars:
+  cr-buildbucket-dev:
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+  cr-buildbucket:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+
 automatic_scaling:
   min_idle_instances: 1
 
 instance_class: F4
 
-# Ensure -auth-service-host is correct. For example, cr-buildbucket-dev uses
-# chrome-infra-auth-dev.appspot.com.
 entrypoint: >
   /usr/local/bin/start
-  -auth-service-host chrome-infra-auth.appspot.com
+  -auth-service-host ${AUTH_SERVICE_HOST}
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
 handlers:
