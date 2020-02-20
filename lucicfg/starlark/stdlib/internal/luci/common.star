@@ -31,7 +31,7 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.project -> [luci.bucket]
 #   luci.project -> [luci.milo_view]
 #   luci.project -> [luci.cq_group]
-#   luci.project -> [luci.notifier]
+#   luci.project -> [luci.notifiable]
 #   luci.project -> [luci.notifier_template]
 #   luci.bucket -> [luci.builder]
 #   luci.bucket -> [luci.gitiles_poller]
@@ -53,8 +53,8 @@ load('@stdlib//internal/validate.star', 'validate')
 #   luci.cq_tryjob_verifier -> luci.builder_ref
 #   luci.cq_tryjob_verifier -> luci.cq_equivalent_builder
 #   luci.cq_equivalent_builder -> luci.builder_ref
-#   luci.notifier -> [luci.builder_ref]
-#   luci.notifier -> luci.notifier_template
+#   luci.notifiable -> [luci.builder_ref]
+#   luci.notifiable -> luci.notifier_template
 
 
 def _namespaced_key(*pairs):
@@ -153,7 +153,7 @@ kinds = struct(
     CQ = 'luci.cq',
     CQ_GROUP = 'luci.cq_group',
     CQ_TRYJOB_VERIFIER = 'luci.cq_tryjob_verifier',
-    NOTIFIER = 'luci.notifier',
+    NOTIFIABLE = 'luci.notifiable',  # either luci.notifier or luci.tree_closer
     NOTIFIER_TEMPLATE = 'luci.notifier_template',
 
     # Internal nodes (declared internally as dependency of other nodes).
@@ -188,7 +188,7 @@ keys = struct(
     cq = lambda: _namespaced_key(kinds.CQ, '...'),
     cq_group = lambda ref: _project_scoped_key(kinds.CQ_GROUP, 'cq_group', ref),
 
-    notifier = lambda ref: _project_scoped_key(kinds.NOTIFIER, 'notifies', ref),
+    notifiable = lambda ref: _project_scoped_key(kinds.NOTIFIABLE, 'notifies', ref),
     notifier_template = lambda ref: _project_scoped_key(kinds.NOTIFIER_TEMPLATE, 'template', ref),
 
     # Internal nodes (declared internally as dependency of other nodes).
@@ -524,4 +524,45 @@ def _view_add_entry(kind, view, builder, props=None):
 view = struct(
     add_view = _view_add_view,
     add_entry = _view_add_entry,
+)
+
+
+################################################################################
+## Helpers for defining luci.notifiable nodes.
+
+
+def _notifiable_add(name, props, template, notified_by):
+  """Adds a luci.notifiable node.
+
+  This is a shared portion of luci.notifier and luci.tree_closer implementation.
+  Nodes defined here are traversed by gen_notify_cfg in generators.star.
+
+  Args:
+    name: name of the notifier or the tree closer.
+    props: a dict with node props.
+    template: an optional reference to a luci.notifier_template to link to.
+    notified_by: builders to link to.
+
+  Returns:
+    A keyset with the luci.notifiable key.
+  """
+  key = keys.notifiable(validate.string('name', name))
+  graph.add_node(key, idempotent=True, props=props)
+  graph.add_edge(keys.project(), key)
+
+  for b in validate.list('notified_by', notified_by):
+    graph.add_edge(
+        parent = key,
+        child = keys.builder_ref(b, attr='notified_by'),
+        title = 'notified_by',
+    )
+
+  if template != None:
+    graph.add_edge(key, keys.notifier_template(template))
+
+  return graph.keyset(key)
+
+
+notifiable = struct(
+    add = _notifiable_add,
 )
