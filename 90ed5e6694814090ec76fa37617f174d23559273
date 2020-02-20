@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9016a948_fd5832b1",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-20T00:50:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e65f852_0fb5ed2e",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 0
+      },
+      "revId": "90ed5e6694814090ec76fa37617f174d23559273",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0896fc3c_9d670a0d",
         "filename": "luci_notify/config/validate.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "fb83b536_87bb6113",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-20T00:50:31Z",
+      "side": 1,
+      "message": "Done (I also changed the name)",
+      "parentUuid": "0896fc3c_9d670a0d",
+      "range": {
+        "startLine": 83,
+        "startChar": 5,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "90ed5e6694814090ec76fa37617f174d23559273",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "689963c2_f81e5b6e",
         "filename": "luci_notify/config/validate_test.go",
         "patchSetId": 1
@@ -59,6 +107,30 @@
       "writtenOn": "2020-02-20T00:39:53Z",
       "side": 1,
       "message": "Hopefully these error messages never change :)",
+      "range": {
+        "startLine": 159,
+        "startChar": 19,
+        "endLine": 159,
+        "endChar": 85
+      },
+      "revId": "90ed5e6694814090ec76fa37617f174d23559273",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "756f08c0_12cb88cb",
+        "filename": "luci_notify/config/validate_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-20T00:50:31Z",
+      "side": 1,
+      "message": "Yeah... not ideal to depend on it but I want to include some indication of why the regex is invalid and this is all we have.",
+      "parentUuid": "689963c2_f81e5b6e",
       "range": {
         "startLine": 159,
         "startChar": 19,
