@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "435c4bd8_2f9f9b20",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-02-20T00:51:33Z",
+      "side": 1,
+      "message": "Suggest renaming for clarity:\nposRegex\u003d\u003eincludeRegex\nnegRegex\u003d\u003eexcludeRegex",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 13
+      },
+      "revId": "f6394f09324fc92d7790a0ff946ef249ab1c0553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
