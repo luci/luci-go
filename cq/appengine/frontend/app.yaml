@@ -1,12 +1,20 @@
 service: default
 runtime: go113
 
+# Note: this is interpreted by gae.py, it maps the app ID being deployed to
+# values of ${...} vars.
+luci_gae_vars:
+  commit-queue-dev:
+    AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
+  commit-queue:
+    AUTH_SERVICE_HOST: chrome-infra-auth.appspot.com
+
 automatic_scaling:
   min_idle_instances: 1
 
 entrypoint: >
   /usr/local/bin/start
-  -auth-service-host chrome-infra-auth-dev.appspot.com
+  -auth-service-host ${AUTH_SERVICE_HOST}
   -config-service-host luci-config.appspot.com
   -ts-mon-account app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
 
