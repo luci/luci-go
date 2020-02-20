@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2177d86f_0a31e435",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-20T19:46:36Z",
+      "side": 1,
+      "message": "CQ",
+      "range": {
+        "startLine": 196,
+        "startChar": 7,
+        "endLine": 196,
+        "endChar": 9
+      },
+      "revId": "339ef67daa582ce86476a4fe4892d163aacd5479",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
