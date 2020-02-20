@@ -34,6 +34,9 @@ const (
 	// The task completes successfully.
 	success = "SUCCESS"
 
+	// The task is skipped, possibly because another worker has leased it.
+	skipped = "SKIPPED"
+
 	// The task runs into a failure that can be resolved by retrying.
 	transientFailure = "TRANSIENT_FAILURE"
 
@@ -95,6 +98,9 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 
 	invID, payload, err := tasks.Lease(ctx, taskType, id, leaseDuration)
 	if err != nil {
+		if err == tasks.ErrConflict {
+			taskStatus = skipped
+		}
 		return err
 	}
 
