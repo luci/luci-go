@@ -22,6 +22,30 @@
       "revId": "f6394f09324fc92d7790a0ff946ef249ab1c0553",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d3ff486_88642716",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-20T00:54:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "435c4bd8_2f9f9b20",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 13
+      },
+      "revId": "f6394f09324fc92d7790a0ff946ef249ab1c0553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
