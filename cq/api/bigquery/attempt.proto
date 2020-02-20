@@ -61,6 +61,9 @@ message Attempt {
 
   // Final status of the Attempt.
   AttemptStatus status = 9;
+
+  // A more fine-grained status the explains more details about the status.
+  AttemptSubstatus substatus = 10;
 }
 
 // GerritChange represents one revision (patchset) of one Gerrit change
@@ -177,4 +180,27 @@ enum AttemptStatus {
   FAILURE = 4;
   // Failure in CQ itself caused the Attempt to be dropped.
   INFRA_FAILURE = 5;
+}
+
+enum AttemptSubstatus {
+  // Default, never set.
+  ATTEMPT_SUBSTATUS_UNSPECIFIED = 0;
+  // There is no more detailed status set.
+  NO_SUBSTATUS = 1;
+  // Failed at least one critical tryjob.
+  FAILED_TRYJOBS = 2;
+  // Failed an initial quick check of CL and CL description state.
+  FAILED_LINT = 3;
+  // A CL didn't get sufficient approval for submitting via CQ.
+  UNAPPROVED = 4;
+  // A CL triggerer doesn't have permission to trigger CQ.
+  PERMISSION_DENIED = 5;
+  // There was a problem with a dependency CL, e.g. some dependencies
+  // were not submitted or not grouped together in this attempt.
+  UNSATISFIED_DEPENDENCY = 6;
+  // Aborted because of a manual cancelation.
+  MANUAL_CANCEL = 7;
+  // A request to buildbucket failed because CQ didn't have permission to
+  // trigger builds.
+  BUILDBUCKET_MISCONFIGURATION = 8;
 }
