@@ -33,24 +33,30 @@ $(document).ready(function() {
     document.cookie = `${name}=${value}; expires=${farFuture}; path=/`;
   }
 
-  $('#showExpanded').click(function(e) {
+  function displayPrefChanged(selectedOption) {
+    if (!['expanded', 'default', 'non-green'].includes(selectedOption)) {
+      selectedOption = 'default';
+    }
+
     $('li.substeps').removeClass('collapsed');
     $('#steps').removeClass('non-green');
-    setCookie('stepDisplayPref', 'expanded')
-  });
 
-  $('#showDefault').click(function(e) {
-    $('li.substeps').removeClass('collapsed');
-    $('li.substeps.green').addClass('collapsed');
-    $('#steps').removeClass('non-green');
-    setCookie('stepDisplayPref', 'default')
-  });
+    switch (selectedOption) {
+      case 'expanded':
+        break;
+      case 'default':
+        $('li.substeps.green').addClass('collapsed');
+        break;
+      case 'non-green':
+        $('#steps').addClass('non-green');
+        break;
+    }
 
-  $('#showNonGreen').click(function(e) {
-    $('li.substeps').removeClass('collapsed');
-    $('#steps').addClass('non-green');
-    setCookie('stepDisplayPref', 'non-green')
-  });
+    setCookie('stepDisplayPref', selectedOption);
+  }
+
+  displayPrefChanged($('input[name="hider"]:checked').val());
+  $('input[name="hider"]').change(function() {displayPrefChanged($(this).val())});
 
   $('#showDebugLogs').change(function(e) {
     setCookie('showDebugLogsPref', this.checked)

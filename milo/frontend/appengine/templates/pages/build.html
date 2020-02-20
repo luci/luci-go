@@ -232,13 +232,13 @@
 
     <h2>Steps and Logs</h2>
     Show:
-    <input type="radio" name="hider" id="showExpanded"
+    <input type="radio" name="hider" id="showExpanded" value="expanded"
            {{- if eq .BuildPage.StepDisplayPref "expanded" }} checked{{ end }}>
     <label for="showExpanded">Expanded</label>
-    <input type="radio" name="hider" id="showDefault"
+    <input type="radio" name="hider" id="showDefault" value="default"
            {{- if eq .BuildPage.StepDisplayPref "default" }} checked{{ end }}>
     <label for="showDefault">Default</label>
-    <input type="radio" name="hider" id="showNonGreen"
+    <input type="radio" name="hider" id="showNonGreen" value="non-green"
            {{- if eq .BuildPage.StepDisplayPref "non-green" }} checked{{ end }}>
     <label for="showNonGreen">Non-Green</label>
 
