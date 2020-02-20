@@ -89,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "4b4da154_f1075da0",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/tree_closer.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-20T23:49:37Z",
+      "side": 1,
+      "message": "Yeah. I also just discovered some other protos also use tree_status_host: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/api/config/project.proto?type\u003dcs\u0026q\u003dtree_status_host\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d154",
+      "parentUuid": "7bec0f76_51f242b1",
+      "range": {
+        "startLine": 31,
+        "startChar": 6,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "56d0e88e89dc157e8149ff743636fda2b3fc9223",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae826414_68f94078",
         "filename": "lucicfg/testdata/notifiable/tree_closer.star",
         "patchSetId": 3
