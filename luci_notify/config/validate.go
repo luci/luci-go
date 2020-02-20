@@ -61,6 +61,7 @@ const (
 	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
 	badRepoURLError       = "repo url %q is invalid"
 	duplicateBuilderError = "builder %q is specified more than once in file"
+	badRegexError         = "field %q contains an invalid regex: %s"
 )
 
 // validateNotification is a helper function for validateConfig which validates
@@ -72,6 +73,17 @@ func validateNotification(c *validation.Context, cfgNotification *notifypb.Notif
 				c.Errorf(badEmailError, addr)
 			}
 		}
+	}
+
+	validateRegexField(c, "failed_step_regexp", cfgNotification.FailedStepRegexp)
+	validateRegexField(c, "failed_step_regexp_exclude", cfgNotification.FailedStepRegexpExclude)
+}
+
+// validateRegexField validates that a field contains a valid regex.
+func validateRegexField(c *validation.Context, fieldName, regex string) {
+	_, err := regexp.Compile(regex)
+	if err != nil {
+		c.Errorf(badRegexError, fieldName, err.Error())
 	}
 }
 
