@@ -167,10 +167,9 @@ func (t *testApp) initServers(ctx context.Context) error {
 		return err
 	}
 	backend.InitServer(backendServer, backend.Options{
-		TaskWorkers:         1,
-		ForceCronInterval:   100 * time.Millisecond,
-		ForceLeaseDuration:  100 * time.Millisecond,
-		PurgeExpiredResults: true,
+		TaskWorkers:        1,
+		ForceCronInterval:  100 * time.Millisecond,
+		ForceLeaseDuration: 100 * time.Millisecond,
 	})
 
 	// Init purger server.
