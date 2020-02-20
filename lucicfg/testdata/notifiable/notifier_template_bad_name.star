@@ -6,7 +6,7 @@ luci.notifier_template(
 # Expect errors:
 #
 # Traceback (most recent call last):
-#   //testdata/errors/notifier_template_bad_name.star: in <toplevel>
+#   //testdata/notifiable/notifier_template_bad_name.star: in <toplevel>
 #   <builtin>: in _notifier_template
 #   @stdlib//internal/validate.star: in _string
 #   <builtin>: in fail
