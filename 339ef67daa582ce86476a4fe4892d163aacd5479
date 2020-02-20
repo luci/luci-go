@@ -22,6 +22,30 @@
       "revId": "339ef67daa582ce86476a4fe4892d163aacd5479",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58977057_f65a47e3",
+        "filename": "cq/api/bigquery/attempt.proto",
+        "patchSetId": 9
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2020-02-20T23:12:33Z",
+      "side": 1,
+      "message": "What I meant here was \"the triggerer of at least one CL\", though in any case CQ triggerer sounds good to me. Uploaded https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2067648",
+      "parentUuid": "2177d86f_0a31e435",
+      "range": {
+        "startLine": 196,
+        "startChar": 7,
+        "endLine": 196,
+        "endChar": 9
+      },
+      "revId": "339ef67daa582ce86476a4fe4892d163aacd5479",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
