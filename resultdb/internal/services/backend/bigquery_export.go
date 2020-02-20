@@ -252,6 +252,8 @@ func (b *bqExporter) queryTestResultsStreaming(
 		return err
 	}
 
+	q.ExcludeArtifacts = true // artifacts are not exported to BigQuery.
+
 	rows := make([]*bigquery.StructSaver, 0, b.maxBatchRowCount)
 	batchSize := 0 // Estimated size of rows in bytes.
 	err = span.QueryTestResultsStreaming(ctx, txn, q, func(tr *pb.TestResult, variantHash string) error {

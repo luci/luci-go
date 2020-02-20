@@ -106,6 +106,7 @@ type TestResultQuery struct {
 	PageSize          int                     // must be positive
 	PageToken         string
 	SelectVariantHash bool
+	ExcludeArtifacts  bool
 }
 
 func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
@@ -113,10 +114,14 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		panic("PageSize < 0")
 	}
 
-	extraSelect := ""
+	var extraSelect []string
 	if q.SelectVariantHash {
-		extraSelect = "tr.VariantHash,"
+		extraSelect = append(extraSelect, "tr.VariantHash")
 	}
+	if !q.ExcludeArtifacts {
+		extraSelect = append(extraSelect, "tr.InputArtifacts", "tr.OutputArtifacts")
+	}
+
 	from := "TestResults tr"
 	if q.Predicate.GetExpectancy() == pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS {
 		// We must return only test results of test variants that have unexpected results.
@@ -174,7 +179,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			))
 		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
 		%s
-	`, extraSelect, from, limit))
+	`, strings.Join(extraSelect, ","), from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 
@@ -230,11 +235,12 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 			&tr.StartTime,
 			&micros,
 			&tr.Tags,
-			&tr.InputArtifacts,
-			&tr.OutputArtifacts,
 		}
 		if q.SelectVariantHash {
 			ptrs = append(ptrs, &variantHash)
+		}
+		if !q.ExcludeArtifacts {
+			ptrs = append(ptrs, &variantHash, &tr.InputArtifacts, &tr.OutputArtifacts)
 		}
 
 		err = b.FromSpanner(row, ptrs...)
