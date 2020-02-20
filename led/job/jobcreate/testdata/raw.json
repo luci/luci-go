@@ -1,0 +1,148 @@
+{
+  "created_ts": "2019-11-05T18:44:22.415785",
+  "task_slices": [
+    {
+      "expiration_secs": "3600",
+      "wait_for_capacity": false,
+      "properties": {
+        "secret_bytes": "PFJFREFDVEVEPg==",
+        "dimensions": [
+          {
+            "value": "none",
+            "key": "gpu"
+          },
+          {
+            "value": "Mac-10.13.6",
+            "key": "os"
+          },
+          {
+            "value": "x86-64",
+            "key": "cpu"
+          },
+          {
+            "value": "chromium.tests",
+            "key": "pool"
+          }
+        ],
+        "idempotent": false,
+        "cipd_input": {
+          "packages": [
+            {
+              "path": ".swarming_module",
+              "version": "git_revision:e1abc57be62d198b5c2f487bfb2fa2d2eb0e867c",
+              "package_name": "infra/tools/luci/logdog/butler/${platform}"
+            },
+            {
+              "path": ".swarming_module",
+              "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+              "package_name": "infra/tools/luci/vpython-native/${platform}"
+            },
+            {
+              "path": ".swarming_module",
+              "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+              "package_name": "infra/tools/luci/vpython/${platform}"
+            },
+            {
+              "path": ".swarming_module/cpython",
+              "version": "version:2.7.15.chromium14",
+              "package_name": "infra/python/cpython/${platform}"
+            },
+            {
+              "path": ".swarming_module/cpython3",
+              "version": "version:3.8.0b1.chromium.1",
+              "package_name": "infra/python/cpython3/${platform}"
+            }
+          ],
+          "client_package": {
+            "version": "git_revision:2a121dde003a3079db0fdf58195b52cbf486f6ba",
+            "package_name": "infra/tools/cipd/${platform}"
+          },
+          "server": "https://chrome-infra-packages.appspot.com"
+        },
+        "extra_args": [
+          "--isolated-script-test-output=${ISOLATED_OUTDIR}/output.json",
+          "--isolated-script-test-perf-output=${ISOLATED_OUTDIR}/perftest-output.json",
+          "--jobs=1",
+          "--extra-browser-args=--disable-gpu"
+        ],
+        "io_timeout_secs": "1200",
+        "env_prefixes": [
+          {
+            "value": [
+              ".swarming_module",
+              ".swarming_module/cpython/bin",
+              ".swarming_module/cpython3/bin"
+            ],
+            "key": "PATH"
+          },
+          {
+            "value": [
+              ".swarming_module_cache/vpython"
+            ],
+            "key": "VPYTHON_VIRTUALENV_ROOT"
+          }
+        ],
+        "env": [
+          {
+            "value": "2",
+            "key": "GTEST_SHARD_INDEX"
+          },
+          {
+            "value": "4",
+            "key": "GTEST_TOTAL_SHARDS"
+          }
+        ],
+        "containment": {
+          "lower_priority": false,
+          "containment_type": "NONE"
+        },
+        "execution_timeout_secs": "3600",
+        "inputs_ref": {
+          "isolatedserver": "https://isolateserver.appspot.com",
+          "namespace": "default-gzip",
+          "isolated": "cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15"
+        },
+        "grace_period_secs": "30",
+        "caches": [
+          {
+            "path": ".swarming_module_cache/vpython",
+            "name": "swarming_module_cache_vpython"
+          }
+        ]
+      }
+    }
+  ],
+  "name": "telemetry_unittests on (none) GPU on Mac (with patch)/Mac-10.13.6/cf2df3059e/mac-rel/229616:2:4",
+  "task_id": "4855b3592354cc10",
+  "tags": [
+    "build_is_experimental:false",
+    "buildername:mac-rel",
+    "buildnumber:229616",
+    "cpu:x86-64",
+    "data:cf2df3059e2ec1cf3f12abccbfe10de6ba4ffc15",
+    "gerrit:https://chromium-review.googlesource.com/c/1898390/2",
+    "gpu:none",
+    "master:tryserver.chromium.mac",
+    "name:telemetry_unittests",
+    "os:Mac-10.13.6",
+    "patch_project:chromium/src",
+    "pool:chromium.tests",
+    "priority:30",
+    "project:chromium",
+    "purpose:ManualTS",
+    "purpose:pre-commit",
+    "service_account:none",
+    "slavename:vm282-m4",
+    "spec_name:chromium.try:mac-rel",
+    "stepname:telemetry_unittests on (none) GPU on Mac (with patch) on Mac-10.13.6",
+    "swarming.pool.template:none",
+    "swarming.pool.version:6fac04973b80d8beed2353d55ee31194607987b6",
+    "user:None"
+  ],
+  "authenticated": "user:chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+  "priority": "30",
+  "parent_task_id": "4855a6e5d89adf11",
+  "user": "",
+  "service_account": "none",
+  "bot_ping_tolerance_secs": "1200"
+}
