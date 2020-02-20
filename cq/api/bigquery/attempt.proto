@@ -193,7 +193,7 @@ enum AttemptSubstatus {
   FAILED_LINT = 3;
   // A CL didn't get sufficient approval for submitting via CQ.
   UNAPPROVED = 4;
-  // A CL triggerer doesn't have permission to trigger CQ.
+  // A CQ triggerer doesn't have permission to trigger CQ.
   PERMISSION_DENIED = 5;
   // There was a problem with a dependency CL, e.g. some dependencies
   // were not submitted or not grouped together in this attempt.
