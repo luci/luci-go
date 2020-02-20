@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "7bec0f76_51f242b1",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/tree_closer.star",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-02-20T02:48:30Z",
+      "side": 1,
+      "message": "Makes sense, I\u0027ve updated the design doc to reflect this. I guess I should probably update the proto too? Should be easy to do at this point before many things depend on it.",
+      "parentUuid": "1e4d4d8b_0c502a91",
+      "range": {
+        "startLine": 31,
+        "startChar": 6,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "56d0e88e89dc157e8149ff743636fda2b3fc9223",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae826414_68f94078",
         "filename": "lucicfg/testdata/notifiable/tree_closer.star",
         "patchSetId": 3
