@@ -271,6 +271,40 @@ func TestServer(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 		})
+
+		Convey("Egress", func(c C) {
+			request := make(chan *http.Request, 1)
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				request <- r.Clone(context.Background())
+			}))
+			defer ts.Close()
+
+			srv.Routes.GET("/test-egress", router.MiddlewareChain{}, func(rc *router.Context) {
+				req, _ := http.NewRequest("GET", ts.URL, nil)
+				req.Header.Add("User-Agent", "zzz")
+
+				t, err := auth.GetRPCTransport(rc.Context, auth.NoAuth)
+				c.So(err, ShouldBeNil)
+				client := http.Client{Transport: t}
+
+				resp, err := client.Do(req)
+				c.So(err, ShouldBeNil)
+				ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
+			})
+
+			srv.ServeInBackground()
+			_, err := srv.GetMain("/test-egress", nil)
+			So(err, ShouldBeNil)
+
+			var req *http.Request
+			select {
+			case req = <-request:
+			default:
+			}
+			So(req, ShouldNotBeNil)
+			So(req.UserAgent(), ShouldEqual, "LUCI-Server (service: service-name; job: namespace/job; ver: latest); zzz")
+		})
 	})
 }
 
@@ -442,6 +476,9 @@ func newTestServer(ctx context.Context, o *Options) (srv *testServer, err error)
 	opts.HTTPAddr = "main_addr"
 	opts.AdminAddr = "admin_addr"
 	opts.ClientAuth = clientauth.Options{Method: clientauth.LUCIContextMethod}
+	opts.TsMonServiceName = "service-name"
+	opts.TsMonJobName = "namespace/job"
+	opts.ContainerImageID = "registry/image:latest"
 
 	opts.testSeed = 1
 	opts.testStdout = &srv.stdout
