@@ -141,6 +141,7 @@ type triggerRun struct {
 	containmentType           containmentType
 	limitProcesses            int64
 	limitTotalCommittedMemory int64
+	namedCache                stringmapflag.Value
 	hardTimeout               int64
 	ioTimeout                 int64
 	cipdPackage               stringmapflag.Value
@@ -183,8 +184,8 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
+	c.Flags.Var(&c.namedCache, "named-cache", "This takes a parameter of `name=cachedir`.")
 	c.Flags.Var(&c.outputs, "output", "(repeatable) Specify an output file or directory that can be retrieved via collect.")
-
 	c.Flags.StringVar(&c.serviceAccount, "service-account", "",
 		`Email of a service account to run the task as, or literal "bot" string to indicate that the task should use the same account the bot itself is using to authenticate to Swarming. Don't use task service accounts if not given (default).`)
 
@@ -357,6 +358,16 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		}
 		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
+
+	for name, path := range c.namedCache {
+		properties.Caches = append(properties.Caches,
+			&swarming.SwarmingRpcsCacheEntry{
+				Name: name,
+				Path: path,
+			},
+		)
+	}
+
 	randomUUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get random UUID").Err()
