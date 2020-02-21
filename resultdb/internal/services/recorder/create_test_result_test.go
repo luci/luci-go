@@ -15,6 +15,7 @@
 package recorder
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -35,17 +36,22 @@ import (
 )
 
 // validCreateTestResultRequest returns a valid CreateTestResultRequest message.
-func validCreateTestResultRequest(now time.Time) *pb.CreateTestResultRequest {
+func validCreateTestResultRequest(now time.Time, invName, testID string) *pb.CreateTestResultRequest {
+	trName := fmt.Sprintf("invocations/%s/tests/%s/results/result-id-0", invName, testID)
 	return &pb.CreateTestResultRequest{
-		Invocation: "invocations/u:build-1",
-		RequestId:  "this is a requestID 123",
+		Invocation: invName,
+		RequestId:  "request-id-123",
 
 		TestResult: &pb.TestResult{
-			Name:     "invocations/a/tests/invocation_id1/results/result_id1",
-			TestId:   "this is a testID",
-			ResultId: "result_id1",
+			Name:     trName,
+			TestId:   testID,
+			ResultId: "result-id-0",
 			Expected: true,
 			Status:   pb.TestStatus_PASS,
+			Variant: pbutil.Variant(
+				"a/b", "1",
+				"c", "2",
+			),
 		},
 	}
 }
@@ -55,7 +61,7 @@ func TestValidateCreateTestResultRequest(t *testing.T) {
 
 	now := testclock.TestRecentTimeUTC
 	Convey("ValidateCreateTestResultRequest", t, func() {
-		req := validCreateTestResultRequest(now)
+		req := validCreateTestResultRequest(now, "invocations/u:build-1", "test-id")
 
 		Convey("suceeeds", func() {
 			So(validateCreateTestResultRequest(req, now), ShouldBeNil)
@@ -103,13 +109,13 @@ func TestCreateTestResult(t *testing.T) {
 	Convey(`CreateTestResult`, t, func() {
 		ctx := SpannerTestContext(t)
 		recorder := newTestRecorderServer()
-		req := validCreateTestResultRequest(clock.Now(ctx).UTC())
-		invID := span.MustParseInvocationName(req.Invocation)
+		req := validCreateTestResultRequest(
+			clock.Now(ctx).UTC(), "invocations/u:build-1", "test-id",
+		)
 
 		createTestResult := func(req *pb.CreateTestResultRequest) {
-			tr := req.TestResult
-			expected := proto.Clone(tr).(*pb.TestResult)
-			expected.Name = pbutil.TestResultName(string(invID), tr.TestId, tr.ResultId)
+			expected := proto.Clone(req.TestResult).(*pb.TestResult)
+			expected.Name = "invocations/u:build-1/tests/test-id/results/result-id-0"
 			res, err := recorder.CreateTestResult(ctx, req)
 			So(err, ShouldBeNil)
 			So(res, ShouldResembleProto, expected)
@@ -120,19 +126,20 @@ func TestCreateTestResult(t *testing.T) {
 			So(row, ShouldResembleProto, expected)
 
 			// variant hash
-			key := span.InvocationID(invID).Key(res.TestId, res.ResultId)
+			key := span.InvocationID("u:build-1").Key("test-id", "result-id-0")
 			var variantHash string
 			MustReadRow(ctx, "TestResults", key, map[string]interface{}{
 				"VariantHash": &variantHash,
 			})
-			So(variantHash, ShouldEqual, pbutil.VariantHash(res.Variant))
+			So(variantHash, ShouldEqual, "c8643f74854d84b4")
 		}
 
 		// Insert a sample invocation
 		const tok = "update token"
 		vs := map[string]interface{}{"UpdateToken": tok}
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		MustApply(ctx, InsertInvocation(span.InvocationID(invID), pb.Invocation_ACTIVE, vs))
+		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, vs)
+		MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
 			Convey("with a request ID", func() {
