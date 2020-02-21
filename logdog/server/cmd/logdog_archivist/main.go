@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -39,23 +40,40 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
+// loopParams control the outer archivist loop.
+type loopParams struct {
+	batchSize int64
+	leaseTime time.Duration
+}
+
 var (
 	errInvalidConfig = errors.New("invalid configuration")
+	errNoWorkToDo    = errors.New("no work to do")
 
-	errNoWorkToDo = errors.New("no work to do")
+	// Note: these initial values are mostly bogus, they are replaced by
+	// fetchLoopParams before the loop starts.
+	loop = loopParams{
+		// batchSize is the number of jobs to lease from taskqueue per cycle.
+		//
+		// TaskQueue has a limit of 10qps for leasing tasks, so the batch size must
+		// be set to:
+		// batchSize * 10 > (max expected stream creation QPS)
+		//
+		// In 2020, max stream QPS is approximately 1000 QPS
+		batchSize: 500,
 
-	// batchSize is the number of jobs to lease from taskqueue per cycle.
-	// TaskQueue has a limit of 10qps for leasing tasks, so the batch size must be set to:
-	// batchSize * 10 > (max expected stream creation QPS)
-	// In 2019, max stream QPS is approximately 400 QPS
-	// TODO(hinoka): Make these configurable in settings.
-	batchSize = int64(50)
+		// leaseTime is the amount of time to to lease the batch of tasks for.
+		//
+		// We need:
+		// (time to process avg stream) * batchSize < leaseTime
+		//
+		// As of 2020, 90th percentile process time per stream is ~5s, 95th
+		// percentile of the loop time is 25m.
+		leaseTime: 40 * time.Minute,
+	}
 
-	// leaseTime is the amount of time to to lease the batch of tasks for.
-	// We need:
-	// (time to process avg stream) * batchSize < leaseTime
-	// As of 2019, 90th percentile process time per stream is ~4s.
-	leaseTime = 15 * time.Minute
+	// loopM protects 'loop'.
+	loopM = sync.Mutex{}
 
 	// maxSleepTime is the max amount of time to sleep in-between errors, in seconds.
 	maxSleepTime = 32
@@ -105,13 +123,26 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 			return c.Err()
 		}
 		if err := func() error {
+			loop := grabLoopParams()
+
+			// Sizes of archival tasks are pretty uniform. It means the total time it
+			// takes to process equally sized batches of tasks is approximately the
+			// same across all archivist instances. Once a bunch of them start at the
+			// same time, they end up hitting LeaseArchiveTasks in waves at
+			// approximately the same time. Randomize the batch size +-25% to remove
+			// this synchronization.
+			factor := int64(mathrand.Intn(c, 500) + 750) // [750, 1250)
+			loop.batchSize = loop.batchSize * factor / 1000
+			loop.leaseTime = loop.leaseTime * time.Duration(factor) / 1000
+
 			cycleStartTime := clock.Now(c)
-			leaseTimeProto := ptypes.DurationProto(leaseTime)
-			nc, cancel := context.WithTimeout(c, leaseTime)
+			leaseTimeProto := ptypes.DurationProto(loop.leaseTime)
+			nc, cancel := context.WithTimeout(c, loop.leaseTime)
 			defer cancel()
 
+			logging.Infof(c, "Leasing max %d tasks for %s", loop.batchSize, loop.leaseTime)
 			tasks, err := client.LeaseArchiveTasks(c, &logdog.LeaseRequest{
-				MaxTasks:  batchSize,
+				MaxTasks:  loop.batchSize,
 				LeaseTime: leaseTimeProto,
 			})
 			if err != nil {
@@ -178,18 +209,34 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 	}
 }
 
-// settingsUpdater updates the settings from datastore every once in a while.
-func settingsUpdater(c context.Context) {
+// grabLoopParams returns a copy of most recent value of `loop`.
+func grabLoopParams() loopParams {
+	loopM.Lock()
+	defer loopM.Unlock()
+	return loop
+}
+
+// fetchLoopParams updates `loop` based on settings in datastore (or panics).
+func fetchLoopParams(c context.Context) {
+	// Note: these are eventually controlled through /admin/portal/archivist.
+	set := coordinator.GetSettings(c)
+	loopM.Lock()
+	defer loopM.Unlock()
+	if set.ArchivistBatchSize != 0 {
+		loop.batchSize = set.ArchivistBatchSize
+	}
+	if set.ArchivistLeaseTime != 0 {
+		loop.leaseTime = set.ArchivistLeaseTime
+	}
+	logging.Debugf(c, "loop settings: batchSize:%d, leastTime:%s", loop.batchSize, loop.leaseTime)
+}
+
+// loopParamsUpdater updates loopParams based on setting in datastore every once
+// in a while.
+func loopParamsUpdater(c context.Context) {
 	for {
-		set := coordinator.GetSettings(c)
-		logging.Debugf(c, "updating settings: %v", set)
-		if batchSize != set.ArchivistBatchSize {
-			batchSize = set.ArchivistBatchSize
-		}
-		if leaseTime != set.ArchivistLeaseTime {
-			leaseTime = set.ArchivistLeaseTime
-		}
 		clock.Sleep(c, 5*time.Minute)
+		fetchLoopParams(c)
 	}
 }
 
@@ -253,8 +300,9 @@ func (a *application) runArchivist(c context.Context) error {
 	// shutdown Context.
 	a.SetShutdownFunc(cancelFunc)
 
-	// Update our settings periodicall.
-	go settingsUpdater(c)
+	// Load our settings and update them periodically.
+	fetchLoopParams(c)
+	go loopParamsUpdater(c)
 
 	return runForever(c, ar)
 }
