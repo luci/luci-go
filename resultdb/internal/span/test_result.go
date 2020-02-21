@@ -72,7 +72,7 @@ func ReadTestResult(ctx context.Context, txn Txn, name string) (*pb.TestResult, 
 	}
 
 	var maybeUnexpected spanner.NullBool
-	var micros int64
+	var micros spanner.NullInt64
 	var summaryHTML Compressed
 	err := ReadRow(ctx, txn, "TestResults", invID.Key(testID, resultID), map[string]interface{}{
 		"Variant":         &tr.Variant,
@@ -215,7 +215,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	return Query(ctx, txn, st, func(row *spanner.Row) error {
 		var invID InvocationID
 		var maybeUnexpected spanner.NullBool
-		var micros int64
+		var micros spanner.NullInt64
 		var variantHash string
 		tr := &pb.TestResult{}
 
@@ -287,8 +287,11 @@ func QueryTestResultsStreaming(ctx context.Context, txn *spanner.ReadOnlyTransac
 	return queryTestResults(ctx, txn, q, f)
 }
 
-func populateDurationField(tr *pb.TestResult, micros int64) {
-	tr.Duration = FromMicros(micros)
+func populateDurationField(tr *pb.TestResult, micros spanner.NullInt64) {
+	tr.Duration = nil
+	if micros.Valid {
+		tr.Duration = FromMicros(micros.Int64)
+	}
 }
 
 func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) {
