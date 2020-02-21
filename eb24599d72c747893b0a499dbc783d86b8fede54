@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a616413_a829fdff",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-21T23:52:53Z",
+      "side": 1,
+      "message": "this is very specific. Is it possible to create a more general pattern?",
+      "range": {
+        "startLine": 76,
+        "startChar": 40,
+        "endLine": 76,
+        "endChar": 103
+      },
+      "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bed202f4_869c5731",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-21T23:52:53Z",
+      "side": 1,
+      "message": "nit: switch?",
+      "range": {
+        "startLine": 166,
+        "startChar": 3,
+        "endLine": 167,
+        "endChar": 6
+      },
+      "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
