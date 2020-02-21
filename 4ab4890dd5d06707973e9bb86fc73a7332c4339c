@@ -99,6 +99,24 @@
       "revId": "4ab4890dd5d06707973e9bb86fc73a7332c4339c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7031cfff_d5eb6f43",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-21T04:02:12Z",
+      "side": 1,
+      "message": "I don\u0027t have a strong opinion on this",
+      "parentUuid": "093ceef6_f6106d37",
+      "revId": "4ab4890dd5d06707973e9bb86fc73a7332c4339c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
