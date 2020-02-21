@@ -214,8 +214,8 @@ func ParseTestResultName(name string) (invID, testID, resultID string, err error
 // TestResultName synthesizes a test result name from its parts.
 // Does not validate parts; use ValidateTestResultName.
 func TestResultName(invID, testID, resultID string) string {
-	return fmt.Sprintf("invocations/%s/tests/%s/results/%s",
-		invID, url.PathEscape(testID), resultID)
+	return fmt.Sprintf(
+		"invocations/%s/tests/%s/results/%s", invID, url.PathEscape(testID), resultID)
 }
 
 // NormalizeTestResult converts inv to the canonical form.
