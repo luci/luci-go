@@ -368,6 +368,11 @@ func (o *Options) imageVersion() string {
 	return o.ContainerImageID[idx+1:]
 }
 
+// userAgent derives a user-agent like string identifying the server.
+func (o *Options) userAgent() string {
+	return fmt.Sprintf("LUCI-Server (service: %s; job: %s; ver: %s);", o.TsMonServiceName, o.TsMonJobName, o.imageVersion())
+}
+
 // shouldEnableTracing is true if options indicate we should enable tracing.
 func (o *Options) shouldEnableTracing() bool {
 	switch {
@@ -1164,6 +1169,17 @@ func (s *Server) initLogging() {
 // and verifying auth tokens can actually be minted (i.e. supplied credentials
 // are valid).
 func (s *Server) initAuth() error {
+	// Make a transport that appends information about the server as User-Agent.
+	ua := s.Options.userAgent()
+	rootTransport := clientauth.NewModifyingTransport(http.DefaultTransport, func(req *http.Request) error {
+		newUA := ua
+		if cur := req.UserAgent(); cur != "" {
+			newUA += " " + cur
+		}
+		req.Header.Set("User-Agent", newUA)
+		return nil
+	})
+
 	// Initialize the state in the context.
 	s.Context = auth.Initialize(s.Context, &auth.Config{
 		DBProvider: func(context.Context) (authdb.DB, error) {
@@ -1172,7 +1188,7 @@ func (s *Server) initAuth() error {
 		},
 		Signer:              nil, // TODO(vadimsh): Implement.
 		AccessTokenProvider: s.getAccessToken,
-		AnonymousTransport:  func(context.Context) http.RoundTripper { return http.DefaultTransport },
+		AnonymousTransport:  func(context.Context) http.RoundTripper { return rootTransport },
 		EndUserIP:           getRemoteIP,
 		IsDevMode:           !s.Options.Prod,
 	})
