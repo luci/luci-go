@@ -118,6 +118,30 @@
       "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48ec2b5f_4b628142",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-21T02:37:45Z",
+      "side": 1,
+      "message": "yeah, sorry, i implied that this is unrelated to this CL. This CL is not blocked on this discussion.",
+      "parentUuid": "38bbfe0d_64d29011",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 84,
+        "endChar": 35
+      },
+      "revId": "6f86b7e76f7e1077645237680230e2fd464c6615",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
