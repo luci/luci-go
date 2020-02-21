@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "3a3588a4_d2e0ad4c",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-21T20:29:43Z",
+      "side": 1,
+      "message": "It appears with batch size 500 each loop iteration on average is 25-30 min with pretty high probability.",
+      "parentUuid": "5c1d4d15_3545ad62",
+      "range": {
+        "startLine": 128,
+        "startChar": 6,
+        "endLine": 128,
+        "endChar": 48
+      },
+      "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58d2d8ae_2902cb00",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43430c4d_cb95e2fc",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-21T20:29:43Z",
+      "side": 1,
+      "message": "Nah.",
+      "parentUuid": "58d2d8ae_2902cb00",
+      "range": {
+        "startLine": 213,
+        "startChar": 5,
+        "endLine": 213,
+        "endChar": 19
+      },
+      "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
