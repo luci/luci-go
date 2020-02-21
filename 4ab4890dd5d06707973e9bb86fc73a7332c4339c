@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a889bf6a_86052b27",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-21T00:40:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5eed11f4_abd4a08b",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 13
+      },
+      "revId": "4ab4890dd5d06707973e9bb86fc73a7332c4339c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a187fdfa_5c287ff0",
         "filename": "resultdb/pbutil/test_result.go",
         "patchSetId": 6
@@ -39,6 +63,24 @@
       "revId": "4ab4890dd5d06707973e9bb86fc73a7332c4339c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e61d8590_ff32a113",
+        "filename": "resultdb/pbutil/test_result.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-21T00:40:33Z",
+      "side": 1,
+      "message": "It was just because my vim and go-fmt didn\u0027t agree with each other for the indent style.\n\nMy vim changes the indent\nfrom\nreturn fmt.Sprintf(\"...\",\n    invID, ....)\n\nto\nreturn fmt.Sprint(\"...\",\ninvID, ....)\n\nand go-fmt changes it back in the other way.\n\nI acknowledge that go-fmt is the official tool for go-lang indentations, but here are  alternatives that both vim and go-fmt agree with each other.(and I chose the last one)\n\n```\n// (1)\nreturn fmt.Sprintf(\n    \"invocation/%s/...\", invID, ...)\n\n// (2)\nreturn fmt.Sprintf(\n    \"invocations/%s/...\", invID, ...,\n)\n\n// (3)\ntestID \u003d url.PathEscape(...)\nreturn fmt.Sprintf(...)\n```\n\nNow, I changed it to (2). Let me if you have different opinions. I\u0027m happy to change it back to the original.",
+      "parentUuid": "a187fdfa_5c287ff0",
+      "revId": "4ab4890dd5d06707973e9bb86fc73a7332c4339c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
