@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ba19227c_6d8e2ff2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-21T20:23:53Z",
+      "side": 1,
+      "message": "typo: start",
+      "range": {
+        "startLine": 7,
+        "startChar": 18,
+        "endLine": 7,
+        "endChar": 22
+      },
+      "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c1d4d15_3545ad62",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-21T20:23:53Z",
+      "side": 1,
+      "message": "I don\u0027t think this is true; each task is archiving a single log stream which can vary from bytes to 100MB (I don\u0027t think there\u0027s any upper bound, so I\u0027m guessing a bit).\n\nThat said, there are MANY tiny logs, so that may be enough to get the slamming effect you describe.",
+      "range": {
+        "startLine": 128,
+        "startChar": 6,
+        "endLine": 128,
+        "endChar": 48
+      },
+      "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58d2d8ae_2902cb00",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-21T20:23:53Z",
+      "side": 1,
+      "message": "(this might be an appropriate use of atomic.Value, though clearly not required)",
+      "range": {
+        "startLine": 213,
+        "startChar": 5,
+        "endLine": 213,
+        "endChar": 19
+      },
+      "revId": "53acd823dbe32b303124569e9cdc7e7550025528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
