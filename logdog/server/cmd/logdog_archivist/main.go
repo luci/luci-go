@@ -235,7 +235,9 @@ func fetchLoopParams(c context.Context) {
 // in a while.
 func loopParamsUpdater(c context.Context) {
 	for {
-		clock.Sleep(c, 5*time.Minute)
+		if clock.Sleep(c, 5*time.Minute).Err != nil {
+			break //  the context is canceled, the process is exiting
+		}
 		fetchLoopParams(c)
 	}
 }
