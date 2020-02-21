@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7fbbf699_ba9bae56",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-21T03:29:12Z",
+      "side": 1,
+      "message": "This is how I \"discovered\" it. I started looking at what it takes to migrate logdog GKE components to server.Server for better observability and standardization.",
+      "range": {
+        "startLine": 9,
+        "startChar": 25,
+        "endLine": 10,
+        "endChar": 39
+      },
+      "revId": "ea74467cabdc50b086b02ef658841a92127f4db6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
