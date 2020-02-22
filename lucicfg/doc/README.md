@@ -1163,7 +1163,7 @@ Buildbucket.
 * **repo**: URL of a primary git repository (starting with `https://`) associated with the builder, if known. It is in particular important when using [luci.notifier(...)](#luci.notifier) to let LUCI know what git history it should use to chronologically order builds on this builder. If unknown, builds will be ordered by creation time. If unset, will be taken from the configuration of [luci.gitiles_poller(...)](#luci.gitiles_poller) that trigger this builder if they all poll the same repo.
 * **triggers**: builders this builder triggers.
 * **triggered_by**: builders or pollers this builder is triggered by.
-* **notifies**: list of [luci.notifier(...)](#luci.notifier) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier).
+* **notifies**: list of [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) the builder notifies when it changes its status. This relation can also be defined via `notified_by` field in [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer).
 
 
 
@@ -1639,6 +1639,13 @@ finishes, the builder "notifies" all [luci.notifier(...)](#luci.notifier) object
 it, and in turn each notifier filters and forwards this event to corresponding
 recipients.
 
+Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+a `luci.notifiable` object, i.e. both are something that "can be notified"
+when a build finishes. They both are valid targets for `notifies` field in
+[luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
+not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+the same name.
+
 #### Arguments {#luci.notifier-args}
 
 * **name**: name of this notifier to reference it from other rules. Required.
@@ -1651,7 +1658,58 @@ recipients.
 * **notify_emails**: an optional list of emails to send notifications to.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
-* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template named `default` is defined in the project somewhere, it is used implicitly by the notifier.
+* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
+* **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
+
+
+
+
+### luci.tree_closer {#luci.tree_closer}
+
+```python
+luci.tree_closer(
+    # Required arguments.
+    name,
+    tree_status_host,
+
+    # Optional arguments.
+    failed_step_regexp = None,
+    failed_step_regexp_exclude = None,
+    template = None,
+    notified_by = None,
+)
+```
+
+
+
+Defines a rule for closing or opening a tree via a tree status app based on
+a status of the observed builders.
+
+*** note
+**Experimental.** This feature is under development and guarded by
+`crbug.com/1054172` experiment.
+***
+
+The set of builders that are being observed is defined through `notified_by`
+field here or `notifies` field in [luci.builder(...)](#luci.builder). Whenever a build
+finishes, the builder "notifies" all (but usually none or just one)
+[luci.tree_closer(...)](#luci.tree_closer) objects subscribed to it, so they can decide whether to
+close or open the tree in reaction to the new builder state.
+
+Note that [luci.notifier(...)](#luci.notifier) and [luci.tree_closer(...)](#luci.tree_closer) are both flavors of
+a `luci.notifiable` object, i.e. both are something that "can be notified"
+when a build finishes. They both are valid targets for `notifies` field in
+[luci.builder(...)](#luci.builder). For that reason they share the same namespace, i.e. it is
+not allowed to have a [luci.notifier(...)](#luci.notifier) and a [luci.tree_closer(...)](#luci.tree_closer) with
+the same name.
+
+#### Arguments {#luci.tree_closer-args}
+
+* **name**: name of this tree closer to reference it from other rules. Required.
+* **tree_status_host**: a hostname of the project tree status app (if any) that this rule will use to open and close the tree. Tree status affects how CQ lands CLs. See `tree_status_host` in [luci.cq_group(...)](#luci.cq_group). Required.
+* **failed_step_regexp**: close the tree only on builds which had a failing step matching this regular expression.
+* **failed_step_regexp_exclude**: close the tree only on builds which don't have a failing step matching this regular expression. May be combined with `failed_step_regexp`, in which case it must also have a failed step matching that regular expression.
+* **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format tree closure notifications. If not specified, and a template `default_tree_status` is defined in the project somewhere, it is used implicitly by the tree closer.
 * **notified_by**: builders to receive status notifications from. This relation can also be defined via `notifies` field in [luci.builder(...)](#luci.builder).
 
 
@@ -1665,7 +1723,8 @@ luci.notifier_template(name, body)
 
 
 
-Defines a template to use for emails sent by [luci.notifier(...)](#luci.notifier).
+Defines a template to use for notifications sent by [luci.notifier(...)](#luci.notifier) and
+[luci.tree_closer(...)](#luci.tree_closer).
 
 The main template body should have format `<subject>\n\n<body>` where
 subject is one line of [text/template] and body is an [html/template]. The
@@ -1764,7 +1823,7 @@ failure.
 
 #### Arguments {#luci.notifier_template-args}
 
-* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) rules. Must match the regex `^[a-z][a-z0-9\_]*$`. A template named `default` is used by all notifiers that do not explicitly specify another template. Required.
+* **name**: name of this template to reference it from [luci.notifier(...)](#luci.notifier) or [luci.tree_closer(...)](#luci.tree_closer) rules. Must match the regex `^[a-z][a-z0-9\_]*$`. Required.
 * **body**: string with the template body. Use [io.read_file(...)](#io.read_file) to load it from an external file, if necessary. Required.
 
 

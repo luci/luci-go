@@ -16,7 +16,7 @@ load('@stdlib//internal/graph.star', 'graph')
 load('@stdlib//internal/lucicfg.star', 'lucicfg')
 load('@stdlib//internal/validate.star', 'validate')
 
-load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/common.star', 'keys', 'notifiable')
 load('@proto//go.chromium.org/luci/buildbucket/proto/common.proto', buildbucket_common_pb='buildbucket.v2')
 
 
@@ -60,6 +60,13 @@ def _notifier(
   it, and in turn each notifier filters and forwards this event to corresponding
   recipients.
 
+  Note that luci.notifier(...) and luci.tree_closer(...) are both flavors of
+  a `luci.notifiable` object, i.e. both are something that "can be notified"
+  when a build finishes. They both are valid targets for `notifies` field in
+  luci.builder(...). For that reason they share the same namespace, i.e. it is
+  not allowed to have a luci.notifier(...) and a luci.tree_closer(...) with
+  the same name.
+
   Args:
     name: name of this notifier to reference it from other rules. Required.
 
@@ -94,8 +101,8 @@ def _notifier(
         (default), only the primary repository associated with the builder is
         considered, see `repo` field in luci.builder(...).
     template: a luci.notifier_template(...) to use to format notification
-        emails. If not specified, and a template named `default` is defined
-        in the project somewhere, it is used implicitly by the notifier.
+        emails. If not specified, and a template `default` is defined in the
+        project somewhere, it is used implicitly by the notifier.
 
     notified_by: builders to receive status notifications from. This relation
         can also be defined via `notifies` field in luci.builder(...).
@@ -125,34 +132,28 @@ def _notifier(
   if blamelist_repos_whitelist and not notify_blamelist:
     fail('blamelist_repos_whitelist requires notify_blamelist to be True')
 
-  key = keys.notifier(name)
-  graph.add_node(key, idempotent = True, props = {
-      'name': name,
-      'on_occurrence': on_occurrence,
-      'on_new_status': on_new_status,
+  return notifiable.add(
+      name = name,
+      props = {
+          'name': name,
+          'kind': 'luci.notifier',
 
-      'on_failure': on_failure,
-      'on_new_failure': on_new_failure,
-      'on_status_change': on_status_change,
-      'on_success': on_success,
+          'on_occurrence': on_occurrence,
+          'on_new_status': on_new_status,
 
-      'notify_emails': notify_emails,
-      'notify_blamelist': notify_blamelist,
-      'blamelist_repos_whitelist': blamelist_repos_whitelist,
-  })
-  graph.add_edge(keys.project(), key)
+          'on_failure': on_failure,
+          'on_new_failure': on_new_failure,
+          'on_status_change': on_status_change,
+          'on_success': on_success,
 
-  for b in validate.list('notified_by', notified_by):
-    graph.add_edge(
-        parent = key,
-        child = keys.builder_ref(b, attr='notified_by'),
-        title = 'notified_by',
-    )
+          'notify_emails': notify_emails,
+          'notify_blamelist': notify_blamelist,
+          'blamelist_repos_whitelist': blamelist_repos_whitelist,
+      },
+      template = template,
+      notified_by = notified_by,
+  )
 
-  if template != None:
-    graph.add_edge(key, keys.notifier_template(template))
-
-  return graph.keyset(key)
 
 def _buildbucket_status_validate(status_list):
   """Validates a list of buildbucket statuses and returns their corresponding

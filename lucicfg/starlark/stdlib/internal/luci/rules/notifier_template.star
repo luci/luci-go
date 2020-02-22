@@ -25,7 +25,8 @@ def _notifier_template(
       name=None,
       body=None
   ):
-  """Defines a template to use for emails sent by luci.notifier(...).
+  """Defines a template to use for notifications sent by luci.notifier(...) and
+  luci.tree_closer(...).
 
   The main template body should have format `<subject>\\n\\n<body>` where
   subject is one line of [text/template] and body is an [html/template]. The
@@ -126,10 +127,9 @@ def _notifier_template(
   failure.
 
   Args:
-    name: name of this template to reference it from luci.notifier(...) rules.
-        Must match the regex `^[a-z][a-z0-9\_]*$`.
-        A template named `default` is used by all notifiers that do not
-        explicitly specify another template. Required.
+    name: name of this template to reference it from luci.notifier(...) or
+        luci.tree_closer(...) rules. Must match the regex `^[a-z][a-z0-9\_]*$`.
+        Required.
     body: string with the template body. Use io.read_file(...) to load it from
         an external file, if necessary. Required.
   """

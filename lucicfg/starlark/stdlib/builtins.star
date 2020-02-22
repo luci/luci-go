@@ -34,6 +34,7 @@ load('@stdlib//internal/luci/rules/milo.star', _milo='milo')
 load('@stdlib//internal/luci/rules/notifier.star', _notifier='notifier')
 load('@stdlib//internal/luci/rules/notifier_template.star', _notifier_template='notifier_template')
 load('@stdlib//internal/luci/rules/project.star', _project='project')
+load('@stdlib//internal/luci/rules/tree_closer.star', _tree_closer='tree_closer')
 
 # LUCI helper modules.
 load('@stdlib//internal/luci/lib/acl.star', _acl='acl')
@@ -68,6 +69,7 @@ luci = struct(
     console_view = _console_view,
     console_view_entry = _console_view_entry,
     notifier = _notifier,
+    tree_closer = _tree_closer,
     notifier_template = _notifier_template,
     cq = _cq,
     cq_group = _cq_group,
