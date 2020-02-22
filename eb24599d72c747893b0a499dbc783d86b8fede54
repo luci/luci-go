@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "76e96472_5393494c",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-22T00:02:27Z",
+      "side": 1,
+      "message": "From what I can find, all synthetic tests seem to all have this prefix.\n\nI can confirm with isamsonov@ when he\u0027s back on Monday.",
+      "parentUuid": "7a616413_a829fdff",
+      "range": {
+        "startLine": 76,
+        "startChar": 40,
+        "endLine": 76,
+        "endChar": 103
+      },
+      "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bed202f4_869c5731",
         "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6934755_143b43ea",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-22T00:02:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bed202f4_869c5731",
+      "range": {
+        "startLine": 166,
+        "startChar": 3,
+        "endLine": 167,
+        "endChar": 6
+      },
+      "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
