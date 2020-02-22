@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync/atomic"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 
@@ -141,11 +142,12 @@ func (r *addRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return r.done(ctx, err)
 	}
 
-	i := 0
+	i := int32(0)
 	return r.PrintAndDone(ctx, args, argOrder, func(ctx context.Context, builder string) (*pb.Build, error) {
-		i++
 		req := proto.Clone(baseReq).(*pb.ScheduleBuildRequest)
-		req.RequestId += fmt.Sprintf("-%d", i)
+
+		// PrintAndDone callback is executed concurrently.
+		req.RequestId += fmt.Sprintf("-%d", atomic.AddInt32(&i, 1))
 
 		var err error
 		req.Builder, err = protoutil.ParseBuilderID(builder)
