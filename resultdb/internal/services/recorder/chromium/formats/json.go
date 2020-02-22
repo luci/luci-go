@@ -256,7 +256,7 @@ func (f *TestFields) convertArtifacts() error {
 		}
 
 		if asPathsErr != nil || asStringErr != nil {
-			return errors.Annotate(errors.NewMultiError(asPathsErr, asStringErr),
+			return errors.Annotate(errors.NewMultiError(asStringErr, asPathsErr),
 				"converting artifacts for %s", name).Err()
 		}
 	}
