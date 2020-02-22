@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "deae365a_76eb7795",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-22T00:50:13Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 167,
+        "startChar": 8,
+        "endLine": 167,
+        "endChar": 22
+      },
+      "revId": "295b2e12f34c73f8b8fbc92e328666abf257cb7b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2abb6358_a510f89f",
+        "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-22T00:50:13Z",
+      "side": 1,
+      "message": "oh i see. didn\u0027t realize these are sentinel strings",
+      "parentUuid": "76e96472_5393494c",
+      "range": {
+        "startLine": 76,
+        "startChar": 40,
+        "endLine": 76,
+        "endChar": 103
+      },
+      "revId": "eb24599d72c747893b0a499dbc783d86b8fede54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bed202f4_869c5731",
         "filename": "resultdb/internal/services/recorder/chromium/formats/gtest.go",
         "patchSetId": 3
