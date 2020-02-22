@@ -70,6 +70,14 @@ var (
 	// no string representation for the value has been provided, and "TestValue" is the user-provided
 	// string representation of the value on which the test has been instantiated.
 	valueParamRE = regexp.MustCompile(`^((\w+)/)?(\w+)\.(\w+)/(\w+)$`)
+
+	// TODO(chanli@): Remove this after crbug.com/1045846 is fixed.
+	// This is a synthetic test created by test launcher, not a real test.
+	syntheticTestRE = regexp.MustCompile(`^GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<\w+>$`)
+
+	syntheticTestTag = errors.BoolTag{
+		Key: errors.NewTagKey("synthetic test"),
+	}
 )
 
 // GTestResults represents the structure as described to be generated in
@@ -155,7 +163,10 @@ func (r *GTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv *p
 
 		for _, name := range testNames {
 			baseName, params, err := extractGTestParameters(name)
-			if err != nil {
+			switch {
+			case syntheticTestTag.In(err):
+				continue
+			case err != nil:
 				return nil, errors.Annotate(err,
 					"failed to extract test base name and parameters from %q", name).Err()
 			}
@@ -257,6 +268,9 @@ func extractGTestParameters(testID string) (baseID string, params map[string]str
 		// and name.
 		suite = match[1]
 		name = match[2]
+	} else if match := syntheticTestRE.FindString(testID); match != "" {
+		// A synthetic test, skip.
+		err = errors.Reason("not a real test").Tag(syntheticTestTag).Err()
 	} else {
 		// Otherwise test id format is unrecognized.
 		err = errors.Reason("test id of unknown format").Err()

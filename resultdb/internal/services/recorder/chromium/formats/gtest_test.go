@@ -270,6 +270,12 @@ func TestGTestConversions(t *testing.T) {
 			So(baseID, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
 		})
 
+		Convey(`synthetic test`, func() {
+			_, _, err := extractGTestParameters("GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<Suite>")
+			So(err, ShouldErrLike, "not a real test")
+			So(syntheticTestTag.In(err), ShouldBeTrue)
+		})
+
 		Convey(`with unrecognized format`, func() {
 			_, _, err := extractGTestParameters("not_gtest_test")
 			So(err, ShouldErrLike, "test id of unknown format")
@@ -289,6 +295,11 @@ func TestGTestConversions(t *testing.T) {
 							},
 							{
 								Status: "FAILURE",
+							},
+						},
+						"GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<Suite>": {
+							{
+								Status: "SUCCESS",
 							},
 						},
 						"FooTest.DoesBar": {
