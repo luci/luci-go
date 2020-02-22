@@ -16,6 +16,24 @@
       "revId": "7776db3fa776047495bfa8da7acd29f88105aeb7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb2b1b7a_4aa6d179",
+        "filename": "buildbucket/cli/add.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-22T02:11:08Z",
+      "side": 1,
+      "message": "done. not sure why your comment is at \"req :\u003d...\". this is not why we clone req. I\u0027ve placed it before atomic.AddInt32 call.",
+      "parentUuid": "6bdb9414_a7f099bc",
+      "revId": "7776db3fa776047495bfa8da7acd29f88105aeb7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
