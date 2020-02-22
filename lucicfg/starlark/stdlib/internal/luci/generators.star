@@ -964,21 +964,21 @@ def _cq_visibility(val):
 
 
 def gen_notify_cfg(ctx):
-  notifiers = graph.children(keys.project(), kinds.NOTIFIER)
+  notifiables = graph.children(keys.project(), kinds.NOTIFIABLE)
   templates = graph.children(keys.project(), kinds.NOTIFIER_TEMPLATE)
-  if not notifiers and not templates:
+  if not notifiables and not templates:
     return
 
-  service = get_service('notify', 'using notifiers')
+  service = get_service('notify', 'using notifiers or tree closers')
 
   # Write all defined templates.
   for t in templates:
     path = '%s/email-templates/%s.template' % (service.app_id, t.props.name)
     set_config(ctx, path, t.props.body)
 
-  # Build the map 'builder node => [notifier node] watching it'.
+  # Build the map 'builder node => [notifiable node] watching it'.
   per_builder = {}
-  for n in notifiers:
+  for n in notifiables:
     for ref in graph.children(n.key, kinds.BUILDER_REF):
       builder = builder_ref.follow(ref, context_node=n)
       per_builder.setdefault(builder, []).append(n)
@@ -994,7 +994,15 @@ def gen_notify_cfg(ctx):
   # Emit a single notify_pb.Notifier per builder with all notifications for that
   # particular builder.
   notifiers_pb = []
-  for builder, notifications in per_builder.items():
+  for builder, nodes in per_builder.items():
+    # 'nodes' here is a list of luci.notifiable nodes. Categorize them either
+    # into luci.notifier or luci.tree_closer based on their 'kind' property.
+    notifications = [n for n in nodes if n.props.kind == 'luci.notifier']
+    tree_closers = [n for n in nodes if n.props.kind == 'luci.tree_closer']
+    if len(notifications) + len(tree_closers) != len(nodes):
+      fail('impossible')
+
+    # Validate luci.notifier(...) has enough information about builders.
     repo = _notify_builder_repo(builder, pollers)
     if any([n.props.notify_blamelist for n in notifications]) and not repo:
       error(
@@ -1002,8 +1010,10 @@ def gen_notify_cfg(ctx):
           'luci.notifier with notify_blamelist=True; add repo=... field') % builder,
           trace=builder.trace
       )
+
     notifiers_pb.append(notify_pb.Notifier(
         notifications = [_notify_notification_pb(n) for n in notifications],
+        tree_closers = [_notify_tree_closer_pb(n) for n in tree_closers],
         builders = [notify_pb.Builder(
             bucket = builder.props.bucket,
             name = builder.props.name,
@@ -1020,20 +1030,22 @@ def gen_notify_cfg(ctx):
   ))
 
 
-def _notify_notification_pb(node):
-  """Given luci.notifier node returns notify_pb.Notification."""
+def _notify_used_template_name(node):
+  """Given a luci.notifiable node returns a name of a template it references."""
   templs = graph.children(node.key, kind=kinds.NOTIFIER_TEMPLATE)
   if len(templs) == 0:
-    template = None
-  elif len(templs) == 1:
-    template = templs[0].props.name
-  else:
-    fail('impossible')
+    return None
+  if len(templs) == 1:
+    return templs[0].props.name
+  fail('impossible')
 
+
+def _notify_notification_pb(node):
+  """Given a luci.notifiable node returns notify_pb.Notification."""
   pb = notify_pb.Notification(
       on_occurrence = node.props.on_occurrence,
       on_new_status = node.props.on_new_status,
-      template = template,
+      template = _notify_used_template_name(node),
 
       # deprecated
       on_change = node.props.on_status_change,
@@ -1048,6 +1060,16 @@ def _notify_notification_pb(node):
         repository_whitelist = node.props.blamelist_repos_whitelist,
     )
   return pb
+
+
+def _notify_tree_closer_pb(node):
+  """Given a luci.notifiable node returns notify_pb.TreeCloser."""
+  return notify_pb.TreeCloser(
+      tree_url = 'https://' + node.props.tree_status_host,
+      failed_step_regexp = node.props.failed_step_regexp,
+      failed_step_regexp_exclude = node.props.failed_step_regexp_exclude,
+      template = _notify_used_template_name(node),
+  )
 
 
 def _notify_pollers_map():

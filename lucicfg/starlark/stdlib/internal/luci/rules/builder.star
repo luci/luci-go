@@ -183,9 +183,9 @@ def _builder(
 
     triggers: builders this builder triggers.
     triggered_by: builders or pollers this builder is triggered by.
-    notifies: list of luci.notifier(...) the builder notifies when it changes
-        its status. This relation can also be defined via `notified_by` field in
-        luci.notifier(...).
+    notifies: list of luci.notifier(...) or luci.tree_closer(...) the builder
+        notifies when it changes its status. This relation can also be defined
+        via `notified_by` field in luci.notifier(...) or luci.tree_closer(...).
   """
   name = validate.string('name', name)
   bucket_key = keys.bucket(bucket)
@@ -262,10 +262,10 @@ def _builder(
         title = 'triggered_by',
     )
 
-  # Subscribe notifiers to this builder.
+  # Subscribe notifiers/tree closers to this builder.
   for n in validate.list('notifies', notifies):
     graph.add_edge(
-        parent = keys.notifier(n),
+        parent = keys.notifiable(n),
         child = builder_ref_key,
         title = 'notifies',
     )
