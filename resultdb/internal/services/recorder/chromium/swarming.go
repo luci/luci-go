@@ -350,7 +350,7 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 	}
 
 	// Conversion with either format failed, but we don't support other formats.
-	return nil, errors.NewMultiError(jsonErr, gtestErr)
+	return nil, errors.NewMultiError(gtestErr, jsonErr)
 }
 
 // isBlacklisted returns whether the given task is blacklisted from being processed.
