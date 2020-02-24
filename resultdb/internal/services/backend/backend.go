@@ -33,13 +33,12 @@ type backend struct {
 	bqExporter
 }
 
-// cronGroup runs multiple cron jobs concurrently.
-func (b *backend) cronGroup(ctx context.Context, replicas int, minInterval time.Duration, f func(ctx context.Context, replica int) error) {
+func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(ctx context.Context) error) {
 	if b.ForceCronInterval > 0 {
 		minInterval = b.ForceCronInterval
 	}
 
-	cron.Group(ctx, replicas, minInterval, f)
+	cron.Run(ctx, minInterval, f)
 }
 
 // Options is backend server configuration.
