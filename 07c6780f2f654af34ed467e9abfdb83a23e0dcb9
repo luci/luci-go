@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dabb11d4_1284a105",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-24T23:09:18Z",
+      "side": 1,
+      "message": "let\u0027s add this later. it is currently unclear to me whether we will end up using it",
+      "range": {
+        "startLine": 28,
+        "startChar": 2,
+        "endLine": 30,
+        "endChar": 53
+      },
+      "revId": "07c6780f2f654af34ed467e9abfdb83a23e0dcb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
