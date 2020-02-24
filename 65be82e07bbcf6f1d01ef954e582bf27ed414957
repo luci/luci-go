@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8ff9f827_52e2ea96",
+        "filename": "resultdb/internal/services/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-24T23:02:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e91900c_1ae8f375",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 13
+      },
+      "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "592fb50d_a1c2fd8f",
         "filename": "resultdb/internal/tasks/tasks.go",
         "patchSetId": 3
@@ -68,6 +92,30 @@
       "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58578c3f_6e587741",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-24T23:02:05Z",
+      "side": 1,
+      "message": "it is ok at this level of abstraction because this is exactly what spanner package is doing: calling a callback.\n\nmore specifically, yes, i think its ok in the context of tasks. we don\u0027t want to buffer because it partially defeats the purpose. I am not aware of problems caused by keeping a RO txn open for a long time. Spanner keeps timestamped versions/snapshots of its state for 24h. This TXN will read the state from that snapshot.",
+      "parentUuid": "37be4187_ca961a0b",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
