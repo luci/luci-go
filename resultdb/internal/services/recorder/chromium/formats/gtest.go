@@ -73,7 +73,7 @@ var (
 
 	// TODO(chanli@): Remove this after crbug.com/1045846 is fixed.
 	// This is a synthetic test created by test launcher, not a real test.
-	syntheticTestRE = regexp.MustCompile(`^GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<\w+>$`)
+	syntheticTestRE = regexp.MustCompile(`^GoogleTestVerification.Uninstantiated(?:Type)?ParamaterizedTestSuite<\w+>$`)
 
 	syntheticTestTag = errors.BoolTag{
 		Key: errors.NewTagKey("synthetic test"),
