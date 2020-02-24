@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e91900c_1ae8f375",
+        "filename": "resultdb/internal/services/backend/invocation_task.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-24T22:50:00Z",
+      "side": 1,
+      "message": "This goroutine may (and likely will) keep running for some time after runInvocationTasks has already exited. This is a recipe for undefined state and crashes. Context cancelation is asynchronous and sometimes best-effort signal, it wont immediately interrupt everything that runTask is doing.\n\nPlease consider adding a wait group that waits for all worked to stop before runInvocationTasks returns. And in general, whenever there\u0027s \"go \u003csomething\u003e\" there should be a point in the code where it is clearly seen that the goroutine is stopped.",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 13
+      },
+      "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "592fb50d_a1c2fd8f",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-24T22:50:00Z",
+      "side": 1,
+      "message": "I think this needs some explicit \"LIMIT \u003cN\u003e\". It is better to be in control of the size of the chunk we process.",
+      "range": {
+        "startLine": 78,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 68
+      },
+      "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37be4187_ca961a0b",
+        "filename": "resultdb/internal/tasks/tasks.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-24T22:50:00Z",
+      "side": 1,
+      "message": "it is OK to block in this callback? Does span.Query holds some session or something that may expire or, maybe, exhaust some global resource? Because \u0027f\u0027 will block when all workers are busy.\n\nMaybe we should collect all results first and the call \u0027f(\u003call of them\u003e)\u0027 outside of Query?",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 91,
+        "endChar": 14
+      },
+      "revId": "65be82e07bbcf6f1d01ef954e582bf27ed414957",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
