@@ -46,6 +46,30 @@
       "revId": "aeefb688208f798dfb1539e0b2a5930ecfa82cd1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5932c4a_2ecf1b81",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-24T23:35:20Z",
+      "side": 0,
+      "message": "Added. PTAL",
+      "parentUuid": "bd2db74c_f54354e5",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 24
+      },
+      "revId": "aeefb688208f798dfb1539e0b2a5930ecfa82cd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
