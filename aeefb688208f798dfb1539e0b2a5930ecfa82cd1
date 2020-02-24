@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b934756_4e3f7750",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-24T23:20:33Z",
+      "side": 0,
+      "message": "Q. Should this be added to the service-level comment?\n\ne.g.,\n\n```\n// Service to report test results.\n//\n// Note that all the RPCs of this service should be made with the auth token\n// in the HTTP header, and the auto token can be found in LUCI_CONTEXT,\n// ..........\nservice Sink {\n```\n\nI didn\u0027t put this section initially, because it\u0027s not part of the messages described in this proto.",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 24
+      },
+      "revId": "aeefb688208f798dfb1539e0b2a5930ecfa82cd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
