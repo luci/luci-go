@@ -270,7 +270,13 @@ func TestGTestConversions(t *testing.T) {
 			So(baseID, ShouldEqual, "org.chromium.tests#testFoo_sub__param=val")
 		})
 
-		Convey(`synthetic test`, func() {
+		Convey(`synthetic parameterized test`, func() {
+			_, _, err := extractGTestParameters("GoogleTestVerification.UninstantiatedParamaterizedTestSuite<Suite>")
+			So(err, ShouldErrLike, "not a real test")
+			So(syntheticTestTag.In(err), ShouldBeTrue)
+		})
+
+		Convey(`synthetic type parameterized test`, func() {
 			_, _, err := extractGTestParameters("GoogleTestVerification.UninstantiatedTypeParamaterizedTestSuite<Suite>")
 			So(err, ShouldErrLike, "not a real test")
 			So(syntheticTestTag.In(err), ShouldBeTrue)
