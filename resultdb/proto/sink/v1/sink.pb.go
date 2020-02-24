@@ -3,9 +3,15 @@
 
 package sinkpb
 
+import prpc "go.chromium.org/luci/grpc/prpc"
+
 import (
+	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -20,150 +26,131 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// A container of a message to a ResultSink server.
-// The server accepts a sequence of these messages in JSON format.
-type SinkMessageContainer struct {
-	// Types that are valid to be assigned to Msg:
-	//	*SinkMessageContainer_Handshake
-	//	*SinkMessageContainer_TestResult
-	//	*SinkMessageContainer_TestResultFile
-	Msg                  isSinkMessageContainer_Msg `protobuf_oneof:"msg"`
-	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
-	XXX_unrecognized     []byte                     `json:"-"`
-	XXX_sizecache        int32                      `json:"-"`
+type ReportTestResultsRequest struct {
+	// Test results to report.
+	TestResults          []*TestResult `protobuf:"bytes,1,rep,name=test_results,json=testResults,proto3" json:"test_results,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *SinkMessageContainer) Reset()         { *m = SinkMessageContainer{} }
-func (m *SinkMessageContainer) String() string { return proto.CompactTextString(m) }
-func (*SinkMessageContainer) ProtoMessage()    {}
-func (*SinkMessageContainer) Descriptor() ([]byte, []int) {
+func (m *ReportTestResultsRequest) Reset()         { *m = ReportTestResultsRequest{} }
+func (m *ReportTestResultsRequest) String() string { return proto.CompactTextString(m) }
+func (*ReportTestResultsRequest) ProtoMessage()    {}
+func (*ReportTestResultsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_67e05c474f1f0646, []int{0}
 }
 
-func (m *SinkMessageContainer) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SinkMessageContainer.Unmarshal(m, b)
+func (m *ReportTestResultsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReportTestResultsRequest.Unmarshal(m, b)
 }
-func (m *SinkMessageContainer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SinkMessageContainer.Marshal(b, m, deterministic)
+func (m *ReportTestResultsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReportTestResultsRequest.Marshal(b, m, deterministic)
 }
-func (m *SinkMessageContainer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SinkMessageContainer.Merge(m, src)
+func (m *ReportTestResultsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportTestResultsRequest.Merge(m, src)
 }
-func (m *SinkMessageContainer) XXX_Size() int {
-	return xxx_messageInfo_SinkMessageContainer.Size(m)
+func (m *ReportTestResultsRequest) XXX_Size() int {
+	return xxx_messageInfo_ReportTestResultsRequest.Size(m)
 }
-func (m *SinkMessageContainer) XXX_DiscardUnknown() {
-	xxx_messageInfo_SinkMessageContainer.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SinkMessageContainer proto.InternalMessageInfo
-
-type isSinkMessageContainer_Msg interface {
-	isSinkMessageContainer_Msg()
+func (m *ReportTestResultsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportTestResultsRequest.DiscardUnknown(m)
 }
 
-type SinkMessageContainer_Handshake struct {
-	Handshake *Handshake `protobuf:"bytes,1,opt,name=handshake,proto3,oneof"`
-}
+var xxx_messageInfo_ReportTestResultsRequest proto.InternalMessageInfo
 
-type SinkMessageContainer_TestResult struct {
-	TestResult *TestResult `protobuf:"bytes,2,opt,name=test_result,json=testResult,proto3,oneof"`
-}
-
-type SinkMessageContainer_TestResultFile struct {
-	TestResultFile *TestResultFile `protobuf:"bytes,3,opt,name=test_result_file,json=testResultFile,proto3,oneof"`
-}
-
-func (*SinkMessageContainer_Handshake) isSinkMessageContainer_Msg() {}
-
-func (*SinkMessageContainer_TestResult) isSinkMessageContainer_Msg() {}
-
-func (*SinkMessageContainer_TestResultFile) isSinkMessageContainer_Msg() {}
-
-func (m *SinkMessageContainer) GetMsg() isSinkMessageContainer_Msg {
+func (m *ReportTestResultsRequest) GetTestResults() []*TestResult {
 	if m != nil {
-		return m.Msg
+		return m.TestResults
 	}
 	return nil
 }
 
-func (m *SinkMessageContainer) GetHandshake() *Handshake {
-	if x, ok := m.GetMsg().(*SinkMessageContainer_Handshake); ok {
-		return x.Handshake
-	}
-	return nil
-}
-
-func (m *SinkMessageContainer) GetTestResult() *TestResult {
-	if x, ok := m.GetMsg().(*SinkMessageContainer_TestResult); ok {
-		return x.TestResult
-	}
-	return nil
-}
-
-func (m *SinkMessageContainer) GetTestResultFile() *TestResultFile {
-	if x, ok := m.GetMsg().(*SinkMessageContainer_TestResultFile); ok {
-		return x.TestResultFile
-	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*SinkMessageContainer) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*SinkMessageContainer_Handshake)(nil),
-		(*SinkMessageContainer_TestResult)(nil),
-		(*SinkMessageContainer_TestResultFile)(nil),
-	}
-}
-
-// The very first message in a ResultSink TCP connection.
-type Handshake struct {
-	// The auth token is available to eligible subprocesses via
-	// test_results.uploader.auth_token LUCI_CONTEXT value.
-	// More about LUCI_CONTEXT: https://chromium.googlesource.com/infra/luci/luci-py/+/6b6dad7aef994b96d3bb5b6f13fae8168938560f/client/LUCI_CONTEXT.md
-	// If the value is unexpected, the server will close the connection.
-	AuthToken            string   `protobuf:"bytes,1,opt,name=auth_token,json=authToken,proto3" json:"auth_token,omitempty"`
+type ReportTestResultsResponse struct {
+	// List of unique identifiers that can be used to link to these results
+	// or requested via luci.resultdb.rpc.v1.ResultDB service.
+	TestResultNames      []string `protobuf:"bytes,1,rep,name=test_result_names,json=testResultNames,proto3" json:"test_result_names,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Handshake) Reset()         { *m = Handshake{} }
-func (m *Handshake) String() string { return proto.CompactTextString(m) }
-func (*Handshake) ProtoMessage()    {}
-func (*Handshake) Descriptor() ([]byte, []int) {
+func (m *ReportTestResultsResponse) Reset()         { *m = ReportTestResultsResponse{} }
+func (m *ReportTestResultsResponse) String() string { return proto.CompactTextString(m) }
+func (*ReportTestResultsResponse) ProtoMessage()    {}
+func (*ReportTestResultsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_67e05c474f1f0646, []int{1}
 }
 
-func (m *Handshake) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Handshake.Unmarshal(m, b)
+func (m *ReportTestResultsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReportTestResultsResponse.Unmarshal(m, b)
 }
-func (m *Handshake) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Handshake.Marshal(b, m, deterministic)
+func (m *ReportTestResultsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReportTestResultsResponse.Marshal(b, m, deterministic)
 }
-func (m *Handshake) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Handshake.Merge(m, src)
+func (m *ReportTestResultsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportTestResultsResponse.Merge(m, src)
 }
-func (m *Handshake) XXX_Size() int {
-	return xxx_messageInfo_Handshake.Size(m)
+func (m *ReportTestResultsResponse) XXX_Size() int {
+	return xxx_messageInfo_ReportTestResultsResponse.Size(m)
 }
-func (m *Handshake) XXX_DiscardUnknown() {
-	xxx_messageInfo_Handshake.DiscardUnknown(m)
+func (m *ReportTestResultsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportTestResultsResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Handshake proto.InternalMessageInfo
+var xxx_messageInfo_ReportTestResultsResponse proto.InternalMessageInfo
 
-func (m *Handshake) GetAuthToken() string {
+func (m *ReportTestResultsResponse) GetTestResultNames() []string {
 	if m != nil {
-		return m.AuthToken
+		return m.TestResultNames
 	}
-	return ""
+	return nil
+}
+
+type ReportTestResultsFromFileRequest struct {
+	// File with test results to report.
+	TestResultFile       *TestResultFile `protobuf:"bytes,1,opt,name=test_result_file,json=testResultFile,proto3" json:"test_result_file,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *ReportTestResultsFromFileRequest) Reset()         { *m = ReportTestResultsFromFileRequest{} }
+func (m *ReportTestResultsFromFileRequest) String() string { return proto.CompactTextString(m) }
+func (*ReportTestResultsFromFileRequest) ProtoMessage()    {}
+func (*ReportTestResultsFromFileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_67e05c474f1f0646, []int{2}
+}
+
+func (m *ReportTestResultsFromFileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReportTestResultsFromFileRequest.Unmarshal(m, b)
+}
+func (m *ReportTestResultsFromFileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReportTestResultsFromFileRequest.Marshal(b, m, deterministic)
+}
+func (m *ReportTestResultsFromFileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportTestResultsFromFileRequest.Merge(m, src)
+}
+func (m *ReportTestResultsFromFileRequest) XXX_Size() int {
+	return xxx_messageInfo_ReportTestResultsFromFileRequest.Size(m)
+}
+func (m *ReportTestResultsFromFileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportTestResultsFromFileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportTestResultsFromFileRequest proto.InternalMessageInfo
+
+func (m *ReportTestResultsFromFileRequest) GetTestResultFile() *TestResultFile {
+	if m != nil {
+		return m.TestResultFile
+	}
+	return nil
 }
 
 func init() {
-	proto.RegisterType((*SinkMessageContainer)(nil), "luci.resultdb.sink.v1.SinkMessageContainer")
-	proto.RegisterType((*Handshake)(nil), "luci.resultdb.sink.v1.Handshake")
+	proto.RegisterType((*ReportTestResultsRequest)(nil), "luci.resultdb.sink.v1.ReportTestResultsRequest")
+	proto.RegisterType((*ReportTestResultsResponse)(nil), "luci.resultdb.sink.v1.ReportTestResultsResponse")
+	proto.RegisterType((*ReportTestResultsFromFileRequest)(nil), "luci.resultdb.sink.v1.ReportTestResultsFromFileRequest")
 }
 
 func init() {
@@ -171,22 +158,121 @@ func init() {
 }
 
 var fileDescriptor_67e05c474f1f0646 = []byte{
-	// 266 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x90, 0xc1, 0x4b, 0xc3, 0x30,
-	0x14, 0xc6, 0x37, 0x87, 0x42, 0xdf, 0x40, 0x24, 0x28, 0x14, 0x41, 0x98, 0x03, 0x41, 0x3c, 0x24,
-	0x6c, 0x8a, 0x17, 0x11, 0x64, 0x8a, 0xf4, 0xe2, 0xc1, 0xba, 0x93, 0x97, 0x92, 0x6e, 0xcf, 0x36,
-	0xb4, 0x4d, 0x46, 0xf2, 0xba, 0xbf, 0xdd, 0xa3, 0x24, 0x63, 0x73, 0x82, 0x22, 0x3b, 0x3d, 0xfa,
-	0x7b, 0x5f, 0x7f, 0xf9, 0x12, 0xb8, 0x2d, 0x0c, 0x9f, 0x95, 0xd6, 0x34, 0xaa, 0x6d, 0xb8, 0xb1,
-	0x85, 0xa8, 0xdb, 0x99, 0x12, 0x16, 0x5d, 0x5b, 0xd3, 0x3c, 0x17, 0x0b, 0x6b, 0xc8, 0x08, 0xa7,
-	0x74, 0x25, 0x96, 0xa3, 0x30, 0x79, 0x40, 0xec, 0xc4, 0xe7, 0xf8, 0x3a, 0xc7, 0xc3, 0x66, 0x39,
-	0x3a, 0xbd, 0xdf, 0x45, 0x47, 0xe8, 0x28, 0x5b, 0xed, 0x56, 0xd6, 0xe1, 0x67, 0x17, 0x8e, 0xdf,
-	0x94, 0xae, 0x5e, 0xd0, 0x39, 0x59, 0xe0, 0xa3, 0xd1, 0x24, 0x95, 0x46, 0xcb, 0x1e, 0x20, 0x2a,
-	0xa5, 0x9e, 0xbb, 0x52, 0x56, 0x18, 0x77, 0x07, 0xdd, 0xcb, 0xfe, 0x78, 0xc0, 0x7f, 0xad, 0xc0,
-	0x93, 0x75, 0x2e, 0xe9, 0xa4, 0xdf, 0x3f, 0xb1, 0x27, 0xe8, 0x6f, 0x9d, 0x17, 0xef, 0x05, 0xc7,
-	0xf9, 0x1f, 0x8e, 0x29, 0x3a, 0x4a, 0x03, 0x4c, 0x3a, 0x29, 0xd0, 0xe6, 0x8b, 0xbd, 0xc2, 0xd1,
-	0x96, 0x25, 0xfb, 0x50, 0x35, 0xc6, 0xbd, 0xa0, 0xba, 0xf8, 0x57, 0xf5, 0xac, 0x6a, 0xdf, 0xe9,
-	0x90, 0x7e, 0x90, 0xc9, 0x3e, 0xf4, 0x1a, 0x57, 0x0c, 0xaf, 0x20, 0xda, 0x34, 0x67, 0x67, 0x00,
-	0xb2, 0xa5, 0x32, 0x23, 0x53, 0xa1, 0x0e, 0xf7, 0x8d, 0xd2, 0xc8, 0x93, 0xa9, 0x07, 0x93, 0x9b,
-	0xf7, 0xf1, 0x0e, 0xef, 0x7c, 0xe7, 0xe7, 0x22, 0xcf, 0x0f, 0x02, 0xbd, 0xfe, 0x0a, 0x00, 0x00,
-	0xff, 0xff, 0x9a, 0xc3, 0xa0, 0xa0, 0xf3, 0x01, 0x00, 0x00,
+	// 274 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4b, 0xcf, 0xd7, 0x4b,
+	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
+	0xd4, 0x2f, 0x4a, 0x2d, 0x2e, 0xcd, 0x29, 0x49, 0x49, 0xd2, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0xd7,
+	0x2f, 0xce, 0xcc, 0xcb, 0xd6, 0x2f, 0x33, 0x04, 0xd3, 0x7a, 0x60, 0x21, 0x21, 0x51, 0x90, 0x3a,
+	0x3d, 0x98, 0x3a, 0x3d, 0xb0, 0x4c, 0x99, 0xa1, 0x94, 0x2d, 0x29, 0xc6, 0x95, 0xa4, 0x16, 0x97,
+	0xc4, 0x43, 0xe4, 0x20, 0xa6, 0x2a, 0x25, 0x70, 0x49, 0x04, 0xa5, 0x16, 0xe4, 0x17, 0x95, 0x84,
+	0xa4, 0x16, 0x97, 0x04, 0x81, 0x65, 0x8a, 0x83, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84, 0x5c,
+	0xb8, 0x78, 0x90, 0x34, 0x14, 0x4b, 0x30, 0x2a, 0x30, 0x6b, 0x70, 0x1b, 0x29, 0xea, 0x61, 0x75,
+	0x88, 0x1e, 0xc2, 0x80, 0x20, 0xee, 0x12, 0x84, 0x61, 0x4a, 0xee, 0x5c, 0x92, 0x58, 0x6c, 0x28,
+	0x2e, 0xc8, 0xcf, 0x2b, 0x4e, 0x15, 0xd2, 0xe2, 0x12, 0x44, 0xb2, 0x22, 0x3e, 0x2f, 0x31, 0x37,
+	0x15, 0x62, 0x0f, 0x67, 0x10, 0x3f, 0xc2, 0x10, 0x3f, 0x90, 0xb0, 0x52, 0x31, 0x97, 0x02, 0x86,
+	0x41, 0x6e, 0x45, 0xf9, 0xb9, 0x6e, 0x99, 0x39, 0xa9, 0x30, 0x27, 0xfb, 0x73, 0x09, 0x20, 0x9b,
+	0x97, 0x96, 0x99, 0x93, 0x2a, 0xc1, 0xa8, 0xc0, 0xa8, 0xc1, 0x6d, 0xa4, 0x4a, 0xd0, 0xd9, 0x60,
+	0x73, 0xf8, 0x4a, 0x50, 0xf8, 0x46, 0x0d, 0x8c, 0x5c, 0x2c, 0xc1, 0x99, 0x79, 0xd9, 0x42, 0x15,
+	0x5c, 0x82, 0x18, 0xb6, 0x0b, 0xe9, 0xe3, 0x30, 0x14, 0x57, 0x90, 0x4a, 0x19, 0x10, 0xaf, 0x01,
+	0x12, 0x42, 0x4a, 0x0c, 0x4e, 0x26, 0x51, 0x46, 0x24, 0xc4, 0xb1, 0x35, 0x88, 0x2e, 0x48, 0x4a,
+	0x62, 0x03, 0x8b, 0x1a, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xd7, 0x2f, 0xa6, 0xc7, 0x6f, 0x02,
+	0x00, 0x00,
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConnInterface
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion6
+
+// SinkClient is the client API for Sink service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type SinkClient interface {
+	// Reports test results.
+	ReportTestResults(ctx context.Context, in *ReportTestResultsRequest, opts ...grpc.CallOption) (*ReportTestResultsResponse, error)
+}
+type sinkPRPCClient struct {
+	client *prpc.Client
+}
+
+func NewSinkPRPCClient(client *prpc.Client) SinkClient {
+	return &sinkPRPCClient{client}
+}
+
+func (c *sinkPRPCClient) ReportTestResults(ctx context.Context, in *ReportTestResultsRequest, opts ...grpc.CallOption) (*ReportTestResultsResponse, error) {
+	out := new(ReportTestResultsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.sink.v1.Sink", "ReportTestResults", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+type sinkClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSinkClient(cc grpc.ClientConnInterface) SinkClient {
+	return &sinkClient{cc}
+}
+
+func (c *sinkClient) ReportTestResults(ctx context.Context, in *ReportTestResultsRequest, opts ...grpc.CallOption) (*ReportTestResultsResponse, error) {
+	out := new(ReportTestResultsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.sink.v1.Sink/ReportTestResults", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SinkServer is the server API for Sink service.
+type SinkServer interface {
+	// Reports test results.
+	ReportTestResults(context.Context, *ReportTestResultsRequest) (*ReportTestResultsResponse, error)
+}
+
+// UnimplementedSinkServer can be embedded to have forward compatible implementations.
+type UnimplementedSinkServer struct {
+}
+
+func (*UnimplementedSinkServer) ReportTestResults(ctx context.Context, req *ReportTestResultsRequest) (*ReportTestResultsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportTestResults not implemented")
+}
+
+func RegisterSinkServer(s prpc.Registrar, srv SinkServer) {
+	s.RegisterService(&_Sink_serviceDesc, srv)
+}
+
+func _Sink_ReportTestResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportTestResultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SinkServer).ReportTestResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.sink.v1.Sink/ReportTestResults",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SinkServer).ReportTestResults(ctx, req.(*ReportTestResultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Sink_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "luci.resultdb.sink.v1.Sink",
+	HandlerType: (*SinkServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReportTestResults",
+			Handler:    _Sink_ReportTestResults_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "go.chromium.org/luci/resultdb/proto/sink/v1/sink.proto",
 }
