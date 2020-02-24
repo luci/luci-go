@@ -72,47 +72,31 @@ func EnqueueBQExport(invID span.InvocationID, payload *pb.BigQueryExport, proces
 	return Enqueue(BQExport, fmt.Sprintf("%s:0", invID.RowID()), invID, payload, processAfter)
 }
 
-// Sample randomly picks sampleSize of tasks of a given type
-// with ProcessAfter earlier than processTime.
-func Sample(ctx context.Context, typ Type, processTime time.Time, sampleSize int64) ([]string, error) {
+// Peek calls f on available tasks of a given type.
+func Peek(ctx context.Context, typ Type, f func(id string) error) error {
 	st := spanner.NewStatement(`
-		WITH readyTasks AS (
-			SELECT TaskId
-			FROM InvocationTasks
-			WHERE TaskType = @taskType AND ProcessAfter <= @processTime
-		)
-		SELECT *
-		FROM readyTasks
-		TABLESAMPLE RESERVOIR(@sampleSize ROWS)
+		SELECT TaskId
+		FROM InvocationTasks
+		WHERE TaskType = @taskType AND ProcessAfter <= CURRENT_TIMESTAMP()
 	`)
 
-	st.Params = span.ToSpannerMap(map[string]interface{}{
-		"taskType":    string(typ),
-		"processTime": processTime,
-		"sampleSize":  sampleSize,
-	})
+	st.Params["taskType"] = string(typ)
 
-	ret := make([]string, 0, sampleSize)
 	var b span.Buffer
-	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id string
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
 		}
-		ret = append(ret, id)
-		return nil
+		return f(id)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 // ErrConflict is returned by Lease if the task does not exist or is already
 // leased.
 var ErrConflict = fmt.Errorf("the task is already leased")
 
-// Lease leases an invocation task if it can.
+// Lease leases an invocation task.
 // If the task does not exist or is already leased, returns ErrConflict.
 func Lease(ctx context.Context, typ Type, id string, duration time.Duration) (invID span.InvocationID, payload []byte, err error) {
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
