@@ -180,8 +180,8 @@ func TestExport(t *testing.T) {
 		ctx = s.Export(ctx)
 		db := lucictx.GetResultDB(ctx)
 		So(db, ShouldNotBeNil)
-		So(db.TestResults, ShouldNotBeNil)
-		So(db.TestResults.Port, ShouldEqual, 42)
-		So(db.TestResults.AuthToken, ShouldEqual, "hello")
+		So(db.ResultSink, ShouldNotBeNil)
+		So(db.ResultSink.Address, ShouldEqual, fmt.Sprintf("localhost:%d", 42))
+		So(db.ResultSink.AuthToken, ShouldEqual, "hello")
 	})
 }

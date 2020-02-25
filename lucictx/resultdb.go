@@ -19,23 +19,26 @@ import (
 	"fmt"
 )
 
-// ResultDB is a struct that may be used with the "resultDB" section of LUCI_CONTEXT.
+// ResultDB is a struct that may be used with the "resultdb" section of LUCI_CONTEXT.
 type ResultDB struct {
-	TestResults TestResults
+	ResultSink ResultSink `json:"resultsink"`
 }
 
-// TestResults is a struct that may be used with the "resultDB.testResults" section of
+// ResultSink is a struct that may be used with the "resultdb.resultsink" section of
 // LUCI_CONTEXT.
-type TestResults struct {
-	Port      int
-	AuthToken string
+type ResultSink struct {
+	// TCP address (e.g. "localhost:62115") where a ResultSink pRPC server is hosted.
+	Address string `json:"address"`
+	// secret string required in all ResultSink requests in HTTP header
+	// `Authorization: ResultSink <auth-token>`
+	AuthToken string `json:"auth_token"`
 }
 
-// GetResultDB returns the current ResultDB from LUCI_CONTEXT
-// if it was present. If no ResultDB is in the context it returns nil.
+// GetResultDB returns the current ResultDB from LUCI_CONTEXT if it was present.
+// nil, otherwise.
 func GetResultDB(ctx context.Context) *ResultDB {
 	ret := ResultDB{}
-	ok, err := Lookup(ctx, "resultDB", &ret)
+	ok, err := Lookup(ctx, "resultdb", &ret)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +54,7 @@ func SetResultDB(ctx context.Context, sink *ResultDB) context.Context {
 	if sink != nil {
 		raw = sink
 	}
-	ctx, err := Set(ctx, "resultDB", raw)
+	ctx, err := Set(ctx, "resultdb", raw)
 	if err != nil {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
