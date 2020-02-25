@@ -1045,6 +1045,8 @@ def _notify_notification_pb(node):
   pb = notify_pb.Notification(
       on_occurrence = node.props.on_occurrence,
       on_new_status = node.props.on_new_status,
+      failed_step_regexp = node.props.failed_step_regexp,
+      failed_step_regexp_exclude = node.props.failed_step_regexp_exclude,
       template = _notify_used_template_name(node),
 
       # deprecated
@@ -1053,8 +1055,11 @@ def _notify_notification_pb(node):
       on_new_failure = node.props.on_new_failure,
       on_success = node.props.on_success,
   )
-  if node.props.notify_emails:
-    pb.email = notify_pb.Notification.Email(recipients=node.props.notify_emails)
+  if node.props.notify_emails or node.props.notify_rotang_rotations:
+    pb.email = notify_pb.Notification.Email(
+        recipients=node.props.notify_emails,
+        rota_ng_rotations=node.props.notify_rotang_rotations,
+    )
   if node.props.notify_blamelist:
     pb.notify_blamelist = notify_pb.Notification.Blamelist(
         repository_whitelist = node.props.blamelist_repos_whitelist,
