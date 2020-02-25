@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "a045e2e9_d52d80d9",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-25T00:51:03Z",
+      "side": 1,
+      "message": "there is no connection to close. It will respond with Unauthenticated error",
+      "range": {
+        "startLine": 26,
+        "startChar": 29,
+        "endLine": 27,
+        "endChar": 12
+      },
+      "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dff599f_18844846",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-25T00:51:03Z",
+      "side": 1,
+      "message": "this is stale. See Environment section in go/result-sink",
+      "range": {
+        "startLine": 30,
+        "startChar": 48,
+        "endLine": 30,
+        "endChar": 56
+      },
+      "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "817e9e6c_290385fd",
         "filename": "resultdb/proto/sink/v1/sink.proto",
         "patchSetId": 10
