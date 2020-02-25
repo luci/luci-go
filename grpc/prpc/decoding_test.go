@@ -200,7 +200,7 @@ func TestDecoding(t *testing.T) {
 					const name = "Lucy"
 					b64 := base64.StdEncoding.EncodeToString([]byte(name))
 					test(c, header("Name-Bin", b64), metadata.MD{
-						"name": []string{name},
+						"name-bin": []string{name},
 					})
 				})
 				Convey("Fails", func() {
