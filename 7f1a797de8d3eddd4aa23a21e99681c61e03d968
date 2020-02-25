@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b2535846_5917f8d4",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-25T01:31:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a045e2e9_d52d80d9",
+      "range": {
+        "startLine": 26,
+        "startChar": 29,
+        "endLine": 27,
+        "endChar": 12
+      },
+      "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dff599f_18844846",
         "filename": "resultdb/proto/sink/v1/sink.proto",
         "patchSetId": 10
@@ -45,6 +69,30 @@
       "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9820534_ae65b7c7",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-25T01:31:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6dff599f_18844846",
+      "range": {
+        "startLine": 30,
+        "startChar": 48,
+        "endLine": 30,
+        "endChar": 56
+      },
+      "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
