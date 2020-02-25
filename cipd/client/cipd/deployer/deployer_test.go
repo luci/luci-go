@@ -919,6 +919,9 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 		})
 
 		Convey("DeployInstance package update", func() {
+			fs.SetMegaLog(true)
+			defer fs.SetMegaLog(false)
+
 			oldPkg := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
