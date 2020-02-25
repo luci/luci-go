@@ -44,6 +44,31 @@ luci.builder(
         ),
     ],
 )
+luci.builder(
+    name = 'builder 4',
+    bucket = 'bucket',
+    executable = 'noop',
+    notifies = [
+        luci.notifier(
+            name = 'notifier with regex filter',
+            on_occurrence = ['FAILURE'],
+            failed_step_regexp = '.*test.*',
+        ),
+    ],
+)
+luci.builder(
+    name = 'builder 5',
+    bucket = 'bucket',
+    executable = 'noop',
+    notifies = [
+        luci.notifier(
+            name = 'notifier with rotang rotations',
+            on_occurrence = ['FAILURE'],
+            notify_rotang_rotations = ['sheriff'],
+        ),
+    ],
+)
+
 # Expect configs:
 #
 # === cr-buildbucket.cfg
@@ -70,6 +95,24 @@ luci.builder(
 #     >
 #     builders: <
 #       name: "builder 3"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "noop"
+#         cipd_package: "noop"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "builder 4"
+#       swarming_host: "chromium-swarm.appspot.com"
+#       recipe: <
+#         name: "noop"
+#         cipd_package: "noop"
+#         cipd_version: "refs/heads/master"
+#       >
+#     >
+#     builders: <
+#       name: "builder 5"
 #       swarming_host: "chromium-swarm.appspot.com"
 #       recipe: <
 #         name: "noop"
@@ -115,6 +158,28 @@ luci.builder(
 #     bucket: "bucket"
 #     name: "builder 3"
 #     repository: "https://repo.example.com"
+#   >
+# >
+# notifiers: <
+#   notifications: <
+#     on_occurrence: FAILURE
+#     failed_step_regexp: ".*test.*"
+#   >
+#   builders: <
+#     bucket: "bucket"
+#     name: "builder 4"
+#   >
+# >
+# notifiers: <
+#   notifications: <
+#     on_occurrence: FAILURE
+#     email: <
+#       rota_ng_rotations: "sheriff"
+#     >
+#   >
+#   builders: <
+#     bucket: "bucket"
+#     name: "builder 5"
 #   >
 # >
 # ===
