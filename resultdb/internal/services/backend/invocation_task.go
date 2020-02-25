@@ -16,6 +16,7 @@ package backend
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -131,45 +132,56 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 	return nil
 }
 
-// runInvocationTasks gets invocation tasks and dispatches them to workers.
+// runInvocationTasks queries invocation tasks and dispatches them to workers.
 func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	queue := make(chan string)
+	var wg sync.WaitGroup
+	// Eventually stop the workers and wait for them to finish.
+	defer func() {
+		close(queue)
+		wg.Wait()
+	}()
+
+	// Prepare workers to process the queue.
 	workers := b.TaskWorkers
 	if workers == 0 {
 		workers = 1
 	}
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func() {
+			defer wg.Done()
+			for id := range queue {
+				ctx := logging.SetField(ctx, "task_id", id)
+				switch err := b.runTask(ctx, taskType, id); {
+				case err == tasks.ErrConflict:
+					// It's possible another worker has leased the task, and it's fine, skip.
+					logging.Warningf(ctx, "Conflict while trying to lease the task")
 
-	samplingLimiter := rate.NewLimiter(taskSamplingLimit, 1)
-	b.cronGroup(ctx, workers, time.Minute, func(ctx context.Context, replica int) error {
-		// Task sampling is expensive. Do not sample too often.
-		if err := samplingLimiter.Wait(ctx); err != nil {
-			return err
-		}
-		ids, err := tasks.Sample(ctx, taskType, time.Now(), 100)
-		if err != nil {
-			return errors.Annotate(err, "failed to query invocation tasks").Err()
-		}
+				case err != nil:
+					// Do not bail on other task ids, otherwise we sample tasks too often
+					// which is expensive. Just log the error and move on to the next task.
+					if permanentInvocationTaskErrTag.In(err) {
+						logging.Errorf(ctx, "Task failed permanently: %s", err)
+					} else {
+						logging.Warningf(ctx, "Task failed transiently: %s", err)
+					}
 
-		for _, id := range ids {
-			ctx := logging.SetField(ctx, "task_id", id)
-			switch err := b.runTask(ctx, taskType, id); {
-
-			case err == tasks.ErrConflict:
-				// It's possible another worker has leased the task, and it's fine, skip.
-				logging.Warningf(ctx, "Conflict while trying to lease the task")
-
-			case err != nil:
-				// Do not bail on other task ids, otherwise we sample tasks too often
-				// which is expensive. Just log the error and move on to the next task.
-				how := "transiently"
-				if permanentInvocationTaskErrTag.In(err) {
-					how = "permanently"
+				default:
+					logging.Infof(ctx, "Task succeeded")
 				}
-				logging.Errorf(ctx, "Task failed %s: %s", how, err)
-
-			default:
-				logging.Infof(ctx, "Task succeeded")
 			}
-		}
-		return nil
+		}()
+	}
+
+	// Stream available tasks in a loop and dispatch to workers.
+	b.cron(ctx, 5*time.Second, func(ctx context.Context) error {
+		return tasks.Peek(ctx, taskType, func(id string) error {
+			queue <- id
+			return nil
+		})
 	})
 }
