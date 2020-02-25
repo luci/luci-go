@@ -1,0 +1,298 @@
+{
+  "buildbucket": {
+    "bbagent_args": {
+      "executable_path": "kitchen-checkout/luciexe",
+      "cache_dir": "cache",
+      "known_public_gerrit_hosts": [
+        "android.googlesource.com",
+        "boringssl.googlesource.com",
+        "chromium.googlesource.com",
+        "dart.googlesource.com",
+        "dawn.googlesource.com",
+        "fuchsia.googlesource.com",
+        "gn.googlesource.com",
+        "go.googlesource.com",
+        "llvm.googlesource.com",
+        "pdfium.googlesource.com",
+        "skia.googlesource.com",
+        "webrtc.googlesource.com"
+      ],
+      "build": {
+        "builder": {
+          "project": "chromium",
+          "bucket": "ci",
+          "builder": "android-code-coverage-native"
+        },
+        "input": {
+          "properties": {
+              "$build/code_coverage": {
+                    "use_clang_coverage": true
+                  },
+              "$kitchen": {
+                    "devshell": true,
+                    "git_auth": true
+                  },
+              "$recipe_engine/runtime": {
+                    "is_experimental": false,
+                    "is_luci": true
+                  },
+              "branch": "refs/heads/master",
+              "buildbucket": {
+                    "build": {
+                          "bucket": "luci.chromium.ci",
+                          "created_by": "project:chromium",
+                          "created_ts": 1572887972393524,
+                          "id": "8897701137417952640",
+                          "project": "chromium",
+                          "tags": [
+                                "build_address:luci.chromium.ci/android-code-coverage-native/446",
+                                "builder:android-code-coverage-native",
+                                "buildset:commit/git/901277e19f5b9eca66a03c8da995646e95ee30e6",
+                                "buildset:commit/gitiles/chromium.googlesource.com/chromium/src/+/901277e19f5b9eca66a03c8da995646e95ee30e6",
+                                "gitiles_ref:refs/heads/master",
+                                "scheduler_invocation_id:9063131199830860608",
+                                "scheduler_job_id:chromium/android-code-coverage-native",
+                                "user_agent:luci-scheduler"
+                              ]
+                        },
+                    "hostname": "cr-buildbucket.appspot.com"
+                  },
+              "buildername": "android-code-coverage-native",
+              "buildnumber": 446,
+              "mastername": "chromium.fyi",
+              "recipe": "chromium",
+              "repository": "https://chromium.googlesource.com/chromium/src",
+              "revision": "901277e19f5b9eca66a03c8da995646e95ee30e6"
+            },
+          "gitiles_commit": {
+            "host": "chromium.googlesource.com",
+            "project": "chromium/src",
+            "id": "901277e19f5b9eca66a03c8da995646e95ee30e6",
+            "ref": "refs/heads/master"
+          },
+          "experimental": true
+        },
+        "infra": {
+          "buildbucket": {
+            "hostname": "cr-buildbucket.appspot.com"
+          },
+          "swarming": {
+            "hostname": "chromium-swarm.appspot.com",
+            "task_service_account": "chromium-ci-builder@chops-service-accounts.iam.gserviceaccount.com",
+            "priority": 40,
+            "task_dimensions": [
+              {
+                "key": "builderless",
+                "value": "1",
+                "expiration": "0s"
+              },
+              {
+                "key": "cores",
+                "value": "32",
+                "expiration": "0s"
+              },
+              {
+                "key": "cpu",
+                "value": "x86-64",
+                "expiration": "0s"
+              },
+              {
+                "key": "os",
+                "value": "Ubuntu-16.04",
+                "expiration": "0s"
+              },
+              {
+                "key": "pool",
+                "value": "luci.chromium.ci",
+                "expiration": "0s"
+              },
+              {
+                "key": "ssd",
+                "value": "1",
+                "expiration": "0s"
+              }
+            ],
+            "caches": [
+              {
+                "name": "git",
+                "path": "git",
+                "wait_for_warm_cache": "0s"
+              },
+              {
+                "name": "vpython",
+                "path": "vpython",
+                "wait_for_warm_cache": "0s",
+                "env_var": "VPYTHON_VIRTUALENV_ROOT"
+              },
+              {
+                "name": "goma_v2",
+                "path": "goma",
+                "wait_for_warm_cache": "0s"
+              },
+              {
+                "name": "builder_84527c5af4d4441fc5a14374d256be65769803505d9e2e72cad7cb7913806658_v2",
+                "path": "builder",
+                "wait_for_warm_cache": "240s"
+              }
+            ]
+          },
+          "logdog": {
+            "hostname": "logs.chromium.org",
+            "project": "chromium"
+          }
+        },
+        "tags": [
+          {
+            "key": "buildset",
+            "value": "commit/git/901277e19f5b9eca66a03c8da995646e95ee30e6"
+          },
+          {
+            "key": "buildset",
+            "value": "commit/gitiles/chromium.googlesource.com/chromium/src/+/901277e19f5b9eca66a03c8da995646e95ee30e6"
+          },
+          {
+            "key": "scheduler_invocation_id",
+            "value": "9063131199830860608"
+          },
+          {
+            "key": "scheduler_job_id",
+            "value": "chromium/android-code-coverage-native"
+          },
+          {
+            "key": "user_agent",
+            "value": "luci-scheduler"
+          }
+        ],
+        "exe": {
+          "cipd_package": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
+          "cipd_version": "refs/heads/master"
+        },
+        "scheduling_timeout": "21600s",
+        "execution_timeout": "72000s"
+      }
+    },
+    "cipd_packages": [
+      {
+        "package_name": "infra/tools/luci/bbagent/${platform}",
+        "version": "latest",
+        "dest_path": "."
+      },
+      {
+        "package_name": "infra/tools/luci/kitchen/${platform}",
+        "version": "git_revision:aa771eea701398c44e27cf591f7a58618bb82984",
+        "dest_path": "."
+      },
+      {
+        "package_name": "infra/git/${platform}",
+        "version": "version:2.21.0.chromium16",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/bb/${platform}",
+        "version": "git_revision:bdbeaf7b6f457238c69f328bfc7684fc1f2a79e6",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/buildbucket/${platform}",
+        "version": "git_revision:a27ace719dcaeacad62228948a9e7f642024b8ed",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/cloudtail/${platform}",
+        "version": "git_revision:edd5644be66d37cdf82978efb0e5d6504d0d552f",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/git/${platform}",
+        "version": "git_revision:b04590046ad20239b5e59ff132850f6479784f4a",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci-auth/${platform}",
+        "version": "git_revision:edd5644be66d37cdf82978efb0e5d6504d0d552f",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci/docker-credential-luci/${platform}",
+        "version": "git_revision:4dee0ef5a74893d559f4cef7b26258851336fe34",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci/git-credential-luci/${platform}",
+        "version": "git_revision:edd5644be66d37cdf82978efb0e5d6504d0d552f",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci/lucicfg/${platform}",
+        "version": "git_revision:ff86f2eaee01a8e67055b5f91a0ef26b306fcbbb",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci/vpython-native/${platform}",
+        "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/luci/vpython/${platform}",
+        "version": "git_revision:e317c7d2c17d4c3460ee37524dfce4e1dee4306a",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/tools/prpc/${platform}",
+        "version": "git_revision:edd5644be66d37cdf82978efb0e5d6504d0d552f",
+        "dest_path": "cipd_bin_packages"
+      },
+      {
+        "package_name": "infra/python/cpython/${platform}",
+        "version": "version:2.7.15.chromium14",
+        "dest_path": "cipd_bin_packages/cpython"
+      },
+      {
+        "package_name": "infra/python/cpython3/${platform}",
+        "version": "version:3.8.0b1.chromium.1",
+        "dest_path": "cipd_bin_packages/cpython3"
+      },
+      {
+        "package_name": "infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build",
+        "version": "refs/heads/master",
+        "dest_path": "kitchen-checkout"
+      }
+    ],
+    "env_vars": [
+      {
+        "key": "BUILDBUCKET_EXPERIMENTAL",
+        "value": "FALSE"
+      }
+    ],
+    "env_prefixes": [
+      {
+        "key": "PATH",
+        "values": [
+          "cipd_bin_packages",
+          "cipd_bin_packages/bin",
+          "cipd_bin_packages/cpython",
+          "cipd_bin_packages/cpython/bin",
+          "cipd_bin_packages/cpython3",
+          "cipd_bin_packages/cpython3/bin"
+        ]
+      },
+      {
+        "key": "VPYTHON_VIRTUALENV_ROOT",
+        "values": [
+          "cache/vpython"
+        ]
+      }
+    ],
+    "grace_period": "30s",
+    "bot_ping_tolerance": "1200s",
+    "containment": {
+
+    },
+    "legacy_kitchen": true,
+    "name": "led: test_name"
+  },
+  "user_payload": {
+    "server": "https://isolateserver.appspot.com",
+    "namespace": "default-gzip"
+  }
+}

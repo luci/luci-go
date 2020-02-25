@@ -1,0 +1,71 @@
+// Copyright 2017 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+package ledcmd
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/led/job"
+	"google.golang.org/genproto/protobuf/field_mask"
+)
+
+// GetBuildOpts are the options for GetBuild.
+type GetBuildOpts struct {
+	BuildbucketHost string
+	BuildID         int64
+	PinBot          bool
+}
+
+// GetBuild retrieves a job Definition from a Buildbucket build.
+func GetBuild(ctx context.Context, authClient *http.Client, opts GetBuildOpts) (*job.Definition, error) {
+	logging.Infof(ctx, "getting build definition")
+	bbucket := newBuildbucketClient(authClient, opts.BuildbucketHost)
+
+	answer, err := bbucket.GetBuild(ctx, &bbpb.GetBuildRequest{
+		Id: opts.BuildID,
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"tags"},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	logging.Infof(ctx, "getting build definition: done")
+
+	swarmingTaskID := ""
+	swarmingHostname := ""
+	for _, t := range answer.Tags {
+		key, value := t.Key, t.Value
+		switch key {
+		case "swarming_task_id":
+			swarmingTaskID = value
+		case "swarming_hostname":
+			swarmingHostname = value
+		}
+		if swarmingTaskID != "" && swarmingHostname != "" {
+			break
+		}
+	}
+
+	if swarmingTaskID == "" {
+		return nil, errors.New("unable to find swarming task ID on buildbucket task")
+	}
+	if swarmingHostname == "" {
+		return nil, errors.New("unable to find swarming hostname on buildbucket task")
+	}
+
+	return GetFromSwarmingTask(ctx, authClient, GetFromSwarmingTaskOpts{
+		SwarmingHost: swarmingHostname,
+		TaskID:       swarmingTaskID,
+		PinBot:       opts.PinBot,
+		Name:         fmt.Sprintf("get-build %d", opts.BuildID),
+	})
+}
