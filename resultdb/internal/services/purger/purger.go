@@ -23,9 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/metric"
-	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
@@ -44,11 +42,6 @@ var (
 		"resultdb/purged_invocations/count",
 		"How many invocations have had their expected test results purged",
 		nil)
-	purgedInvocationsDelay = metric.NewCumulativeDistribution(
-		"resultdb/purged_invocations/sampled_delay",
-		"How long overdue for purging is each invocation sampled.",
-		&types.MetricMetadata{Units: types.Seconds},
-		distribution.DefaultBucketer)
 )
 
 // Options is purger server configuration.
@@ -56,10 +49,6 @@ type Options struct {
 	// ForceCronInterval forces minimum interval in cron jobs.
 	// Useful in integration tests to reduce the test time.
 	ForceCronInterval time.Duration
-
-	// SampleSize is the number of expired invocations to sample at a time from
-	// any given shard.
-	SampleSize int
 }
 
 // InitServer initializes a purger server.
@@ -85,21 +74,28 @@ func run(ctx context.Context, opts Options) {
 	if opts.ForceCronInterval > 0 {
 		minInterval = opts.ForceCronInterval
 	}
-	cron.Group(ctx, maxShard+1, minInterval, func(ctx context.Context, shard int) error {
-		ids, err := randomExpiredResultsInvocations(ctx, shard, opts.SampleSize)
-		switch err {
-		case span.ErrNoResults:
-			return nil
-		case nil:
-			for _, id := range ids {
-				if err := purgeOneInvocation(ctx, id); err != nil {
-					logging.Errorf(ctx, "error when trying to purge %s: %s", id, err)
-				}
-			}
-			return nil
-		default:
+	cron.Group(ctx, maxShard+1, minInterval, purgeShard)
+}
+
+func purgeShard(ctx context.Context, shard int) error {
+	st := spanner.NewStatement(`
+		SELECT InvocationId
+		FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
+		WHERE ShardId = @shardId
+		AND ExpectedTestResultsExpirationTime IS NOT NULL
+		AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP()
+	`)
+	st.Params["shardId"] = shard
+	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
+		var id span.InvocationID
+		if err := span.FromSpanner(row, &id); err != nil {
 			return err
 		}
+
+		if err := purgeOneInvocation(ctx, id); err != nil {
+			logging.Errorf(ctx, "failed to purge %s: %s", id, err)
+		}
+		return nil
 	})
 }
 
@@ -133,42 +129,12 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 	return unsetInvocationResultsExpiration(ctx, id)
 }
 
-// randomExpiredResultsInvocations selects a random set of invocations that have
-// expired test results.
-func randomExpiredResultsInvocations(ctx context.Context, shardID, sampleSize int) ([]span.InvocationID, error) {
-	st := spanner.NewStatement(`
-		WITH expiringInvocations AS (
-			SELECT InvocationId, TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), ExpectedTestResultsExpirationTime, SECOND)
-			FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
-			WHERE ShardId = @shardId
-			AND ExpectedTestResultsExpirationTime IS NOT NULL
-			AND ExpectedTestResultsExpirationTime <= CURRENT_TIMESTAMP())
-		SELECT *
-		FROM expiringInvocations
-		TABLESAMPLE RESERVOIR (@sampleSize ROWS)
-	`)
-	st.Params["shardId"] = shardID
-	st.Params["sampleSize"] = sampleSize
-	ret := make([]span.InvocationID, 0, sampleSize)
-	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
-		var res span.InvocationID
-		var delay int64
-		if err := span.FromSpanner(row, &res, &delay); err != nil {
-			return err
-		}
-		ret = append(ret, res)
-		purgedInvocationsDelay.Add(ctx, float64(delay))
-		return nil
-	})
-	return ret, err
-}
-
 // testVariantID is a simple pair-of-strings struct with no spanner columnnames.
 //
 // It is used to pass these pairs as sql params in the UNNEST function in the
 // statement composed by deleteTestResults below.
 type testVariantID struct {
-	TestId      string `spanner:""`
+	TestID      string `spanner:""`
 	VariantHash string `spanner:""`
 }
 
@@ -208,7 +174,7 @@ func queryTestVariantsWithUnexpectedResults(ctx context.Context, id span.Invocat
 	st.Params["limit"] = limit
 	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		tv := testVariantID{}
-		if err := row.Columns(&tv.TestId, &tv.VariantHash); err != nil {
+		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
 			return err
 		}
 		ret = append(ret, tv)

@@ -15,8 +15,6 @@
 package main
 
 import (
-	"flag"
-
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -24,10 +22,8 @@ import (
 )
 
 func main() {
-	var opts purger.Options
-	flag.IntVar(&opts.SampleSize, "sample-size", 100, "how many expired invocations to sample at a time from any given shard.")
 	internal.Main(func(srv *server.Server) error {
-		purger.InitServer(srv, opts)
+		purger.InitServer(srv, purger.Options{})
 		return nil
 	})
 }
