@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "918ddc83_28b52075",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-25T02:58:22Z",
+      "side": 1,
+      "message": "In follow-up CLs, ServerConfig.Port will be replaced by ServerConfig.Address, and all the server logic with TCP bind/listen will be removed with prpc.\n\nThis change is just to resolve unit test failures.",
+      "range": {
+        "startLine": 214,
+        "startChar": 3,
+        "endLine": 214,
+        "endChar": 52
+      },
+      "revId": "f4756bfbcc0c4421506d79d18a21d3cb510d5c04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
