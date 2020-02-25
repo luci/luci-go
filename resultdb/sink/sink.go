@@ -210,7 +210,10 @@ func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
 	db := lucictx.ResultDB{
-		TestResults: lucictx.TestResults{Port: s.cfg.Port, AuthToken: s.cfg.AuthToken},
+		ResultSink: lucictx.ResultSink{
+			Address: fmt.Sprintf("localhost:%d", s.cfg.Port),
+			AuthToken: s.cfg.AuthToken,
+		},
 	}
 	return lucictx.SetResultDB(ctx, &db)
 }
