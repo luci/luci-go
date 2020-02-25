@@ -54,6 +54,9 @@ func TimeFromProto(t *timestamp.Timestamp) time.Time {
 	if t == nil {
 		return time.Time{}
 	}
+	if t.Seconds == 0 && t.Nanos == 0 {
+		return time.Time{}
+	}
 	return time.Unix(t.Seconds, int64(t.Nanos)).UTC()
 }
 
