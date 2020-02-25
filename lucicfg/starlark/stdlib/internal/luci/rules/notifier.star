@@ -29,6 +29,10 @@ def _notifier(
       on_occurrence=None,
       on_new_status=None,
 
+      # Step filters.
+      failed_step_regexp=None,
+      failed_step_regexp_exclude=None,
+
       # Deprecated conditions.
       on_failure=None,
       on_new_failure=None,
@@ -37,6 +41,7 @@ def _notifier(
 
       # Who to notify.
       notify_emails=None,
+      notify_rotang_rotations=None,
       notify_blamelist=None,
 
       # Tweaks.
@@ -90,7 +95,19 @@ def _notifier(
     on_success: Deprecated. Please use `on_new_status` or `on_occurrence`
         instead. If True, notify on each build success. Default is False.
 
+    failed_step_regexp: an optional regex, which is matched against the names of
+        failed steps. Only build failures containing failed steps matching this
+        regex will cause a notification to be sent. Mutually exclusive with
+        `on_new_status`.
+    failed_step_regexp_exclude: an optional regex, which has the same function
+        as `failed_step_regexp`, but negated - this regex must *not* match any
+        failed steps for a notification to be sent. Mutually exclusive with
+        `on_new_status`.
+
     notify_emails: an optional list of emails to send notifications to.
+    notify_rotang_rotations: an optional list of Rota-NG rotations. For each
+        rotation, an email will be sent to the currently active member of that
+        rotation.
     notify_blamelist: if True, send notifications to everyone in the computed
         blamelist for the build. Works only if the builder has a repository
         associated with it, see `repo` field in luci.builder(...). Default is
@@ -118,12 +135,23 @@ def _notifier(
   on_status_change = validate.bool('on_status_change', on_status_change, required=False)
   on_success = validate.bool('on_success', on_success, required=False)
 
+  failed_step_regexp = validate.string('failed_step_regexp', failed_step_regexp, required=False)
+  failed_step_regexp_exclude = validate.string('failed_step_regexp_exclude', failed_step_regexp_exclude, required=False)
+
+  if (failed_step_regexp or failed_step_regexp_exclude) and (on_new_status or on_new_failure or on_status_change):
+    fail('failed step regexes cannot be used in combination with status change predicates')
+
   if not(on_failure or on_new_failure or on_status_change or on_success or on_occurrence or on_new_status):
     fail('at least one on_... condition is required')
 
   notify_emails = validate.list('notify_emails', notify_emails)
   for e in notify_emails:
     validate.string('notify_emails', e)
+
+  notify_rotang_rotations = validate.list(
+      'notify_rotang_rotations', notify_rotang_rotations, required=False)
+  for r in notify_rotang_rotations:
+    validate.string('notify_rotang_rotations', r)
 
   notify_blamelist = validate.bool('notify_blamelist', notify_blamelist, required=False)
   blamelist_repos_whitelist = validate.list('blamelist_repos_whitelist', blamelist_repos_whitelist)
@@ -146,7 +174,11 @@ def _notifier(
           'on_status_change': on_status_change,
           'on_success': on_success,
 
+          'failed_step_regexp': failed_step_regexp,
+          'failed_step_regexp_exclude': failed_step_regexp_exclude,
+
           'notify_emails': notify_emails,
+          'notify_rotang_rotations': notify_rotang_rotations,
           'notify_blamelist': notify_blamelist,
           'blamelist_repos_whitelist': blamelist_repos_whitelist,
       },

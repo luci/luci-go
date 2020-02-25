@@ -1615,7 +1615,10 @@ luci.notifier(
     on_new_failure = None,
     on_status_change = None,
     on_success = None,
+    failed_step_regexp = None,
+    failed_step_regexp_exclude = None,
     notify_emails = None,
+    notify_rotang_rotations = None,
     notify_blamelist = None,
     blamelist_repos_whitelist = None,
     template = None,
@@ -1655,7 +1658,10 @@ the same name.
 * **on_new_failure**: Deprecated. Please use `on_new_status` or `on_occurrence` instead.  If True, notify on a build failure unless the previous build was a failure too. Ignores transient (aka "infra") failures. Default is False.
 * **on_status_change**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each change to a build status (e.g. a green build becoming red and vice versa). Default is False.
 * **on_success**: Deprecated. Please use `on_new_status` or `on_occurrence` instead. If True, notify on each build success. Default is False.
+* **failed_step_regexp**: an optional regex, which is matched against the names of failed steps. Only build failures containing failed steps matching this regex will cause a notification to be sent. Mutually exclusive with `on_new_status`.
+* **failed_step_regexp_exclude**: an optional regex, which has the same function as `failed_step_regexp`, but negated - this regex must *not* match any failed steps for a notification to be sent. Mutually exclusive with `on_new_status`.
 * **notify_emails**: an optional list of emails to send notifications to.
+* **notify_rotang_rotations**: an optional list of Rota-NG rotations. For each rotation, an email will be sent to the currently active member of that rotation.
 * **notify_blamelist**: if True, send notifications to everyone in the computed blamelist for the build. Works only if the builder has a repository associated with it, see `repo` field in [luci.builder(...)](#luci.builder). Default is False.
 * **blamelist_repos_whitelist**: an optional list of repository URLs (e.g. `https://host/repo`) to restrict the blamelist calculation to. If empty (default), only the primary repository associated with the builder is considered, see `repo` field in [luci.builder(...)](#luci.builder).
 * **template**: a [luci.notifier_template(...)](#luci.notifier_template) to use to format notification emails. If not specified, and a template `default` is defined in the project somewhere, it is used implicitly by the notifier.
