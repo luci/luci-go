@@ -37,7 +37,7 @@ func TestBinaryHeader(t *testing.T) {
 			data := []byte{10}
 			k, v, err := headerToMeta("K-Bin", base64.StdEncoding.EncodeToString(data))
 			So(err, ShouldBeNil)
-			So(k, ShouldEqual, "k")
+			So(k, ShouldEqual, "k-bin")
 			So(v, ShouldEqual, string(data))
 		})
 
@@ -56,7 +56,7 @@ func TestBinaryHeader(t *testing.T) {
 
 		Convey("binary", func() {
 			data := []byte{10}
-			k, v := metaToHeader("K", string(data))
+			k, v := metaToHeader("k-bin", string(data))
 			So(k, ShouldEqual, "K-Bin")
 			So(v, ShouldEqual, base64.StdEncoding.EncodeToString(data))
 		})
