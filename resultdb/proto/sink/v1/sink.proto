@@ -20,6 +20,38 @@ import "go.chromium.org/luci/resultdb/proto/sink/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/sink/v1;sinkpb";
 
+// Service to report test results.
+//
+// Note that clients need to add the auth token in the HTTP header when invoking
+// the RPCs of this service, or Unauthenticated error will be returned.
+// i.e., Authorization: ResultSink <auth-token>
+//
+// The auth token is available via resultdb.resultsink.auth_token LUCI_CONTEXT
+// value. For more information, visit
+// https://github.com/luci/luci-py/blob/master/client/LUCI_CONTEXT.md
+service Sink {
+  // Reports test results.
+  rpc ReportTestResults(ReportTestResultsRequest)
+      returns (ReportTestResultsResponse) {};
+}
+
+message ReportTestResultsRequest {
+  // Test results to report.
+  repeated TestResult test_results = 1;
+}
+
+message ReportTestResultsResponse {
+  // List of unique identifiers that can be used to link to these results
+  // or requested via luci.resultdb.rpc.v1.ResultDB service.
+  repeated string test_result_names = 1;
+}
+
+/*
+  DEPRECATED - SinkMessageContainer and HandShake are going to be removed
+  soon. Use ReportTestResultsRequest instead.
+
+  TODO(crbug/1017288) - remove the below messages.
+*/
 // A container of a message to a ResultSink server.
 // The server accepts a sequence of these messages in JSON format.
 message SinkMessageContainer {
