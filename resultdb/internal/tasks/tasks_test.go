@@ -15,6 +15,7 @@
 package tasks
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -32,19 +33,22 @@ func TestTasks(t *testing.T) {
 		ctx := testutil.SpannerTestContext(t)
 		start := clock.Now(ctx).UTC()
 
-		Convey(`Sample`, func() {
+		Convey(`Peek`, func() {
 			testutil.MustApply(ctx,
 				Enqueue(BQExport, "task1", "inv", "payload", start.Add(-time.Hour)),
 				Enqueue(BQExport, "task2", "inv", "payload", start.Add(-time.Hour)),
 				Enqueue(BQExport, "task3", "inv", "payload", start.Add(-time.Hour)),
-				Enqueue(BQExport, "task4", "inv", "payload", start),
-				Enqueue(BQExport, "task5", "inv", "payload", start.Add(time.Hour)),
+				Enqueue(BQExport, "task4", "inv", "payload", start.Add(time.Hour)),
 			)
 
-			rows, err := Sample(ctx, BQExport, start, 3)
+			var ids []string
+			err := Peek(ctx, BQExport, func(id string) error {
+				ids = append(ids, id)
+				return nil
+			})
 			So(err, ShouldBeNil)
-			So(rows, ShouldHaveLength, 3)
-			So(rows, ShouldNotContain, "task5")
+			sort.Strings(ids)
+			So(ids, ShouldResemble, []string{"task1", "task2", "task3"})
 		})
 
 		Convey(`Lease`, func() {
