@@ -34,36 +34,19 @@ func headerToMeta(key, value string) (mdKey, mdValue string, err error) {
 		return
 	}
 
-	mdKey = strings.TrimSuffix(mdKey, metadataSuffixBinary)
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	mdValue = string(decoded)
 	return
 }
 
 // metaToHeader converts a key-value pair from gRPC metadata format to HTTP.
-// Takes care of -metadataSuffixBinary.
+// Takes care of metadataSuffixBinary.
 func metaToHeader(key, value string) (hKey, hValue string) {
-	if isValidHTTPText(value) {
-		return http.CanonicalHeaderKey(key), value
+	hKey = http.CanonicalHeaderKey(key)
+	if !strings.HasSuffix(key, metadataSuffixBinary) {
+		return hKey, value
 	}
 
-	hKey = http.CanonicalHeaderKey(key + metadataSuffixBinary)
 	hValue = base64.StdEncoding.EncodeToString([]byte(value))
 	return
-}
-
-// isValidHTTPText returns false if s is not valid "TEXT" according to
-// https://tools.ietf.org/html/rfc2616#section-2.2
-func isValidHTTPText(s string) bool {
-	for _, r := range s {
-		switch {
-		case r == ' ':
-			// allowed
-
-		case r < 32, r > 255, r == 127:
-			return false
-		}
-	}
-
-	return true
 }
