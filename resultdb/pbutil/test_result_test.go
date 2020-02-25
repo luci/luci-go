@@ -412,12 +412,12 @@ func TestValidateArtifact(t *testing.T) {
 
 		Convey("with empty FetchUrl", func() {
 			art.FetchUrl = ""
-			So(validate(art), ShouldErrLike, "fetch_url: parse : empty url")
+			So(validate(art), ShouldErrLike, "empty url")
 		})
 
 		Convey("with invalid URI", func() {
 			art.FetchUrl = "a/b"
-			So(validate(art), ShouldErrLike, "fetch_url: parse a/b: invalid URI for request")
+			So(validate(art), ShouldErrLike, "invalid URI for request")
 		})
 
 		Convey("with unsupported Scheme", func() {
@@ -426,13 +426,13 @@ func TestValidateArtifact(t *testing.T) {
 			}
 			for _, in := range badInputs {
 				art.FetchUrl = in
-				So(validate(art), ShouldErrLike, "fetch_url: the URL scheme is not HTTPS")
+				So(validate(art), ShouldErrLike, "the URL scheme is not HTTPS")
 			}
 		})
 
 		Convey("without host", func() {
 			art.FetchUrl = "https://"
-			So(validate(art), ShouldErrLike, "fetch_url: missing host")
+			So(validate(art), ShouldErrLike, "missing host")
 		})
 	})
 }
