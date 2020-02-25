@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da081b37_50d1de83",
+        "filename": "common/proto/google/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-25T21:50:27Z",
+      "side": 1,
+      "message": "... // this is year 0000",
+      "revId": "2e484fba1836214e9641c8b57e7a04a829a97ba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
