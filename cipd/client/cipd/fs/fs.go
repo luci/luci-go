@@ -426,6 +426,7 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 		return err // refuse to delete non-empty directories
 	default:
 		// Otherwise assume it's a locked file and just move it to trash.
+		fmt.Printf("ERR in os.Remove(%q): %s\n", path, err)
 		if _, err2 := f.moveToTrash(ctx, path); err2 != nil {
 			return err // prefer the original error
 		}
@@ -482,6 +483,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	if err = atomicRename(oldpath, newpath); err == nil {
 		return nil
 	}
+	fmt.Printf("ERR in atomicRename(%q, %q): %s\n", oldpath, newpath, err)
 
 	// This code path is hit it two cases:
 	//
@@ -579,6 +581,7 @@ func (f *fsImpl) CleanupTrash(ctx context.Context) {
 //   ("<path in trash>", nil) if move to the trash succeeded.
 //   ("", non-nil) if move to the trash failed (this is also logged).
 func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
+	fmt.Printf("MOVE TO TRASH: %s\n", path)
 	if runtime.GOOS != "windows" {
 		if err := os.Remove(path); err == nil || os.IsNotExist(err) {
 			return "", nil
