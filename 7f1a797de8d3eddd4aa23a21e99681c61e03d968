@@ -22,6 +22,30 @@
       "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b0c1b41_85fd2218",
+        "filename": "resultdb/proto/sink/v1/sink.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-25T00:50:32Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "817e9e6c_290385fd",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 0
+      },
+      "revId": "7f1a797de8d3eddd4aa23a21e99681c61e03d968",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
