@@ -67,31 +67,45 @@ func TestValidateInvocationDeadline(t *testing.T) {
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
+	never := func() (bool, error) { return false, nil }
+	always := func() (bool, error) { return true, nil }
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now, never)
 			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "1",
-			}, now)
+			}, now, never)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
 		Convey(`reserved prefix`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "build-1",
-			}, now)
+				InvocationId: "build:8765432100",
+			}, now, never)
 			So(err, ShouldErrLike, `must have id starting with "u:"`)
+		})
+
+		Convey(`reserved prefix, allowed`, func() {
+			deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "build:8765432100",
+				Invocation: &pb.Invocation{
+					Deadline: deadline,
+					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
+				},
+			}, now, always)
+			So(err, ShouldBeNil)
 		})
 
 		Convey(`invalid request id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u:a",
 				RequestId:    "😃",
-			}, now)
+			}, now, never)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 
@@ -101,7 +115,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Tags: pbutil.StringPairs("1", "a"),
 				},
-			}, now)
+			}, now, never)
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
 		})
 
@@ -112,7 +126,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 				},
-			}, now)
+			}, now, never)
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
@@ -129,7 +143,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				},
-			}, now)
+			}, now, never)
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
@@ -141,7 +155,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 				},
-			}, now)
+			}, now, never)
 			So(err, ShouldBeNil)
 		})
 	})
