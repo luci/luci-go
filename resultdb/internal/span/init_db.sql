@@ -156,7 +156,10 @@ CREATE TABLE TestResults (
 
   -- Output artifacts, see also TestResult.output_artifacts in test_result.proto.
   -- Encoded as luci.resultdb.internal.Artifacts message.
-  OutputArtifacts BYTES(MAX)
+  OutputArtifacts BYTES(MAX),
+
+  -- If true, this row is scheduled for deletion.
+  Purge BOOL
 ) PRIMARY KEY (InvocationId, TestId, ResultId),
   INTERLEAVE IN PARENT Invocations ON DELETE CASCADE;
 
