@@ -783,9 +783,6 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 }
 
 func TestDeployInstanceCopyModeWindows(t *testing.T) {
-	// https://crbug.com/1056010: This test behaves weirdly on go 1.14.
-	t.SkipNow()
-
 	t.Parallel()
 
 	if runtime.GOOS != "windows" {

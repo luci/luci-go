@@ -81,18 +81,29 @@ func moveFileEx(source, target *uint16, flags uint32) error {
 	return nil
 }
 
-func atomicRename(source, target string) error {
+func mostlyAtomicRename(source, target string) error {
 	source, target = longFileName(source), longFileName(target)
 
-	lpReplacedFileName, err := syscall.UTF16PtrFromString(target)
+	lpTarget, err := syscall.UTF16PtrFromString(target)
 	if err != nil {
 		return err
 	}
-	lpReplacementFileName, err := syscall.UTF16PtrFromString(source)
+	lpSource, err := syscall.UTF16PtrFromString(source)
 	if err != nil {
 		return err
 	}
-	return moveFileEx(lpReplacementFileName, lpReplacedFileName, moveFileReplaceExisting|moveFileWriteThrough)
+
+	// MoveFileEx is unable to replace read-only files. Do best effort to remove
+	// the read-only flag (in most cases where mostlyAtomicRename is used in CIPD
+	// it is set, since CIPD uses it to update files it itself installed and they
+	// are usually read-only). No big deal if this fails or if MoveFileEx below
+	// fails. The caller will eventually delete `target` one way or another, so
+	// leaving it with read-only bit removed is fine.
+	if attrs, err := syscall.GetFileAttributes(lpTarget); err == nil && (attrs&syscall.FILE_ATTRIBUTE_READONLY) != 0 {
+		syscall.SetFileAttributes(lpTarget, attrs&^syscall.FILE_ATTRIBUTE_READONLY)
+	}
+
+	return moveFileEx(lpSource, lpTarget, moveFileReplaceExisting|moveFileWriteThrough)
 }
 
 // For errors codes see
