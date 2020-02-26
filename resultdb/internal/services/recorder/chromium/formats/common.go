@@ -34,9 +34,9 @@ const (
 	FormatGTest = "chromium_gtest"
 )
 
-// summaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
+// SummaryTmpl is used to generate SummaryHTML in GTest and JTR-based test
 // results.
-var summaryTmpl = template.Must(template.New("summary").Parse(`
+var SummaryTmpl = template.Must(template.New("summary").Parse(`
 {{ define "gtest" -}}
 {{- template "links" .links -}}
 {{- if .snippet }}<div><pre>{{.snippet}}</pre></div>{{ end -}}
