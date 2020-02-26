@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ab69735_18b79988",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-26T20:29:52Z",
+      "side": 1,
+      "message": "maybe 2.4.0? It\u0027s sort of more than a bugfix.\n\nIf you disagree, feel free to ignore me :)",
+      "range": {
+        "startLine": 134,
+        "startChar": 19,
+        "endLine": 134,
+        "endChar": 24
+      },
+      "revId": "13d9a0d13a723a167a431d6b7133f8f3b66bcefb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63751c20_fa60ac66",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-26T20:29:52Z",
+      "side": 1,
+      "message": "lol",
+      "range": {
+        "startLine": 445,
+        "startChar": 10,
+        "endLine": 445,
+        "endChar": 28
+      },
+      "revId": "13d9a0d13a723a167a431d6b7133f8f3b66bcefb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
