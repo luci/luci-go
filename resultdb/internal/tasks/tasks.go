@@ -83,8 +83,7 @@ func Peek(ctx context.Context, typ Type, f func(id string) error) error {
 	st.Params["taskType"] = string(typ)
 
 	var b span.Buffer
-	txn := span.Client(ctx).Single().WithTimestampBound(spanner.MaxStaleness(30 * time.Second))
-	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+	return span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
 		var id string
 		if err := b.FromSpanner(row, &id); err != nil {
 			return err
