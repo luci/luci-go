@@ -26,12 +26,29 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/internal/retry"
 )
+
+var logNow int64
+
+func megaLog(msg string, args ...interface{}) {
+	if atomic.LoadInt64(&logNow) != 0 {
+		fmt.Printf(msg, args...)
+	}
+}
+
+func SetMegaLog(b bool) {
+	if b {
+		atomic.StoreInt64(&logNow, 1)
+	} else {
+		atomic.StoreInt64(&logNow, 0)
+	}
+}
 
 // FileSystem abstracts operations that touch single file system subpath.
 //
@@ -482,6 +499,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	if err = atomicRename(oldpath, newpath); err == nil {
 		return nil
 	}
+	megaLog("ERR in atomicRename(%q, %q): %s\n", oldpath, newpath, err)
 
 	// This code path is hit it two cases:
 	//
@@ -505,7 +523,9 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 		}
 
 		// 'newpath' now should be available.
-		switch err = atomicRename(oldpath, newpath); {
+		err = atomicRename(oldpath, newpath)
+		megaLog("Retry: %v\n", err)
+		switch {
 		case err == nil:
 			return nil
 

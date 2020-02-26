@@ -67,8 +67,6 @@ func loggerWarnings(c context.Context) (out []string) {
 }
 
 func TestUtilities(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
@@ -140,8 +138,6 @@ func TestUtilities(t *testing.T) {
 }
 
 func TestDeployInstance(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
@@ -170,8 +166,6 @@ func TestDeployInstance(t *testing.T) {
 }
 
 func TestDeployInstanceSymlinkMode(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping on Windows: no symlinks")
 	}
@@ -515,8 +509,6 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 }
 
 func TestDeployInstanceCopyModePosix(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping on windows")
 	}
@@ -783,8 +775,6 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 }
 
 func TestDeployInstanceCopyModeWindows(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS != "windows" {
 		t.Skip("Skipping on posix")
 	}
@@ -919,6 +909,9 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 		})
 
 		Convey("DeployInstance package update", func() {
+			fs.SetMegaLog(true)
+			defer fs.SetMegaLog(false)
+
 			oldPkg := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
@@ -1063,8 +1056,6 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 }
 
 func TestDeployInstanceSwitchingModes(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping on Windows: no symlinks")
 	}
@@ -1192,8 +1183,6 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 }
 
 func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
-	t.Parallel()
-
 	Convey("DeployInstance can replace files with directories", t, func() {
 		ctx := withMemLogger()
 		tempDir := mkTempDir()
@@ -1226,8 +1215,6 @@ func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
 }
 
 func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
-	t.Parallel()
-
 	Convey("With packages", t, func() {
 		ctx := withMemLogger()
 		tempDir := mkTempDir()
@@ -1327,8 +1314,6 @@ func TestDeployInstanceDirAndSymlinkSwaps(t *testing.T) {
 }
 
 func TestDeployInstanceChangeInCase(t *testing.T) {
-	t.Parallel()
-
 	Convey("DeployInstance handle change in file name case", t, func(c C) {
 		ctx := withMemLogger()
 		tempDir := mkTempDir()
@@ -1402,8 +1387,6 @@ func TestDeployInstanceChangeInCase(t *testing.T) {
 }
 
 func TestFindDeployed(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
@@ -1483,8 +1466,6 @@ func TestRemoveDeployedCommon(t *testing.T) {
 }
 
 func TestRemoveDeployedPosix(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping on windows")
 	}
@@ -1564,8 +1545,6 @@ func TestRemoveDeployedPosix(t *testing.T) {
 }
 
 func TestRemoveDeployedWindows(t *testing.T) {
-	t.Parallel()
-
 	if runtime.GOOS != "windows" {
 		t.Skip("Skipping on posix")
 	}
@@ -1642,8 +1621,6 @@ func TestRemoveDeployedWindows(t *testing.T) {
 }
 
 func TestCheckDeployedAndRepair(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
@@ -1833,8 +1810,6 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 }
 
 func TestUpgradeOldPkgDir(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given an old-style pkgs dir", t, func() {
@@ -1916,8 +1891,6 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 }
 
 func TestNumSet(t *testing.T) {
-	t.Parallel()
-
 	Convey("numSet", t, func() {
 		ns := numSet{}
 
@@ -1947,8 +1920,6 @@ func TestNumSet(t *testing.T) {
 }
 
 func TestResolveValidPackageDirs(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("resolveValidPackageDirs", t, func() {
@@ -2093,8 +2064,6 @@ func TestResolveValidPackageDirs(t *testing.T) {
 }
 
 func TestPackagePathCollision(t *testing.T) {
-	t.Parallel()
-
 	const threads = 50
 	const packages = 4
 
@@ -2139,8 +2108,6 @@ func TestPackagePathCollision(t *testing.T) {
 }
 
 func TestDeployInstanceCollision(t *testing.T) {
-	t.Parallel()
-
 	const threads = 50
 	const instances = 5
 
@@ -2181,8 +2148,6 @@ func TestDeployInstanceCollision(t *testing.T) {
 }
 
 func TestRemoveEmptyTrees(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
