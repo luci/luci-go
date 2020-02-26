@@ -101,11 +101,12 @@ func TestPurgeExpiredResults(t *testing.T) {
 		invocations := []span.InvocationID{
 			insertInvocationWithTestResults(ctx, "inv-some-unexpected", 10, 9, 1),
 			insertInvocationWithTestResults(ctx, "inv-no-unexpected", 10, 10, 0),
-			insertInvocationWithTestResults(ctx, "inv-too-many-unexpected", 1, 1, 1001),
 		}
 
 		// Purge expired data.
-		err := purgeShard(ctx, 0)
+		err := scheduleForPurgingOneShard(ctx, 0)
+		So(err, ShouldBeNil)
+		err = deleteTestResults(ctx)
 		So(err, ShouldBeNil)
 
 		// Count remaining results
@@ -114,9 +115,5 @@ func TestPurgeExpiredResults(t *testing.T) {
 
 		// 10 tests * 0 variants with unexpected results * 2 results per test variant
 		So(countTestResults(ctx, invocations[1]), ShouldEqual, 0)
-
-		// Too many test variants with unexpected results (1001), so no deletions happen.
-		// 1 test * 1002 variants * 2 results per test variants
-		So(countTestResults(ctx, invocations[2]), ShouldEqual, 2004)
 	})
 }
