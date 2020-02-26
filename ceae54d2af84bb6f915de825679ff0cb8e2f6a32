@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "07ab5e88_ea84c893",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-26T14:41:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "24836f3b_d47a3797",
+      "range": {
+        "startLine": 9,
+        "startChar": 30,
+        "endLine": 9,
+        "endChar": 38
+      },
+      "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c4e7b9d6_c0bcbbec",
         "filename": "/COMMIT_MSG",
         "patchSetId": 4
@@ -36,6 +60,24 @@
       "writtenOn": "2020-02-25T17:18:32Z",
       "side": 1,
       "message": "please update it too",
+      "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "95e3f3df_0ba8c1cb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-26T14:41:42Z",
+      "side": 1,
+      "message": "It\u0027s in a separate repo, and I will send a separate CL.",
+      "parentUuid": "c4e7b9d6_c0bcbbec",
       "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b66c7672_34aad60d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-26T14:41:42Z",
+      "side": 1,
+      "message": "Ah, right. Removed",
+      "parentUuid": "8324f673_2062c280",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 78
+      },
+      "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d88a41e6_6bf8135a",
         "filename": "lucictx/resultdb.go",
         "patchSetId": 4
@@ -85,6 +151,30 @@
       "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecb5bc8e_82a1a86f",
+        "filename": "lucictx/resultdb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-26T14:41:42Z",
+      "side": 1,
+      "message": "Done. Also, renamed the file.",
+      "parentUuid": "d88a41e6_6bf8135a",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 25,
+        "endChar": 1
+      },
+      "revId": "ceae54d2af84bb6f915de825679ff0cb8e2f6a32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
