@@ -91,6 +91,23 @@
       "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ba43543_48ebbf7a",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-26T20:38:04Z",
+      "side": 1,
+      "message": "Aren\u0027t we missing a test for the case where we return invalidTaskf(\"failed to convert the task to a test result\") ?",
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
