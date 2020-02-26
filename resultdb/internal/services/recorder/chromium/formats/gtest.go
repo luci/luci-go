@@ -329,7 +329,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 		}
 	}
 	buf.Reset()
-	err = summaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
+	err = SummaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
 		"snippet": snippet,
 		"links":   result.Links,
 	})
