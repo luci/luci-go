@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dba80e88_7cc3958e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T23:25:27Z",
+      "side": 1,
+      "message": "This description is a little confusing for me.\n\nIIUC, you meant that ElapsedMs should be treated as millseconds instead of microseconds?",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 35
+      },
+      "revId": "ebfcf4ab8e18dbc0b0b93de9d72afccf81bf6a79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
