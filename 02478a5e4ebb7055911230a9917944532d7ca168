@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "26b21cb6_ff0b21e6",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T17:47:47Z",
+      "side": 1,
+      "message": "this does not quite make sense to me. What if a task did time out. Why wouldn\u0027t we export test result with ABORT test status?",
+      "range": {
+        "startLine": 140,
+        "startChar": 22,
+        "endLine": 140,
+        "endChar": 41
+      },
+      "revId": "02478a5e4ebb7055911230a9917944532d7ca168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9af51c64_051b857a",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T17:47:47Z",
+      "side": 1,
+      "message": "comparing slices to nil is an anti-pattern. processOutputs might return (nil, nil). it is better to be more explicit, e.g. do this only if processOutputs returned a non-nil error",
+      "range": {
+        "startLine": 140,
+        "startChar": 4,
+        "endLine": 140,
+        "endChar": 18
+      },
+      "revId": "02478a5e4ebb7055911230a9917944532d7ca168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c1eb435_057b1dc2",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T17:47:47Z",
+      "side": 1,
+      "message": "to a",
+      "range": {
+        "startLine": 144,
+        "startChar": 62,
+        "endLine": 144,
+        "endChar": 64
+      },
+      "revId": "02478a5e4ebb7055911230a9917944532d7ca168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22d7b666_7396ddec",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T17:47:47Z",
+      "side": 1,
+      "message": "this will crash if testIDPrefix is empty. Please make it safer and more explicit by using strings.TrimSuffix, strings.TrimRight or strings.TrimRightFunc",
+      "range": {
+        "startLine": 243,
+        "startChar": 12,
+        "endLine": 243,
+        "endChar": 46
+      },
+      "revId": "02478a5e4ebb7055911230a9917944532d7ca168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25db51eb_0b281b27",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T17:47:47Z",
+      "side": 1,
+      "message": "that template is probably more generic than what we might want here. Here it might be useful to include swarming task state. Then, we don\u0027t need touch formats/* in this CL.",
+      "range": {
+        "startLine": 250,
+        "startChar": 19,
+        "endLine": 250,
+        "endChar": 30
+      },
+      "revId": "02478a5e4ebb7055911230a9917944532d7ca168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
