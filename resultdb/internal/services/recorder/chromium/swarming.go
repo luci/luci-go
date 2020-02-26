@@ -32,7 +32,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
@@ -55,16 +54,6 @@ const (
 )
 
 var (
-	// Ignore swarming tasks with any of the below values for the given tag keys.
-	tagBlacklist = stringset.NewFromSlice(
-		// Not currently in test-results-hrd and use an "isolated script test output"/"simplified JSON"
-		// format.
-		"name:angle_perftests",
-		"name:components_perftests",
-		"name:content_shell_crash_test",
-		"name:views_perftests",
-	)
-
 	// Look for the output JSON trying the below possibilities in the given order.
 	outputJSONFileNames = []string{"output.json", "full_results.json"}
 
@@ -78,10 +67,6 @@ var (
 //
 // The derived Invocation and TestResult protos will be written by the caller.
 func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
-	if isBlacklisted(task) {
-		return nil, nil, invalidTaskf("blacklisted")
-	}
-
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		// Tasks not yet completed should not be requested to be processed by the recorder.
 		s := status.Newf(codes.FailedPrecondition, "task %s is not complete yet", req.SwarmingTask.Id)
@@ -400,16 +385,6 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 
 	// Conversion with either format failed, but we don't support other formats.
 	return nil, errors.NewMultiError(gtestErr, jsonErr)
-}
-
-// isBlacklisted returns whether the given task is blacklisted from being processed.
-func isBlacklisted(task *swarmingAPI.SwarmingRpcsTaskResult) bool {
-	for _, t := range task.Tags {
-		if tagBlacklist.Has(t) {
-			return true
-		}
-	}
-	return false
 }
 
 // convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
