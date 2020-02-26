@@ -114,10 +114,9 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	case "TIMED_OUT":
 		inv.Interrupted = true
 
-	// For COMPLETED state, we expect normal completion and output.
+	// For COMPLETED state, we expect normal completion.
 	case "COMPLETED":
 		mustFetchOutputJSON = true
-
 	default:
 		return nil, nil, invalidTaskf("unknown state %q", task.State)
 	}
@@ -132,17 +131,18 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	// Fetch outputs, converting if any.
 	var results []*pb.TestResult
 	ref := task.OutputsRef
-	switch {
-	case ref != nil && ref.Isolated != "":
-		// If we have output, try to process it regardless.
-		if results, err = processOutputs(ctx, ref, testIDPrefix, inv, req); err != nil {
-			return nil, nil, errors.Annotate(err, "isolated outputs at %q in %q, %q",
-				ref.Isolated, ref.Isolatedserver, ref.Namespace).Err()
-		}
+	if ref != nil && ref.Isolated != "" {
+		results, err = processOutputs(ctx, ref, testIDPrefix, inv, req)
+		logging.Errorf(ctx, "isolated outputs at %q in %q, %q: %s",
+			ref.Isolated, ref.Isolatedserver, ref.Namespace, err)
+	}
 
-	case mustFetchOutputJSON:
-		// Otherwise we expect output but have none, so fail.
-		return nil, nil, invalidTaskf("missing expected isolated outputs")
+	if results == nil && mustFetchOutputJSON {
+		// Either no output to process or we don't understand the output,
+		// fall back to convert the whole task as one result.
+		if results, err = convertTaskToResult(testIDPrefix, task, req); err != nil {
+			return nil, nil, invalidTaskf("failed to convert the task to test result")
+		}
 	}
 
 	// Apply the base variant.
@@ -225,6 +225,36 @@ func GetOriginTask(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult
 func GetInvocationID(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) span.InvocationID {
 	escapedHostname := strings.Replace(req.SwarmingTask.Hostname, ".", "_", -1)
 	return span.InvocationID(fmt.Sprintf("task:%s:%s", escapedHostname, task.RunId))
+}
+
+func getTaskResultStatus(failure bool) pb.TestStatus {
+	if failure {
+		return pb.TestStatus_FAIL
+	}
+	return pb.TestStatus_PASS
+}
+
+// convertTaskToResult uses a swarming task's information to create a test result.
+// It's the fallback when resultdb fails to parse the results using json and
+// gtest result formats.
+func convertTaskToResult(testIDPrefix string, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
+	ret := &pb.TestResult{
+		// Use ninja target as test_id.
+		TestId:   testIDPrefix[:len(testIDPrefix)-1],
+		Expected: !task.Failure,
+		Status:   getTaskResultStatus(task.Failure),
+	}
+
+	// Add the swarming task url to summaryHTML.
+	buf := &strings.Builder{}
+	if err := formats.SummaryTmpl.ExecuteTemplate(buf, "default", map[string]interface{}{
+		"links": map[string]string{"task": fmt.Sprintf("https://%s/%s", req.SwarmingTask.Hostname, req.SwarmingTask.Id)},
+	}); err != nil {
+		return nil, err
+	}
+	ret.SummaryHtml = buf.String()
+
+	return []*pb.TestResult{ret}, nil
 }
 
 // processOutputs fetches the output.json from the given task and processes it using whichever
