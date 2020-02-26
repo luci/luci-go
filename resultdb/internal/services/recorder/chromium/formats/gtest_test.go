@@ -151,7 +151,7 @@ func TestGTestConversions(t *testing.T) {
 		Convey("Duration", func() {
 			tr := convert(&GTestRunResult{
 				Status:        "SUCCESS",
-				ElapsedTimeMs: 1e6,
+				ElapsedTimeMs: 1e3,
 			})
 			So(tr.Duration.GetSeconds(), ShouldEqual, 1)
 			So(tr.Duration.GetNanos(), ShouldEqual, 0)
