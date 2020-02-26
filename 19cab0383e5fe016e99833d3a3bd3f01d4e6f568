@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b314a99_894b8a67",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T01:39:25Z",
+      "side": 1,
+      "message": "this code is equivalent to \n\n  return auth.IsMember(ctx, customIdGroup)\n\nso the whole thing can be inlined?",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 2
+      },
+      "revId": "19cab0383e5fe016e99833d3a3bd3f01d4e6f568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d86918f8_6350cabd",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T01:39:25Z",
+      "side": 1,
+      "message": "in the vast majority of RPCs, this function will be called, so it would be simpler to always check membership at the callsite and pass boolean here",
+      "range": {
+        "startLine": 82,
+        "startChar": 85,
+        "endLine": 82,
+        "endChar": 119
+      },
+      "revId": "19cab0383e5fe016e99833d3a3bd3f01d4e6f568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
