@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "229d4ab0_673ebb2e",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-26T22:58:31Z",
+      "side": 1,
+      "message": "heh, it started as a more complicated thing and as I started simplifying it I totally missed that I was returning the same as IsMember returns. Done.",
+      "parentUuid": "7b314a99_894b8a67",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 59,
+        "endChar": 2
+      },
+      "revId": "19cab0383e5fe016e99833d3a3bd3f01d4e6f568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d86918f8_6350cabd",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "19cab0383e5fe016e99833d3a3bd3f01d4e6f568",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6deba4ff_2970bd46",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-26T22:58:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d86918f8_6350cabd",
+      "range": {
+        "startLine": 82,
+        "startChar": 85,
+        "endLine": 82,
+        "endChar": 119
+      },
+      "revId": "19cab0383e5fe016e99833d3a3bd3f01d4e6f568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
