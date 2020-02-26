@@ -361,7 +361,7 @@ func (f *TestFields) toProtos(ctx context.Context, dest *[]*pb.TestResult, testI
 
 		if container, ok := arts[i]; ok {
 			buf.Reset()
-			err := summaryTmpl.ExecuteTemplate(buf, "jtr", map[string]interface{}{
+			err := SummaryTmpl.ExecuteTemplate(buf, "jtr", map[string]interface{}{
 				"links": container.links,
 			})
 			if err != nil {

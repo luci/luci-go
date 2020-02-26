@@ -110,6 +110,14 @@ func TestSwarming(t *testing.T) {
 			case fmt.Sprintf("/%stask/timed-out-task/result", swarmingAPIEndpoint):
 				resp.State = "TIMED_OUT"
 
+			case fmt.Sprintf("/%stask/timed-out-invalid-outputs-task/result", swarmingAPIEndpoint):
+				resp.State = "TIMED_OUT"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
+
 			case fmt.Sprintf("/%stask/timed-out-outputs-task/result", swarmingAPIEndpoint):
 				resp.State = "TIMED_OUT"
 				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
@@ -220,16 +228,14 @@ func TestSwarming(t *testing.T) {
 				So(inv.Interrupted, ShouldEqual, true)
 			})
 
+			// The task has output but it's invalid. Since it's not required for
+			// resultdb to parse this task's output, no error will be reported.
 			Convey(`and do`, func() {
 				task, err := swarmSvc.Task.Result("timed-out-outputs-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
-
-				Convey(`and errors with FailedPrecondition for malformed output`, func() {
-					So(err, ShouldHaveAppStatus, codes.FailedPrecondition)
-				})
+				So(err, ShouldBeNil)
 			})
 		})
 
@@ -238,8 +244,13 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("completed-no-outputs-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
-				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "missing expected isolated outputs")
+				var res []*pb.TestResult
+				_, res, err = DeriveProtosForWriting(ctx, task, req)
+				So(err, ShouldBeNil)
+				So(len(res), ShouldEqual, 1)
+				So(res[0].TestId, ShouldEqual, "ninja:chrome/tests:browser_tests")
+				So(res[0].Expected, ShouldBeTrue)
+				So(res[0].Status, ShouldEqual, pb.TestStatus_PASS)
 			})
 
 			Convey(`and do but the hash cannot be fetched`, func() {
@@ -249,7 +260,7 @@ func TestSwarming(t *testing.T) {
 				ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
 				defer cancel()
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "getting isolated outputs")
+				So(err, ShouldBeNil)
 			})
 
 			Convey(`and does but outputs don't have expected file`, func() {
@@ -257,7 +268,7 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "missing expected output in isolated outputs")
+				So(err, ShouldBeNil)
 			})
 
 			Convey(`and does but output file is empty`, func() {
@@ -265,7 +276,7 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "empty output file")
+				So(err, ShouldBeNil)
 			})
 
 			Convey(`and do`, func() {
@@ -273,7 +284,7 @@ func TestSwarming(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				_, _, err = DeriveProtosForWriting(ctx, task, req)
-				So(err, ShouldErrLike, "cannot unmarshal string into Go value")
+				So(err, ShouldBeNil)
 			})
 		})
 
