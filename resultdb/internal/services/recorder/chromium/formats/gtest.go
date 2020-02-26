@@ -102,8 +102,8 @@ type GTestResults struct {
 //
 // Fields not used by Test Results are omitted.
 type GTestRunResult struct {
-	Status        string `json:"status"`
-	ElapsedTimeMs int    `json:"elapsed_time_ms"`
+	Status         string `json:"status"`
+	EllapsedTimeMs int    `json:"elapsed_time_ms"`
 
 	LosslessSnippet     bool   `json:"losless_snippet"`
 	OutputSnippetBase64 string `json:"output_snippet_base64"`
@@ -312,8 +312,8 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 	}
 
 	// Do not set duration if it is unknown.
-	if result.ElapsedTimeMs != 0 {
-		tr.Duration = secondsToDuration(1e-6 * float64(result.ElapsedTimeMs))
+	if result.EllapsedTimeMs != 0 {
+		tr.Duration = secondsToDuration(float64(result.EllapsedTimeMs) / 1000)
 	}
 
 	// Write the summary.

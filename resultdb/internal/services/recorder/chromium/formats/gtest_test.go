@@ -96,26 +96,26 @@ func TestGTestConversions(t *testing.T) {
 				"FooTest.TestDoBar": {
 					{
 						Status:              "CRASH",
-						ElapsedTimeMs:       1837,
+						EllapsedTimeMs:       1837,
 						LosslessSnippet:     true,
 						OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmFy",
 					},
 					{
 						Status:              "FAILURE",
-						ElapsedTimeMs:       1856,
+						EllapsedTimeMs:       1856,
 						OutputSnippetBase64: "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
 					},
 				},
 				"FooTest.TestDoBaz": {
 					{
 						Status:              "SUCCESS",
-						ElapsedTimeMs:       837,
+						EllapsedTimeMs:       837,
 						LosslessSnippet:     true,
 						OutputSnippetBase64: "WyBSVU4gICAgICBdIEZvb1Rlc3QuVGVzdERvQmF6",
 					},
 					{
 						Status:              "SUCCESS",
-						ElapsedTimeMs:       856,
+						EllapsedTimeMs:       856,
 						OutputSnippetBase64: "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
 						Links: map[string]string{
 							"logcat": "https://luci-logdog.appspot.com/v/?s=logcat",
@@ -151,7 +151,7 @@ func TestGTestConversions(t *testing.T) {
 		Convey("Duration", func() {
 			tr := convert(&GTestRunResult{
 				Status:        "SUCCESS",
-				ElapsedTimeMs: 1e6,
+				EllapsedTimeMs: 1e3,
 			})
 			So(tr.Duration.GetSeconds(), ShouldEqual, 1)
 			So(tr.Duration.GetNanos(), ShouldEqual, 0)
