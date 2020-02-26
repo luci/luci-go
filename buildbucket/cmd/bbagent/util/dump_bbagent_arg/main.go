@@ -84,7 +84,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to parse: %s", err)
 		os.Exit(1)
 	}
-	err = (&jsonpb.Marshaler{OrigName: true, Indent: ""}).Marshal(os.Stdout, bbargs)
+	err = (&jsonpb.Marshaler{OrigName: true, Indent: "  "}).Marshal(os.Stdout, bbargs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to emit: %s", err)
 		os.Exit(1)
