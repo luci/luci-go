@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be0cf3df_7fb546c7",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T22:59:10Z",
+      "side": 1,
+      "message": "this compiles this template for each task, instead of just once. please move to a global variable",
+      "range": {
+        "startLine": 261,
+        "startChar": 5,
+        "endLine": 261,
+        "endChar": 16
+      },
+      "revId": "90e58c7fdbaac3ea28c4bb00f253efa7433cef45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45129154_c2c3bebc",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T22:59:10Z",
+      "side": 1,
+      "message": "nit: a bit hard to read. consider not consolidating assignment and if statement if the assignment is multi-line",
+      "range": {
+        "startLine": 268,
+        "startChar": 3,
+        "endLine": 268,
+        "endChar": 4
+      },
+      "revId": "90e58c7fdbaac3ea28c4bb00f253efa7433cef45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
