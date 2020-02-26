@@ -369,8 +369,9 @@ func (f *fsImpl) EnsureFile(ctx context.Context, path string, write func(*os.Fil
 	}
 
 	// Replace the current file (if there's one) with a new one. Use nuclear
-	// version (f.Replace) instead of simple atomicReplace to handle various edge
-	// cases handled by the nuclear version (e.g replacing a non-empty directory).
+	// version (f.Replace) instead of simple mostlyAtomicRename to handle various
+	// edge cases handled by the nuclear version (e.g replacing a non-empty
+	// directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
 		return err
 	}
@@ -398,8 +399,8 @@ func (f *fsImpl) EnsureSymlink(ctx context.Context, path string, target string) 
 	}
 
 	// Replace the current symlink with a new one. Use nuclear version (f.Replace)
-	// instead of simple atomicReplace to handle various edge cases handled by
-	// the nuclear version (e.g replacing a non-empty directory).
+	// instead of simple mostlyAtomicRename to handle various edge cases handled
+	// by the nuclear version (e.g replacing a non-empty directory).
 	if err := f.Replace(ctx, temp, path); err != nil {
 		if err2 := os.Remove(temp); err2 != nil && !os.IsNotExist(err2) {
 			logging.Warningf(ctx, "fs: failed to remove %q - %s", temp, err2)
@@ -441,7 +442,7 @@ func (f *fsImpl) EnsureDirectoryGone(ctx context.Context, path string) error {
 	}
 	// Make directory "disappear" instantly by renaming it first.
 	temp := tempFileName(path)
-	if err = atomicRename(path, temp); err != nil {
+	if err = mostlyAtomicRename(path, temp); err != nil {
 		if os.IsNotExist(err) {
 			return nil
 		}
@@ -479,7 +480,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	}
 
 	// Try a regular move first. Replaces files atomically.
-	if err = atomicRename(oldpath, newpath); err == nil {
+	if err = mostlyAtomicRename(oldpath, newpath); err == nil {
 		return nil
 	}
 
@@ -494,8 +495,8 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	waiter := retry.Waiter(ctx, "fs: lost a race when renaming", 10*time.Second)
 	for {
 		// Try to move existing path away into the trash directory. If this fails
-		// in a weird way, atomicRename most probably will also fail in a weird way,
-		// and the error will be properly propagated.
+		// in a weird way, mostlyAtomicRename most probably will also fail in a
+		// weird way, and the error will be properly propagated.
 		if trash, _ := f.moveToTrash(ctx, newpath); trash != "" {
 			// If 'newpath' was a directory, we can actually try to delete it as soon
 			// as possible (after exiting the retry loop). If this fails (e.g. if
@@ -505,7 +506,7 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 		}
 
 		// 'newpath' now should be available.
-		switch err = atomicRename(oldpath, newpath); {
+		switch err = mostlyAtomicRename(oldpath, newpath); {
 		case err == nil:
 			return nil
 
@@ -589,7 +590,7 @@ func (f *fsImpl) moveToTrash(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 	trashed := filepath.Join(f.trash, pseudoRand())
-	if err := atomicRename(path, trashed); err != nil {
+	if err := mostlyAtomicRename(path, trashed); err != nil {
 		if !os.IsNotExist(err) {
 			logging.Warningf(ctx, "fs: failed to rename(%q, %q) when trashing - %s", path, trashed, err)
 		}
