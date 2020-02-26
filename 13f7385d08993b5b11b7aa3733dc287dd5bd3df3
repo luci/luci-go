@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e6c846f_3854bb98",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T19:22:05Z",
+      "side": 1,
+      "message": "nit: i think this code is a wrong place. It unnecessarily assumes that testIDPrefix is a ninja target, and unlike processOutputs, does not treat testIDPrefix as a prefix.\n\nI think it would be cleaner to accept \"testID\" parameter here and pass strings.TrimSuffix(testIDPrefix, \"/\") at the callsite. Then the logic \"append /\" and \"remove slash\" is one function. Bonus points to not append-and-then-remove slash.",
+      "range": {
+        "startLine": 249,
+        "startChar": 2,
+        "endLine": 250,
+        "endChar": 50
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4eaadaf4_12966037",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T19:22:05Z",
+      "side": 1,
+      "message": "i think this can be simplified to resultStatus \u003d\u003d PASS? then we don\u0027t need bool return value in getTestResultStatus",
+      "range": {
+        "startLine": 251,
+        "startChar": 12,
+        "endLine": 251,
+        "endChar": 20
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a52244a_7b4b645f",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T19:22:05Z",
+      "side": 1,
+      "message": "please either use html/template package (which will protect you from security bugs) or escape all inputs:  https://godoc.org/html#EscapeString\n\nif you still prefer fmt.Sprintf, please use ` to avoid escaping \"",
+      "range": {
+        "startLine": 256,
+        "startChar": 19,
+        "endLine": 256,
+        "endChar": 30
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9fd30f3_a0010472",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-26T19:22:05Z",
+      "side": 1,
+      "message": "nit: this is specific to the callsite (we are doing this in a wrong place). This function unconditionally returns one test result. I think this func should return *pb.TestResult, and it is the callsite\u0027s job to make it a slice.",
+      "range": {
+        "startLine": 258,
+        "startChar": 8,
+        "endLine": 258,
+        "endChar": 29
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
