@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1b7ee91_811ff0ea",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T23:43:02Z",
+      "side": 1,
+      "message": "The log message should be updated?",
+      "range": {
+        "startLine": 101,
+        "startChar": 3,
+        "endLine": 101,
+        "endChar": 57
+      },
+      "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14442099_a397ff23",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T23:43:02Z",
+      "side": 1,
+      "message": "I wonder if we should do this here or after we actually delete the results.\n\nI think if we do this after the actual deletion, we\u0027ll need to change Invocation (i.e. add a new column \"PurgeScheduled\" or something).",
+      "range": {
+        "startLine": 157,
+        "startChar": 11,
+        "endLine": 157,
+        "endChar": 43
+      },
+      "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
