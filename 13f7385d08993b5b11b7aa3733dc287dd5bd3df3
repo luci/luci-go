@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "237da9ee_5b8a67f7",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T21:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e6c846f_3854bb98",
+      "range": {
+        "startLine": 249,
+        "startChar": 2,
+        "endLine": 250,
+        "endChar": 50
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4eaadaf4_12966037",
         "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b27885f9_cd11996f",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T21:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4eaadaf4_12966037",
+      "range": {
+        "startLine": 251,
+        "startChar": 12,
+        "endLine": 251,
+        "endChar": 20
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9b76d2fc_784af051",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T21:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a52244a_7b4b645f",
+      "range": {
+        "startLine": 256,
+        "startChar": 19,
+        "endLine": 256,
+        "endChar": 30
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9fd30f3_a0010472",
         "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
         "patchSetId": 6
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "3352b035_184691f4",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T21:14:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9fd30f3_a0010472",
+      "range": {
+        "startLine": 258,
+        "startChar": 8,
+        "endLine": 258,
+        "endChar": 29
+      },
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ba43543_48ebbf7a",
         "filename": "resultdb/internal/services/recorder/chromium/swarming_test.go",
         "patchSetId": 6
@@ -105,6 +201,24 @@
       "writtenOn": "2020-02-26T20:38:04Z",
       "side": 1,
       "message": "Aren\u0027t we missing a test for the case where we return invalidTaskf(\"failed to convert the task to a test result\") ?",
+      "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6987c9f3_fd91b4d9",
+        "filename": "resultdb/internal/services/recorder/chromium/swarming_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-26T21:14:30Z",
+      "side": 1,
+      "message": "I think we\u0027re probably fine since convertTaskToResult can only fail when generating SummaryHtml.",
+      "parentUuid": "4ba43543_48ebbf7a",
       "revId": "13f7385d08993b5b11b7aa3733dc287dd5bd3df3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
