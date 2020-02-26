@@ -252,9 +252,12 @@ func TestRemoveAll(t *testing.T) {
 
 				Convey(`Can remove the directory when it is read-only`, func() {
 					// Make the directory read-only, and assert that classic os.RemoveAll
-					// fails.
+					// fails. Except on Windows it doesn't, see:
+					// https://github.com/golang/go/issues/26295.
 					So(MakeReadOnly(subDir, nil), ShouldBeNil)
-					So(os.RemoveAll(subDir), ShouldNotBeNil)
+					if runtime.GOOS != "windows" {
+						So(os.RemoveAll(subDir), ShouldNotBeNil)
+					}
 
 					So(RemoveAll(subDir), ShouldBeNil)
 					So(isGone(subDir), ShouldBeTrue)
