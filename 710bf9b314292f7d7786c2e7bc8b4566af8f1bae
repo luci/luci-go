@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64a9f371_4b72181b",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-26T23:18:41Z",
+      "side": 1,
+      "message": "Does this run once upon container restart? Might be worth mentioning here.",
+      "revId": "710bf9b314292f7d7786c2e7bc8b4566af8f1bae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
