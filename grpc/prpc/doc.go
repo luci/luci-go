@@ -105,7 +105,7 @@
 //  - Any other headers MUST be added to metadata.MD in the context that is
 //    passed to the service method implementation.
 //    - If a header name has "-Bin" suffix, the server must treat it as
-//      standard-base64-encoded and trim the suffix.
+//      standard-base64-encoded.
 //
 // Response headers:
 //  - "X-Prpc-Grpc-Code": specifies the gRPC code.
