@@ -313,7 +313,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 
 	// Do not set duration if it is unknown.
 	if result.ElapsedTimeMs != 0 {
-		tr.Duration = secondsToDuration(1e-6 * float64(result.ElapsedTimeMs))
+		tr.Duration = secondsToDuration(float64(result.ElapsedTimeMs) / 1000)
 	}
 
 	// Write the summary.
