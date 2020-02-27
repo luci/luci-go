@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2d84f1a9_b27ee6f3",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-27T01:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b651c44_ee0839e4",
+      "range": {
+        "startLine": 67,
+        "startChar": 85,
+        "endLine": 67,
+        "endChar": 98
+      },
+      "revId": "8d1ade71a60a32b6b049343b55fd916f40a502bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b30d5de_ad27ed80",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "38943294_f123a9d4",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-27T01:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0b30d5de_ad27ed80",
+      "range": {
+        "startLine": 108,
+        "startChar": 12,
+        "endLine": 108,
+        "endChar": 14
+      },
+      "revId": "8d1ade71a60a32b6b049343b55fd916f40a502bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec788426_d167eb8f",
         "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "8d1ade71a60a32b6b049343b55fd916f40a502bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d86f5f7_7c575e10",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-27T01:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ec788426_d167eb8f",
+      "range": {
+        "startLine": 95,
+        "startChar": 4,
+        "endLine": 98,
+        "endChar": 6
+      },
+      "revId": "8d1ade71a60a32b6b049343b55fd916f40a502bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
