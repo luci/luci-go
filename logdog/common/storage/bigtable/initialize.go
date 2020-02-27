@@ -28,8 +28,8 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 )
 
-// DefaultMaxLogAge is the maximum age of a log (7 days).
-const DefaultMaxLogAge = time.Duration(7 * 24 * time.Hour)
+// DefaultMaxLogAge is the maximum age of a log (4 days).
+const DefaultMaxLogAge = time.Duration(4 * 24 * time.Hour)
 
 // InitializeScopes is the set of OAuth scopes needed to use the Initialize
 // functionality.
