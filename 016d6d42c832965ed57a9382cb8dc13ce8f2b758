@@ -93,6 +93,30 @@
       "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2298e645_82cc0ee8",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T00:15:59Z",
+      "side": 1,
+      "message": "Thought this a bit more, I guess we don\u0027t really gain anything from that additional complexity: I was thinking it would be safer if we update Invocations\u0027s expiration_time after we actually complete the deletion - but it actually makes no difference.\n\nAlthough it still bugs me a little that we update purgedInvocationsCount metric in unsetInvocationResultsExpiration, because after this change the Invocations are not really purged yet when unsetInvocationResultsExpiration",
+      "parentUuid": "56e3c91e_a053765d",
+      "range": {
+        "startLine": 157,
+        "startChar": 11,
+        "endLine": 157,
+        "endChar": 43
+      },
+      "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
