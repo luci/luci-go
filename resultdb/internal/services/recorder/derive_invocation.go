@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -212,7 +211,7 @@ func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Inv
 				return err
 			}
 
-			metrics.IncTestResultCount(ctx, len(batch), metrics.Inserted)
+			span.IncTestResultCount(ctx, len(batch), span.Inserted)
 			return nil
 		})
 	}

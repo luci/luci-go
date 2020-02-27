@@ -27,12 +27,25 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
+
+var testResultCounter = metric.NewCounter(
+	"resultdb/test_results/count",
+	"Number of test results",
+	nil,
+	field.String("status")) // See RowStatus type.
+
+// IncTestResultCount increments the test result counter.
+func IncTestResultCount(ctx context.Context, count int, rowStatus RowStatus) {
+	testResultCounter.Add(ctx, int64(count), string(rowStatus))
+}
 
 // MustParseTestResultName retrieves the invocation ID, unescaped test id, and
 // result ID.
