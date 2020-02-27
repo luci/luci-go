@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04a9c79e_95106919",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T06:53:01Z",
+      "side": 1,
+      "message": "I personally think id would be more clear (or even invID).",
+      "range": {
+        "startLine": 94,
+        "startChar": 45,
+        "endLine": 94,
+        "endChar": 48
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a551da6_146115d9",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T06:53:01Z",
+      "side": 1,
+      "message": "Inserted?",
+      "range": {
+        "startLine": 61,
+        "startChar": 38,
+        "endLine": 61,
+        "endChar": 45
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "518a958c_37011f97",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T06:53:01Z",
+      "side": 1,
+      "message": "Will we track a similar metric for other tables?\n\nIf so we can potentially further generalize testResultCounter to rowCounter?\n\nPerhaps we can do this for InvocationTasks? If so we can potentially remove the existing task count metric (hence one fewer query)?",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
