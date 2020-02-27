@@ -206,13 +206,13 @@ func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
 	return errors.New("not implemented yet")
 }
 
-// Export exports lucictx.ResultDB derived from the server configuration into
+// Export exports lucictx.ResultSink derived from the server configuration into
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
-	db := lucictx.ResultDB{
-		TestResults: lucictx.TestResults{Port: s.cfg.Port, AuthToken: s.cfg.AuthToken},
-	}
-	return lucictx.SetResultDB(ctx, &db)
+	return lucictx.SetResultSink(ctx, &lucictx.ResultSink{
+		Address:   fmt.Sprintf("localhost:%d", s.cfg.Port),
+		AuthToken: s.cfg.AuthToken,
+	})
 }
 
 func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
