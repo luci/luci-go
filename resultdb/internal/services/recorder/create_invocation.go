@@ -30,12 +30,18 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+)
+
+var (
+	// customIdGroup is a CIA group that can create invocations with custom id's.
+	customIdGroup = "luci-resultdb-custom-invocation-id"
 )
 
 // validateInvocationDeadline returns a non-nil error if deadline is invalid.
@@ -58,14 +64,12 @@ func validateInvocationDeadline(deadline *tspb.Timestamp, now time.Time) error {
 
 // validateCreateInvocationRequest returns an error if req is determined to be
 // invalid.
-func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time) error {
+func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.Time, allowCustomID bool) error {
 	if err := pbutil.ValidateInvocationID(req.InvocationId); err != nil {
 		return errors.Annotate(err, "invocation_id").Err()
 	}
 
-	// TODO(nodir): whitelist trusted LUCI service accounts that are allowed to
-	// create invocations with any ids.
-	if !strings.HasPrefix(req.InvocationId, "u:") {
+	if !strings.HasPrefix(req.InvocationId, "u:") && !allowCustomID {
 		return errors.Reason(`invocation_id: an invocation created by a non-LUCI system must have id starting with "u:"; please generate "u:{GUID}"`).Err()
 	}
 
@@ -101,7 +105,11 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
 	now := clock.Now(ctx).UTC()
 
-	if err := validateCreateInvocationRequest(in, now); err != nil {
+	allowCustomID, err := auth.IsMember(ctx, customIdGroup)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateCreateInvocationRequest(in, now, allowCustomID); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
 
