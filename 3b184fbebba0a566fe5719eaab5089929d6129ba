@@ -235,6 +235,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5996e069_e4a07a38",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:51:05Z",
+      "side": 1,
+      "message": "mind if we further improve further this when there are more use cases?\n\nalso, wdyt about the part for which I\u0027ve CCed you:\n\n\u003e\u003e If so we can potentially remove the existing task count metric (hence one fewer query)?\n\u003e i am not sure about this. i don\u0027t think counters can be reliably used to reason about the current state. they are used to reason about relative changes of the state, but not absolute. +ddoman",
+      "parentUuid": "129239b1_b3f2313c",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
