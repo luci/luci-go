@@ -117,6 +117,30 @@
       "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cf7131d_f4ec7137",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T00:36:14Z",
+      "side": 1,
+      "message": "your point makes sense! I\u0027ve added a status metric field with values SCHEDULED and PURGED",
+      "parentUuid": "2298e645_82cc0ee8",
+      "range": {
+        "startLine": 157,
+        "startChar": 11,
+        "endLine": 157,
+        "endChar": 43
+      },
+      "revId": "016d6d42c832965ed57a9382cb8dc13ce8f2b758",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
