@@ -1,0 +1,268 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c79e1c67_77465e19",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "it is not obvious that bucket_id is \"{project}/{bucket}\" and builder id has \"{project}/{bucket}/{builder}\". Please add comments.",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 36
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfec11b2_62b00aba",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "this is pretty generic and useful. i\u0027d like to use it in resultdb. Could you place it in some buildbucket-agnostic package?",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 15
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e50e0d6_1161e2e0",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "this won\u0027t be very readable for large messages because it uses https://godoc.org/github.com/golang/protobuf/proto#CompactTextString\nsource: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/build.pb.go;l\u003d150\n\nconsider https://godoc.org/github.com/golang/protobuf/proto#MarshalTextString",
+      "range": {
+        "startLine": 45,
+        "startChar": 92,
+        "endLine": 45,
+        "endChar": 95
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b5c7f5c_b3e181ea",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 56,
+        "startChar": 84,
+        "endLine": 56,
+        "endChar": 87
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88661b22_2892cac0",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "it is up to you, but i found it useful to place each rpc in separate file. Here is how it worked out for us: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/;l\u003d1?q\u003dservices%2Frecorder\u0026sq\u003d\n\nwe kept unimplemented methods in one file. as we implemented them with new files.",
+      "range": {
+        "startLine": 78,
+        "startChar": 15,
+        "endLine": 78,
+        "endChar": 23
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7326fe91_f8263bfa",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "this set of checks will grow. Please separate stateless validation from execution.\nconsider approach: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/create_invocation.go",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849a0dee_ab9885e5",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "i bet that down the road you\u0027d want to return specific grpc codes from deeper parts of the code. I tried to use grpcutil and it failed for me, and I had to replace it with appstatus package (reasoning: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1984537 )\nit proved to work well for us, so I recommend reusing it.\nobviously, not in this CL, because we\u0027d need to move appstatus out of resultdb",
+      "range": {
+        "startLine": 82,
+        "startChar": 15,
+        "endLine": 82,
+        "endChar": 28
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5bc3c813_5f361e86",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "this case is not executed if req.GetId() !\u003d 0\n\nplease combine expressions in L80 and L81 into one expression\n\nstepping back, I am not sure this is a good usage of switch. There is the same problem in L89 essentially. Basically, we should enter a \"case\" iff we are going to return an error for sure",
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ca0cfb4_9ee1482c",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "unlike python, regexp package does not cache these, so these regexps are compiled in each request\n\nplease replace constant strings with *regexp.Regexp variables",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05cd8e83_1a5e2f50",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "we will definitely need to reuse this logic in other places. please extract.\nconsider a pattern ParseXXX(aString string) (component1, component2, component3 string, err error)\nexamples: https://source.chromium.org/search?q\u003dfunc%5C%20Parse%20f:resultdb",
+      "range": {
+        "startLine": 89,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46ed1d8f_257790b4",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "didn\u0027t you already logged that with logDetails()?",
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff592da5_ddb8d92f",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T17:24:43Z",
+      "side": 1,
+      "message": "nit:\n\n  switch err :\u003d datastore.Get(ctx, ent); err {",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 14
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
