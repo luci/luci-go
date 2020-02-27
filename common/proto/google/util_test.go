@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -42,6 +43,14 @@ func TestTimestamp(t *testing.T) {
 
 	Convey(`A nil Timestamp produces a zero time.Time.`, t, func() {
 		So(TimeFromProto(nil).IsZero(), ShouldBeTrue)
+	})
+
+	Convey(`A zero Timestamp produces a zero time.Time.`, t, func() {
+		// It is easy to (unintentionally) inject a zero value for an unset
+		// message field when round-tripping through the generated code in some
+		// languages. e.g., reading an unset field in python injects the zero
+		// value for the field in the source message.
+		So(TimeFromProto(&timestamp.Timestamp{}).IsZero(), ShouldBeTrue)
 	})
 }
 
