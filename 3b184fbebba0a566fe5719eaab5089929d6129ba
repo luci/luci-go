@@ -307,6 +307,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dd6c9178_06288015",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T18:57:10Z",
+      "side": 1,
+      "message": "I proposed to replace the taskCountMetric by this rowCounter not because they are tracking the same thing, but we can use them to achieve the same goal: to make sure the tasks are being processed properly.\n\nIIRC, we add taskCountMetric so that we can add an alert later which should notify us when seeing accumulating backlog.  And I think rowCounter can help on that. Even better it can also alert us when the inserts count drops drastically.",
+      "parentUuid": "6ae9b52e_802e3554",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
