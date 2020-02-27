@@ -379,6 +379,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "737b610b_f40d5b73",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T19:21:26Z",
+      "side": 1,
+      "message": "we\u0027d need to compare that number to the number of tasks we are inserting? but that\u0027s unreliable because insertions and deletions do not happen at the same time\n\nhow would we tell if we\u0027ve finished processing a backlog?",
+      "parentUuid": "79fa03a8_94833daa",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
