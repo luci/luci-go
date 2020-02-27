@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"time"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/data/treapstore"
@@ -38,7 +37,6 @@ type Testing interface {
 	DataMap() map[string][]byte
 	SetMaxRowSize(int)
 	SetErr(error)
-	MaxLogAge() time.Duration
 }
 
 type btTestingStorage struct {
@@ -51,15 +49,11 @@ type btTestingStorage struct {
 
 	// err, if true, is the error immediately returned by functions.
 	err error
-
-	// maxLogAge is the currently-configured maximum log age.
-	maxLogAge time.Duration
 }
 
 func (bts *btTestingStorage) DataMap() map[string][]byte { return bts.dataMap() }
 func (bts *btTestingStorage) SetMaxRowSize(v int)        { bts.maxRowSize = v }
 func (bts *btTestingStorage) SetErr(err error)           { bts.err = err }
-func (bts *btTestingStorage) MaxLogAge() time.Duration   { return bts.maxLogAge }
 
 // NewMemoryInstance returns an in-memory BigTable Storage implementation.
 // This can be supplied in the Raw field in Options to simulate a BigTable
@@ -176,14 +170,6 @@ func (bts *btTestingStorage) getLogData(c context.Context, rk *rowKey, limit int
 		return true
 	})
 	return ierr
-}
-
-func (bts *btTestingStorage) setMaxLogAge(c context.Context, d time.Duration) error {
-	if bts.err != nil {
-		return bts.err
-	}
-	bts.maxLogAge = d
-	return nil
 }
 
 func (bts *btTestingStorage) dataMap() map[string][]byte {

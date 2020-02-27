@@ -20,7 +20,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
@@ -203,34 +202,6 @@ func TestBigTable(t *testing.T) {
 				})
 			})
 
-			Convey(`Config()`, func() {
-				cfg := storage.Config{
-					MaxLogAge: time.Hour,
-				}
-
-				Convey(`Can update the configuration.`, func() {
-					So(st.Config(c, cfg), ShouldBeNil)
-					So(st.MaxLogAge, ShouldEqual, cfg.MaxLogAge)
-				})
-
-				Convey(`Will return an error if one is set.`, func() {
-					st.SetErr(errors.New("test error"))
-					So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
-				})
-			})
-
-			Convey(`Errors can be set, cleared, and set again.`, func() {
-				So(st.Config(c, storage.Config{}), ShouldBeNil)
-
-				st.SetErr(errors.New("test error"))
-				So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
-
-				st.SetErr(nil)
-				So(st.Config(c, storage.Config{}), ShouldBeNil)
-
-				st.SetErr(errors.New("test error"))
-				So(st.Config(c, storage.Config{}), ShouldErrLike, "test error")
-			})
 		})
 	})
 }

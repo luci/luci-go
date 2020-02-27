@@ -52,11 +52,6 @@ func (st *BigTableStorage) Close() {
 	}
 }
 
-// Config implements storage.Storage.
-func (st *BigTableStorage) Config(context.Context, storage.Config) error {
-	return errors.New("not implemented")
-}
-
 // ArchivalStorage is a bound GSClient-backed Storage instance.
 type ArchivalStorage struct {
 	// Storage is the base (archive) Storage instance.

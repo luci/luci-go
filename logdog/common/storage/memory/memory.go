@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -54,9 +53,6 @@ type Storage struct {
 	// a single Get request.
 	MaxGetCount int
 
-	// MaxLogAge is the configured maximum log age.
-	MaxLogAge time.Duration
-
 	stateMu sync.Mutex
 	streams map[streamKey]*logStream
 	closed  bool
@@ -80,14 +76,6 @@ func (s *Storage) ResetClose() {
 	defer s.stateMu.Unlock()
 
 	s.closed = false
-}
-
-// Config implements storage.Storage.
-func (s *Storage) Config(c context.Context, cfg storage.Config) error {
-	return s.run(func() error {
-		s.MaxLogAge = cfg.MaxLogAge
-		return nil
-	})
 }
 
 // Put implements storage.Storage.
