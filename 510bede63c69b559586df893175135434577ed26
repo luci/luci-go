@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "99ef5276_3805aef3",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-02-27T00:50:35Z",
+      "side": 1,
+      "message": "The count here is the count of deleted results, not invocations.",
+      "range": {
+        "startLine": 225,
+        "startChar": 33,
+        "endLine": 225,
+        "endChar": 38
+      },
+      "revId": "510bede63c69b559586df893175135434577ed26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
