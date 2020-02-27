@@ -104,9 +104,7 @@ func TestPurgeExpiredResults(t *testing.T) {
 		}
 
 		// Purge expired data.
-		err := scheduleForPurgingOneShard(ctx, 0)
-		So(err, ShouldBeNil)
-		err = deleteTestResults(ctx)
+		err := purgeOneShard(ctx, 0)
 		So(err, ShouldBeNil)
 
 		// Count remaining results

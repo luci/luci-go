@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/internal/tasks"
@@ -149,7 +148,12 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 			return txn.BufferWrite(ms)
 		}
 	})
-	return inv, err
+	if err != nil {
+		return nil, err
+	}
+
+	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+	return inv, nil
 }
 
 func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.InvocationID) (bool, error) {
@@ -212,7 +216,8 @@ func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Inv
 				return err
 			}
 
-			metrics.IncTestResultCount(ctx, len(batch), metrics.Inserted)
+			span.IncRowCount(ctx, len(batch), span.TestResults, span.Inserted)
+			span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 			return nil
 		})
 	}

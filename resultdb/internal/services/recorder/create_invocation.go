@@ -178,6 +178,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 	if inv.CreateTime == nil {
 		// The request was not deduped.
 		inv.CreateTime = pbutil.MustTimestampProto(commitTimestamp)
+		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	}
 	return inv, nil
 }
