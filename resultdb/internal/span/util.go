@@ -37,6 +37,16 @@ import (
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 )
 
+// RowStatus is a status of a row.
+// Used in test counter metrics.
+type RowStatus string
+
+// Values of RowStatus type.
+const (
+	Inserted RowStatus = "INSERTED"
+	Deleted  RowStatus = "DELETED"
+)
+
 // This file implements utility functions that make spanner API slightly easier
 // to use.
 
