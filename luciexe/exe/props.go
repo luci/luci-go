@@ -88,6 +88,7 @@ func ParseProperties(props *structpb.Struct, outputs map[string]interface{}) err
 //    JSONPB and Unmarshaled into the proto.Message.
 //  * a valid "encoding/json" marshal source. The data in this field will be
 //    interpreted as json and marshaled with the stdlib "encoding/json" package.
+//  * nil. The top-level property will be removed.
 //
 // This function will scan the inputs and marshal them as appropriate into
 // `props` (usually `build.Output.Properties`).
@@ -109,6 +110,11 @@ func WriteProperties(props *structpb.Struct, inputs map[string]interface{}) erro
 	idx := -1
 	for field, input := range inputs {
 		idx++
+
+		if input == nil {
+			delete(props.Fields, field)
+			continue
+		}
 
 		var buf bytes.Buffer
 		var err error
