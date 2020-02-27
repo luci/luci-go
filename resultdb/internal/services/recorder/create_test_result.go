@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/resultdb/internal/metrics"
+
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
 
@@ -58,6 +60,7 @@ func (s *recorderServer) CreateTestResult(ctx context.Context, in *pb.CreateTest
 	if err != nil {
 		return nil, err
 	}
+	metrics.IncTestResultCount(ctx, 1, metrics.PurgeScheduled)
 	return ret, nil
 }
 

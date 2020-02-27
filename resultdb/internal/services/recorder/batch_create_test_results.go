@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -82,5 +83,6 @@ func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.Batc
 	if err != nil {
 		return nil, err
 	}
+	metrics.IncTestResultCount(ctx, len(in.Requests), metrics.Inserted)
 	return ret, nil
 }
