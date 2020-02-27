@@ -22,6 +22,30 @@
       "revId": "2a48b25ba669729faa15fec29bb711401c01a329",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d93e17e1_221c3bf0",
+        "filename": "resultdb/internal/span/metrics.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:35:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78d47f26_6664ec78",
+      "range": {
+        "startLine": 37,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 0
+      },
+      "revId": "2a48b25ba669729faa15fec29bb711401c01a329",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
