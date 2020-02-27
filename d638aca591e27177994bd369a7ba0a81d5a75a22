@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a6d1901d_ec589ee2",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-27T07:21:30Z",
+      "side": 0,
+      "message": "Thanks for cleaning this up. This could have gone in the previous change but I didn\u0027t notice.",
+      "revId": "d638aca591e27177994bd369a7ba0a81d5a75a22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

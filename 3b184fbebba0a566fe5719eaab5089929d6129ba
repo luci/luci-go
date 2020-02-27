@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "a48aee7f_15b39e1a",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-02-27T07:21:30Z",
+      "side": 1,
+      "message": "nit: remove",
+      "range": {
+        "startLine": 148,
+        "startChar": 52,
+        "endLine": 148,
+        "endChar": 63
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5a551da6_146115d9",
         "filename": "resultdb/internal/services/recorder/create_test_result.go",
         "patchSetId": 2
