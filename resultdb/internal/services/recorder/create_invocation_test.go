@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -69,29 +70,36 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 	Convey(`TestValidateCreateInvocationRequest`, t, func() {
 		Convey(`empty`, func() {
-			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now)
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{}, now, false)
 			So(err, ShouldErrLike, `invocation_id: unspecified`)
 		})
 
 		Convey(`invalid id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "1",
-			}, now)
+			}, now, false)
 			So(err, ShouldErrLike, `invocation_id: does not match`)
 		})
 
 		Convey(`reserved prefix`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
-				InvocationId: "build-1",
-			}, now)
+				InvocationId: "build:8765432100",
+			}, now, false)
 			So(err, ShouldErrLike, `must have id starting with "u:"`)
+		})
+
+		Convey(`reserved prefix, allowed`, func() {
+			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
+				InvocationId: "build:8765432100",
+			}, now, true)
+			So(err, ShouldBeNil)
 		})
 
 		Convey(`invalid request id`, func() {
 			err := validateCreateInvocationRequest(&pb.CreateInvocationRequest{
 				InvocationId: "u:a",
 				RequestId:    "😃",
-			}, now)
+			}, now, false)
 			So(err, ShouldErrLike, "request_id: does not match")
 		})
 
@@ -101,7 +109,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Tags: pbutil.StringPairs("1", "a"),
 				},
-			}, now)
+			}, now, false)
 			So(err, ShouldErrLike, `invocation.tags: "1":"a": key: does not match`)
 		})
 
@@ -112,7 +120,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				Invocation: &pb.Invocation{
 					Deadline: deadline,
 				},
-			}, now)
+			}, now, false)
 			So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
 		})
 
@@ -129,7 +137,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 						},
 					},
 				},
-			}, now)
+			}, now, false)
 			So(err, ShouldErrLike, `bigquery_export[0]: dataset: unspecified`)
 		})
 
@@ -141,7 +149,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					Deadline: deadline,
 					Tags:     pbutil.StringPairs("a", "b", "a", "c", "d", "e"),
 				},
-			}, now)
+			}, now, false)
 			So(err, ShouldBeNil)
 		})
 	})
@@ -150,6 +158,12 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 func TestCreateInvocation(t *testing.T) {
 	Convey(`TestCreateInvocation`, t, func() {
 		ctx := SpannerTestContext(t)
+		// Configure mock authentication to allow creation of custom invocation ids.
+		ctx = authtest.MockAuthConfig(ctx)
+		db := authtest.FakeDB{
+			"anonymous:anonymous": []string{"luci-resultdb-custom-invocation-id"},
+		}
+		ctx = db.Use(ctx)
 
 		start := clock.Now(ctx).UTC()
 
