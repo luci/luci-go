@@ -259,6 +259,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "43a09c3d_71d813cb",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-27T09:20:19Z",
+      "side": 1,
+      "message": "\u003e\u003e mind if we further improve further this when there are more use cases?\nI personally like you latest change, because the metric path actually seems aligned and matched more with what the business logic actually reports, which is # of rows, not # of the business object stored in DB, IIUC.\n\n\u003e\u003e also, wdyt about the part for which I\u0027ve CCed you:\nnodir@ is right, and it\u0027s mainly because the monitoring system down-samples random monitoring data points during the retention stages.\n(remind you that each retention policy is configured with a sampling policy)\n\nHowever, the generate monitoring outputs are accurate enough in most cases, and the monitoring system always uses real data reported by applications. Even for the down-sampling, it\u0027s not a big deal in many cases.\n\nFor example, lets\u0027 say that the application reports 3 data points with 1 minute interval.\nAt 00:00, 0\nAt 00:01, 1\nAt 00:03, 3\n\nbut the 2nd was down-sampled out by the retention policy.\nAt 00:00, 0\nAt 00:03, 3\n\nBefore down-sampling,\nDelta(from\u003d\"00:00\", to\u003d\"00:01\") returns 1\nDelta(from\u003d\"00:00\", to\u003d\"00:03\") returns 3\n\nAfter down-sampling,\nDelta(from\u003d\"00:00\", to\u003d\"00:01\") returns 0\nDelta(from\u003d\"00:00\", to\u003d\"00:03\") returns 3\n\nWe lose the time precision, but if we increase the length of the time window, we still get an accurate number. Yes, we lose certain time precision, but in many cases, it\u0027s not a big deal, and down-sampling typically occurs 4weeks or longer period after the first retention stage.\n\nIn short, monitoring data provides reliable enough data in many cases, and we can always tune the retention policy, and control the summarizing operation, if necessary. However, if you need an exact string consistent number at a microsecond level, then monitoring system is not the solution.",
+      "parentUuid": "5996e069_e4a07a38",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
