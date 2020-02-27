@@ -26,7 +26,6 @@ import (
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
-	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
@@ -46,23 +45,18 @@ type Options struct {
 
 // InitServer initializes a purger server.
 func InitServer(srv *server.Server, opts Options) {
-	srv.RunInBackground("resultdb.schedule_for_purging", func(ctx context.Context) {
+	srv.RunInBackground("resultdb.purge", func(ctx context.Context) {
 		minInterval := time.Minute
 		if opts.ForceCronInterval > 0 {
 			minInterval = opts.ForceCronInterval
 		}
-		scheduleForPurgingContinuously(ctx, minInterval)
-	})
-	srv.RunInBackground("resultdb.purge", func(ctx context.Context) {
-		// Run database-scale operation only once a day or per container restart.
-		cron.Run(ctx, 24*time.Hour, deleteTestResults)
+		run(ctx, minInterval)
 	})
 }
 
-// scheduleForPurgingContinuously continuously schedules expired test results
-// for purging.
+// run continuously purges expired test results.
 // It blocks until context is canceled.
-func scheduleForPurgingContinuously(ctx context.Context, minInterval time.Duration) {
+func run(ctx context.Context, minInterval time.Duration) {
 	maxShard, err := span.CurrentMaxShard(ctx)
 	switch {
 	case err == span.ErrNoResults:
@@ -72,10 +66,10 @@ func scheduleForPurgingContinuously(ctx context.Context, minInterval time.Durati
 	}
 
 	// Start one cron job for each shard of the database.
-	cron.Group(ctx, maxShard+1, minInterval, scheduleForPurgingOneShard)
+	cron.Group(ctx, maxShard+1, minInterval, purgeOneShard)
 }
 
-func scheduleForPurgingOneShard(ctx context.Context, shard int) error {
+func purgeOneShard(ctx context.Context, shard int) error {
 	st := spanner.NewStatement(`
 		SELECT InvocationId
 		FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
@@ -90,21 +84,21 @@ func scheduleForPurgingOneShard(ctx context.Context, shard int) error {
 			return err
 		}
 
-		if err := scheduleForPurgingOneInvocation(ctx, id); err != nil {
+		if err := purgeOneInvocation(ctx, id); err != nil {
 			logging.Errorf(ctx, "failed to process %s: %s", id, err)
 		}
 		return nil
 	})
 }
 
-func scheduleForPurgingOneInvocation(ctx context.Context, id span.InvocationID) error {
+func purgeOneInvocation(ctx context.Context, invID span.InvocationID) error {
 	txn := span.Client(ctx).ReadOnlyTransaction()
 	defer txn.Close()
 
 	// Check that invocation hasn't been purged already.
 	var expirationTime spanner.NullTime
 	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
-	if err := span.ReadInvocation(ctx, txn, id, ptrs); err != nil {
+	if err := span.ReadInvocation(ctx, txn, invID, ptrs); err != nil {
 		return err
 	}
 	if expirationTime.IsNull() {
@@ -118,19 +112,18 @@ func scheduleForPurgingOneInvocation(ctx context.Context, id span.InvocationID) 
 	// is currently O(table size).
 	var ms []*spanner.Mutation
 	count := 0
-	err := testResultsToPurge(ctx, txn, id, func(testID, resultID string) error {
+	err := testResultsToPurge(ctx, txn, invID, func(testID, resultID string) error {
 		count++
-		ms = append(ms, span.UpdateMap("TestResults", map[string]interface{}{
-			"InvocationId": id,
-			"TestId":       testID,
-			"ResultID":     resultID,
-			"Purge":        true,
-		}))
+		ms = append(ms, spanner.Delete("TestResults", invID.Key(testID, resultID)))
 		// Flush if the batch is too large.
-		if len(ms) > 1000 {
+		// Cloud Spanner limitation is 20k mutations per txn.
+		// One deletion is one mutation.
+		// Flush at 19k boundary.
+		if len(ms) > 19000 {
 			if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
 				return err
 			}
+			span.IncRowCount(ctx, len(ms), span.TestResults, span.Deleted)
 			ms = ms[:0]
 		}
 		return nil
@@ -144,25 +137,16 @@ func scheduleForPurgingOneInvocation(ctx context.Context, id span.InvocationID) 
 		if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
 			return err
 		}
+		span.IncRowCount(ctx, len(ms), span.TestResults, span.Deleted)
 	}
 
 	// Set the invocation's result expiration to null.
-	if err := unsetInvocationResultsExpiration(ctx, id); err != nil {
+	if err := unsetInvocationResultsExpiration(ctx, invID); err != nil {
 		return err
 	}
 
-	metrics.IncTestResultCount(ctx, count, metrics.PurgeScheduled)
-	logging.Debugf(ctx, "Scheduled %d test results in %s for purging", count, id.Name())
+	logging.Debugf(ctx, "Deleted %d test results in %s", count, invID.Name())
 	return nil
-}
-
-// testVariantID is a simple pair-of-strings struct with no spanner columnnames.
-//
-// It is used to pass these pairs as sql params in the UNNEST function in the
-// statement composed by deleteTestResults below.
-type testVariantID struct {
-	TestID      string `spanner:""`
-	VariantHash string `spanner:""`
 }
 
 // testResultsToPurge calls f for test results that should be purged.
@@ -201,18 +185,5 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-// deleteTestResults executes a partitioned DML "DELETE" to drop test results
-// scheduled to purging.
-func deleteTestResults(ctx context.Context) error {
-	st := spanner.NewStatement(`DELETE FROM TestResults WHERE Purge = True`)
-	count, err := span.Client(ctx).PartitionedUpdate(ctx, st)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "Deleted %d test result rows", count)
-	metrics.IncTestResultCount(ctx, int(count), metrics.Purged)
 	return nil
 }
