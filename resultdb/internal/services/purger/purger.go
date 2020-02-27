@@ -23,11 +23,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/tsmon/field"
-	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server"
 
 	"go.chromium.org/luci/resultdb/internal/cron"
+	"go.chromium.org/luci/resultdb/internal/metrics"
 	"go.chromium.org/luci/resultdb/internal/span"
 )
 
@@ -37,14 +36,6 @@ import (
 // variant combinations with unexpected results will not be purged, until
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
-
-var (
-	purgedInvocationsCount = metric.NewCounter(
-		"resultdb/purged_invocations/count",
-		"How many invocations have had their expected test results purged",
-		nil,
-		field.String("status")) // SCHEDULED, PURGED.
-)
 
 // Options is purger server configuration.
 type Options struct {
@@ -160,6 +151,7 @@ func scheduleForPurgingOneInvocation(ctx context.Context, id span.InvocationID) 
 		return err
 	}
 
+	metrics.IncTestResultCount(ctx, count, metrics.PurgeScheduled)
 	logging.Debugf(ctx, "Scheduled %d test results in %s for purging", count, id.Name())
 	return nil
 }
@@ -209,7 +201,6 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 	if err != nil {
 		return err
 	}
-	purgedInvocationsCount.Add(ctx, 1, "SCHEDULED")
 	return nil
 }
 
@@ -222,6 +213,6 @@ func deleteTestResults(ctx context.Context) error {
 		return err
 	}
 	logging.Infof(ctx, "Deleted %d test result rows", count)
-	purgedInvocationsCount.Add(ctx, count, "PURGED")
+	metrics.IncTestResultCount(ctx, int(count), metrics.Purged)
 	return nil
 }
