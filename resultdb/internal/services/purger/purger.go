@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/server"
 
@@ -41,7 +42,8 @@ var (
 	purgedInvocationsCount = metric.NewCounter(
 		"resultdb/purged_invocations/count",
 		"How many invocations have had their expected test results purged",
-		nil)
+		nil,
+		field.String("status")) // SCHEDULED, PURGED.
 )
 
 // Options is purger server configuration.
@@ -53,14 +55,23 @@ type Options struct {
 
 // InitServer initializes a purger server.
 func InitServer(srv *server.Server, opts Options) {
-	srv.RunInBackground("resultdb.purge_expired_results", func(ctx context.Context) {
-		run(ctx, opts)
+	srv.RunInBackground("resultdb.schedule_for_purging", func(ctx context.Context) {
+		minInterval := time.Minute
+		if opts.ForceCronInterval > 0 {
+			minInterval = opts.ForceCronInterval
+		}
+		scheduleForPurgingContinuously(ctx, minInterval)
+	})
+	srv.RunInBackground("resultdb.purge", func(ctx context.Context) {
+		// Run database-scale operation only once a day or per container restart.
+		cron.Run(ctx, 24*time.Hour, deleteTestResults)
 	})
 }
 
-// run continuously purges expired test results.
+// scheduleForPurgingContinuously continuously schedules expired test results
+// for purging.
 // It blocks until context is canceled.
-func run(ctx context.Context, opts Options) {
+func scheduleForPurgingContinuously(ctx context.Context, minInterval time.Duration) {
 	maxShard, err := span.CurrentMaxShard(ctx)
 	switch {
 	case err == span.ErrNoResults:
@@ -70,14 +81,10 @@ func run(ctx context.Context, opts Options) {
 	}
 
 	// Start one cron job for each shard of the database.
-	minInterval := time.Minute
-	if opts.ForceCronInterval > 0 {
-		minInterval = opts.ForceCronInterval
-	}
-	cron.Group(ctx, maxShard+1, minInterval, purgeShard)
+	cron.Group(ctx, maxShard+1, minInterval, scheduleForPurgingOneShard)
 }
 
-func purgeShard(ctx context.Context, shard int) error {
+func scheduleForPurgingOneShard(ctx context.Context, shard int) error {
 	st := spanner.NewStatement(`
 		SELECT InvocationId
 		FROM Invocations@{FORCE_INDEX=InvocationsByExpectedTestResultsExpiration}
@@ -92,20 +99,21 @@ func purgeShard(ctx context.Context, shard int) error {
 			return err
 		}
 
-		if err := purgeOneInvocation(ctx, id); err != nil {
-			logging.Errorf(ctx, "failed to purge %s: %s", id, err)
+		if err := scheduleForPurgingOneInvocation(ctx, id); err != nil {
+			logging.Errorf(ctx, "failed to process %s: %s", id, err)
 		}
 		return nil
 	})
 }
 
-// purgeOneInvocation finds test variants with unexpected results and drops the
-// complement, if there aren't too many of them.
-func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
+func scheduleForPurgingOneInvocation(ctx context.Context, id span.InvocationID) error {
+	txn := span.Client(ctx).ReadOnlyTransaction()
+	defer txn.Close()
+
 	// Check that invocation hasn't been purged already.
 	var expirationTime spanner.NullTime
 	ptrs := map[string]interface{}{"ExpectedTestResultsExpirationTime": &expirationTime}
-	if err := span.ReadInvocation(ctx, span.Client(ctx).Single(), id, ptrs); err != nil {
+	if err := span.ReadInvocation(ctx, txn, id, ptrs); err != nil {
 		return err
 	}
 	if expirationTime.IsNull() {
@@ -113,20 +121,47 @@ func purgeOneInvocation(ctx context.Context, id span.InvocationID) error {
 		return nil
 	}
 
-	// Get the test variants that have one or more unexpected results (up to limit + 1).
-	testVariantsToKeep, err := queryTestVariantsWithUnexpectedResults(ctx, id, maxTestVariantsToFilter+1)
+	// Stream test results that need to be purged, and set Purge=true on them,
+	// in batches.
+	// Note that we cannot use Partitioned UPDATE here because its time complexity
+	// is currently O(table size).
+	var ms []*spanner.Mutation
+	count := 0
+	err := testResultsToPurge(ctx, txn, id, func(testID, resultID string) error {
+		count++
+		ms = append(ms, span.UpdateMap("TestResults", map[string]interface{}{
+			"InvocationId": id,
+			"TestId":       testID,
+			"ResultID":     resultID,
+			"Purge":        true,
+		}))
+		// Flush if the batch is too large.
+		if len(ms) > 1000 {
+			if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
+				return err
+			}
+			ms = ms[:0]
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	if len(testVariantsToKeep) > maxTestVariantsToFilter {
-		logging.Warningf(ctx, "Too many test variants with unexpected test results for %s, not purging", id.Name())
-	} else if err := deleteTestResults(ctx, id, testVariantsToKeep); err != nil {
+	// Flush the last batch.
+	if len(ms) > 0 {
+		if _, err := span.Client(ctx).Apply(ctx, ms); err != nil {
+			return err
+		}
+	}
+
+	// Set the invocation's result expiration to null.
+	if err := unsetInvocationResultsExpiration(ctx, id); err != nil {
 		return err
 	}
 
-	// Set the invocation's result expiration to null
-	return unsetInvocationResultsExpiration(ctx, id)
+	logging.Debugf(ctx, "Scheduled %d test results in %s for purging", count, id.Name())
+	return nil
 }
 
 // testVariantID is a simple pair-of-strings struct with no spanner columnnames.
@@ -138,53 +173,30 @@ type testVariantID struct {
 	VariantHash string `spanner:""`
 }
 
-// deleteTestResults composes and executes a partitioned delete to drop
-// all the test results in a given invocation except those matching any of the given
-// test variant combination given in except.
-func deleteTestResults(ctx context.Context, id span.InvocationID, except []testVariantID) error {
+// testResultsToPurge calls f for test results that should be purged.
+func testResultsToPurge(ctx context.Context, txn *spanner.ReadOnlyTransaction, inv span.InvocationID, f func(testID, resultID string) error) error {
 	st := spanner.NewStatement(`
-		DELETE FROM TestResults
+		WITH DoNotPurge AS (
+			SELECT DISTINCT TestId, VariantHash
+			FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
+			WHERE InvocationId = @invocationId
+			  AND IsUnexpected = TRUE
+		)
+		SELECT tr.TestId, tr.ResultId
+		FROM TestResults tr
+		LEFT JOIN DoNotPurge dnp ON tr.TestId = dnp.TestId AND tr.VariantHash = dnp.VariantHash
 		WHERE InvocationId = @invocationId
-		AND (TestId, VariantHash) NOT IN UNNEST(@exceptTestVariants)
-	`)
-	st.Params["invocationId"] = span.ToSpanner(id)
-	st.Params["exceptTestVariants"] = except
-	count, err := span.Client(ctx).PartitionedUpdate(ctx, st)
-	if err != nil {
-		return err
-	}
-	logging.Infof(ctx, "Deleted %d expired test result rows in %s", count, id.Name())
-	return nil
-}
-
-// queryTestVariantsWithUnexpectedResults finds up to `limit` test variant
-// combinations that have at least one unexpected test result for a given
-// invocation.
-func queryTestVariantsWithUnexpectedResults(ctx context.Context, id span.InvocationID, limit int) ([]testVariantID, error) {
-	ret := []testVariantID{}
-	st := spanner.NewStatement(`
-		SELECT DISTINCT TestId, VariantHash
-		FROM TestResults@{FORCE_INDEX=UnexpectedTestResults}
-		WHERE InvocationId = @invocationId
-		AND IsUnexpected = TRUE
-		LIMIT @limit
+			AND dnp.VariantHash IS NULL
 	`)
 
-	st.Params["invocationId"] = id
-	st.Params["limit"] = limit
-	err := span.Query(ctx, span.Client(ctx).Single(), st, func(row *spanner.Row) error {
-		tv := testVariantID{}
-		if err := row.Columns(&tv.TestID, &tv.VariantHash); err != nil {
+	st.Params["invocationId"] = inv
+	return span.Query(ctx, txn, st, func(row *spanner.Row) error {
+		var testID, resultID string
+		if err := row.Columns(&testID, &resultID); err != nil {
 			return err
 		}
-		ret = append(ret, tv)
-		return nil
-
+		return f(testID, resultID)
 	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID) error {
@@ -197,6 +209,19 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 	if err != nil {
 		return err
 	}
-	purgedInvocationsCount.Add(ctx, 1)
+	purgedInvocationsCount.Add(ctx, 1, "SCHEDULED")
+	return nil
+}
+
+// deleteTestResults executes a partitioned DML "DELETE" to drop test results
+// scheduled to purging.
+func deleteTestResults(ctx context.Context) error {
+	st := spanner.NewStatement(`DELETE FROM TestResults WHERE Purge = True`)
+	count, err := span.Client(ctx).PartitionedUpdate(ctx, st)
+	if err != nil {
+		return err
+	}
+	logging.Infof(ctx, "Deleted %d test result rows", count)
+	purgedInvocationsCount.Add(ctx, count, "PURGED")
 	return nil
 }
