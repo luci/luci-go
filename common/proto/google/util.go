@@ -54,6 +54,10 @@ func TimeFromProto(t *timestamp.Timestamp) time.Time {
 	if t == nil {
 		return time.Time{}
 	}
+	if t.Seconds == 0 && t.Nanos == 0 {
+		// This is year 0000 as opposed to time.Unix(0, 0).UTC(), which is 1970.
+		return time.Time{}
+	}
 	return time.Unix(t.Seconds, int64(t.Nanos)).UTC()
 }
 
