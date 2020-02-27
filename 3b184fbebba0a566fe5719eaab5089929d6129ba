@@ -187,6 +187,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d80b3920_d035e612",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-27T08:45:31Z",
+      "side": 1,
+      "message": "Generally speaking, if two business objects are distinct from each other in the business logic, they should be separated because there is a chance their properties can diverge in the future. In this CL, metric \u0027resultdb/test_result/count\u0027 is to represent # of table rows under test_results, and all the current fields are generate enough to be applicable to any db tables.\n- table_name\n- row_status\n\nHowever, in the future, if there is a need of reporting certain table specific columns into the metric, then the metric field becomes such a field that is conditionally present only if another field value (table_name) is \u0027foo\u0027, for example. Typically, such metric fields tend to cause unhealthy monitoring configs.\n\nWell, perhaps, I\u0027d propose to rename this metric to \u0027resultdb/db_table_operations/count\u0027 with the following fields\n- FIELDS[\u0027table_name\u0027]\n- FIELDS[\u0027operation\u0027]  # insertion, deletion, update",
+      "parentUuid": "bc50de5e_e472733a",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
