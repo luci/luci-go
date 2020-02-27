@@ -243,10 +243,6 @@ func testArchiveStorage(t *testing.T, limit int64) {
 
 		stImpl := st.(*storageImpl)
 
-		Convey(`Will fail to configure with ErrReadOnly`, func() {
-			So(st.Config(c, storage.Config{}), ShouldEqual, storage.ErrReadOnly)
-		})
-
 		Convey(`Will fail to Put with ErrReadOnly`, func() {
 			So(st.Put(c, storage.PutRequest{}), ShouldEqual, storage.ErrReadOnly)
 		})

@@ -15,11 +15,8 @@
 package bigtable
 
 import (
-	"context"
 	"testing"
-	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/common/storage"
 
 	"cloud.google.com/go/bigtable"
@@ -31,7 +28,6 @@ func TestBigTable(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Testing BigTable internal functions`, t, func() {
-		c := context.Background()
 		s := NewMemoryInstance(nil)
 		defer s.Close()
 
@@ -68,22 +64,5 @@ func TestBigTable(t *testing.T) {
 			})
 		})
 
-		Convey(`When pushing a configuration`, func() {
-			cfg := storage.Config{
-				MaxLogAge: 1 * time.Hour,
-			}
-
-			Convey(`Can successfully apply configuration.`, func() {
-				So(s.Config(c, cfg), ShouldBeNil)
-				So(s.MaxLogAge(), ShouldEqual, cfg.MaxLogAge)
-			})
-
-			Convey(`With return an error if the configuration fails to apply.`, func() {
-				testErr := errors.New("test error")
-				s.SetErr(testErr)
-
-				So(s.Config(c, cfg), ShouldEqual, testErr)
-			})
-		})
 	})
 }

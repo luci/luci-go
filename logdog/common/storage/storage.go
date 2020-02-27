@@ -17,7 +17,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -37,15 +36,6 @@ var (
 	// is read-only.
 	ErrReadOnly = errors.New("storage: read only")
 )
-
-// Config is the set of runtime configuration parameters for this storage
-// instance.
-type Config struct {
-	// MaxLogAge is the maximium amount of time that a log entry must be kept for.
-	// The Storage instance is welcome to delete any log entries that exceed this
-	// age.
-	MaxLogAge time.Duration
-}
 
 // PutRequest describes adding a single storage record to BigTable.
 type PutRequest struct {
@@ -128,8 +118,4 @@ type Storage interface {
 	// the caller will have to unmarshal the log entry data to determine its
 	// index.
 	Tail(ctx context.Context, projectName string, stream types.StreamPath) (*Entry, error)
-
-	// Config installs the supplied configuration parameters into the storage
-	// instance.
-	Config(context.Context, Config) error
 }

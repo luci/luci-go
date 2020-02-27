@@ -17,7 +17,6 @@ package bigtable
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.chromium.org/luci/logdog/common/storage"
 
@@ -72,9 +71,6 @@ type btIface interface {
 	//
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
-
-	// setMaxLogAge updates the maximum log age policy for the log family.
-	setMaxLogAge(context.Context, time.Duration) error
 
 	// getMaxRowSize returns the maximum row size that this implementation
 	// supports.
@@ -161,21 +157,6 @@ func (bti prodBTIface) getLogData(c context.Context, rk *rowKey, limit int, keys
 	}
 	if innerErr != nil {
 		return innerErr
-	}
-	return nil
-}
-
-func (bti prodBTIface) setMaxLogAge(c context.Context, d time.Duration) error {
-	if bti.AdminClient == nil {
-		return errors.New("no admin client configured")
-	}
-
-	var logGCPolicy bigtable.GCPolicy
-	if d > 0 {
-		logGCPolicy = bigtable.MaxAgePolicy(d)
-	}
-	if err := bti.AdminClient.SetGCPolicy(c, bti.LogTable, logColumnFamily, logGCPolicy); err != nil {
-		return grpcutil.WrapIfTransient(err)
 	}
 	return nil
 }

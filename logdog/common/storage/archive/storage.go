@@ -97,7 +97,6 @@ func New(o Options) (storage.Storage, error) {
 
 func (s *storageImpl) Close() {}
 
-func (s *storageImpl) Config(context.Context, storage.Config) error  { return storage.ErrReadOnly }
 func (s *storageImpl) Put(context.Context, storage.PutRequest) error { return storage.ErrReadOnly }
 
 func (s *storageImpl) Get(c context.Context, req storage.GetRequest, cb storage.GetCallback) error {
