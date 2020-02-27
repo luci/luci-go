@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package span
 
 import (
 	"context"
@@ -21,24 +21,33 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 )
 
-// TestResultRowStatus is a status of a test result row.
-// Used in test result counter metric.
-type TestResultRowStatus string
+// RowStatus is a status of a row.
+// Used in metrics.
+type RowStatus string
 
-// Values of TestResultRowStatus type.
+// Values of RowStatus type.
 const (
-	Inserted       TestResultRowStatus = "INSERTED"
-	PurgeScheduled TestResultRowStatus = "PURGE_SCHEDULED"
-	Purged         TestResultRowStatus = "PURGED"
+	Inserted RowStatus = "INSERTED"
+	Deleted  RowStatus = "DELETED"
 )
 
 var testResultCounter = metric.NewCounter(
 	"resultdb/test_results/count",
 	"Number of test results",
 	nil,
-	field.String("status")) // See TestResultRowStatus type.
+	field.String("status")) // See RowStatus type.
 
-// IncTestResultCount increments the test result counter.
-func IncTestResultCount(ctx context.Context, count int, rowStatus TestResultRowStatus) {
-	testResultCounter.Add(ctx, int64(count), string(rowStatus))
+// Table identifies a Spanner table.
+// Used in metrics.
+type Table string
+
+// Values of Table type.
+const (
+	TestResults     Table = "TestResults"
+	Invocations     Table = "Invocations"
+)
+
+// IncRowCount increments the row counter.
+func IncRowCount(ctx context.Context, count int, table Table, rowStatus RowStatus) {
+	testResultCounter.Add(ctx, int64(count), string(table), string(rowStatus))
 }
