@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bf74db5d_01b1eaec",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T07:57:26Z",
+      "side": 1,
+      "message": "i didn\u0027t like id because L117 becomes\n\n  id.Key(testID, resultID)\n\nrenamed to invID. Now it is consistent with testID and resultID",
+      "parentUuid": "04a9c79e_95106919",
+      "range": {
+        "startLine": 94,
+        "startChar": 45,
+        "endLine": 94,
+        "endChar": 48
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a48aee7f_15b39e1a",
         "filename": "resultdb/internal/services/purger/purger.go",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc9fa19f_c3380667",
+        "filename": "resultdb/internal/services/purger/purger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T07:57:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a48aee7f_15b39e1a",
+      "range": {
+        "startLine": 148,
+        "startChar": 52,
+        "endLine": 148,
+        "endChar": 63
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fead738d_17dc81ed",
+        "filename": "resultdb/internal/services/recorder/create_test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T07:57:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a551da6_146115d9",
+      "range": {
+        "startLine": 61,
+        "startChar": 38,
+        "endLine": 61,
+        "endChar": 45
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "518a958c_37011f97",
         "filename": "resultdb/internal/span/test_result.go",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc50de5e_e472733a",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T07:57:26Z",
+      "side": 1,
+      "message": "\u003e Will we track a similar metric for other tables?\n\nyes\n\n\u003e If so we can potentially further generalize testResultCounter to rowCounter?\n\nthis is a great idea. done.\n\n\u003e \n\u003e Perhaps we can do this for InvocationTasks? \n\nmaybe. not in this CL though.\n\n\u003e If so we can potentially remove the existing task count metric (hence one fewer query)?\n\ni am not sure about this. i don\u0027t think counters can be reliably used to reason about the current state. they are used to reason about relative changes of the state, but not absolute. +ddoman",
+      "parentUuid": "518a958c_37011f97",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
