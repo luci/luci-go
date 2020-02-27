@@ -18,22 +18,27 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/mail"
+	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/luci_notify/api/config"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
@@ -132,7 +137,27 @@ func BlamelistRepoWhiteset(notifications notifypb.Notifications) stringset.Set {
 //
 // An "input" blamelist is computed from the input commit to a build, while an
 // "output" blamelist is derived from output commits.
-func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+func ComputeRecipients(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+	return computeRecipientsInternal(c, notifications, inputBlame, outputBlame,
+		func(c context.Context, url string) ([]byte, error) {
+			transport := urlfetch.Get(c)
+			response, err := (&http.Client{Transport: transport}).Get(url)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to get data from %q", url).Err()
+			}
+
+			bytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
+			}
+
+			return bytes, nil
+		})
+}
+
+// This internal version also takes fetchFunc, so http requests can be mocked
+// out for testing.
+func computeRecipientsInternal(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs, fetchFunc func(context.Context, string) ([]byte, error)) []EmailNotify {
 	recipients := make([]EmailNotify, 0)
 	for _, notification := range notifications.GetNotifications() {
 		// Aggregate the static list of recipients from the Notifications.
@@ -159,6 +184,51 @@ func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb
 		whiteset := stringset.NewFromSlice(whitelist...)
 		recipients = append(recipients, outputBlame.Filter(whiteset).Blamelist(notification.Template)...)
 	}
+
+	// Acquired before appending to "recipients" from the tasks below.
+	mRecipients := sync.Mutex{}
+	parallel.WorkPool(8, func(ch chan<- func() error) {
+		for _, notification := range notifications.GetNotifications() {
+			// Make a local so that the function below doesn't close over the loop variable.
+			template := notification.Template
+			for _, rotation_ := range notification.GetEmail().GetRotaNgRotations() {
+				// Make a local so that the function below doesn't close over the loop variable.
+				rotation := rotation_
+				ch <- func() error {
+					address := "https://rota-ng.appspot.com/legacy/" + rotation + ".json"
+					resp, err := fetchFunc(c, address)
+					if err != nil {
+						err = errors.Annotate(err, "Failed to fetch address %q", address).Err()
+						logging.Errorf(c, err.Error())
+						return err
+					}
+
+					type Oncall struct {
+						Emails []string
+					}
+					oncallEmails := Oncall{}
+					err = json.Unmarshal(resp, &oncallEmails)
+					if err != nil {
+						err = errors.Annotate(err, "Failed to unmarshal JSON").Err()
+						logging.Errorf(c, err.Error())
+						return err
+					}
+
+					mRecipients.Lock()
+					defer mRecipients.Unlock()
+					for _, email := range oncallEmails.Emails {
+						recipients = append(recipients, EmailNotify{
+							Email:    email,
+							Template: template,
+						})
+					}
+
+					return nil
+				}
+			}
+		}
+	})
+
 	return recipients
 }
 
