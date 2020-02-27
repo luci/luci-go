@@ -17,7 +17,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -41,10 +40,6 @@ var (
 // Config is the set of runtime configuration parameters for this storage
 // instance.
 type Config struct {
-	// MaxLogAge is the maximium amount of time that a log entry must be kept for.
-	// The Storage instance is welcome to delete any log entries that exceed this
-	// age.
-	MaxLogAge time.Duration
 }
 
 // PutRequest describes adding a single storage record to BigTable.

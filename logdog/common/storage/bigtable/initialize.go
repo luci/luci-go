@@ -28,9 +28,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 )
 
-// DefaultMaxLogAge is the maximum age of a log (7 days).
-const DefaultMaxLogAge = time.Duration(7 * 24 * time.Hour)
-
 // InitializeScopes is the set of OAuth scopes needed to use the Initialize
 // functionality.
 var InitializeScopes = []string{
@@ -130,9 +127,7 @@ func (s *Storage) Initialize(c context.Context) error {
 		}.Infof(c, "Successfully created 'log' column family.")
 	}
 
-	cfg := storage.Config{
-		MaxLogAge: DefaultMaxLogAge,
-	}
+	cfg := storage.Config{}
 	if err := s.Config(c, cfg); err != nil {
 		log.WithError(err).Errorf(c, "Failed to push default configuration.")
 		return err

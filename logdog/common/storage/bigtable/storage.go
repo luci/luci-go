@@ -109,13 +109,6 @@ func (s *Storage) Close() {}
 
 // Config implements storage.Storage.
 func (s *Storage) Config(c context.Context, cfg storage.Config) error {
-	if err := s.getIface().setMaxLogAge(c, cfg.MaxLogAge); err != nil {
-		log.WithError(err).Errorf(c, "Failed to set 'log' GC policy.")
-		return err
-	}
-	log.Fields{
-		"maxLogAge": cfg.MaxLogAge,
-	}.Infof(c, "Set maximum log age.")
 	return nil
 }
 
