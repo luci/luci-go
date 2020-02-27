@@ -2,6 +2,92 @@
   "comments": [
     {
       "key": {
+        "uuid": "4d6a2f01_4f27414b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/server/auth#GetRPCTransport should be used to get a transport.\nyou\u0027d also get client-side metric instrumentation",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "783ffff8_82261f7d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "i don\u0027t think context timeout is used here.\nshould probably use https://godoc.org/net/http#NewRequestWithContext or https://godoc.org/net/http#Request.WithContext",
+      "range": {
+        "startLine": 144,
+        "startChar": 57,
+        "endLine": 144,
+        "endChar": 65
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d368b406_f9edc927",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "defer responses.Body.Close()",
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f9003db_5a4759b4",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "nit: in go, comments for symbols must start with the symbol name\n\n  // computeRecipientsInternal takes...",
+      "range": {
+        "startLine": 158,
+        "startChar": 3,
+        "endLine": 158,
+        "endChar": 7
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8518f63f_cc85bfc7",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -18,6 +104,168 @@
         "startChar": 0,
         "endLine": 190,
         "endChar": 52
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb895517_39852be7",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "8518f63f_cc85bfc7",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 52
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b09e51c1_9ce04266",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "nit: unnecessary\n\nits ok and typical to write foo :\u003d foo in such cases",
+      "range": {
+        "startLine": 194,
+        "startChar": 18,
+        "endLine": 194,
+        "endChar": 19
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae140727_5758b41f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "this should be escaped. Consider https://godoc.org/net/url#URL that would do it for you",
+      "range": {
+        "startLine": 198,
+        "startChar": 56,
+        "endLine": 198,
+        "endChar": 64
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5efa4a10_dbf749f1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "hostnames should not be hardcoded, but should be propagated like other hostnames: https://chrome-internal.googlesource.com/infradata/config/+/master/configs/luci-notify/settings.cfg",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 44
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fc02b7b_b965323d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "logging the error and returning it is an anti-pattern\nsee \"Only handle errors once\" in https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully\n\nit is the higher level part that should be logging",
+      "range": {
+        "startLine": 202,
+        "startChar": 6,
+        "endLine": 203,
+        "endChar": 16
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4b36d33_d145e8be",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "simpler:\n\n  var oncallEmails struct {\n    Emails []string\n  }",
+      "range": {
+        "startLine": 206,
+        "startChar": 5,
+        "endLine": 209,
+        "endChar": 29
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2b0612c_73d24c34",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-27T08:33:57Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 214,
+        "endChar": 16
       },
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
