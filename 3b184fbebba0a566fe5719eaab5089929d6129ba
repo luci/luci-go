@@ -211,6 +211,30 @@
       "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "129239b1_b3f2313c",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-27T08:47:00Z",
+      "side": 1,
+      "message": "err, \".... all the current fields are *general* enough to ...\"",
+      "parentUuid": "d80b3920_d035e612",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 23
+      },
+      "revId": "3b184fbebba0a566fe5719eaab5089929d6129ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
