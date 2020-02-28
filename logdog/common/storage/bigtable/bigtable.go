@@ -72,6 +72,9 @@ type btIface interface {
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
 
+	// Drops all rows given the path prefix of rk.
+	dropRowRange(c context.Context, rkPrefix *rowKey) error
+
 	// getMaxRowSize returns the maximum row size that this implementation
 	// supports.
 	getMaxRowSize() int
@@ -107,6 +110,10 @@ func (bti prodBTIface) putLogData(c context.Context, rk *rowKey, data []byte) er
 		return storage.ErrExists
 	}
 	return nil
+}
+
+func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
+	return bti.AdminClient.DropRowRange(c, bti.LogTable, rk.pathPrefix())
 }
 
 func (bti prodBTIface) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {

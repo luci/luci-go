@@ -115,6 +115,24 @@ func (bts *btTestingStorage) putLogData(c context.Context, rk *rowKey, d []byte)
 	return nil
 }
 
+func (bts *btTestingStorage) dropRowRange(c context.Context, rk *rowKey) error {
+	it := bts.c.Iterator(&storageItem{[]byte(rk.pathPrefix()), nil})
+	for {
+		itm, ok := it.Next()
+		if !ok {
+			return nil
+		}
+		drk, err := decodeRowKey(string((itm.(*storageItem)).key))
+		if err != nil {
+			return err
+		}
+		if !drk.sharesPathWith(rk) {
+			return nil
+		}
+		bts.c.Delete(itm)
+	}
+}
+
 func (bts *btTestingStorage) forEachItem(start []byte, cb func(k, v []byte) bool) {
 	it := bts.c.Iterator(&storageItem{start, nil})
 	for {
