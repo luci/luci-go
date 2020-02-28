@@ -141,7 +141,7 @@ func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
 	keyC := make(chan string)
 
 	// TODO(iannucci): parallelize row scan?
-	readerC := make(chan error)
+	readerC := make(chan error, 1)
 	go func() {
 		defer close(keyC)
 		defer close(readerC)
