@@ -147,6 +147,12 @@ func (s *Storage) Put(c context.Context, r storage.PutRequest) error {
 	return nil
 }
 
+// Expunge implements storage.Storage.
+func (s *Storage) Expunge(c context.Context, r storage.ExpungeRequest) error {
+	return s.getIface().dropRowRange(
+		prepareContext(c), newRowKey(string(r.Project), string(r.Path), 0, 0))
+}
+
 // Get implements storage.Storage.
 func (s *Storage) Get(c context.Context, r storage.GetRequest, cb storage.GetCallback) error {
 	c = prepareContext(c)

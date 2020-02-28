@@ -562,9 +562,15 @@ func (s *Service) IntermediateStorage(c context.Context, rw bool) (storage.Stora
 	if err != nil {
 		return nil, err
 	}
+	adminClient, err := cloudBT.NewAdminClient(c, btcfg.Project, btcfg.Instance,
+		option.WithUserAgent(s.getUserAgent()), option.WithTokenSource(ts))
+	if err != nil {
+		return nil, err
+	}
 	return &bigtable.Storage{
-		Client:   client,
-		LogTable: btcfg.LogTableName,
+		Client:      client,
+		AdminClient: adminClient,
+		LogTable:    btcfg.LogTableName,
 	}, nil
 }
 
