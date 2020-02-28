@@ -133,7 +133,6 @@ func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
 
 	prefix, upperBound := rk.pathPrefix(), rk.pathPrefixUpperBound()
 	rng := bigtable.NewRange(prefix, upperBound)
-	logging.Infof(c, "dropRowRange: prefix: %q upperBound: %q rng: %s", prefix, upperBound, rng)
 	// apply paranoia mode
 	if rng.Contains("") || prefix == "" || upperBound == "" {
 		panic(fmt.Sprintf("NOTHING MAKES SENSE: %q %q %q", rng, prefix, upperBound))
