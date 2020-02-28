@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b537ad31_76530297",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-28T01:50:05Z",
+      "side": 1,
+      "message": "yep",
+      "parentUuid": "e1bfb65d_b3c2b38d",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc473dd1_6e62c8fd",
         "filename": "logdog/common/storage/bigtable/bigtable.go",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2020-02-28T01:38:11Z",
       "side": 1,
       "message": "I admit I only vaguely understand what this means.",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 56
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a447527a_71187cfb",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-28T01:50:05Z",
+      "side": 1,
+      "message": "I copypasta\u0027d from getLogData below",
+      "parentUuid": "fc473dd1_6e62c8fd",
       "range": {
         "startLine": 147,
         "startChar": 0,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "93c84d8c_ef9e444f",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-28T01:50:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e80e10d_29b4cd68",
+      "range": {
+        "startLine": 160,
+        "startChar": 17,
+        "endLine": 160,
+        "endChar": 18
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2206a9ef_fae9a89d",
         "filename": "logdog/common/storage/bigtable/bigtable.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6a8dd2c_65bb0995",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-28T01:50:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2206a9ef_fae9a89d",
+      "range": {
+        "startLine": 174,
+        "startChar": 11,
+        "endLine": 174,
+        "endChar": 16
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
