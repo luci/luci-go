@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1bfb65d_b3c2b38d",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T01:38:11Z",
+      "side": 1,
+      "message": "this is weird api...",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc473dd1_6e62c8fd",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T01:38:11Z",
+      "side": 1,
+      "message": "I admit I only vaguely understand what this means.",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 148,
+        "endChar": 56
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e80e10d_29b4cd68",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T01:38:11Z",
+      "side": 1,
+      "message": "nit: \u003e\u003d",
+      "range": {
+        "startLine": 160,
+        "startChar": 17,
+        "endLine": 160,
+        "endChar": 18
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2206a9ef_fae9a89d",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T01:38:11Z",
+      "side": 1,
+      "message": "nit: Warningf or Errorf",
+      "range": {
+        "startLine": 174,
+        "startChar": 11,
+        "endLine": 174,
+        "endChar": 16
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ea39e9e_188867a2",
+        "filename": "logdog/common/storage/bigtable/storage.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T01:38:11Z",
+      "side": 1,
+      "message": "What will happen if by some mistake/bug/botched refactoring r.Project ends up \"\" here (or both r.Project and r.Path). Will it drop EVERYTHING? Can we add a panic or something (probably to dropRowRange) just in case...",
+      "range": {
+        "startLine": 149,
+        "startChar": 38,
+        "endLine": 149,
+        "endChar": 47
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
