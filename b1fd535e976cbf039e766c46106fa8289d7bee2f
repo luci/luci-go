@@ -210,6 +210,30 @@
       "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12b82a10_9b603ccb",
+        "filename": "logdog/common/storage/bigtable/storage.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-02-28T01:50:25Z",
+      "side": 1,
+      "message": "added paranoia in dropRowRange",
+      "parentUuid": "9ea39e9e_188867a2",
+      "range": {
+        "startLine": 149,
+        "startChar": 38,
+        "endLine": 149,
+        "endChar": 47
+      },
+      "revId": "b1fd535e976cbf039e766c46106fa8289d7bee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
