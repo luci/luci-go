@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a7b968b_6ddbf191",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 471,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-02-28T09:25:28Z",
+      "side": 1,
+      "message": "Is this expected to be positive?",
+      "range": {
+        "startLine": 471,
+        "startChar": 2,
+        "endLine": 471,
+        "endChar": 6
+      },
+      "revId": "f1407ce8718b8b0fdd5202d3bfa90a4640d3f1dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
