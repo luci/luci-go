@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 const (
@@ -113,7 +114,7 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		Context: ctx,
 		cfg:     cfg,
 		errC:    make(chan error, 1),
-		prpc:    &prpc.Server{},
+		prpc:    &prpc.Server{Authenticator: prpc.NoAuthentication},
 		routes:  router.NewWithRootContext(ctx),
 	}
 	s.routes.Use(router.NewMiddlewareChain(
@@ -122,7 +123,14 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		// checks the auth-token
 		authTokenValidator(s.cfg.AuthToken),
 	))
-	s.prpc = &prpc.Server{}
+
+	// Install the pRPC service.
+	s.prpc = &prpc.Server{Authenticator: prpc.NoAuthentication}
+	s.prpc.InstallHandlers(s.routes, router.MiddlewareChain{})
+	sinkpb.RegisterSinkServer(s.prpc, &sinkpb.DecoratedSink{
+		Service: &sinkServer{cfg: s.cfg},
+	})
+
 	s.httpSrv = &http.Server{
 		Addr: cfg.Address,
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
