@@ -340,20 +340,27 @@ func TestHandleArchive(t *testing.T) {
 			stream.State.TerminalIndex = 3
 
 			Convey(`Will consume the task if the log stream has no entries.`, func() {
+				So(st.Count(project, desc.Path()), ShouldEqual, 0)
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(st.Count(project, desc.Path()), ShouldEqual, 0)
 			})
 
 			Convey(`Will archive {0, 1, 2, 4} (incomplete).`, func() {
 				addTestEntry(project, 0, 1, 2, 4)
+				So(st.Count(project, desc.Path()), ShouldEqual, 4)
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(st.Count(project, desc.Path()), ShouldEqual, 0)
 			})
 
 			Convey(`Will successfully archive {0, 1, 2, 3, 4}, stopping at the terminal index.`, func() {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 
+				So(st.Count(project, desc.Path()), ShouldEqual, 5)
 				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				So(st.Count(project, desc.Path()), ShouldEqual, 0)
 
 				So(hasStreams(true, true, true), ShouldBeTrue)
+
 				So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 					Project:       project,
 					Id:            task.Id,
@@ -369,7 +376,9 @@ func TestHandleArchive(t *testing.T) {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.New("test error", transient.Tag) }
 
+				So(st.Count(project, desc.Path()), ShouldEqual, 5)
 				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
+				So(st.Count(project, desc.Path()), ShouldEqual, 5)
 			})
 
 			Convey(`When a non-transient archival error occurs`, func() {
@@ -378,9 +387,11 @@ func TestHandleArchive(t *testing.T) {
 				gsc.newWriterErr = func(*testGSWriter) error { return archiveErr }
 
 				Convey(`If remote report returns an error, do not consume the task.`, func() {
-					archiveStreamErr = errors.New("test error")
+					archiveStreamErr = errors.New("test error", transient.Tag)
 
+					So(st.Count(project, desc.Path()), ShouldEqual, 5)
 					So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
+					So(st.Count(project, desc.Path()), ShouldEqual, 5)
 
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
@@ -390,7 +401,9 @@ func TestHandleArchive(t *testing.T) {
 				})
 
 				Convey(`If remote report returns success, the task is consumed.`, func() {
+					So(st.Count(project, desc.Path()), ShouldEqual, 5)
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(st.Count(project, desc.Path()), ShouldEqual, 0)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
@@ -433,7 +446,9 @@ func TestHandleArchive(t *testing.T) {
 				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func() {
 					addTestEntry(project, 0, 1, 2, 4)
 
+					So(st.Count(project, desc.Path()), ShouldEqual, 4)
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(st.Count(project, desc.Path()), ShouldEqual, 0)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{
@@ -469,7 +484,9 @@ func TestHandleArchive(t *testing.T) {
 				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index to 2.`, func() {
 					addTestEntry(project, 0, 1, 2, 4)
 
+					So(st.Count(project, desc.Path()), ShouldEqual, 4)
 					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+					So(st.Count(project, desc.Path()), ShouldEqual, 0)
 
 					So(hasStreams(true, true, true), ShouldBeTrue)
 					So(archiveRequest, ShouldResemble, &logdog.ArchiveStreamRequest{

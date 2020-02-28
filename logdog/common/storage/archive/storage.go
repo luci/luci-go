@@ -99,6 +99,10 @@ func (s *storageImpl) Close() {}
 
 func (s *storageImpl) Put(context.Context, storage.PutRequest) error { return storage.ErrReadOnly }
 
+func (s *storageImpl) Expunge(context.Context, storage.ExpungeRequest) error {
+	return storage.ErrReadOnly
+}
+
 func (s *storageImpl) Get(c context.Context, req storage.GetRequest, cb storage.GetCallback) error {
 	idx, err := s.getIndex(c)
 	if err != nil {
