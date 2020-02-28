@@ -22,6 +22,30 @@
       "revId": "b6adff243cdcdbedd67e76e47880fa2cdbe4f3b4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4208f291_e4fe0c3f",
+        "filename": "logdog/common/storage/bigtable/bigtable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-02-28T00:29:32Z",
+      "side": 1,
+      "message": "Oh, you discovered this already.",
+      "parentUuid": "4c273754_895176c3",
+      "range": {
+        "startLine": 116,
+        "startChar": 12,
+        "endLine": 116,
+        "endChar": 23
+      },
+      "revId": "b6adff243cdcdbedd67e76e47880fa2cdbe4f3b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
