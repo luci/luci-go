@@ -14,16 +14,22 @@
 package sink
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/router"
+
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -65,6 +71,36 @@ func httpGet(url string, authToken string) (int, string, error) {
 		return 0, "", err
 	}
 	return resp.StatusCode, string(body), nil
+}
+
+func prpcPost(url string, authToken string, in proto.Message) (int, error) {
+	// encode the payload
+	byteData, err := json.Marshal(in)
+	if err != nil {
+		return 0, err
+	}
+	So(err, ShouldBeNil)
+	buf := bytes.NewBuffer(byteData)
+
+	// creat request
+	req, err := http.NewRequest("POST", url, buf)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	if authToken != "" {
+		req.Header.Add(AuthTokenKey, AuthTokenValue(authToken))
+	}
+
+	// send
+	c := http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode, err
 }
 
 func TestNewServer(t *testing.T) {
@@ -248,6 +284,25 @@ func TestServer(t *testing.T) {
 					So(code, ShouldEqual, http.StatusForbidden)
 					So(body, ShouldEqual, "no valid auth_token found\n")
 				})
+			})
+		})
+
+		Convey("serves pRPC requests", func() {
+			addr, cleanup := startWithTestListener(srv)
+			defer cleanup()
+			req := &sinkpb.ReportTestResultsRequest{}
+			url := fmt.Sprintf("%s/prpc/luci.resultdb.sink.v1.Sink/ReportTestResults", addr)
+
+			Convey("with 200 OK", func() {
+				code, err := prpcPost(url, "secret", req)
+				So(err, ShouldBeNil)
+				So(code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("with 403 Forbidden", func() {
+				code, err := prpcPost(url, "not-secret", req)
+				So(err, ShouldBeNil)
+				So(code, ShouldEqual, http.StatusForbidden)
 			})
 		})
 
