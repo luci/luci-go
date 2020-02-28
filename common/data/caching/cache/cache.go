@@ -84,9 +84,8 @@ type Policies struct {
 	// MaxItems is the maximum number of items to keep in the cache. If 0, do not
 	// enforce a limit.
 	MaxItems int
-	// MinFreeSpace trims if disk free space becomes lower than this value. If 0,
-	// it unconditionally fills the disk. Only makes sense when using disk based
-	// cache.
+	// MinFreeSpace trims if disk free space becomes lower than this value.
+	// Only makes sense when using disk based cache.
 	MinFreeSpace units.Size
 }
 
@@ -469,9 +468,6 @@ func (d *disk) statePath() string {
 
 func (d *disk) respectPolicies() {
 	increaseFreeSpace := func() bool {
-		if d.policies.MinFreeSpace == 0 {
-			return false
-		}
 		size, err := filesystem.GetFreeSpace(d.path)
 		if err != nil {
 			return false
