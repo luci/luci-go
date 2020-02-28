@@ -258,10 +258,6 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 
 	// Initialize our Storage.
-	//
-	// NOTE: We're requesting read/write access even though we only need read-only
-	// access because GKE doesn't understand the read-only scope:
-	// https://www.googleapis.com/auth/bigtable.readonly
 	st, err := a.IntermediateStorage(c, true)
 	if err != nil {
 		log.WithError(err).Errorf(c, "Failed to get storage instance.")

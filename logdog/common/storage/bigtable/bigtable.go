@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -72,6 +73,9 @@ type btIface interface {
 	// If keysOnly is true, then the callback will return nil row data.
 	getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error
 
+	// Drops all rows given the path prefix of rk.
+	dropRowRange(c context.Context, rkPrefix *rowKey) error
+
 	// getMaxRowSize returns the maximum row size that this implementation
 	// supports.
 	getMaxRowSize() int
@@ -107,6 +111,77 @@ func (bti prodBTIface) putLogData(c context.Context, rk *rowKey, data []byte) er
 		return storage.ErrExists
 	}
 	return nil
+}
+
+func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
+	logTable, err := bti.getLogTable()
+	if err != nil {
+		return err
+	}
+
+	// ApplyBulk claims to be able to apply 100k mutations. Keep it small here to
+	// stay well within the stated guidelines.
+	const maxBatchSize = 100000 / 4
+
+	del := bigtable.NewMutation()
+	del.DeleteRow()
+
+	allMuts := make([]*bigtable.Mutation, maxBatchSize)
+	for i := range allMuts {
+		allMuts[i] = del
+	}
+
+	prefix, upperBound := rk.pathPrefix(), rk.pathPrefixUpperBound()
+	rng := bigtable.NewRange(prefix, upperBound)
+	// apply paranoia mode
+	if rng.Contains("") || prefix == "" || upperBound == "" {
+		panic(fmt.Sprintf("NOTHING MAKES SENSE: %q %q %q", rng, prefix, upperBound))
+	}
+
+	keyC := make(chan string)
+
+	// TODO(iannucci): parallelize row scan?
+	readerC := make(chan error)
+	go func() {
+		defer close(keyC)
+		defer close(readerC)
+		readerC <- logTable.ReadRows(c, rng, func(row bigtable.Row) bool {
+			keyC <- row.Key()
+			return true
+		},
+			bigtable.RowFilter(bigtable.FamilyFilter(logColumnFamily)),
+			bigtable.RowFilter(bigtable.ColumnFilter(logColumn)),
+			bigtable.RowFilter(bigtable.StripValueFilter()),
+		)
+	}()
+
+	keys := make([]string, maxBatchSize)
+	batchNum := 0
+	var totalDropped int64
+	for {
+		batchNum++
+		batch := keys[:0]
+		for key := range keyC {
+			batch = append(batch, key)
+			if len(batch) >= maxBatchSize {
+				break
+			}
+		}
+		if len(batch) == 0 {
+			logging.Infof(c, "dropRowRange: dropped %d rows", totalDropped)
+			err, _ := <-readerC
+			return err
+		}
+
+		errs, err := logTable.ApplyBulk(c, batch, allMuts[:len(batch)])
+		if err != nil {
+			return errors.Annotate(err, "ApplyBulk failed on batch %d", batchNum).Err()
+		}
+		if len(errs) > 0 {
+			logging.Warningf(c, "ApplyBulk: got %d errors: first: %q", len(errs), errs[0])
+		}
+		totalDropped += int64(len(batch) - len(errs))
+	}
 }
 
 func (bti prodBTIface) getLogData(c context.Context, rk *rowKey, limit int, keysOnly bool, cb btGetCallback) error {

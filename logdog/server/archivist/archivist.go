@@ -206,10 +206,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 
 	case ls.State.Purged:
 		log.Warningf(c, "Log stream is purged. Discarding archival request.")
+		a.expungeStorage(c, task.Project, ls)
 		return nil
 
 	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived. Discarding archival request.")
+		a.expungeStorage(c, task.Project, ls)
 		return nil
 
 	case ls.State.ProtoVersion != logpb.Version:
@@ -308,8 +310,32 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		log.WithError(err).Errorf(c, "Failed to report archive state.")
 		return err
 	}
+	a.expungeStorage(c, task.Project, ls)
 
 	return nil
+}
+
+// expungeStorage does a best-effort expunging of the intermediate storage
+// (BigTable) rows after successful archival.
+func (a *Archivist) expungeStorage(c context.Context, project string, ls *logdog.LoadStreamResponse) {
+	if ls.Desc == nil {
+		log.Warningf(c, "expungeStorage: nil ls.Desc")
+		return
+	}
+
+	var desc logpb.LogStreamDescriptor
+	if err := proto.Unmarshal(ls.Desc, &desc); err != nil {
+		log.WithError(err).Warningf(c, "expungeStorage: decoding ls.Desc")
+		return
+	}
+
+	err := a.Storage.Expunge(c, storage.ExpungeRequest{
+		Path:    desc.Path(),
+		Project: project,
+	})
+	if err != nil {
+		log.WithError(err).Warningf(c, "expungeStorage: failed")
+	}
 }
 
 // loadSettings loads and validates archival settings.

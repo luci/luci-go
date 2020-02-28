@@ -79,6 +79,14 @@ type GetRequest struct {
 // the caller will have to unmarshal the log entry data to determine its index.
 type GetCallback func(*Entry) bool
 
+// ExpungeRequest is a request to expunge the data associated with this stream.
+type ExpungeRequest struct {
+	// Project is the project name of the stream.
+	Project string
+	// Path is the stream path to remove from storage.
+	Path types.StreamPath
+}
+
 // Storage is an abstract LogDog storage implementation. Interfaces implementing
 // this may be used to store and retrieve log records by the collection service
 // layer.
@@ -110,6 +118,9 @@ type Storage interface {
 	// the requested stream does not exist, and an error if an error occurred
 	// during retrieval.
 	Get(context.Context, GetRequest, GetCallback) error
+
+	// Expunge removes all entries related to the given project/path.
+	Expunge(context.Context, ExpungeRequest) error
 
 	// Tail retrieves the latest log in the stream. If the stream has no logs, it
 	// will fail with ErrDoesNotExist.

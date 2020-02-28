@@ -82,10 +82,6 @@ type Storage struct {
 	// Client, if not nil, is the BigTable client to use for BigTable accesses.
 	Client *bigtable.Client
 
-	// AdminClient, if not nil, is the BigTable admin client to use for BigTable
-	// administrator operations.
-	AdminClient *bigtable.AdminClient
-
 	// LogTable is the name of the BigTable table to use for logs.
 	LogTable string
 
@@ -145,6 +141,12 @@ func (s *Storage) Put(c context.Context, r storage.PutRequest) error {
 		return err
 	}
 	return nil
+}
+
+// Expunge implements storage.Storage.
+func (s *Storage) Expunge(c context.Context, r storage.ExpungeRequest) error {
+	return s.getIface().dropRowRange(
+		prepareContext(c), newRowKey(string(r.Project), string(r.Path), 0, 0))
 }
 
 // Get implements storage.Storage.

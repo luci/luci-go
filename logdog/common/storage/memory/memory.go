@@ -100,6 +100,15 @@ func (s *Storage) Put(c context.Context, req storage.PutRequest) error {
 	})
 }
 
+// Expunge implements storage.Storage.
+func (s *Storage) Expunge(c context.Context, req storage.ExpungeRequest) error {
+	return s.run(func() error {
+		ls := s.getLogStreamLocked(req.Project, req.Path, true)
+		ls.logs = nil
+		return nil
+	})
+}
+
 // Get implements storage.Storage.
 func (s *Storage) Get(c context.Context, req storage.GetRequest, cb storage.GetCallback) error {
 	recs := []*rec(nil)
