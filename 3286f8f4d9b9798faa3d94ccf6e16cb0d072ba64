@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a539b085_e069a89a",
+        "filename": "logdog/common/storage/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-02-28T01:12:15Z",
+      "side": 1,
+      "message": "t",
+      "range": {
+        "startLine": 82,
+        "startChar": 29,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "3286f8f4d9b9798faa3d94ccf6e16cb0d072ba64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
