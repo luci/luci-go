@@ -19,27 +19,31 @@ package sink
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"strconv"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"net/http"
+	"sync"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/router"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 const (
-	// DefaultPort is the TCP port that the Server listens on by default.
-	DefaultPort = 62115
+	// DefaultAddr is the TCP address that the Server listens on by default.
+	DefaultAddr = "localhost:62115"
+	// AuthTokenHeader is the key of the HTTP request header where the auth token should
+	// be specified. Note that the an HTTP request must have the auth token in the header
+	// with the following format.
+	// Authorization: ResultSink <auth_token>
+	AuthTokenKey    = "Authorization"
+	AuthTokenPrefix = "ResultSink"
 )
 
 // ServerConfig defines the parameters of the server.
@@ -50,8 +54,9 @@ type ServerConfig struct {
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
 	AuthToken string
-	// Port is the TCP port to listen on. If 0, the server will use DefaultPort.
-	Port int
+	// Address is the HTTP address to listen on. If empty, the server will use
+	// the default address.
+	Address string
 
 	// Invocation is the name of the invocation that test results should append
 	// to.
@@ -71,7 +76,16 @@ type Server struct {
 	cfg    ServerConfig
 	cancel context.CancelFunc
 	errC   chan error
-	ln     net.Listener
+
+	mu      sync.Mutex // protects fields below
+	started bool       //true inside and after ListenAndServe
+
+	httpSrv *http.Server
+	routes  *router.Router
+	prpc    *prpc.Server
+
+	// Listner for tests
+	testListener net.Listener
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -83,16 +97,29 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 		}
 		cfg.AuthToken = hex.EncodeToString(buf)
 	}
-
-	if cfg.Port == 0 {
-		cfg.Port = DefaultPort
+	if cfg.Address == "" {
+		cfg.Address = DefaultAddr
 	}
 
 	s := &Server{
-		cfg:  cfg,
-		errC: make(chan error, 1),
+		cfg:    cfg,
+		errC:   make(chan error, 1),
+		prpc:   &prpc.Server{},
+		routes: router.New(),
 	}
-
+	s.routes.Use(router.NewMiddlewareChain(
+		// transform panics into HTTP 500
+		middleware.WithPanicCatcher,
+		// checks the auth-token
+		authTokenValidator(s.cfg.AuthToken),
+	))
+	s.prpc = &prpc.Server{}
+	s.httpSrv = &http.Server{
+		Addr: cfg.Address,
+		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			s.routes.ServeHTTP(rw, r)
+		}),
+	}
 	return s, nil
 }
 
@@ -121,7 +148,7 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// TODO(sajjadm): Add Export here when implemented and explain it in the function comment.
-	if err := s.Start(ctx); err != nil {
+	if err := s.Start(); err != nil {
 		return err
 	}
 	defer s.Close()
@@ -145,130 +172,82 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 //
 // On success, Start will return nil, and a subsequent error will be sent on
 // the server's ErrC channel.
-func (s *Server) Start(ctx context.Context) error {
-	if s.ln != nil {
+func (s *Server) Start() error {
+	s.mu.Lock()
+	if s.started {
+		s.mu.Unlock()
 		return errors.Reason("cannot call Start twice").Err()
 	}
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
-	if err != nil {
-		return err
-	}
-	s.ln = ln
+	s.started = true
+	s.mu.Unlock()
 
-	_, port, err := net.SplitHostPort(s.ln.Addr().String())
-	if err != nil {
-		return err
-	}
-	s.cfg.Port, err = strconv.Atoi(port)
-	if err != nil {
-		return err
-	}
+	go func() {
+		var err error
+		switch s.testListener {
+		case nil:
+			err = s.httpSrv.ListenAndServe()
+		default:
+			// In test mode, the the listener MUST be prepared already.
+			err = s.httpSrv.Serve(s.testListener)
+		}
 
-	ctx, s.cancel = context.WithCancel(ctx)
-	go s.serveLoop(ctx)
+		s.mu.Lock()
+		s.started = false
+		s.mu.Unlock()
+		s.errC <-err
+	}()
 	return nil
 }
 
-func (s *Server) serveLoop(ctx context.Context) {
-	defer s.ln.Close()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	for {
-		switch conn, err := s.ln.Accept(); {
-		case err == nil:
-			go func() {
-				if err := s.handleConnection(ctx, conn); err != nil {
-					logging.Errorf(ctx, "%s", err)
-				}
-			}()
-		case ctx.Err() != nil:
-			s.errC <- ctx.Err()
-			return
-		case shouldKeepTrying(err):
-			continue
-		default:
-			s.errC <- errors.Annotate(err, "unrecoverable listener error").Err()
-			return
-		}
-	}
-}
-
-// Close immediately stops the server from accepting new connections and cancels existing ones.
+// Close immediately stops the servers and cancels the requests that are being processed.
 func (s *Server) Close() error {
-	// TODO(sajjadm): Determine if some pending connections were forcefully closed by s.cancel()
-	// and report that as an error.
-	s.cancel()
-	return s.ln.Close()
-}
-
-// Process handles a message as if it had been sent over the TCP interface.
-func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
-	return errors.New("not implemented yet")
+	// TODO(ddoman): handle error from Close().
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started == true {
+		return s.httpSrv.Close()
+	}
+	return nil
 }
 
 // Export exports lucictx.ResultSink derived from the server configuration into
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
 	return lucictx.SetResultSink(ctx, &lucictx.ResultSink{
-		Address:   fmt.Sprintf("localhost:%d", s.cfg.Port),
+		Address:   s.cfg.Address,
 		AuthToken: s.cfg.AuthToken,
 	})
 }
 
-func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		c.Close()
-	}()
-
-	dc := json.NewDecoder(c)
-	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
-		return errors.Annotate(err, "handshake failed").Err()
-	}
-	logging.Debugf(ctx, "Successful handshake")
-
-	if err := processMessages(dc); err != nil && err != io.EOF {
-		return err
-	}
-
-	return nil
+// send403 logs the error message and sends a 403 response with the message.
+func send403(c context.Context, rw http.ResponseWriter, msg string) {
+	logging.Errorf(c, msg)
+	http.Error(rw, msg, http.StatusForbidden)
 }
 
-func processMessages(dc *json.Decoder) error {
-	for {
-		msgp := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(dc, msgp); err != nil {
-			return errors.Annotate(err, "failed to read message").Err()
+// authTokenValue returns the value of the auth_token HTTP header that all requests must
+// have.
+func authTokenValue(authToken string) string {
+	return fmt.Sprintf("%s %s", AuthTokenPrefix, authToken)
+}
+
+// authTokenValidator is a factory function returning a middleware that validates
+// a given HTTP request with the auth key.
+func authTokenValidator(authToken string) func(c *router.Context, next router.Handler) {
+	expected := authTokenValue(authToken)
+
+	return func(c *router.Context, next router.Handler) {
+		tokens, ok := c.Request.Header[AuthTokenKey]
+		if !ok {
+			send403(c.Context, c.Writer, "auth_token is missing")
+			return
 		}
-
-		// TODO(sajjadm): msgp is valid, do something with it
-	}
-}
-
-func readMessage(dc *json.Decoder, dest proto.Message) error {
-	for {
-		err := jsonpb.UnmarshalNext(dc, dest)
-		if shouldKeepTrying(err) {
-			continue
+		for _, tk := range tokens {
+			if tk == expected {
+				next(c)
+				return
+			}
 		}
-		return err
+		send403(c.Context, c.Writer, "no valid auth_token found")
 	}
-}
-
-func processHandshake(dc *json.Decoder, authToken string) error {
-	var hs sinkpb.Handshake
-	if err := jsonpb.UnmarshalNext(dc, &hs); err != nil {
-		return errors.Reason("failed to parse Handshake").Err()
-	}
-	if hs.GetAuthToken() != authToken {
-		return errors.Reason("handshake message had invalid AuthToken").Err()
-	}
-	return nil
-}
-
-func shouldKeepTrying(err error) bool {
-	e, ok := err.(net.Error)
-	return ok && (e.Temporary() || e.Timeout())
 }
