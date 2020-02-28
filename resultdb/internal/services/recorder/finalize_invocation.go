@@ -54,13 +54,13 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 
 	var ret *pb.Invocation
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		inv, updateToken, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, invID)
+		inv, err := span.ReadInvocationFull(ctx, txn, invID)
 		if err != nil {
 			return err
 		}
 		ret = inv
 
-		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
+		if err := validateUserUpdateToken(ctx, invID, userToken); err != nil {
 			return err
 		}
 

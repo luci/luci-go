@@ -26,9 +26,16 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/tokens"
 )
 
 var httpClientCtxKey = "context key for a *http.Client"
+
+var InvocationTokenKind = tokens.TokenKind{
+	Algo:      tokens.TokenAlgoHmacSHA256,
+	SecretKey: "invocation_tokens_secret",
+	Version:   1,
+}
 
 // WithHTTPClient returns a context with the client embedded.
 func WithHTTPClient(ctx context.Context, client *http.Client) context.Context {

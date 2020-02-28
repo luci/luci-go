@@ -16,8 +16,6 @@ package recorder
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"strings"
 	"time"
 
@@ -115,13 +113,6 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 
 	invID := span.InvocationID(in.InvocationId)
 
-	// Return update token to the client.
-	updateToken, err := generateUpdateToken()
-	if err != nil {
-		return nil, err
-	}
-	prpc.SetHeader(ctx, metadata.Pairs(UpdateTokenMetadataKey, updateToken))
-
 	// Prepare the invocation we will return.
 	inv := &pb.Invocation{
 		Name:            invID.Name(),
@@ -164,7 +155,7 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		}
 
 		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, updateToken, in.RequestId)),
+			span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, in.RequestId)),
 		})
 	})
 	switch {
@@ -180,15 +171,20 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 		inv.CreateTime = pbutil.MustTimestampProto(commitTimestamp)
 		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	}
+
+	// Return update token to the client, only if the creation was successful
+	// or it is a valid deduplication.
+	// Generate a token with the invocation id as the state, no embedded data and
+	// no expiration.
+	updateToken, err := internal.InvocationTokenKind.Generate(ctx, []byte(invID), nil, 0)
+	if err != nil {
+		return nil, err
+	}
+	prpc.SetHeader(ctx, metadata.Pairs(UpdateTokenMetadataKey, updateToken))
+
 	return inv, nil
 }
 
 func invocationAlreadyExists(id span.InvocationID) error {
 	return appstatus.Errorf(codes.AlreadyExists, "%s already exsts", id.Name())
-}
-
-func generateUpdateToken() (string, error) {
-	buf := make([]byte, 32)
-	_, err := rand.Read(buf)
-	return hex.EncodeToString(buf), err
 }

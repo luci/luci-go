@@ -16,7 +16,6 @@ package recorder
 
 import (
 	"context"
-	"crypto/subtle"
 	"fmt"
 	"time"
 
@@ -27,8 +26,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
 	"go.chromium.org/luci/resultdb/internal/span"
@@ -67,11 +66,9 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			return err
 		}
 
-		var updateToken spanner.NullString
 		var state pb.Invocation_State
 		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"UpdateToken": &updateToken,
-			"State":       &state,
+			"State": &state,
 		})
 		switch {
 		case err != nil:
@@ -81,7 +78,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 		}
 
-		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
+		if err := validateUserUpdateToken(ctx, id, userToken); err != nil {
 			return err
 		}
 
@@ -109,22 +106,17 @@ func extractUserUpdateToken(ctx context.Context) (string, error) {
 	}
 }
 
-func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
-	if !updateToken.Valid {
-		return errors.Reason("no update token in active invocation").Err()
-	}
-
-	if subtle.ConstantTimeCompare([]byte(userToken), []byte(updateToken.StringVal)) == 0 {
+func validateUserUpdateToken(ctx context.Context, id span.InvocationID, userToken string) error {
+	if _, err := internal.InvocationTokenKind.Validate(ctx, userToken, []byte(id)); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-
 	return nil
 }
 
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
-func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
+func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
 	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
 		"InvocationId": span.MustParseInvocationName(inv.Name),
@@ -135,8 +127,6 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
 		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),
-
-		"UpdateToken": updateToken,
 
 		"CreateTime": spanner.CommitTimestamp,
 		"Deadline":   inv.Deadline,
