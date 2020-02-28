@@ -206,12 +206,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 
 	case ls.State.Purged:
 		log.Warningf(c, "Log stream is purged. Discarding archival request.")
-		a.expungeStorage(c, task.Project, ls)
+		a.expungeStorage(c, task.Project, ls.Desc, ls.State.TerminalIndex)
 		return nil
 
 	case ls.State.Archived:
 		log.Infof(c, "Log stream is already archived. Discarding archival request.")
-		a.expungeStorage(c, task.Project, ls)
+		a.expungeStorage(c, task.Project, ls.Desc, ls.State.TerminalIndex)
 		return nil
 
 	case ls.State.ProtoVersion != logpb.Version:
@@ -310,27 +310,36 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task *logdog.ArchiveTask)
 		log.WithError(err).Errorf(c, "Failed to report archive state.")
 		return err
 	}
-	a.expungeStorage(c, task.Project, ls)
+	a.expungeStorage(c, task.Project, ls.Desc, ar.TerminalIndex)
 
 	return nil
 }
 
 // expungeStorage does a best-effort expunging of the intermediate storage
 // (BigTable) rows after successful archival.
-func (a *Archivist) expungeStorage(c context.Context, project string, ls *logdog.LoadStreamResponse) {
-	if ls.Desc == nil {
-		log.Warningf(c, "expungeStorage: nil ls.Desc")
+//
+// `desc` is a binary-encoded LogStreamDescriptor
+// `terminalIndex` should be the terminal index of the archived stream. If it's
+//   <0 (an empty stream) we skip the expunge.
+func (a *Archivist) expungeStorage(c context.Context, project string, desc []byte, terminalIndex int64) {
+	if terminalIndex < 0 {
+		// no log rows
 		return
 	}
 
-	var desc logpb.LogStreamDescriptor
-	if err := proto.Unmarshal(ls.Desc, &desc); err != nil {
-		log.WithError(err).Warningf(c, "expungeStorage: decoding ls.Desc")
+	if desc == nil {
+		log.Warningf(c, "expungeStorage: nil desc")
+		return
+	}
+
+	var lsd logpb.LogStreamDescriptor
+	if err := proto.Unmarshal(desc, &lsd); err != nil {
+		log.WithError(err).Warningf(c, "expungeStorage: decoding desc")
 		return
 	}
 
 	err := a.Storage.Expunge(c, storage.ExpungeRequest{
-		Path:    desc.Path(),
+		Path:    lsd.Path(),
 		Project: project,
 	})
 	if err != nil {
