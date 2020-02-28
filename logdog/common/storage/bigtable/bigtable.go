@@ -174,8 +174,10 @@ func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
 			return err
 		}
 
+		logging.Infof(c, "dropRowRange: dropping %d rows", len(batch))
 		errs, err := logTable.ApplyBulk(c, batch, allMuts[:len(batch)])
 		if err != nil {
+			logging.WithError(err).Errorf(c, "dropRowRange: ApplyBulk failed")
 			return errors.Annotate(err, "ApplyBulk failed on batch %d", batchNum).Err()
 		}
 		if len(errs) > 0 {
