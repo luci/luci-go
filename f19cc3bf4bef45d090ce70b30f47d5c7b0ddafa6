@@ -1,0 +1,435 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3540ca01_f0a8fa50",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "this is a fairly typical pattern:\n* https://godoc.org/cloud.google.com/go/spanner#NewClient and https://godoc.org/cloud.google.com/go/spanner#ReadOnlyTransaction.Query\n* https://godoc.org/cloud.google.com/go/bigquery#NewClient and https://godoc.org/cloud.google.com/go/bigquery#Query.Read\n\nso I think this change should be reverted",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c8ee184_892b3389",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "%d is missing",
+      "range": {
+        "startLine": 126,
+        "startChar": 34,
+        "endLine": 126,
+        "endChar": 37
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "343ef08a_c7563a98",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "Key",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 19
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3589ecf8_ed85c381",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "please add a comment",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 16
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1bd19479_b145d080",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "this is rather atypical.\n\nwould we still need this if we accepted context in Run and Start?",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 22
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "637815bf_acd1fc7c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "fields",
+      "range": {
+        "startLine": 84,
+        "startChar": 13,
+        "endLine": 84,
+        "endChar": 18
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9930db16_dd64c886",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "it protects only boolean variables. Would be simpler to make them int32 and use https://godoc.org/sync/atomic#StoreInt32 and https://godoc.org/sync/atomic#LoadInt32",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15d9847f_ed8764d3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "unnecessary. local variables in NewServer are enough\n\n---\n\ni see you use these variables in tests. To me, the tests subscribe too much to the impl details, and amount_of_code_under_test/amount_of_test_code is fairly low. Could you align tests with public APIs instead? e.g. a good test would be: \n1. start a server\n2. report a test result\n3. assert that test result was sent to a mocked recorder.\n\nits OK to add this test later.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 21
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "987e523c_c9c1044e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "it is already created in L116",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 24
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3153e9e_07d5430d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "why not just s.routes.ServeHTTP",
+      "range": {
+        "startLine": 128,
+        "startChar": 11,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c90b5ff4_97269318",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "nit: we have only one condition here. \"if\" would be simpler",
+      "range": {
+        "startLine": 195,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 8
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "241976b7_92d151a5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "this check is racy. If Close is called twice concurrently, the \"first\" one will not set stopped to true, because it is done async\u0027ly in L204.\n\nwhy not return return s.httpSrv.Close()\n\nwith an explanation that if the server is already closed (by calling Close() or by canceling the context), then this will return an error",
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5f53bfb_0c485cda",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "Authorization",
+      "range": {
+        "startLine": 230,
+        "startChar": 43,
+        "endLine": 230,
+        "endChar": 53
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8baae379_c0919727",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "router.Middleware",
+      "range": {
+        "startLine": 244,
+        "startChar": 42,
+        "endLine": 244,
+        "endChar": 86
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3473eef_041a619a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "Authorization header",
+      "range": {
+        "startLine": 250,
+        "startChar": 33,
+        "endLine": 250,
+        "endChar": 43
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31d3cec1_6bcbf755",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "this should be 401",
+      "range": {
+        "startLine": 250,
+        "startChar": 3,
+        "endLine": 250,
+        "endChar": 10
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41366416_45f7c16e",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "it is used only in TestServer. Would be much simpler to write\n\n  addr, cleanup :\u003d installTestListener(srv)\n  So(srv.Start(), ShouldBeNil)\n  defer cleanup()\n\nin L104. Then all sub-conveys would already have a started server\n\nand stepping back, same with installtestListener really",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6babb709_ac79fda5",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 23
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a64a18a_68ed8b8c",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:17:21Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 117,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 9
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
