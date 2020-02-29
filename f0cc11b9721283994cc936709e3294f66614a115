@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "d3c7040b_ecb35313",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T01:59:56Z",
+      "side": 1,
+      "message": "the example in go/result-sink does not use prpc package because our customers are not in Go. It would use prpc package if they were in Go.\n\nin general, i think we should not spend engineering time writing tests that assert behavior of code we don\u0027t indent to test. This func asserts behavior of prpc package (server impl) which already has tests.\n\nI wrote this before: tests should be simple/minimal, because we don\u0027t have tests for tests.\n\nreading material:\n- http://go/tott/299\n- go/unit-test-practices",
+      "parentUuid": "f634eace_1d79433c",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dfe2808c_1eebe21a",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 4
