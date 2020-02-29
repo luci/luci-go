@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7639e26e_ba5a4537",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T08:11:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f67b0f8b_3dec9f14",
+      "range": {
+        "startLine": 126,
+        "startChar": 34,
+        "endLine": 126,
+        "endChar": 37
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "343ef08a_c7563a98",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -271,6 +295,30 @@
       "side": 1,
       "message": "It\u0027s to chain the modification of `started` and `stopped` within a single transaction.\nI will revisit this comment with rewriting close() in the following patchset. I will see if I can remove either of `started` or `stopped`. Then, yes, the var can be manipulated and modified by the atomic operators",
       "parentUuid": "9930db16_dd64c886",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9d3a1b9_a16f5298",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T08:11:49Z",
+      "side": 1,
+      "message": "how does reading them in a single txn help if they are written in diff txns anyway?",
+      "parentUuid": "a7af5fd5_cc643414",
       "range": {
         "startLine": 85,
         "startChar": 1,
@@ -672,6 +720,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "68caf73d_a613df81",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T08:11:49Z",
+      "side": 1,
+      "message": "sub-conveys do not share memory, e.g.\n\n Convey {\n    obj \u003d NewObject()\n    Convey {\n    }\n    Convey{\n    }\n }\n\neven if the leads execute concurrently, obj\u003dNewObject() is executed for each of them independently.\nSo I think each of conveys should get different port.\n\nwhich commit are you referring to? maybe there was another bug",
+      "parentUuid": "e60c45a0_784fe298",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
