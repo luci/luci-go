@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f67b0f8b_3dec9f14",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "This is fmt.Sprint(), not fmt.Sprintf(). I found that fmt.Sprintf(\":%d\", arg.port) is unnecessarily longer for simple itoa(), but am open to replace it with fmt.Sprintf(), if reasonable. let me know.",
+      "parentUuid": "1c8ee184_892b3389",
+      "range": {
+        "startLine": 126,
+        "startChar": 34,
+        "endLine": 126,
+        "endChar": 37
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "343ef08a_c7563a98",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "944ddf31_ab062d84",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "343ef08a_c7563a98",
+      "range": {
+        "startLine": 41,
+        "startChar": 13,
+        "endLine": 41,
+        "endChar": 19
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3589ecf8_ed85c381",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -91,6 +139,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94376443_ab213c19",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3589ecf8_ed85c381",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 16
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +212,30 @@
     },
     {
       "key": {
+        "uuid": "2dee9463_a0ea123b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "637815bf_acd1fc7c",
+      "range": {
+        "startLine": 84,
+        "startChar": 13,
+        "endLine": 84,
+        "endChar": 18
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9930db16_dd64c886",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -151,6 +247,30 @@
       "writtenOn": "2020-02-29T00:17:21Z",
       "side": 1,
       "message": "it protects only boolean variables. Would be simpler to make them int32 and use https://godoc.org/sync/atomic#StoreInt32 and https://godoc.org/sync/atomic#LoadInt32",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7af5fd5_cc643414",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "It\u0027s to chain the modification of `started` and `stopped` within a single transaction.\nI will revisit this comment with rewriting close() in the following patchset. I will see if I can remove either of `started` or `stopped`. Then, yes, the var can be manipulated and modified by the atomic operators",
+      "parentUuid": "9930db16_dd64c886",
       "range": {
         "startLine": 85,
         "startChar": 1,
@@ -209,6 +329,30 @@
     },
     {
       "key": {
+        "uuid": "f4f537b5_b80a9b06",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "987e523c_c9c1044e",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 24
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3153e9e_07d5430d",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -255,6 +399,30 @@
     },
     {
       "key": {
+        "uuid": "e35f6dd4_810f95bc",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c90b5ff4_97269318",
+      "range": {
+        "startLine": 195,
+        "startChar": 2,
+        "endLine": 195,
+        "endChar": 8
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "241976b7_92d151a5",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -295,6 +463,30 @@
     },
     {
       "key": {
+        "uuid": "e0d44720_e9339c6e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5f53bfb_0c485cda",
+      "range": {
+        "startLine": 230,
+        "startChar": 43,
+        "endLine": 230,
+        "endChar": 53
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8baae379_c0919727",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -315,6 +507,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1e238d2_32de51e9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8baae379_c0919727",
+      "range": {
+        "startLine": 244,
+        "startChar": 42,
+        "endLine": 244,
+        "endChar": 86
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -364,6 +580,54 @@
     },
     {
       "key": {
+        "uuid": "8f47b367_2a61fb1b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "31d3cec1_6bcbf755",
+      "range": {
+        "startLine": 250,
+        "startChar": 3,
+        "endLine": 250,
+        "endChar": 10
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e969f841_37b53f0c",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3473eef_041a619a",
+      "range": {
+        "startLine": 250,
+        "startChar": 33,
+        "endLine": 250,
+        "endChar": 43
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41366416_45f7c16e",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 16
@@ -384,6 +648,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e60c45a0_784fe298",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "My previous commit was actually made with the exact same code.:)\nHowever, all sub-conveys shared the same server instance listening on the same port, and interfere each other. For example, even if a sub convey closes the server, the server is still available by another process forked with the same HTTP server.\n\nThus, it was necessary to repeat `installTestListener(srv)` and `defer cleanup()` in each sub test, and I added startWithTestListener() to reduce a couple of lines in every test.",
+      "parentUuid": "41366416_45f7c16e",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -410,6 +698,30 @@
     },
     {
       "key": {
+        "uuid": "146b58d7_900fc58b",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6babb709_ac79fda5",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 23
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a64a18a_68ed8b8c",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 16
@@ -430,6 +742,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f85c3e5_473e9202",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:01:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a64a18a_68ed8b8c",
+      "range": {
+        "startLine": 117,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 9
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
