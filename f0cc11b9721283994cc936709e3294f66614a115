@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f634eace_1d79433c",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-02-29T01:20:48Z",
+      "side": 1,
+      "message": "It\u0027s because this is trying to follow the client example code snippet from go/result-sink-protocol as much as possible.\n\nMy original intention was\n(1) sink_test.go contains unit tests with real HTTP interactions, which clients would have sent out.\n(2) sink_server_test.go, which is the unit test module of the prpc server methods, contains unit tests with mocked prpc server and clients.\n\nIf go/result-sink-protocol adds another example snippet using prpc#Client, then I can change this to use prpc#Client, instead. WDTY?",
+      "parentUuid": "82ad024e_5df1bbc7",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dfe2808c_1eebe21a",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 4
