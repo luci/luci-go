@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a545772f_cc38f5d1",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:38:18Z",
+      "side": 1,
+      "message": "what\u0027s the point of using DecoratedSink if it is not decorated?",
+      "range": {
+        "startLine": 130,
+        "startChar": 35,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82ad024e_5df1bbc7",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:38:18Z",
+      "side": 1,
+      "message": "why not use https://godoc.org/github.com/luci/luci-go/grpc/prpc#Client ?",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfe2808c_1eebe21a",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-02-29T00:38:18Z",
+      "side": 1,
+      "message": "now the tests above are redundant with this. Ideally one piece of functionality has one test. I prefer RPC-level tests to HTTP-level tests because RPC is closer to our public API.\n\ni recommend removing the tests above.",
+      "range": {
+        "startLine": 304,
+        "startChar": 3,
+        "endLine": 322,
+        "endChar": 5
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
