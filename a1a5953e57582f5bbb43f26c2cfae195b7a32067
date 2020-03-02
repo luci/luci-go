@@ -52,6 +52,24 @@
       "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89cf2589_2ff5cfee",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:14:01Z",
+      "side": 0,
+      "message": "Ack. But i\u0027m keeping the change to make this function return error, which will be propagated to Add()",
+      "parentUuid": "190c2032_b7c500c0",
+      "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
