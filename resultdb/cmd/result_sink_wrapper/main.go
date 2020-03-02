@@ -123,7 +123,7 @@ func (w *wrapper) init() error {
 	w.cmdName = flag.Arg(0)
 	w.cmdArgs = flag.Args()[1:]
 
-	w.serverCfg.Port = args.port
+	w.serverCfg.Address = fmt.Sprint(":", args.port)
 
 	if args.logFile == "" {
 		w.logCfg.Out = os.Stderr
@@ -177,7 +177,7 @@ func (w *wrapper) main(ctx context.Context) error {
 		return err
 	}
 
-	err = server.Run(ctx, func(ctx context.Context) error {
+	err = server.Run(func(ctx context.Context) error {
 		code, err := w.run(ctx)
 		if err != nil {
 			return err
