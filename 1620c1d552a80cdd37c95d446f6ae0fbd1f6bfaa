@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62dc1c3a_03f7b1a2",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T09:24:23Z",
+      "side": 0,
+      "message": "I removed this panic recovery test, because I found that it\u0027s not necessary to have the test here, and I can remove non-prpc HTTP tests completely from this module, if this panic test is removed. Let me know if this test is still necessary in this module.",
+      "range": {
+        "startLine": 183,
+        "startChar": 2,
+        "endLine": 187,
+        "endChar": 56
+      },
+      "revId": "1620c1d552a80cdd37c95d446f6ae0fbd1f6bfaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
