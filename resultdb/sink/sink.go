@@ -24,14 +24,21 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 const (
@@ -118,9 +125,16 @@ func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
 	routes.Use(router.NewMiddlewareChain(
 		// transform panics into HTTP 500
 		middleware.WithPanicCatcher,
-		// checks the auth-token
-		authTokenValidator(s.cfg.AuthToken),
 	))
+
+	// Install the pRPC service.
+	prpc := &prpc.Server{Authenticator: prpc.NoAuthentication}
+	prpc.InstallHandlers(routes, router.MiddlewareChain{})
+	sinkpb.RegisterSinkServer(prpc, &sinkpb.DecoratedSink{
+		Service: &sinkServer{cfg: s.cfg},
+		Prelude: authTokenPrelude(s.cfg.AuthToken),
+	})
+
 	s.httpSrv = &http.Server{
 		Addr:    cfg.Address,
 		Handler: routes,
@@ -233,23 +247,26 @@ func sendErr(c *router.Context, msg string, statusCode int) {
 	http.Error(c.Writer, msg, statusCode)
 }
 
-// authTokenValidator is a factory function generating a middleware that validates
+// authTokenValidator is a factory function generating a pRPC prelude that validates
 // a given HTTP request with the auth key.
-func authTokenValidator(authToken string) router.Middleware {
+func authTokenPrelude(authToken string) func(context.Context, string, proto.Message) (context.Context, error) {
 	expected := AuthTokenValue(authToken)
 
-	return func(c *router.Context, next router.Handler) {
-		tokens, ok := c.Request.Header[AuthTokenKey]
+	return func(ctx context.Context, _ string, req proto.Message) (context.Context, error) {
+		unauthErr := status.Errorf(codes.Unauthenticated, "Authorization header is missing")
+		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
-			sendErr(c, "Authorization header is missing", http.StatusUnauthorized)
-			return
+			return nil, unauthErr
 		}
-		for _, tk := range tokens {
+		tks := md.Get(AuthTokenKey)
+		if len(tks) == 0 {
+			return nil, unauthErr
+		}
+		for _, tk := range tks {
 			if tk == expected {
-				next(c)
-				return
+				return ctx, nil
 			}
 		}
-		sendErr(c, "no valid auth_token found", http.StatusForbidden)
+		return nil, status.Errorf(codes.PermissionDenied, "no valid auth_token found")
 	}
 }
