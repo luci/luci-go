@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5d90efe0_cc4fe35d",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:38:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a64189d_ff61afe9",
+      "range": {
+        "startLine": 473,
+        "startChar": 1,
+        "endLine": 473,
+        "endChar": 4
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7e024d1_f04932b0",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2020-03-02T09:21:49Z",
       "side": 1,
       "message": "use fmt.Errorf to annotate?",
+      "range": {
+        "startLine": 476,
+        "startChar": 17,
+        "endLine": 476,
+        "endChar": 20
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10eea5c1_f9bb580e",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:38:35Z",
+      "side": 1,
+      "message": "Why? What do you want to annotate?",
+      "parentUuid": "e7e024d1_f04932b0",
       "range": {
         "startLine": 476,
         "startChar": 17,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "e987df09_1fd5d8d7",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:38:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9bda819c_9c1f332c",
+      "range": {
+        "startLine": 481,
+        "startChar": 5,
+        "endLine": 481,
+        "endChar": 9
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02e26843_2b048f7f",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "cb957a1e_1e09f4b5",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:38:35Z",
+      "side": 1,
+      "message": "Same as above",
+      "parentUuid": "02e26843_2b048f7f",
+      "range": {
+        "startLine": 484,
+        "startChar": 10,
+        "endLine": 484,
+        "endChar": 13
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b67e0210_fb7efa97",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 3
@@ -114,6 +210,30 @@
       "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87090577_f9ec1b63",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 488,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T09:38:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b67e0210_fb7efa97",
+      "range": {
+        "startLine": 488,
+        "startChar": 23,
+        "endLine": 488,
+        "endChar": 25
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
