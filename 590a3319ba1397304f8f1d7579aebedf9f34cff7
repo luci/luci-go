@@ -1,0 +1,314 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ecc99f49_39373cb8",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "this does not compile",
+      "range": {
+        "startLine": 180,
+        "startChar": 14,
+        "endLine": 180,
+        "endChar": 17
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20830c8e_1357b3b3",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "why not embed it?",
+      "range": {
+        "startLine": 80,
+        "startChar": 9,
+        "endLine": 80,
+        "endChar": 10
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "465a216e_aa155a48",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "why pointer? would be simpler to use \u0026s.started where you need a pointer",
+      "range": {
+        "startLine": 83,
+        "startChar": 9,
+        "endLine": 83,
+        "endChar": 10
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb6e5100_f22296e6",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "the point of cryptorand is to make it mockable via context. Using cryptorand package is mutually exclusive with NOT allowing the client to pass their own context.\n\nconsider generating the secret in Start where you do have the context.",
+      "range": {
+        "startLine": 95,
+        "startChar": 31,
+        "endLine": 95,
+        "endChar": 51
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24f2afb1_01646ace",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "not for this CL: I\u0027ve realized this is a bad design, e.g. we cannot have two listeners on this.\n\ni wonder if we should simply have public \"ListenAndServe\" function that blocks and returns an error. Then we don\u0027t need Start() and ListenAndServe() body would be basically servingLoop()",
+      "range": {
+        "startLine": 128,
+        "startChar": 17,
+        "endLine": 128,
+        "endChar": 21
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "540497b4_7bceb781",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "defer cancel()\n\nbut stepping back, I don\u0027t see why we need WithCancel here",
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "947db0a6_ac3df1fe",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "why is this needed? the context is already canceled",
+      "range": {
+        "startLine": 175,
+        "startChar": 3,
+        "endLine": 175,
+        "endChar": 11
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0366ab0_91a8f26d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "i think this is a responsibility of serveLoop, because if a function accepts a context, it is expected to check if it is canceled",
+      "range": {
+        "startLine": 172,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 4
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31a3e0e8_df0ee8c8",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "i think initializing httpSrv here would be better than in L110",
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "863acbd2_4a14a244",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "combine into one if statement?\n\nstepping back, I don\u0027t see what these checks adds. In particular, as I wrote earlier, they do not guarantee that Close() return nil if the Close() was called before. Consider:\n- Close is called from two goroutunines concurrently\n- both of them pass these checks\n- one of them stalls. Another successfully closes the server and L198 sets stopped to 1\n- the slow goroutine wakes up and calls s.httpSrv.Close() in L211 \n- an error is returned\n\ndid you consider calling s.httpSrv.Close() unconditionally?",
+      "range": {
+        "startLine": 203,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 38
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "123318f3_ac6e6251",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "why is this function public?",
+      "range": {
+        "startLine": 225,
+        "startChar": 5,
+        "endLine": 225,
+        "endChar": 19
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5761c06b_88f9d45d",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "this may fail if msg has \"%s\" because the accepted parameter here is a format string. This should be\n\n  logging.Errorf(c.Context, \"%s\", msg)\n\nbut also, consider prefixing the format string with something that points back to this line of code, so that when we see the error message, we can easily trace it back to the code",
+      "range": {
+        "startLine": 231,
+        "startChar": 27,
+        "endLine": 231,
+        "endChar": 30
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe6316ad_d11c0bde",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 5
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5d42cfb_02d0f96a",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-02T23:53:55Z",
+      "side": 1,
+      "message": "simpler:\n\n  \u003c-ctx.Done()\n  return ctx.Err()",
+      "range": {
+        "startLine": 167,
+        "startChar": 6,
+        "endLine": 171,
+        "endChar": 16
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
