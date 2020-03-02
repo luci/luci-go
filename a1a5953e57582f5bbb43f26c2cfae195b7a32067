@@ -16,6 +16,24 @@
       "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecc75232_e42898b7",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T08:58:25Z",
+      "side": 0,
+      "message": "Do you mean to return false or error directly when d.lru.length() \u003d\u003d 0 || d.lru.sum \u003d\u003d 0?",
+      "parentUuid": "6e2eadc9_b5dcba1d",
+      "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
