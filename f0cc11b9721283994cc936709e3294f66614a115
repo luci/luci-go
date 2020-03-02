@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f6cae483_a5543b58",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T09:21:33Z",
+      "side": 1,
+      "message": "It\u0027s now decorated. I change the HTTP authentication middleware to a prelude. I feel that its seems more reasonable to return the grpc error codes for auth errors, even if it is mapped into the same HTTP error codes.",
+      "parentUuid": "a545772f_cc38f5d1",
+      "range": {
+        "startLine": 130,
+        "startChar": 35,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82ad024e_5df1bbc7",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 4
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "7a4ebe16_829c58fb",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T09:21:33Z",
+      "side": 1,
+      "message": "Ack. Replaced",
+      "parentUuid": "d3c7040b_ecb35313",
+      "range": {
+        "startLine": 77,
+        "startChar": 5,
+        "endLine": 77,
+        "endChar": 13
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dfe2808c_1eebe21a",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 4
@@ -116,6 +164,30 @@
       "revId": "f0cc11b9721283994cc936709e3294f66614a115",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62b0b5e8_3824c144",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 322,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T09:21:33Z",
+      "side": 1,
+      "message": "Removed. PTAL",
+      "parentUuid": "dfe2808c_1eebe21a",
+      "range": {
+        "startLine": 304,
+        "startChar": 3,
+        "endLine": 322,
+        "endChar": 5
+      },
+      "revId": "f0cc11b9721283994cc936709e3294f66614a115",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
