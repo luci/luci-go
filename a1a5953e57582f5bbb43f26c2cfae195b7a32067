@@ -34,6 +34,24 @@
       "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "190c2032_b7c500c0",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-02T09:02:16Z",
+      "side": 0,
+      "message": "Yes.\nBut not check lru.sum, lru may have some values with length 0.",
+      "parentUuid": "ecc75232_e42898b7",
+      "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
