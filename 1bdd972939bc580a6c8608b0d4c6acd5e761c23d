@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "61ac24a7_12c04bc8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-02T13:35:50Z",
+      "side": 1,
+      "message": "could you use `git cl upload -d` in every cl upload to kick CQ?",
+      "revId": "1bdd972939bc580a6c8608b0d4c6acd5e761c23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
