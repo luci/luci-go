@@ -16,6 +16,24 @@
       "revId": "1bdd972939bc580a6c8608b0d4c6acd5e761c23d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a653eeb1_8895969a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T13:42:04Z",
+      "side": 1,
+      "message": "Ah, didn\u0027t know this trick.",
+      "parentUuid": "61ac24a7_12c04bc8",
+      "revId": "1bdd972939bc580a6c8608b0d4c6acd5e761c23d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
