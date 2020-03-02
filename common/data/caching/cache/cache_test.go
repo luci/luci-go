@@ -181,4 +181,26 @@ func TestNewDisk(t *testing.T) {
 
 		So(c.Close(), ShouldBeNil)
 	}))
+
+	Convey(`MinFreeSpace too big`, t, func() {
+		namespace := isolatedclient.DefaultNamespace
+		td, err := ioutil.TempDir("", "cache")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(td); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		pol := Policies{MaxSize: 10, MinFreeSpace: 9223372036854775807}
+		c, err := NewDisk(pol, td, namespace)
+		So(err, ShouldBeNil)
+
+		h := isolated.GetHash(namespace)
+		file1Content := []byte("foo")
+		file1Digest := isolated.HashBytes(h, file1Content)
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
+
+		So(c.Close(), ShouldBeNil)
+	})
 }
