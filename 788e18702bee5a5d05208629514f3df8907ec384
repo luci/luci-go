@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "4c1ee890_8af97ae6",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T13:21:04Z",
+      "side": 1,
+      "message": "Done.\n\nBTW, IMO respectPolicies() w/o returning error implies that running the function guarantees the policies to be respected, which isn\u0027t really the case, which is why I think returning the error is better.",
+      "parentUuid": "efdde1a1_b184272c",
+      "revId": "788e18702bee5a5d05208629514f3df8907ec384",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aeec431f_39efbdc2",
         "filename": "common/data/caching/cache/cache.go",
         "patchSetId": 4
@@ -30,6 +48,30 @@
       "writtenOn": "2020-03-02T11:59:23Z",
       "side": 1,
       "message": "could you reverse the condition and do early return here?",
+      "range": {
+        "startLine": 486,
+        "startChar": 5,
+        "endLine": 486,
+        "endChar": 95
+      },
+      "revId": "788e18702bee5a5d05208629514f3df8907ec384",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4346217_fd4985a7",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T13:21:04Z",
+      "side": 1,
+      "message": "Hmm, i turned this to its opposition condition before checking lru.length. If we check length first, it might be the case that we have enough free space and don\u0027t have to return an error.",
+      "parentUuid": "aeec431f_39efbdc2",
       "range": {
         "startLine": 486,
         "startChar": 5,
@@ -62,6 +104,30 @@
       "revId": "788e18702bee5a5d05208629514f3df8907ec384",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2973ac_38c0caa8",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 488,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-02T13:21:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b673e124_51c4ac71",
+      "range": {
+        "startLine": 488,
+        "startChar": 11,
+        "endLine": 488,
+        "endChar": 46
+      },
+      "revId": "788e18702bee5a5d05208629514f3df8907ec384",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
