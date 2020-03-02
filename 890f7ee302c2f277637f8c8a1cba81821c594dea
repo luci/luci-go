@@ -16,6 +16,24 @@
       "revId": "890f7ee302c2f277637f8c8a1cba81821c594dea",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7abc54b7_4e719f59",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-02T00:51:14Z",
+      "side": 1,
+      "message": "This is just a small cleanup, no bug label is intentional.",
+      "parentUuid": "128d30b8_0cec9da8",
+      "revId": "890f7ee302c2f277637f8c8a1cba81821c594dea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
