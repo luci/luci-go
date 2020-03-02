@@ -16,6 +16,7 @@ package cache
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -90,6 +91,7 @@ func testCache(t *testing.T, c Cache) isolated.HexDigests {
 		So(c.Add(file2Digest, bytes.NewBuffer(file2Content)), ShouldBeNil)
 
 		r, err = c.Read(file1Digest)
+		fmt.Printf("file1 read r=%v err=%v\n", r, err)
 		So(r, ShouldBeNil)
 		So(err, ShouldNotBeNil)
 		r, err = c.Read(file2Digest)
@@ -181,4 +183,26 @@ func TestNewDisk(t *testing.T) {
 
 		So(c.Close(), ShouldBeNil)
 	}))
+
+	Convey(`MinFreeSpace too big`, t, func() {
+		namespace := isolatedclient.DefaultNamespace
+		td, err := ioutil.TempDir("", "cache")
+		So(err, ShouldBeNil)
+		defer func() {
+			if err := os.RemoveAll(td); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		pol := Policies{MaxSize: 10, MinFreeSpace: 9223372036854775807}
+		c, err := NewDisk(pol, td, namespace)
+		So(err, ShouldBeNil)
+
+		h := isolated.GetHash(namespace)
+		file1Content := []byte("foo")
+		file1Digest := isolated.HashBytes(h, file1Content)
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
+
+		So(c.Close(), ShouldBeNil)
+	})
 }
