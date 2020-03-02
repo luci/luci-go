@@ -137,6 +137,30 @@
       "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65f11823_4f7d906c",
+        "filename": "common/data/caching/cache/cache_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-02T09:24:12Z",
+      "side": 1,
+      "message": "Sorry, this is right.",
+      "parentUuid": "ecb91624_d60082ba",
+      "range": {
+        "startLine": 188,
+        "startChar": 64,
+        "endLine": 188,
+        "endChar": 67
+      },
+      "revId": "bb73b275889efe542809dfdc9132aaec4286a834",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
