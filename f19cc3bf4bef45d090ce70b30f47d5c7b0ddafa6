@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ba56aa90_c7ac5fc4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "In my understanding, the examples in your comment support my arguments, and here is why.\n\nIf an object is created with a New() function that takes a context, I think the lifetime of the created object should be coupled with the lifetime of the context. For example, spanner.NewClient() creates Spanner API clients with the context, it passes the context into its child calls, as following.\n: SessionClient -\u003e APIClient -\u003e grpc.Dial -\u003e grpc.ClientConn.\n\nAt the tail level inside spanner.NewClient(), the grpc.Clientconn is created with the context, and I believe that the lifetime of the connection is coupled with the context.\n\nIf I look at Single() of Spanner Client at https://github.com/googleapis/google-cloud-go/blob/master/spanner/client.go#L291, I think that it uses the session client to execute the query.\n\nIn summary, IIUC, the lifetime of spanner.NewClient() is bound to the lifetime of the context given at the time of creation, and all the subsequent functions performed with the client will fail after the context being closed, because the grpc client channel will be invalid once the context, passed to spanner.NewServer(), is cancelled.\n\ne.g.,\n```\n  clientCtx, cancel :\u003d context.WithCancel(...)\n  client :\u003d spanner.NewClient(clientCtx, ....)\n  cancel()\n  queryCtx :\u003d context.Background()\n  // this should fail, although the query context is still alive,\n  // because the client context has been closed.\n  iter :\u003d client.Single().Query(queryContext, ....)\n```\n\nI can find the same pattern from bigquery.NewClient().\n\nThis is what I tried to describe as confusing.\n\"It\u0027s confusing that the context used to create the server context has no impact the request serving context.\"\nI acknowledge that the following is more accurate statement.\n\"It\u0027s confusing the the context used to create the server context has no impact on Run() and Start()\"\n\n----------------------------------------\nWhat about removing param \"ctx\" from NewServer()?\n\nTBH, I don\u0027t find the value of taking param ctx in NewServer(). It\u0027s only being used to generate the random auth token, but the NewServer() already provides interfaces to let callers control the auth token via ServerConfig. If necessary, the caller can simply pass a custom auth token to NewServer(). There is no reason to take a context to be used for the auth token generator.\n\nThere are two choices.\n(1) NewServer() invokes cryptorand.Read() with context.Background().\n(2) The auth token is generated in Start().\nThe auth token is generate only when the server needs. At the beginning of Start(), the server generates a random auth token with the given context, and Start() will immediately fail if cryptorand.Read(ctx, buf) fails.\n\nI personally prefer (2). Let me know your idea. Thanks",
+      "parentUuid": "3540ca01_f0a8fa50",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1c8ee184_892b3389",
         "filename": "resultdb/cmd/result_sink_wrapper/main.go",
         "patchSetId": 16
@@ -213,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "ace7ef5a_2d73f2b5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "No, if NewServer() doesn\u0027t take a param for ServerContext. Let\u0027s remove param context from NewServer().",
+      "parentUuid": "1bd19479_b145d080",
+      "range": {
+        "startLine": 78,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 22
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "637815bf_acd1fc7c",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -331,6 +379,30 @@
     },
     {
       "key": {
+        "uuid": "a1f3d3d9_c6f7fb5a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "You are right. I broke them into two separate transactions. PTAL.",
+      "parentUuid": "e9d3a1b9_a16f5298",
+      "range": {
+        "startLine": 85,
+        "startChar": 1,
+        "endLine": 85,
+        "endChar": 3
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15d9847f_ed8764d3",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -342,6 +414,30 @@
       "writtenOn": "2020-02-29T00:17:21Z",
       "side": 1,
       "message": "unnecessary. local variables in NewServer are enough\n\n---\n\ni see you use these variables in tests. To me, the tests subscribe too much to the impl details, and amount_of_code_under_test/amount_of_test_code is fairly low. Could you align tests with public APIs instead? e.g. a good test would be: \n1. start a server\n2. report a test result\n3. assert that test result was sent to a mocked recorder.\n\nits OK to add this test later.",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 21
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d946c7e0_4e82c5cb",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "I see your point, and removed the fields from Server{}, and the unit tests for HTTP serving. In the next CL, prpc tests will cover the auth-token validation with the public pRPC APIs.\n\n\u003e\u003e Could you align tests with public APIs instead? \nHowever, I kept a handler for \"/panic\". I\u0027m not sure if there is an easy to inject a custom handler into the public prpc APIs with panic(). In the next CL, I will remove the custom HTTP handler with panic(), if I find a clean, simple way other than the custom panic handler.\n\nPTAL",
+      "parentUuid": "15d9847f_ed8764d3",
       "range": {
         "startLine": 92,
         "startChar": 0,
@@ -424,6 +520,30 @@
     },
     {
       "key": {
+        "uuid": "9730d04c_da23d506",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3153e9e_07d5430d",
+      "range": {
+        "startLine": 128,
+        "startChar": 11,
+        "endLine": 130,
+        "endChar": 4
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c90b5ff4_97269318",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -482,6 +602,24 @@
       "writtenOn": "2020-02-29T00:17:21Z",
       "side": 1,
       "message": "this check is racy. If Close is called twice concurrently, the \"first\" one will not set stopped to true, because it is done async\u0027ly in L204.\n\nwhy not return return s.httpSrv.Close()\n\nwith an explanation that if the server is already closed (by calling Close() or by canceling the context), then this will return an error",
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abe5d972_102f77e1",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "Update the logic without the mutex. PTAL",
+      "parentUuid": "241976b7_92d151a5",
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -744,6 +882,30 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17003b19_46072ed7",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T05:37:03Z",
+      "side": 1,
+      "message": "You are right. Convey()s are executed independently from each other, and, they don\u0027t interfere each other, as long as each of them runs against a unique port.\n\nI cleaned up the tests.",
+      "parentUuid": "68caf73d_a613df81",
+      "range": {
+        "startLine": 41,
+        "startChar": 5,
+        "endLine": 41,
+        "endChar": 26
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
