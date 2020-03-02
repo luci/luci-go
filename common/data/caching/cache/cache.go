@@ -397,7 +397,10 @@ func (d *disk) add(digest isolated.HexDigest, src io.Reader, cb func() error) er
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.lru.pushFront(digest, units.Size(size))
-	d.respectPolicies()
+	if err := d.respectPolicies(); err != nil {
+		d.lru.pop(digest)
+		return err
+	}
 	d.added = append(d.added, size)
 	return nil
 }
@@ -466,17 +469,29 @@ func (d *disk) statePath() string {
 	return filepath.Join(d.path, "state.json")
 }
 
-func (d *disk) respectPolicies() {
-	increaseFreeSpace := func() bool {
+func (d *disk) respectPolicies() error {
+	increaseFreeSpace := func() (bool, error) {
 		size, err := filesystem.GetFreeSpace(d.path)
 		if err != nil {
-			return false
+			return false, err
 		}
-		return size < uint64(d.policies.MinFreeSpace)
+		return size < uint64(d.policies.MinFreeSpace), nil
 	}
 
-	for d.lru.length() > d.policies.MaxItems || d.lru.sum > d.policies.MaxSize || increaseFreeSpace() {
-		k, _ := d.lru.popOldest()
-		_ = os.Remove(d.itemPath(k))
+	for {
+		shouldIncrease, err := increaseFreeSpace()
+		if err != nil {
+			return err
+		}
+		if d.lru.length() > d.policies.MaxItems || d.lru.sum > d.policies.MaxSize || shouldIncrease {
+			if d.lru.length() == 0 {
+				return errors.New("no more space to free")
+			}
+			k, _ := d.lru.popOldest()
+			_ = os.Remove(d.itemPath(k))
+		} else {
+			break
+		}
 	}
+	return nil
 }

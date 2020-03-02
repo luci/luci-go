@@ -17,6 +17,7 @@ package cache
 import (
 	"bytes"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -178,6 +179,19 @@ func TestNewDisk(t *testing.T) {
 		empty, err := filesystem.IsEmptyDir(dir)
 		So(err, ShouldBeNil)
 		So(empty, ShouldBeTrue)
+
+		So(c.Close(), ShouldBeNil)
+	}))
+
+	Convey(`MinFreeSpace too big`, t, testfs.MustWithTempDir(t, "newdisk", func(dir string) {
+		namespace := isolatedclient.DefaultNamespace
+		c, err := NewDisk(Policies{MaxSize: 10, MinFreeSpace: math.MaxInt64}, dir, namespace)
+		So(err, ShouldBeNil)
+
+		h := isolated.GetHash(namespace)
+		file1Content := []byte("foo")
+		file1Digest := isolated.HashBytes(h, file1Content)
+		So(c.Add(file1Digest, bytes.NewBuffer(file1Content)), ShouldNotBeNil)
 
 		So(c.Close(), ShouldBeNil)
 	}))
