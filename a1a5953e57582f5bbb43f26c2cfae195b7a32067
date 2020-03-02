@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e2eadc9_b5dcba1d",
+        "filename": "common/data/caching/cache/cache.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 479,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-02T08:38:14Z",
+      "side": 0,
+      "message": "just checking d.lru.length() before this line is not sufficient?",
+      "revId": "a1a5953e57582f5bbb43f26c2cfae195b7a32067",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
