@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "67635fb2_cafd9435",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 16
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-02T13:26:35Z",
+      "side": 1,
+      "message": "NVM. I totally forgot that I created the router with NewWithRootContext(). Thus, all the serving contexts are derived from the server context given to NewServer().\n\nI reverted the changed back. PTAL",
+      "parentUuid": "ba56aa90_c7ac5fc4",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c8ee184_892b3389",
         "filename": "resultdb/cmd/result_sink_wrapper/main.go",
         "patchSetId": 16
