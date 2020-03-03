@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6b6b8d2b_e07ff186",
+        "filename": "resultdb/internal/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-03T23:36:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c90bf83_5b066aac",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 23
+      },
+      "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "56336006_a0d7795b",
         "filename": "resultdb/internal/services/recorder/invocation.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03e9906b_d50c748e",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-03T23:36:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "56336006_a0d7795b",
+      "range": {
+        "startLine": 70,
+        "startChar": 13,
+        "endLine": 70,
+        "endChar": 27
+      },
+      "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fba65d22_ce05f121",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-03T23:36:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6e99307_a48487cc",
+      "range": {
+        "startLine": 109,
+        "startChar": 13,
+        "endLine": 109,
+        "endChar": 17
+      },
+      "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "80be4abf_1c64480a",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "3b7d33bd_8f7cbb3d",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-03T23:36:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80be4abf_1c64480a",
+      "range": {
+        "startLine": 174,
+        "startChar": 3,
+        "endLine": 174,
+        "endChar": 5
+      },
+      "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17faf1d6_e7186cc5",
         "filename": "resultdb/internal/span/invocation.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcff41e9_2c66fe80",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-03T23:36:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "17faf1d6_e7186cc5",
+      "range": {
+        "startLine": 188,
+        "startChar": 2,
+        "endLine": 188,
+        "endChar": 6
+      },
+      "revId": "d4d2bb2b251fc771ef05e1459913ab775381427d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
