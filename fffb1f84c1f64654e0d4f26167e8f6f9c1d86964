@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3539892_71649a4d",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c79e1c67_77465e19",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 36
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cfec11b2_62b00aba",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2020-02-27T17:24:43Z",
       "side": 1,
       "message": "this is pretty generic and useful. i\u0027d like to use it in resultdb. Could you place it in some buildbucket-agnostic package?",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 15
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6961698f_97656ffb",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "I was envisioning that eventually this prelude would be Buildbucket-specific. For example, I have similar code in GCE Provider but the prelude does service-specific stuff as well:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/dd30416ecf0c26ae224e9e9e1a8dea58c339051a/gce/appengine/rpc/instances.go#243\n\nFor now can you copy/paste in resultdb? Otherwise I may have to copy/paste it back here if it needs to evolve to be BB-specific. Alternately we could support prelude chains and then provide \"x called y\" in a common location.",
+      "parentUuid": "cfec11b2_62b00aba",
       "range": {
         "startLine": 44,
         "startChar": 5,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "abeab140_6135c2ec",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e50e0d6_1161e2e0",
+      "range": {
+        "startLine": 45,
+        "startChar": 92,
+        "endLine": 45,
+        "endChar": 95
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b5c7f5c_b3e181ea",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "957ba624_eac27635",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b5c7f5c_b3e181ea",
+      "range": {
+        "startLine": 56,
+        "startChar": 84,
+        "endLine": 56,
+        "endChar": 87
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "530a460a_4ddd3658",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88661b22_2892cac0",
+      "range": {
+        "startLine": 78,
+        "startChar": 15,
+        "endLine": 78,
+        "endChar": 23
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7326fe91_f8263bfa",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -128,6 +248,30 @@
       "writtenOn": "2020-02-27T17:24:43Z",
       "side": 1,
       "message": "this set of checks will grow. Please separate stateless validation from execution.\nconsider approach: https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/create_invocation.go",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08d29a01_fe0f3c0c",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "I don\u0027t know how it\u0027ll be structured yet. I\u0027ll move it later.",
+      "parentUuid": "7326fe91_f8263bfa",
       "range": {
         "startLine": 79,
         "startChar": 1,
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "f02341c6_4b1500a2",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "849a0dee_ab9885e5",
+      "range": {
+        "startLine": 82,
+        "startChar": 15,
+        "endLine": 82,
+        "endChar": 28
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bc3c813_5f361e86",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -174,6 +342,24 @@
       "writtenOn": "2020-02-27T17:24:43Z",
       "side": 1,
       "message": "this case is not executed if req.GetId() !\u003d 0\n\nplease combine expressions in L80 and L81 into one expression\n\nstepping back, I am not sure this is a good usage of switch. There is the same problem in L89 essentially. Basically, we should enter a \"case\" iff we are going to return an error for sure",
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "833939db_cefd66bd",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Isn\u0027t that fine? If req.GetId() !\u003d 0 then we are in get-by-ID mode. If req.Builder or req.BuildNumber are given, that\u0027s an error.",
+      "parentUuid": "5bc3c813_5f361e86",
       "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "4e3c2da7_8fd9c174",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ca0cfb4_9ee1482c",
+      "range": {
+        "startLine": 86,
+        "startChar": 2,
+        "endLine": 88,
+        "endChar": 50
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "05cd8e83_1a5e2f50",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -214,6 +424,30 @@
       "writtenOn": "2020-02-27T17:24:43Z",
       "side": 1,
       "message": "we will definitely need to reuse this logic in other places. please extract.\nconsider a pattern ParseXXX(aString string) (component1, component2, component3 string, err error)\nexamples: https://source.chromium.org/search?q\u003dfunc%5C%20Parse%20f:resultdb",
+      "range": {
+        "startLine": 89,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdba1f86_0b6bd3ce",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "I have a TODO to move it already, I\u0027ll move it once it\u0027s needed.",
+      "parentUuid": "05cd8e83_1a5e2f50",
       "range": {
         "startLine": 89,
         "startChar": 2,
@@ -243,6 +477,24 @@
     },
     {
       "key": {
+        "uuid": "add9b166_a9690dc7",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46ed1d8f_257790b4",
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff592da5_ddb8d92f",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -263,6 +515,30 @@
       "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f7f3654_12eb6f17",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-03T23:40:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff592da5_ddb8d92f",
+      "range": {
+        "startLine": 108,
+        "startChar": 2,
+        "endLine": 109,
+        "endChar": 14
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
