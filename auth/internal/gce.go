@@ -74,12 +74,12 @@ func NewGCETokenProvider(ctx context.Context, account string, scopes []string) (
 	return p, err
 }
 
-// retryParams defines the retry strategy.
+// retryParams defines the retry strategy for attemptInit.
 func retryParams() retry.Iterator {
 	return &retry.ExponentialBackoff{
 		Limited: retry.Limited{
 			Delay:    100 * time.Millisecond,
-			MaxTotal: 2 * time.Minute,
+			MaxTotal: 5 * time.Minute,
 			Retries:  -1, // until the overall MaxTotal timeout
 		},
 		Multiplier: 2,
