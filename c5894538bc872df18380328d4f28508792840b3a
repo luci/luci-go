@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "526d44b1_4c77c1bf",
+        "filename": "resultdb/internal/services/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:50:56Z",
+      "side": 1,
+      "message": "nit: would be simpler to move this out of the switch block: then inv variable would be declared right here",
+      "range": {
+        "startLine": 102,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 3
+      },
+      "revId": "c5894538bc872df18380328d4f28508792840b3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84676d75_08d4498d",
+        "filename": "resultdb/internal/services/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:50:56Z",
+      "side": 1,
+      "message": "nit: consolidate?",
+      "range": {
+        "startLine": 128,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 5
+      },
+      "revId": "c5894538bc872df18380328d4f28508792840b3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4cb65dc5_c4411af6",
+        "filename": "resultdb/internal/services/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:50:56Z",
+      "side": 1,
+      "message": "this txn may fail because another transaction might have already created inv. We either need to do READS again, or replace InsertMap with InsertOrUpdateMap (to make mutations idempotent).\n\nif the latter, this can be simplified to client.Apply(ctx, invMS)",
+      "revId": "c5894538bc872df18380328d4f28508792840b3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f398e1df_b05db08c",
         "filename": "resultdb/internal/services/recorder/derive_invocation.go",
         "patchSetId": 3
@@ -19,6 +82,23 @@
         "endLine": 174,
         "endChar": 50
       },
+      "revId": "c5894538bc872df18380328d4f28508792840b3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e94b02f_6de1cb42",
+        "filename": "resultdb/internal/services/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:50:56Z",
+      "side": 1,
+      "message": "overall, i think this function could be simpler. it could be structured two functions\n\n1) first function does not care about task deduplication. It just derives test results from a given task and returns derived origin invocation\n2) second, higher level function, cares about deduplication and about inclusion of origin inv. This func alls the first func on the origin task, and includes the orig inv into the inv that we return the client\n\nWDYT?",
       "revId": "c5894538bc872df18380328d4f28508792840b3a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
