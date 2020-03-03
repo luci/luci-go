@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "78a39ac1_fd6fc1e9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T22:06:46Z",
+      "side": 1,
+      "message": "do we plan to turn this into a transient error later when we ensure this code works?",
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "500bd348_251e2997",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T22:06:46Z",
+      "side": 1,
+      "message": "common mistake: the param is a format string, so this will fail if error message contains %s or something like that\n\n  logging.Errorf(c, \"failed to fetch rota-ng oncallers: %s\", err)",
+      "range": {
+        "startLine": 216,
+        "startChar": 20,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21053187_69bb9b7b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T22:06:46Z",
+      "side": 1,
+      "message": "nit: in Go, errors always start with a lower-case letters because errors tend to be concatenated together\n\n\"Error strings should not start with a capital letter because they\u0027ll often be prefixed before printing:\" go/gocomments#error-strings\n\napplies below too",
+      "range": {
+        "startLine": 226,
+        "startChar": 30,
+        "endLine": 226,
+        "endChar": 31
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a1850d6_038811fb",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T22:06:46Z",
+      "side": 1,
+      "message": "nit: consolidate?",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 5
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "676ac4db_806009dd",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T22:06:46Z",
+      "side": 1,
+      "message": "nit: inline?",
+      "range": {
+        "startLine": 235,
+        "startChar": 2,
+        "endLine": 235,
+        "endChar": 5
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
