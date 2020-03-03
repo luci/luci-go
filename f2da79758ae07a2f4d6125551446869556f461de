@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "e8b6abe6_812a10f1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:55:38Z",
+      "side": 1,
+      "message": "I believe so. +Vadim",
+      "parentUuid": "a2bcbb90_66742561",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "783ffff8_82261f7d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -387,6 +411,30 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "10cd4857_a15da292",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T21:55:38Z",
+      "side": 1,
+      "message": "that\u0027s because, when proto is compiled to Go, the names become CamelCase: https://source.chromium.org/search?q\u003dMiloHost%20f:luci_notify\u0026sq\u003d",
+      "parentUuid": "4ec6d110_a358dbae",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 44
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
