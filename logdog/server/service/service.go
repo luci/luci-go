@@ -63,7 +63,6 @@ import (
 	"go.chromium.org/gae/impl/cloud"
 
 	cloudBT "cloud.google.com/go/bigtable"
-	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
@@ -118,10 +117,7 @@ type Service struct {
 	coordinatorHost     string
 	coordinatorInsecure bool
 	useDatastoreConfig  bool
-
-	// onGCE is true if we're on GCE. We probe this once during Run.
-	onGCE        bool
-	hasDatastore bool
+	hasDatastore        bool
 
 	// killCheckInterval is the amount of time in between service configuration
 	// checks. If set, this service will periodically reload its service
@@ -139,9 +135,7 @@ type Service struct {
 	serviceConfig svcconfig.Config
 	configCache   config.MessageCache
 
-	// serviceID is the cloud project ID, which is also this service's unique
-	// ID. This can be specified by flag or, if on GCE, will automatically be
-	// probed from metadata.
+	// serviceID is the cloud project ID specified via -service-id flag.
 	serviceID string
 
 	coord logdog.ServicesClient
@@ -175,14 +169,6 @@ func (s *Service) Run(c context.Context, f func(context.Context) error) {
 }
 
 func (s *Service) runImpl(c context.Context, f func(context.Context) error) error {
-	// Set log level to Info for initial setup. This will be overridden when the
-	// flags are parsed.
-	c = log.SetLevel(c, log.Info)
-
-	// Probe our environment for default values. Set log level to Info for this
-	// b/c we haven't parsed flags yet.
-	s.probeGCEEnvironment(c)
-
 	// Install service flags and parse.
 	s.addFlags(c, &s.Flags)
 	if err := s.Flags.Parse(os.Args[1:]); err != nil {
@@ -257,10 +243,12 @@ func (s *Service) runImpl(c context.Context, f func(context.Context) error) erro
 	}()
 
 	// Initialize our tsmon library.
+	if s.tsMonFlags.Target.TaskServiceName == "" {
+		s.tsMonFlags.Target.TaskServiceName = s.serviceID
+	}
 	c = tsmon.WithState(c, tsmon.NewState())
-
 	if err := tsmon.InitializeFromFlags(c, &s.tsMonFlags); err != nil {
-		log.WithError(err).Warningf(c, "Failed to initialize monitoring; will continue without metrics.")
+		return errors.Annotate(err, "failed to initialize monitoring").Err()
 	}
 	defer tsmon.Shutdown(c)
 
@@ -289,11 +277,11 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.loggingFlags.Level = log.Warning
 	s.loggingFlags.AddFlags(fs)
 
-	// Initialize tsmon flags.
+	// Initialize tsmon flags. TaskServiceName will be populated once -service-id
+	// is parsed, right before InitializeFromFlags.
 	s.tsMonFlags = tsmon.NewFlags()
 	s.tsMonFlags.Flush = tsmon.FlushAuto
 	s.tsMonFlags.Target.TargetType = target.TaskType
-	s.tsMonFlags.Target.TaskServiceName = s.serviceID
 	s.tsMonFlags.Target.TaskJobName = s.Name
 	s.tsMonFlags.Register(fs)
 
@@ -304,8 +292,7 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 	s.profiler.AddFlags(fs)
 
 	fs.StringVar(&s.serviceID, "service-id", s.serviceID,
-		"Specify the service ID that this instance is supporting. If empty, the service ID "+
-			"will attempt to be resolved by probing the local environment. This probably will match the "+
+		"Specify the service ID that this instance is supporting. This should match the "+
 			"App ID of the Coordinator.")
 	fs.StringVar(&s.coordinatorHost, "coordinator", s.coordinatorHost,
 		"The Coordinator service's [host][:port].")
@@ -317,32 +304,6 @@ func (s *Service) addFlags(c context.Context, fs *flag.FlagSet) {
 		"(Testing) If set, load configuration from a local filesystem rooted here.")
 	fs.BoolVar(&s.useDatastoreConfig, "use-datastore-config", s.useDatastoreConfig,
 		"Enable/Disable loading configuration directly from datastore cache.")
-}
-
-// probeGCEEnvironment fills in any parameters that can be probed from Google
-// Compute Engine metadata.
-//
-// If we're not running on GCE, this will do nothing. It is non-fatal if any
-// given GCE field fails to be probed.
-func (s *Service) probeGCEEnvironment(c context.Context) {
-	s.onGCE = metadata.OnGCE()
-	if !s.onGCE {
-		log.Infof(c, "Not on GCE.")
-		return
-	}
-
-	// Determine our service ID from metadata. The service ID will equal the cloud
-	// project ID.
-	if s.serviceID == "" {
-		var err error
-		if s.serviceID, err = metadata.ProjectID(); err != nil {
-			log.WithError(err).Warningf(c, "Failed to probe GCE project ID.")
-		}
-
-		log.Fields{
-			"serviceID": s.serviceID,
-		}.Infof(c, "Probed GCE service ID.")
-	}
 }
 
 func (s *Service) initDatastoreClient(c context.Context) (*datastore.Client, error) {
