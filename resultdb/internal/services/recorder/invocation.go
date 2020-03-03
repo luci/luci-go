@@ -16,7 +16,6 @@ package recorder
 
 import (
 	"context"
-	"crypto/subtle"
 	"fmt"
 	"time"
 
@@ -27,7 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/services/recorder/chromium"
@@ -41,6 +40,12 @@ const (
 	// Delete Invocations row after this duration since invocation creation.
 	invocationExpirationDuration = 2 * 365 * day // 2 y
 
+	// How long the update token will be valid after invocation creation.
+	// This should be about as long as a build is allowed to run.
+	// Buildbucket has a max of 2 days, so one week should be enough even
+	// for other use cases.
+	invocationTokenExpiration = 7 * day // One week.
+
 	// By default, interrupt the invocation 1h after creation if it is still
 	// incomplete.
 	defaultInvocationDeadlineDuration = time.Hour
@@ -48,6 +53,14 @@ const (
 	// To make sure an invocation_task can be performed eventually.
 	eventualInvocationTaskProcessAfter = 2 * day
 )
+
+// InvocationTokenKind generates and validates tokens issued to authorize
+// updating a given invocation.
+var InvocationTokenKind = tokens.TokenKind{
+	Algo:      tokens.TokenAlgoHmacSHA256,
+	SecretKey: "invocation_tokens_secret",
+	Version:   1,
+}
 
 // UpdateTokenMetadataKey is the metadata.MD key for the secret update token
 // required to mutate an invocation.
@@ -62,17 +75,12 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 	var retErr error
 
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		userToken, err := extractUserUpdateToken(ctx)
+		token, err := extractUpdateToken(ctx)
 		if err != nil {
 			return err
 		}
 
-		var updateToken spanner.NullString
-		var state pb.Invocation_State
-		err = span.ReadInvocation(ctx, txn, id, map[string]interface{}{
-			"UpdateToken": &updateToken,
-			"State":       &state,
-		})
+		state, err := span.ReadInvocationState(ctx, txn, id)
 		switch {
 		case err != nil:
 			return err
@@ -81,7 +89,7 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 			return appstatus.Errorf(codes.FailedPrecondition, "%s is not active", id.Name())
 		}
 
-		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
+		if err := validateUpdateToken(ctx, id, token); err != nil {
 			return err
 		}
 
@@ -94,37 +102,32 @@ func mutateInvocation(ctx context.Context, id span.InvocationID, f func(context.
 	return retErr
 }
 
-func extractUserUpdateToken(ctx context.Context) (string, error) {
+func extractUpdateToken(ctx context.Context) (string, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
-	userToken := md.Get(UpdateTokenMetadataKey)
+	token := md.Get(UpdateTokenMetadataKey)
 	switch {
-	case len(userToken) == 0:
+	case len(token) == 0:
 		return "", appstatus.Errorf(codes.Unauthenticated, "missing %s metadata value in the request", UpdateTokenMetadataKey)
 
-	case len(userToken) > 1:
-		return "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", UpdateTokenMetadataKey, len(userToken))
+	case len(token) > 1:
+		return "", appstatus.Errorf(codes.InvalidArgument, "expected exactly one %s metadata value, got %d", UpdateTokenMetadataKey, len(token))
 
 	default:
-		return userToken[0], nil
+		return token[0], nil
 	}
 }
 
-func validateUserUpdateToken(updateToken spanner.NullString, userToken string) error {
-	if !updateToken.Valid {
-		return errors.Reason("no update token in active invocation").Err()
-	}
-
-	if subtle.ConstantTimeCompare([]byte(userToken), []byte(updateToken.StringVal)) == 0 {
+func validateUpdateToken(ctx context.Context, id span.InvocationID, token string) error {
+	if _, err := InvocationTokenKind.Validate(ctx, token, []byte(id)); err != nil {
 		return appstatus.Errorf(codes.PermissionDenied, "invalid update token")
 	}
-
 	return nil
 }
 
 // rowOfInvocation returns Invocation row values to be inserted to create the
 // invocation.
 // inv.CreateTime is ignored in favor of spanner.CommitTime.
-func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, updateToken, createRequestID string) map[string]interface{} {
+func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation, createRequestID string) map[string]interface{} {
 	now := clock.Now(ctx).UTC()
 	row := map[string]interface{}{
 		"InvocationId": span.MustParseInvocationName(inv.Name),
@@ -135,8 +138,6 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 
 		"InvocationExpirationTime":          now.Add(invocationExpirationDuration),
 		"ExpectedTestResultsExpirationTime": now.Add(s.ExpectedResultsExpiration),
-
-		"UpdateToken": updateToken,
 
 		"CreateTime": spanner.CommitTimestamp,
 		"Deadline":   inv.Deadline,

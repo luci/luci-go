@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 
 	"go.chromium.org/luci/resultdb/internal/span"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -71,6 +73,9 @@ func SpannerTestContext(tb testing.TB) context.Context {
 	if err != nil {
 		tb.Fatal(err)
 	}
+
+	// Set test secrets store for token generation/validation.
+	ctx = secrets.Set(ctx, &testsecrets.Store{})
 
 	return span.WithClient(ctx, spannerClient)
 }
@@ -216,7 +221,6 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 		"ShardId":                           0,
 		"State":                             state,
 		"Realm":                             "",
-		"UpdateToken":                       "",
 		"InvocationExpirationTime":          future,
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,

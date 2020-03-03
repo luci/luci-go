@@ -135,10 +135,10 @@ func TestCreateTestResult(t *testing.T) {
 		}
 
 		// Insert a sample invocation
-		const tok = "update token"
-		vs := map[string]interface{}{"UpdateToken": tok}
+		tok, err := InvocationTokenKind.Generate(ctx, []byte("u:build-1"), nil, invocationTokenExpiration)
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, vs)
+		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
 		MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
