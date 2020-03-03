@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a2bcbb90_66742561",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "This is for a regular HTTP request, not an RPC, is \"GetRPCTransport\" the right thing to use here?",
+      "parentUuid": "4d6a2f01_4f27414b",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "783ffff8_82261f7d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "791efb24_a927872a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "783ffff8_82261f7d",
+      "range": {
+        "startLine": 144,
+        "startChar": 57,
+        "endLine": 144,
+        "endChar": 65
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d368b406_f9edc927",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac6f07b4_cefe7f86",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d368b406_f9edc927",
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +151,30 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5de125e_49cbf56d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f9003db_5a4759b4",
+      "range": {
+        "startLine": 158,
+        "startChar": 3,
+        "endLine": 158,
+        "endChar": 7
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -135,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "220d7481_6a46c76c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done - I factored out the innermost part to make things less heavily indented.",
+      "parentUuid": "bb895517_39852be7",
+      "range": {
+        "startLine": 190,
+        "startChar": 0,
+        "endLine": 190,
+        "endChar": 52
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b09e51c1_9ce04266",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -155,6 +269,30 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66b9030e_f6db1633",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b09e51c1_9ce04266",
+      "range": {
+        "startLine": 194,
+        "startChar": 18,
+        "endLine": 194,
+        "endChar": 19
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -204,6 +342,54 @@
     },
     {
       "key": {
+        "uuid": "4ec6d110_a358dbae",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "I\u0027ve been trying to figure out how the existing settings work, but I can\u0027t actually find anything that reads the \u0027milo_host\u0027 field from the config. Am I missing something, or is this field unused?",
+      "parentUuid": "5efa4a10_dbf749f1",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 44
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d886efa1_a8351c26",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Shouldn\u0027t matter, since none of the rotations supported by the legacy endpoint have special chars. But it\u0027s easy enough to do I suppose, so done.",
+      "parentUuid": "ae140727_5758b41f",
+      "range": {
+        "startLine": 198,
+        "startChar": 56,
+        "endLine": 198,
+        "endChar": 64
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9fc02b7b_b965323d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -224,6 +410,30 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a0f5e86_74183dbe",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fc02b7b_b965323d",
+      "range": {
+        "startLine": 202,
+        "startChar": 6,
+        "endLine": 203,
+        "endChar": 16
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -250,6 +460,30 @@
     },
     {
       "key": {
+        "uuid": "6c6fb565_d7ed229d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4b36d33_d145e8be",
+      "range": {
+        "startLine": 206,
+        "startChar": 5,
+        "endLine": 209,
+        "endChar": 29
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d2b0612c_73d24c34",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -270,6 +504,30 @@
       "revId": "f2da79758ae07a2f4d6125551446869556f461de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24a81bf6_703b288e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-03T03:44:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2b0612c_73d24c34",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 214,
+        "endChar": 16
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
