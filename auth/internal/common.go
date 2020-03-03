@@ -60,7 +60,7 @@ var (
 
 	// ErrBadCredentials is returned by MintToken or RefreshToken if provided
 	// offline credentials (like service account key) are invalid.
-	ErrBadCredentials = errors.New("invalid service account credentials")
+	ErrBadCredentials = errors.New("invalid or unavailable service account credentials")
 )
 
 // Token is an oauth2.Token with an email that corresponds to it.

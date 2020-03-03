@@ -1225,12 +1225,16 @@ func (t *tokenWithProvider) compareAndRefresh(ctx context.Context, params compar
 
 		// No one updated the token yet. It should be us. Mint a new token or
 		// refresh the existing one.
+		start := clock.Now(ctx)
 		newTok, err := params.refreshCb(ctx, t.token)
 		if err != nil {
 			t.token = nil
 			return nil, false, err
 		}
-		logging.Debugf(ctx, "Token expires in %s", newTok.Expiry.Round(0).Sub(clock.Now(ctx)))
+		now := clock.Now(ctx)
+		logging.Debugf(
+			ctx, "The token refreshed in %s, expires in %s",
+			now.Sub(start), newTok.Expiry.Round(0).Sub(now))
 		t.token = newTok
 		return newTok, true, nil
 	}()
@@ -1296,9 +1300,9 @@ func (t *tokenWithProvider) renewToken(ctx context.Context, prev, base *internal
 func retryParams() retry.Iterator {
 	return &retry.ExponentialBackoff{
 		Limited: retry.Limited{
-			Delay:    50 * time.Millisecond,
+			Delay:    100 * time.Millisecond,
 			Retries:  50,
-			MaxTotal: 5 * time.Second,
+			MaxTotal: 30 * time.Second,
 		},
 		Multiplier: 2,
 	}
@@ -1310,7 +1314,7 @@ func (t *tokenWithProvider) mintTokenWithRetries(ctx context.Context, base *inte
 	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.MintToken(ctx, base)
 		return err
-	}, nil)
+	}, retry.LogCallback(ctx, "token-mint"))
 	return
 }
 
@@ -1320,7 +1324,7 @@ func (t *tokenWithProvider) refreshTokenWithRetries(ctx context.Context, prev, b
 	err = retry.Retry(ctx, transient.Only(retryParams), func() error {
 		tok, err = t.provider.RefreshToken(ctx, prev, base)
 		return err
-	}, nil)
+	}, retry.LogCallback(ctx, "token-refresh"))
 	return
 }
 
@@ -1356,10 +1360,6 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string) 
 			serviceAccountPath,
 			scopes)
 	case GCEMetadataMethod:
-		if !metadata.OnGCE() {
-			logging.Errorf(ctx, "Attempting to use GCE VM service account, but not running on GCE")
-			return nil, ErrBadCredentials
-		}
 		return internal.NewGCETokenProvider(ctx, opts.GCEAccountName, scopes)
 	case LUCIContextMethod:
 		return internal.NewLUCIContextTokenProvider(ctx, scopes, opts.Transport)

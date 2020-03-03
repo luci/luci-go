@@ -16,16 +16,21 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
 
-	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -36,12 +41,16 @@ import (
 var metadataClient = metadata.NewClient(&http.Client{
 	Transport: &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout:   2 * time.Second,
+			Timeout:   10 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial,
-		ResponseHeaderTimeout: 10 * time.Second, // default is 2
+		ResponseHeaderTimeout: 15 * time.Second, // default is 2
 	},
 })
+
+// GKE metadata servers is grumpy when it is called concurrently. We use the
+// global mutex to serialize calls to it from within this process.
+var globalGCELock sync.Mutex
 
 type gceTokenProvider struct {
 	account  string
@@ -80,11 +89,32 @@ func retryParams() retry.Iterator {
 
 // attemptInit attempts to initialize GCE token provider.
 func attemptInit(ctx context.Context, account string, scopes []string) (TokenProvider, error) {
+	// This mutex is used to avoid hitting GKE metadata server concurrently if
+	// we have a stampede of goroutines. It doesn't actually protect any shared
+	// state in the current process.
+	globalGCELock.Lock()
+	defer globalGCELock.Unlock()
+
+	if account == "" {
+		account = "default"
+	}
+
 	// Grab an email associated with the account. This must not be failing on
 	// a healthy VM if the account is present. If it does, the metadata server is
 	// broken.
 	email, err := metadataClient.Email(account)
 	if err != nil {
+		// Note: we purposefully delay this check only after the first call to
+		// the metadata fails because metadata.OnGCE was observed to often report
+		// "false" when running on GKE due to gke-metadata-server being slow. Our
+		// metadataClient has (much) higher timeouts that the client used by
+		// metadata.OnGCE, and it handles slow gke-metadata-server better. So if we
+		// end up here and metadata.OnGCE also says "false", then we are not on GCE
+		// with high probability. The downside is that it may take up to 15 sec to
+		// detect this (or whatever ResponseHeaderTimeout in metadataClient is).
+		if !metadata.OnGCE() {
+			return nil, ErrBadCredentials
+		}
 		if _, yep := err.(metadata.NotDefinedError); yep {
 			return nil, ErrInsufficientAccess
 		}
@@ -139,13 +169,47 @@ func (p *gceTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 }
 
 func (p *gceTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	src := google.ComputeTokenSource(p.account)
-	tok, err := src.Token()
+	// This mutex is used to avoid hitting GKE metadata server concurrently if
+	// we have a stampede of goroutines. It doesn't actually protect any shared
+	// state in the current process.
+	globalGCELock.Lock()
+	defer globalGCELock.Unlock()
+
+	// Note: this code is very similar to ComputeTokenSource(p.account).Token()
+	// from [1], except it uses our custom metadataClient which is more forgiving
+	// of the slowness of the gke-metadata-server.
+	//
+	// [1]: https://github.com/golang/oauth2/blob/master/google/google.go
+
+	tokenJSON, err := metadataClient.Get("instance/service-accounts/" + p.account + "/token")
 	if err != nil {
-		return nil, transient.Tag.Apply(err)
+		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
 	}
+
+	var res struct {
+		AccessToken  string `json:"access_token"`
+		ExpiresInSec int    `json:"expires_in"`
+		TokenType    string `json:"token_type"`
+	}
+	switch err = json.NewDecoder(strings.NewReader(tokenJSON)).Decode(&res); {
+	case err != nil:
+		return nil, errors.Annotate(err, "auth/gce: invalid token JSON from metadata").Tag(transient.Tag).Err()
+	case res.ExpiresInSec == 0 || res.AccessToken == "":
+		return nil, errors.Reason("auth/gce: incomplete token received from metadata").Tag(transient.Tag).Err()
+	}
+
+	tok := oauth2.Token{
+		AccessToken: res.AccessToken,
+		TokenType:   res.TokenType,
+		Expiry:      clock.Now(ctx).Add(time.Duration(res.ExpiresInSec) * time.Second),
+	}
+
 	return &Token{
-		Token: *tok,
+		// Replicate the hidden magic state added by computeSource.Token().
+		Token: *tok.WithExtra(map[string]interface{}{
+			"oauth2.google.tokenSource":    "compute-metadata",
+			"oauth2.google.serviceAccount": p.account,
+		}),
 		Email: p.Email(),
 	}, nil
 }

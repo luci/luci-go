@@ -404,8 +404,8 @@ func TestRefreshToken(t *testing.T) {
 		after := clock.Now(ctx)
 
 		// It took reasonable amount of time and number of attempts.
-		So(after.Sub(before), ShouldBeLessThan, 15*time.Second)
-		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 8)
+		So(after.Sub(before), ShouldBeLessThan, time.Minute)
+		So(5000-tokenProvider.transientRefreshErrors, ShouldEqual, 10)
 	})
 }
 
