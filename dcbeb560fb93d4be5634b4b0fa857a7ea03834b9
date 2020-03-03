@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80587352_13b451ea",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T00:04:20Z",
+      "side": 1,
+      "message": "this error is created in each request. could you keep it in the outer function like you do with expected?",
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aa5a5be_4d69a870",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T00:04:20Z",
+      "side": 1,
+      "message": "not really necessary. the for loop below already does this check and then it would jump straight to L257.\nit would also allow inlining tks which would make the code simpler",
+      "range": {
+        "startLine": 249,
+        "startChar": 0,
+        "endLine": 251,
+        "endChar": 3
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d49faf7_662ce0ec",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T00:04:20Z",
+      "side": 1,
+      "message": "using https://godoc.org/google.golang.org/grpc/metadata#AppendToOutgoingContext would be simpler?",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 54,
+        "endChar": 3
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "636ffc8f_7fa60fa3",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-03T00:04:20Z",
+      "side": 1,
+      "message": "this should be just\n\n  client :\u003d sinkpb.NewSinkPRPCClient(\u0026prpc.Client{...})\n  return client.ReportTestResult(ctx, in)",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 16
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
