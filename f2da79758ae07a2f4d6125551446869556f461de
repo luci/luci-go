@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "872e64b8_95028376",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-03T22:22:00Z",
+      "side": 1,
+      "message": "Yes. An RPC can be (and often is) an HTTP request. There are hints in GetRPCTransport doc as well: \"returns http.RoundTripper to use for outbound HTTP RPC requests.\" HTTP is mentioned twice.\n\nNote that requests made with urlfetch.Get(c) do not include any credentials, but requests made through auth.GetRPCTransport(c, auth.AsSelf) do include OAuth2 access tokens. If you indeed want to make requests anonymous, use auth.GetRPCTransport(c, auth.NoAuth).",
+      "parentUuid": "e8b6abe6_812a10f1",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "783ffff8_82261f7d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
