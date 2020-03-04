@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "4250fbdf_40b1ad06",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T03:16:55Z",
+      "side": 1,
+      "message": "makes sense",
+      "parentUuid": "015f2cb3_188f1ebf",
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "500bd348_251e2997",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2

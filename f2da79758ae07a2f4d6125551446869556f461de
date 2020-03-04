@@ -534,6 +534,30 @@
     },
     {
       "key": {
+        "uuid": "187485d3_c9e32c32",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T03:16:55Z",
+      "side": 1,
+      "message": "oh, i see what you mean now, sorry.\n\ni bet what happened is luci-notify needed milo hostname in the past to generate build URLs, but then we\u0027ve implemented a redirect in buildbucket (https://{buildbucket_hostname}/build/{build_id}) and the need for the milo hostname disappeared\n\nit would be good to remove milo hostname",
+      "parentUuid": "2aac125a_1d50bd0b",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 44
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9fc02b7b_b965323d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
