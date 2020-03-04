@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "30160a57_b442631c",
+        "filename": "resultdb/internal/services/recorder/batch_create_test_results_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T02:05:35Z",
+      "side": 1,
+      "message": "this code is repeated many times.\n\nCan we extract it to a help function\n\n  GenerateInvocationToken(ctx context.Context, id span.InvocationID) (string, error)\n\n?\n\nand then we inline invocatoinTokenExpiration because it would be used only in one place",
+      "range": {
+        "startLine": 167,
+        "startChar": 14,
+        "endLine": 167,
+        "endChar": 100
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d150e86_18abd7ba",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T02:05:35Z",
+      "side": 1,
+      "message": "an update",
+      "range": {
+        "startLine": 175,
+        "startChar": 11,
+        "endLine": 175,
+        "endChar": 17
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8e3ea43f_ac00e607",
         "filename": "resultdb/internal/services/recorder/finalize_invocation.go",
         "patchSetId": 2
@@ -25,6 +71,29 @@
     },
     {
       "key": {
+        "uuid": "65ff1d76_11e6ace8",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T02:05:35Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 59,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 23
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3e8d8531_8086d328",
         "filename": "resultdb/internal/services/recorder/invocation.go",
         "patchSetId": 2
@@ -41,6 +110,52 @@
         "startChar": 2,
         "endLine": 94,
         "endChar": 3
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9652bba_b512e69a",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T02:05:35Z",
+      "side": 1,
+      "message": "is it now simple enough to be inlined?",
+      "range": {
+        "startLine": 120,
+        "startChar": 5,
+        "endLine": 120,
+        "endChar": 24
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4be4ab6_6a77c55f",
+        "filename": "resultdb/internal/testutil/spantest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T02:05:35Z",
+      "side": 1,
+      "message": "this does not seems to be specific to Spanner. testingContext is a better place for this?",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 0
       },
       "revId": "4454959d3910612ae034823ce9c3589a15761efa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
