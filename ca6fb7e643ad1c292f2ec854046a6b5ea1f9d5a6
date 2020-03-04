@@ -46,6 +46,30 @@
       "revId": "ca6fb7e643ad1c292f2ec854046a6b5ea1f9d5a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d0683cb_06036032",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T04:27:00Z",
+      "side": 1,
+      "message": "Ah, I see. Yes, you\u0027re right. I assumed it was empty but non-nil since we are taking the \"len\" of it, but from looking at the docs len(nil) \u003d\u003d 0.",
+      "parentUuid": "d760f9d1_6d81a92b",
+      "range": {
+        "startLine": 246,
+        "startChar": 38,
+        "endLine": 246,
+        "endChar": 55
+      },
+      "revId": "ca6fb7e643ad1c292f2ec854046a6b5ea1f9d5a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
