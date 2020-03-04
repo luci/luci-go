@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucketpb
-
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec
-//go:generate cproto
-//go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package buildbucketpb -write_package_comment=false
-//go:generate goimports -w rpc.mock.pb.go
-//go:generate svcdec -type BuildsServer
+// Package model contains datastore model implementation.
+package model
