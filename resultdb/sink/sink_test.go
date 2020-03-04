@@ -11,18 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package sink
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"strings"
+	"net/http"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucictx"
@@ -31,157 +27,171 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func handshakeCheck(msg, token string) error {
-	dc := json.NewDecoder(strings.NewReader(msg))
-	return processHandshake(dc, token)
+func installTestListener(srv *Server) (string, func() error) {
+	l, err := net.Listen("tcp", "localhost:0")
+	So(err, ShouldBeNil)
+	srv.testListener = l
+
+	// return the serving address
+	return fmt.Sprint("http://localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
 }
 
-func Test(t *testing.T) {
-	Convey("Test Server", t, func() {
+func httpGet(url, authToken string) (int, error) {
+	// create request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return 0, err
+	}
+	if authToken != "" {
+		req.Header.Add(AuthTokenKey, authTokenValue(authToken))
+	}
+
+	// send
+	c := http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	resp.Body.Close()
+	return resp.StatusCode, nil
+}
+
+func TestNewServer(t *testing.T) {
+	t.Parallel()
+
+	Convey("NewServer", t, func() {
+		Convey("succeeds", func() {
+			srv := NewServer(ServerConfig{Address: ":42", AuthToken: "hello"})
+			So(srv, ShouldNotBeNil)
+		})
+		Convey("uses the default address, if not given", func() {
+			srv := NewServer(ServerConfig{})
+			So(srv, ShouldNotBeNil)
+			So(srv.cfg.Address, ShouldNotEqual, "")
+		})
+	})
+}
+
+func TestServer(t *testing.T) {
+	t.Parallel()
+
+	Convey("Server", t, func() {
 		ctx := context.Background()
+		srv := NewServer(ServerConfig{AuthToken: "secret"})
+		So(srv, ShouldNotBeNil)
 
-		// Create a 5-second timeout to try to catch hanging tests.
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-		go func() {
-			select {
-			case <-ctx.Done():
-			case <-time.After(5 * time.Second):
-				So(ctx.Err(), ShouldNotBeNil)
-			}
-		}()
+		addr, cleanup := installTestListener(srv)
+		defer cleanup()
 
-		Convey("Default server config", func() {
-			s, err := NewServer(ctx, ServerConfig{})
-			So(err, ShouldBeNil)
-
-			cfg := s.Config()
-			So(cfg.AuthToken, ShouldNotBeEmpty)
+		Convey("Creates a random auth token, if not given", func() {
+			srv.cfg.AuthToken = ""
+			So(srv.Start(ctx), ShouldBeNil)
+			So(srv.cfg.AuthToken, ShouldNotEqual, "")
 		})
 
-		Convey("Handshake processing", func() {
-			authToken := "hello"
-			Convey("Successful handshake", func() {
-				So(handshakeCheck(`{"auth_token":"hello"}`, authToken),
-					ShouldBeNil)
+		Convey("Start", func() {
+			So(srv.Start(ctx), ShouldBeNil)
+
+			Convey("fails if called twice", func() {
+				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
 			})
-			Convey("Unsuccessful handshake", func() {
-				err := handshakeCheck(`{"auth_token":"BAD"}`, authToken)
-				So(err, ShouldErrLike, "invalid AuthToken")
-				err = handshakeCheck(`garbage`, authToken)
-				So(err, ShouldErrLike, "failed to parse")
+
+			Convey("fails after being closed", func() {
+				// close the server
+				err := srv.Close()
+				So(err, ShouldBeNil)
+				So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+
+				// start after close should fail
+				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
 			})
 		})
 
-		Convey("Tests with a real server", func() {
-			server, err := NewServer(ctx, ServerConfig{AuthToken: "hello"})
+		Convey("Close closes the HTTP server", func() {
+			So(srv.Start(ctx), ShouldBeNil)
+
+			// check that the server is up.
+			_, err := httpGet(addr, "secret")
 			So(err, ShouldBeNil)
 
-			Convey("Tests with Start", func() {
-				So(server.Start(ctx), ShouldBeNil)
-				defer server.Close()
+			// close the server
+			err = srv.Close()
+			So(err, ShouldBeNil)
+			So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+		})
 
-				Convey("Calling Start twice is impossible", func() {
-					So(server.Start(ctx), ShouldErrLike, "cannot call Start twice")
-				})
+		Convey("Close fails before Start being called", func() {
+			So(srv.Close(), ShouldErrLike, ErrCloseBeforeStart)
+		})
 
-				Convey("Close stops new connections", func() {
-					addr := fmt.Sprintf(":%d", server.Config().Port)
-					conn, err := net.Dial("tcp", addr)
-					So(err, ShouldBeNil)
+		Convey("Closing the context closes the HTTP server", func() {
+			ctx, cancel := context.WithCancel(ctx)
+			So(srv.Start(ctx), ShouldBeNil)
 
-					_, err = conn.Write([]byte(`{"auth_token":"hello"}`))
-					So(err, ShouldBeNil)
+			// check that the server is up.
+			_, err := httpGet(addr, "secret")
+			So(err, ShouldBeNil)
 
-					err = server.Close()
-					So(err, ShouldBeNil)
+			// close the context, and check the server is down.
+			cancel()
+			So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+		})
 
-					_, err = net.Dial("tcp", addr)
-					So(err, ShouldNotBeNil)
-				})
+		Convey("Run", func() {
+			handlerErr := make(chan error)
+			runErr := make(chan error)
+			expected := errors.New("an error-1")
 
+			Convey("succeeds", func() {
+				// launch a go routine with Run
+				go func() {
+					runErr <- srv.Run(ctx, func(ctx context.Context) error {
+						return <-handlerErr
+					})
+				}()
+
+				// check that the server is running
+				_, err := httpGet(fmt.Sprint(addr, "/hello"), "secret")
+				So(err, ShouldBeNil)
+
+				// finish the callback and verify that the server stopped running
+				handlerErr <- expected
+				So(<-srv.ErrC(), ShouldEqual, http.ErrServerClosed)
+				So(<-runErr, ShouldEqual, expected)
 			})
 
-			Convey("Connection handling tests", func() {
-				cr, cw := net.Pipe()
-				defer cr.Close()
-				defer cw.Close()
-				errC := make(chan error)
-				ctx, cancel := context.WithCancel(ctx)
-				go func() { errC <- server.handleConnection(ctx, cr) }()
-
-				Convey("Bad handshake", func() {
-					_, err := cw.Write([]byte(`{"auth_token":"BAD"}`))
-					So(err, ShouldBeNil)
-					So(<-errC, ShouldErrLike, "handshake failed")
-				})
-
-				Convey("Bad test result", func() {
-					_, err := cw.Write([]byte(`{"auth_token":"hello"}`))
-					So(err, ShouldBeNil)
-
-					_, err = cw.Write([]byte("kjhdsghg"))
-					So(err, ShouldBeNil)
-					So(<-errC, ShouldErrLike, "invalid")
-				})
-
-				Convey("Context cancellation", func() {
-					// With context cancellation, the failure mode is that the server
-					// ignores it and keeps running forever. To test this we cancel the
-					// top-level context and wait on the error channel. If the connection
-					// handler is hung, the top-level test timeout will fail.
-					cancel()
-					So(<-errC, ShouldNotBeNil)
-				})
-			})
-
-			Convey("Tests with Run", func() {
-				Convey("Run aborts after server error", func() {
-					fakeError := errors.New("test error")
-					server.errC <- fakeError
-					err := server.Run(ctx, func(ctx context.Context) error {
+			Convey("aborts after server error", func() {
+				// launch a go routine with Run
+				go func() {
+					runErr <- srv.Run(ctx, func(ctx context.Context) error {
 						<-ctx.Done()
 						return ctx.Err()
 					})
-					So(err, ShouldErrLike, fakeError)
-				})
-				Convey("Run stops after callback completes", func() {
-					err := server.Run(ctx, func(ctx context.Context) error {
-						return nil
-					})
-					So(err, ShouldBeNil)
-				})
-			})
-		})
+				}()
 
-		Convey("Message-processing check", func() {
-			badInput := `blah`
-			goodInput := `{"testResult":{"testId":"foo/bar/baz","resultId":"result000001","expected":true,"status":"PASS","summaryHtml":"hello","startTime":"2019-11-12T00:02:54.855213790Z","tags":[{"key":"foo","value":"bar"}]}}{"testResult":{"testId":"sdhg/jgdsh/yeuwt","resultId":"result000002","status":"FAIL","summaryHtml":"iuuujn","startTime":"2019-11-12T00:02:54.855214521Z","tags":[{"key":"dskhnfjsd","value":"bar"}]}}`
-			Convey("Garbage data", func() {
-				dc := json.NewDecoder(strings.NewReader(badInput))
-				err := processMessages(dc)
-				So(err, ShouldErrLike, "invalid")
-			})
+				// check that the server is running
+				_, err := httpGet(fmt.Sprint(addr, "/hello"), "secret")
+				So(err, ShouldBeNil)
 
-			Convey("Two populated messages", func() {
-				dc := json.NewDecoder(strings.NewReader(goodInput))
-				err := processMessages(dc)
-				So(err, ShouldErrLike, io.EOF)
+				// close the server to emit a server error.
+				srv.httpSrv.Close()
+				So(<-runErr, ShouldEqual, http.ErrServerClosed)
 			})
 		})
 	})
 }
 
-func TestExport(t *testing.T) {
-	Convey("Export check", t, func() {
+func TestServerExport(t *testing.T) {
+	t.Parallel()
+
+	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		s, err := NewServer(ctx, ServerConfig{Port: 42, AuthToken: "hello"})
-		So(err, ShouldBeNil)
-		ctx = s.Export(ctx)
+		srv := NewServer(ServerConfig{Address: ":42", AuthToken: "hello"})
+		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
 		So(sink, ShouldNotBeNil)
 		So(sink, ShouldNotBeNil)
-		So(sink.Address, ShouldEqual, fmt.Sprintf("localhost:%d", 42))
+		So(sink.Address, ShouldEqual, ":42")
 		So(sink.AuthToken, ShouldEqual, "hello")
 	})
 }
