@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "c91242e6_11d55311",
+        "filename": "resultdb/internal/services/recorder/derive_invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:44:45Z",
+      "side": 1,
+      "message": "I 100% agree with your logic",
+      "parentUuid": "e700bbb8_808e0d24",
+      "range": {
+        "startLine": 174,
+        "startChar": 39,
+        "endLine": 174,
+        "endChar": 50
+      },
+      "revId": "c5894538bc872df18380328d4f28508792840b3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e94b02f_6de1cb42",
         "filename": "resultdb/internal/services/recorder/derive_invocation.go",
         "patchSetId": 3
