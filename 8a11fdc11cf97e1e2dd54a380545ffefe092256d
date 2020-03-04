@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "5c14e1b2_15023a09",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T06:13:42Z",
+      "side": 1,
+      "message": "stepping back, this func is unused. remove?",
+      "parentUuid": "2da4b8f4_936d33a2",
+      "range": {
+        "startLine": 208,
+        "startChar": 40,
+        "endLine": 208,
+        "endChar": 49
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "15d5dc2e_077ce5a4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 28
