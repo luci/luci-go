@@ -17,7 +17,9 @@ package notify
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"io/ioutil"
+	"sort"
 	"testing"
 
 	"go.chromium.org/gae/service/datastore"
@@ -26,6 +28,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 
@@ -130,6 +133,234 @@ func TestNotify(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(tasks, ShouldHaveLength, 1)
+		})
+	})
+}
+
+func TestComputeRecipients(t *testing.T) {
+	Convey("ComputeRecipients", t, func() {
+		c := gaetesting.TestingContextWithAppID("luci-notify")
+		c = clock.Set(c, testclock.New(testclock.TestRecentTimeUTC))
+		c = gologger.StdConfig.Use(c)
+		c = logging.SetLevel(c, logging.Debug)
+
+		oncallers := map[string]string{
+			"https://rota-ng.appspot.com/legacy/sheriff.json": `{
+				"updated_unix_timestamp": 1582692124,
+				"emails": [
+					"sheriff1@google.com",
+					"sheriff2@google.com",
+					"sheriff3@google.com",
+					"sheriff4@google.com"
+				]
+			}`,
+			"https://rota-ng.appspot.com/legacy/sheriff_ios.json": `{
+				"updated_unix_timestamp": 1582692124,
+				"emails": [
+					"sheriff5@google.com",
+					"sheriff6@google.com"
+				]
+			}`,
+			"https://rota-ng.appspot.com/legacy/bad.json": "@!(*",
+		}
+		fetch := func(_ context.Context, url string) ([]byte, error) {
+			if s, e := oncallers[url]; e {
+				return []byte(s), nil
+			} else {
+				return []byte(""), errors.New("Key not present")
+			}
+		}
+
+		Convey("ComputeRecipients fetches all sheriffs", func() {
+			n := notifypb.Notifications{
+				Notifications: []*notifypb.Notification{
+					&notifypb.Notification{
+						Template: "sheriff_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff"},
+						},
+					},
+					&notifypb.Notification{
+						Template: "sheriff_ios_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff_ios"},
+						},
+					},
+				},
+			}
+			emails := computeRecipientsInternal(c, n, nil, nil, fetch)
+
+			// ComputeRecipients is concurrent, hence we have no guarantees as to the order.
+			// So we sort here to ensure a consistent ordering.
+			sort.Slice(emails, func(i, j int) bool {
+				return emails[i].Email < emails[j].Email
+			})
+
+			So(emails, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "sheriff1@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff2@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff3@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff4@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff5@google.com",
+					Template: "sheriff_ios_template",
+				},
+				EmailNotify{
+					Email:    "sheriff6@google.com",
+					Template: "sheriff_ios_template",
+				},
+			})
+		})
+
+		Convey("ComputeRecipients drops missing", func() {
+			n := notifypb.Notifications{
+				Notifications: []*notifypb.Notification{
+					&notifypb.Notification{
+						Template: "sheriff_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff"},
+						},
+					},
+					&notifypb.Notification{
+						Template: "what",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"huh"},
+						},
+					},
+				},
+			}
+			emails := computeRecipientsInternal(c, n, nil, nil, fetch)
+
+			// ComputeRecipients is concurrent, hence we have no guarantees as to the order.
+			// So we sort here to ensure a consistent ordering.
+			sort.Slice(emails, func(i, j int) bool {
+				return emails[i].Email < emails[j].Email
+			})
+
+			So(emails, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "sheriff1@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff2@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff3@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff4@google.com",
+					Template: "sheriff_template",
+				},
+			})
+		})
+
+		Convey("ComputeRecipients includes static emails", func() {
+			n := notifypb.Notifications{
+				Notifications: []*notifypb.Notification{
+					&notifypb.Notification{
+						Template: "sheriff_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff"},
+						},
+					},
+					&notifypb.Notification{
+						Template: "other_template",
+						Email: &notifypb.Notification_Email{
+							Recipients: []string{"someone@google.com"},
+						},
+					},
+				},
+			}
+			emails := computeRecipientsInternal(c, n, nil, nil, fetch)
+
+			// ComputeRecipients is concurrent, hence we have no guarantees as to the order.
+			// So we sort here to ensure a consistent ordering.
+			sort.Slice(emails, func(i, j int) bool {
+				return emails[i].Email < emails[j].Email
+			})
+
+			So(emails, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "sheriff1@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff2@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff3@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff4@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "someone@google.com",
+					Template: "other_template",
+				},
+			})
+		})
+
+		Convey("ComputeRecipients drops bad JSON", func() {
+			n := notifypb.Notifications{
+				Notifications: []*notifypb.Notification{
+					&notifypb.Notification{
+						Template: "sheriff_template",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"sheriff"},
+						},
+					},
+					&notifypb.Notification{
+						Template: "bad JSON",
+						Email: &notifypb.Notification_Email{
+							RotaNgRotations: []string{"bad"},
+						},
+					},
+				},
+			}
+			emails := computeRecipientsInternal(c, n, nil, nil, fetch)
+
+			// ComputeRecipients is concurrent, hence we have no guarantees as to the order.
+			// So we sort here to ensure a consistent ordering.
+			sort.Slice(emails, func(i, j int) bool {
+				return emails[i].Email < emails[j].Email
+			})
+
+			So(emails, ShouldResemble, []EmailNotify{
+				EmailNotify{
+					Email:    "sheriff1@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff2@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff3@google.com",
+					Template: "sheriff_template",
+				},
+				EmailNotify{
+					Email:    "sheriff4@google.com",
+					Template: "sheriff_template",
+				},
+			})
 		})
 	})
 }
