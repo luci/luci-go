@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "40f91a08_9d7f2dd9",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T05:55:12Z",
+      "side": 1,
+      "message": "no we never return the error. let\u0027s remove this",
+      "range": {
+        "startLine": 92,
+        "startChar": 43,
+        "endLine": 92,
+        "endChar": 48
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a544561b_d5c18b49",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T05:55:12Z",
+      "side": 1,
+      "message": "this never returns if the root context is not canceled.\ni think we need to cancel it when the goroutine above exits",
+      "range": {
+        "startLine": 181,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 5
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15d5dc2e_077ce5a4",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T05:55:12Z",
+      "side": 1,
+      "message": "ctx",
+      "range": {
+        "startLine": 215,
+        "startChar": 30,
+        "endLine": 215,
+        "endChar": 50
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

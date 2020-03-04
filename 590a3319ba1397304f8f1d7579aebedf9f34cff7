@@ -448,6 +448,30 @@
     },
     {
       "key": {
+        "uuid": "7857613c_4e582764",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T05:55:12Z",
+      "side": 1,
+      "message": "\u003e \u003e\u003e they do not guarantee that Close() return nil if the Close() was called before.\n\u003e What is the previous Close() was failed? \n\nif this was the problem in this design, it would be the problem in http.Server too? because it is exactly same design\n\n\u003e This code is to guarantee the termination of the server when Close() returns nil. Yes, you are right that it doesn\u0027t strongly guarantee nil on the second invocation of Close(). However, once the server terminates and flip the value of s.stopped, Close() starts returning nil, which guarantees the server termination.\n\u003e \n\u003e Let\u0027s say that\n\u003e - Close() conditionally invokes httpSrv.Close(), and\n\u003e - multiple goroutines invoke s.Close().\n\u003e \n\u003e It\u0027s still possible that all of the goroutines receive a non-nil error from s.Close(). As a result, the callers of this function need to invoke Close() repeatedly, anyways. Indeed, the users need to invoke Close() repeatedly, even with s.stopped being used in Close().\n\nWhy do we need to support multiple callers calling Stop()? http.Server does not attempt to support this case, so why do we? presumably there is one owner of the server and it knows what it is doing\n\n\u003e However, the difference is that the users don\u0027t have to be aware of the HTTP error codes. If at least one goroutine successfully invoked httpSrv.Close(), then Close() will start returning a different error to other goroutines. Therefore, all goroutines need to be aware of certain error codes that httpSrv.Close() can return, and self-determines whether the server has been successfully terminated or not.\n\u003e \n\u003e After some consideration, I found that it\u0027s the most convenient to the users, if Close() guarantees the termination of the server when it returns nil. Let me know if you have other opinions.\n\nlet me repeat it back: you want a guarantee \"if returned nil, then it is closed\" (and not \"if it closed, it returns nil\"). This guarantee is provided by just \"{ return s.httpSrv.Close() }`",
+      "parentUuid": "b25d4ecd_e8188c2e",
+      "range": {
+        "startLine": 203,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 38
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "123318f3_ac6e6251",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
