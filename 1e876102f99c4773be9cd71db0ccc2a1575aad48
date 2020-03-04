@@ -68,6 +68,24 @@
       "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e58e1017_1f5929b7",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:46:05Z",
+      "side": 1,
+      "message": "it is different already: CreateTime can be different. maybe we should convert the commit timestamp (returned by client.ReadWriteTransaction) to Timestamp and use that for the returned protos",
+      "parentUuid": "52a2eeaa_cc7f1d0d",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
