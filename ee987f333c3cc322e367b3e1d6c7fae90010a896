@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbaffcd1_9f72f184",
+        "filename": "milo/frontend/appengine/service-trui.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T23:10:28Z",
+      "side": 1,
+      "message": "It\u0027s a little confusing to have some things called \"test-results-ui\" and some things called \"trui\". I\u0027d suggest renaming (I don\u0027t mind which) to make it consistent.",
+      "range": {
+        "startLine": 1,
+        "startChar": 9,
+        "endLine": 1,
+        "endChar": 13
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60f10259_52b98479",
+        "filename": "milo/frontend/test-results-ui/karma.conf.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T23:10:28Z",
+      "side": 1,
+      "message": "Nit: The double line spacing feels unnecessary here. Unless this a standard convention.",
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0cb6e9b_b3e00015",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation-page.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T23:10:28Z",
+      "side": 1,
+      "message": "IIUC, \u0027?.\u0027 will evaulate to null if its LHS is null. Doesn\u0027t this mean the following \u0027.\u0027s in the chain should be \u0027?.\u0027s as well? Right now if getAuthInstanceSync() returns null, we\u0027ll still get a null deref on calling \u0027.get()\u0027.",
+      "range": {
+        "startLine": 66,
+        "startChar": 12,
+        "endLine": 66,
+        "endChar": 25
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abf8c27c_6028fbe6",
+        "filename": "milo/frontend/test-results-ui/src/pages/login-page.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T23:10:28Z",
+      "side": 1,
+      "message": "Super nit: This is very similar to the message Swarming displays[1]. Perhaps we should use the exact same message, for consistency?\n\n[1] \"You must sign in to see anything useful\".",
+      "range": {
+        "startLine": 37,
+        "startChar": 13,
+        "endLine": 37,
+        "endChar": 53
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
