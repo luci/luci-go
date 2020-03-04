@@ -146,8 +146,14 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 		"Tags": inv.Tags,
 	}
 
-	if inv.FinalizeTime != nil {
-		row["FinalizeTime"] = inv.FinalizeTime
+	if inv.State == pb.Invocation_FINALIZED {
+		// We are ignoring the provided inv.FinalizeTime because it would not
+		// make sense to have an invocation finalized before it was created,
+		// yet attempting to set this in the future would fail the sql schema
+		// restriction for columns that allow commit timestamp.
+		// Note this function is only used for setting FinalizeTime by derive
+		// invocation, which is planned to be superseded by other mechanisms.
+		row["FinalizeTime"] = spanner.CommitTimestamp
 	}
 
 	if createRequestID != "" {
