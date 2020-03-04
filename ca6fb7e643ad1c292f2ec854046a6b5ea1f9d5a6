@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a838865_c2edc0d2",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:56:29Z",
+      "side": 1,
+      "message": "Is this extra condition necessary? From a quick look at the implementation of ComputeLogs, it looks like it might just do nothing if checkout is empty.",
+      "range": {
+        "startLine": 246,
+        "startChar": 38,
+        "endLine": 246,
+        "endChar": 55
+      },
+      "revId": "ca6fb7e643ad1c292f2ec854046a6b5ea1f9d5a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
