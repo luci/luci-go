@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bbe7a931_86fea002",
+        "filename": "resultdb/cmd/result_sink_wrapper/main.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecc99f49_39373cb8",
+      "range": {
+        "startLine": 180,
+        "startChar": 14,
+        "endLine": 180,
+        "endChar": 17
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20830c8e_1357b3b3",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -45,6 +69,30 @@
       "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a405bf7b_30403dec",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Good point. Changed it to a non-pointer type",
+      "parentUuid": "20830c8e_1357b3b3",
+      "range": {
+        "startLine": 80,
+        "startChar": 9,
+        "endLine": 80,
+        "endChar": 10
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "99bcb365_8f6bef5f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "465a216e_aa155a48",
+      "range": {
+        "startLine": 83,
+        "startChar": 9,
+        "endLine": 83,
+        "endChar": 10
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb6e5100_f22296e6",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -91,6 +163,30 @@
       "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb7140f3_4f9fe0e5",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb6e5100_f22296e6",
+      "range": {
+        "startLine": 95,
+        "startChar": 31,
+        "endLine": 95,
+        "endChar": 51
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "0b3d4ef0_61bdae75",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "I noticed this issue while debugging with s.stopped and s.errC, and was going to send a separate CL with the idea. I\u0027d like to remove s.ErrC(), but Start() returns a channel where the user can read to find if the server has been terminated. Let\u0027s continue this topic in a separate CL.\n\n```\nfunc (s *Server) Start(ctx) \u003c- chan error {\n  // this is the channel that the user can use to get notified\n  // for the termination of the server.\n  ret :\u003d make(chan error, 1)\n\n  ....\n  go serveLoop(ctx)\n  go func() {\n    for {\n      select {\n      case \u003c-ctx.Done():\n        # Perhaps, this should repeat invoking s.Close(), with exponential backoff,\n        # until Close() returns nil?\n        s.Close()\n      case sErr :\u003d \u003c- s.errC:\n        // notify the user that the server has been terminated  \n        if ctx.Err() !\u003d nil {\n          ret \u003c- context.Canceled\n        } else {\n          ret \u003c- sErr\n        }\n      }\n  }()\n  return ret\n}\n```",
+      "parentUuid": "24f2afb1_01646ace",
+      "range": {
+        "startLine": 128,
+        "startChar": 17,
+        "endLine": 128,
+        "endChar": 21
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "540497b4_7bceb781",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -131,6 +251,24 @@
       "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13e904b1_c2e66e7f",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Good point. Removed",
+      "parentUuid": "540497b4_7bceb781",
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "c959d442_cba84833",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "947db0a6_ac3df1fe",
+      "range": {
+        "startLine": 175,
+        "startChar": 3,
+        "endLine": 175,
+        "endChar": 11
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0366ab0_91a8f26d",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "94a58267_b3f32fd0",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Merged serveLoop() into Start().",
+      "parentUuid": "e0366ab0_91a8f26d",
+      "range": {
+        "startLine": 172,
+        "startChar": 1,
+        "endLine": 178,
+        "endChar": 4
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "31a3e0e8_df0ee8c8",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -197,6 +383,24 @@
     },
     {
       "key": {
+        "uuid": "1dbe18af_272970c6",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Done with all them merged into Start()",
+      "parentUuid": "31a3e0e8_df0ee8c8",
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "863acbd2_4a14a244",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -208,6 +412,30 @@
       "writtenOn": "2020-03-02T23:53:55Z",
       "side": 1,
       "message": "combine into one if statement?\n\nstepping back, I don\u0027t see what these checks adds. In particular, as I wrote earlier, they do not guarantee that Close() return nil if the Close() was called before. Consider:\n- Close is called from two goroutunines concurrently\n- both of them pass these checks\n- one of them stalls. Another successfully closes the server and L198 sets stopped to 1\n- the slow goroutine wakes up and calls s.httpSrv.Close() in L211 \n- an error is returned\n\ndid you consider calling s.httpSrv.Close() unconditionally?",
+      "range": {
+        "startLine": 203,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 38
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b25d4ecd_e8188c2e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "\u003e\u003e they do not guarantee that Close() return nil if the Close() was called before.\nWhat is the previous Close() was failed? This code is to guarantee the termination of the server when Close() returns nil. Yes, you are right that it doesn\u0027t strongly guarantee nil on the second invocation of Close(). However, once the server terminates and flip the value of s.stopped, Close() starts returning nil, which guarantees the server termination.\n\nLet\u0027s say that\n- Close() conditionally invokes httpSrv.Close(), and\n- multiple goroutines invoke s.Close().\n\nIt\u0027s still possible that all of the goroutines receive a non-nil error from s.Close(). As a result, the callers of this function need to invoke Close() repeatedly, anyways. Indeed, the users need to invoke Close() repeatedly, even with s.stopped being used in Close().\n\nHowever, the difference is that the users don\u0027t have to be aware of the HTTP error codes. If at least one goroutine successfully invoked httpSrv.Close(), then Close() will start returning a different error to other goroutines. Therefore, all goroutines need to be aware of certain error codes that httpSrv.Close() can return, and self-determines whether the server has been successfully terminated or not.\n\nAfter some consideration, I found that it\u0027s the most convenient to the users, if Close() guarantees the termination of the server when it returns nil. Let me know if you have other opinions.",
+      "parentUuid": "863acbd2_4a14a244",
       "range": {
         "startLine": 203,
         "startChar": 1,
@@ -243,6 +471,30 @@
     },
     {
       "key": {
+        "uuid": "a30cb9f5_a6095367",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "Changed to be a private.",
+      "parentUuid": "123318f3_ac6e6251",
+      "range": {
+        "startLine": 225,
+        "startChar": 5,
+        "endLine": 225,
+        "endChar": 19
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5761c06b_88f9d45d",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
@@ -263,6 +515,30 @@
       "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ef9b738_384e0907",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T04:05:04Z",
+      "side": 1,
+      "message": "That\u0027s a good point. Updated.",
+      "parentUuid": "5761c06b_88f9d45d",
+      "range": {
+        "startLine": 231,
+        "startChar": 27,
+        "endLine": 231,
+        "endChar": 30
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
