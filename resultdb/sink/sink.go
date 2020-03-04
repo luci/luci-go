@@ -19,28 +19,37 @@ package sink
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"strconv"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"net/http"
+	"sync/atomic"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/server/middleware"
+	"go.chromium.org/luci/server/router"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
-	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 const (
-	// DefaultPort is the TCP port that the Server listens on by default.
-	DefaultPort = 62115
+	// DefaultAddr is the TCP address that the Server listens on by default.
+	DefaultAddr = "localhost:62115"
+	// AuthTokenKey is the key of the HTTP request header where the auth token should
+	// be specified. Note that the an HTTP request must have the auth token in the header
+	// with the following format.
+	// Authorization: ResultSink <auth_token>
+	AuthTokenKey = "Authorization"
+	// AuthTokenPrefix is embedded into the value of the Authorization HTTP request header,
+	// where the auth_token must be present. For the details about the value format of
+	// the Authoization HTTP request header, find the description of `AuthTokenKey`.
+	AuthTokenPrefix = "ResultSink"
 )
+
+// ErrCloseBeforeStart is returned by Close(), when it was invoked before the server
+// started.
+var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").Err()
 
 // ServerConfig defines the parameters of the server.
 type ServerConfig struct {
@@ -50,8 +59,9 @@ type ServerConfig struct {
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
 	AuthToken string
-	// Port is the TCP port to listen on. If 0, the server will use DefaultPort.
-	Port int
+	// Address is the HTTP address to listen on. If empty, the server will use
+	// the default address.
+	Address string
 
 	// Invocation is the name of the invocation that test results should append
 	// to.
@@ -68,32 +78,28 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg    ServerConfig
-	cancel context.CancelFunc
-	errC   chan error
-	ln     net.Listener
+	cfg     ServerConfig
+	errC    chan error
+	httpSrv http.Server
+
+	// 1 indicates that the server is starting or has started. 0, otherwise.
+	started int32
+
+	// Listener for tests
+	testListener net.Listener
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
-func NewServer(ctx context.Context, cfg ServerConfig) (*Server, error) {
-	if cfg.AuthToken == "" {
-		buf := make([]byte, 32)
-		if _, err := cryptorand.Read(ctx, buf); err != nil {
-			return nil, err
-		}
-		cfg.AuthToken = hex.EncodeToString(buf)
-	}
-
-	if cfg.Port == 0 {
-		cfg.Port = DefaultPort
+func NewServer(cfg ServerConfig) *Server {
+	if cfg.Address == "" {
+		cfg.Address = DefaultAddr
 	}
 
 	s := &Server{
 		cfg:  cfg,
 		errC: make(chan error, 1),
 	}
-
-	return s, nil
+	return s
 }
 
 // Config retrieves the ServerConfig of a previously created Server.
@@ -146,129 +152,70 @@ func (s *Server) Run(ctx context.Context, callback func(context.Context) error) 
 // On success, Start will return nil, and a subsequent error will be sent on
 // the server's ErrC channel.
 func (s *Server) Start(ctx context.Context) error {
-	if s.ln != nil {
+	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
 		return errors.Reason("cannot call Start twice").Err()
 	}
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.Port))
-	if err != nil {
-		return err
-	}
-	s.ln = ln
-
-	_, port, err := net.SplitHostPort(s.ln.Addr().String())
-	if err != nil {
-		return err
-	}
-	s.cfg.Port, err = strconv.Atoi(port)
-	if err != nil {
-		return err
+	if s.cfg.AuthToken == "" {
+		t, err := genAuthToken(ctx)
+		if err != nil {
+			return err
+		}
+		s.cfg.AuthToken = t
 	}
 
-	ctx, s.cancel = context.WithCancel(ctx)
-	go s.serveLoop(ctx)
+	// launch an HTTP server
+	routes := router.NewWithRootContext(ctx)
+	routes.Use(router.NewMiddlewareChain(middleware.WithPanicCatcher))
+	s.httpSrv.Addr = s.cfg.Address
+	s.httpSrv.Handler = routes
+
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		defer cancel()
+		if s.testListener == nil {
+			s.errC <- s.httpSrv.ListenAndServe()
+		} else {
+			// In test mode, the the listener MUST be prepared already.
+			s.errC <- s.httpSrv.Serve(s.testListener)
+		}
+	}()
+	go func() {
+		<-ctx.Done()
+		// TODO(ddoman): handle errors from s.httpSrv.Close()
+		s.httpSrv.Close()
+	}()
 	return nil
 }
 
-func (s *Server) serveLoop(ctx context.Context) {
-	defer s.ln.Close()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	for {
-		switch conn, err := s.ln.Accept(); {
-		case err == nil:
-			go func() {
-				if err := s.handleConnection(ctx, conn); err != nil {
-					logging.Errorf(ctx, "%s", err)
-				}
-			}()
-		case ctx.Err() != nil:
-			s.errC <- ctx.Err()
-			return
-		case shouldKeepTrying(err):
-			continue
-		default:
-			s.errC <- errors.Annotate(err, "unrecoverable listener error").Err()
-			return
-		}
-	}
-}
-
-// Close immediately stops the server from accepting new connections and cancels existing ones.
+// Close immediately stops the servers and cancels the requests that are being processed.
 func (s *Server) Close() error {
-	// TODO(sajjadm): Determine if some pending connections were forcefully closed by s.cancel()
-	// and report that as an error.
-	s.cancel()
-	return s.ln.Close()
-}
-
-// Process handles a message as if it had been sent over the TCP interface.
-func (s *Server) Process(msg *sinkpb.SinkMessageContainer) error {
-	return errors.New("not implemented yet")
+	if atomic.LoadInt32(&s.started) == 0 {
+		// hasn't been started
+		return ErrCloseBeforeStart
+	}
+	return s.httpSrv.Close()
 }
 
 // Export exports lucictx.ResultSink derived from the server configuration into
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
 	return lucictx.SetResultSink(ctx, &lucictx.ResultSink{
-		Address:   fmt.Sprintf("localhost:%d", s.cfg.Port),
+		Address:   s.cfg.Address,
 		AuthToken: s.cfg.AuthToken,
 	})
 }
 
-func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go func() {
-		<-ctx.Done()
-		c.Close()
-	}()
-
-	dc := json.NewDecoder(c)
-	if err := processHandshake(dc, s.cfg.AuthToken); err != nil {
-		return errors.Annotate(err, "handshake failed").Err()
+// genAuthToken generates and returns a random auth token.
+func genAuthToken(ctx context.Context) (string, error) {
+	buf := make([]byte, 32)
+	if _, err := cryptorand.Read(ctx, buf); err != nil {
+		return "", err
 	}
-	logging.Debugf(ctx, "Successful handshake")
-
-	if err := processMessages(dc); err != nil && err != io.EOF {
-		return err
-	}
-
-	return nil
+	return hex.EncodeToString(buf), nil
 }
 
-func processMessages(dc *json.Decoder) error {
-	for {
-		msgp := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(dc, msgp); err != nil {
-			return errors.Annotate(err, "failed to read message").Err()
-		}
-
-		// TODO(sajjadm): msgp is valid, do something with it
-	}
-}
-
-func readMessage(dc *json.Decoder, dest proto.Message) error {
-	for {
-		err := jsonpb.UnmarshalNext(dc, dest)
-		if shouldKeepTrying(err) {
-			continue
-		}
-		return err
-	}
-}
-
-func processHandshake(dc *json.Decoder, authToken string) error {
-	var hs sinkpb.Handshake
-	if err := jsonpb.UnmarshalNext(dc, &hs); err != nil {
-		return errors.Reason("failed to parse Handshake").Err()
-	}
-	if hs.GetAuthToken() != authToken {
-		return errors.Reason("handshake message had invalid AuthToken").Err()
-	}
-	return nil
-}
-
-func shouldKeepTrying(err error) bool {
-	e, ok := err.(net.Error)
-	return ok && (e.Temporary() || e.Timeout())
+// authTokenValue returns the value of the Authorization HTTP header that all requests must
+// have.
+func authTokenValue(authToken string) string {
+	return fmt.Sprintf("%s %s", AuthTokenPrefix, authToken)
 }

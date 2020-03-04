@@ -123,7 +123,7 @@ func (w *wrapper) init() error {
 	w.cmdName = flag.Arg(0)
 	w.cmdArgs = flag.Args()[1:]
 
-	w.serverCfg.Port = args.port
+	w.serverCfg.Address = fmt.Sprint(":", args.port)
 
 	if args.logFile == "" {
 		w.logCfg.Out = os.Stderr
@@ -172,12 +172,8 @@ func (w *wrapper) main(ctx context.Context) error {
 	// TODO(sajjadm): Use https://godoc.org/go.chromium.org/luci/common/system/signals
 	// to handle interrupts
 
-	server, err := sink.NewServer(ctx, w.serverCfg)
-	if err != nil {
-		return err
-	}
-
-	err = server.Run(ctx, func(ctx context.Context) error {
+	server := sink.NewServer(w.serverCfg)
+	err := server.Run(ctx, func(ctx context.Context) error {
 		code, err := w.run(ctx)
 		if err != nil {
 			return err
