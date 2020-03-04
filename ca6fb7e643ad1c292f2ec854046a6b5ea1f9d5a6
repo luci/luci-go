@@ -22,6 +22,30 @@
       "revId": "ca6fb7e643ad1c292f2ec854046a6b5ea1f9d5a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d760f9d1_6d81a92b",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-04T04:03:14Z",
+      "side": 1,
+      "message": "I did it because in line 248, we have checkout.Filter(...), if checkout is nil, I am not sure if it will throw exception. Just not sure how Go handle nil in this case.",
+      "parentUuid": "0a838865_c2edc0d2",
+      "range": {
+        "startLine": 246,
+        "startChar": 38,
+        "endLine": 246,
+        "endChar": 55
+      },
+      "revId": "ca6fb7e643ad1c292f2ec854046a6b5ea1f9d5a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
