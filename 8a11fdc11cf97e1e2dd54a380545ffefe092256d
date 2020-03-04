@@ -48,6 +48,29 @@
     },
     {
       "key": {
+        "uuid": "2da4b8f4_936d33a2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T06:09:49Z",
+      "side": 1,
+      "message": "\u0027sendErr\u0027 name does not entail that this is about an auth error. let\u0027s either remove this, or rename the func to sendAuthErr.",
+      "range": {
+        "startLine": 208,
+        "startChar": 40,
+        "endLine": 208,
+        "endChar": 49
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "15d5dc2e_077ce5a4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 28
