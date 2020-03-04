@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "954458fc_3ec366c9",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-04T20:11:42Z",
+      "side": 1,
+      "message": "Does not apply anymore",
+      "parentUuid": "af791591_7b06cca6",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cebe6427_de452da1",
         "filename": "resultdb/internal/services/recorder/invocation.go",
         "patchSetId": 1
@@ -86,6 +104,24 @@
       "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8009e53_1dcce19a",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-04T20:11:42Z",
+      "side": 1,
+      "message": "Ignoring FinalizeTime, PTAL",
+      "parentUuid": "e58e1017_1f5929b7",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
