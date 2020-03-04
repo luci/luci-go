@@ -130,9 +130,15 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		return nil // This project is not tracked by luci-notify
 	}
 
+	// checkout is only used to compute the blamelist
+	// As blamelist is not a "critical" feature of luci-notify, if there is an
+	// error getting the checkout (mostly because there is no source manifest)
+	// we should not throw 500, but just log the error, and inform the builder
+	// owner that they are missing source manifest in their builds
 	checkout, err := getCheckout(c, build)
 	if err != nil {
-		return errors.Annotate(err, "failed to retrieve checkout for build").Err()
+		// TODO (crbug.com/1058190): log the error and let the owner know
+		logging.Warningf(c, "Got error when getting source manifest for build %v", err)
 	}
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
@@ -237,7 +243,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	// Get the blamelist logs, if needed.
 	var aggregateLogs Logs
 	aggregateRepoWhiteset := BlamelistRepoWhiteset(builder.Notifications)
-	if len(aggregateRepoWhiteset) > 0 {
+	if len(aggregateRepoWhiteset) > 0 && len(checkout) > 0{
 		oldCheckout := NewCheckout(builder.GitilesCommits)
 		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
 		if err != nil {
