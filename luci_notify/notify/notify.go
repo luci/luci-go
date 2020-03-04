@@ -230,7 +230,7 @@ func fetchRotaOncallers(c context.Context, rotation, template string, fetchFunc 
 	var oncallEmails struct {
 		Emails []string
 	}
-	if json.Unmarshal(resp, &oncallEmails) != nil {
+	if err = json.Unmarshal(resp, &oncallEmails); err != nil {
 		return errors.Annotate(err, "failed to unmarshal JSON").Err()
 	}
 
