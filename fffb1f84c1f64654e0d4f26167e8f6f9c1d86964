@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "067c9108_440783d5",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T08:53:30Z",
+      "side": 1,
+      "message": "right, i implied prelude chains. I didn\u0027t realize we don\u0027t have such a function. anyway, this CL is not the right place to add it..",
+      "parentUuid": "6961698f_97656ffb",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 15
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e50e0d6_1161e2e0",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -284,6 +308,30 @@
     },
     {
       "key": {
+        "uuid": "7a7b4b81_8e3192c3",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T08:53:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "08d29a01_fe0f3c0c",
+      "range": {
+        "startLine": 79,
+        "startChar": 1,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "849a0dee_ab9885e5",
         "filename": "buildbucket/appengine/rpc/builds.go",
         "patchSetId": 1
@@ -363,6 +411,24 @@
       "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "646e86e5_83489a29",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T08:53:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "833939db_cefd66bd",
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -457,6 +523,30 @@
       "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e225ad46_9c4d5706",
+        "filename": "buildbucket/appengine/rpc/builds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T08:53:30Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "cdba1f86_0b6bd3ce",
+      "range": {
+        "startLine": 89,
+        "startChar": 2,
+        "endLine": 89,
+        "endChar": 8
+      },
+      "revId": "fffb1f84c1f64654e0d4f26167e8f6f9c1d86964",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

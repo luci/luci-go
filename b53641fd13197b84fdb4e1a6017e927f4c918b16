@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73617074_8efdc11f",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T08:53:30Z",
+      "side": 1,
+      "message": "nit: would be simpler to inline these consts in L40-42, and use \n\n  projRegex.String()\n\nin L56",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "b53641fd13197b84fdb4e1a6017e927f4c918b16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
