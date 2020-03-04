@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 
+	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -65,8 +66,8 @@ func validateDeriveInvocationRequest(req *pb.DeriveInvocationRequest) error {
 
 // DeriveInvocation derives the invocation associated with the given swarming task.
 //
-// If the task is a dedup of another task, the invocation returned is the underlying one; otherwise,
-// the invocation returned is associated with the swarming task itself.
+// The invocation returned is associated with the swarming task itself.
+// If the task is deduped against another task, the invocation returned includes the underlying one.
 func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
 	if err := validateDeriveInvocationRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)
@@ -79,23 +80,18 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return nil, errors.Annotate(err, "creating swarming client for %q", swarmingURL).Err()
 	}
 
-	// Get the swarming task, deduping if necessary.
+	// Get the swarming task.
 	task, err := chromium.GetSwarmingTask(ctx, in.SwarmingTask.Id, swarmSvc)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting swarming task %q on %q",
-			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
-	}
-	if task, err = chromium.GetOriginTask(ctx, task, swarmSvc); err != nil {
-		return nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
 			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
 	}
 	invID := chromium.GetInvocationID(task, in)
 
 	client := span.Client(ctx)
 
-	// Check if we even need to write this invocation: is it finalized?
-	doWrite, err := shouldWriteInvocation(ctx, client.Single(), invID)
-	switch {
+	// Check if we need to write this invocation.
+	switch doWrite, err := shouldWriteInvocation(ctx, client.Single(), invID); {
 	case err != nil:
 		return nil, err
 	case !doWrite:
@@ -104,54 +100,42 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 		return span.ReadInvocationFull(ctx, readTxn, invID)
 	}
 
-	// Otherwise, get the protos and prepare to write them to Spanner.
-	logging.Infof(ctx, "Deriving task %q on %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname)
-	inv, results, err := chromium.DeriveProtosForWriting(ctx, task, in)
-	if err != nil {
-		return nil, errors.Annotate(err,
-			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, task.Name).Err()
-	}
-	if inv.FinalizeTime == nil {
-		panic("missing inv.FinalizeTime")
-	}
-	inv.Deadline = inv.FinalizeTime
-
-	// TODO(jchinlee): Validate invocation and results.
-
-	// Write test results in batches concurrently, updating inv with the names of the invocations
-	// that will be included.
-	batchInvs, err := s.batchInsertTestResults(ctx, inv, results, testResultBatchSizeMax)
+	inv, err := chromium.DeriveInvocation(task, in)
 	if err != nil {
 		return nil, err
 	}
-	inv.IncludedInvocations = batchInvs.Names()
 
-	// Prepare mutations.
-	ms := make([]*spanner.Mutation, 0, len(batchInvs)+2)
-	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", "")))
-	for includedID := range batchInvs {
-		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
-			"InvocationId":         invID,
-			"IncludedInvocationId": includedID,
-		}))
+	// Derive the origin invocation and results.
+	var originInv *pb.Invocation
+	switch originInv, err = s.deriveInvocationForOriginTask(ctx, in, task, swarmSvc, client); {
+	case err != nil:
+		return nil, err
+	case inv.Name == originInv.Name: // origin task is the task itself, we're done.
+		return originInv, nil
 	}
-	ms = append(ms, tasks.EnqueueBQExport(invID, s.DerivedInvBQTable, clock.Now(ctx).UTC()))
 
+	// Include originInv into inv.
+	inv.IncludedInvocations = []string{originInv.Name}
+	invMs := []*spanner.Mutation{
+		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", "")),
+		span.InsertMap("IncludedInvocations", map[string]interface{}{
+			"InvocationId":         invID,
+			"IncludedInvocationId": span.MustParseInvocationName(originInv.Name),
+		}),
+	}
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Check invocation state again.
 		switch doWrite, err := shouldWriteInvocation(ctx, txn, invID); {
 		case err != nil:
 			return err
 		case !doWrite:
 			return nil
 		default:
-			return txn.BufferWrite(ms)
+			return txn.BufferWrite(invMs)
 		}
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
 	return inv, nil
 }
@@ -174,6 +158,79 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 
 	// The invocation exists and is finalized, so no need to write it.
 	return false, nil
+}
+
+// deriveInvocationForOriginTask derives an invocation and test results
+// from a given task and returns derived origin invocation.
+func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *pb.DeriveInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, client *spanner.Client) (*pb.Invocation, error) {
+	// Get the origin task that the task is deduped against. Or the task
+	// itself if it's not deduped.
+	originTask, err := chromium.GetOriginTask(ctx, task, swarmSvc)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
+			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
+	}
+	originInvID := chromium.GetInvocationID(originTask, in)
+
+	// Check if we need to write origin invocation.
+	switch doWrite, err := shouldWriteInvocation(ctx, client.Single(), originInvID); {
+	case err != nil:
+		return nil, err
+	case !doWrite: // Origin invocation is already in Spanner. Return it.
+		readTxn := client.ReadOnlyTransaction()
+		defer readTxn.Close()
+		return span.ReadInvocationFull(ctx, readTxn, originInvID)
+	}
+	originInv, err := chromium.DeriveInvocation(originTask, in)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the protos and prepare to write them to Spanner.
+	logging.Infof(ctx, "Deriving task %q on %q", originTask.TaskId, in.SwarmingTask.Hostname)
+	results, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
+	if err != nil {
+		return nil, errors.Annotate(err,
+			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, originTask.Name).Err()
+	}
+	// TODO(jchinlee): Validate invocation and results.
+
+	// Write test results in batches concurrently, updating inv with the names of the invocations
+	// that will be included.
+	batchInvs, err := s.batchInsertTestResults(ctx, originInv, results, testResultBatchSizeMax)
+	if err != nil {
+		return nil, err
+	}
+	originInv.IncludedInvocations = batchInvs.Names()
+
+	// Prepare mutations.
+	ms := make([]*spanner.Mutation, 0, len(batchInvs)+4)
+	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "", "")))
+	for includedID := range batchInvs {
+		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
+			"InvocationId":         originInvID,
+			"IncludedInvocationId": includedID,
+		}))
+	}
+	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.DerivedInvBQTable, clock.Now(ctx).UTC()))
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Check origin invocation state again.
+		switch doWrite, err := shouldWriteInvocation(ctx, txn, originInvID); {
+		case err != nil:
+			return err
+		case !doWrite:
+			return nil
+		default:
+			return txn.BufferWrite(ms)
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+	return originInv, nil
 }
 
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,

@@ -63,19 +63,19 @@ var (
 	`))
 )
 
-// DeriveProtosForWriting derives the protos with the data from the given task and request.
+// DeriveInvocation derives the Invocation proto from the given task and request.
 //
-// The derived Invocation and TestResult protos will be written by the caller.
-func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, []*pb.TestResult, error) {
+// The derived Invocation will be written by the caller.
+func DeriveInvocation(task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest) (*pb.Invocation, error) {
 	if task.State == "PENDING" || task.State == "RUNNING" {
 		// Tasks not yet completed should not be requested to be processed by the recorder.
-		s := status.Newf(codes.FailedPrecondition, "task %s is not complete yet", req.SwarmingTask.Id)
+		s := status.Newf(codes.FailedPrecondition, "task %s is not complete yet", task.TaskId)
 		s = appstatus.MustWithDetails(s, &errdetails.PreconditionFailure{
 			Violations: []*errdetails.PreconditionFailure_Violation{{
 				Type: pb.DeriveInvocationPreconditionFailureType_INCOMPLETE_SWARMING_TASK.String(),
 			}},
 		})
-		return nil, nil, appstatus.ToError(s)
+		return nil, appstatus.ToError(s)
 	}
 
 	// Populate fields we will need in the base invocation.
@@ -85,31 +85,32 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 	}
 	var err error
 	if inv.CreateTime, err = convertSwarmingTs(task.CreatedTs); err != nil {
-		return nil, nil, invalidTaskf("invalid task creation time %q: %s", task.CreatedTs, err)
+		return nil, invalidTaskf("invalid task creation time %q: %s", task.CreatedTs, err)
 	}
 	if inv.FinalizeTime, err = convertSwarmingTs(task.CompletedTs); err != nil {
-		return nil, nil, invalidTaskf("invalid task completion time %q: %s", task.CreatedTs, err)
+		return nil, invalidTaskf("invalid task completion time %q: %s", task.CreatedTs, err)
 	}
+	inv.Deadline = inv.FinalizeTime
 
 	// Decide how to continue based on task state.
 	switch task.State {
 	// Tasks that got interrupted for which we expect no output just need to set the correct
 	// Invocation state and are done.
-	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED":
+	case "BOT_DIED", "CANCELED", "EXPIRED", "NO_RESOURCE", "KILLED", "TIMED_OUT":
 		inv.Interrupted = true
-		return inv, nil, nil
-
-	// Tasks that got interrupted for which we may get output need to set the correct Invocation state
-	// but further processing may be needed.
-	case "TIMED_OUT":
-		inv.Interrupted = true
-
+		return inv, nil
 	// For COMPLETED state, we expect normal completion.
 	case "COMPLETED":
+		return inv, nil
 	default:
-		return nil, nil, invalidTaskf("unknown state %q", task.State)
+		return nil, invalidTaskf("unknown state %q", task.State)
 	}
+}
 
+// DeriveTestResults derives the protos with the data from the given task and request.
+//
+// The derived Invocation and TestResult protos will be written by the caller.
+func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
 	// Parse swarming tags.
 	baseVariant, ninjaTarget := parseSwarmingTags(task)
 	testIDPrefix := ""
@@ -121,6 +122,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 
 	// Fetch outputs, converting if any.
 	var results []*pb.TestResult
+	var err error
 	ref := task.OutputsRef
 
 	if ref != nil && ref.Isolated != "" {
@@ -137,7 +139,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		// fall back to convert the whole task as one result.
 		result, err := convertTaskToResult(taskTestID, task, req)
 		if err != nil {
-			return nil, nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
+			return nil, attachInvalidTaskf(err, "failed to convert the task to a test result")
 		}
 		results = append(results, result)
 	}
@@ -157,7 +159,7 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		}
 	}
 
-	return inv, results, nil
+	return results, nil
 }
 
 func parseSwarmingTags(task *swarmingAPI.SwarmingRpcsTaskResult) (baseVariant *typepb.Variant, ninjaTarget string) {
