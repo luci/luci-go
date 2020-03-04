@@ -20,8 +20,15 @@ import (
 	"net/http"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -33,27 +40,19 @@ func installTestListener(srv *Server) (string, func() error) {
 	srv.testListener = l
 
 	// return the serving address
-	return fmt.Sprint("http://localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
+	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
 }
 
-func httpGet(url, authToken string) (int, error) {
-	// create request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
+func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
+	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
+		Host:    host,
+		Options: &prpc.Options{Insecure: true},
+	})
+	// install the auth token into the context, if present
 	if authToken != "" {
-		req.Header.Add(AuthTokenKey, authTokenValue(authToken))
+		ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(authToken))
 	}
-
-	// send
-	c := http.Client{}
-	resp, err := c.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	resp.Body.Close()
-	return resp.StatusCode, nil
+	return sinkClient.ReportTestResults(ctx, in)
 }
 
 func TestNewServer(t *testing.T) {
@@ -76,6 +75,7 @@ func TestServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("Server", t, func() {
+		req := &sinkpb.ReportTestResultsRequest{}
 		ctx := context.Background()
 		srv := NewServer(ServerConfig{AuthToken: "secret"})
 		So(srv, ShouldNotBeNil)
@@ -111,7 +111,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// check that the server is up.
-			_, err := httpGet(addr, "secret")
+			_, err := reportTestResults(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
 			// close the server
@@ -129,7 +129,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// check that the server is up.
-			_, err := httpGet(addr, "secret")
+			_, err := reportTestResults(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
 			// close the context, and check the server is down.
@@ -151,7 +151,7 @@ func TestServer(t *testing.T) {
 				}()
 
 				// check that the server is running
-				_, err := httpGet(fmt.Sprint(addr, "/hello"), "secret")
+				_, err := reportTestResults(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
 				// finish the callback and verify that the server stopped running
@@ -170,12 +170,32 @@ func TestServer(t *testing.T) {
 				}()
 
 				// check that the server is running
-				_, err := httpGet(fmt.Sprint(addr, "/hello"), "secret")
+				_, err := reportTestResults(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
 				// close the server to emit a server error.
 				srv.httpSrv.Close()
 				So(<-runErr, ShouldEqual, http.ErrServerClosed)
+			})
+		})
+
+		Convey("serves requests", func() {
+			So(srv.Start(ctx), ShouldBeNil)
+
+			Convey("with 200 OK", func() {
+				res, err := reportTestResults(ctx, addr, "secret", req)
+				So(err, ShouldBeNil)
+				So(res, ShouldNotBeNil)
+			})
+
+			Convey("with 401 Unauthorized if the auth_token missing", func() {
+				_, err := reportTestResults(ctx, addr, "", req)
+				So(status.Code(err), ShouldEqual, codes.Unauthenticated)
+			})
+
+			Convey("with 403 Forbidden if auth_token mismatched", func() {
+				_, err := reportTestResults(ctx, addr, "not-a-secret", req)
+				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			})
 		})
 	})
