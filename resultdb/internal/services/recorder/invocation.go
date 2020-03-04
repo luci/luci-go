@@ -21,11 +21,13 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tokens"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -146,7 +148,22 @@ func (s *recorderServer) rowOfInvocation(ctx context.Context, inv *pb.Invocation
 	}
 
 	if inv.FinalizeTime != nil {
-		row["FinalizeTime"] = inv.FinalizeTime
+		ts, err := ptypes.Timestamp(inv.FinalizeTime)
+		switch {
+		case err != nil:
+			panic(fmt.Sprintf("Could not covert FinalizeTime timestamp to time.Time: %s", err))
+		case ts.After(now.Add(-time.Second)):
+			// In the unlikely case that finalize time is in the future w.r.t. current
+			// server time, or too close to the current time, use commit timestamp.
+			// This is to account for slight deviations in the server's clock vs spanner's
+			// that could cause the spanner restriction to disallow timestamps in the
+			// future for columnns with 'allow_commit_timestamp' option, to trigger.
+			logging.Warningf(ctx, "Given FinalizeTime %s in the future, or too close to the current time, using commit timestamp instead",
+				inv.FinalizeTime.String())
+			row["FinalizeTime"] = spanner.CommitTimestamp
+		default:
+			row["FinalizeTime"] = inv.FinalizeTime
+		}
 	}
 
 	if createRequestID != "" {
