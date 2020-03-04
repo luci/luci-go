@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4deee213_60412fbf",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T22:46:24Z",
+      "side": 1,
+      "message": "this doesn\u0027t add meaning\n\n  // GenerateInvocationToken generates an update token for a given invocation.",
+      "range": {
+        "startLine": 65,
+        "startChar": 27,
+        "endLine": 65,
+        "endChar": 51
+      },
+      "revId": "e1677716806343027f88a03aa08cc39db132333a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f675772e_fa115ed2",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T22:46:24Z",
+      "side": 1,
+      "message": "does it have to be public?",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 28
+      },
+      "revId": "e1677716806343027f88a03aa08cc39db132333a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
