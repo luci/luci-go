@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af791591_7b06cca6",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:23:56Z",
+      "side": 1,
+      "message": "since L154 panics anyway, it is easier to use internal.MustTimestampp",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cebe6427_de452da1",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:23:56Z",
+      "side": 1,
+      "message": "i think this will result in a lot of spam because this code will run for all derived invocations.\nand invocations created with CreateInvocation RPC, FinalizeTime is nil and none of this applies",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f2605e48_97ffd979",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:23:56Z",
+      "side": 1,
+      "message": "note that we don\u0027t do that with CreateTime. in fact, we ignore inv.CreateTime. \n\nSince we ignore inv.CreateTime, it seems we may ignore inv.FinalizeTime as well.\n\nthen we can replace this with\n\n  if inv.State \u003d\u003d Finalized {\n    row[\"FinalizeTime\"] \u003d spanner.CommitTimestamp\n  }\n\nwhich would be much simpler. WDYT?",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
