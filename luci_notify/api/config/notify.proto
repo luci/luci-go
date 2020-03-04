@@ -140,8 +140,8 @@ message Notification {
 // TreeCloser represents an action which closes a tree, by interfacing with an
 // instance of the tree-status app.
 message TreeCloser {
-  // The URL of the tree-status instance which this rule opens and closes.
-  string tree_url = 1;
+  // The hostname of the tree-status instance which this rule opens and closes.
+  string tree_status_host = 1;
 
   // Close the tree only on builds which had a failing step matching this
   // regular expression.

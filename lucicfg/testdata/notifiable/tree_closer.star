@@ -78,7 +78,7 @@ luci.tree_closer(
 #     name: "builder 1"
 #   >
 #   tree_closers: <
-#     tree_url: "https://some-tree.example.com"
+#     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
 #     failed_step_regexp_exclude: "failed-step-regexp-exclude"
 #     template: "tree_status"
@@ -91,7 +91,7 @@ luci.tree_closer(
 #     repository: "https://repo.example.com"
 #   >
 #   tree_closers: <
-#     tree_url: "https://some-tree.example.com"
+#     tree_status_host: "some-tree.example.com"
 #     failed_step_regexp: "failed-step-regexp"
 #     failed_step_regexp_exclude: "failed-step-regexp-exclude"
 #     template: "tree_status"
