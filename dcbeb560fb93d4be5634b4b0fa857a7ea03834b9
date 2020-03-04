@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "078964ba_21216138",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T07:20:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80587352_13b451ea",
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa5a5be_4d69a870",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 10
@@ -39,6 +57,30 @@
       "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0592dcd8_fdcd67fd",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T07:20:12Z",
+      "side": 1,
+      "message": "I thought it was not necessary at the beginning, too. However, it turned out that md.Get() returns an empty array even if no header was provided at all.\n\nTherefore, without checking \"len(tks) \u003d\u003d 0\", codes.PermissionDenied(HTTP-Forbbiden) is returnedd when no auth header was present.",
+      "parentUuid": "9aa5a5be_4d69a870",
+      "range": {
+        "startLine": 249,
+        "startChar": 0,
+        "endLine": 251,
+        "endChar": 3
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "eb24b661_7577efb5",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T07:20:12Z",
+      "side": 1,
+      "message": "Good idea. Done",
+      "parentUuid": "4d49faf7_662ce0ec",
+      "range": {
+        "startLine": 52,
+        "startChar": 16,
+        "endLine": 54,
+        "endChar": 3
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "636ffc8f_7fa60fa3",
         "filename": "resultdb/sink/sink_test.go",
         "patchSetId": 10
@@ -85,6 +151,30 @@
       "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51160926_43ddd9af",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T07:20:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "636ffc8f_7fa60fa3",
+      "range": {
+        "startLine": 56,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 16
+      },
+      "revId": "dcbeb560fb93d4be5634b4b0fa857a7ea03834b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
