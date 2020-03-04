@@ -474,6 +474,30 @@
     },
     {
       "key": {
+        "uuid": "78ed3776_9ef89417",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "Marking as resolved. I found that it\u0027s not necessary to test Server with panic(), and removed the HTTP Handler with panic() from test,\n\nThe correctness of middleware.PanicCatcher is already being self-tested, net/http.Server itself already recovers panic. Thus, whether Server installs middleware.PanicCatcher or not, the test won\u0027t be able to see any difference.",
+      "parentUuid": "d946c7e0_4e82c5cb",
+      "range": {
+        "startLine": 92,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 21
+      },
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "987e523c_c9c1044e",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 16
@@ -647,6 +671,24 @@
       "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aca01b0_e1968cab",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "Marking as resolved.",
+      "parentUuid": "abe5d972_102f77e1",
+      "revId": "f19cc3bf4bef45d090ce70b30f47d5c7b0ddafa6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

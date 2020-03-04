@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ed4f526c_425315d2",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40f91a08_9d7f2dd9",
+      "range": {
+        "startLine": 92,
+        "startChar": 43,
+        "endLine": 92,
+        "endChar": 48
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a544561b_d5c18b49",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 28
@@ -45,6 +69,30 @@
       "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f82e983e_970f18af",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "ahhhh yeah. I added creation of a new derived context to be able to cancel the server context without having to cancel the context given by the caller.",
+      "parentUuid": "a544561b_d5c18b49",
+      "range": {
+        "startLine": 181,
+        "startChar": 2,
+        "endLine": 181,
+        "endChar": 5
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "469e92ec_d0279571",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "5c14e1b2_15023a09",
+      "range": {
+        "startLine": 208,
+        "startChar": 40,
+        "endLine": 208,
+        "endChar": 49
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15d5dc2e_077ce5a4",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 28
@@ -115,6 +187,30 @@
       "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d2af729_88b81a4a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 28
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15d5dc2e_077ce5a4",
+      "range": {
+        "startLine": 215,
+        "startChar": 30,
+        "endLine": 215,
+        "endChar": 50
+      },
+      "revId": "8a11fdc11cf97e1e2dd54a380545ffefe092256d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

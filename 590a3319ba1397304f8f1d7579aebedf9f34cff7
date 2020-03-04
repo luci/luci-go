@@ -472,6 +472,30 @@
     },
     {
       "key": {
+        "uuid": "1a8a3cd7_6287e3f6",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 26
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1147264
+      },
+      "writtenOn": "2020-03-04T06:36:20Z",
+      "side": 1,
+      "message": "\u003e\u003e let me repeat it back: you want a guarantee \"if returned nil, then it is closed\" (and not \"if it closed, it returns nil\"). This guarantee is provided by just \"{ return s.httpSrv.Close() }`\n\nThat\u0027s true. Unconditionally invoking s.httpSrv.Close() guarantees Close() returning nil once on success. It does not necessary have to support returning nil on the subsequent invocation of Close() after the success invocation of Close(). As you said, \"returning nil to subsequent calls of Close() after the first success\" is not supported by s.httpSrv.Close(), either. You are right, and I removed s.stopped.",
+      "parentUuid": "7857613c_4e582764",
+      "range": {
+        "startLine": 203,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 38
+      },
+      "revId": "590a3319ba1397304f8f1d7579aebedf9f34cff7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "123318f3_ac6e6251",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 26
