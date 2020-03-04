@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "015f2cb3_188f1ebf",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Probably not. The migration off Rota-NG should happen within the next quarter, so I don\u0027t feel it\u0027s worth the time to make this super-robust.\n\nWhen we add support for oncall rotations (via rotation proxy), we should do something like this.",
+      "parentUuid": "78a39ac1_fd6fc1e9",
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "500bd348_251e2997",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f200b42f_f6c91063",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "500bd348_251e2997",
+      "range": {
+        "startLine": 216,
+        "startChar": 20,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "a0a57241_a45933a4",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21053187_69bb9b7b",
+      "range": {
+        "startLine": 226,
+        "startChar": 30,
+        "endLine": 226,
+        "endChar": 31
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a1850d6_038811fb",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "4223cc5f_90746dd1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a1850d6_038811fb",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 234,
+        "endChar": 5
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "676ac4db_806009dd",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -108,6 +198,30 @@
       "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aaf849c9_dcfefca0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "676ac4db_806009dd",
+      "range": {
+        "startLine": 235,
+        "startChar": 2,
+        "endLine": 235,
+        "endChar": 5
+      },
+      "revId": "9d4c308a16df562b3dfd5723755964f8860d1b14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

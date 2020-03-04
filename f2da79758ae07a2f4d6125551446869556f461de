@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "d55806f2_8a95c502",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Thanks Vadim.\n\nI\u0027m aware that RPCs are often over HTTP. But when I see \"RPC\" it makes me think of a specific protocol such as grpc. While grpc runs over HTTP, you wouldn\u0027t want or need to use it for other HTTP requests not using that protocol.",
+      "parentUuid": "872e64b8_95028376",
+      "range": {
+        "startLine": 143,
+        "startChar": 3,
+        "endLine": 143,
+        "endChar": 31
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "783ffff8_82261f7d",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 1
@@ -474,6 +498,30 @@
       "side": 1,
       "message": "however, I am OK hardcoding the hostname here since you plan to turn down rotang",
       "parentUuid": "10cd4857_a15da292",
+      "range": {
+        "startLine": 198,
+        "startChar": 25,
+        "endLine": 198,
+        "endChar": 44
+      },
+      "revId": "f2da79758ae07a2f4d6125551446869556f461de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2aac125a_1d50bd0b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:02:21Z",
+      "side": 1,
+      "message": "Right, I\u0027m aware of that. But the only place I found it being used is in validateSettings, which just checks that it\u0027s non-nil and non-empty.",
+      "parentUuid": "4e4b1744_011e5434",
       "range": {
         "startLine": 198,
         "startChar": 25,
