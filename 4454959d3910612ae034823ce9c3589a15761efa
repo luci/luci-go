@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e3ea43f_ac00e607",
+        "filename": "resultdb/internal/services/recorder/finalize_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-04T01:27:46Z",
+      "side": 1,
+      "message": "And here (and in other places where validateUpdateToken is used, if any).",
+      "range": {
+        "startLine": 63,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 3
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e8d8531_8086d328",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-04T01:27:46Z",
+      "side": 1,
+      "message": "Better to do it outside the transaction. We no longer need to fetch the invocation to get its UpdateToken.",
+      "range": {
+        "startLine": 92,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 3
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
