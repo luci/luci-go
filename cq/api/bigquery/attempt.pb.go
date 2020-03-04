@@ -111,7 +111,7 @@ const (
 	AttemptSubstatus_FAILED_LINT AttemptSubstatus = 3
 	// A CL didn't get sufficient approval for submitting via CQ.
 	AttemptSubstatus_UNAPPROVED AttemptSubstatus = 4
-	// A CL triggerer doesn't have permission to trigger CQ.
+	// A CQ triggerer doesn't have permission to trigger CQ.
 	AttemptSubstatus_PERMISSION_DENIED AttemptSubstatus = 5
 	// There was a problem with a dependency CL, e.g. some dependencies
 	// were not submitted or not grouped together in this attempt.
