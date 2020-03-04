@@ -18,10 +18,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 
@@ -34,6 +38,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/luci_notify/api/config"
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
@@ -132,7 +138,37 @@ func BlamelistRepoWhiteset(notifications notifypb.Notifications) stringset.Set {
 //
 // An "input" blamelist is computed from the input commit to a build, while an
 // "output" blamelist is derived from output commits.
-func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+func ComputeRecipients(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+	return computeRecipientsInternal(c, notifications, inputBlame, outputBlame,
+		func(c context.Context, url string) ([]byte, error) {
+			transport, err := auth.GetRPCTransport(c, auth.AsSelf)
+			if err != nil {
+				return nil, err
+			}
+
+			req, err := http.NewRequestWithContext(c, "GET", url, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			response, err := (&http.Client{Transport: transport}).Do(req)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to get data from %q", url).Err()
+			}
+
+			defer response.Body.Close()
+			bytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				return nil, errors.Annotate(err, "failed to read response body from %q", url).Err()
+			}
+
+			return bytes, nil
+		})
+}
+
+// computeRecipientsInternal also takes fetchFunc, so http requests can be
+// mocked out for testing.
+func computeRecipientsInternal(c context.Context, notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs, fetchFunc func(context.Context, string) ([]byte, error)) []EmailNotify {
 	recipients := make([]EmailNotify, 0)
 	for _, notification := range notifications.GetNotifications() {
 		// Aggregate the static list of recipients from the Notifications.
@@ -159,7 +195,55 @@ func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb
 		whiteset := stringset.NewFromSlice(whitelist...)
 		recipients = append(recipients, outputBlame.Filter(whiteset).Blamelist(notification.Template)...)
 	}
+
+	// Acquired before appending to "recipients" from the tasks below.
+	mRecipients := sync.Mutex{}
+	err := parallel.WorkPool(8, func(ch chan<- func() error) {
+		for _, notification := range notifications.GetNotifications() {
+			template := notification.Template
+			for _, rotation := range notification.GetEmail().GetRotaNgRotations() {
+				rotation := rotation
+				ch <- func() error {
+					return fetchRotaOncallers(c, rotation, template, fetchFunc, &recipients, &mRecipients)
+				}
+			}
+		}
+	})
+
+	if err != nil {
+		// Just log the error and continue. Nothing much else we can do, and it's possible that we only failed
+		// to fetch some of the recipients, so we can at least return the ones we were able to compute.
+		logging.Errorf(c, "failed to fetch some or all Rota-NG oncallers: %s", err)
+	}
+
 	return recipients
+}
+
+func fetchRotaOncallers(c context.Context, rotation, template string, fetchFunc func(context.Context, string) ([]byte, error), recipients *[]EmailNotify, mRecipients *sync.Mutex) error {
+	address := "https://rota-ng.appspot.com/legacy/" + url.PathEscape(rotation) + ".json"
+	resp, err := fetchFunc(c, address)
+	if err != nil {
+		err = errors.Annotate(err, "failed to fetch address %q", address).Err()
+		return err
+	}
+
+	var oncallEmails struct {
+		Emails []string
+	}
+	if json.Unmarshal(resp, &oncallEmails) != nil {
+		return errors.Annotate(err, "failed to unmarshal JSON").Err()
+	}
+
+	mRecipients.Lock()
+	defer mRecipients.Unlock()
+	for _, email := range oncallEmails.Emails {
+		*recipients = append(*recipients, EmailNotify{
+			Email:    email,
+			Template: template,
+		})
+	}
+
+	return nil
 }
 
 // Notify discovers, consolidates and filters recipients from a Builder's notifications,
