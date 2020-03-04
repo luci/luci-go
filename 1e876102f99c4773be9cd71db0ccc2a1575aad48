@@ -50,6 +50,24 @@
       "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52a2eeaa_cc7f1d0d",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-04T07:40:37Z",
+      "side": 1,
+      "message": "(Not directly related to this change)\n\nIf so, we can also potentially simply https://osscs.corp.google.com/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/chromium/swarming.go;l\u003d87\n\nBut also, that means the invocation returned by DeriveInvocation is different from what we save in Spanner.",
+      "parentUuid": "f2605e48_97ffd979",
+      "revId": "1e876102f99c4773be9cd71db0ccc2a1575aad48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
