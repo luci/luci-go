@@ -102,6 +102,7 @@ func TestSwarming(t *testing.T) {
 			switch r.URL.Path {
 			case fmt.Sprintf("/%stask/pending-task/result", swarmingAPIEndpoint):
 				resp.State = "PENDING"
+				resp.TaskId = "pending-task"
 				hasCompletion = false
 
 			case fmt.Sprintf("/%stask/bot-died-task/result", swarmingAPIEndpoint):
@@ -186,7 +187,7 @@ func TestSwarming(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			req.SwarmingTask.Id = "pending-task"
-			_, _, err = DeriveProtosForWriting(ctx, task, req)
+			_, err = DeriveInvocation(task, req)
 			expectedDetail := &errdetails.PreconditionFailure{
 				Violations: []*errdetails.PreconditionFailure_Violation{{Type: "INCOMPLETE_SWARMING_TASK"}},
 			}
@@ -197,7 +198,7 @@ func TestSwarming(t *testing.T) {
 			task, err := swarmSvc.Task.Result("bot-died-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
-			inv, _, err := DeriveProtosForWriting(ctx, task, req)
+			inv, err := DeriveInvocation(task, req)
 			So(err, ShouldBeNil)
 			So(inv, ShouldNotBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
@@ -209,7 +210,7 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("timed-out-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
-				inv, _, err := DeriveProtosForWriting(ctx, task, req)
+				inv, err := DeriveInvocation(task, req)
 				So(err, ShouldBeNil)
 				So(inv, ShouldNotBeNil)
 				So(inv.State, ShouldEqual, pb.Invocation_FINALIZED)
@@ -220,8 +221,12 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("timed-out-outputs-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+
 				var res []*pb.TestResult
-				_, res, err = DeriveProtosForWriting(ctx, task, req)
+				res, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 				So(len(res), ShouldEqual, 1)
 				So(res[0].Expected, ShouldBeFalse)
@@ -234,8 +239,12 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("completed-no-outputs-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+
 				var res []*pb.TestResult
-				_, res, err = DeriveProtosForWriting(ctx, task, req)
+				res, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 				So(len(res), ShouldEqual, 1)
 				So(res[0].TestId, ShouldEqual, "ninja:chrome/tests:browser_tests")
@@ -249,7 +258,11 @@ func TestSwarming(t *testing.T) {
 
 				ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
 				defer cancel()
-				_, _, err = DeriveProtosForWriting(ctx, task, req)
+
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+				_, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 			})
 
@@ -257,7 +270,10 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("completed-no-output-file-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
-				_, _, err = DeriveProtosForWriting(ctx, task, req)
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+				_, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 			})
 
@@ -265,7 +281,10 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("completed-empty-output-file-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
-				_, _, err = DeriveProtosForWriting(ctx, task, req)
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+				_, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 			})
 
@@ -273,7 +292,10 @@ func TestSwarming(t *testing.T) {
 				task, err := swarmSvc.Task.Result("completed-outputs-task").Context(ctx).Do()
 				So(err, ShouldBeNil)
 
-				_, _, err = DeriveProtosForWriting(ctx, task, req)
+				inv, err := DeriveInvocation(task, req)
+				So(err, ShouldBeNil)
+				So(inv, ShouldNotBeNil)
+				_, err = DeriveTestResults(ctx, task, req, inv)
 				So(err, ShouldBeNil)
 			})
 		})
@@ -282,9 +304,12 @@ func TestSwarming(t *testing.T) {
 			task, err := swarmSvc.Task.Result("no-completion-task").Context(ctx).Do()
 			So(err, ShouldBeNil)
 
-			inv, _, err := DeriveProtosForWriting(ctx, task, req)
+			inv, err := DeriveInvocation(task, req)
 			So(err, ShouldBeNil)
+			So(inv, ShouldNotBeNil)
 			So(inv.FinalizeTime, ShouldBeNil)
+			_, err = DeriveTestResults(ctx, task, req, inv)
+			So(err, ShouldBeNil)
 		})
 	})
 

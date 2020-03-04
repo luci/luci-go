@@ -18,7 +18,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -29,6 +28,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
+	swarmingAPI "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
 
@@ -95,7 +95,7 @@ func TestValidateDeriveInvocationRequest(t *testing.T) {
 }
 
 func TestDeriveInvocation(t *testing.T) {
-	Convey(`TestDeriveInvocation`, t, func() {
+	Convey(`TestDeriveInvocation`, t, func(c C) {
 		ctx := testutil.SpannerTestContext(t)
 
 		testutil.MustApply(ctx, testutil.InsertInvocation("inserted", pb.Invocation_FINALIZED, nil))
@@ -160,24 +160,44 @@ func TestDeriveInvocation(t *testing.T) {
 		outputsDigest := isoFake.Inject("ns", isoOutBytes)
 
 		// Set up fake swarming service.
-		// This service only supports one task and returns the same one regardless of input.
 		swarmingFake := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			io.WriteString(w, fmt.Sprintf(`{
-				"state": "COMPLETED",
-				"outputs_ref": {
-					"isolatedserver": "%s",
-					"namespace": "ns",
-					"isolated": "%s"
-				},
-				"tags": [
+			resp := &swarmingAPI.SwarmingRpcsTaskResult{
+				CreatedTs: "2019-10-14T13:49:16.01",
+				Tags: []string{
 					"bucket:bkt",
 					"buildername:blder",
 					"test_suite:foo_unittests",
-					"ninja_target://tests:tests"
-				],
-				"created_ts": "2019-10-14T13:49:16.01",
-				"completed_ts": "2019-10-14T14:49:16.01"
-			}`, isoServer.URL, outputsDigest))
+					"ninja_target://tests:tests",
+				},
+				State:       "COMPLETED",
+				CompletedTs: "2019-10-14T14:49:16.01",
+			}
+
+			swarmingAPIEndpoint := "_ah/api/swarming/v1/"
+			switch r.URL.Path {
+			case fmt.Sprintf("/%stask/completed-task/result", swarmingAPIEndpoint):
+				resp.TaskId = "completed-task"
+				resp.RunId = "completed-task"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
+			case fmt.Sprintf("/%stask/origin/result", swarmingAPIEndpoint):
+				resp.TaskId = "origin"
+				resp.RunId = "origin"
+				resp.OutputsRef = &swarmingAPI.SwarmingRpcsFilesRef{
+					Isolatedserver: isoServer.URL,
+					Namespace:      "ns",
+					Isolated:       string(outputsDigest),
+				}
+			case fmt.Sprintf("/%stask/deduped/result", swarmingAPIEndpoint):
+				resp.TaskId = "deduped"
+				resp.RunId = "deduped"
+				resp.DedupedFrom = "origin"
+			}
+			err := json.NewEncoder(w).Encode(resp)
+			c.So(err, ShouldBeNil)
 		}))
 		defer swarmingFake.Close()
 
@@ -240,6 +260,53 @@ func TestDeriveInvocation(t *testing.T) {
 
 			// Read InvocationTask to confirm it's added.
 			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.Name).RowID()))
+			var payload []byte
+			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
+				"Payload": &payload,
+			})
+			bqExports := &pb.BigQueryExport{}
+			err = proto.Unmarshal(payload, bqExports)
+			So(err, ShouldBeNil)
+			So(bqExports, ShouldResembleProto, recorder.DerivedInvBQTable)
+		})
+
+		Convey(`inserts a deduped invocation`, func() {
+			req.SwarmingTask.Id = "deduped"
+			inv, err := recorder.DeriveInvocation(ctx, req)
+			So(err, ShouldBeNil)
+			So(len(inv.IncludedInvocations), ShouldEqual, 1)
+			So(inv.IncludedInvocations[0], ShouldContainSubstring, "origin")
+
+			// Assert we wrote correct test results.
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+
+			invIDs, err := span.ReadReachableInvocations(ctx, txn, 100, span.NewInvocationIDSet(span.MustParseInvocationName(inv.Name)))
+			So(err, ShouldBeNil)
+			So(len(invIDs), ShouldEqual, 3)
+
+			trs, _, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
+				InvocationIDs: invIDs,
+				PageSize:      100,
+			})
+			So(err, ShouldBeNil)
+			So(trs, ShouldHaveLength, 3)
+			So(trs[0].TestId, ShouldEqual, "ninja://tests:tests/FooTest.DoesBar")
+			So(trs[0].Status, ShouldEqual, pb.TestStatus_PASS)
+			So(trs[0].Variant, ShouldResembleProto, pbutil.Variant(
+				"bucket", "bkt",
+				"builder", "blder",
+				"test_suite", "foo_unittests",
+				"param/instantiation", "MyInstantiation",
+				"param/id", "1",
+			))
+			So(trs[1].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+			So(trs[1].Status, ShouldEqual, pb.TestStatus_CRASH)
+			So(trs[2].TestId, ShouldEqual, "ninja://tests:tests/FooTest.TestDoBar")
+			So(trs[2].Status, ShouldEqual, pb.TestStatus_FAIL)
+
+			// Read InvocationTask to confirm it's added for origin task.
+			taskKey := tasks.BQExport.Key(fmt.Sprintf("%s:0", span.MustParseInvocationName(inv.IncludedInvocations[0]).RowID()))
 			var payload []byte
 			testutil.MustReadRow(ctx, "InvocationTasks", taskKey, map[string]interface{}{
 				"Payload": &payload,
