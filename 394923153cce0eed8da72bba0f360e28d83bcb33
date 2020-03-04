@@ -22,6 +22,30 @@
       "revId": "394923153cce0eed8da72bba0f360e28d83bcb33",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60c3109e_a4b5af85",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-04T03:22:07Z",
+      "side": 1,
+      "message": "Oh whoops. I\u0027ll fix in a follow-up CL.",
+      "parentUuid": "ba9dfadb_502a344c",
+      "range": {
+        "startLine": 234,
+        "startChar": 25,
+        "endLine": 234,
+        "endChar": 28
+      },
+      "revId": "394923153cce0eed8da72bba0f360e28d83bcb33",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
