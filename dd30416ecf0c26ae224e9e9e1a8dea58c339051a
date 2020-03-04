@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cc634f1_9166a106",
+        "filename": "resultdb/internal/services/recorder/derive_invocation_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-04T07:43:06Z",
+      "side": 0,
+      "message": "thank you removing this! what you wrote is much better!",
+      "range": {
+        "startLine": 165,
+        "startChar": 3,
+        "endLine": 165,
+        "endChar": 35
+      },
+      "revId": "dd30416ecf0c26ae224e9e9e1a8dea58c339051a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
