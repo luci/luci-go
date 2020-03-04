@@ -949,7 +949,8 @@ type Verifiers_Tryjob_Builder struct {
 	// experimental. It is only triggered on a given percentage of the CLs
 	// and the outcome does not affect the decision of whether a CL can land
 	// or not. This is typically used to test new builders and estimate their
-	// capacity requirements.
+	// capacity requirements.  May be combined with location_regexp and
+	// location_regexp_exclude.
 	ExperimentPercentage float32 `protobuf:"fixed32,4,opt,name=experiment_percentage,json=experimentPercentage,proto3" json:"experiment_percentage,omitempty"`
 	// Optionally specified alternative builder for CQ to choose instead.
 	// If provided, CQ will choose only one of the equivalent builders as
@@ -982,7 +983,6 @@ type Verifiers_Tryjob_Builder struct {
 	// Touching a file means either adding, modifying or removing it.
 	//
 	// These options currently can not be combined with the following other options:
-	//   * experiment_percentage
 	//   * triggered_by
 	//   * GerritCQAbility.allow_submit_with_open_deps
 	// If you need to combine them, please talk to CQ owners.
