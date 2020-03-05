@@ -1,0 +1,10 @@
+{
+    "extends": "gts/tslint.json",
+    "rules": {
+        "semicolon": true,
+        "trailing-comma": [true, {"multiline": "always", "singleline": "never"}]
+    },
+    "linterOptions": {
+        "exclude": ["node_modules/**/*"]
+    }
+}
