@@ -16,6 +16,24 @@
       "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d2745d5_1e34f8b3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-05T08:54:35Z",
+      "side": 1,
+      "message": "OK. BTW what kind of tests shall I do? I see that most other subcommands also don\u0027t have a test. Is there a command line (e.g. `isolate run xx yy -- zz`) that i can run directly\u003e?",
+      "parentUuid": "d9dc35d3_47c109ab",
+      "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
