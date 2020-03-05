@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "13344576_357e0dec",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-05T08:18:44Z",
+      "side": 1,
+      "message": "1. replace errors.New() with lucierros.Reason()\n2. then we don\u0027t have to import \"errors\" at all?",
+      "parentUuid": "d53ccd57_ec34656d",
+      "revId": "ba5fdbccfaabc40de7f6b013b89e1588a5235892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ba0e94c2_4604135e",
         "filename": "client/cmd/isolate/run.go",
         "patchSetId": 2
