@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d53ccd57_ec34656d",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:09:19Z",
+      "side": 1,
+      "message": "could you make another CL to replce standard errors to luci\u0027s errors?",
+      "revId": "ba5fdbccfaabc40de7f6b013b89e1588a5235892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba0e94c2_4604135e",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:09:19Z",
+      "side": 1,
+      "message": "use errors.Reason",
+      "range": {
+        "startLine": 118,
+        "startChar": 10,
+        "endLine": 118,
+        "endChar": 16
+      },
+      "revId": "ba5fdbccfaabc40de7f6b013b89e1588a5235892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
