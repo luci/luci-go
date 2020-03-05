@@ -71,7 +71,11 @@ func FromNewTaskRequest(ctx context.Context, r *swarming.SwarmingRpcsNewTaskRequ
 		err = ks.FromSwarming(ctx, r, bb)
 
 	case "raw":
-		panic("implement me")
+		// non-Buildbucket Swarming task
+		sw := &job.Swarming{Hostname: swarmingHost}
+		ret.JobType = &job.Definition_Swarming{Swarming: sw}
+		jobDefinitionFromSwarming(sw, r)
+		sw.Task.Name = name
 
 	default:
 		panic("impossible")
