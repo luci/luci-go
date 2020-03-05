@@ -5,6 +5,8 @@
 package job
 
 import (
+	"path"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -95,5 +97,9 @@ func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
 }
 
 func (b bbInfo) TaskPayload() (cipdPkg, cipdVers string, pathInTask string) {
-	panic("implement me")
+	exe := b.GetBbagentArgs().GetBuild().GetExe()
+	cipdPkg = exe.GetCipdPackage()
+	cipdVers = exe.GetCipdVersion()
+	pathInTask = path.Dir(b.GetBbagentArgs().GetExecutablePath())
+	return
 }

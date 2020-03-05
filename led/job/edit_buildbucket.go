@@ -5,6 +5,7 @@
 package job
 
 import (
+	"path"
 	"sort"
 	"time"
 
@@ -67,7 +68,22 @@ func (bbm *buildbucketEditor) Tags(values []string) {
 }
 
 func (bbm *buildbucketEditor) TaskPayload(cipdPkg, cipdVers, dirInTask string) {
-	panic("implement me")
+	bbm.tweak(func() error {
+		bbm.bb.BbagentArgs.ExecutablePath = path.Join(dirInTask, "luciexe")
+		if cipdPkg != "" && cipdVers != "" {
+			bbm.bb.BbagentArgs.Build.Exe = &bbpb.Executable{
+				CipdPackage: cipdPkg,
+				CipdVersion: cipdVers,
+			}
+		} else if cipdPkg == "" && cipdVers == "" {
+			bbm.bb.BbagentArgs.Build.Exe = nil
+		} else {
+			return errors.Reason(
+				"cipdPkg and cipdVers must both be set or both be empty: cipdPkg=%q cipdVers=%q",
+				cipdPkg, cipdVers).Err()
+		}
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) ClearCurrentIsolated() {
