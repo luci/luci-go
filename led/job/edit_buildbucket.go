@@ -231,7 +231,10 @@ func (bbm *buildbucketEditor) SwarmingHostname(host string) {
 }
 
 func (bbm *buildbucketEditor) Experimental(isExperimental bool) {
-	panic("implement me")
+	bbm.tweak(func() error {
+		bbm.bb.BbagentArgs.Build.Input.Experimental = isExperimental
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) PrefixPathEnv(values []string) {
