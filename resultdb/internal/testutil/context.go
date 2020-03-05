@@ -19,6 +19,8 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/secrets/testsecrets"
 )
 
 func testingContext(mockClock bool) context.Context {
@@ -31,6 +33,9 @@ func testingContext(mockClock bool) context.Context {
 	if mockClock {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	}
+
+	// Set test secrets store for token generation/validation.
+	ctx = secrets.Set(ctx, &testsecrets.Store{})
 
 	return ctx
 }

@@ -45,24 +45,23 @@ func (s *recorderServer) FinalizeInvocation(ctx context.Context, in *pb.Finalize
 		return nil, appstatus.BadRequest(err)
 	}
 
-	userToken, err := extractUserUpdateToken(ctx)
+	token, err := extractUpdateToken(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	invID := span.MustParseInvocationName(in.Name)
+	if err := validateInvocationToken(ctx, token, invID); err != nil {
+		return nil, appstatus.Errorf(codes.PermissionDenied, "invalid update token")
+	}
 
 	var ret *pb.Invocation
 	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		inv, updateToken, err := span.ReadInvocationFullWithUpdateToken(ctx, txn, invID)
+		inv, err := span.ReadInvocationFull(ctx, txn, invID)
 		if err != nil {
 			return err
 		}
 		ret = inv
-
-		if err := validateUserUpdateToken(updateToken, userToken); err != nil {
-			return err
-		}
 
 		switch {
 		case ret.State != pb.Invocation_ACTIVE && ret.Interrupted == in.Interrupted:

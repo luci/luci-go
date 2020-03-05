@@ -16,7 +16,6 @@ package span
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"cloud.google.com/go/spanner"
@@ -156,16 +155,12 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	return reachable, nil
 }
 
-func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpdateToken bool, f func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error) error {
+func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, f func(id InvocationID, inv *pb.Invocation) error) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	extraSelect := ""
-	if withUpdateToken {
-		extraSelect = "i.UpdateToken"
-	}
-	st := spanner.NewStatement(fmt.Sprintf(`
+	st := spanner.NewStatement(`
 		SELECT
 		 i.InvocationId,
 		 i.State,
@@ -176,23 +171,20 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 		 i.Interrupted,
 		 i.BigQueryExports,
 		 ARRAY(SELECT IncludedInvocationId FROM IncludedInvocations incl WHERE incl.InvocationID = i.InvocationId),
-		 %s
 		FROM Invocations i
 		WHERE i.InvocationID IN UNNEST(@invIDs)
-	`, extraSelect))
+	`)
 	st.Params = ToSpannerMap(map[string]interface{}{
 		"invIDs": ids,
 	})
 	var b Buffer
 	return Query(ctx, txn, st, func(row *spanner.Row) error {
 		var id InvocationID
-		var updateToken spanner.NullString
 		included := InvocationIDSet{}
 		var bqExports [][]byte
 		inv := &pb.Invocation{}
 
-		ptrs := []interface{}{
-			&id,
+		err := b.FromSpanner(row, &id,
 			&inv.State,
 			&inv.CreateTime,
 			&inv.FinalizeTime,
@@ -200,12 +192,7 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 			&inv.Tags,
 			&inv.Interrupted,
 			&bqExports,
-			&included,
-		}
-		if withUpdateToken {
-			ptrs = append(ptrs, &updateToken)
-		}
-		err := b.FromSpanner(row, ptrs...)
+			&included)
 		if err != nil {
 			return err
 		}
@@ -223,30 +210,8 @@ func readInvocations(ctx context.Context, txn Txn, ids InvocationIDSet, withUpda
 			}
 		}
 
-		return f(id, inv, updateToken)
+		return f(id, inv)
 	})
-}
-
-// ReadInvocationFullWithUpdateToken reads one invocation and it's updateToken from Spanner.
-// If the invocation does not exist, the returned error is annotated with
-// NotFound GRPC code.
-func ReadInvocationFullWithUpdateToken(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, spanner.NullString, error) {
-	var ret *pb.Invocation
-	var token spanner.NullString
-	err := readInvocations(ctx, txn, NewInvocationIDSet(id), true, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
-		ret = inv
-		token = updateToken
-		return nil
-	})
-
-	switch {
-	case err != nil:
-		return nil, token, err
-	case ret == nil:
-		return nil, token, appstatus.Errorf(codes.NotFound, "%s not found", id.Name())
-	default:
-		return ret, token, nil
-	}
 }
 
 // ReadInvocationFull reads one invocation from Spanner.
@@ -254,7 +219,7 @@ func ReadInvocationFullWithUpdateToken(ctx context.Context, txn Txn, id Invocati
 // NotFound GRPC code.
 func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invocation, error) {
 	var ret *pb.Invocation
-	err := readInvocations(ctx, txn, NewInvocationIDSet(id), false, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
+	err := readInvocations(ctx, txn, NewInvocationIDSet(id), func(id InvocationID, inv *pb.Invocation) error {
 		ret = inv
 		return nil
 	})
@@ -273,7 +238,7 @@ func ReadInvocationFull(ctx context.Context, txn Txn, id InvocationID) (*pb.Invo
 // If any of them are not found, returns an error.
 func ReadInvocationsFull(ctx context.Context, txn Txn, ids InvocationIDSet) (map[InvocationID]*pb.Invocation, error) {
 	ret := make(map[InvocationID]*pb.Invocation, len(ids))
-	err := readInvocations(ctx, txn, ids, false, func(id InvocationID, inv *pb.Invocation, updateToken spanner.NullString) error {
+	err := readInvocations(ctx, txn, ids, func(id InvocationID, inv *pb.Invocation) error {
 		if _, ok := ret[id]; ok {
 			panic("query is incorrect; it returned duplicated invocation IDs")
 		}

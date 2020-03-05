@@ -117,7 +117,7 @@ func (s *recorderServer) DeriveInvocation(ctx context.Context, in *pb.DeriveInvo
 	// Include originInv into inv.
 	inv.IncludedInvocations = []string{originInv.Name}
 	invMs := []*spanner.Mutation{
-		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "", "")),
+		span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, "")),
 		span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         invID,
 			"IncludedInvocationId": span.MustParseInvocationName(originInv.Name),
@@ -205,7 +205,7 @@ func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *
 
 	// Prepare mutations.
 	ms := make([]*spanner.Mutation, 0, len(batchInvs)+4)
-	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "", "")))
+	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "")))
 	for includedID := range batchInvs {
 		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
 			"InvocationId":         originInvID,
@@ -261,7 +261,7 @@ func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Inv
 				Deadline:     inv.Deadline,
 			}
 			muts = append(muts, span.InsertOrUpdateMap(
-				"Invocations", s.rowOfInvocation(ctx, batchInv, "", "")),
+				"Invocations", s.rowOfInvocation(ctx, batchInv, "")),
 			)
 
 			// Convert the TestResults in the batch.
