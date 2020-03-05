@@ -149,7 +149,7 @@ func TestValidation(t *testing.T) {
 			}`,
 			"", "")
 
-		testValidation(`bad failed_step_regexp`, `
+		testValidation(`bad failed_step_regexp in notification`, `
 			notifiers {
 				name: "invalid"
 				notifications: {
@@ -158,7 +158,7 @@ func TestValidation(t *testing.T) {
 			}`,
 			badRegexError, "failed_step_regexp", "error parsing regexp: missing closing ]: `[`")
 
-		testValidation(`bad failed_step_regexp_exclude`, `
+		testValidation(`bad failed_step_regexp_exclude in notification`, `
 			notifiers {
 				name: "invalid"
 				notifications: {
@@ -166,6 +166,35 @@ func TestValidation(t *testing.T) {
 				}
 			}`,
 			badRegexError, "failed_step_regexp_exclude", "error parsing regexp: invalid repeat count: `{3,2}`")
+
+		testValidation(`bad failed_step_regexp in tree_closer`, `
+			notifiers {
+				name: "invalid"
+				tree_closers: {
+					tree_status_host: "example.com"
+					failed_step_regexp: ")"
+				}
+			}`,
+			badRegexError, "failed_step_regexp", "error parsing regexp: unexpected ): `)`")
+
+		testValidation(`bad failed_step_regexp_exclude in tree_closer`, `
+			notifiers {
+				name: "invalid"
+				tree_closers: {
+					tree_status_host: "example.com"
+					failed_step_regexp_exclude: "[z-a]"
+				}
+			}`,
+			badRegexError, "failed_step_regexp_exclude", "error parsing regexp: invalid character class range: `z-a`")
+
+		testValidation(`missing tree_status_host in tree_closer`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					template: "foo"
+				}
+			}`,
+			requiredFieldError, "tree_status_host")
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {

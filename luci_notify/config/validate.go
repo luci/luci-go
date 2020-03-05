@@ -79,6 +79,17 @@ func validateNotification(c *validation.Context, cfgNotification *notifypb.Notif
 	validateRegexField(c, "failed_step_regexp_exclude", cfgNotification.FailedStepRegexpExclude)
 }
 
+// validateTreeCloser is a helper function for validateConfig which validates an
+// individual tree closer configuration.
+func validateTreeCloser(c *validation.Context, cfgTreeCloser *notifypb.TreeCloser) {
+	if cfgTreeCloser.TreeStatusHost == "" {
+		c.Errorf(requiredFieldError, "tree_status_host")
+	}
+
+	validateRegexField(c, "failed_step_regexp", cfgTreeCloser.FailedStepRegexp)
+	validateRegexField(c, "failed_step_regexp_exclude", cfgTreeCloser.FailedStepRegexpExclude)
+}
+
 // validateRegexField validates that a field contains a valid regex.
 func validateRegexField(c *validation.Context, fieldName, regex string) {
 	_, err := regexp.Compile(regex)
@@ -116,6 +127,11 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, bui
 	for i, cfgNotification := range cfgNotifier.Notifications {
 		c.Enter("notification #%d", i+1)
 		validateNotification(c, cfgNotification)
+		c.Exit()
+	}
+	for i, cfgTreeCloser := range cfgNotifier.TreeClosers {
+		c.Enter("tree_closer #%d", i+1)
+		validateTreeCloser(c, cfgTreeCloser)
 		c.Exit()
 	}
 	for i, cfgBuilder := range cfgNotifier.Builders {
