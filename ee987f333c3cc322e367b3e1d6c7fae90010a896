@@ -145,6 +145,30 @@
     },
     {
       "key": {
+        "uuid": "5475f616_8b5606d3",
+        "filename": "milo/frontend/appengine/service-trui.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "946cf802_91346a4e",
+      "range": {
+        "startLine": 1,
+        "startChar": 9,
+        "endLine": 1,
+        "endChar": 13
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66ab5039_078e76f1",
         "filename": "milo/frontend/appengine/service-trui.yaml",
         "patchSetId": 1
@@ -284,6 +308,30 @@
       "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac620f01_87a78e62",
+        "filename": "milo/frontend/appengine/test-results-ui/index.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "Forgot to upload the patch.",
+      "parentUuid": "5f74c61b_d99da853",
+      "range": {
+        "startLine": 3,
+        "startChar": 7,
+        "endLine": 3,
+        "endChar": 22
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -533,6 +581,30 @@
     },
     {
       "key": {
+        "uuid": "c96ec107_c79fe316",
+        "filename": "milo/frontend/test-results-ui/src/components/page-header.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "Keep @observable for now and added a TODO comment.",
+      "parentUuid": "eab2d222_bab1d087",
+      "range": {
+        "startLine": 25,
+        "startChar": 4,
+        "endLine": 25,
+        "endChar": 15
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "23f0eacf_9711d7a7",
         "filename": "milo/frontend/test-results-ui/src/pages/invocation-page.ts",
         "patchSetId": 1
@@ -618,6 +690,24 @@
       "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95cda90f_0af5b31c",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation-page.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "You are right. Fixed.",
+      "parentUuid": "ee91275d_d2eef352",
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

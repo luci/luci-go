@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "65bc18c3_d23dfe2d",
+        "filename": "milo/Makefile",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "They need to be on the same line. It\u0027s a dependency not a command.\nOr did you mean I should just copy-paste `cd frontend/test-results-ui \u0026\u0026 npm run build`?",
+      "parentUuid": "11b09299_061674c4",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 29
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "516733f1_b9a5c9ef",
         "filename": "milo/frontend/test-results-ui/src/@types/@vaddin/router.d.ts",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "75ff5c37_50959a68",
+        "filename": "milo/frontend/test-results-ui/src/@types/@vaddin/router.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "516733f1_b9a5c9ef",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 0
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0822d0ee_88b28966",
         "filename": "milo/frontend/test-results-ui/src/pages/invocation_page.ts",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee3dd8f6_4091485a",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-05T04:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0822d0ee_88b28966",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 7
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
