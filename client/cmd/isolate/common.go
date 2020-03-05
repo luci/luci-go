@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -29,6 +28,7 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
@@ -105,7 +105,7 @@ const (
 
 func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 	if !filepath.IsAbs(cwd) {
-		return errors.New("cwd must be absolute path")
+		return errors.Reason("cwd must be absolute path").Err()
 	}
 	for _, vars := range [](map[string]string){c.ConfigVariables, c.ExtraVariables, c.PathVariables} {
 		for k := range vars {
@@ -124,7 +124,7 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 
 	if c.Isolate == "" {
 		if flags&RequireIsolateFile != 0 {
-			return errors.New("-isolate must be specified")
+			return errors.Reason("-isolate must be specified").Err()
 		}
 	} else {
 		if !filepath.IsAbs(c.Isolate) {
@@ -134,7 +134,7 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 
 	if c.Isolated == "" {
 		if flags&RequireIsolatedFile != 0 {
-			return errors.New("-isolated must be specified")
+			return errors.Reason("-isolated must be specified").Err()
 		}
 	} else {
 		if !filepath.IsAbs(c.Isolated) {
