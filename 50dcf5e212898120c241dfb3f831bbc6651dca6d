@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "11b09299_061674c4",
+        "filename": "milo/Makefile",
+        "patchSetId": 4
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "Suggest putting this on a new line to maintain consistency with the other rules in this file. Same below.",
+      "range": {
+        "startLine": 15,
+        "startChar": 8,
+        "endLine": 15,
+        "endChar": 29
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "516733f1_b9a5c9ef",
+        "filename": "milo/frontend/test-results-ui/src/@types/@vaddin/router.d.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "Suggest adding a file-level comment explaining that this adds type information to Vaadin Router?",
+      "range": {
+        "startLine": 14,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 0
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0822d0ee_88b28966",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "For class/method comments, describe what it does rather than writing it as an imperative (e.g. say \"Reads\" instead of \"Read\").\n\nSuggest changing to:\n\nReads invocation_name from URL params.\nIf not logged in, redirects to \u0027/login?redirect\u003d${current_url}\u0027.\nIf invocation_name not provided, redirects to \u0027/not-found\u0027.\nOtherwise, shows results for the invocation.",
+      "range": {
+        "startLine": 25,
+        "startChar": 3,
+        "endLine": 25,
+        "endChar": 7
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecc452b5_ed69582d",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation_page_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "Optional, but I\u0027d like your thoughts.\n\nWhat do you think about standardising on one of the more \"fluent\" Chai assertion formats?\n\nIIUC these are the three options:\nassert.strictEqual(page.invocationName, location.params[\u0027invocation_name\u0027]);\npage.invocationName.should.equal(location.params[\u0027invocation_name\u0027]);\nexpect(page.invocationName).to.equal(location.params[\u0027invocation_name\u0027]);\n\nPersonally I think I like #3 the best, but it\u0027s not overly important. I think the reason I like it is that option #1 doesn\u0027t make it obvious which parameter is expected and which is actual, so it\u0027s easy to get them the wrong way around.",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 80
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2941724_221dea2f",
+        "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "Prompts",
+      "range": {
+        "startLine": 23,
+        "startChar": 3,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93480237_a44d2421",
+        "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T03:37:32Z",
+      "side": 1,
+      "message": "redirects",
+      "range": {
+        "startLine": 24,
+        "startChar": 19,
+        "endLine": 24,
+        "endChar": 27
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
