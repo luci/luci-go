@@ -57,7 +57,10 @@ func (bbm *buildbucketEditor) TaskPayload(cipdPkg, cipdVers, dirInTask string) {
 }
 
 func (bbm *buildbucketEditor) ClearCurrentIsolated() {
-	panic("implement me")
+	bbm.tweak(func() error {
+		bbm.userPayload.Digest = ""
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) ClearDimensions() {
