@@ -6,7 +6,9 @@ package job
 
 import (
 	"sort"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
@@ -76,7 +78,72 @@ func (bbm *buildbucketEditor) ClearCurrentIsolated() {
 }
 
 func (bbm *buildbucketEditor) ClearDimensions() {
-	panic("implement me")
+	bbm.tweak(func() error {
+		bbm.bb.BbagentArgs.Build.Infra.Swarming.TaskDimensions = nil
+		return nil
+	})
+}
+
+func (bbm *buildbucketEditor) SetDimensions(dims ExpiringDimensions) {
+	bbm.ClearDimensions()
+	dec := DimensionEditCommands{}
+	for key, vals := range dims {
+		dec[key] = &DimensionEditCommand{SetValues: vals}
+	}
+	bbm.EditDimensions(dec)
+}
+
+func (bbm *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
+	if len(dimEdits) == 0 {
+		return
+	}
+
+	bbm.tweak(func() error {
+		dims, err := bbm.jd.Info().Dimensions()
+		if err != nil {
+			return err
+		}
+
+		dimMap := dims.toLogical()
+		dimEdits.apply(dimMap, 0)
+
+		sw := bbm.bb.BbagentArgs.Build.Infra.Swarming
+		var maxExp time.Duration
+		newDims := make([]*bbpb.RequestedDimension, 0,
+			len(sw.TaskDimensions)+len(dimEdits))
+		for _, key := range keysOf(dimMap) {
+			valueExp := dimMap[key]
+			for _, value := range keysOf(valueExp) {
+				exp := valueExp[value]
+				if exp > maxExp {
+					maxExp = exp
+				}
+
+				toAdd := &bbpb.RequestedDimension{
+					Key:   key,
+					Value: value,
+				}
+				if exp > 0 {
+					toAdd.Expiration = ptypes.DurationProto(exp)
+				}
+				newDims = append(newDims, toAdd)
+			}
+		}
+		sw.TaskDimensions = newDims
+
+		build := bbm.bb.BbagentArgs.Build
+		var curTimeout time.Duration
+		if build.SchedulingTimeout != nil {
+			var err error
+			if curTimeout, err = ptypes.Duration(build.SchedulingTimeout); err != nil {
+				return err
+			}
+		}
+		if maxExp > curTimeout {
+			build.SchedulingTimeout = ptypes.DurationProto(maxExp)
+		}
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) Env(env map[string]string) {
