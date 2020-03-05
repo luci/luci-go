@@ -1,0 +1,571 @@
+{
+  "created_ts": "2019-11-04T17:20:22.705202",
+  "task_slices": [
+    {
+      "expiration_secs": "240",
+      "wait_for_capacity": false,
+      "properties": {
+        "dimensions": [
+          {
+            "value": "Ubuntu",
+            "key": "os"
+          },
+          {
+            "value": "x86-64",
+            "key": "cpu"
+          },
+          {
+            "value": "Chrome",
+            "key": "pool"
+          },
+          {
+            "value": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
+            "key": "caches"
+          }
+        ],
+        "idempotent": false,
+        "secret_bytes": "PFJFREFDVEVEPg==",
+        "cipd_input": {
+          "packages": [
+            {
+              "path": ".",
+              "version": "latest",
+              "package_name": "infra/tools/luci/bbagent/${platform}"
+            },
+            {
+              "path": ".",
+              "version": "latest",
+              "package_name": "infra/tools/luci/kitchen/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/git/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/bb/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/buildbucket/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/cloudtail/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/git/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci-auth/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/docker-credential-luci/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/git-credential-luci/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/lucicfg/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/vpython-native/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/vpython/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/prpc/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages/cpython",
+              "version": "latest",
+              "package_name": "infra/python/cpython/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages/cpython3",
+              "version": "latest",
+              "package_name": "infra/python/cpython3/${platform}"
+            },
+            {
+              "path": "kitchen-checkout",
+              "version": "refs/heads/master",
+              "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
+            }
+          ],
+          "client_package": {
+            "version": "latest",
+            "package_name": "infra/tools/cipd/${platform}"
+          },
+          "server": "https://chrome-infra-packages.appspot.com"
+        },
+        "env_prefixes": [
+          {
+            "value": [
+              "cipd_bin_packages",
+              "cipd_bin_packages/bin",
+              "cipd_bin_packages/cpython",
+              "cipd_bin_packages/cpython/bin",
+              "cipd_bin_packages/cpython3",
+              "cipd_bin_packages/cpython3/bin"
+            ],
+            "key": "PATH"
+          },
+          {
+            "value": [
+              "cache/vpython"
+            ],
+            "key": "VPYTHON_VIRTUALENV_ROOT"
+          }
+        ],
+        "command": [
+          "bbagent${EXECUTABLE_SUFFIX}",
+          "eJzNVMuLHEUY357d2W0rySapsOyklWUd9uJgb0/3vHpGCREVfCxZCZuF4GGsrvq6pzLdXU119exERfTmWfAS8e4xnn0g/gkigp4EL6KgAf+AWD07hpAZxYMHLx/9/b7Xr75Ho9qYKzqC1NaCjkWhnLigHKaAq5RozKqRlEnB2X4kRBRDLgpJYZ+KxLICIXka5Xm8aLtMR1IkvEgWTVuMSLUUPkkX4VpY0FHOyaLlUiSWZInjyZKa2xkLl5PJx8tyb59AIBVdMNQ/esy8++m793+9/+UXb+GnUJWnoSS4Qrn1RFDwmNmZFErYMM1A8gRSZcc8Laa1Owf1c9p0C6gazGK8M+Z3n733W/XC3Z8+NF85O1d+/v2X7403jDf/MNA9A+2jdQmUZ4D3rHpYqEJCPoApSTLNyQkIHUdSFCkbjiDW9dCTyNybjxNvNS6hi+gMJEVMFAwjCriya6A7BqrtnSYdQhrxFJxc+7MiBonfabyNnkbmSOQqJQngXWunXAb7gYfNYLJPsizPhCrbgQ6QqSSPIpA5vupdQc82BprFGpUixZcb22gLoQhSkERxjWxYVa/veR0NVzjD561zpeNg4g5m8AfGt1X0ldH4+P9Nc7BDpT0bdlDQMahHq+HPK2jnr/W38xMik0ddrGcIGwlqK8iVvqCrM/pKjPUZ5iAn8xdwohe21DkFQqme9Cx4d6dxHq3SrMDrU79rd9vWSmMTVUSO128E2qfQ+gW0lgkR4/XnSx5grQzOotWIK1wKrW2itUgkBM+k1m20Mcluq1H5+vmHtVLfPn7t5tFLh9eGxy9fP7rx3MGL146H1w8Pjwavo1dnDQA5dJkbNtt+0+2GLUZ7Xr8NLgkYC1mv47u+F9B+p+v2KVCP+D3WdEkr9Nodtxe0wfPd9nDi4Y15MmvVvGdYDD0+60csIiaihe6enpx15aEJOP88EMf3+71e0236nZbf8lqdXrdZv4VemCVy5lumO8fKq/rb/5Zz6l5Sm8fkdnYb/4u7/Nq4+R8VuyghzJ0REJY7CckVyG+MNfPHT4wfjFXz/c0/AWMH8Y4"
+        ],
+        "env": [
+          {
+            "value": "FALSE",
+            "key": "BUILDBUCKET_EXPERIMENTAL"
+          },
+          {
+            "value": "test_canary",
+            "key": "SWARMING_TASK_TEMPLATE_NAME"
+          }
+        ],
+        "containment": {
+          "lower_priority": false,
+          "containment_type": "NOT_SPECIFIED"
+        },
+        "execution_timeout_secs": "1800",
+        "inputs_ref": {
+          "isolatedserver": "https://isolateserver-dev.appspot.com",
+          "namespace": "default-gzip"
+        },
+        "grace_period_secs": "30",
+        "caches": [
+          {
+            "path": "cache/builder",
+            "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2"
+          },
+          {
+            "path": "cache/git",
+            "name": "git"
+          },
+          {
+            "path": "cache/goma",
+            "name": "goma"
+          },
+          {
+            "path": "cache/vpython",
+            "name": "vpython"
+          }
+        ]
+      }
+    },
+    {
+      "expiration_secs": "21360",
+      "wait_for_capacity": false,
+      "properties": {
+        "dimensions": [
+          {
+            "value": "Ubuntu",
+            "key": "os"
+          },
+          {
+            "value": "x86-64",
+            "key": "cpu"
+          },
+          {
+            "value": "Chrome",
+            "key": "pool"
+          }
+        ],
+        "idempotent": false,
+        "secret_bytes": "PFJFREFDVEVEPg==",
+        "cipd_input": {
+          "packages": [
+            {
+              "path": ".",
+              "version": "latest",
+              "package_name": "infra/tools/luci/bbagent/${platform}"
+            },
+            {
+              "path": ".",
+              "version": "latest",
+              "package_name": "infra/tools/luci/kitchen/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/git/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/bb/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/buildbucket/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/cloudtail/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/git/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci-auth/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/docker-credential-luci/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/git-credential-luci/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/lucicfg/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/vpython-native/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/luci/vpython/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages",
+              "version": "latest",
+              "package_name": "infra/tools/prpc/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages/cpython",
+              "version": "latest",
+              "package_name": "infra/python/cpython/${platform}"
+            },
+            {
+              "path": "cipd_bin_packages/cpython3",
+              "version": "latest",
+              "package_name": "infra/python/cpython3/${platform}"
+            },
+            {
+              "path": "kitchen-checkout",
+              "version": "refs/heads/master",
+              "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
+            }
+          ],
+          "client_package": {
+            "version": "latest",
+            "package_name": "infra/tools/cipd/${platform}"
+          },
+          "server": "https://chrome-infra-packages.appspot.com"
+        },
+        "env_prefixes": [
+          {
+            "value": [
+              "cipd_bin_packages",
+              "cipd_bin_packages/bin",
+              "cipd_bin_packages/cpython",
+              "cipd_bin_packages/cpython/bin",
+              "cipd_bin_packages/cpython3",
+              "cipd_bin_packages/cpython3/bin"
+            ],
+            "key": "PATH"
+          },
+          {
+            "value": [
+              "cache/vpython"
+            ],
+            "key": "VPYTHON_VIRTUALENV_ROOT"
+          }
+        ],
+        "command": [
+          "bbagent${EXECUTABLE_SUFFIX}",
+          "eJzNVMuLHEUY357d2W0rySapsOyklWUd9uJgb0/3vHpGCREVfCxZCZuF4GGsrvq6pzLdXU119exERfTmWfAS8e4xnn0g/gkigp4EL6KgAf+AWD07hpAZxYMHLx/9/b7Xr75Ho9qYKzqC1NaCjkWhnLigHKaAq5RozKqRlEnB2X4kRBRDLgpJYZ+KxLICIXka5Xm8aLtMR1IkvEgWTVuMSLUUPkkX4VpY0FHOyaLlUiSWZInjyZKa2xkLl5PJx8tyb59AIBVdMNQ/esy8++m793+9/+UXb+GnUJWnoSS4Qrn1RFDwmNmZFErYMM1A8gRSZcc8Laa1Owf1c9p0C6gazGK8M+Z3n733W/XC3Z8+NF85O1d+/v2X7403jDf/MNA9A+2jdQmUZ4D3rHpYqEJCPoApSTLNyQkIHUdSFCkbjiDW9dCTyNybjxNvNS6hi+gMJEVMFAwjCriya6A7BqrtnSYdQhrxFJxc+7MiBonfabyNnkbmSOQqJQngXWunXAb7gYfNYLJPsizPhCrbgQ6QqSSPIpA5vupdQc82BprFGpUixZcb22gLoQhSkERxjWxYVa/veR0NVzjD561zpeNg4g5m8AfGt1X0ldH4+P9Nc7BDpT0bdlDQMahHq+HPK2jnr/W38xMik0ddrGcIGwlqK8iVvqCrM/pKjPUZ5iAn8xdwohe21DkFQqme9Cx4d6dxHq3SrMDrU79rd9vWSmMTVUSO128E2qfQ+gW0lgkR4/XnSx5grQzOotWIK1wKrW2itUgkBM+k1m20Mcluq1H5+vmHtVLfPn7t5tFLh9eGxy9fP7rx3MGL146H1w8Pjwavo1dnDQA5dJkbNtt+0+2GLUZ7Xr8NLgkYC1mv47u+F9B+p+v2KVCP+D3WdEkr9Nodtxe0wfPd9nDi4Y15MmvVvGdYDD0+60csIiaihe6enpx15aEJOP88EMf3+71e0236nZbf8lqdXrdZv4VemCVy5lumO8fKq/rb/5Zz6l5Sm8fkdnYb/4u7/Nq4+R8VuyghzJ0REJY7CckVyG+MNfPHT4wfjFXz/c0/AWMH8Y4"
+        ],
+        "env": [
+          {
+            "value": "FALSE",
+            "key": "BUILDBUCKET_EXPERIMENTAL"
+          },
+          {
+            "value": "test_canary",
+            "key": "SWARMING_TASK_TEMPLATE_NAME"
+          }
+        ],
+        "containment": {
+          "lower_priority": false,
+          "containment_type": "NOT_SPECIFIED"
+        },
+        "execution_timeout_secs": "1800",
+        "inputs_ref": {
+          "isolatedserver": "https://isolateserver-dev.appspot.com",
+          "namespace": "default-gzip"
+        },
+        "grace_period_secs": "30",
+        "caches": [
+          {
+            "path": "cache/builder",
+            "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2"
+          },
+          {
+            "path": "cache/git",
+            "name": "git"
+          },
+          {
+            "path": "cache/goma",
+            "name": "goma"
+          },
+          {
+            "path": "cache/vpython",
+            "name": "vpython"
+          }
+        ]
+      }
+    }
+  ],
+  "name": "bb-8897701085383235760-infra/ci/build-proto-experiment-linux-9754",
+  "task_id": "48504016bdbc3110",
+  "tags": [
+    "build_address:luci.infra.ci/build-proto-experiment-linux/9754",
+    "buildbucket_bucket:infra/ci",
+    "buildbucket_build_id:8897701085383235760",
+    "buildbucket_hostname:cr-buildbucket-dev.appspot.com",
+    "buildbucket_template_canary:0",
+    "builder:build-proto-experiment-linux",
+    "caches:builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
+    "cpu:x86-64",
+    "luci_project:infra",
+    "os:Ubuntu",
+    "pool:Chrome",
+    "priority:30",
+    "scheduler_invocation_id:9063131147423938160",
+    "scheduler_job_id:infra/build-proto-experiment-linux",
+    "service_account:adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
+    "swarming.pool.template:canary",
+    "swarming.pool.version:58290e0670cecf6a4796b603fc3dfe3b66d3779b",
+    "user:None",
+    "user_agent:luci-scheduler-dev"
+  ],
+  "authenticated": "project:infra",
+  "pubsub_topic": "projects/cr-buildbucket-dev/topics/swarming",
+  "priority": "30",
+  "pubsub_userdata": "{\"build_id\": 8897701085383235760, \"created_ts\": 1572888022640606, \"swarming_hostname\": \"chromium-swarm-dev.appspot.com\"}",
+  "user": "",
+  "service_account": "adhoc-testing@luci-token-server-dev.iam.gserviceaccount.com",
+  "bot_ping_tolerance_secs": "1200",
+  "expiration_secs": "21600",
+  "properties": {
+    "dimensions": [
+      {
+        "value": "Ubuntu",
+        "key": "os"
+      },
+      {
+        "value": "x86-64",
+        "key": "cpu"
+      },
+      {
+        "value": "Chrome",
+        "key": "pool"
+      },
+      {
+        "value": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
+        "key": "caches"
+      }
+    ],
+    "idempotent": false,
+    "secret_bytes": "PFJFREFDVEVEPg==",
+    "cipd_input": {
+      "packages": [
+        {
+          "path": ".",
+          "version": "latest",
+          "package_name": "infra/tools/luci/bbagent/${platform}"
+        },
+        {
+          "path": ".",
+          "version": "latest",
+          "package_name": "infra/tools/luci/kitchen/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/git/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/bb/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/buildbucket/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/cloudtail/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/git/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci-auth/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci/docker-credential-luci/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci/git-credential-luci/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci/lucicfg/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci/vpython-native/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/luci/vpython/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages",
+          "version": "latest",
+          "package_name": "infra/tools/prpc/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages/cpython",
+          "version": "latest",
+          "package_name": "infra/python/cpython/${platform}"
+        },
+        {
+          "path": "cipd_bin_packages/cpython3",
+          "version": "latest",
+          "package_name": "infra/python/cpython3/${platform}"
+        },
+        {
+          "path": "kitchen-checkout",
+          "version": "refs/heads/master",
+          "package_name": "infra/recipe_bundles/chromium.googlesource.com/infra/luci/recipes-py"
+        }
+      ],
+      "client_package": {
+        "version": "latest",
+        "package_name": "infra/tools/cipd/${platform}"
+      },
+      "server": "https://chrome-infra-packages.appspot.com"
+    },
+    "env_prefixes": [
+      {
+        "value": [
+          "cipd_bin_packages",
+          "cipd_bin_packages/bin",
+          "cipd_bin_packages/cpython",
+          "cipd_bin_packages/cpython/bin",
+          "cipd_bin_packages/cpython3",
+          "cipd_bin_packages/cpython3/bin"
+        ],
+        "key": "PATH"
+      },
+      {
+        "value": [
+          "cache/vpython"
+        ],
+        "key": "VPYTHON_VIRTUALENV_ROOT"
+      }
+    ],
+    "command": [
+      "bbagent${EXECUTABLE_SUFFIX}",
+      "eJzNVMuLHEUY357d2W0rySapsOyklWUd9uJgb0/3vHpGCREVfCxZCZuF4GGsrvq6pzLdXU119exERfTmWfAS8e4xnn0g/gkigp4EL6KgAf+AWD07hpAZxYMHLx/9/b7Xr75Ho9qYKzqC1NaCjkWhnLigHKaAq5RozKqRlEnB2X4kRBRDLgpJYZ+KxLICIXka5Xm8aLtMR1IkvEgWTVuMSLUUPkkX4VpY0FHOyaLlUiSWZInjyZKa2xkLl5PJx8tyb59AIBVdMNQ/esy8++m793+9/+UXb+GnUJWnoSS4Qrn1RFDwmNmZFErYMM1A8gRSZcc8Laa1Owf1c9p0C6gazGK8M+Z3n733W/XC3Z8+NF85O1d+/v2X7403jDf/MNA9A+2jdQmUZ4D3rHpYqEJCPoApSTLNyQkIHUdSFCkbjiDW9dCTyNybjxNvNS6hi+gMJEVMFAwjCriya6A7BqrtnSYdQhrxFJxc+7MiBonfabyNnkbmSOQqJQngXWunXAb7gYfNYLJPsizPhCrbgQ6QqSSPIpA5vupdQc82BprFGpUixZcb22gLoQhSkERxjWxYVa/veR0NVzjD561zpeNg4g5m8AfGt1X0ldH4+P9Nc7BDpT0bdlDQMahHq+HPK2jnr/W38xMik0ddrGcIGwlqK8iVvqCrM/pKjPUZ5iAn8xdwohe21DkFQqme9Cx4d6dxHq3SrMDrU79rd9vWSmMTVUSO128E2qfQ+gW0lgkR4/XnSx5grQzOotWIK1wKrW2itUgkBM+k1m20Mcluq1H5+vmHtVLfPn7t5tFLh9eGxy9fP7rx3MGL146H1w8Pjwavo1dnDQA5dJkbNtt+0+2GLUZ7Xr8NLgkYC1mv47u+F9B+p+v2KVCP+D3WdEkr9Nodtxe0wfPd9nDi4Y15MmvVvGdYDD0+60csIiaihe6enpx15aEJOP88EMf3+71e0236nZbf8lqdXrdZv4VemCVy5lumO8fKq/rb/5Zz6l5Sm8fkdnYb/4u7/Nq4+R8VuyghzJ0REJY7CckVyG+MNfPHT4wfjFXz/c0/AWMH8Y4"
+    ],
+    "env": [
+      {
+        "value": "FALSE",
+        "key": "BUILDBUCKET_EXPERIMENTAL"
+      },
+      {
+        "value": "test_canary",
+        "key": "SWARMING_TASK_TEMPLATE_NAME"
+      }
+    ],
+    "containment": {
+      "lower_priority": false,
+      "containment_type": "NOT_SPECIFIED"
+    },
+    "execution_timeout_secs": "1800",
+    "inputs_ref": {
+      "isolatedserver": "https://isolateserver-dev.appspot.com",
+      "namespace": "default-gzip"
+    },
+    "grace_period_secs": "30",
+    "caches": [
+      {
+        "path": "cache/builder",
+        "name": "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2"
+      },
+      {
+        "path": "cache/git",
+        "name": "git"
+      },
+      {
+        "path": "cache/goma",
+        "name": "goma"
+      },
+      {
+        "path": "cache/vpython",
+        "name": "vpython"
+      }
+    ]
+  }
+}
