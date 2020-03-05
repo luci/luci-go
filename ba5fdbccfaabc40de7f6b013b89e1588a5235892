@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "baa4132c_85af89e1",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:23:49Z",
+      "side": 1,
+      "message": "yes.",
+      "parentUuid": "13344576_357e0dec",
+      "revId": "ba5fdbccfaabc40de7f6b013b89e1588a5235892",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ba0e94c2_4604135e",
         "filename": "client/cmd/isolate/run.go",
         "patchSetId": 2
