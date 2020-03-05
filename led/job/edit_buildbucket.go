@@ -114,6 +114,13 @@ func (bbm *buildbucketEditor) Properties(props map[string]string, auto bool) {
 	panic("implement me")
 }
 
+func (bbm *buildbucketEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
+	bbm.tweak(func() error {
+		cipdPkgs.updateCipdPkgs(&bbm.bb.CipdPackages)
+		return nil
+	})
+}
+
 func (bbm *buildbucketEditor) SwarmingHostname(host string) {
 	if host == "" {
 		return
