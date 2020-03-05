@@ -115,7 +115,7 @@ func (jd *Definition) Edit(cb func(m Editor)) error {
 	if jd.GetBuildbucket() != nil {
 		m = newBuildbucketEditor(jd)
 	} else {
-		panic("implement me")
+		m = newSwarmingEditor(jd)
 	}
 
 	cb(m)
