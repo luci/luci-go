@@ -146,10 +146,11 @@ func ComputeRecipients(c context.Context, notifications notifypb.Notifications, 
 				return nil, err
 			}
 
-			req, err := http.NewRequestWithContext(c, "GET", url, nil)
+			req, err := http.NewRequest("GET", url, nil)
 			if err != nil {
 				return nil, err
 			}
+			req = req.WithContext(c)
 
 			response, err := (&http.Client{Transport: transport}).Do(req)
 			if err != nil {
