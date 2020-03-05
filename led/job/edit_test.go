@@ -9,6 +9,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	api "go.chromium.org/luci/swarming/proto/api"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -254,6 +255,93 @@ func TestTags(t *testing.T) {
 				})
 				So(jd.Info().Tags(), ShouldResemble, []string{
 					"key:value", "other:value",
+				})
+			},
+		},
+	})
+}
+
+func TestGerritChange(t *testing.T) {
+	t.Parallel()
+
+	mkChange := func(project string) *bbpb.GerritChange {
+		return &bbpb.GerritChange{
+			Host:     "host.example.com",
+			Project:  project,
+			Change:   1,
+			Patchset: 1,
+		}
+	}
+
+	runCases(t, `GerritChange`, []testCase{
+		{
+			name:   "nil",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(nil)
+					je.RemoveGerritChange(nil)
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldBeEmpty)
+			},
+		},
+
+		{
+			name:   "new",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(mkChange("project"))
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+					mkChange("project"),
+				})
+			},
+		},
+
+		{
+			name:   "dupe",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(mkChange("project"))
+					je.AddGerritChange(mkChange("project"))
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+					mkChange("project"),
+				})
+			},
+		},
+
+		{
+			name:   "remove",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(mkChange("a"))
+					je.AddGerritChange(mkChange("b"))
+					je.AddGerritChange(mkChange("c"))
+
+					je.RemoveGerritChange(mkChange("b"))
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+					mkChange("a"),
+					mkChange("c"),
+				})
+			},
+		},
+
+		{
+			name:   "remove (noop)",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.AddGerritChange(mkChange("a"))
+
+					je.RemoveGerritChange(mkChange("b"))
+				})
+				So(jd.HighLevelInfo().GerritChanges(), ShouldResemble, []*bbpb.GerritChange{
+					mkChange("a"),
 				})
 			},
 		},

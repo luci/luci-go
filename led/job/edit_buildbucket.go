@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -221,11 +222,37 @@ func (bbm *buildbucketEditor) PrefixPathEnv(values []string) {
 }
 
 func (bbm *buildbucketEditor) AddGerritChange(cl *bbpb.GerritChange) {
-	panic("implement me")
+	if cl == nil {
+		return
+	}
+
+	bbm.tweak(func() error {
+		gc := &bbm.bb.BbagentArgs.Build.Input.GerritChanges
+		for _, change := range *gc {
+			if proto.Equal(change, cl) {
+				return nil
+			}
+		}
+		*gc = append(*gc, cl)
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) RemoveGerritChange(cl *bbpb.GerritChange) {
-	panic("implement me")
+	if cl == nil {
+		return
+	}
+
+	bbm.tweak(func() error {
+		gc := &bbm.bb.BbagentArgs.Build.Input.GerritChanges
+		for idx, change := range *gc {
+			if proto.Equal(change, cl) {
+				*gc = append((*gc)[:idx], (*gc)[idx+1:]...)
+				return nil
+			}
+		}
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) GitilesCommit(commit *bbpb.GitilesCommit) {
