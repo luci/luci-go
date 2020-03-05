@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5fec5c61_9c199082",
+        "filename": "milo/frontend/appengine/service-trui.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T00:56:16Z",
+      "side": 1,
+      "message": "Or \"test-results-ui\" (let\u0027s pick one rather than mixing singular and plural \"results\")",
+      "parentUuid": "e49d82e6_8c43460b",
+      "range": {
+        "startLine": 1,
+        "startChar": 9,
+        "endLine": 1,
+        "endChar": 13
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "66ab5039_078e76f1",
         "filename": "milo/frontend/appengine/service-trui.yaml",
         "patchSetId": 1
@@ -65,6 +89,53 @@
         "startChar": 9,
         "endLine": 2,
         "endChar": 17
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f55f3201_17192353",
+        "filename": "milo/frontend/appengine/service-trui.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T00:56:16Z",
+      "side": 1,
+      "message": "Yeah, I don\u0027t think we actually want the nodejs runtime here, right? We won\u0027t be running any nodejs server code.",
+      "parentUuid": "66ab5039_078e76f1",
+      "range": {
+        "startLine": 2,
+        "startChar": 9,
+        "endLine": 2,
+        "endChar": 17
+      },
+      "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71c34293_8eb257d6",
+        "filename": "milo/frontend/appengine/test-results-ui/index.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T00:56:16Z",
+      "side": 1,
+      "message": "If this is the page users will see, let\u0027s call it \"LUCI Test Results\".",
+      "range": {
+        "startLine": 3,
+        "startChar": 7,
+        "endLine": 3,
+        "endChar": 22
       },
       "revId": "ee987f333c3cc322e367b3e1d6c7fae90010a896",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
