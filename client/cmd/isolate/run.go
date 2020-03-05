@@ -17,38 +17,41 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 
 	"github.com/maruel/subcommands"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
-func cmdRemap() *subcommands.Command {
+func cmdRun() *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "remap <options>",
+		UsageLine: "run <options>",
 
-		ShortDesc: "Creates a directory with all the dependencies mapped into it.",
-		LongDesc: `Creates a directory with all the dependencies mapped into it.
-
-Useful to test manually why a test is failing. The target executable is not run.`,
+		ShortDesc: "Run the commands in isolsted",
+		LongDesc:  `TODO`,
 		CommandRun: func() subcommands.CommandRun {
-			r := remapRun{}
+			r := runRun{}
 			r.commonFlags.Init()
 			r.isolateFlags.Init(&r.Flags)
-			r.Flags.StringVar(&r.outdir, "outdir", "", "Directory used to recreate the tree.")
 			return &r
 		},
 	}
 }
 
-type remapRun struct {
+type runRun struct {
 	commonFlags
 	isolateFlags
-
-	outdir string
 }
 
-func (r *remapRun) Parse(a subcommands.Application, args []string) error {
+func (r *runRun) verbose() bool {
+	return r.defaultFlags.Verbose
+}
+
+func (r *runRun) Parse(a subcommands.Application, args []string) error {
 	if err := r.commonFlags.Parse(); err != nil {
 		return err
 	}
@@ -64,14 +67,10 @@ func (r *remapRun) Parse(a subcommands.Application, args []string) error {
 		return errors.Reason("position arguments not expected").Err()
 	}
 
-	if r.outdir == "" {
-		return errors.Reason("-outdir is not specified").Err()
-	}
-
 	return nil
 }
 
-func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
+func (r *runRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := r.Parse(a, args); err != nil {
 		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 		return 1
@@ -89,11 +88,42 @@ func (r *remapRun) Run(a subcommands.Application, args []string, _ subcommands.E
 	return 0
 }
 
-func (r *remapRun) main(a subcommands.Application, args []string) error {
-	deps, rootDir, _, err := isolate.ProcessIsolate(&r.ArchiveOptions)
+func (r *runRun) main(a subcommands.Application, args []string) error {
+	deps, rootDir, isol, err := isolate.ProcessIsolate(&r.ArchiveOptions)
 	if err != nil {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}
 
-	return recreateTree(r.outdir, rootDir, deps)
+	var cleanupError error = nil
+	finalError := (&filesystem.TempDir{
+		Dir:    filepath.Dir(rootDir),
+		Prefix: time.Now().Format("2006-01-02"),
+		CleanupErrFunc: func(tdir string, err error) {
+			cleanupError = errors.Annotate(err, "failed to clean up %s", tdir).Err()
+		},
+	}).With(func(outDir string) error {
+		if err := recreateTree(outDir, rootDir, deps); err != nil {
+			return errors.Annotate(err, "failed to recreate tree").Err()
+		}
+		cmdAndArgs := append([]string{}, isol.Command...)
+		cmdAndArgs = append(cmdAndArgs, args...)
+		cwd := filepath.Join(outDir, isol.RelativeCwd)
+		// TODO: Ensure cwd exists + normalize cwd
+		if r.verbose() {
+			fmt.Fprintf(os.Stderr, "Running %v, cwd=%s\n", cmdAndArgs, cwd)
+		}
+		if len(cmdAndArgs) == 0 {
+			return errors.Reason("command cannot be empty").Err()
+		}
+		cmd := exec.Command(cmdAndArgs[0], cmdAndArgs[1:]...)
+		cmd.Dir = cwd
+		if err := cmd.Run(); err != nil {
+			return errors.Annotate(err, "failed to run: %v", cmdAndArgs).Err()
+		}
+		return nil
+	})
+	if finalError == nil {
+		finalError = cleanupError
+	}
+	return finalError
 }
