@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb44fd60_0c964f6d",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:10:50Z",
+      "side": 1,
+      "message": "I prefer to merge this to one line.",
+      "range": {
+        "startLine": 106,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 17
+      },
+      "revId": "04a35d76e3d89057149f6ed1669a03f87bf97fd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6574da9_bed8dbd9",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:10:50Z",
+      "side": 1,
+      "message": "this is not set?",
+      "range": {
+        "startLine": 112,
+        "startChar": 2,
+        "endLine": 112,
+        "endChar": 5
+      },
+      "revId": "04a35d76e3d89057149f6ed1669a03f87bf97fd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90300d08_752d1a5e",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T08:10:50Z",
+      "side": 1,
+      "message": "I prefer to merge this to one line.",
+      "range": {
+        "startLine": 121,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 17
+      },
+      "revId": "04a35d76e3d89057149f6ed1669a03f87bf97fd4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
