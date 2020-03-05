@@ -5,6 +5,7 @@
 package job
 
 import (
+	"sort"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -144,9 +145,26 @@ func (swm *swarmingEditor) PrefixPathEnv(values []string) {
 }
 
 func validateTags(tags []string) error {
-	panic("implement me")
+	for _, tag := range tags {
+		if !strings.Contains(tag, ":") {
+			return errors.Reason("bad tag %q: must be in the form 'key:value'", tag).Err()
+		}
+	}
+	return nil
 }
 
 func (swm *swarmingEditor) Tags(values []string) {
-	panic("implement me")
+	if len(values) == 0 {
+		return
+	}
+	swm.tweak(func() (err error) {
+		if err = validateTags(values); err == nil {
+			if swm.sw.Task == nil {
+				swm.sw.Task = &api.TaskRequest{}
+			}
+			swm.sw.Task.Tags = append(swm.sw.Task.Tags, values...)
+			sort.Strings(swm.sw.Task.Tags)
+		}
+		return
+	})
 }
