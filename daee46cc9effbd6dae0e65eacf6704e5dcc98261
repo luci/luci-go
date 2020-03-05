@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57b74c03_2340731d",
+        "filename": "milo/frontend/appengine/service-trui.yaml",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-05T04:06:02Z",
+      "side": 1,
+      "message": "Will this work? Does this imply that this part of the project will run on GAEv2?\n\nIs it possible for this to run on v2 while the rest of Milo runs on v1?",
+      "range": {
+        "startLine": 2,
+        "startChar": 9,
+        "endLine": 2,
+        "endChar": 14
+      },
+      "revId": "daee46cc9effbd6dae0e65eacf6704e5dcc98261",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
