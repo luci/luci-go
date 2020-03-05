@@ -40,7 +40,7 @@ func (b bbInfo) TaskName() string {
 }
 
 func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
-	if b.userPayload.GetDigest() != "" {
+	if b.userPayload.Digest != "" {
 		return b.userPayload, nil
 	}
 	return nil, nil
