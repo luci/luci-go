@@ -38,42 +38,42 @@ func TestMutateInvocation(t *testing.T) {
 	Convey("MayMutateInvocation", t, func() {
 		ctx := SpannerTestContext(t)
 
-		mayMutate := func() error {
-			return mutateInvocation(ctx, "inv", func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		mayMutate := func(id span.InvocationID) error {
+			return mutateInvocation(ctx, id, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 				return nil
 			})
 		}
 
 		Convey("no token", func() {
-			err := mayMutate()
+			err := mayMutate("inv")
 			So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token metadata value`)
 		})
 
 		Convey("with token", func() {
-			const token = "update token"
+			token, err := generateInvocationToken(ctx, "inv")
+			So(err, ShouldBeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 			Convey(`no invocation`, func() {
-				err := mayMutate()
+				err := mayMutate("inv")
 				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
 			})
 
 			Convey(`with finalized invocation`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{"UpdateToken": token}))
-				err := mayMutate()
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_FINALIZED, nil))
+				err := mayMutate("inv")
 				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
 			})
 
 			Convey(`with active invocation and different token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": "different token"}))
-				err := mayMutate()
+				MustApply(ctx, InsertInvocation("inv2", pb.Invocation_ACTIVE, nil))
+				err := mayMutate("inv2")
 				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
 			})
 
 			Convey(`with active invocation and same token`, func() {
-				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
-
-				err := mayMutate()
+				MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
+				err := mayMutate("inv")
 				So(err, ShouldBeNil)
 			})
 		})

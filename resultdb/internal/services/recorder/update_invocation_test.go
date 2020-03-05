@@ -102,7 +102,8 @@ func TestUpdateInvocation(t *testing.T) {
 
 		recorder := newTestRecorderServer()
 
-		const token = "update token"
+		token, err := generateInvocationToken(ctx, "inv")
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		validDeadline := pbutil.MustTimestampProto(start.Add(day))
@@ -129,7 +130,7 @@ func TestUpdateInvocation(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 		Convey("e2e", func() {
 			expected := &pb.Invocation{

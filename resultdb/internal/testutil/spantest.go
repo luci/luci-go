@@ -216,7 +216,6 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 		"ShardId":                           0,
 		"State":                             state,
 		"Realm":                             "",
-		"UpdateToken":                       "",
 		"InvocationExpirationTime":          future,
 		"ExpectedTestResultsExpirationTime": future,
 		"CreateTime":                        spanner.CommitTimestamp,

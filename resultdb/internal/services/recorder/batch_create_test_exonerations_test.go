@@ -127,7 +127,8 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 
 		recorder := newTestRecorderServer()
 
-		const token = "update token"
+		token, err := generateInvocationToken(ctx, "inv")
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`Invalid request`, func() {
@@ -147,7 +148,7 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 		})
 
 		// Insert the invocation.
-		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}))
+		MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 		e2eTest := func(withRequestID bool) {
 			req := &pb.BatchCreateTestExonerationsRequest{

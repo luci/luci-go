@@ -52,14 +52,14 @@ func TestFinalizeInvocation(t *testing.T) {
 		ctx := SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 
-		const token = "update token"
+		token, err := generateInvocationToken(ctx, "inv")
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		Convey(`finalized failed`, func() {
 			MustApply(ctx,
 				InsertInvocation("inv", pb.Invocation_FINALIZED, map[string]interface{}{
 					"Interrupted": true,
-					"UpdateToken": token,
 				}),
 			)
 			_, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
@@ -67,11 +67,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Idempotent`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{
-					"UpdateToken": token,
-				}),
-			)
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
@@ -83,11 +79,7 @@ func TestFinalizeInvocation(t *testing.T) {
 		})
 
 		Convey(`Success`, func() {
-			MustApply(ctx,
-				InsertInvocation("inv", pb.Invocation_ACTIVE, map[string]interface{}{
-					"UpdateToken": token,
-				}),
-			)
+			MustApply(ctx, InsertInvocation("inv", pb.Invocation_ACTIVE, nil))
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
 			So(err, ShouldBeNil)
 			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)

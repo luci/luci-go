@@ -44,10 +44,6 @@ CREATE TABLE Invocations (
   -- When expected results are removed, this column is set to NULL.
   ExpectedTestResultsExpirationTime TIMESTAMP,
 
-  -- Secret token that a client must provide to mutate this or any of the
-  -- interleaved rows.
-  UpdateToken STRING(64),
-
   -- When the invocation was created.
   CreateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
 

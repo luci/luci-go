@@ -88,7 +88,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 		ctx := SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 
-		const token = "update token"
+		token, err := generateInvocationToken(ctx, "including")
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, token))
 
 		insInv := InsertInvocation
@@ -131,7 +132,7 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 			Convey(`With existing inclusion`, func() {
 				MustApply(ctx,
-					insInv("including", pb.Invocation_ACTIVE, map[string]interface{}{"UpdateToken": token}),
+					insInv("including", pb.Invocation_ACTIVE, nil),
 					insInv("toberemoved", pb.Invocation_FINALIZED, nil),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{

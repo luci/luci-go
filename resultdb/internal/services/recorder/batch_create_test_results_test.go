@@ -164,10 +164,10 @@ func TestBatchCreateTestResults(t *testing.T) {
 		}
 
 		// Insert a sample invocation
-		const tok = "update token"
-		vs := map[string]interface{}{"UpdateToken": tok}
+		tok, err := generateInvocationToken(ctx, "u:build-1")
+		So(err, ShouldBeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
-		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, vs)
+		mut := InsertInvocation(span.InvocationID("u:build-1"), pb.Invocation_ACTIVE, nil)
 		MustApply(ctx, mut)
 
 		Convey("succeeds", func() {
@@ -193,6 +193,9 @@ func TestBatchCreateTestResults(t *testing.T) {
 			})
 
 			Convey("with an non-existing invocation", func() {
+				tok, err = generateInvocationToken(ctx, "inv")
+				So(err, ShouldBeNil)
+				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(UpdateTokenMetadataKey, tok))
 				req.Invocation = "invocations/inv"
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
