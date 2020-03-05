@@ -332,6 +332,30 @@
     },
     {
       "key": {
+        "uuid": "ae0bb993_4b13c783",
+        "filename": "resultdb/internal/services/recorder/invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-05T00:29:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c33adb7e_421b0fa2",
+      "range": {
+        "startLine": 120,
+        "startChar": 5,
+        "endLine": 120,
+        "endChar": 24
+      },
+      "revId": "4454959d3910612ae034823ce9c3589a15761efa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4be4ab6_6a77c55f",
         "filename": "resultdb/internal/testutil/spantest.go",
         "patchSetId": 2
