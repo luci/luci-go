@@ -34,6 +34,24 @@
       "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b3ae4f11_95642ec4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-05T09:10:50Z",
+      "side": 1,
+      "message": "Just extracting sample execution from mb.py and apply that to isolate run.",
+      "parentUuid": "8d2745d5_1e34f8b3",
+      "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
