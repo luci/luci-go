@@ -75,7 +75,14 @@ func (swm *swarmingEditor) ClearDimensions() {
 }
 
 func (swm *swarmingEditor) Env(env map[string]string) {
-	panic("implement me")
+	if len(env) == 0 {
+		return
+	}
+
+	swm.tweakSlices(func(slc *api.TaskSlice) error {
+		updateStringPairList(&slc.Properties.Env, env)
+		return nil
+	})
 }
 
 func (swm *swarmingEditor) Priority(priority int32) {
