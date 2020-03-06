@@ -126,7 +126,7 @@ The spec (as it is) for JobDefinition is at:
 			// TODO(iannucci): `get` to scrape from any URL
 			// IMPLEMENT getSwarmCmd(defaults),
 			// IMPLEMENT getBuildCmd(defaults),
-			// IMPLEMENT getBuilderCmd(defaults),
+			getBuilderCmd(defaults),
 
 			// commands to edit JobDescriptions.
 			// IMPLEMENT editCmd(defaults),
