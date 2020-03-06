@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"google.golang.org/appengine"
 
@@ -62,7 +61,7 @@ func main() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		ctx, cancel := context.WithTimeout(c.Context, 50*time.Second)
+		ctx, cancel := context.WithTimeout(c.Context, notify.PUBSUB_POST_REQUEST_TIMEOUT)
 		defer cancel()
 		c.Context = ctx
 
