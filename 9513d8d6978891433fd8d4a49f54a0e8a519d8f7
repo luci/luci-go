@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "5f8c1ab0_8d0a62b4",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-06T03:16:39Z",
+      "side": 1,
+      "message": "Isn\u0027t that gonna be super long...?",
+      "parentUuid": "a32b25e4_2e570dee",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "763d0a7c_b7ce94d1",
         "filename": "client/cmd/isolate/run.go",
         "patchSetId": 7
@@ -330,6 +354,30 @@
       "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1edf730b_3fb645fd",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-06T03:16:39Z",
+      "side": 1,
+      "message": "Ah, done (lcoally, will upload when the other comment is resolved)",
+      "parentUuid": "5a31368a_46790aa0",
+      "range": {
+        "startLine": 112,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 3
+      },
+      "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
