@@ -30,6 +30,9 @@ import (
 // IsNotExist calls os.IsNotExist on the unwrapped err.
 func IsNotExist(err error) bool { return os.IsNotExist(errors.Unwrap(err)) }
 
+// IsExist calls os.IsExist on the unwrapped err.
+func IsExist(err error) bool { return os.IsExist(errors.Unwrap(err)) }
+
 // MakeDirs is a convenience wrapper around os.MkdirAll that applies a 0755
 // mask to all created directories.
 func MakeDirs(path string) error {
@@ -423,6 +426,27 @@ func IsDir(path string) (bool, error) {
 		return false, err
 	}
 	return stat.IsDir(), nil
+}
+
+// MakeDirIfNotExistWithPerm creates a new directory at |path| with permission
+// |perm|, if it does not exist.
+func MakeDirIfNotExistWithPerm(path string, perm os.FileMode) error {
+	if isdir, _ := IsDir(path); isdir {
+		return nil
+	}
+	if err := os.MkdirAll(path, perm); err != nil {
+		isdir, _ := IsDir(path)
+		if !(os.IsExist(err) && isdir) {
+			return errors.Annotate(err, "").Err()
+		}
+	}
+	return nil
+}
+
+// MakeDirIfNotExist is a convenience wrapper of MakeDirIfNotExistWithPerm with
+// perm being 0755.
+func MakeDirIfNotExist(path string) error {
+	return MakeDirIfNotExistWithPerm(path, 0755)
 }
 
 // GetFreeSpace returns the number of free bytes.

@@ -465,6 +465,27 @@ func TestIsDir(t *testing.T) {
 	})
 }
 
+func TestMakeDirIfNotExist(t *testing.T) {
+	Convey("MakeDirIfNotExist", t, func() {
+		withTempDir(t, func(dir string) {
+			err := MakeDirIfNotExist(dir)
+			So(err, ShouldBeNil)
+
+			newDir := filepath.Join(dir, "new")
+			b, err := IsDir(newDir)
+			So(err, ShouldBeNil)
+			So(b, ShouldBeFalse)
+			err = MakeDirIfNotExist(newDir)
+			So(err, ShouldBeNil)
+
+			file := filepath.Join(dir, "file")
+			So(ioutil.WriteFile(file, []byte(""), 0644), ShouldBeNil)
+			err = MakeDirIfNotExist(file)
+			So(err, ShouldNotBeNil)
+		})
+	})
+}
+
 func TestGetFreeSpace(t *testing.T) {
 	t.Parallel()
 
