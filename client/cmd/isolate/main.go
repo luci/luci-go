@@ -30,7 +30,7 @@ import (
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.4"
+const version = "0.5"
 
 func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -42,6 +42,7 @@ func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 			cmdBatchArchive(defaultAuthOpts),
 			cmdCheck(),
 			cmdRemap(),
+			cmdRun(),
 			subcommands.CmdHelp,
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
