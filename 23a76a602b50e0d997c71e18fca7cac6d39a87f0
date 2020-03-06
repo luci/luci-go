@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48790810_f1a6a231",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-06T22:29:58Z",
+      "side": 1,
+      "message": "would it be hard to make it a flag? So we can experiment with this parameter without rebuilding images.",
+      "range": {
+        "startLine": 165,
+        "startChar": 29,
+        "endLine": 165,
+        "endChar": 30
+      },
+      "revId": "23a76a602b50e0d997c71e18fca7cac6d39a87f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
