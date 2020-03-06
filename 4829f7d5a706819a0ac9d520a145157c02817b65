@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7c151829_b9cca146",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-06T01:33:59Z",
+      "side": 1,
+      "message": "Agree on that. The reason I created this file is to have a glance of various timeouts in the system. We may have other timeouts though, like BB request timeout, history request timeout... and I feel like \"distributing\" them over many files makes it hard to understand the system.",
+      "parentUuid": "3e60f789_f756319e",
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "639dd171_1ea60a04",
         "filename": "luci_notify/notify/constants.go",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2020-03-06T01:20:00Z",
       "side": 1,
       "message": "2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21fed0d7_91772b86",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-06T01:33:59Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "639dd171_1ea60a04",
       "range": {
         "startLine": 1,
         "startChar": 13,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "9efd4ece_16adb28f",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-06T01:33:59Z",
+      "side": 1,
+      "message": "We have 30 secs for Logdog, so I want to reserve the other 30 secs for other operations. We can lower it though, but I prefer to be conservative.",
+      "parentUuid": "38803255_0dbb992b",
+      "range": {
+        "startLine": 21,
+        "startChar": 36,
+        "endLine": 21,
+        "endChar": 38
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "27b70db4_90089bf7",
         "filename": "luci_notify/notify/constants.go",
         "patchSetId": 2
@@ -76,6 +142,30 @@
       "writtenOn": "2020-03-06T01:20:00Z",
       "side": 1,
       "message": "Just curious - how did you arrive at this figure?",
+      "range": {
+        "startLine": 24,
+        "startChar": 31,
+        "endLine": 24,
+        "endChar": 47
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f92b51b4_06c92d55",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-06T01:33:59Z",
+      "side": 1,
+      "message": "When I investigated the log viewer, I can see that if a logdog request is successful, it succeed within 5 secs, otherwise it will almost certainly fail. 30 secs is just my conservative estimation, originally LogDog will only timeout after 50 secs, which I think too much.",
+      "parentUuid": "27b70db4_90089bf7",
       "range": {
         "startLine": 24,
         "startChar": 31,
