@@ -135,7 +135,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	// error getting the checkout (mostly because there is no source manifest)
 	// we should not throw 500, but just log the error, and inform the builder
 	// owner that they are missing source manifest in their builds
-	checkout, err := getCheckout(c, build)
+	logdogContext, _ := context.WithTimeout(c, LOGDOG_REQUEST_TIMEOUT)
+	checkout, err := getCheckout(logdogContext, build)
 	if err != nil {
 		// TODO (crbug.com/1058190): log the error and let the owner know
 		logging.Warningf(c, "Got error when getting source manifest for build %v", err)
