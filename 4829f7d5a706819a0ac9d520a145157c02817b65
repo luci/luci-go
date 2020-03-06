@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3e60f789_f756319e",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-06T01:20:00Z",
+      "side": 1,
+      "message": "Pulling these constants out into this separate file feels premature, as they currently only have one use each. Personally I\u0027d just put each of them in the file that uses them and not have this file. Up to you though.",
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "639dd171_1ea60a04",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-06T01:20:00Z",
+      "side": 1,
+      "message": "2020",
+      "range": {
+        "startLine": 1,
+        "startChar": 13,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38803255_0dbb992b",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-06T01:20:00Z",
+      "side": 1,
+      "message": "What\u0027s the reasoning behind raising the overall timeout from 50s-\u003e60s in this CL?",
+      "range": {
+        "startLine": 21,
+        "startChar": 36,
+        "endLine": 21,
+        "endChar": 38
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27b70db4_90089bf7",
+        "filename": "luci_notify/notify/constants.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-06T01:20:00Z",
+      "side": 1,
+      "message": "Just curious - how did you arrive at this figure?",
+      "range": {
+        "startLine": 24,
+        "startChar": 31,
+        "endLine": 24,
+        "endChar": 47
+      },
+      "revId": "4829f7d5a706819a0ac9d520a145157c02817b65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
