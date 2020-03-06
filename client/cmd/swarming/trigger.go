@@ -292,6 +292,11 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		fmt.Println()
 	}
 
+	if !c.defaultFlags.Quiet {
+		fmt.Println("You can also see the task status in")
+		fmt.Printf("  %s/task?id=%s\n", c.serverURL, result.TaskId)
+	}
+
 	duration := time.Since(start)
 	log.Printf("Duration: %s\n", units.Round(duration, time.Millisecond))
 	return nil
