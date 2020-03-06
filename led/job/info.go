@@ -49,7 +49,7 @@ type Info interface {
 	//
 	// Returns an error if not all slices in the swarming task have the same set
 	// of packages.
-	// IMPLEMENT CIPDPkgs() (CIPDPkgs, error)
+	CIPDPkgs() (CIPDPkgs, error)
 
 	// Env returns any environment variable overrides in the job.
 	Env() (map[string]string, error)
