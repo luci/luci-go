@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "21bbe76f_f1e6b399",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T03:27:45Z",
+      "side": 1,
+      "message": "!\u003d ?",
+      "range": {
+        "startLine": 120,
+        "startChar": 9,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "db4783fe444ac4f3d6b20a20069ae3ca8de109c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
