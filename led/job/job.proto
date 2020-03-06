@@ -1,0 +1,88 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package job;
+option go_package = "go.chromium.org/luci/led/job;job";
+
+import "google/protobuf/duration.proto";
+
+import "go.chromium.org/luci/buildbucket/proto/launcher.proto";
+import "go.chromium.org/luci/swarming/proto/api/swarming.proto";
+
+// Buildbucket is, ideally, just a BBAgentArgs, but there are bits of data that
+// led needs to track which aren't currently contained in BBAgentArgs.
+//
+// Where it makes sense, this additional data should be moved from this
+// Buildbucket message into BBAgentArgs, but for now we store it separately to
+// get led v2 up and running.
+message Buildbucket {
+  // NOTE: for kitchen builds, the "executable_path" field is used to hold the
+  // argument "$checkout_dir/luciexe". This is a bit bogus, as for kitchen we
+  // only will use the "$checkout_dir" bit; but it makes it easy to upgrade
+  // a task from kitchen to luciexe by just flipping the 'legacy_kitchen'
+  // boolean.
+  buildbucket.v2.BBAgentArgs bbagent_args = 1;
+
+  repeated swarming.v1.CIPDPackage cipd_packages = 2;
+
+  repeated swarming.v1.StringPair env_vars = 3;
+  repeated swarming.v1.StringListPair env_prefixes = 4;
+  repeated string extra_tags = 5;
+
+  google.protobuf.Duration grace_period = 6;
+  google.protobuf.Duration bot_ping_tolerance = 7;
+
+  swarming.v1.Containment containment = 8;
+
+  // Indicates that this build should be generated as a legacy kitchen task when
+  // launched.
+  bool legacy_kitchen = 9;
+
+  // Eventually becomes the name of the launched swarming task.
+  string name = 10;
+}
+
+// Swarming is the raw TaskRequest. When a Definition is in this form, the
+// user's ability to manipulate it via `led` subcommands is extremely limited.
+message Swarming {
+  swarming.v1.TaskRequest task = 1;
+
+  string hostname = 2;
+}
+
+message Definition {
+  oneof job_type {
+    // Represents a buildbucket-native task; May be recovered from a swarming
+    // task, or provided directly via buildbucket.
+    Buildbucket buildbucket = 1;
+
+    // Represents a swarming task. This will be filled for jobs sourced directly
+    // from swarming which weren't recognized as a buildbucket task.
+    //
+    // A limited subset of the edit and info functionality is available for
+    // raw swarming jobs.
+    Swarming swarming = 2;
+  }
+
+  // If set, this holds the CASTree to use with the build, when launched.
+  //
+  // At the time of launch, this will be merged with
+  // swarming.task_slice[*].properties.cas_inputs, if any.
+  //
+  // The 'server' and 'namespace' fields here are used as the defaults for any
+  // digests specified without server/namespace.
+  swarming.v1.CASTree user_payload = 3;
+}
