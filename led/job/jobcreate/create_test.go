@@ -71,6 +71,18 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	return jd
 }
 
+func TestCreateSwarmRaw(t *testing.T) {
+	t.Parallel()
+
+	Convey(`consume non-buildbucket swarming task`, t, func() {
+		jd := readTestFixture("raw")
+
+		So(jd.GetSwarming(), ShouldNotBeNil)
+		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
+		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+	})
+}
+
 func TestCreateBBagent(t *testing.T) {
 	t.Parallel()
 
