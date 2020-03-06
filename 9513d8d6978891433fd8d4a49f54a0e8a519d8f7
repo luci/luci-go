@@ -167,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "ee501ae6_17125ec8",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T02:52:28Z",
+      "side": 1,
+      "message": "\u003e Hmm, that requires a Context (of course we can create one, but does that make sense?). Also the other loggings in this module is done via \"fmt\".\n\u003e \n\nI mean to use standard log package.\nlog.Infof respects verbose flag .\n\n\u003e BTW, for exec.Command, what i did is simply assign os.Stdout to its Stdout. I don\u0027t think this deserves the more complicated mechanism of polling stdout in a loop?\n\nYes, you don\u0027t need poll.",
+      "parentUuid": "966214e5_d97f98d7",
+      "range": {
+        "startLine": 112,
+        "startChar": 2,
+        "endLine": 114,
+        "endChar": 3
+      },
+      "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "db7a6b0e_716ac592",
         "filename": "client/cmd/isolate/run.go",
         "patchSetId": 7

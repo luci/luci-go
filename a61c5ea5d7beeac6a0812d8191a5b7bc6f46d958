@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "01376635_240f9981",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T02:52:28Z",
+      "side": 1,
+      "message": "drop",
+      "range": {
+        "startLine": 38,
+        "startChar": 25,
+        "endLine": 38,
+        "endChar": 28
+      },
+      "revId": "a61c5ea5d7beeac6a0812d8191a5b7bc6f46d958",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d01a391d_55673d9d",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T02:52:28Z",
+      "side": 1,
+      "message": "\u0027-isolated\u0027 is go style flag",
+      "range": {
+        "startLine": 38,
+        "startChar": 33,
+        "endLine": 38,
+        "endChar": 43
+      },
+      "revId": "a61c5ea5d7beeac6a0812d8191a5b7bc6f46d958",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
