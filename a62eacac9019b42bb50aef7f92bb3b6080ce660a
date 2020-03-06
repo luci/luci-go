@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "586b15da_ef0eaeb2",
+        "filename": "led/job/info.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-06T02:30:32Z",
+      "side": 1,
+      "message": "I haven\u0027t yet seen the CL which explains why you need separate methods for fetching info and fetching info only if it\u0027s Buildbucket.",
+      "revId": "a62eacac9019b42bb50aef7f92bb3b6080ce660a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
