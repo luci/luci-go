@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "775d9f4c_73a7c5c6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T06:01:36Z",
+      "side": 1,
+      "message": "why os.MkdirAll is not sufficnent?\nhttps://golang.org/pkg/os/#MkdirAll",
+      "revId": "5d9628ec8b25e9e407fce277af0125e81c36afe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
