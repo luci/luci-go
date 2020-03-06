@@ -122,7 +122,11 @@ func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
 }
 
 func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
-	panic("implement me")
+	if gc := b.GetBbagentArgs().GetBuild().GetInput().GetGitilesCommit(); gc != nil {
+		toRet := *gc
+		ret = &toRet
+	}
+	return
 }
 
 func (b bbInfo) TaskPayload() (cipdPkg, cipdVers string, pathInTask string) {
