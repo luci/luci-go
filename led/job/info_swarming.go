@@ -15,6 +15,7 @@
 package job
 
 import (
+	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
 
@@ -34,7 +35,27 @@ func (s swInfo) TaskName() string {
 }
 
 func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
-	panic("implement me")
+	isolatedOptions := map[string]*swarmingpb.CASTree{}
+	if up := s.userPayload; up != nil {
+		isolatedOptions[up.Digest] = up
+	}
+
+	if sw := s.Swarming; sw != nil {
+		for _, slc := range sw.GetTask().GetTaskSlices() {
+			input := slc.GetProperties().GetCasInputs()
+			if input != nil {
+				isolatedOptions[input.Digest] = input
+			}
+		}
+	}
+	if len(isolatedOptions) > 1 {
+		return nil, errors.Reason(
+			"Definition contains multiple isolateds: %v", isolatedOptions).Err()
+	}
+	for _, v := range isolatedOptions {
+		return v, nil
+	}
+	return nil, nil
 }
 
 func (s swInfo) Env() (ret map[string]string, err error) {
