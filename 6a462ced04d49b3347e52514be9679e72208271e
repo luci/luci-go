@@ -2,6 +2,92 @@
   "comments": [
     {
       "key": {
+        "uuid": "7945b9ba_9fd83bf4",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "golint likes all public symbols to have comments\n\nnote that for grouped constants like L23-28, one comment before `const (` is enough",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ac82479_c70f8a74",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "not legacy",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95496cab_15347377",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "the rest of luci-go/buildbucket uses \"pb\" alias for this package https://source.chromium.org/search?q\u003dpb%5C%20%22go.chromium.org%2Fluci%2Fbuildbucket%2Fproto%22%20lang:go%20f:buildbucket",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 14
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41f40d54_062b70a1",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "why not proto-gae? https://source.chromium.org/search?q\u003dlang:go%20proto-gae\u0026sq\u003d\n\nyou will also need this for infra, properties and steps",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "68a52b7d_a8bf26b1",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
@@ -19,6 +105,41 @@
     },
     {
       "key": {
+        "uuid": "c7474c24_a0c6bc5e",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "Build entity does store infra, steps, input.properties and output.properties.\nthey are stored in BuildInfra, BuildSteps, BuildInputProperties and BuildOutputProperties entities.\n\nonly during build creation, Build.proto (in python) has these fields populated, but they are trimmed right before writing to ds",
+      "parentUuid": "68a52b7d_a8bf26b1",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8275d6d_e24af2c6",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "ds does not know how to index byte props anyway",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c4c44a34_ca3a4f4e",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
@@ -30,6 +151,30 @@
       "writtenOn": "2020-03-06T04:07:48Z",
       "side": 1,
       "message": "Copy/paste from Python code. I don\u0027t want to use crbug/1042991 and I also don\u0027t want to assign it to myself. Let me know if there\u0027s a crbug to use or if this is fine.",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 14
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e7323bb_7f2b6a2d",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-06T23:23:32Z",
+      "side": 1,
+      "message": "no bug\ni didn\u0027t find any reliance on create_time indexes at HEAD https://source.chromium.org/search?q\u003dcreate_time%20f:cr-buildbucket%20-f:test\u0026sq\u003d",
+      "parentUuid": "c4c44a34_ca3a4f4e",
       "range": {
         "startLine": 93,
         "startChar": 9,
