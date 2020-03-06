@@ -17,12 +17,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/maruel/subcommands"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/filesystem"
 )
 
 func cmdRemap() *subcommands.Command {
@@ -97,27 +95,5 @@ func (r *remapRun) main(a subcommands.Application, args []string) error {
 		return errors.Annotate(err, "failed to process isolate").Err()
 	}
 
-	if err := filesystem.MakeDirs(r.outdir); err != nil {
-		return errors.Annotate(err, "failed to create directory: %s", r.outdir).Err()
-	}
-
-	createdDirs := make(map[string]struct{})
-
-	for _, dep := range deps {
-		dst := filepath.Join(r.outdir, dep[len(rootDir):])
-
-		dstDir := filepath.Dir(dst)
-		if _, ok := createdDirs[dstDir]; !ok {
-			if err := filesystem.MakeDirs(dstDir); err != nil {
-				return errors.Annotate(err, "failed to call MakeDirs(%s)", dstDir).Err()
-			}
-			createdDirs[dstDir] = struct{}{}
-		}
-
-		err := filesystem.HardlinkRecursively(dep, dst)
-		if err != nil {
-			return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", dep, dst).Err()
-		}
-	}
-	return nil
+	return recreateTree(r.outdir, rootDir, deps)
 }

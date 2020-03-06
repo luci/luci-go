@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolatedclient"
+	"go.chromium.org/luci/common/system/filesystem"
 )
 
 type commonFlags struct {
@@ -151,4 +152,28 @@ type loggingFlags struct {
 
 func (lf *loggingFlags) Init(f *flag.FlagSet) {
 	f.StringVar(&lf.EventlogEndpoint, "eventlog-endpoint", "", `The URL destination for eventlogs. The special values "prod" or "test" may be used to target the standard prod or test urls respectively. An empty string disables eventlogging.`)
+}
+
+func recreateTree(outDir string, rootDir string, deps []string) error {
+	if err := filesystem.MakeDirs(outDir); err != nil {
+		return errors.Annotate(err, "failed to create directory: %s", outDir).Err()
+	}
+	createdDirs := make(map[string]struct{})
+	for _, dep := range deps {
+		dst := filepath.Join(outDir, dep[len(rootDir):])
+
+		dstDir := filepath.Dir(dst)
+		if _, ok := createdDirs[dstDir]; !ok {
+			if err := filesystem.MakeDirs(dstDir); err != nil {
+				return errors.Annotate(err, "failed to call MakeDirs(%s)", dstDir).Err()
+			}
+			createdDirs[dstDir] = struct{}{}
+		}
+
+		err := filesystem.HardlinkRecursively(dep, dst)
+		if err != nil {
+			return errors.Annotate(err, "failed to call HardlinkRecursively(%s, %s)", dep, dst).Err()
+		}
+	}
+	return nil
 }
