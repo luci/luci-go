@@ -99,7 +99,12 @@ type HighLevelInfo interface {
 //
 // Returns nil if the Definition doesn't support Info().
 func (jd *Definition) Info() Info {
-	panic("implement me")
+	if bb := jd.GetBuildbucket(); bb != nil {
+		return bbInfo{bb, jd.UserPayload}
+	} else if sw := jd.GetSwarming(); sw != nil {
+		panic("implement me")
+	}
+	return nil
 }
 
 // HighLevelInfo returns an accessor object which can returns high-level
@@ -108,5 +113,8 @@ func (jd *Definition) Info() Info {
 // Only returns a functioning implementation for Buildbucket jobs, otherwise
 // returns nil.
 func (jd *Definition) HighLevelInfo() HighLevelInfo {
-	panic("implement me")
+	if bb := jd.GetBuildbucket(); bb != nil {
+		return bbInfo{bb, jd.UserPayload}
+	}
+	return nil
 }
