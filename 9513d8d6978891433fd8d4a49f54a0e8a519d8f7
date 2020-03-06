@@ -49,6 +49,52 @@
     },
     {
       "key": {
+        "uuid": "d74080aa_c2ef0901",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T02:55:42Z",
+      "side": 1,
+      "message": "I prefer to strip this",
+      "range": {
+        "startLine": 97,
+        "startChar": 15,
+        "endLine": 97,
+        "endChar": 17
+      },
+      "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "043b56cd_dfd92003",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-06T02:55:42Z",
+      "side": 1,
+      "message": "I prefer to assign this to err in \u0027if\u0027 statement?",
+      "range": {
+        "startLine": 98,
+        "startChar": 1,
+        "endLine": 98,
+        "endChar": 11
+      },
+      "revId": "9513d8d6978891433fd8d4a49f54a0e8a519d8f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "763d0a7c_b7ce94d1",
         "filename": "client/cmd/isolate/run.go",
         "patchSetId": 7
