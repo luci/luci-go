@@ -102,7 +102,7 @@ func (jd *Definition) Info() Info {
 	if bb := jd.GetBuildbucket(); bb != nil {
 		return bbInfo{bb, jd.UserPayload}
 	} else if sw := jd.GetSwarming(); sw != nil {
-		panic("implement me")
+		return swInfo{sw, jd.UserPayload}
 	}
 	return nil
 }
