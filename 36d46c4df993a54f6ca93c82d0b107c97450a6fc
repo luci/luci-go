@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "157f4e1f_65076764",
+        "filename": "led/job/info.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-06T18:49:42Z",
+      "side": 1,
+      "message": "It would be possible to pass a swarming task through led with multiple different isolateds, but it wouldn\u0027t be supported to attempt to read/manipulate those isolateds via e.g. `led edit-isolated`. We could change this later, of course, but today I\u0027m not aware of any swarming tasks which do this, so I decided to make this an error so the rest of the code could be simpler. Otherwise the isolate editing functionality would need to run for each slice separately when using a raw swarming job.",
+      "parentUuid": "c07bd494_37c2aad9",
+      "revId": "36d46c4df993a54f6ca93c82d0b107c97450a6fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d75bc2b_7f2c14ee",
         "filename": "led/job/info.go",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2020-03-06T02:08:01Z",
       "side": 1,
       "message": "Would there potentially be non-common info for Swarming? How about CommonInfo and BuildbucketInfo?",
+      "range": {
+        "startLine": 67,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 16
+      },
+      "revId": "36d46c4df993a54f6ca93c82d0b107c97450a6fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "937eaeda_2ffa3432",
+        "filename": "led/job/info.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-06T18:49:42Z",
+      "side": 1,
+      "message": "Clarified in the comment; Buildbucket jobs support a strict superset of the info/edit capabilities vs raw swarming jobs.\n\nI was trying to keep the interface names service agnostic so that, for example, \u0027Info\u0027 could apply to, e.g. an RBE job, and \u0027HighLevelInfo\u0027 could apply to a BuildDumpster2000 job (or whatever evolution of buildbucket there is).",
+      "parentUuid": "4d75bc2b_7f2c14ee",
       "range": {
         "startLine": 67,
         "startChar": 3,
@@ -62,6 +104,30 @@
       "revId": "36d46c4df993a54f6ca93c82d0b107c97450a6fc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ecf25be_0fa8b266",
+        "filename": "led/job/info.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-06T18:49:42Z",
+      "side": 1,
+      "message": "s/high-level/generic",
+      "parentUuid": "d8a62627_6fe25170",
+      "range": {
+        "startLine": 95,
+        "startChar": 59,
+        "endLine": 95,
+        "endChar": 63
+      },
+      "revId": "36d46c4df993a54f6ca93c82d0b107c97450a6fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
