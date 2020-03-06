@@ -52,6 +52,24 @@
       "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1029410c_fa87f2c8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-06T02:19:21Z",
+      "side": 1,
+      "message": "I tested with this command:\n\n` client/cmd/isolate/isolate run -i  out/default/content_browsertests.isolate -verbose -- --test-launcher-retry-limit\u003d0`\n\nI didn\u0027t finish running it, but at least the output looked identical to `tools/mb/mb.py run out/default/ content_browsertests -- --test-launcher-retry-limit\u003d0`.\n\nIf you know a smaller isolate test case, maybe i can give that a try.",
+      "parentUuid": "b3ae4f11_95642ec4",
+      "revId": "16614f626bb83bf8bd05350b2452680444f283ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
