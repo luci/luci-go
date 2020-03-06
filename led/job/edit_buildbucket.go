@@ -101,7 +101,13 @@ func (bbm *buildbucketEditor) Env(env map[string]string) {
 }
 
 func (bbm *buildbucketEditor) Priority(priority int32) {
-	panic("implement me")
+	if priority < 0 {
+		return
+	}
+	bbm.tweak(func() error {
+		bbm.bb.BbagentArgs.Build.Infra.Swarming.Priority = priority
+		return nil
+	})
 }
 
 func (bbm *buildbucketEditor) Properties(props map[string]string, auto bool) {
@@ -109,7 +115,14 @@ func (bbm *buildbucketEditor) Properties(props map[string]string, auto bool) {
 }
 
 func (bbm *buildbucketEditor) SwarmingHostname(host string) {
-	panic("implement me")
+	if host == "" {
+		return
+	}
+
+	bbm.tweak(func() (err error) {
+		bbm.bb.BbagentArgs.Build.Infra.Swarming.Hostname = host
+		return
+	})
 }
 
 func (bbm *buildbucketEditor) Experimental(isExperimental bool) {
