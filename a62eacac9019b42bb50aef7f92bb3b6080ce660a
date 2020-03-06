@@ -16,6 +16,24 @@
       "revId": "a62eacac9019b42bb50aef7f92bb3b6080ce660a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "153890c7_17407a25",
+        "filename": "led/job/info.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-06T18:40:45Z",
+      "side": 1,
+      "message": "Correct. There are bits of info (everything in HighLevelInfo) which are only needed for buildbucket based jobs.",
+      "parentUuid": "586b15da_ef0eaeb2",
+      "revId": "a62eacac9019b42bb50aef7f92bb3b6080ce660a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
