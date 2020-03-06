@@ -22,6 +22,30 @@
       "revId": "db4783fe444ac4f3d6b20a20069ae3ca8de109c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84f78e40_00a04cc6",
+        "filename": "client/cmd/isolate/run.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-06T03:42:50Z",
+      "side": 1,
+      "message": "nice catch, thx!",
+      "parentUuid": "21bbe76f_f1e6b399",
+      "range": {
+        "startLine": 120,
+        "startChar": 9,
+        "endLine": 120,
+        "endChar": 11
+      },
+      "revId": "db4783fe444ac4f3d6b20a20069ae3ca8de109c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
