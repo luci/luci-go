@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -110,10 +111,12 @@ var (
 // application is the Archivist application state.
 type application struct {
 	service.Service
+
+	maxConcurrentTasks int
 }
 
 // runForever runs the archivist loop forever.
-func runForever(c context.Context, ar archivist.Archivist) error {
+func runForever(c context.Context, taskConcurrency int, ar archivist.Archivist) error {
 	sleepTime := 1
 	client := ar.Service
 	// Forever loop.
@@ -157,20 +160,34 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 			if len(tasks.Tasks) == 0 {
 				return errNoWorkToDo
 			}
-			merr := errors.NewLazyMultiError(len(tasks.Tasks))
+
+			var ackTasksM sync.Mutex
 			ackTasks := make([]*logdog.ArchiveTask, 0, len(tasks.Tasks))
-			for i, task := range tasks.Tasks {
-				deleteTask := false
-				startTime := clock.Now(c)
-				if err := ar.ArchiveTask(nc, task); err != nil {
-					merr.Assign(i, err)
-				} else { // err == nil
-					ackTasks = append(ackTasks, task)
-					deleteTask = true
+
+			merr := parallel.WorkPool(taskConcurrency, func(ch chan<- func() error) {
+				for i := range tasks.Tasks {
+					task := tasks.Tasks[i]
+					ch <- func() (err error) {
+						deleteTask := false
+						startTime := clock.Now(c)
+
+						defer func() {
+							duration := clock.Now(c).Sub(startTime)
+							tsTaskProcessingTime.Add(c, float64(duration.Nanoseconds())/1000000, deleteTask)
+						}()
+
+						if err = ar.ArchiveTask(nc, task); err == nil {
+							deleteTask = true
+							ackTasksM.Lock()
+							defer ackTasksM.Unlock()
+							ackTasks = append(ackTasks, task)
+						}
+
+						return
+					}
 				}
-				duration := clock.Now(c).Sub(startTime)
-				tsTaskProcessingTime.Add(c, float64(duration.Nanoseconds())/1000000, deleteTask)
-			}
+			})
+
 			tsNackCount.Add(c, int64(len(tasks.Tasks)-len(ackTasks)))
 			// Ack the successful tasks.  We log the error here since there's nothing we can do.
 			if len(ackTasks) > 0 {
@@ -189,7 +206,8 @@ func runForever(c context.Context, ar archivist.Archivist) error {
 				"timeSpentSec": duration.Seconds(),
 			}.Infof(c, "Done archiving %d items (%d successful) took %.2fs", len(tasks.Tasks), len(ackTasks), duration.Seconds())
 			tsLoopCycleTime.Add(c, float64(duration.Nanoseconds()/1000000))
-			return merr.Get()
+
+			return merr
 		}(); err != nil {
 			// Back off on errors.
 			sleepTime *= 2
@@ -302,7 +320,7 @@ func (a *application) runArchivist(c context.Context) error {
 	fetchLoopParams(c)
 	go loopParamsUpdater(c)
 
-	return runForever(c, ar)
+	return runForever(c, a.maxConcurrentTasks, ar)
 }
 
 // GetSettingsLoader is an archivist.SettingsLoader implementation that merges
@@ -367,5 +385,8 @@ func main() {
 			DefaultAuthOptions: chromeinfra.DefaultAuthOptions(),
 		},
 	}
+	a.Flags.IntVar(&a.maxConcurrentTasks, "max-concurrent-tasks", 1,
+		"Maximum number of archive tasks to process concurrently. "+
+			"Pass 0 to set infinite limit.")
 	a.Run(context.Background(), a.runArchivist)
 }
