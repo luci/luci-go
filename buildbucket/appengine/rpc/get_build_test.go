@@ -159,10 +159,14 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("found", func() {
 				So(datastore.Put(ctx, &model.Build{
-					ID:        1,
-					Project:   "project",
-					BucketID:  "bucket",
-					BuilderID: "builder",
+					Proto: model.BuildProto{buildbucketpb.Build{
+						Id: 1,
+						Builder: &buildbucketpb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					}},
 				}), ShouldBeNil)
 				req := &buildbucketpb.GetBuildRequest{
 					Id: 1,

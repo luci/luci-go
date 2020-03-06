@@ -70,14 +70,8 @@ func (*Builds) GetBuild(ctx context.Context, req *buildbucketpb.GetBuildRequest)
 		default:
 			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 		}
-		return &buildbucketpb.Build{
-			Builder: &buildbucketpb.BuilderID{
-				Project: ent.Project,
-				Bucket:  ent.BucketID,
-				Builder: ent.BuilderID,
-			},
-			Id: ent.ID,
-		}, nil
+		// TODO(crbug/1042991): Merge in zeroed properties.
+		return &ent.Proto.Build, nil
 	}
 	// TODO(crbug/1042991): Implement get by builder/build number.
 	return &buildbucketpb.Build{}, nil
