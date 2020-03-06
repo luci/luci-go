@@ -111,6 +111,13 @@ func (swm *swarmingEditor) Priority(priority int32) {
 	})
 }
 
+func (swm *swarmingEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
+	swm.tweakSlices(func(slc *api.TaskSlice) error {
+		cipdPkgs.updateCipdPkgs(&slc.Properties.CipdInputs)
+		return nil
+	})
+}
+
 func (swm *swarmingEditor) SwarmingHostname(host string) {
 	if host == "" {
 		return

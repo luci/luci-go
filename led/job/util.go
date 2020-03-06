@@ -15,8 +15,27 @@
 package job
 
 import (
+	"reflect"
+	"sort"
+
 	api "go.chromium.org/luci/swarming/proto/api"
 )
+
+func keysOf(mapish interface{}) []string {
+	mapV := reflect.ValueOf(mapish)
+	if mapV.Kind() != reflect.Map {
+		panic("keysOf expected a map")
+	}
+	keys := []string{}
+	for _, key := range mapV.MapKeys() {
+		if key.Kind() != reflect.String {
+			panic("keysOf expected a map with string keys")
+		}
+		keys = append(keys, key.String())
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 func updateStringPairList(list *[]*api.StringPair, updates map[string]string) {
 	if len(updates) == 0 {
