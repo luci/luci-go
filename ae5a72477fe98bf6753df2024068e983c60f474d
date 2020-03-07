@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5929f102_0652b880",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-07T02:57:49Z",
+      "side": 1,
+      "message": "In theory this doesn\u0027t guarantee the same bot, just a bot that has the same name (in particular, GCE Provider is churning through thousands of randomly generated names a day). Is this needed? A user can just edit the dimensions to be only the ID themselves can\u0027t they?",
+      "revId": "ae5a72477fe98bf6753df2024068e983c60f474d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66d3ecb5_93bbe136",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-07T02:57:49Z",
+      "side": 1,
+      "message": "Seems like BotDimensions and Dimensions are both SwarmingRpcsStringPair, so you could add a helper for this pattern.",
+      "revId": "ae5a72477fe98bf6753df2024068e983c60f474d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
