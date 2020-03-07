@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e82e26e_50c2448d",
+        "filename": "led/ledcli/launch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-07T03:59:10Z",
+      "side": 1,
+      "message": "Is there a use case for calling LaunchSwarming with a UserID not obtained from GetUID? Or did you only make them separate functions because you don\u0027t want to pass an *auth.Authenticator to LaunchSwarming?",
+      "revId": "ca95aed7777195cf4727a6a2ea2a6a8b7cdb4831",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
