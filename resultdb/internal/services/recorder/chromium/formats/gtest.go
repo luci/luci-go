@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/context"
 
@@ -330,7 +331,7 @@ func (r *GTestResults) convertTestResult(ctx context.Context, testID, name strin
 	}
 	buf.Reset()
 	err = summaryTmpl.ExecuteTemplate(buf, "gtest", map[string]interface{}{
-		"snippet": snippet,
+		"snippet": strings.ToValidUTF8(snippet, string(unicode.ReplacementChar)),
 		"links":   result.Links,
 	})
 	if err != nil {
