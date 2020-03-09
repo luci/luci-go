@@ -15,6 +15,11 @@ package sink
 
 import (
 	"context"
+
+	"go.chromium.org/luci/common/clock"
+
+	"go.chromium.org/luci/resultdb/internal/appstatus"
+	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
@@ -25,5 +30,11 @@ type sinkServer struct {
 
 // ReportTestResults implement sinkpb.SinkServer.
 func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
+	now := clock.Now(ctx).UTC()
+	for _, tr := range in.TestResults {
+		if err := pbutil.ValidateSinkTestResult(now, tr); err != nil {
+			return nil, appstatus.BadRequest(err)
+		}
+	}
 	return &sinkpb.ReportTestResultsResponse{}, nil
 }
