@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19766fc9_3ca219cf",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-09T06:06:39Z",
+      "side": 1,
+      "message": "consider follow up with s/bbm/e or editor.",
+      "range": {
+        "startLine": 51,
+        "startChar": 6,
+        "endLine": 51,
+        "endChar": 9
+      },
+      "revId": "184902d903398e40ee2202cb1ef9186c99fff5c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
