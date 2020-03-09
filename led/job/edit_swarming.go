@@ -99,11 +99,27 @@ func (swe *swarmingEditor) Env(env map[string]string) {
 }
 
 func (swe *swarmingEditor) Priority(priority int32) {
-	panic("implement me")
+	if priority < 0 {
+		return
+	}
+	swe.tweak(func() error {
+		if task := swe.sw.GetTask(); task == nil {
+			swe.sw.Task = &api.TaskRequest{}
+		}
+		swe.sw.Task.Priority = priority
+		return nil
+	})
 }
 
 func (swe *swarmingEditor) SwarmingHostname(host string) {
-	panic("implement me")
+	if host == "" {
+		return
+	}
+
+	swe.tweak(func() (err error) {
+		swe.sw.Hostname = host
+		return
+	})
 }
 
 func updatePrefixPathEnv(values []string, prefixes *[]*api.StringListPair) {
