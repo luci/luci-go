@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e889f78f_25d690ef",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-09T20:38:00Z",
+      "side": 1,
+      "message": "Yep, it is needed because it\u0027s tedious to do by hand and some led users requested it in the past. The existing led command implements this the same way.\n\nWhen ALL bots are dynamically allocated with GCE provider, I suspect we can remove this. I\u0027ve added a note + TODO.",
+      "parentUuid": "5929f102_0652b880",
+      "revId": "ae5a72477fe98bf6753df2024068e983c60f474d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "66d3ecb5_93bbe136",
         "filename": "led/ledcmd/get_swarm.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "ae5a72477fe98bf6753df2024068e983c60f474d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51b6393c_8c5a8fa5",
+        "filename": "led/ledcmd/get_swarm.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-09T20:38:00Z",
+      "side": 1,
+      "message": "BotDimensions is a SwarmingRpcsStringListPair and Dimensions is a SwarmingRpcsStringPair",
+      "parentUuid": "66d3ecb5_93bbe136",
+      "revId": "ae5a72477fe98bf6753df2024068e983c60f474d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
