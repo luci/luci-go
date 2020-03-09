@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -152,6 +153,7 @@ func ReadReachableInvocations(ctx context.Context, txn Txn, limit int, roots Inv
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
+	logging.Debugf(ctx, "%d invocations are reachable from %s", len(reachable), roots.Names())
 	return reachable, nil
 }
 
