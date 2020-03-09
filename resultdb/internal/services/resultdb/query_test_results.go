@@ -31,7 +31,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-const maxInvocationGraphSize = 1000
+const maxInvocationGraphSize = 10000
 
 // queryRequest is implemented by *pb.QueryTestResultsRequest and
 // *pb.QueryTestExonerationsRequest.

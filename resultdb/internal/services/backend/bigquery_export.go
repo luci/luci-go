@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	maxInvocationGraphSize  = 1000
+	maxInvocationGraphSize  = 10000
 	partitionExpirationTime = 540 * 24 * time.Hour // ~1.5y
 )
 
