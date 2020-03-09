@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aecfe8f5_c29bc860",
+        "filename": "resultdb/internal/services/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-09T20:59:19Z",
+      "side": 1,
+      "message": "Increasing from 1000 to 10000 seems to be a big change. What\u0027s the range of invocations numbers are we handling in reality?",
+      "range": {
+        "startLine": 45,
+        "startChar": 27,
+        "endLine": 45,
+        "endChar": 32
+      },
+      "revId": "590948fe1c73c02bcaa9b3b3d9f6b4e82ba75808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
