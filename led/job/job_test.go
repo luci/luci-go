@@ -33,8 +33,7 @@ import (
 func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
 
-	// TODO: add this test back when jobcreate lands.
-	SkipConvey(`FlattenToSwarming`, t, func() {
+	Convey(`FlattenToSwarming`, t, func() {
 		fixture, err := os.Open("jobcreate/testdata/bbagent.job.json")
 		So(err, ShouldBeNil)
 		defer fixture.Close()
