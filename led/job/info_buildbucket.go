@@ -40,7 +40,11 @@ func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 }
 
 func (b bbInfo) Env() (ret map[string]string, err error) {
-	panic("implement me")
+	ret = make(map[string]string, len(b.EnvVars))
+	for _, pair := range b.EnvVars {
+		ret[pair.Key] = pair.Value
+	}
+	return
 }
 
 func (b bbInfo) Priority() int32 {
