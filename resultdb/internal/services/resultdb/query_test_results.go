@@ -22,6 +22,7 @@ import (
 	durpb "github.com/golang/protobuf/ptypes/duration"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -95,6 +96,7 @@ func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestR
 	if err != nil {
 		return nil, err
 	}
+	logging.Debugf(ctx, "%d invocations are reachable", len(invs))
 
 	// Query test results.
 	trs, token, err := span.QueryTestResults(ctx, txn, span.TestResultQuery{
