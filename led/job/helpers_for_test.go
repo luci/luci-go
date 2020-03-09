@@ -130,6 +130,10 @@ func SoEdit(jd *Definition, cb func(Editor)) {
 	So(jd.Edit(cb), ShouldBeNil)
 }
 
+func SoHLEdit(jd *Definition, cb func(HighLevelEditor)) {
+	So(jd.HighLevelEdit(cb), ShouldBeNil)
+}
+
 func mustGetDimensions(jd *Definition) ExpiringDimensions {
 	ret, err := jd.Info().Dimensions()
 	So(err, ShouldBeNil)
