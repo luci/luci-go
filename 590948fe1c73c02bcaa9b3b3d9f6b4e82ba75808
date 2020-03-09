@@ -22,6 +22,30 @@
       "revId": "590948fe1c73c02bcaa9b3b3d9f6b4e82ba75808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "109b2cf4_d1b5332c",
+        "filename": "resultdb/internal/services/backend/bigquery_export.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-09T22:29:35Z",
+      "side": 1,
+      "message": "in today reality, it is ~5.\nin reality when we start displaying test results at CL level, we will see ~(N_builds)*(N_tasks_per_build) . Chromium has 30 tryjobs. Each build has tens of tasks. It takes only 33 tasks per build to reach 1000 per CL. If we add retries, there will be more.",
+      "parentUuid": "aecfe8f5_c29bc860",
+      "range": {
+        "startLine": 45,
+        "startChar": 27,
+        "endLine": 45,
+        "endChar": 32
+      },
+      "revId": "590948fe1c73c02bcaa9b3b3d9f6b4e82ba75808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
