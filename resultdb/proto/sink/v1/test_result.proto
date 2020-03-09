@@ -47,8 +47,8 @@ message TestResult {
   // Equivalent of luci.resultpb.TestResult.start_time.
   google.protobuf.Timestamp start_time = 7;
 
-  // Equivalent of luci.resultpb.TestResult.run_duration.
-  google.protobuf.Duration run_duration = 8;
+  // Equivalent of luci.resultpb.TestResult.duration.
+  google.protobuf.Duration duration = 8;
 
   // Equivalent of luci.resultpb.TestResult.tags.
   repeated luci.resultdb.type.StringPair tags = 9;
