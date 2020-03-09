@@ -58,5 +58,23 @@ func TestPredefinedTypes(t *testing.T) {
 
 			So(GetSwarming(c), ShouldResemble, &Swarming{[]byte("foo")})
 		})
+
+		Convey("resultdb", func() {
+			So(GetResultDB(c), ShouldBeNil)
+
+			resultdb := ResultDB{
+				Hostname: "test.results.cr.dev",
+				CurrentInvocation: Invocation{
+					Name:        "invocations/build:1",
+					UpdateToken: "foobarbazsecretoken",
+				}}
+			c = SetResultDB(c, &resultdb)
+			rawJSON := json.RawMessage{}
+			Get(c, "resultdb", &rawJSON)
+			So(string(rawJSON), ShouldEqual, `{"hostname":"test.results.cr.dev","current_invocation":`+
+				`{"name":"invocations/build:1","update_token":"foobarbazsecretoken"}}`)
+
+			So(GetResultDB(c), ShouldResemble, &resultdb)
+		})
 	})
 }
