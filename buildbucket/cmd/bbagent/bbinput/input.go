@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// Parse parses the base64(zlib(proto.Marshal(BBAgentArgs))) `encodedData`.
+// Parse returns proto.Unmarshal(zlibDec(base64Dec(encodedData))).
 func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 	if encodedData == "" {
 		return nil, errors.New("inputs required")
@@ -47,4 +47,34 @@ func Parse(encodedData string) (*bbpb.BBAgentArgs, error) {
 
 	ret := &bbpb.BBAgentArgs{}
 	return ret, errors.Annotate(proto.Unmarshal(decompressed, ret), "parsing proto").Err()
+}
+
+// Encode returns base64(zlib(proto.Marshal(args))).
+func Encode(args *bbpb.BBAgentArgs) string {
+	pbuf := proto.NewBuffer(nil)
+	pbuf.SetDeterministic(true)
+	err := pbuf.Marshal(args)
+	if err != nil {
+		// can only happen if there are unmarshalable extensions in args, which
+		// isn't possible.
+		panic("impossible: " + err.Error())
+	}
+
+	var buf bytes.Buffer
+	zw, err := zlib.NewWriterLevel(&buf, zlib.BestCompression)
+	if err != nil {
+		// can only happen if zlib.BestCompression is an invalid value.
+		panic("impossible: " + err.Error())
+	}
+
+	if _, err = zw.Write(pbuf.Bytes()); err != nil {
+		// can only happen if buf.Write returns an error
+		panic("impossible: " + err.Error())
+	}
+	if err = zw.Close(); err != nil {
+		// can only happen if buf.Close returns an error
+		panic("impossible: " + err.Error())
+	}
+
+	return base64.RawStdEncoding.EncodeToString(buf.Bytes())
 }
