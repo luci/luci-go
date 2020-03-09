@@ -16,6 +16,24 @@
       "revId": "c40e2d653512c55f8bcce133450b02a00e767165",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "991835cc_b7f7fad6",
+        "filename": "resultdb/internal/span/invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-09T19:20:46Z",
+      "side": 1,
+      "message": "yeah, it might be useful to see how many invocations were scanned when we see slow queries in the future.",
+      "parentUuid": "42e8e5f2_5d918f4c",
+      "revId": "c40e2d653512c55f8bcce133450b02a00e767165",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
