@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/trace"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -109,7 +110,10 @@ type TestResultQuery struct {
 	ExcludeArtifacts  bool
 }
 
-func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) error {
+func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery, f func(tr *pb.TestResult, variantHash string) error) (err error) {
+	ctx, ts := trace.StartSpan(ctx, "resultdb.queryTestResults")
+	defer func() { ts.End(err) }()
+
 	if q.PageSize < 0 {
 		panic("PageSize < 0")
 	}
@@ -131,7 +135,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		// table.
 		from = `
 			VariantsWithUnexpectedResults vur
-			JOIN@{FORCE_JOIN_ORDER=TRUE} TestResults tr
+			JOIN@{FORCE_JOIN_ORDER=TRUE, JOIN_METHOD=HASH_JOIN} TestResults tr
 				ON vur.TestId = tr.TestId AND vur.VariantHash = tr.VariantHash
 		`
 	}
@@ -142,6 +146,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	st := spanner.NewStatement(fmt.Sprintf(`
+		@{USE_ADDITIONAL_PARALLELISM=TRUE}
 		WITH VariantsWithUnexpectedResults AS (
 			# Note: this query is not executed if it ends up not used in the top-level
 			# query.
@@ -203,7 +208,6 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	}
 
 	// Apply page token.
-	var err error
 	st.Params["afterInvocationId"],
 		st.Params["afterTestId"],
 		st.Params["afterResultId"],
