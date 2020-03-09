@@ -63,7 +63,11 @@ func (b bbInfo) PrefixPathEnv() (ret []string, err error) {
 }
 
 func (b bbInfo) Tags() (ret []string) {
-	panic("implement me")
+	if len(b.ExtraTags) > 0 {
+		ret = make([]string, len(b.ExtraTags))
+		copy(ret, b.ExtraTags)
+	}
+	return
 }
 
 func (b bbInfo) Experimental() bool {
