@@ -17,6 +17,7 @@ package formats
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -174,6 +175,15 @@ func TestGTestConversions(t *testing.T) {
 					OutputSnippetBase64: "invalid base64",
 				})
 				So(tr.SummaryHtml, ShouldEqual, "")
+			})
+
+			Convey("invalid utf8 is fixed", func() {
+				tr := convert(&GTestRunResult{
+					Status:              "SUCCESS",
+					LosslessSnippet:     true,
+					OutputSnippetBase64: base64.StdEncoding.EncodeToString([]byte("[\x00]")),
+				})
+				So(tr.SummaryHtml, ShouldContainSubstring, "[�]")
 			})
 		})
 
