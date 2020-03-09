@@ -123,7 +123,7 @@ func (jd *Definition) Edit(cb func(m Editor)) error {
 	}
 
 	if jd.GetBuildbucket() != nil {
-		panic("implement me")
+		m = newBuildbucketEditor(jd)
 	} else {
 		panic("implement me")
 	}
@@ -141,7 +141,7 @@ func (jd *Definition) HighLevelEdit(cb func(m HighLevelEditor)) error {
 	}
 
 	if jd.GetBuildbucket() != nil {
-		panic("implement me")
+		m = newBuildbucketEditor(jd)
 	} else {
 		return errors.New("job.HighLevelEdit not supported for this Job")
 	}
