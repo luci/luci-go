@@ -26,6 +26,9 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 message BuildSecrets {
   // Token to identify RPCs associated with the same build.
   string build_token = 1;
+
+  // Token to allow updating this build's invocation in ResultDB.
+  string resultdb_invocation_update_token = 2;
 }
 
 // Arguments for bbagent command.
