@@ -72,6 +72,11 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	return ret
 }
 
+func must(value interface{}, err error) interface{} {
+	So(err, ShouldBeNil)
+	return value
+}
+
 // runCases runs some 'edit' tests for the given operation name (e.g. a method
 // of the Editor interface).
 //
