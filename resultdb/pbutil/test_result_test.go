@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 	typepb "go.chromium.org/luci/resultdb/proto/type"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -321,20 +322,20 @@ func TestValidateArtifacts(t *testing.T) {
 	now := testclock.TestRecentTimeUTC
 	art1, art2 := validArtifacts(now)
 	bart1, bart2 := invalidArtifacts(now)
-	validate := func(arts []*pb.Artifact) error {
+	validate := func(arts ...*pb.Artifact) error {
 		return ValidateArtifacts(arts)
 	}
 
 	Convey("Succeeds", t, func() {
 		Convey("with no artifact", func() {
-			So(validate([]*pb.Artifact{}), ShouldBeNil)
+			So(validate(), ShouldBeNil)
 		})
 
 		Convey("with an artifact", func() {
-			So(validate([]*pb.Artifact{art1}), ShouldBeNil)
+			So(validate(art1), ShouldBeNil)
 		})
 		Convey("with multiple artifacts", func() {
-			So(validate([]*pb.Artifact{art1, art2}), ShouldBeNil)
+			So(validate(art1, art2), ShouldBeNil)
 		})
 	})
 
@@ -343,19 +344,61 @@ func TestValidateArtifacts(t *testing.T) {
 
 		Convey("with duplicate names", func() {
 			art2.Name = art1.Name
-			So(validate([]*pb.Artifact{art1, art2}), ShouldErrLike, "duplicate name")
+			So(validate(art1, art2), ShouldErrLike, "duplicate name")
 		})
 
 		Convey("with an invalid artifact", func() {
-			So(validate([]*pb.Artifact{bart1}), ShouldErrLike, expected)
+			So(validate(bart1), ShouldErrLike, expected)
 		})
 
 		Convey("with multiple invalid artifacts", func() {
-			So(validate([]*pb.Artifact{bart1, bart2}), ShouldErrLike, expected)
+			So(validate(bart1, bart2), ShouldErrLike, expected)
 		})
 
 		Convey("with a mix of valid and invalid artifacts", func() {
-			So(validate([]*pb.Artifact{art1, bart1}), ShouldErrLike, expected)
+			So(validate(art1, bart1), ShouldErrLike, expected)
+		})
+	})
+}
+
+func TestValidateSinkArtifacts(t *testing.T) {
+	t.Parallel()
+	// valid artifacts
+	validArts := map[string]*sinkpb.Artifact{
+		"art1": &sinkpb.Artifact{
+			Body:        &sinkpb.Artifact_FilePath{"/tmp/foo"},
+			ContentType: "text/plain",
+		},
+		"art2": &sinkpb.Artifact{
+			Body:        &sinkpb.Artifact_Contents{[]byte("contents")},
+			ContentType: "text/plain",
+		},
+	}
+	// invalid artifacts
+	invalidArts := map[string]*sinkpb.Artifact{
+		"art1": &sinkpb.Artifact{ContentType: "text/plain"},
+	}
+
+	Convey("Succeeds", t, func() {
+		Convey("with no artifact", func() {
+			So(ValidateSinkArtifacts(nil), ShouldBeNil)
+		})
+
+		Convey("with valid artifacts", func() {
+			So(ValidateSinkArtifacts(validArts), ShouldBeNil)
+		})
+	})
+
+	Convey("Fails", t, func() {
+		expected := "body: either file_path or contents must be provided"
+
+		Convey("with invalid artifacts", func() {
+			So(ValidateSinkArtifacts(invalidArts), ShouldErrLike, expected)
+		})
+
+		Convey("with a mix of valid and invalid artifacts", func() {
+			invalidArts["art2"] = validArts["art2"]
+			So(ValidateSinkArtifacts(invalidArts), ShouldErrLike, expected)
 		})
 	})
 }
