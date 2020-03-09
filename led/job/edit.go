@@ -30,10 +30,10 @@ type Editor interface {
 	ClearDimensions()
 
 	// SetDimensions sets the full set of dimensions.
-	// IMPLEMENT: SetDimensions(dims ExpiringDimensions)
+	SetDimensions(dims ExpiringDimensions)
 
 	// EditDimensions edits the swarming dimensions.
-	// IMPLEMENT: EditDimensions(dimEdits DimensionEditCommands)
+	EditDimensions(dimEdits DimensionEditCommands)
 
 	// CIPDPkgs allows you to edit the cipd packages. The mapping is in the form
 	// of:
