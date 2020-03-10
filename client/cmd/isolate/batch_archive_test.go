@@ -40,11 +40,6 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 				[]string{"--path-variable", "key", "value1"},
 				[]string{"--path-variable", "key=value1"},
 			},
-			// That's how python isolate works.
-			{
-				[]string{"--extra-variable", "key", "and spaces"},
-				[]string{"--extra-variable", "key=and spaces"},
-			},
 			{
 				[]string{"--path-variable", "key", "--even-this-value"},
 				[]string{"--path-variable", "key=--even-this-value"},
@@ -88,7 +83,6 @@ func TestArchiveCMDParsing(t *testing.T) {
 			"--isolate", "../boz/bar.isolate",
 			"--path-variable", "DEPTH", "../..",
 			"--path-variable", "PRODUCT_DIR", "../../out/Release",
-			"--extra-variable", "version_full=42.0.2284.0",
 			"--config-variable", "OS=linux",
 		}
 		root := absToOS("e:", "/tmp/bar")
@@ -103,7 +97,6 @@ func TestArchiveCMDParsing(t *testing.T) {
 		} else {
 			So(stringmapflag.Value{"PRODUCT_DIR": "../../out/Release", "EXECUTABLE_SUFFIX": "", "DEPTH": "../.."}, ShouldResemble, opts.PathVariables)
 		}
-		So(stringmapflag.Value{"version_full": "42.0.2284.0"}, ShouldResemble, opts.ExtraVariables)
 	})
 }
 

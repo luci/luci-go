@@ -111,7 +111,7 @@ func TestArchive(t *testing.T) {
 		'conditions': [
 			['OS=="amiga"', {
 				'variables': {
-					'command': ['amiga', '<(EXTRA)'],
+					'command': ['amiga'],
 				},
 			}],
 			['OS=="win"', {
@@ -133,7 +133,6 @@ func TestArchive(t *testing.T) {
 			Isolated:        filepath.Join(tmpDir, "baz.isolated"),
 			Blacklist:       stringlistflag.Flag{"ignored", "*.isolate"},
 			PathVariables:   map[string]string{"VAR": "wonderful"},
-			ExtraVariables:  map[string]string{"EXTRA": "really"},
 			ConfigVariables: map[string]string{"OS": "amiga"},
 		}
 		item := Archive(a, opts)
@@ -176,7 +175,7 @@ func TestArchive(t *testing.T) {
 
 		isolatedData := isolated.Isolated{
 			Algo:    "sha-1",
-			Command: []string{"amiga", "really"},
+			Command: []string{"amiga"},
 			Files:   map[string]isolated.File{},
 			// This list must be in deterministic order.
 			Includes:    isolated.HexDigests{baseIsolatedHash, secondIsolatedHash},
