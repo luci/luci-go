@@ -92,7 +92,6 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 	f.Var(&c.Blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
 	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
-	f.Var(&c.ExtraVariables, "extra-variable", "Extraneous variables are replaced on the command entry and on paths in the .isolate file but are not considered relative paths.")
 }
 
 // RequiredIsolateFlags specifies which flags are required on the command line
@@ -110,7 +109,7 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 	if !filepath.IsAbs(cwd) {
 		return errors.Reason("cwd must be absolute path").Err()
 	}
-	for _, vars := range [](map[string]string){c.ConfigVariables, c.ExtraVariables, c.PathVariables} {
+	for _, vars := range [](map[string]string){c.ConfigVariables, c.PathVariables} {
 		for k := range vars {
 			if !isolate.IsValidVariable(k) {
 				return fmt.Errorf("invalid key %s", k)
@@ -118,9 +117,9 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 		}
 	}
 	// Account for EXECUTABLE_SUFFIX.
-	if len(c.ConfigVariables) != 0 || len(c.ExtraVariables) != 0 || len(c.PathVariables) > 1 {
+	if len(c.ConfigVariables) != 0 || len(c.PathVariables) > 1 {
 		os.Stderr.WriteString(
-			"WARNING: -config-variables, -path-variables and -extra-variables\n" +
+			"WARNING: -config-variables and -path-variables\n" +
 				"         will be unsupported soon. Please contact the LUCI team.\n" +
 				"         https://crbug.com/907880\n")
 	}

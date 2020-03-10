@@ -122,7 +122,7 @@ func parseArchiveCMD(args []string, cwd string) (*isolate.ArchiveOptions, error)
 // Essentially converts "--X key value" into "--X key=value".
 func convertPyToGoArchiveCMDArgs(args []string) []string {
 	kvars := map[string]bool{
-		"--path-variable": true, "--config-variable": true, "--extra-variable": true}
+		"--path-variable": true, "--config-variable": true}
 	var newArgs []string
 	for i := 0; i < len(args); {
 		newArgs = append(newArgs, args[i])

@@ -63,7 +63,6 @@ type ArchiveOptions struct {
 	Isolated        string              `json:"isolated"`
 	Blacklist       stringlistflag.Flag `json:"blacklist"`
 	PathVariables   stringmapflag.Value `json:"path_variables"`
-	ExtraVariables  stringmapflag.Value `json:"extra_variables"`
 	ConfigVariables stringmapflag.Value `json:"config_variables"`
 }
 
@@ -76,7 +75,6 @@ func (a *ArchiveOptions) Init() {
 	} else {
 		a.PathVariables["EXECUTABLE_SUFFIX"] = ""
 	}
-	a.ExtraVariables = map[string]string{}
 	a.ConfigVariables = map[string]string{}
 }
 
@@ -126,9 +124,6 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 		func(match string) string {
 			varName := match[2 : len(match)-1]
 			if v, ok := opts.PathVariables[varName]; ok {
-				return v
-			}
-			if v, ok := opts.ExtraVariables[varName]; ok {
 				return v
 			}
 			if v, ok := opts.ConfigVariables[varName]; ok {

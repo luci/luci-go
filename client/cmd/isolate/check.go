@@ -66,7 +66,6 @@ func (c *checkRun) main(a subcommands.Application, args []string) error {
 		fmt.Printf("Blacklist: %s\n", c.Blacklist)
 		fmt.Printf("Config:    %s\n", c.ConfigVariables)
 		fmt.Printf("Path:      %s\n", c.PathVariables)
-		fmt.Printf("Extra:     %s\n", c.ExtraVariables)
 	}
 
 	deps, _, _, err := isolate.ProcessIsolate(&c.ArchiveOptions)
