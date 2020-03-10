@@ -135,6 +135,24 @@
     },
     {
       "key": {
+        "uuid": "432e7bd0_7e995be3",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T18:46:20Z",
+      "side": 1,
+      "message": "i see. this makes sense.\n\ni think either [-include and -exclude] or [-add and -remove] to use correct opposites.\n\ni personally favor -add/remove because they are shorter and to avoid confusion with \"include into includedInvocations\" (overload of \"include\" meaning)\n\nconsider https://godoc.org/go.chromium.org/luci/common/flag#StringSlice to represent multiple invocation ids in one flag value",
+      "parentUuid": "29709d36_0bbc3cb8",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ead5eebe_2ebe4c21",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
