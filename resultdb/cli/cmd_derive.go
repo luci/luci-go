@@ -108,7 +108,7 @@ func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommand
 	return r.done(r.queryAndPrint(ctx, invIDs))
 }
 
-// deriveInvocations derives invocations from the swarming tasks and returns
+// deriveInvocations derive invocations from the swarming tasks and return
 // invocation ids.
 func (r *deriveRun) deriveInvocations(ctx context.Context) ([]string, error) {
 	eg, ctx := errgroup.WithContext(ctx)

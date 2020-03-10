@@ -80,7 +80,7 @@ var (
 	}
 )
 
-// GTestResults represents the structure as described to be generated in
+// GTestResults represent the structure as described to be generated in
 // https://cs.chromium.org/chromium/src/base/test/launcher/test_results_tracker.h?l=83&rcl=96020cfd447cb285acfa1a96c37a67ed22fa2499
 // (base::TestResultsTracker::SaveSummaryAsJSON)
 //
@@ -92,7 +92,7 @@ type GTestResults struct {
 	// PerIterationData is a vector of run iterations, each mapping test names to a list of test data.
 	PerIterationData []map[string][]*GTestRunResult `json:"per_iteration_data"`
 
-	// TestLocations maps test names to their location in code.
+	// TestLocations map test names to their location in code.
 	TestLocations map[string]*Location `json:"test_locations"`
 }
 
@@ -238,7 +238,7 @@ func fromGTestStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
-// extractGTestParameters extracts parameters from a test id as a mapping with "param/" keys.
+// extractGTestParameters extract parameters from a test id as a mapping with "param/" keys.
 func extractGTestParameters(testID string) (baseID string, params map[string]string, err error) {
 	var suite, name string
 

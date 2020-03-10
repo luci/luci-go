@@ -38,6 +38,7 @@ import (
 // the whole invocation expires.
 const maxTestVariantsToFilter = 1000
 
+<<<<<<< HEAD
 var (
 	purgedInvocationsCount = metric.NewCounter(
 		"resultdb/purged_invocations/count",
@@ -47,6 +48,9 @@ var (
 )
 
 // Options is purger server configuration.
+=======
+// Options are purger server configuration.
+>>>>>>> up
 type Options struct {
 	// ForceCronInterval forces minimum interval in cron jobs.
 	// Useful in integration tests to reduce the test time.

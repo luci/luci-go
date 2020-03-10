@@ -172,7 +172,84 @@ func shouldWriteInvocation(ctx context.Context, txn span.Txn, id span.Invocation
 	return false, nil
 }
 
+<<<<<<< HEAD
 // batchInsertTestResults inserts the given TestResults in batches under container Invocations,
+=======
+// deriveInvocationForOriginTask derives an invocation and test results
+// from a given task and returns derived origin invocation.
+func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *pb.DeriveInvocationRequest, task *swarmingAPI.SwarmingRpcsTaskResult, swarmSvc *swarmingAPI.Service, client *spanner.Client) (*pb.Invocation, error) {
+	// Get the origin task that the task is deduped against. Or the task
+	// itself if it's not deduped.
+	originTask, err := chromium.GetOriginTask(ctx, task, swarmSvc)
+	if err != nil {
+		return nil, errors.Annotate(err, "getting origin for swarming task %q on %q",
+			in.SwarmingTask.Id, in.SwarmingTask.Hostname).Err()
+	}
+	originInvID := chromium.GetInvocationID(originTask, in)
+
+	// Check if we need to write origin invocation.
+	switch doWrite, err := shouldWriteInvocation(ctx, client.Single(), originInvID); {
+	case err != nil:
+		return nil, err
+	case !doWrite: // Origin invocation is already in Spanner. Return it.
+		readTxn := client.ReadOnlyTransaction()
+		defer readTxn.Close()
+		return span.ReadInvocationFull(ctx, readTxn, originInvID)
+	}
+	originInv, err := chromium.DeriveInvocation(originTask, in)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the protos and prepare to write them to Spanner.
+	logging.Infof(ctx, "Deriving task %q on %q", originTask.TaskId, in.SwarmingTask.Hostname)
+	results, err := chromium.DeriveTestResults(ctx, originTask, in, originInv)
+	if err != nil {
+		return nil, errors.Annotate(err,
+			"task %q on %q named %q", in.SwarmingTask.Id, in.SwarmingTask.Hostname, originTask.Name).Err()
+	}
+	// TODO(jchinlee): Validate invocation and results.
+
+	// Write test results in batches concurrently, updating inv with the names of the invocations
+	// that will be included.
+	batchInvs, err := s.batchInsertTestResults(ctx, originInv, results, testResultBatchSizeMax)
+	if err != nil {
+		return nil, err
+	}
+	originInv.IncludedInvocations = batchInvs.Names()
+
+	// Prepare mutations.
+	ms := make([]*spanner.Mutation, 0, len(batchInvs)+4)
+	ms = append(ms, span.InsertMap("Invocations", s.rowOfInvocation(ctx, originInv, "")))
+	for includedID := range batchInvs {
+		ms = append(ms, span.InsertMap("IncludedInvocations", map[string]interface{}{
+			"InvocationId":         originInvID,
+			"IncludedInvocationId": includedID,
+		}))
+	}
+	ms = append(ms, tasks.EnqueueBQExport(originInvID, s.DerivedInvBQTable, clock.Now(ctx).UTC()))
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		// Check origin invocation state again.
+		switch doWrite, err := shouldWriteInvocation(ctx, txn, originInvID); {
+		case err != nil:
+			return err
+		case !doWrite:
+			return nil
+		default:
+			return txn.BufferWrite(ms)
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
+	return originInv, nil
+}
+
+// batchInsertTestResults insert the given TestResults in batches under container Invocations,
+>>>>>>> up
 // returning container ids.
 func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
@@ -225,7 +302,7 @@ func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID 
 	return span.InvocationID(fmt.Sprintf("%s::batch::%d", invID, batchInd))
 }
 
-// batchTestResults batches the given TestResults given the maximum batch size.
+// batchTestResults batch the given TestResults given the maximum batch size.
 func batchTestResults(trs []*pb.TestResult, batchSize int) [][]*pb.TestResult {
 	batches := make([][]*pb.TestResult, 0, len(trs)/batchSize+1)
 	for len(trs) > 0 {
