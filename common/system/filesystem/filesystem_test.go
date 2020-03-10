@@ -381,6 +381,21 @@ func TestHardlinkRecursively(t *testing.T) {
 			So(stat.Mode()&os.ModeSymlink, ShouldEqual, 0)
 		})
 	})
+
+	Convey("HardlinkRecursively nested", t, func() {
+		withTempDir(t, func(dir string) {
+			top := filepath.Join(dir, "top")
+			nested := filepath.Join(top, "nested")
+			So(os.MkdirAll(nested, 0755), ShouldBeNil)
+
+			So(ioutil.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
+
+			dstTop := filepath.Join(dir, "dst")
+			So(HardlinkRecursively(top, dstTop), ShouldBeNil)
+			dstDested := filepath.Join(dstTop, "nested")
+			So(HardlinkRecursively(nested, dstDested), ShouldNotBeNil)
+		})
+	})
 }
 
 func TestCreateDirectories(t *testing.T) {
