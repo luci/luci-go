@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e0ad6bc_2a5026fe",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-10T00:22:13Z",
+      "side": 1,
+      "message": "deletion isn\u0027t actually covered here. Maybe add:\n\n\"DEL\": \"to be deleted later\",",
+      "revId": "b98690b28deaf61b833bdae9b54616812c9a04cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6590936e_df0693de",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-10T00:22:13Z",
+      "side": 1,
+      "message": "yep.",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 78,
+        "endChar": 1
+      },
+      "revId": "b98690b28deaf61b833bdae9b54616812c9a04cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a9d82289_7b7cdfcc",
+        "filename": "led/job/info_swarming.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-10T00:22:13Z",
+      "side": 1,
+      "message": "del these 2 lines.",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 78,
+        "endChar": 21
+      },
+      "revId": "b98690b28deaf61b833bdae9b54616812c9a04cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
