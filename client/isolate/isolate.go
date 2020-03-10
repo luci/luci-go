@@ -186,7 +186,8 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 
 	// Find the root directory of all the files (the root might be above isolateDir).
 	rootDir := isolateDir
-	for _, dep := range deps {
+	osSep := string(os.PathSeparator)
+	for i, dep := range deps {
 		// Check if the dep is outside isolateDir.
 		info, err := os.Stat(dep)
 		if err != nil {
@@ -195,6 +196,9 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 		base := filepath.Dir(dep)
 		if info.IsDir() {
 			base = dep
+			// Downstream expects the dependency of a directory to always end
+			// with '/', but filepath.Join() removes that, so we add it back.
+			deps[i] = dep + osSep
 		}
 		for {
 			rel, err := filepath.Rel(rootDir, base)
