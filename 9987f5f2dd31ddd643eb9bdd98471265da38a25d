@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7fbae5c9_64c27317",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T16:02:29Z",
+      "side": 1,
+      "message": "nit: public symbols should have a comment",
+      "revId": "9987f5f2dd31ddd643eb9bdd98471265da38a25d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d46cc95_1b4941c6",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T16:02:29Z",
+      "side": 1,
+      "message": "it is more typical in Go to make this code type-safe:\n\n\n  type TreeCloserStatus\n  const(\n    Open TreeCloserStatus \u003d \"Open\"\n    Closed TreeCloserStatus \u003d \"Closed\"\n  )\n\n  ...\n  Status TreeCloserStatus",
+      "range": {
+        "startLine": 38,
+        "startChar": 47,
+        "endLine": 40,
+        "endChar": 45
+      },
+      "revId": "9987f5f2dd31ddd643eb9bdd98471265da38a25d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
