@@ -53,7 +53,7 @@ var (
 	}
 )
 
-// JSONTestResults represents the structure in
+// JSONTestResults represent the structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
 //
 // Deprecated fields and fields not used by Test Results are omitted.
@@ -78,7 +78,7 @@ type JSONTestResults struct {
 	Metadata map[string]json.RawMessage `json:"metadata"`
 }
 
-// TestFields represents the test fields structure in
+// TestFields represent the test fields structure in
 // https://chromium.googlesource.com/chromium/src/+/master/docs/testing/json_test_results_format.md
 //
 // Deprecated fields and fields not used by Test Results are omitted.
@@ -112,7 +112,7 @@ func (r *JSONTestResults) ConvertFromJSON(ctx context.Context, reader io.Reader)
 	return nil
 }
 
-// ToProtos converts test results in r []*pb.TestResult and updates inv
+// ToProtos convert test results in r []*pb.TestResult and updates inv
 // in-place accordingly.
 // If an error is returned, inv is left unchanged.
 //
@@ -173,7 +173,7 @@ func (r *JSONTestResults) ToProtos(ctx context.Context, testIDPrefix string, inv
 	return ret, nil
 }
 
-// convertTests converts the trie of tests.
+// convertTests convert the trie of tests.
 func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) error {
 	// curNode should certainly be a map.
 	var maybeNode map[string]json.RawMessage
@@ -228,7 +228,7 @@ func (r *JSONTestResults) convertTests(curPath string, curNode json.RawMessage) 
 	return nil
 }
 
-// convertArtifacts converts the raw artifacts into the supported
+// convertArtifacts convert the raw artifacts into the supported
 // map[string][]string representation.
 // It also accepts but does not store artifacts in the map[string]string
 // representation used by WPT results.
@@ -264,7 +264,7 @@ func (f *TestFields) convertArtifacts() error {
 	return nil
 }
 
-// extractTags tries to read the optional "tags" field in "metadata" as a slice of strings.
+// extractTags try to read the optional "tags" field in "metadata" as a slice of strings.
 func (r *JSONTestResults) extractTags() ([]string, error) {
 	maybeTags, ok := r.Metadata["tags"]
 	if !ok {
@@ -303,7 +303,7 @@ func fromJSONStatus(s string) (pb.TestStatus, error) {
 	}
 }
 
-// toProtos converts the TestFields into zero or more pb.TestResult and
+// toProtos convert the TestFields into zero or more pb.TestResult and
 // appends them to dest.
 //
 // TODO(crbug/1032779): Track artifacts that did not get processed.
@@ -390,7 +390,7 @@ type parsedArtifacts struct {
 	links     map[string]string
 }
 
-// getArtifacts gets pb.Artifacts corresponding to the TestField's artifacts.
+// getArtifacts get pb.Artifacts corresponding to the TestField's artifacts.
 //
 // It tries to derive the pb.Artifacts in the following order:
 //   - look for them in the isolated outputs represented as pb.Artifacts
@@ -479,7 +479,7 @@ func artifactsToString(arts map[string][]string) string {
 	return msg.String()
 }
 
-// checkIsolatedOutputs looks for the given output path in the isolated output directory.
+// checkIsolatedOutputs look for the given output path in the isolated output directory.
 // Checks the root directory as well as known possible subdirectories.
 func checkIsolatedOutputs(outputs map[string]*pb.Artifact, normPath string) (string, *pb.Artifact) {
 	// Check root.

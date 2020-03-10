@@ -146,7 +146,7 @@ func ValidateArtifact(art *pb.Artifact) (err error) {
 	return err
 }
 
-// ValidateArtifacts returns a non-nil error if any element of arts is invalid.
+// ValidateArtifacts return a non-nil error if any element of arts is invalid.
 func ValidateArtifacts(arts []*pb.Artifact) error {
 	// The name of each Artifact must be unique within the slice.
 	names := make(stringset.Set)
@@ -172,7 +172,7 @@ func ValidateSinkArtifact(art *sinkpb.Artifact) error {
 	return nil
 }
 
-// ValidateSinkArtifacts returns a non-nil error if any element of arts is invalid.
+// ValidateSinkArtifacts return a non-nil error if any element of arts is invalid.
 func ValidateSinkArtifacts(arts map[string]*sinkpb.Artifact) error {
 	for name, art := range arts {
 		if art == nil {
@@ -210,7 +210,7 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	return err
 }
 
-// ValidateSinkTestResults returns a non-nil error if msg is invalid.
+// ValidateSinkTestResults return a non-nil error if msg is invalid.
 func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
 	ec := checker{&err}
 	switch {

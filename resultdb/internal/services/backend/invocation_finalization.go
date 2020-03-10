@@ -277,7 +277,7 @@ func insertNextFinalizationTasks(ctx context.Context, txn *spanner.ReadWriteTran
 	return nil
 }
 
-// insertBigQueryTasks inserts a bq_export invocation task for each element
+// insertBigQueryTasks insert a bq_export invocation task for each element
 // of Invocations.BigQueryExports array in the specified invocation.
 func insertBigQueryTasks(ctx context.Context, txn *spanner.ReadWriteTransaction, invID span.InvocationID) error {
 	// Note: Spanner currently does not support PENDING_COMMIT_TIMESTAMP()

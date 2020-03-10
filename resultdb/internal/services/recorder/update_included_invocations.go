@@ -58,7 +58,7 @@ func validateUpdateIncludedInvocationsRequest(req *pb.UpdateIncludedInvocationsR
 	return nil
 }
 
-// UpdateIncludedInvocations implements pb.RecorderServer.
+// UpdateIncludedInvocations implement pb.RecorderServer.
 func (s *recorderServer) UpdateIncludedInvocations(ctx context.Context, in *pb.UpdateIncludedInvocationsRequest) (*empty.Empty, error) {
 	if err := validateUpdateIncludedInvocationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)

@@ -259,7 +259,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 	})
 }
 
-// QueryTestResults reads test results matching the predicate.
+// QueryTestResults read test results matching the predicate.
 // Returned test results from the same invocation are contiguous.
 func QueryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestResultQuery) (trs []*pb.TestResult, nextPageToken string, err error) {
 	if q.PageSize <= 0 {
@@ -306,7 +306,7 @@ func populateExpectedField(tr *pb.TestResult, maybeUnexpected spanner.NullBool) 
 	tr.Expected = !maybeUnexpected.Valid || !maybeUnexpected.Bool
 }
 
-// ToMicros converts a duration.Duration proto to microseconds.
+// ToMicros convert a duration.Duration proto to microseconds.
 func ToMicros(d *durpb.Duration) int64 {
 	if d == nil {
 		return 0
@@ -314,7 +314,7 @@ func ToMicros(d *durpb.Duration) int64 {
 	return 1e6*d.Seconds + int64(1e-3*float64(d.Nanos))
 }
 
-// FromMicros converts microseconds to a duration.Duration proto.
+// FromMicros convert microseconds to a duration.Duration proto.
 func FromMicros(micros int64) *durpb.Duration {
 	return ptypes.DurationProto(time.Duration(1e3 * micros))
 }

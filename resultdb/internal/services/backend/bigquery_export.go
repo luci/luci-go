@@ -213,7 +213,7 @@ type testVariantKey struct {
 	variantHash string
 }
 
-// queryExoneratedTestVariants reads exonerated test variants matching the predicate.
+// queryExoneratedTestVariants read exonerated test variants matching the predicate.
 func queryExoneratedTestVariants(ctx context.Context, txn *spanner.ReadOnlyTransaction, invIDs span.InvocationIDSet) (map[testVariantKey]struct{}, error) {
 	st := spanner.NewStatement(`
 		SELECT DISTINCT TestId, VariantHash,
@@ -320,7 +320,7 @@ func (b *bqExporter) batchExportRows(ctx context.Context, ins inserter, batchC c
 	return eg.Wait()
 }
 
-// insertRowsWithRetries inserts rows into BigQuery.
+// insertRowsWithRetries insert rows into BigQuery.
 // Retries on quotaExceeded errors.
 func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, rows []*bigquery.StructSaver) error {
 	if err := b.putLimiter.Wait(ctx); err != nil {

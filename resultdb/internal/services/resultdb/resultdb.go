@@ -35,7 +35,7 @@ type resultDBServer struct {
 	generateIsolateURL func(ctx context.Context, host, ns, digest string) (u *url.URL, expiration time.Time, err error)
 }
 
-// Options is resultdb server configuration.
+// Options are resultdb server configuration.
 type Options struct {
 	// Use http:// (not https://) for URLs pointing back to ResultDB
 	InsecureSelfURLs bool
