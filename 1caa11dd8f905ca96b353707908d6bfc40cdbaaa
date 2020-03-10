@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db77b3e6_8bd0c987",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-10T05:14:21Z",
+      "side": 1,
+      "message": "PathSeparator",
+      "range": {
+        "startLine": 7,
+        "startChar": 17,
+        "endLine": 7,
+        "endChar": 20
+      },
+      "revId": "1caa11dd8f905ca96b353707908d6bfc40cdbaaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "526a949c_a850c8fa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-10T05:14:21Z",
+      "side": 1,
+      "message": "could you add test for this?",
+      "revId": "1caa11dd8f905ca96b353707908d6bfc40cdbaaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e95a317_4fb505ea",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-10T05:14:21Z",
+      "side": 1,
+      "message": "could you use\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/6d34c549ba3d6e0e4caa67d1d0852271fe2bf8ad:client/isolate/format.go;l\u003d42;drc\u003d1959e6eb61432386b7cf6f69f6bc7bfedc0d2c57?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n?",
+      "range": {
+        "startLine": 201,
+        "startChar": 19,
+        "endLine": 201,
+        "endChar": 24
+      },
+      "revId": "1caa11dd8f905ca96b353707908d6bfc40cdbaaa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
