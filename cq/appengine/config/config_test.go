@@ -74,7 +74,10 @@ const validConfigTextPB = `
 					transient_failure_weight: 1
 					timeout_weight: 1
 				}
-				builders { name: "chromium/try/linux" }
+				builders {
+					name: "chromium/try/linux"
+					cancel_stale: NO
+				}
 			}
 		}
 	}

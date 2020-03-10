@@ -73,13 +73,9 @@ def _cq_group(
     retry_config: a new cq.retry_config(...) struct or one of `cq.RETRY_*`
         constants that define how CQ should retry failed builds. See
         [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
-    cancel_stale_tryjobs: **EXPERIMENTAL. Follow https://crbug.com/909895.**
-        TODO(tandrii): update this doc once https://crbug.com/909895 is ready.
-        controls what CQ does with not yet finished tryjobs if a new
-        non-trivially different patchset is uploaded. Such tryjobs will not be
-        useful to CQ any more, so you may choose to cancel them for efficiency
-        reasons. If set to False (current default), CQ will NOT cancel them.
-        If set to True, CQ will cancel such tryjobs.
+    cancel_stale_tryjobs: EXPERIMENTAL & DEPRECATED. Use
+        `cq_tryjob_verifier(..., cancel_stale=...)` instead. Current default is
+        NO, but see https://crbug.com/1001182 for the up-to-date information.
     verifiers: a list of luci.cq_tryjob_verifier(...) specifying what checks to
         run on a pending CL. See luci.cq_tryjob_verifier(...) for all details.
         As a shortcut, each entry can also either be a dict or a string. A dict

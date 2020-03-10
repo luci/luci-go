@@ -28,6 +28,7 @@ def _cq_tryjob_verifier(
       includable_only=None,
       result_visibility=None,
       disable_reuse=None,
+      cancel_stale=None,
       experiment_percentage=None,
       location_regexp=None,
       location_regexp_exclude=None,
@@ -166,6 +167,9 @@ def _cq_tryjob_verifier(
         and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full
         visibility: builder name and full summary markdown are included in the
         Gerrit comment.
+    cancel_stale: Controls whether not yet finished builds previously triggered
+        by CQ will be cancelled as soon as a substantially different patchset is
+        uploaded to a CL. Default is True, meaning CQ will cancel.
     includable_only: if True, this builder will only be triggered by CQ if it is
         also specified via `CQ-Include-Trybots:` on CL description. Default is
         False. See the explanation above for all details.
@@ -274,6 +278,7 @@ def _cq_tryjob_verifier(
           default=cq.COMMENT_LEVEL_UNSET,
           required=False,
       ),
+      'cancel_stale': validate.bool('cancel_stale', cancel_stale, required=False),
       'includable_only': validate.bool('includable_only', includable_only, required=False),
       'experiment_percentage': validate.float(
           'experiment_percentage',
