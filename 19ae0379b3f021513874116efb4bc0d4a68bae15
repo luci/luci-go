@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a81c1d82_16058042",
+        "filename": "client/isolate/isolate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-10T04:25:22Z",
+      "side": 1,
+      "message": "I don\u0027t have confidence that this ends with \u0027\\\u0027 in windows.\nSo better to dir check after around L201",
+      "range": {
+        "startLine": 187,
+        "startChar": 29,
+        "endLine": 187,
+        "endChar": 32
+      },
+      "revId": "19ae0379b3f021513874116efb4bc0d4a68bae15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
