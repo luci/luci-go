@@ -25,7 +25,7 @@ func InclusionKey(including, included InvocationID) spanner.Key {
 	return spanner.Key{including.RowID(), included.RowID()}
 }
 
-// ReadIncludedInvocations reads ids of included invocations.
+// ReadIncludedInvocations read ids of included invocations.
 func ReadIncludedInvocations(ctx context.Context, txn Txn, id InvocationID) (InvocationIDSet, error) {
 	var ret InvocationIDSet
 	var b Buffer

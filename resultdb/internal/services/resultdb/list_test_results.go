@@ -38,7 +38,7 @@ func validateListTestResultsRequest(req *pb.ListTestResultsRequest) error {
 	return nil
 }
 
-// ListTestResults implements pb.ResultDBServer.
+// ListTestResults implement pb.ResultDBServer.
 func (s *resultDBServer) ListTestResults(ctx context.Context, in *pb.ListTestResultsRequest) (*pb.ListTestResultsResponse, error) {
 	if err := validateListTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)

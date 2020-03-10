@@ -76,7 +76,7 @@ func validateQueryTestResultsRequest(req *pb.QueryTestResultsRequest) error {
 	return validateQueryRequest(req)
 }
 
-// QueryTestResults implements pb.ResultDBServer.
+// QueryTestResults implement pb.ResultDBServer.
 func (s *resultDBServer) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
 	if err := validateQueryTestResultsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)

@@ -33,7 +33,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// makeTestResultsWithVariants creates test results with a number of passing/failing variants.
+// makeTestResultsWithVariants create test results with a number of passing/failing variants.
 //
 // There'll be two rows for each variant. If the variant is a passing variant, both results
 // will have a passing status, otherwise the first will be passing, and the second faled.

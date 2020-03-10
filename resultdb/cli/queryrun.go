@@ -146,7 +146,7 @@ func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<
 	return nil
 }
 
-// fetchItems fetches test results and exonerations from the specified invocations.
+// fetchItems fetch test results and exonerations from the specified invocations.
 func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTemplate resultItem, dest chan<- resultItem) error {
 	invNames := make([]string, len(invIDs))
 	for i, id := range invIDs {

@@ -50,7 +50,7 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 	return nil
 }
 
-// BatchCreateTestExonerations implements pb.RecorderServer.
+// BatchCreateTestExonerations implement pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestExonerations(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (rsp *pb.BatchCreateTestExonerationsResponse, err error) {
 	if err := validateBatchCreateTestExonerationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)

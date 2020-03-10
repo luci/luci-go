@@ -61,7 +61,7 @@ func (r *baseCommandRun) RegisterJSONFlag(usage string) {
 	r.Flags.BoolVar(&r.json, "json", false, usage)
 }
 
-// initClients validates -host flag and initializes r.httpClient, r.resultdb
+// initClients validate -host flag and initializes r.httpClient, r.resultdb
 // and r.recorder.
 func (r *baseCommandRun) initClients(ctx context.Context) error {
 	// Create HTTP Client.

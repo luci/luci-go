@@ -33,7 +33,7 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// InvocationShards is the sharding level for the Invocations table.
+// InvocationShards i the sharding level for the Invocations table.
 // Column Invocations.ShardId is a value in range [0, InvocationShards).
 const InvocationShards = 100
 
@@ -77,7 +77,7 @@ var TooManyInvocationsTag = errors.BoolTag{
 	Key: errors.NewTagKey("too many matching invocations matched the condition"),
 }
 
-// ReadReachableInvocations returns a transitive closure of roots.
+// ReadReachableInvocations return a transitive closure of roots.
 // If the returned error is non-nil, it is annotated with a gRPC code.
 //
 // limit must be positive. If the size of the transitive closure exceeds the
@@ -298,7 +298,7 @@ func ReadInvocationState(ctx context.Context, txn Txn, id InvocationID) (pb.Invo
 	return state, err
 }
 
-// ReadInvocationStates reads the states of invocations.
+// ReadInvocationStates read the states of invocations.
 func ReadInvocationStates(ctx context.Context, txn Txn, ids InvocationIDSet) (map[InvocationID]pb.Invocation_State, error) {
 	ret := make(map[InvocationID]pb.Invocation_State)
 	err := txn.Read(ctx, "Invocations", ids.Keys(), []string{"InvocationID", "State"}).Do(func(r *spanner.Row) error {

@@ -110,6 +110,13 @@ func DeriveProtosForWriting(ctx context.Context, task *swarmingAPI.SwarmingRpcsT
 		return nil, nil, invalidTaskf("unknown state %q", task.State)
 	}
 
+<<<<<<< HEAD
+=======
+// DeriveTestResults derive the protos with the data from the given task and request.
+//
+// The derived Invocation and TestResult protos will be written by the caller.
+func DeriveTestResults(ctx context.Context, task *swarmingAPI.SwarmingRpcsTaskResult, req *pb.DeriveInvocationRequest, inv *pb.Invocation) ([]*pb.TestResult, error) {
+>>>>>>> up
 	// Parse swarming tags.
 	baseVariant, ninjaTarget := parseSwarmingTags(task)
 	testIDPrefix := ""
@@ -261,7 +268,7 @@ func convertTaskToResult(testID string, task *swarmingAPI.SwarmingRpcsTaskResult
 	return ret, nil
 }
 
-// processOutputs fetches the output.json from the given task and processes it using whichever
+// processOutputs fetch the output.json from the given task and processes it using whichever
 // additional isolated outputs necessary.
 func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFilesRef, testIDPrefix string, inv *pb.Invocation, req *pb.DeriveInvocationRequest) (results []*pb.TestResult, err error) {
 	isoClient := isolatedclient.New(
@@ -302,7 +309,7 @@ func processOutputs(ctx context.Context, outputsRef *swarmingAPI.SwarmingRpcsFil
 	return results, nil
 }
 
-// GetOutputs gets the map of isolated.Files associated with the given task.
+// GetOutputs get the map of isolated.Files associated with the given task.
 func GetOutputs(ctx context.Context, isoClient *isolatedclient.Client, ref *swarmingAPI.SwarmingRpcsFilesRef) (map[string]isolated.File, error) {
 	// Fetch the isolate.
 	buf := &bytes.Buffer{}
@@ -387,7 +394,7 @@ func ConvertOutputJSON(ctx context.Context, inv *pb.Invocation, testIDPrefix str
 	return nil, errors.NewMultiError(gtestErr, jsonErr)
 }
 
-// convertSwarmingTs converts a swarming-formatted string to a tspb.Timestamp.
+// convertSwarmingTs convert a swarming-formatted string to a tspb.Timestamp.
 func convertSwarmingTs(ts string) (*tspb.Timestamp, error) {
 	if ts == "" {
 		return nil, nil
