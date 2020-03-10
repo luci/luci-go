@@ -67,3 +67,26 @@ func (p *Notifications) FromProperty(prop datastore.Property) error {
 	}
 	return proto.Unmarshal(data.([]byte), p)
 }
+
+var _ datastore.PropertyConverter = (*TreeCloser)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'TreeCloser' to serialize to an unindexed '[]byte' when used with the
+// "go.chromium.org/gae" library.
+func (p *TreeCloser) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'TreeCloser' when used with the "go.chromium.org/gae" library.
+func (p *TreeCloser) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}
