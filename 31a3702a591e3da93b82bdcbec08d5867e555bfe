@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48e5639d_6989dd12",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:36:41Z",
+      "side": 1,
+      "message": "So(status.Code(err), ShouldEqual, codes.InvalidArgument)",
+      "range": {
+        "startLine": 79,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 51
+      },
+      "revId": "31a3702a591e3da93b82bdcbec08d5867e555bfe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
