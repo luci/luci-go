@@ -51,7 +51,7 @@ type Invocation struct {
 	// For more details, refer to pb.Invocation.Interrupted.
 	Interrupted bool `bigquery:"interrupted"`
 
-	// Tags represents Invocation-level string key-value pairs.
+	// Tags represent Invocation-level string key-value pairs.
 	// A key can be repeated.
 	Tags []StringPair `bigquery:"tags"`
 }
@@ -98,7 +98,7 @@ type TestResultRow struct {
 	// Duration of the test case execution in seconds.
 	Duration bigquery.NullFloat64 `bigquery:"duration"`
 
-	// Tags contains metadata for this test result.
+	// Tags contain metadata for this test result.
 	// It might describe this particular execution or the test case.
 	Tags []StringPair `bigquery:"tags"`
 
@@ -119,7 +119,7 @@ func (tr *TestResultRow) Name() string {
 	return pbutil.TestResultName(tr.ParentInvocation.ID, tr.TestID, tr.ResultID)
 }
 
-// stringPairProtosToStringPairs returns a slice of StringPair derived from *typepb.StringPair.
+// stringPairProtosToStringPairs return a slice of StringPair derived from *typepb.StringPair.
 func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
 	if len(pairs) == 0 {
 		return nil
@@ -135,7 +135,7 @@ func stringPairProtosToStringPairs(pairs []*typepb.StringPair) []StringPair {
 	return sp
 }
 
-// variantToStringPairs returns a slice of StringPair derived from *typepb.Variant.
+// variantToStringPairs return a slice of StringPair derived from *typepb.Variant.
 func variantToStringPairs(vr *typepb.Variant) []StringPair {
 	defMap := vr.GetDef()
 	if len(defMap) == 0 {

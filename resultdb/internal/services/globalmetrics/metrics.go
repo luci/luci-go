@@ -54,7 +54,7 @@ var (
 		field.String("type")) // tasks.Type
 )
 
-// Options is global metrics server configuration.
+// Options are global metrics server configuration.
 type Options struct {
 	// UpdateInterval is how often to update metrics.
 	UpdateInterval time.Duration
@@ -110,7 +110,7 @@ func updateExpiredResultsMetrics(ctx context.Context) error {
 	}
 }
 
-// expiredResultStats computes the creation time of the oldest invocation
+// expiredResultStats compute the creation time of the oldest invocation
 // pending to be purged in seconds.
 func expiredResultStats(ctx context.Context) (oldestResult time.Time, pendingInvocationsCount int64, err error) {
 	st := spanner.NewStatement(`

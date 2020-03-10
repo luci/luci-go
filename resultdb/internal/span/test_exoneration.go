@@ -83,7 +83,7 @@ type TestExonerationQuery struct {
 	PageToken     string
 }
 
-// QueryTestExonerations reads test exonerations matching the predicate.
+// QueryTestExonerations read test exonerations matching the predicate.
 // Returned test exonerations from the same invocation are contiguous.
 func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction, q TestExonerationQuery) (tes []*pb.TestExoneration, nextPageToken string, err error) {
 	switch {

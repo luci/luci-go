@@ -41,7 +41,7 @@ func (b *backend) cron(ctx context.Context, minInterval time.Duration, f func(ct
 	cron.Run(ctx, minInterval, f)
 }
 
-// Options is backend server configuration.
+// Options are backend server configuration.
 type Options struct {
 	// ForceCronInterval forces minimum interval in cron jobs.
 	// Useful in integration tests to reduce the test time.
@@ -52,7 +52,7 @@ type Options struct {
 	// Useful in integration tests to reduce the test time.
 	ForceLeaseDuration time.Duration
 
-	// TaskWorkers is the number of goroutines that process invocation tasks.
+	// TaskWorkers are the number of goroutines that process invocation tasks.
 	TaskWorkers int
 }
 

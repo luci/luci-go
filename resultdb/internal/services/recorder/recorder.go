@@ -31,7 +31,7 @@ type recorderServer struct {
 	*Options
 }
 
-// Options is recorder server configuration.
+// Options are recorder server configuration.
 type Options struct {
 	// BigQuery table that the derived invocations should be exported to.
 	DerivedInvBQTable *pb.BigQueryExport

@@ -37,7 +37,7 @@ func StringPair(k, v string) *typepb.StringPair {
 	return &typepb.StringPair{Key: k, Value: v}
 }
 
-// StringPairs creates a slice of typepb.StringPair from a list of strings alternating key/value.
+// StringPairs create a slice of typepb.StringPair from a list of strings alternating key/value.
 //
 // Panics if an odd number of tokens is passed.
 func StringPairs(pairs ...string) []*typepb.StringPair {
@@ -62,7 +62,7 @@ func StringPairsContain(pairs []*typepb.StringPair, item *typepb.StringPair) boo
 	return false
 }
 
-// sortStringPairs sorts in-place the tags slice lexicographically by key, then value.
+// sortStringPairs sort in-place the tags slice lexicographically by key, then value.
 func sortStringPairs(tags []*typepb.StringPair) {
 	sort.Slice(tags, func(i, j int) bool {
 		if tags[i].Key != tags[j].Key {
@@ -86,7 +86,7 @@ func ValidateStringPair(p *typepb.StringPair) error {
 	return nil
 }
 
-// ValidateStringPairs returns an error if any of the pairs is invalid.
+// ValidateStringPairs return an error if any of the pairs is invalid.
 func ValidateStringPairs(pairs []*typepb.StringPair) error {
 	for _, p := range pairs {
 		if err := ValidateStringPair(p); err != nil {
@@ -110,7 +110,7 @@ func StringPairToString(pair *typepb.StringPair) string {
 	return fmt.Sprintf("%s:%s", pair.Key, pair.Value)
 }
 
-// StringPairsToStrings converts pairs to a slice of "{key}:{value}" strings
+// StringPairsToStrings convert pairs to a slice of "{key}:{value}" strings
 // in the same order.
 func StringPairsToStrings(pairs ...*typepb.StringPair) []string {
 	ret := make([]string, len(pairs))

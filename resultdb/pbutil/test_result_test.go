@@ -33,7 +33,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-// validArtifacts returns two valid Artifact samples.
+// validArtifacts return two valid Artifact samples.
 func validArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 	et, _ := ptypes.TimestampProto(now.Add(24 * time.Hour))
 	art1 := &pb.Artifact{
@@ -53,7 +53,7 @@ func validArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 	return art1, art2
 }
 
-// invalidArtifacts returns two invalid Artifact samples.
+// invalidArtifacts return two invalid Artifact samples.
 func invalidArtifacts(now time.Time) (*pb.Artifact, *pb.Artifact) {
 	et, _ := ptypes.TimestampProto(now.Add(24 * time.Hour))
 	art1 := &pb.Artifact{

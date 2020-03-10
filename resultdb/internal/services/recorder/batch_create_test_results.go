@@ -61,7 +61,7 @@ func validateBatchCreateTestResultsRequest(msg *pb.BatchCreateTestResultsRequest
 	return nil
 }
 
-// BatchCreateTestResults implements pb.RecorderServer.
+// BatchCreateTestResults implement pb.RecorderServer.
 func (s *recorderServer) BatchCreateTestResults(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
 	if err := validateBatchCreateTestResultsRequest(in, now); err != nil {

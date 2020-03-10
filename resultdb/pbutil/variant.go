@@ -54,7 +54,7 @@ func Variant(pairs ...string) *typepb.Variant {
 	return vr
 }
 
-// VariantToStrings returns a key:val string slice representation of the Variant.
+// VariantToStrings return a key:val string slice representation of the Variant.
 func VariantToStrings(vr *typepb.Variant) []string {
 	if vr == nil {
 		return nil
@@ -69,7 +69,7 @@ func VariantToStrings(vr *typepb.Variant) []string {
 	return pairs
 }
 
-// VariantFromStrings returns a Variant proto given the key:val string slice of its contents.
+// VariantFromStrings return a Variant proto given the key:val string slice of its contents.
 //
 // If a key appears multiple times, the last pair wins.
 func VariantFromStrings(pairs []string) (*typepb.Variant, error) {
@@ -88,7 +88,7 @@ func VariantFromStrings(pairs []string) (*typepb.Variant, error) {
 	return &typepb.Variant{Def: def}, nil
 }
 
-// SortedVariantKeys returns the keys in the variant as a sorted slice.
+// SortedVariantKeys return the keys in the variant as a sorted slice.
 func SortedVariantKeys(vr *typepb.Variant) []string {
 	keys := make([]string, 0, len(vr.GetDef()))
 	for k := range vr.GetDef() {

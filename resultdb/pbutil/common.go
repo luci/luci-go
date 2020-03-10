@@ -79,7 +79,7 @@ func ValidateRequestID(requestID string) error {
 	return nil
 }
 
-// ValidateMaxStaleness returns a non-nil error if maxStaleness is invalid.
+// ValidateMaxStaleness return a non-nil error if maxStaleness is invalid.
 func ValidateMaxStaleness(maxStaleness *durationpb.Duration) error {
 	if maxStaleness == nil {
 		return unspecified()
