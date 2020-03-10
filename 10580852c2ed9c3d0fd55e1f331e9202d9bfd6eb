@@ -34,6 +34,24 @@
       "revId": "10580852c2ed9c3d0fd55e1f331e9202d9bfd6eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82b61498_c6fdc87e",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-10T06:03:54Z",
+      "side": 1,
+      "message": "Added such a case anyway.",
+      "parentUuid": "ed74e640_a6cddf4b",
+      "revId": "10580852c2ed9c3d0fd55e1f331e9202d9bfd6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
