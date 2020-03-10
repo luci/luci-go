@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/grpc/prpc"
 
+	"go.chromium.org/luci/lucictx"
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
@@ -41,20 +42,24 @@ type baseCommandRun struct {
 	host          string
 	json          bool
 	forceInsecure bool
+	defaultHost   string
 
-	http     *http.Client
-	resultdb pb.ResultDBClient
-	recorder pb.RecorderClient
+	http        *http.Client
+	resultdb    pb.ResultDBClient
+	recorder    pb.RecorderClient
+	resultdbCtx *lucictx.ResultDB
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, text.Doc(`
-		Host of the resultdb instance.
+	r.Flags.StringVar(&r.host, "host", "", text.Doc(`
+		Host of the resultdb instance. Note that this should be specified
+		in LUCI_CONTEXT instead of the command line whenever possible.
 	`))
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
 		Force HTTP, as opposed to HTTPS.
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
+	r.defaultHost = p.DefaultResultDBHost
 }
 
 func (r *baseCommandRun) RegisterJSONFlag(usage string) {
@@ -72,6 +77,18 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	r.http, err = auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).Client()
 	if err != nil {
 		return err
+	}
+
+	r.resultdbCtx = lucictx.GetResultDB(ctx)
+
+	// If no host specified in command line populate from lucictx.
+	// If host also not set in lucictx, fallback to defaultHost (from Params).
+	if r.host == "" {
+		if r.resultdbCtx == nil || r.resultdbCtx.Hostname == "" {
+			r.host = r.defaultHost
+		} else {
+			r.host = r.resultdbCtx.Hostname
+		}
 	}
 
 	// Validate -host
