@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2e73e04_237adb52",
+        "filename": "client/cmd/isolate/common_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-10T09:56:42Z",
+      "side": 1,
+      "message": "I forget to say, but could you use t.Parallel() here?",
+      "revId": "ab7f5213987c83c03f2413dc0a6f1802a0dd01e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
