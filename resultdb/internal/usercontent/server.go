@@ -58,7 +58,7 @@ func NewServer(ctx context.Context, insecureURLs bool, hostname string) (*Server
 	}, nil
 }
 
-// InstallHandlers installs handlers to serve user content.
+// InstallHandlers install handlers to serve user content.
 func (s *Server) InstallHandlers(r *router.Router) {
 	mc := router.NewMiddlewareChain(validateToken)
 	r.GET(isolatePathPattern, mc, s.handleIsolateContent)

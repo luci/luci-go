@@ -104,7 +104,7 @@ func (s InvocationIDSet) String() string {
 	return fmt.Sprintf("%q", strs)
 }
 
-// Keys returns a spanner.KeySet.
+// Keys return a spanner.KeySet.
 func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
 	ret := spanner.KeySets()
 	for id := range s {
@@ -113,7 +113,7 @@ func (s InvocationIDSet) Keys(suffix ...interface{}) spanner.KeySet {
 	return ret
 }
 
-// MustParseInvocationNames converts invocation names to InvocationIDSet.
+// MustParseInvocationNames convert invocation names to InvocationIDSet.
 // Panics if a name is invalid. Useful for situations when names were already
 // validated.
 func MustParseInvocationNames(names []string) InvocationIDSet {
@@ -124,7 +124,7 @@ func MustParseInvocationNames(names []string) InvocationIDSet {
 	return ids
 }
 
-// Names returns a sorted slice of invocation names.
+// Names return a sorted slice of invocation names.
 func (s InvocationIDSet) Names() []string {
 	names := make([]string, 0, len(s))
 	for id := range s {
@@ -134,7 +134,7 @@ func (s InvocationIDSet) Names() []string {
 	return names
 }
 
-// hashPrefixBytes is the number of bytes of sha256 to prepend to a PK
+// hashPrefixBytes are the number of bytes of sha256 to prepend to a PK
 // to achieve even distribution.
 const hashPrefixBytes = 4
 
