@@ -38,7 +38,7 @@ func validateListTestExonerationsRequest(req *pb.ListTestExonerationsRequest) er
 	return nil
 }
 
-// ListTestExonerations implements pb.ResultDBServer.
+// ListTestExonerations implement pb.ResultDBServer.
 func (s *resultDBServer) ListTestExonerations(ctx context.Context, in *pb.ListTestExonerationsRequest) (*pb.ListTestExonerationsResponse, error) {
 	if err := validateListTestExonerationsRequest(in); err != nil {
 		return nil, appstatus.BadRequest(err)

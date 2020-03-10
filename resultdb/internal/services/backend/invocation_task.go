@@ -132,7 +132,7 @@ func (b *backend) runTask(ctx context.Context, taskType tasks.Type, id string) (
 	return nil
 }
 
-// runInvocationTasks queries invocation tasks and dispatches them to workers.
+// runInvocationTasks query invocation tasks and dispatch them to workers.
 func (b *backend) runInvocationTasks(ctx context.Context, taskType tasks.Type) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

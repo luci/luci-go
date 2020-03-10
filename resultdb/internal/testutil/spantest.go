@@ -45,7 +45,7 @@ import (
 // The value must be "1" for integration tests to run.
 const IntegrationTestEnvVar = "INTEGRATION_TESTS"
 
-// RunIntegrationTests returns true if integration tests should run.
+// RunIntegrationTests return true if integration tests should run.
 func RunIntegrationTests() bool {
 	return os.Getenv(IntegrationTestEnvVar) == "1"
 }
@@ -174,7 +174,7 @@ func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
 	return ct
 }
 
-// CombineMutations concatenates mutations
+// CombineMutations concatenate mutations
 func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 	totalLen := 0
 	for _, ms := range msSlice {
@@ -232,12 +232,12 @@ func InsertInvocation(id span.InvocationID, state pb.Invocation_State, extraValu
 	return span.InsertMap("Invocations", values)
 }
 
-// InsertFinalizedInvocationWithInclusions returns mutations to insert a finalized invocation with inclusions.
+// InsertFinalizedInvocationWithInclusions return mutations to insert a finalized invocation with inclusions.
 func InsertFinalizedInvocationWithInclusions(id span.InvocationID, included ...span.InvocationID) []*spanner.Mutation {
 	return InsertInvocationWithInclusions(id, pb.Invocation_FINALIZED, included...)
 }
 
-// InsertInvocationWithInclusions returns mutations to insert an invocation with inclusions.
+// InsertInvocationWithInclusions return mutations to insert an invocation with inclusions.
 func InsertInvocationWithInclusions(id span.InvocationID, state pb.Invocation_State, included ...span.InvocationID) []*spanner.Mutation {
 	ms := []*spanner.Mutation{InsertInvocation(id, state, nil)}
 	for _, incl := range included {
@@ -254,7 +254,7 @@ func InsertInclusion(including, included span.InvocationID) *spanner.Mutation {
 	})
 }
 
-// InsertTestResults returns spanner mutations to insert test results
+// InsertTestResults return spanner mutations to insert test results
 func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
@@ -278,7 +278,7 @@ func InsertTestResults(trs []*pb.TestResult) []*spanner.Mutation {
 	return ms
 }
 
-// InsertTestExonerations returns spanner mutations to insert test exonerations.
+// InsertTestExonerations return spanner mutations to insert test exonerations.
 func InsertTestExonerations(invID span.InvocationID, testID string, variant *typepb.Variant, count int) []*spanner.Mutation {
 	ms := make([]*spanner.Mutation, count)
 	for i := 0; i < count; i++ {
@@ -294,7 +294,7 @@ func InsertTestExonerations(invID span.InvocationID, testID string, variant *typ
 	return ms
 }
 
-// MakeTestResults creates test results.
+// MakeTestResults create test results.
 func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.TestStatus) []*pb.TestResult {
 	trs := make([]*pb.TestResult, len(statuses))
 	for i, status := range statuses {
@@ -312,7 +312,7 @@ func MakeTestResults(invID, testID string, v *typepb.Variant, statuses ...pb.Tes
 	return trs
 }
 
-// LogQueryResults executes the statement and logs results.
+// LogQueryResults execute the statement and log results.
 // Useful to debug failing tests.
 func LogQueryResults(ctx context.Context, st spanner.Statement) {
 	var values []interface{}

@@ -38,7 +38,7 @@ func BadRequest(err error, details ...*errdetails.BadRequest) error {
 	return Attach(err, s)
 }
 
-// MustWithDetails adds details to a status and asserts it is successful.
+// MustWithDetails add details to a status and assert that it is successful.
 func MustWithDetails(s *status.Status, details ...proto.Message) *status.Status {
 	s, err := s.WithDetails(details...)
 	if err != nil {

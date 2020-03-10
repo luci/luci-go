@@ -48,7 +48,7 @@ type Txn interface {
 	// Read reads multiple rows from the database.
 	Read(ctx context.Context, table string, key spanner.KeySet, columns []string) *spanner.RowIterator
 
-	// ReadOptions reads multiple rows from the database, and allows customizing
+	// ReadOptions read multiple rows from the database, and allow customizing
 	// options.
 	ReadWithOptions(ctx context.Context, table string, keys spanner.KeySet, columns []string, opts *spanner.ReadOptions) (ri *spanner.RowIterator)
 

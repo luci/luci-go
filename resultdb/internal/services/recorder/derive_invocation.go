@@ -233,7 +233,7 @@ func (s *recorderServer) deriveInvocationForOriginTask(ctx context.Context, in *
 	return originInv, nil
 }
 
-// batchInsertTestResults inserts the given TestResults in batches under container Invocations,
+// batchInsertTestResults insert the given TestResults in batches under container Invocations,
 // returning container ids.
 func (s *recorderServer) batchInsertTestResults(ctx context.Context, inv *pb.Invocation, trs []*pb.TestResult, batchSize int) (span.InvocationIDSet, error) {
 	batches := batchTestResults(trs, batchSize)
@@ -291,7 +291,7 @@ func batchInvocationID(invID span.InvocationID, batchInd int) span.InvocationID 
 	return span.InvocationID(fmt.Sprintf("%s::batch::%d", invID, batchInd))
 }
 
-// batchTestResults batches the given TestResults given the maximum batch size.
+// batchTestResults batch the given TestResults given the maximum batch size.
 func batchTestResults(trs []*pb.TestResult, batchSize int) [][]*pb.TestResult {
 	batches := make([][]*pb.TestResult, 0, len(trs)/batchSize+1)
 	for len(trs) > 0 {
