@@ -29,11 +29,15 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
-)
 
 func handshakeCheck(msg, token string) error {
 	dc := json.NewDecoder(strings.NewReader(msg))
 	return processHandshake(dc, token)
+}
+
+func handshakeCheck(ctx context.Context, msg, token string) error {
+	dc := json.NewDecoder(strings.NewReader(msg))
+	return processHandshake(ctx, dc, token)
 }
 
 func Test(t *testing.T) {

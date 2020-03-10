@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
@@ -61,6 +62,11 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// ChannelOptions specify the dispatcher options of the channel used, where
+	// the workloads for uploading TestResult(s) are queued. If nil, the default
+	// options are used.
+	ChannelOptions *dispatcher.Options
 }
 
 // Server contains state relevant to the server itself.
@@ -68,10 +74,11 @@ type ServerConfig struct {
 // After a call to Serve(), Server will accept connections on its Port and
 // gather test results to send to its Recorder.
 type Server struct {
-	cfg    ServerConfig
-	cancel context.CancelFunc
-	errC   chan error
-	ln     net.Listener
+	cfg          ServerConfig
+	cancel       context.CancelFunc
+	errC         chan error
+	ln           net.Listener
+	uploadChanel dispatcher.Channel
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -236,15 +243,25 @@ func (s *Server) handleConnection(ctx context.Context, c net.Conn) error {
 	return nil
 }
 
-func processMessages(dc *json.Decoder) error {
-	for {
-		msgp := &sinkpb.SinkMessageContainer{}
-		if err := readMessage(dc, msgp); err != nil {
-			return errors.Annotate(err, "failed to read message").Err()
+func processMessages(ctx context.Context, dc *json.Decoder) (err error) {
+	for err == nil {
+		msg := &sinkpb.SinkMessageContainer{}
+		if err = readMessage(ctx, dc, msg); err != nil {
+			continue
 		}
 
-		// TODO(sajjadm): msgp is valid, do something with it
+		switch mt := msg.Msg.(type) {
+		case *sinkpb.SinkMessageContainer_TestResult:
+			err = processUploadTestResult(ctx, msg.GetTestResult())
+		case *sinkpb.SinkMessageContainer_TestResultFile:
+			err = processUploadTestResultFile(ctx, msg.GetTestResultFile())
+		case *sinkpb.SinkMessageContainer_Handshake:
+			logging.Warningf(ctx, "Unnecessary Handshake")
+		default:
+			err = errors.Reason("unknown SinkMessageContainer message - %q", mt).Err()
+		}
 	}
+	return
 }
 
 func readMessage(dc *json.Decoder, dest proto.Message) error {
@@ -271,4 +288,65 @@ func processHandshake(dc *json.Decoder, authToken string) error {
 func shouldKeepTrying(err error) bool {
 	e, ok := err.(net.Error)
 	return ok && (e.Temporary() || e.Timeout())
+}
+
+// processUploadTestResult schedules an upload of the test result.
+func processUploadTestResult(ctx context.Context, msg *sinkpb.TestResult) error {
+	if err := validateUploadTestResult(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResult message").Err()
+	}
+	uploadChannel.C <- msg
+	return nil
+}
+
+// processUploadTestResultFile schedules an upload of the test result stored in the file.
+func processUploadTestResultFile(ctx context.Context, msg *sinkpb.TestResultFile) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// run basic checks for the request before putting it to the channel.
+	if err := validateUploadTestResultFile(msg); err != nil {
+		return errors.Annotate(err, "failed to validate the TestResultFile message").Err()
+	}
+
+	f, err := os.Open(msg.Path)
+	if err != nil {
+		return errors.Annotate(err, "failed to TestResultFile %q", msg.Path).Err()
+	}
+	go func() {
+		<-ctx.Done()
+		f.Close()
+	}()
+
+	switch msg.Format {
+	case TestResultFile_LUCI:
+		err = handleConnection(f)
+	case TestResultFile_CHROMIUM_JSON_TEST_RESULTS:
+		err = handleChromiumJSONTestResultFile(ctx, f)
+	case TestResultFile_GOOGLE_TEST:
+		err = handleGTestResultFile(ctx, f)
+	default:
+		err = errors.New("Unknown TestResultFile.Format %d for %s", msg.Format, msg.Path).Err()
+	}
+	return err
+}
+
+func handleLuciTestResultFile(ctx context.Context, f *File) error {
+	dc := json.NewDecoder(c)
+	if err != processMessage(ctx, dc); err != nil && err != io.EOF {
+		return err
+	}
+	return nil
+}
+
+func handleChromiumJSONTestResultFile(ctx context.Context, f *file) error {
+	logging.Warnf("ChromiumJSONTestResult format is not supported yet")
+	// TODO(crbug/1017288): convert CR-JSON into []TestResult{}
+	return nil
+}
+
+func handleGTestResultFile(ctx context.Context, f *file) error {
+	logging.Warnf("GTestResult format is not supported yet")
+	// TODO(crbug/1017288): convert GT into []TestResult{}
+	return nil
 }
