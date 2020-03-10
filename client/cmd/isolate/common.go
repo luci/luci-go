@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -154,9 +156,41 @@ func (lf *loggingFlags) Init(f *flag.FlagSet) {
 	f.StringVar(&lf.EventlogEndpoint, "eventlog-endpoint", "", `The URL destination for eventlogs. The special values "prod" or "test" may be used to target the standard prod or test urls respectively. An empty string disables eventlogging.`)
 }
 
+func elideNestedPaths(deps []string, checkIsDir func(string) (bool, error)) ([]string, error) {
+	// For a deps having a pattern of the following:
+	// "ab/"
+	// "ab/cd/"
+	// "ab/foo.txt"
+	//
+	// We need to elide the nested paths under "ab/" to make HardlinkRecursively
+	// work. Without this step, all files have already been hard linked when
+	// processing "ab/", so "ab/cd/" would lead to an error.
+	sort.Strings(deps)
+	prefixDir := ""
+	var result []string
+	for _, dep := range deps {
+		if len(prefixDir) > 0 && strings.HasPrefix(dep, prefixDir) {
+			continue
+		}
+		// |dep| can be a unseen top-level directory, or an individual file
+		result = append(result, dep)
+		prefixDir = ""
+		if isDir, err := checkIsDir(dep); err != nil {
+			return nil, errors.Annotate(err, "failed to check dir: %s", dep).Err()
+		} else if isDir {
+			prefixDir = dep
+		}
+	}
+	return result, nil
+}
+
 func recreateTree(outDir string, rootDir string, deps []string) error {
 	if err := filesystem.MakeDirs(outDir); err != nil {
 		return errors.Annotate(err, "failed to create directory: %s", outDir).Err()
+	}
+	deps, err := elideNestedPaths(deps, filesystem.IsDir)
+	if err != nil {
+		return errors.Annotate(err, "failed to elide nested paths").Err()
 	}
 	createdDirs := make(map[string]struct{})
 	for _, dep := range deps {
