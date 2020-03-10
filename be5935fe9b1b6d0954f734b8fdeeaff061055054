@@ -82,6 +82,23 @@
     },
     {
       "key": {
+        "uuid": "1e19aa1a_c9d61ffa",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-10T17:28:38Z",
+      "side": 1,
+      "message": "WDYT if we pass all invocations to be included in one string and all invocations to be removed in another string to make the command line more explicit?\n\nsomething like:\n\nrdb update-inclusions -include \"inv1 inv2 ...\" -remove \"inv3 inv4 ...\"",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ead5eebe_2ebe4c21",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -105,6 +122,29 @@
     },
     {
       "key": {
+        "uuid": "a22145b4_a34b89af",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-10T17:28:38Z",
+      "side": 1,
+      "message": "I think \"the current invocation\" is not quite accurate here.",
+      "range": {
+        "startLine": 42,
+        "startChar": 57,
+        "endLine": 42,
+        "endChar": 76
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "40e5bb5a_f18e602f",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -121,6 +161,29 @@
         "startChar": 20,
         "endLine": 44,
         "endChar": 29
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "055b65b6_ef34fa3d",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-10T17:28:38Z",
+      "side": 1,
+      "message": "nit: be",
+      "range": {
+        "startLine": 44,
+        "startChar": 44,
+        "endLine": 44,
+        "endChar": 46
       },
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
