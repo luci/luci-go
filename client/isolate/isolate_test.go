@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/isolatedclient/isolatedfake"
+	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/testing/testfs"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -351,5 +352,44 @@ func TestArchiveDir(t *testing.T) {
 		}
 		So(actual, ShouldResemble, expected)
 		So(item.Digest(), ShouldResemble, isolatedHash)
+	}))
+}
+
+func TestProcessIsolateFile(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Directory deps should end with osPathSeparator`, t, testfs.MustWithTempDir(t, "", func(tmpDir string) {
+		baseDir := filepath.Join(tmpDir, "baseDir")
+		secondDir := filepath.Join(tmpDir, "secondDir")
+		So(os.Mkdir(baseDir, 0700), ShouldBeNil)
+		So(os.Mkdir(secondDir, 0700), ShouldBeNil)
+		So(ioutil.WriteFile(filepath.Join(baseDir, "foo"), []byte("foo"), 0600), ShouldBeNil)
+		// Note that for "secondDir", its separator is omitted intentionally.
+		isolate := `{
+			'variables': {
+				'files': [
+					'../baseDir/',
+					'../secondDir',
+					'../baseDir/foo',
+				],
+			},
+		}`
+
+		outDir := filepath.Join(tmpDir, "out")
+		So(os.Mkdir(outDir, 0700), ShouldBeNil)
+		isolatePath := filepath.Join(outDir, "my.isolate")
+		So(ioutil.WriteFile(isolatePath, []byte(isolate), 0600), ShouldBeNil)
+
+		opts := &ArchiveOptions{
+			Isolate: isolatePath,
+		}
+
+		deps, _, _, err := ProcessIsolate(opts)
+		So(err, ShouldBeNil)
+		for _, dep := range deps {
+			isDir, err := filesystem.IsDir(dep)
+			So(err, ShouldBeNil)
+			So(strings.HasSuffix(dep, osPathSeparator), ShouldEqual, isDir)
+		}
 	}))
 }
