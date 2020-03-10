@@ -337,13 +337,13 @@ message Verifiers {
     // Optional, defaulting to no retries whatsoever.
     RetryConfig retry_config = 2;
 
-    // EXPERIMENTAL. WORK IN PROGRESS. https://crbug.com/909895.
-    // Optional. If YES, running or not-yet-started tryjobs will be cancelled as
-    // soon as substantially different patchset is uploaded to a CL.
+    // EXPERIMENTAL & DEPRECATED. Use per-builder `cancel_stale`
+    // instead. Current default is NO, but see https://crbug.com/1001182 for
+    // the up-to-date information.
     Toggle cancel_stale_tryjobs = 3;
 
     message Builder {
-      // Next field number: 11
+      // Next field number: 12
 
       // Required. Name of the builder as <project>/<bucket>/<builder>
       //
@@ -382,6 +382,11 @@ message Verifiers {
       // additional OWNERS, lint, etc checks which are useful to run against
       // the latest revision of the CL's target branch.
       bool disable_reuse = 2;
+
+      // Optional. If YES (default), running or not-yet-started builds of this
+      // builder previously triggered by CQ will be cancelled as soon as
+      // a substantially different patchset is uploaded to a CL.
+      Toggle cancel_stale = 11;
 
       // Optional name of a builder (aka parent) which will trigger this builder
       // (aka child).

@@ -876,6 +876,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
       name = name,
       result_visibility = _cq_visibility(verifier.props.result_visibility),
       includable_only = verifier.props.includable_only,
+      cancel_stale = _cq_toggle(verifier.props.cancel_stale),
       disable_reuse = verifier.props.disable_reuse,
       experiment_percentage = verifier.props.experiment_percentage,
       owner_whitelist_group = verifier.props.owner_whitelist,

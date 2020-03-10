@@ -1901,7 +1901,7 @@ whenever there's a pending approved CL for a ref in the watched set.
 * **allow_owner_if_submittable**: allow CL owner to trigger CQ after getting `Code-Review` and other approvals regardless of `acl.CQ_COMMITTER` or `acl.CQ_DRY_RUNNER` roles. Only `cq.ACTION_*` are allowed here. Default is `cq.ACTION_NONE` which grants no additional permissions. CL owner is user owning a CL, i.e. its first patchset uploader, not to be confused with OWNERS files. **WARNING**: using this option is not recommended if you have sticky `Code-Review` label because this allows a malicious developer to upload a good looking patchset at first, get code review approval, and then upload a bad patchset and CQ it right away.
 * **tree_status_host**: a hostname of the project tree status app (if any). It is used by the CQ to check the tree status before committing a CL. If the tree is closed, then the CQ will wait until it is reopened.
 * **retry_config**: a new [cq.retry_config(...)](#cq.retry_config) struct or one of `cq.RETRY_*` constants that define how CQ should retry failed builds. See [CQ](#cq_doc) for more info. Default is `cq.RETRY_TRANSIENT_FAILURES`.
-* **cancel_stale_tryjobs**: **EXPERIMENTAL. Follow https://crbug.com/909895.** TODO(tandrii): update this doc once https://crbug.com/909895 is ready. controls what CQ does with not yet finished tryjobs if a new non-trivially different patchset is uploaded. Such tryjobs will not be useful to CQ any more, so you may choose to cancel them for efficiency reasons. If set to False (current default), CQ will NOT cancel them. If set to True, CQ will cancel such tryjobs.
+* **cancel_stale_tryjobs**: EXPERIMENTAL & DEPRECATED. Use `cq_tryjob_verifier(..., cancel_stale=...)` instead. Current default is NO, but see https://crbug.com/1001182 for the up-to-date information.
 * **verifiers**: a list of [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) specifying what checks to run on a pending CL. See [luci.cq_tryjob_verifier(...)](#luci.cq_tryjob_verifier) for all details. As a shortcut, each entry can also either be a dict or a string. A dict entry is an alias for `luci.cq_tryjob_verifier(**entry)` and a string entry is an alias for `luci.cq_tryjob_verifier(builder = entry)`.
 
 
@@ -1917,6 +1917,7 @@ luci.cq_tryjob_verifier(
     # Optional arguments.
     cq_group = None,
     result_visibility = None,
+    cancel_stale = None,
     includable_only = None,
     disable_reuse = None,
     experiment_percentage = None,
@@ -2052,6 +2053,7 @@ For example:
 * **builder**: a builder to launch when verifying a CL, see [luci.builder(...)](#luci.builder). Can also be a reference to a builder defined in another project. See [Referring to builders in other projects](#external_builders) for more details. Required.
 * **cq_group**: a CQ group to add the verifier to. Can be omitted if `cq_tryjob_verifier` is used inline inside some [luci.cq_group(...)](#luci.cq_group) declaration.
 * **result_visibility**: can be used to restrict the visibility of the tryjob results in comments on Gerrit. Valid values are `cq.COMMENT_LEVEL_FULL` and `cq.COMMENT_LEVEL_RESTRICTED` constants. Default is to give full visibility: builder name and full summary markdown are included in the Gerrit comment.
+* **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel.
 * **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_regexp` or `location_regexp_exclude`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decicion whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements. May be combined with location_regexp and location_regexp_exclude.
