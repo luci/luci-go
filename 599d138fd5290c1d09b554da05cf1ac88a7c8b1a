@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89b1735a_ae15cb69",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-10T00:13:02Z",
+      "side": 1,
+      "message": "*no AI required*: haven\u0027t you considered using ... here to avoid the need to create explicit slice? Why did you choose against it?",
+      "range": {
+        "startLine": 84,
+        "startChar": 49,
+        "endLine": 84,
+        "endChar": 52
+      },
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
