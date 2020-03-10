@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "67c035f0_ebd46d24",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "i think it is rather a strong statement. baseCommandRun is used in contexts where LUCI_CONTEXT does not quite make sense, e.g. `rdb ls`.\n\nlet\u0027s just say what the program does: that the flag value defaults to the value in luci context, or else to p.DefaultResultDBHost",
+      "range": {
+        "startLine": 56,
+        "startChar": 46,
+        "endLine": 56,
+        "endChar": 63
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "597dba7a_1ab9d39b",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "this isn\u0027t a part of registering flags.\n\nstepping back, why do we have this field to begin with? it is used only in L88 where we could use p.DefaultResultDBHost",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e7c09c7_c57fc132",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "what is this referring to? asking because this is capitalized",
+      "range": {
+        "startLine": 85,
+        "startChar": 67,
+        "endLine": 85,
+        "endChar": 73
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "477625d8_8c06fe8f",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "nit: if this condition is inverted, the the related lines L87 and L90 will be visually closer to each other",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ead5eebe_2ebe4c21",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "other subcommands accept invocation id, not name, because it is shorter.\n\nwe use invocation names in RPCs only because of https://aip.dev/122 for consistency with other RPCs. I am thinking, we should use names (as opposed to ids) only there. WDYT?\n\ndoes this mean we should change build proto and lucictx to use invocation ids instead of names too?",
+      "range": {
+        "startLine": 37,
+        "startChar": 44,
+        "endLine": 37,
+        "endChar": 61
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40e5bb5a_f18e602f",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "starting",
+      "range": {
+        "startLine": 44,
+        "startChar": 20,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0c43176_aa6428df",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "we will need the same thing in other subcommands. Could you extract this feature to a separate subcommand\n\n  rdb ctx -current-invocation \u003cid\u003e -update-token \u003ctoken\u003e \u003ccommandline\u003e\n\nand use it like\n\n  rdb -ctx -current-invocation foo -update-token bar rdb update-inclusions include1 include2 ~exclude1\n\nconsistent with `luci-auth context`\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/auth/client/authcli/authcli.go;l\u003d417?q\u003dSubcommandContextWithParams\u0026sq\u003d\u0026ss\u003dchromium%2Finfra%2Finfra\n\n--\n\nthen the logic in updateInclusions gets simpler\n\n--\n\nshould be in a separate CL",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 4
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d66eb2c5_538c9bdb",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "please use errors.Reason to be consistent with other files",
+      "range": {
+        "startLine": 83,
+        "startChar": 13,
+        "endLine": 83,
+        "endChar": 19
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7e93f29_1be3d7ba",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "error messages must start with lower-case letter",
+      "range": {
+        "startLine": 83,
+        "startChar": 21,
+        "endLine": 83,
+        "endChar": 22
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30a601d_20f01c85",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "shorter:\n\n  remove :\u003d strings.HasPrefix(arg, \"~\")\n  name :\u003d stirngs.TrimPrefix(arg, \"~\")",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 3
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0b1fca6_5987cb03",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T15:58:42Z",
+      "side": 1,
+      "message": "use errors.Reason to create brand new errors",
+      "range": {
+        "startLine": 136,
+        "startChar": 16,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
