@@ -375,6 +375,16 @@ func validateTryjobVerifier(ctx *validation.Context, v *v2.Verifiers_Tryjob) {
 		validateTryjobRetry(ctx, v.RetryConfig)
 		ctx.Exit()
 	}
+
+	switch v.CancelStaleTryjobs {
+	case v2.Toggle_YES:
+		ctx.Errorf("`cancel_stale_tryjobs: YES` matches default CQ behavior now; please remove")
+	case v2.Toggle_NO:
+		ctx.Errorf("`cancel_stale_tryjobs: NO` is no longer supported, use per-builder `cancel_stale` instead")
+	case v2.Toggle_UNSET:
+		// OK
+	}
+
 	if len(v.Builders) == 0 {
 		ctx.Errorf("at least 1 builder required")
 		return

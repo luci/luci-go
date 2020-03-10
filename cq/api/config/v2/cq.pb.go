@@ -815,9 +815,7 @@ type Verifiers_Tryjob struct {
 	Builders []*Verifiers_Tryjob_Builder `protobuf:"bytes,1,rep,name=builders,proto3" json:"builders,omitempty"`
 	// Optional, defaulting to no retries whatsoever.
 	RetryConfig *Verifiers_Tryjob_RetryConfig `protobuf:"bytes,2,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
-	// EXPERIMENTAL & DEPRECATED. Use per-builder `cancel_stale`
-	// instead. Current default is NO, but see https://crbug.com/1001182 for
-	// the up-to-date information.
+	// DEPRECATED & IGNORED BY CQ. Use per-builder `cancel_stale` to opt out.
 	CancelStaleTryjobs   Toggle   `protobuf:"varint,3,opt,name=cancel_stale_tryjobs,json=cancelStaleTryjobs,proto3,enum=cq.config.Toggle" json:"cancel_stale_tryjobs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -905,9 +903,9 @@ type Verifiers_Tryjob_Builder struct {
 	// additional OWNERS, lint, etc checks which are useful to run against
 	// the latest revision of the CL's target branch.
 	DisableReuse bool `protobuf:"varint,2,opt,name=disable_reuse,json=disableReuse,proto3" json:"disable_reuse,omitempty"`
-	// Optional. If YES (default), running or not-yet-started tryjobs
-	// previously triggered by CQ will be cancelled as soon as substantially
-	// different patchset is uploaded to a CL.
+	// Optional. If YES (default), running or not-yet-started builds of this
+	// builder previously triggered by CQ will be cancelled as soon as
+	// a substantially different patchset is uploaded to a CL.
 	CancelStale Toggle `protobuf:"varint,11,opt,name=cancel_stale,json=cancelStale,proto3,enum=cq.config.Toggle" json:"cancel_stale,omitempty"`
 	// Optional name of a builder (aka parent) which will trigger this builder
 	// (aka child).
