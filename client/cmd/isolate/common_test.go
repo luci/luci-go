@@ -21,6 +21,7 @@ import (
 )
 
 func TestElideNestedPaths(t *testing.T) {
+	t.Parallel()
 	doElision := func(deps []string) []string {
 		// Ignore OS-dependent path sep
 		return elideNestedPaths(deps, "/")
