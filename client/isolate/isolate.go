@@ -176,12 +176,19 @@ func ProcessIsolate(opts *ArchiveOptions) ([]string, string, *isolated.Isolated,
 	}
 
 	// Expand variables in the deps, and convert each path to an absolute form.
+	osSep := string(os.PathSeparator)
 	for i := range deps {
 		dep, err := ReplaceVariables(deps[i], opts)
 		if err != nil {
 			return nil, "", nil, err
 		}
+		// Downstream expects the dependency of a directory to always end with
+		// '/', but filepath.Join() removes that, so we add it back.
+		isDir := strings.HasSuffix(dep, osSep)
 		deps[i] = filepath.Join(isolateDir, dep)
+		if isDir {
+			deps[i] += osSep
+		}
 	}
 
 	// Find the root directory of all the files (the root might be above isolateDir).
