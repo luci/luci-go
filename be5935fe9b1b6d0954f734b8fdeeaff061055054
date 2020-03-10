@@ -117,6 +117,24 @@
     },
     {
       "key": {
+        "uuid": "29709d36_0bbc3cb8",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-10T18:12:17Z",
+      "side": 1,
+      "message": "I think for rdb-ls it should be fine since we are performing the same action on all the invocation ids.\n\nBut here we can either include or remove invocation ids, so I think it would be nice to be more explicit.",
+      "parentUuid": "d6759200_9fa8ae1f",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ead5eebe_2ebe4c21",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
