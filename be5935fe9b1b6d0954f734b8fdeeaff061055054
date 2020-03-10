@@ -99,6 +99,24 @@
     },
     {
       "key": {
+        "uuid": "d6759200_9fa8ae1f",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-10T17:44:29Z",
+      "side": 1,
+      "message": "Chan, does your argument also applies to other subcommands? rdb-ls accepts invocation ids as positional arguments, not flags",
+      "parentUuid": "1e19aa1a_c9d61ffa",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ead5eebe_2ebe4c21",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
