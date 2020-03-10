@@ -16,6 +16,24 @@
       "revId": "10580852c2ed9c3d0fd55e1f331e9202d9bfd6eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed74e640_a6cddf4b",
+        "filename": "client/isolate/isolate_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-10T06:01:24Z",
+      "side": 1,
+      "message": "I thought that would be an illegal case, given that isolate file\u0027s directory deps always contain \u0027/\u0027?",
+      "parentUuid": "0d264ec2_24db26ee",
+      "revId": "10580852c2ed9c3d0fd55e1f331e9202d9bfd6eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
