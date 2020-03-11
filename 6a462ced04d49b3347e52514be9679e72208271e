@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "cd775a8a_f54e9099",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T16:39:11Z",
+      "side": 1,
+      "message": "if it is such a big deal, we can make proto-gae generate a struct {the_proto}  that implements those methods.\n\ni don\u0027t see a problem in having those methods though",
+      "parentUuid": "0e04ab1d_121de531",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68a52b7d_a8bf26b1",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
@@ -228,6 +252,24 @@
       "revId": "6a462ced04d49b3347e52514be9679e72208271e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d48ad61d_47bcda1a",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T16:39:11Z",
+      "side": 1,
+      "message": "\u003e The comment about them existing during build creation is only on infra and input.properties, but you mean it applies to all of these? \n\nyes\n\n\u003e If they are trimmed before writing to datastore then they never exist in the proto when the proto is in the datastore, right? \n\nright\n\n\u003e I guess I don\u0027t understand the reason the comment is written this way:\n\u003e https://chromium.googlesource.com/infra/infra/+/c5050e19726f7dedd73b9af78468afda665e55cd/appengine/cr-buildbucket/model.py#126\n\u003e \n\u003e 1. \"does exist during build creation, and moved into BuildInputProperties right before initial datastore.put\". In other words, never exists in the proto in the datastore. In which case I wouldn\u0027t bother to include the \"CAVEAT\". Can I just say it\u0027s not in the proto in the datastore?\n\u003e \n\u003e 2. The caveat is only written for 2/5 of these so I thought it implied there is some difference.\n\nwhat you have in ps3 is fine. The comment was written this way to avoid \"wait a sec, everywhere in creaiton.py i see these fields are read/write\", but you scoped it to entities/storage, so I think its fine",
+      "parentUuid": "38d9bc08_691a9542",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -316,6 +358,30 @@
       "revId": "6a462ced04d49b3347e52514be9679e72208271e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae8dd45f_d3bb46b7",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T16:39:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f593e886_1926631f",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 14
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
