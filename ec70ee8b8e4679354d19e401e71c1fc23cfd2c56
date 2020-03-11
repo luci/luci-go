@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5e654f01_bfd797b9",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "why this file is modified in this CL? contextSubcommand does not use baseCommandRun",
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38f02dd5_975e68ba",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "please restore tabs. the indentation got weird",
+      "range": {
+        "startLine": 54,
+        "startChar": 11,
+        "endLine": 55,
+        "endChar": 10
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5486a9f7_b8361b1d",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "\"given\" or \"specified\"\n\nthere is nothing hardcoded here",
+      "range": {
+        "startLine": 60,
+        "startChar": 13,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2908c38_a22f71a7",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "nit: unused outside of if@L83 \u003d\u003e please move inside the if\n\ncan be injected into if@L84 too",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 7
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72edb401_3892b6cb",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "nothing hardcoded here",
+      "range": {
+        "startLine": 86,
+        "startChar": 48,
+        "endLine": 86,
+        "endChar": 57
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5a2ece7_e703e141",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "should be in `else`",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 87,
+        "endChar": 26
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9774c1e9_4c99113f",
+        "filename": "resultdb/cli/cmd_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "let\u0027s make it consistent with luci-auth: context (not ctx)\n\napplies to L51 too",
+      "range": {
+        "startLine": 53,
+        "startChar": 14,
+        "endLine": 53,
+        "endChar": 17
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "937577d9_5aea3ff8",
+        "filename": "resultdb/cli/cmd_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "this is very specific to updateInclusions. we should not talk about it here. \n\npresumably the user of context subcommand understands luci context, so we can refer to resultdb.current_invocation in luci context\n\nsame below",
+      "range": {
+        "startLine": 76,
+        "startChar": 24,
+        "endLine": 76,
+        "endChar": 56
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "685d01cc_73c8858f",
+        "filename": "resultdb/cli/cmd_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "we are repeating ourselves here and in L110. Consider just returning the error with a full message and print it in L139. Strictly speaking, L139 just ignores error message and this makes the reader wonder if this is intentional",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 59
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f1d854a_449eb224",
+        "filename": "resultdb/cli/cmd_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "would be simpler to use https://godoc.org/go.chromium.org/luci/lucictx#Exported.SetInCmd ?",
+      "range": {
+        "startLine": 135,
+        "startChar": 1,
+        "endLine": 136,
+        "endChar": 30
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a18cc572_c7ac54fa",
+        "filename": "resultdb/cli/cmd_ctx.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:12:24Z",
+      "side": 1,
+      "message": "this is nil because err in L143 is scoped to L143-145.",
+      "range": {
+        "startLine": 146,
+        "startChar": 34,
+        "endLine": 146,
+        "endChar": 37
+      },
+      "revId": "ec70ee8b8e4679354d19e401e71c1fc23cfd2c56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
