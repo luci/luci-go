@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
 // TODO(crbug/1042991): Move to a common location.
@@ -36,15 +36,15 @@ var (
 	builderRegex = regexp.MustCompile("^[a-zA-Z0-9_\\-. ]{1,128}$")
 )
 
-// GetBuild handles a request to retrieve a build. Implements buildbucketpb.BuildsServer.
-func (*Builds) GetBuild(ctx context.Context, req *buildbucketpb.GetBuildRequest) (*buildbucketpb.Build, error) {
+// GetBuild handles a request to retrieve a build. Implements pb.BuildsServer.
+func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
 	switch {
 	case req.GetId() != 0:
 		if req.Builder != nil || req.BuildNumber != 0 {
 			return nil, status.Errorf(codes.InvalidArgument, "id is mutually exclusive with (builder and build_number)")
 		}
 	case req.GetBuilder() != nil && req.BuildNumber != 0:
-		// TODO(crbug/1042991): Move buildbucketpb.BuilderID validation to a common location.
+		// TODO(crbug/1042991): Move pb.BuilderID validation to a common location.
 		switch parts := strings.Split(req.Builder.Bucket, "."); {
 		case !projRegex.MatchString(req.Builder.Project):
 			return nil, status.Errorf(codes.InvalidArgument, "builder.project must match %q", projRegex.String())
@@ -70,15 +70,9 @@ func (*Builds) GetBuild(ctx context.Context, req *buildbucketpb.GetBuildRequest)
 		default:
 			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 		}
-		return &buildbucketpb.Build{
-			Builder: &buildbucketpb.BuilderID{
-				Project: ent.Project,
-				Bucket:  ent.BucketID,
-				Builder: ent.BuilderID,
-			},
-			Id: ent.ID,
-		}, nil
+		// TODO(crbug/1042991): Merge in zeroed properties.
+		return &ent.Proto, nil
 	}
 	// TODO(crbug/1042991): Implement get by builder/build number.
-	return &buildbucketpb.Build{}, nil
+	return &pb.Build{}, nil
 }
