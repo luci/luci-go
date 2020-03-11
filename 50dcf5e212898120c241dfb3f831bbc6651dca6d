@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "7cc46e78_ab151f35",
+        "filename": "milo/frontend/test-results-ui/src/pages/invocation_page_test.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-11T13:37:44Z",
+      "side": 1,
+      "message": "I agree that #3 is more readable. But I prefer the assert variant.\nMostly because the expect and should variants can break the \u0027no-unused-expression\u0027 rule in tslint (e.g. expect(something).to.be.true).",
+      "parentUuid": "ecc452b5_ed69582d",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 80
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b2941724_221dea2f",
         "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
         "patchSetId": 4
@@ -213,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "7e80ec9d_37ffe9e6",
+        "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-11T13:37:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2941724_221dea2f",
+      "range": {
+        "startLine": 23,
+        "startChar": 3,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93480237_a44d2421",
         "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
         "patchSetId": 4
@@ -233,6 +281,30 @@
       "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "677c1fbf_09d83513",
+        "filename": "milo/frontend/test-results-ui/src/pages/login_page.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-11T13:37:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93480237_a44d2421",
+      "range": {
+        "startLine": 24,
+        "startChar": 19,
+        "endLine": 24,
+        "endChar": 27
+      },
+      "revId": "50dcf5e212898120c241dfb3f831bbc6651dca6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
