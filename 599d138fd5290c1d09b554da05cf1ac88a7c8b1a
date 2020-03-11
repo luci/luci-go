@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "d7245db6_5c079779",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T22:01:00Z",
+      "side": 1,
+      "message": "Is there a CL in the future that uses these? Right now their use could be inlined in runCases and I think it\u0027d be more readable in fewer lines.\n\n// Make a swarming job whose last slice expires in 60 + 180 + 360 \u003d 600 seconds.\ntc.fn(testSWJob(60 * time.Second, 180 * time.Second, 360 * time.Second))",
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "89b1735a_ae15cb69",
         "filename": "led/job/helpers_for_test.go",
         "patchSetId": 6
@@ -19,6 +36,46 @@
         "endLine": 84,
         "endChar": 52
       },
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e2e1809_33a4b3bb",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T22:01:00Z",
+      "side": 1,
+      "message": "600 I think",
+      "range": {
+        "startLine": 103,
+        "startChar": 45,
+        "endLine": 103,
+        "endChar": 48
+      },
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f0ccc47_163427c8",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T22:01:00Z",
+      "side": 1,
+      "message": "Personally I would inline this everywhere so readers of the code can avoid having to look up a function in another file. It\u0027s down to personal preference, but mine is for tests to be extremely easy to understand (esp. in isolation) even if it makes them verbose and inefficient.",
       "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
