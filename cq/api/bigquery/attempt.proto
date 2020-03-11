@@ -17,7 +17,7 @@ message Attempt {
   // The opaque key unique to this Attempt.
   string key = 1;
   // The LUCI project that this Attempt belongs to.
-  string project = 2;
+  string luci_project = 2;
 
   // An opaque key that is unique for a given set of Gerrit change patchsets.
   // (or, equivalently, buildsets). The same cl_group_key will be used if
