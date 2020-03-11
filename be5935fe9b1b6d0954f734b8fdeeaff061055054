@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e66b484b_5c209069",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67c035f0_ebd46d24",
+      "range": {
+        "startLine": 56,
+        "startChar": 46,
+        "endLine": 56,
+        "endChar": 63
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "597dba7a_1ab9d39b",
         "filename": "resultdb/cli/baserun.go",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2020-03-10T15:58:42Z",
       "side": 1,
       "message": "this isn\u0027t a part of registering flags.\n\nstepping back, why do we have this field to begin with? it is used only in L88 where we could use p.DefaultResultDBHost",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b95ed8b_84c422cf",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "initClients does not have access to Params. My options were to:\n- pipe Params down to initClients\n- keep a pointer to the Params in baseCommandRun struct\n- overload the host flag to by default have something like \"DEFAULT:\u003cactual default\u003e\" s.t. initClients can decide whether it needs to apply the luci context hostname, when there\u0027s a DEFAULT: prefix in the flag, or strip it if no host name in the context.\n- hijack the flag registration to save only the hardcoded default to the baseCommandRun struct.\n\nThe first two were hacky because Params IIUC is intended only to initialize the struct, not to actually run the commands.\nThe third one was hacky because it\u0027s an unexpected use of the flag. Even though this option does not require adding fields to the baseCommandRun struct.\nThe fourth one is hacky because copying the hardcoded default to the baseCommandRun struct is not strictly \u0027registering\u0027 a flag.\n\nI thought 4th option was less ugly than the others. Do you have any suggestions?",
+      "parentUuid": "597dba7a_1ab9d39b",
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "4f34a127_1424c873",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "I clarified.",
+      "parentUuid": "7e7c09c7_c57fc132",
+      "range": {
+        "startLine": 85,
+        "startChar": 67,
+        "endLine": 85,
+        "endChar": 73
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "477625d8_8c06fe8f",
         "filename": "resultdb/cli/baserun.go",
         "patchSetId": 2
@@ -79,6 +145,24 @@
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e3831e8_fd778730",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "477625d8_8c06fe8f",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -153,6 +237,24 @@
     },
     {
       "key": {
+        "uuid": "575940ee_96cfaf9f",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "432e7bd0_7e995be3",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ead5eebe_2ebe4c21",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -176,6 +278,30 @@
     },
     {
       "key": {
+        "uuid": "9ba424eb_490bbac5",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ead5eebe_2ebe4c21",
+      "range": {
+        "startLine": 37,
+        "startChar": 44,
+        "endLine": 37,
+        "endChar": 61
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a22145b4_a34b89af",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -196,6 +322,30 @@
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63d31e61_a87e1ca2",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a22145b4_a34b89af",
+      "range": {
+        "startLine": 42,
+        "startChar": 57,
+        "endLine": 42,
+        "endChar": 76
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -245,6 +395,54 @@
     },
     {
       "key": {
+        "uuid": "dab22823_1dfb03d8",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "055b65b6_ef34fa3d",
+      "range": {
+        "startLine": 44,
+        "startChar": 44,
+        "endLine": 44,
+        "endChar": 46
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5b6eb633_da2b9cc0",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "40e5bb5a_f18e602f",
+      "range": {
+        "startLine": 44,
+        "startChar": 20,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d0c43176_aa6428df",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -265,6 +463,30 @@
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a29b1f29_51e866fa",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done, see crrev.com/c/2097670",
+      "parentUuid": "d0c43176_aa6428df",
+      "range": {
+        "startLine": 69,
+        "startChar": 2,
+        "endLine": 78,
+        "endChar": 4
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -314,6 +536,54 @@
     },
     {
       "key": {
+        "uuid": "6c991cff_149e51d0",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d66eb2c5_538c9bdb",
+      "range": {
+        "startLine": 83,
+        "startChar": 13,
+        "endLine": 83,
+        "endChar": 19
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2147d1c7_eb284eb3",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d7e93f29_1be3d7ba",
+      "range": {
+        "startLine": 83,
+        "startChar": 21,
+        "endLine": 83,
+        "endChar": 22
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b30a601d_20f01c85",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -337,6 +607,30 @@
     },
     {
       "key": {
+        "uuid": "87c74388_bf65d016",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "N/A",
+      "parentUuid": "b30a601d_20f01c85",
+      "range": {
+        "startLine": 87,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 3
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0b1fca6_5987cb03",
         "filename": "resultdb/cli/cmd_update_inclusions.go",
         "patchSetId": 2
@@ -357,6 +651,30 @@
       "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28e029d6_3776f050",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-11T07:26:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0b1fca6_5987cb03",
+      "range": {
+        "startLine": 136,
+        "startChar": 16,
+        "endLine": 136,
+        "endChar": 36
+      },
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
