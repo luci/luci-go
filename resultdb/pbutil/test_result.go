@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
+	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 // artifactFormatVersion identifies the version of artifact encoding format we're using.
@@ -151,7 +152,7 @@ func ValidateArtifacts(arts []*pb.Artifact) error {
 	names := make(stringset.Set)
 	for i, art := range arts {
 		if names.Has(art.Name) {
-			return errors.Reason("duplicate name %q", art.Name).Err()
+			return errors.Reason("%d: duplicate name %q", i, art.Name).Err()
 		}
 		names.Add(art.Name)
 		if err := ValidateArtifact(art); err != nil {
@@ -161,10 +162,34 @@ func ValidateArtifacts(arts []*pb.Artifact) error {
 	return nil
 }
 
+// ValidateSinkArtifact returns a non-nil error if art is invalid.
+func ValidateSinkArtifact(art *sinkpb.Artifact) error {
+	if art.GetFilePath() == "" && art.GetContents() == nil {
+		return errors.Reason("body: either file_path or contents must be provided").Err()
+	}
+	// TODO(1017288) - validate content_type
+	// skip `ContentType`
+	return nil
+}
+
+// ValidateSinkArtifacts returns a non-nil error if any element of arts is invalid.
+func ValidateSinkArtifacts(arts map[string]*sinkpb.Artifact) error {
+	for name, art := range arts {
+		if art == nil {
+			return errors.Reason("%s: %s", name, unspecified()).Err()
+		}
+		// the name should be a valid pb.Artifact.Name
+		if err := ValidateArtifactName(name); err != nil {
+			return errors.Annotate(err, "%s", name).Err()
+		}
+		if err := ValidateSinkArtifact(art); err != nil {
+			return errors.Annotate(err, "%s", name).Err()
+		}
+	}
+	return nil
+}
+
 // ValidateTestResult returns a non-nil error if msg is invalid.
-//
-// Note that this function validates msg as an RPC request message. Therefore,
-// fields with OUTPUT_ONLY tag are not validated.
 func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	ec := checker{&err}
 	switch {
@@ -181,6 +206,26 @@ func ValidateTestResult(now time.Time, msg *pb.TestResult) (err error) {
 	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
 	case ec.isErr(ValidateArtifacts(msg.InputArtifacts), "input_artifacts"):
 	case ec.isErr(ValidateArtifacts(msg.OutputArtifacts), "output_artifacts"):
+	}
+	return err
+}
+
+// ValidateSinkTestResult returns a non-nil error if msg is invalid.
+func ValidateSinkTestResult(now time.Time, msg *sinkpb.TestResult) (err error) {
+	ec := checker{&err}
+	switch {
+	case msg == nil:
+		return unspecified()
+	case ec.isErr(ValidateTestID(msg.TestId), "test_id"):
+	case ec.isErr(ValidateResultID(msg.ResultId), "result_id"):
+	case ec.isErr(ValidateVariant(msg.Variant), "variant"):
+	// skip `Expected`
+	case ec.isErr(ValidateEnum(int32(msg.Status), pb.TestStatus_name), "status"):
+	case ec.isErr(ValidateSummaryHTML(msg.SummaryHtml), "summary_html"):
+	case ec.isErr(ValidateStartTimeWithDuration(now, msg.StartTime, msg.Duration), ""):
+	case ec.isErr(ValidateStringPairs(msg.Tags), "tags"):
+	case ec.isErr(ValidateSinkArtifacts(msg.InputArtifacts), "input_artifacts"):
+	case ec.isErr(ValidateSinkArtifacts(msg.OutputArtifacts), "output_artifacts"):
 	}
 	return err
 }
