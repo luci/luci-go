@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7e1ff53b_c32141de",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7945b9ba_9fd83bf4",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ac82479_c70f8a74",
         "filename": "buildbucket/appengine/model/legacy.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "6a462ced04d49b3347e52514be9679e72208271e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c32b74b3_32651d8f",
+        "filename": "buildbucket/appengine/model/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ac82479_c70f8a74",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 83,
+        "endChar": 18
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "5b90fe05_a79f619f",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "95496cab_15347377",
+      "range": {
+        "startLine": 25,
+        "startChar": 1,
+        "endLine": 25,
+        "endChar": 14
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41f40d54_062b70a1",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
@@ -85,6 +151,30 @@
       "revId": "6a462ced04d49b3347e52514be9679e72208271e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e04ab1d_121de531",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "Because there was a huge fucking argument over whether adding methods to generated protos is correct or not the other day. Personally I do prefer your approach and think it is correct. Done.",
+      "parentUuid": "41f40d54_062b70a1",
+      "range": {
+        "startLine": 27,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +207,24 @@
       "side": 1,
       "message": "Build entity does store infra, steps, input.properties and output.properties.\nthey are stored in BuildInfra, BuildSteps, BuildInputProperties and BuildOutputProperties entities.\n\nonly during build creation, Build.proto (in python) has these fields populated, but they are trimmed right before writing to ds",
       "parentUuid": "68a52b7d_a8bf26b1",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "38d9bc08_691a9542",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "The comment about them existing during build creation is only on infra and input.properties, but you mean it applies to all of these? If they are trimmed before writing to datastore then they never exist in the proto when the proto is in the datastore, right? I guess I don\u0027t understand the reason the comment is written this way:\nhttps://chromium.googlesource.com/infra/infra/+/c5050e19726f7dedd73b9af78468afda665e55cd/appengine/cr-buildbucket/model.py#126\n\n1. \"does exist during build creation, and moved into BuildInputProperties right before initial datastore.put\". In other words, never exists in the proto in the datastore. In which case I wouldn\u0027t bother to include the \"CAVEAT\". Can I just say it\u0027s not in the proto in the datastore?\n\n2. The caveat is only written for 2/5 of these so I thought it implied there is some difference.",
+      "parentUuid": "c7474c24_a0c6bc5e",
       "revId": "6a462ced04d49b3347e52514be9679e72208271e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -175,6 +283,30 @@
       "side": 1,
       "message": "no bug\ni didn\u0027t find any reliance on create_time indexes at HEAD https://source.chromium.org/search?q\u003dcreate_time%20f:cr-buildbucket%20-f:test\u0026sq\u003d",
       "parentUuid": "c4c44a34_ca3a4f4e",
+      "range": {
+        "startLine": 93,
+        "startChar": 9,
+        "endLine": 93,
+        "endChar": 14
+      },
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f593e886_1926631f",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T00:05:48Z",
+      "side": 1,
+      "message": "Left as TODO. If I noindex now it may come as a surprise later because right now index/noindex is irrelevant (since we\u0027re not writing to the datastore yet).",
+      "parentUuid": "3e7323bb_7f2b6a2d",
       "range": {
         "startLine": 93,
         "startChar": 9,
