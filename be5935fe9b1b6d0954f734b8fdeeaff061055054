@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "f3b089aa_83cc1aa1",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "oh i see, you are absolutely right",
+      "parentUuid": "9b95ed8b_84c422cf",
+      "revId": "be5935fe9b1b6d0954f734b8fdeeaff061055054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7e7c09c7_c57fc132",
         "filename": "resultdb/cli/baserun.go",
         "patchSetId": 2

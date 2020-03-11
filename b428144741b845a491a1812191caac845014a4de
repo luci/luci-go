@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e02955b0_0eea6962",
+        "filename": "resultdb/cli/baserun.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "fallbackHost",
+      "range": {
+        "startLine": 86,
+        "startChar": 51,
+        "endLine": 86,
+        "endChar": 62
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7d33d94_91772aba",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 34,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 57
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6667117e_35350ffa",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "these are no longer args. consider addIDs or addInvocationIDs to be consistent with L59-60",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 7
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52989a9e_ca72b0fa",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "ID",
+      "range": {
+        "startLine": 66,
+        "startChar": 2,
+        "endLine": 66,
+        "endChar": 6
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "934e1799_d86dbc8d",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "i am sorry, i meant https://godoc.org/go.chromium.org/luci/common/flag#CommaList",
+      "range": {
+        "startLine": 66,
+        "startChar": 37,
+        "endLine": 66,
+        "endChar": 49
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "888649d3_934cc66a",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 73,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 49
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a954f94_f4710826",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "u",
+      "range": {
+        "startLine": 85,
+        "startChar": 31,
+        "endLine": 85,
+        "endChar": 32
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "085055a8_1c3dcb69",
+        "filename": "resultdb/cli/cmd_update_inclusions.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T18:25:59Z",
+      "side": 1,
+      "message": "we will need this in all sub-commands that mutate an inv. for example, i can envision a subcommand to upload test results. could you extract this to a separate func?\nand perhaps call it in the beginning of Run? then this function has only one purpose - update the inclusion",
+      "range": {
+        "startLine": 119,
+        "startChar": 0,
+        "endLine": 130,
+        "endChar": 0
+      },
+      "revId": "b428144741b845a491a1812191caac845014a4de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
