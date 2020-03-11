@@ -1,0 +1,463 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "53ad75c0_a44d6b8d",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "nit: ordering is unclear here. it is not \"lines ordered lexicographically\". and it is not \"sort by symbols\". how about straightforward \"order lines lexicogrpahiscally\"? that is, in VSCode, Ctrl+Shift+P, \"Sort lines ascending\"",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a5d6e76_55aed40f",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "moment(null).format(\u0027YYYY-MM-DD HH:mm:ss\u0027) is \"Invalid date\"\nwe probably don\u0027t want to display that\n\nstepping back, the format string has been repeated a few times in this and other files. maybe we need a lit element for displaying time (in another CL). in this a CL, a TODO would do",
+      "range": {
+        "startLine": 54,
+        "startChar": 52,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34c68387_d8f9e217",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "inconsistent with L53. why not {\u0027display\u0027: ...}\n\nstepping back, i see this repeated 3 times. is it worth making short func that accepts boolean and returns css?\n\nif yes, we could actually inline hasTags and hasIncludedInvocations: they are used in one place and the bool\u003d\u003eclass function would be used in 3 places",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 31
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bc5ab71_edc5dbf3",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "this part is a const. why is it in ${} ? i.e. why not\n\n  href\u003d\"/invocation/${encodeURIComponent(invocationName)}\"\n\n?",
+      "range": {
+        "startLine": 63,
+        "startChar": 26,
+        "endLine": 63,
+        "endChar": 41
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "678e3334_4a5799a6",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "didn\u0027t you plan to use a table without borders?",
+      "range": {
+        "startLine": 73,
+        "startChar": 15,
+        "endLine": 73,
+        "endChar": 19
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c823b5c1_3f6ecce5",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "nit: seems unused",
+      "range": {
+        "startLine": 73,
+        "startChar": 27,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70f9bc42_0d74ea68",
+        "filename": "milo/frontend/resultui/src/pages/error_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "you probably meant ErrorPageElement.\nNotFoundPageElement already exists",
+      "range": {
+        "startLine": 22,
+        "startChar": 13,
+        "endLine": 22,
+        "endChar": 21
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "311ebdcc_9009461e",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "why do we need these brackets? invocation states seems to be just strings.\nis this for type safety?",
+      "range": {
+        "startLine": 28,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 3
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2b2225d8_11698751",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "will this expression re-evaluated if this.accessToken (which, I assume, is rxjs observable) changes?\nFWIU no because there is https://www.learnrxjs.io/learn-rxjs/operators/conditional/iif for that",
+      "range": {
+        "startLine": 49,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 5
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "48fc2e74_42809d5d",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "does this poll the predicate periodically? what is the polling freq?\n\nwhy this isn\u0027t push based? isn\u0027t that the point of rxjs? i.e. something like subscribe to the observable and navigate to error if the tag is err",
+      "range": {
+        "startLine": 89,
+        "startChar": 20,
+        "endLine": 89,
+        "endChar": 24
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d70b8217_3ef41a75",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "nit: indent",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ce62dda_fadbd47b",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "nit: indent",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ba6b4bf_1d707a60",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "please add a link to the original protos (with revision from which this code was derived), refer the reader there for documentation/semantics.",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "427a0af2_bebe068b",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "this is a bummer :( i wish we could convert string to Date before we persist it here",
+      "range": {
+        "startLine": 43,
+        "startChar": 23,
+        "endLine": 43,
+        "endChar": 29
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7b2e4c6_5951f633",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "repeated. consider\n\n  type VariantPredicate \u003d VariantPredicateContains | VariantPredicateEquals;\n\nalso they are pretty short, so consider also\n\n  type VariantPredicate \u003d { readonly equals: Variant; } | { readonly contains: Variant; };",
+      "range": {
+        "startLine": 113,
+        "startChar": 21,
+        "endLine": 113,
+        "endChar": 70
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b00cb16_ed0e04bc",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "why this one is int while enums above are strings? in proto json, all enums are string by default",
+      "range": {
+        "startLine": 125,
+        "startChar": 8,
+        "endLine": 125,
+        "endChar": 9
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4694673_89fc3700",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "how are we going to refresh this token after the user kept the page open for an hour? i think it is a problem in the prpcClient itself: accessToken should be `() \u003d\u003e Promise\u003cstring\u003e`\n\nnot for this CL",
+      "range": {
+        "startLine": 142,
+        "startChar": 37,
+        "endLine": 142,
+        "endChar": 48
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "769f79bc_3019fe7e",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "nit: inconsistent with other methods. consider either accepting a request",
+      "range": {
+        "startLine": 146,
+        "startChar": 22,
+        "endLine": 146,
+        "endChar": 44
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4056678_eafbeed2",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "repeated a few times below and will be repeated more. consider \n\n  private async function call\u003cT\u003e(method: string, req: any): Promise\u003cT\u003e {\n    return await this.prpcClient.call(\u0027luci.resultdb.rpc.v1.ResultDB\u0027, method, req) as T;\n  }\n\n...\n\n  return this.call\u003cInvocation\u003e(\u0027GetInvocation\u0027);",
+      "range": {
+        "startLine": 147,
+        "startChar": 4,
+        "endLine": 151,
+        "endChar": 20
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "495950db_f0b17e26",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "inconsistent: why not \"query\" like L154",
+      "range": {
+        "startLine": 162,
+        "startChar": 8,
+        "endLine": 162,
+        "endChar": 12
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d0ed0d6_7afda397",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-11T17:50:11Z",
+      "side": 1,
+      "message": "Exonerations",
+      "range": {
+        "startLine": 167,
+        "startChar": 18,
+        "endLine": 167,
+        "endChar": 25
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
