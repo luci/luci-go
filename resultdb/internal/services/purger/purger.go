@@ -182,8 +182,5 @@ func unsetInvocationResultsExpiration(ctx context.Context, id span.InvocationID)
 			"ExpectedTestResultsExpirationTime": nil,
 		}),
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
