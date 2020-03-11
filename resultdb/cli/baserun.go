@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -41,6 +42,7 @@ type baseCommandRun struct {
 	host          string
 	json          bool
 	forceInsecure bool
+	fallbackHost  string
 
 	http     *http.Client
 	resultdb pb.ResultDBClient
@@ -48,13 +50,16 @@ type baseCommandRun struct {
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, text.Doc(`
-		Host of the resultdb instance.
-	`))
+	r.Flags.StringVar(&r.host, "host", "", text.Doc(`
+               Host of the resultdb instance. Overrides the one in LUCI_CONTEXT.
+       `))
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
 		Force HTTP, as opposed to HTTPS.
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
+	// Copy the hardcoded default to the struct s.t. initClients
+	// can use it if needed.
+	r.fallbackHost = p.DefaultResultDBHost
 }
 
 func (r *baseCommandRun) RegisterJSONFlag(usage string) {
@@ -74,9 +79,18 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 
+	rdbCtx := lucictx.GetResultDB(ctx)
+	if r.host == "" {
+		if rdbCtx != nil && rdbCtx.Hostname != "" {
+			r.host = rdbCtx.Hostname
+			// No host in flags or resultdb context. Use hardcoded default.
+			r.host = r.fallbackHost
+		}
+	}
+
 	// Validate -host
 	if r.host == "" {
-		return fmt.Errorf("a host for resuldb is required")
+		return fmt.Errorf("a host for resultdb is required")
 	}
 	if strings.ContainsRune(r.host, '/') {
 		return fmt.Errorf("invalid host %q", r.host)
