@@ -14,10 +14,10 @@
 
 import '../components/page_header';
 
-import {MobxLitElement} from '@adobe/lit-mobx';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import * as signin from '@chopsui/chops-signin';
-import {BeforeEnterObserver, Router, RouterLocation} from '@vaadin/router';
-import {customElement, html} from 'lit-element';
+import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
+import { customElement, html } from 'lit-element';
 
 /**
  * Prompts the user to login.
