@@ -18,12 +18,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { customElement, html } from 'lit-element';
 
 
-@customElement('tr-not-found-page')
+@customElement('tr-error-page')
 export class NotFoundPageElement extends MobxLitElement {
   protected render() {
     return html`
       <tr-page-header></tr-page-header>
-      <div>We couldn't find the page you were looking for.<div>
+      <div>An error occured.<div>
     `;
   }
 }
