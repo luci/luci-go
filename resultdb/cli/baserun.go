@@ -44,9 +44,10 @@ type baseCommandRun struct {
 	forceInsecure bool
 	fallbackHost  string
 
-	http     *http.Client
-	resultdb pb.ResultDBClient
-	recorder pb.RecorderClient
+	http        *http.Client
+	resultdb    pb.ResultDBClient
+	recorder    pb.RecorderClient
+	resultdbCtx *lucictx.ResultDB
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
@@ -79,11 +80,14 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 
-	rdbCtx := lucictx.GetResultDB(ctx)
+	r.resultdbCtx = lucictx.GetResultDB(ctx)
+
+	// If no host specified in command line populate from lucictx.
+	// If host also not set in lucictx, fallback to r.defaultHost.
 	if r.host == "" {
-		if rdbCtx != nil && rdbCtx.Hostname != "" {
-			r.host = rdbCtx.Hostname
-			// No host in flags or resultdb context. Use hardcoded default.
+		if r.resultdbCtx != nil && r.resultdbCtx.Hostname != "" {
+			r.host = r.resultdbCtx.Hostname
+		} else {
 			r.host = r.fallbackHost
 		}
 	}
