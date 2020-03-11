@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6c883b6d_e8fcb7a4",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-11T02:31:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fbae5c9_64c27317",
+      "revId": "9987f5f2dd31ddd643eb9bdd98471265da38a25d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d46cc95_1b4941c6",
         "filename": "luci_notify/config/tree_closer.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "9987f5f2dd31ddd643eb9bdd98471265da38a25d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da0b735d_1d73e588",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-11T02:31:20Z",
+      "side": 1,
+      "message": "Nice, thanks for the tip.",
+      "parentUuid": "8d46cc95_1b4941c6",
+      "range": {
+        "startLine": 38,
+        "startChar": 47,
+        "endLine": 40,
+        "endChar": 45
+      },
+      "revId": "9987f5f2dd31ddd643eb9bdd98471265da38a25d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
