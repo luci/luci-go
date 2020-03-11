@@ -12,8 +12,8 @@ dev:
 # asking for user confirmation multiple times.
 up: up-all
 
-up-all:
-	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default pubsub
+up-all: build-resultui
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default pubsub resultui
 
 up-default:
 	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine default
@@ -21,11 +21,17 @@ up-default:
 up-pubsub:
 	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine pubsub
 
+up-resultui: build-resultui
+	gae.py upload -A luci-milo --app-dir $(projdir)/frontend/appengine resultui
+
 up-dev:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default pubsub
 
 up-dev-default:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default
+
+up-dev-resultui: build-resultui
+	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine resultui
 
 switch:
 	gae.py switch -A luci-milo --app-dir $(projdir)/frontend/appengine
@@ -47,3 +53,6 @@ versions-cleanup-dev:
 
 versions-cleanup:
 	gae.py cleanup -A luci-milo --app-dir $(projdir)/frontend/appengine
+
+build-resultui:
+	cd frontend/resultui && npm run build

@@ -1,0 +1,50 @@
+{
+  "name": "resultui",
+  "version": "0.1.0",
+  "description": "Test Results UI",
+  "author": "weiweilin@google.com",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@adobe/lit-mobx": "0.0.2",
+    "@chopsui/chops-signin": "^0.3.1",
+    "@vaadin/router": "^1.7.1",
+    "lit-element": "^2.2.1",
+    "mobx": "^5.15.4"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.8.7",
+    "@types/chai": "^4.2.10",
+    "@types/gapi": "0.0.39",
+    "@types/gapi.auth2": "0.0.51",
+    "@types/karma": "^4.4.0",
+    "@types/karma-webpack": "^2.0.7",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.7.7",
+    "@types/sinon": "^7.5.2",
+    "@types/webpack": "^4.41.7",
+    "@types/webpack-dev-server": "^3.10.0",
+    "babel-jest": "^25.1.0",
+    "chai": "^4.2.0",
+    "gts": "^1.1.2",
+    "karma": "^4.4.1",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-mocha": "^1.3.0",
+    "karma-webpack": "^4.0.2",
+    "mocha": "^7.1.0",
+    "sinon": "^9.0.1",
+    "ts-loader": "^6.2.1",
+    "ts-node": "^8.6.2",
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -w",
+    "dev": "webpack-dev-server",
+    "test": "karma start --single-run karma.conf.ts"
+  }
+}
