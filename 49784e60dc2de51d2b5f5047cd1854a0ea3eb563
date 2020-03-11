@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2adbbb0b_dd8185e7",
+        "filename": "led/job/buildbucket_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-11T01:33:03Z",
+      "side": 1,
+      "message": "IMO still use Get here so it actually reaches the assertion and says it\u0027s nil when it should not be nil. Otherwise it will panic.",
+      "revId": "49784e60dc2de51d2b5f5047cd1854a0ea3eb563",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
