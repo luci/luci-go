@@ -22,7 +22,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	pb "go.chromium.org/luci/buildbucket/proto"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -46,15 +46,15 @@ func TestGetBuild(t *testing.T) {
 				})
 
 				Convey("empty", func() {
-					req := &buildbucketpb.GetBuildRequest{}
+					req := &pb.GetBuildRequest{}
 					rsp, err := srv.GetBuild(ctx, req)
 					So(err, ShouldErrLike, "id or (builder and build_number) is required")
 					So(rsp, ShouldBeNil)
 				})
 
 				Convey("builder", func() {
-					req := &buildbucketpb.GetBuildRequest{
-						Builder: &buildbucketpb.BuilderID{},
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{},
 					}
 					rsp, err := srv.GetBuild(ctx, req)
 					So(err, ShouldErrLike, "id or (builder and build_number) is required")
@@ -62,7 +62,7 @@ func TestGetBuild(t *testing.T) {
 				})
 
 				Convey("build number", func() {
-					req := &buildbucketpb.GetBuildRequest{
+					req := &pb.GetBuildRequest{
 						BuildNumber: 1,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
@@ -73,9 +73,9 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("mutual exclusion", func() {
 				Convey("builder", func() {
-					req := &buildbucketpb.GetBuildRequest{
+					req := &pb.GetBuildRequest{
 						Id:      1,
-						Builder: &buildbucketpb.BuilderID{},
+						Builder: &pb.BuilderID{},
 					}
 					rsp, err := srv.GetBuild(ctx, req)
 					So(err, ShouldErrLike, "id is mutually exclusive with (builder and build_number)")
@@ -83,7 +83,7 @@ func TestGetBuild(t *testing.T) {
 				})
 
 				Convey("build number", func() {
-					req := &buildbucketpb.GetBuildRequest{
+					req := &pb.GetBuildRequest{
 						Id:          1,
 						BuildNumber: 1,
 					}
@@ -95,8 +95,8 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("builder", func() {
 				Convey("project", func() {
-					req := &buildbucketpb.GetBuildRequest{
-						Builder:     &buildbucketpb.BuilderID{},
+					req := &pb.GetBuildRequest{
+						Builder:     &pb.BuilderID{},
 						BuildNumber: 1,
 					}
 					rsp, err := srv.GetBuild(ctx, req)
@@ -106,8 +106,8 @@ func TestGetBuild(t *testing.T) {
 
 				Convey("bucket", func() {
 					Convey("empty", func() {
-						req := &buildbucketpb.GetBuildRequest{
-							Builder: &buildbucketpb.BuilderID{
+						req := &pb.GetBuildRequest{
+							Builder: &pb.BuilderID{
 								Project: "project",
 							},
 							BuildNumber: 1,
@@ -118,8 +118,8 @@ func TestGetBuild(t *testing.T) {
 					})
 
 					Convey("v1", func() {
-						req := &buildbucketpb.GetBuildRequest{
-							Builder: &buildbucketpb.BuilderID{
+						req := &pb.GetBuildRequest{
+							Builder: &pb.BuilderID{
 								Project: "project",
 								Bucket:  "luci.project.bucket",
 								Builder: "builder",
@@ -133,8 +133,8 @@ func TestGetBuild(t *testing.T) {
 				})
 
 				Convey("builder", func() {
-					req := &buildbucketpb.GetBuildRequest{
-						Builder: &buildbucketpb.BuilderID{
+					req := &pb.GetBuildRequest{
+						Builder: &pb.BuilderID{
 							Project: "project",
 							Bucket:  "bucket",
 						},
@@ -149,7 +149,7 @@ func TestGetBuild(t *testing.T) {
 
 		Convey("id", func() {
 			Convey("not found", func() {
-				req := &buildbucketpb.GetBuildRequest{
+				req := &pb.GetBuildRequest{
 					Id: 1,
 				}
 				rsp, err := srv.GetBuild(ctx, req)
@@ -159,18 +159,22 @@ func TestGetBuild(t *testing.T) {
 
 			Convey("found", func() {
 				So(datastore.Put(ctx, &model.Build{
-					ID:        1,
-					Project:   "project",
-					BucketID:  "bucket",
-					BuilderID: "builder",
+					Proto: pb.Build{
+						Id: 1,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+					},
 				}), ShouldBeNil)
-				req := &buildbucketpb.GetBuildRequest{
+				req := &pb.GetBuildRequest{
 					Id: 1,
 				}
 				rsp, err := srv.GetBuild(ctx, req)
 				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &buildbucketpb.Build{
-					Builder: &buildbucketpb.BuilderID{
+				So(rsp, ShouldResemble, &pb.Build{
+					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder",
