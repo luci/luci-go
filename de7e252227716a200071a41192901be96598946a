@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a501355_61c5359c",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "The imports are ordered alphabetically with grouping (3rd party, local), which is the default configuration. Some imports are not ordered correctly because I didn\u0027t realise that tslint extension is not installed on my Macbook. I will fix those.",
+      "parentUuid": "53ad75c0_a44d6b8d",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a5d6e76_55aed40f",
         "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
         "patchSetId": 2
@@ -39,6 +57,30 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8d6b30e_6ddd738d",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "invocation is a required parameter to be set by the parent node. I have to use `invocation?: Invocation` because the property is not set in the constructor.\n`!` just means we know that it can\u0027t be undefined here.\n\nWill add a TODO.\nI\u0027ll replace the element with \u003cchops-timestamp\u003e once it\u0027s packaged and published.",
+      "parentUuid": "0a5d6e76_55aed40f",
+      "range": {
+        "startLine": 54,
+        "startChar": 52,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "3707c77f_56197437",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "fixed inconsistency.\nI prefer leaving them as is. In the said function, if we return a styleMap instance, we won\u0027t be able to add new styles easily. If we return the style config object, it adds another layer of indirection without giving much simplification.",
+      "parentUuid": "34c68387_d8f9e217",
+      "range": {
+        "startLine": 59,
+        "startChar": 30,
+        "endLine": 59,
+        "endChar": 31
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9bc5ab71_edc5dbf3",
         "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e73a20b_7719d34e",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "fixed.",
+      "parentUuid": "9bc5ab71_edc5dbf3",
+      "range": {
+        "startLine": 63,
+        "startChar": 26,
+        "endLine": 63,
+        "endChar": 41
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +224,54 @@
     },
     {
       "key": {
+        "uuid": "3453bc62_f4b364c1",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "changed to table based implementation.",
+      "parentUuid": "678e3334_4a5799a6",
+      "range": {
+        "startLine": 73,
+        "startChar": 15,
+        "endLine": 73,
+        "endChar": 19
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53659ce8_a805b924",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c823b5c1_3f6ecce5",
+      "range": {
+        "startLine": 73,
+        "startChar": 27,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70f9bc42_0d74ea68",
         "filename": "milo/frontend/resultui/src/pages/error_page.ts",
         "patchSetId": 2
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "e30ca999_23747d51",
+        "filename": "milo/frontend/resultui/src/pages/error_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "70f9bc42_0d74ea68",
+      "range": {
+        "startLine": 22,
+        "startChar": 13,
+        "endLine": 22,
+        "endChar": 21
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "311ebdcc_9009461e",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 2
@@ -168,6 +330,30 @@
       "writtenOn": "2020-03-11T17:50:11Z",
       "side": 1,
       "message": "why do we need these brackets? invocation states seems to be just strings.\nis this for type safety?",
+      "range": {
+        "startLine": 28,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 3
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33020ccf_4382d4c6",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "AFAIK, it has to be enclosed in brackets in JS, unlike python.",
+      "parentUuid": "311ebdcc_9009461e",
       "range": {
         "startLine": 28,
         "startChar": 2,
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "2ded75a5_2e9e65df",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "It will if `this.accessToken` is changed AND `this.resultDb` is active (has at least one observer).\nhttps://mobx.js.org/refguide/computed-decorator.html",
+      "parentUuid": "2b2225d8_11698751",
+      "range": {
+        "startLine": 49,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 5
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "48fc2e74_42809d5d",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 2
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "ff692b2b_c5700272",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "It is push based. The first function will only be re-evaluated when `this.invocationReq` (any observable the function accessed during its last computation) is updated.\nThe second function will be invoked when the first function returns `true`.\nhttps://mobx.js.org/refguide/when.html",
+      "parentUuid": "48fc2e74_42809d5d",
+      "range": {
+        "startLine": 89,
+        "startChar": 20,
+        "endLine": 89,
+        "endChar": 24
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d70b8217_3ef41a75",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 2
@@ -240,6 +474,24 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "159ff9cf_cb6c941e",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d70b8217_3ef41a75",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -260,6 +512,24 @@
     },
     {
       "key": {
+        "uuid": "7e26a469_72e343e5",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ce62dda_fadbd47b",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ba6b4bf_1d707a60",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 2
@@ -274,6 +544,24 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2a8767c_baea583b",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ba6b4bf_1d707a60",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -300,6 +588,30 @@
     },
     {
       "key": {
+        "uuid": "c8108b4b_0c1c10c1",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Don\u0027t feel like doing manual conversion here. Maybe we can implement that when we have the code-generated version.",
+      "parentUuid": "427a0af2_bebe068b",
+      "range": {
+        "startLine": 43,
+        "startChar": 23,
+        "endLine": 43,
+        "endChar": 29
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7b2e4c6_5951f633",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 2
@@ -320,6 +632,30 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91876de5_c2519b77",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7b2e4c6_5951f633",
+      "range": {
+        "startLine": 113,
+        "startChar": 21,
+        "endLine": 113,
+        "endChar": 70
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -346,6 +682,30 @@
     },
     {
       "key": {
+        "uuid": "d5cb52e8_28a82e80",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b00cb16_ed0e04bc",
+      "range": {
+        "startLine": 125,
+        "startChar": 8,
+        "endLine": 125,
+        "endChar": 9
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4694673_89fc3700",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 2
@@ -357,6 +717,30 @@
       "writtenOn": "2020-03-11T17:50:11Z",
       "side": 1,
       "message": "how are we going to refresh this token after the user kept the page open for an hour? i think it is a problem in the prpcClient itself: accessToken should be `() \u003d\u003e Promise\u003cstring\u003e`\n\nnot for this CL",
+      "range": {
+        "startLine": 142,
+        "startChar": 37,
+        "endLine": 142,
+        "endChar": 48
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47c6296f_ea4b0ce9",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "When we get a new accessToken, a new resultDb/prpcClient instance will be constructed. Returning a promise doesn\u0027t help in this case, it can only be resolved once after all.",
+      "parentUuid": "a4694673_89fc3700",
       "range": {
         "startLine": 142,
         "startChar": 37,
@@ -392,6 +776,30 @@
     },
     {
       "key": {
+        "uuid": "eff2fba5_f3ea585f",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "769f79bc_3019fe7e",
+      "range": {
+        "startLine": 146,
+        "startChar": 22,
+        "endLine": 146,
+        "endChar": 44
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4056678_eafbeed2",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 2
@@ -412,6 +820,30 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83b1e786_28ec7a48",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4056678_eafbeed2",
+      "range": {
+        "startLine": 147,
+        "startChar": 4,
+        "endLine": 151,
+        "endChar": 20
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -438,6 +870,30 @@
     },
     {
       "key": {
+        "uuid": "702afed9_8805c47e",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "495950db_f0b17e26",
+      "range": {
+        "startLine": 162,
+        "startChar": 8,
+        "endLine": 162,
+        "endChar": 12
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d0ed0d6_7afda397",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 2
@@ -458,6 +914,30 @@
       "revId": "de7e252227716a200071a41192901be96598946a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8311e71_d7737647",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T00:56:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d0ed0d6_7afda397",
+      "range": {
+        "startLine": 167,
+        "startChar": 18,
+        "endLine": 167,
+        "endChar": 25
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
