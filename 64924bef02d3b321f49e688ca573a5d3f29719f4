@@ -22,6 +22,30 @@
       "revId": "64924bef02d3b321f49e688ca573a5d3f29719f4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a4c7a5c_e2fe822e",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-12T19:23:51Z",
+      "side": 1,
+      "message": "It stops actually applying any edits on the first error, but it means that callsites to chains of edit commands remain concise and only have to implement the error-handling clause in one place. For edit sites which call one edit command they\u0027re marginally more verbose, but for sites which call a series of edit commands (which is common) they\u0027re much much less verbose and more clearly correct.\n\nThese comments are actually leftovers from when these types used to be public; I\u0027ve removed them and clarified on Definition.Edit and Definition.HighLevelEdit.",
+      "parentUuid": "d33f2183_1061ea6f",
+      "range": {
+        "startLine": 26,
+        "startChar": 9,
+        "endLine": 26,
+        "endChar": 18
+      },
+      "revId": "64924bef02d3b321f49e688ca573a5d3f29719f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
