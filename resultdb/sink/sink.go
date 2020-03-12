@@ -19,15 +19,9 @@ package sink
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"net"
 	"net/http"
 	"sync/atomic"
-
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
@@ -177,12 +171,13 @@ func (s *Server) Start(ctx context.Context) error {
 	s.httpSrv.Handler = routes
 
 	// install a pRPC service into it.
+	ss, err := newSinkServer(ctx, s.cfg)
+	if err != nil {
+		return err
+	}
 	prpc := &prpc.Server{Authenticator: prpc.NoAuthentication}
 	prpc.InstallHandlers(routes, router.MiddlewareChain{})
-	sinkpb.RegisterSinkServer(prpc, &sinkpb.DecoratedSink{
-		Service: &sinkServer{cfg: s.cfg},
-		Prelude: authTokenPrelude(s.cfg.AuthToken),
-	})
+	sinkpb.RegisterSinkServer(prpc, ss)
 
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
@@ -227,34 +222,4 @@ func genAuthToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(buf), nil
-}
-
-// authTokenValue returns the value of the Authorization HTTP header that all requests must
-// have.
-func authTokenValue(authToken string) string {
-	return fmt.Sprintf("%s %s", AuthTokenPrefix, authToken)
-}
-
-// authTokenValidator is a factory function generating a pRPC prelude that validates
-// a given HTTP request with the auth key.
-func authTokenPrelude(authToken string) func(context.Context, string, proto.Message) (context.Context, error) {
-	expected := authTokenValue(authToken)
-	missingKeyErr := status.Errorf(codes.Unauthenticated, "Authorization header is missing")
-
-	return func(ctx context.Context, _ string, _ proto.Message) (context.Context, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, missingKeyErr
-		}
-		tks := md.Get(AuthTokenKey)
-		if len(tks) == 0 {
-			return nil, missingKeyErr
-		}
-		for _, tk := range tks {
-			if tk == expected {
-				return ctx, nil
-			}
-		}
-		return nil, status.Errorf(codes.PermissionDenied, "no valid auth_token found")
-	}
 }
