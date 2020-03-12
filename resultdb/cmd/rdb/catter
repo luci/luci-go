@@ -1,0 +1,3 @@
+#!/bin/bash
+echo $LUCI_CONTEXT
+cat $LUCI_CONTEXT
