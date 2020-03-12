@@ -51,6 +51,7 @@ func application(p Params) *cli.Application {
 			cmdContext(),
 			cmdQuery(p),
 			cmdDerive(p),
+			cmdUpdateInclusions(p),
 			// TODO(crbug.com/1021849): add subcommand upload
 			// TODO(crbug.com/1021849): add subcommand run
 

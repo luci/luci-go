@@ -27,8 +27,10 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/cipd/version"
 	"go.chromium.org/luci/common/data/text"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/lucictx"
 
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
@@ -41,20 +43,25 @@ type baseCommandRun struct {
 	host          string
 	json          bool
 	forceInsecure bool
+	fallbackHost  string
 
-	http     *http.Client
-	resultdb pb.ResultDBClient
-	recorder pb.RecorderClient
+	http        *http.Client
+	resultdb    pb.ResultDBClient
+	recorder    pb.RecorderClient
+	resultdbCtx *lucictx.ResultDB
 }
 
 func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
-	r.Flags.StringVar(&r.host, "host", p.DefaultResultDBHost, text.Doc(`
-		Host of the resultdb instance.
+	r.Flags.StringVar(&r.host, "host", "", text.Doc(`
+		Host of the resultdb instance. Overrides the one in LUCI_CONTEXT.
 	`))
 	r.Flags.BoolVar(&r.forceInsecure, "force-insecure", false, text.Doc(`
 		Force HTTP, as opposed to HTTPS.
 	`))
 	r.authFlags.Register(&r.Flags, p.Auth)
+	// Copy the given default to the struct s.t. initClients
+	// can use it if needed.
+	r.fallbackHost = p.DefaultResultDBHost
 }
 
 func (r *baseCommandRun) RegisterJSONFlag(usage string) {
@@ -74,9 +81,21 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 		return err
 	}
 
+	r.resultdbCtx = lucictx.GetResultDB(ctx)
+
+	// If no host specified in command line populate from lucictx.
+	// If host also not set in lucictx, fall back to r.fallbackHost.
+	if r.host == "" {
+		if r.resultdbCtx != nil && r.resultdbCtx.Hostname != "" {
+			r.host = r.resultdbCtx.Hostname
+		} else {
+			r.host = r.fallbackHost
+		}
+	}
+
 	// Validate -host
 	if r.host == "" {
-		return fmt.Errorf("a host for resuldb is required")
+		return fmt.Errorf("a host for resultdb is required")
 	}
 	if strings.ContainsRune(r.host, '/') {
 		return fmt.Errorf("invalid host %q", r.host)
@@ -97,6 +116,21 @@ func (r *baseCommandRun) initClients(ctx context.Context) error {
 	}
 	r.resultdb = pb.NewResultDBPRPCClient(prpcClient)
 	r.recorder = pb.NewRecorderPRPCClient(prpcClient)
+	return nil
+}
+
+func (r *baseCommandRun) validateCurrentInvocation() error {
+	if r.resultdbCtx == nil {
+		return errors.Reason("resultdb section of LUCI_CONTEXT missing").Err()
+	}
+
+	if r.resultdbCtx.CurrentInvocation.Name == "" {
+		return errors.Reason("current invocation name missing from LUCI_CONTEXT").Err()
+	}
+
+	if r.resultdbCtx.CurrentInvocation.UpdateToken == "" {
+		return errors.Reason("invocation update token missing from LUCI_CONTEXT").Err()
+	}
 	return nil
 }
 
