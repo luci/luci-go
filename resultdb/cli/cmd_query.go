@@ -32,9 +32,9 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 )
 
-func cmdLs(p Params) *subcommands.Command {
+func cmdQuery(p Params) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: `ls [flags] [INVOCATION_ID]...`,
+		UsageLine: `query [flags] [INVOCATION_ID]...`,
 		ShortDesc: "query results",
 		LongDesc: text.Doc(`
 			Query results.
@@ -45,22 +45,22 @@ func cmdLs(p Params) *subcommands.Command {
 
 			If no invocation ids are specified on the command line, read them from
 			stdin separated by newline. Example:
-			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb ls
+			  bb chromium/ci/linux-rel -status failure -inv -10 | rdb query
 		`),
 		CommandRun: func() subcommands.CommandRun {
-			r := &lsRun{}
-			r.queryRun.registerFlags(p)
+			r := &queryRun{}
+			r.queryRunBase.registerFlags(p)
 			return r
 		},
 	}
 }
 
-type lsRun struct {
-	queryRun
+type queryRun struct {
+	queryRunBase
 	invIDs []string
 }
 
-func (r *lsRun) parseArgs(args []string) error {
+func (r *queryRun) parseArgs(args []string) error {
 	r.invIDs = args
 	if len(r.invIDs) == 0 {
 		var err error
@@ -75,10 +75,10 @@ func (r *lsRun) parseArgs(args []string) error {
 		}
 	}
 
-	return r.queryRun.validate()
+	return r.queryRunBase.validate()
 }
 
-func (r *lsRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+func (r *queryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
 
 	if err := r.parseArgs(args); err != nil {
