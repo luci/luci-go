@@ -114,8 +114,10 @@ type HighLevelEditor interface {
 	GitilesCommit(commit *bbpb.GitilesCommit)
 }
 
-// Edit runs a mutator function with an Editor and returns the first mutation
-// error, if any.
+// Edit runs a mutator function with an Editor.
+//
+// If one of the edit operations has an error, further method calls on the
+// Editor are ignored and this returns the error.
 func (jd *Definition) Edit(cb func(m Editor)) error {
 	var m interface {
 		Editor
@@ -123,7 +125,7 @@ func (jd *Definition) Edit(cb func(m Editor)) error {
 	}
 
 	if jd.GetBuildbucket() != nil {
-		panic("implement me")
+		m = newBuildbucketEditor(jd)
 	} else {
 		panic("implement me")
 	}
@@ -132,8 +134,10 @@ func (jd *Definition) Edit(cb func(m Editor)) error {
 	return m.Close()
 }
 
-// HighLevelEdit runs a mutator function with an Editor and returns the first
-// mutation error, if any.
+// HighLevelEdit runs a mutator function with a HighLevelEditor.
+//
+// If one of the edit operations has an error, further method calls on the
+// HighLevelEditor are ignored and this returns the error.
 func (jd *Definition) HighLevelEdit(cb func(m HighLevelEditor)) error {
 	var m interface {
 		HighLevelEditor
@@ -141,7 +145,7 @@ func (jd *Definition) HighLevelEdit(cb func(m HighLevelEditor)) error {
 	}
 
 	if jd.GetBuildbucket() != nil {
-		panic("implement me")
+		m = newBuildbucketEditor(jd)
 	} else {
 		return errors.New("job.HighLevelEdit not supported for this Job")
 	}
