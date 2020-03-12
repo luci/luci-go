@@ -57,7 +57,7 @@ func cmdDerive(p Params) *subcommands.Command {
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
 			r := &deriveRun{}
-			r.queryRun.registerFlags(p)
+			r.queryRunBase.registerFlags(p)
 			r.Flags.BoolVar(&r.wait, "wait", false, text.Doc(`
 				Wait for the tasks to complete.
 				Without waiting, if the task is incomplete, exits with an error.
@@ -68,7 +68,7 @@ func cmdDerive(p Params) *subcommands.Command {
 }
 
 type deriveRun struct {
-	queryRun
+	queryRunBase
 	swarmingHost string
 	taskIDs      []string
 	wait         bool
@@ -86,7 +86,7 @@ func (r *deriveRun) parseArgs(args []string) error {
 		return errors.Reason("invalid swarming host %q", r.swarmingHost).Err()
 	}
 
-	return r.queryRun.validate()
+	return r.queryRunBase.validate()
 }
 
 func (r *deriveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {

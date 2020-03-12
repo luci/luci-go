@@ -32,8 +32,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 )
 
-// queryRun is a base subcommandRun for subcommands ls and derive.
-type queryRun struct {
+// queryRunBase is a base subcommandRun for subcommands query and derive.
+type queryRunBase struct {
 	baseCommandRun
 	limit      int
 	unexpected bool
@@ -44,7 +44,7 @@ type queryRun struct {
 	// TODO(crbug.com/1021849): add flag -artifact-name
 }
 
-func (r *queryRun) registerFlags(p Params) {
+func (r *queryRunBase) registerFlags(p Params) {
 	r.RegisterGlobalFlags(p)
 	r.RegisterJSONFlag(text.Doc(`
 		Print results in JSON format separated by newline.
@@ -80,7 +80,7 @@ func (r *queryRun) registerFlags(p Params) {
 	`))
 }
 
-func (r *queryRun) validate() error {
+func (r *queryRunBase) validate() error {
 	if r.limit < 0 {
 		return errors.Reason("-n must be non-negative").Err()
 	}
@@ -95,7 +95,7 @@ type resultItem struct {
 }
 
 // queryAndPrint queries results and prints them.
-func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
+func (r *queryRunBase) queryAndPrint(ctx context.Context, invIDs []string) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	resultC := make(chan resultItem)
 
@@ -137,7 +137,7 @@ func (r *queryRun) queryAndPrint(ctx context.Context, invIDs []string) error {
 }
 
 // fetchInvocation fetches an invocation.
-func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<- resultItem) error {
+func (r *queryRunBase) fetchInvocation(ctx context.Context, invID string, dest chan<- resultItem) error {
 	res, err := r.resultdb.GetInvocation(ctx, &pb.GetInvocationRequest{Name: pbutil.InvocationName(invID)})
 	if err != nil {
 		return err
@@ -147,7 +147,7 @@ func (r *queryRun) fetchInvocation(ctx context.Context, invID string, dest chan<
 }
 
 // fetchItems fetches test results and exonerations from the specified invocations.
-func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTemplate resultItem, dest chan<- resultItem) error {
+func (r *queryRunBase) fetchItems(ctx context.Context, invIDs []string, resultItemTemplate resultItem, dest chan<- resultItem) error {
 	invNames := make([]string, len(invIDs))
 	for i, id := range invIDs {
 		invNames[i] = pbutil.InvocationName(id)
@@ -215,7 +215,7 @@ func (r *queryRun) fetchItems(ctx context.Context, invIDs []string, resultItemTe
 // Each result takes exactly one line and is followed by newline.
 // This format supports streaming, and is easy to parse by languages (Python)
 // that cannot parse an arbitrary sequence of JSON values.
-func (r *queryRun) printJSON(resultC <-chan resultItem) {
+func (r *queryRunBase) printJSON(resultC <-chan resultItem) {
 	enc := json.NewEncoder(os.Stdout)
 	for res := range resultC {
 		var key string
