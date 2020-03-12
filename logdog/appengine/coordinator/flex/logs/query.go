@@ -17,15 +17,14 @@ package logs
 import (
 	"context"
 
-	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"go.chromium.org/luci/logdog/api/logpb"
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"
@@ -37,25 +36,6 @@ const (
 	// automatically called at this value.
 	queryResultLimit = 500
 )
-
-// applyTrinary executes the supplied query modification function based on a
-// trinary value.
-//
-// If the value is "YES", it will be executed with "true". If "NO", "false". If
-// "BOTH", it will not be executed.
-func applyTrinary(q *ds.Query, v logdog.QueryRequest_Trinary, f func(*ds.Query, bool) *ds.Query) *ds.Query {
-	switch v {
-	case logdog.QueryRequest_YES:
-		return f(q, true)
-
-	case logdog.QueryRequest_NO:
-		return f(q, false)
-
-	default:
-		// Default is "both".
-		return q
-	}
-}
 
 // Query returns log stream paths that match the requested query.
 func (s *server) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
@@ -122,65 +102,44 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		r.limit = int(r.MaxResults)
 	}
 
-	q := ds.NewQuery("LogStream").Order("-Created")
-
-	// Determine which entity to query against based on our sorting constraints.
-	if r.Next != "" {
-		cursor, err := ds.DecodeCursor(r, r.Next)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"cursor":     r.Next,
-			}.Errorf(r, "Failed to decode cursor.")
-			return grpcutil.Errf(codes.InvalidArgument, "invalid `next` value")
-		}
-		q = q.Start(cursor)
+	q, err := coordinator.NewLogStreamQuery(r.Path)
+	if err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"path":       r.Path,
+		}.Errorf(r, "Invalid query path.")
+		return grpcutil.Errf(codes.InvalidArgument, "invalid query `path`")
 	}
 
-	// Add Path constraints.
-	if r.Path != "" {
-		err := error(nil)
-		q, err = coordinator.AddLogStreamPathFilter(q, r.Path)
-		if err != nil {
-			log.Fields{
-				log.ErrorKey: err,
-				"path":       r.Path,
-			}.Errorf(r, "Invalid query path.")
-			return grpcutil.Errf(codes.InvalidArgument, "invalid query `path`")
-		}
+	if err := q.SetCursor(r, r.Next); err != nil {
+		log.Fields{
+			log.ErrorKey: err,
+			"cursor":     r.Next,
+		}.Errorf(r, "Failed to SetCursor.")
+		return grpcutil.Errf(codes.InvalidArgument, "invalid `next` value")
 	}
 
-	if r.ContentType != "" {
-		q = q.Eq("ContentType", r.ContentType)
-	}
-
+	q.OnlyContentType(r.ContentType)
 	if st := r.StreamType; st != nil {
-		switch v := st.Value; v {
-		case logpb.StreamType_TEXT, logpb.StreamType_BINARY, logpb.StreamType_DATAGRAM:
-			q = q.Eq("StreamType", v)
-
-		default:
-			return grpcutil.Errf(codes.InvalidArgument, "invalid query `streamType`: %s", v.String())
+		if err := q.OnlyStreamType(st.Value); err != nil {
+			return grpcutil.Errf(codes.InvalidArgument, "invalid query `streamType`: %s", st.Value)
 		}
 	}
 
-	if !r.canSeePurged {
-		// Force non-purged results for non-admin users.
-		q = q.Eq("Purged", false)
-	} else {
-		q = applyTrinary(q, r.Purged, coordinator.AddLogStreamPurgedFilter)
+	// By default q wll exclude purged data.
+	//
+	// If the user is allowed to, and `r.Purged in (YES, BOTH)`, include purged
+	// results in the result.
+	if r.canSeePurged && r.Purged != logdog.QueryRequest_NO {
+		q.IncludePurged()
+		// If the user requested to ONLY see purged results, further restrict the
+		// query.
+		if r.Purged == logdog.QueryRequest_YES {
+			q.OnlyPurged()
+		}
 	}
 
-	if r.Newer != nil {
-		q = coordinator.AddNewerFilter(q, google.TimeFromProto(r.Newer))
-	}
-	if r.Older != nil {
-		q = coordinator.AddOlderFilter(q, google.TimeFromProto(r.Older))
-	}
-
-	if r.ProtoVersion != "" {
-		q = q.Eq("ProtoVersion", r.ProtoVersion)
-	}
+	q.TimeBound(r.Newer, r.Older)
 
 	// Add tag constraints.
 	for k, v := range r.Tags {
@@ -192,39 +151,35 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			}.Errorf(r, "Invalid tag constraint.")
 			return grpcutil.Errf(codes.InvalidArgument, "invalid tag constraint: %q", k)
 		}
-		q = coordinator.AddLogStreamTagFilter(q, k, v)
 	}
+	q.MustHaveTags(r.Tags)
 
-	q = q.Limit(int32(r.limit))
-	q = q.KeysOnly(true)
+	resp.Streams = make([]*logdog.QueryResponse_Stream, 0, r.limit)
+	logStreamStates := make([]*coordinator.LogStreamState, 0, r.limit)
+	var merr errors.MultiError
 
-	// Issue the query.
-	if log.IsLogging(r, log.Debug) {
-		fq, _ := q.Finalize()
-		log.Fields{
-			"query": fq.String(),
-		}.Debugf(r, "Issuing query.")
-	}
+	err = q.Run(r, func(ls *coordinator.LogStream, cb ds.CursorCB) error {
+		toAdd := &logdog.QueryResponse_Stream{
+			Path: string(ls.Path()),
+		}
+		resp.Streams = append(resp.Streams, toAdd)
+		if r.State {
+			logStreamStates = append(logStreamStates, ls.State(r))
+			toAdd.State = &logdog.LogStreamState{}
+			fillStateFromLogStream(toAdd.State, ls)
 
-	cursor := ds.Cursor(nil)
-	logStreams := make([]*coordinator.LogStream, 0, r.limit)
-
-	err := ds.Run(r, q, func(sk *ds.Key, cb ds.CursorCB) error {
-		var ls coordinator.LogStream
-		ds.PopulateKey(&ls, sk)
-		logStreams = append(logStreams, &ls)
-
-		// If we hit our limit, add a cursor for the next iteration.
-		if len(logStreams) == r.limit {
 			var err error
-			cursor, err = cb()
+			toAdd.Desc, err = ls.DescriptorValue()
 			if err != nil {
-				log.Fields{
-					log.ErrorKey: err,
-					"count":      len(logStreams),
-				}.Errorf(r, "Failed to get cursor value.")
+				merr = append(merr, err)
+			}
+		}
+		if len(resp.Streams) == r.limit {
+			cursor, err := cb()
+			if err != nil {
 				return err
 			}
+			resp.Next = cursor.String()
 			return ds.Stop
 		}
 		return nil
@@ -233,53 +188,17 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 		log.Fields{
 			log.ErrorKey: err,
 		}.Errorf(r, "Failed to execute query.")
-		return grpcutil.Internal
+		return grpcutil.Errf(codes.Internal, "failed to execute query: %s", err)
 	}
 
-	if len(logStreams) > 0 {
-		// Don't fetch our states unless requested.
-		var logStreamStates []coordinator.LogStreamState
-		if !r.State {
-			if err := ds.Get(r, logStreams); err != nil {
-				log.WithError(err).Errorf(r, "Failed to load entry content.")
-				return grpcutil.Internal
-			}
-		} else {
-			entities := make([]interface{}, 0, 2*len(logStreams))
-			logStreamStates = make([]coordinator.LogStreamState, len(logStreams))
-			for i, ls := range logStreams {
-				ls.PopulateState(r, &logStreamStates[i])
-				entities = append(entities, ls, &logStreamStates[i])
-
-			}
-
-			if err := ds.Get(r, entities); err != nil {
-				log.WithError(err).Errorf(r, "Failed to load entry and state content.")
-				return grpcutil.Internal
-			}
+	if len(logStreamStates) > 0 {
+		if err := ds.Get(r, logStreamStates); err != nil {
+			log.WithError(err).Errorf(r, "Failed to load log stream states.")
+			return grpcutil.Errf(codes.Internal, "failed to load log stream states: %s", err)
 		}
-
-		resp.Streams = make([]*logdog.QueryResponse_Stream, len(logStreams))
-		for i, ls := range logStreams {
-			stream := logdog.QueryResponse_Stream{
-				Path: string(ls.Path()),
-			}
-			if logStreamStates != nil {
-				stream.State = buildLogStreamState(ls, &logStreamStates[i])
-
-				var err error
-				stream.Desc, err = ls.DescriptorValue()
-				if err != nil {
-					return grpcutil.Internal
-				}
-			}
-
-			resp.Streams[i] = &stream
+		for i, state := range logStreamStates {
+			fillStateFromLogStreamState(resp.Streams[i].State, state)
 		}
-	}
-
-	if cursor != nil {
-		resp.Next = cursor.String()
 	}
 
 	return nil
