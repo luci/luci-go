@@ -1329,8 +1329,6 @@ func (s *Server) initAuthDB() error {
 	switch {
 	case s.Options.AuthDBPath != "" && s.Options.AuthServiceHost != "":
 		return errors.Reason("-auth-db-path and -auth-service-host can't be used together").Err()
-	case s.Options.Prod && s.Options.testAuthDB == nil && s.Options.AuthDBPath == "" && s.Options.AuthServiceHost == "":
-		return errors.Reason("a source of AuthDB is not configured: pass either -auth-db-path or -auth-service-host flag").Err()
 	case s.Options.AuthServiceHost == "" && (s.Options.AuthDBDump != "" || s.Options.AuthDBSigner != ""):
 		return errors.Reason("-auth-db-dump and -auth-db-signer can be used only with -auth-service-host").Err()
 	case s.Options.AuthDBDump != "" && !strings.HasPrefix(s.Options.AuthDBDump, "gs://"):
@@ -1430,7 +1428,12 @@ func (s *Server) fetchAuthDB(c context.Context, cur authdb.DB) (authdb.DB, error
 		return authdb.DevServerDB{}, nil
 	}
 
-	return nil, errors.Reason("a source of AuthDB is not configured").Err()
+	// In prod mode default to "fail on any non-trivial check". Some services may
+	// not need to use AuthDB at all and configuring it for them is a hassle. If
+	// they try to use it for something vital, they'll see the error.
+	return authdb.UnconfiguredDB{
+		Error: errors.Reason("a source of AuthDB is not configured, see -auth-* server flags").Err(),
+	}, nil
 }
 
 // initTSMon initializes time series monitoring state.
