@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "ddce6bf3_b68c02d7",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "if tslint takes care of ordering, that\u0027s great",
+      "parentUuid": "5a501355_61c5359c",
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a5d6e76_55aed40f",
         "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
         "patchSetId": 2
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "invocation is a required parameter to be set by the parent node. I have to use `invocation?: Invocation` because the property is not set in the constructor.\n`!` just means we know that it can\u0027t be undefined here.\n\nWill add a TODO.\nI\u0027ll replace the element with \u003cchops-timestamp\u003e once it\u0027s packaged and published.",
       "parentUuid": "0a5d6e76_55aed40f",
+      "range": {
+        "startLine": 54,
+        "startChar": 52,
+        "endLine": 54,
+        "endChar": 53
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ee56afec_868e3bb8",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "ah, i confused this.invocation!.createTime with this.invocation?.createTime",
+      "parentUuid": "d8d6b30e_6ddd738d",
       "range": {
         "startLine": 54,
         "startChar": 52,
@@ -366,6 +408,30 @@
     },
     {
       "key": {
+        "uuid": "c06e8801_55a00f41",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "33020ccf_4382d4c6",
+      "range": {
+        "startLine": 28,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 3
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b2225d8_11698751",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 2
@@ -413,6 +479,30 @@
     },
     {
       "key": {
+        "uuid": "2e87286e_224b75db",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "2ded75a5_2e9e65df",
+      "range": {
+        "startLine": 49,
+        "startChar": 4,
+        "endLine": 51,
+        "endChar": 5
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "48fc2e74_42809d5d",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 2
@@ -448,6 +538,30 @@
       "side": 1,
       "message": "It is push based. The first function will only be re-evaluated when `this.invocationReq` (any observable the function accessed during its last computation) is updated.\nThe second function will be invoked when the first function returns `true`.\nhttps://mobx.js.org/refguide/when.html",
       "parentUuid": "48fc2e74_42809d5d",
+      "range": {
+        "startLine": 89,
+        "startChar": 20,
+        "endLine": 89,
+        "endChar": 24
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2bfda5c8_3ac5de66",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ff692b2b_c5700272",
       "range": {
         "startLine": 89,
         "startChar": 20,
@@ -741,6 +855,30 @@
       "side": 1,
       "message": "When we get a new accessToken, a new resultDb/prpcClient instance will be constructed. Returning a promise doesn\u0027t help in this case, it can only be resolved once after all.",
       "parentUuid": "a4694673_89fc3700",
+      "range": {
+        "startLine": 142,
+        "startChar": 37,
+        "endLine": 142,
+        "endChar": 48
+      },
+      "revId": "de7e252227716a200071a41192901be96598946a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f3108fa_41660e9f",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "sgtm\n\nnote that i proposed a `() \u003d\u003e Promise\u003cstring\u003e`, not `Promise\u003cstring\u003e`",
+      "parentUuid": "47c6296f_ea4b0ce9",
       "range": {
         "startLine": 142,
         "startChar": 37,

@@ -71,6 +71,30 @@
     },
     {
       "key": {
+        "uuid": "5f5523ee_06ccaa9d",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "good point",
+      "parentUuid": "8ce3b579_4c84f2e2",
+      "range": {
+        "startLine": 68,
+        "startChar": 21,
+        "endLine": 68,
+        "endChar": 73
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5b525703_8c3f4f21",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 4
@@ -105,6 +129,30 @@
       "writtenOn": "2020-03-12T04:05:43Z",
       "side": 1,
       "message": "This looks like a link but it doesn\u0027t work. Suggest putting the following URL instead (which also includes the revision as Nodir suggested):\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/4525018bc0953bfa8597bd056f814dcf5e765142/resultdb/proto/rpc/v1/resultdb.proto",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 68
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25ed76e5_13cff8b5",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T04:50:16Z",
+      "side": 1,
+      "message": "+1\nnote that Joey\u0027s link has the revision",
+      "parentUuid": "cd107b8e_4ad4471c",
       "range": {
         "startLine": 21,
         "startChar": 3,
