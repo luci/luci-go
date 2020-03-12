@@ -16,6 +16,24 @@
       "revId": "49784e60dc2de51d2b5f5047cd1854a0ea3eb563",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eea9d00c_dd4155fb",
+        "filename": "led/job/buildbucket_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-12T18:30:34Z",
+      "side": 1,
+      "message": "So the reason I used GetBuildbucket() at all is because it\u0027s a oneof (and so GetX is the only way to get it at all that\u0027s not horrifically ugly). I think that:\n  1) if the test panics, it\u0027s easy to repro/fix (and indicates that the code is wrong, not the test)\n  2) (imo) Using \"GetX\" methods on protobufs unnecessarily confuses the reader as to what\u0027s expected to possibly be nil. Note that lots of things in go code do \u0027.\u0027 access without an explicit nil check, and the GetX methods are essentially just injecting `if m \u003d\u003d nil { return zeroValue } return m.X` everywhere.\n\nSo, from my PoV, GetX methods should be used only:\n  * for oneofs\n  * for fields which are expected to possibly be nil.\n\nIf you still feel strongly about this we can have a broader discussion and I can apply these changes on top of all the tests (otherwise it\u0027s going to be a pita to rebase :()",
+      "parentUuid": "2adbbb0b_dd8185e7",
+      "revId": "49784e60dc2de51d2b5f5047cd1854a0ea3eb563",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
