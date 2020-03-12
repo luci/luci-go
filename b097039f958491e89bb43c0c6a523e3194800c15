@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60ecda35_9ea351d8",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-12T03:56:33Z",
+      "side": 1,
+      "message": "For my own education, how do these version numbers interact with package-lock.json? It looks like these dependencies are all unpinned since they start with ^.\n\nhttps://docs.npmjs.com/misc/semver#caret-ranges-123-025-004",
+      "range": {
+        "startLine": 9,
+        "startChar": 29,
+        "endLine": 16,
+        "endChar": 23
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "736bf2c8_e0e28362",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-12T03:56:33Z",
+      "side": 1,
+      "message": "optional style suggestion:\nreturn !!this.invocation!.includedInvocations.length;\nor\nreturn this.invocation!.includedInvocations.length \u003e 0;\n\nand same below",
+      "range": {
+        "startLine": 36,
+        "startChar": 55,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ce3b579_4c84f2e2",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-12T03:56:33Z",
+      "side": 1,
+      "message": "again for my own education, is there a reason to do this rather than just conditionally rendering the div?",
+      "range": {
+        "startLine": 68,
+        "startChar": 21,
+        "endLine": 68,
+        "endChar": 73
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b525703_8c3f4f21",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-12T03:56:33Z",
+      "side": 1,
+      "message": "just so I know, how far off is this? I assume this is because we don\u0027t have a way to generate TS bindings for protos yet?",
+      "range": {
+        "startLine": 20,
+        "startChar": 3,
+        "endLine": 20,
+        "endChar": 78
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
