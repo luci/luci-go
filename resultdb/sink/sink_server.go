@@ -16,6 +16,7 @@ package sink
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
@@ -23,22 +24,71 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/dispatcher"
+	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
 
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
-	cfg ServerConfig
+	cfg     ServerConfig
+	recC    *dispatcher.Channel
+	gsC     *dispatcher.Channel
+	closeFn func()
+}
+
+type artifactWorkload struct {
+	name     string
+	artifact *sinkpb.Artifact
+}
+
+type ctxSendFn func(context.Context, *buffer.Batch) error
+
+func withCtx(ctx context.Context, f ctxSendFn) dispatcher.SendFn {
+	return func(b *buffer.Batch) error {
+		return f(ctx, b)
+	}
 }
 
 func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
+	rd, err := dispatcher.NewChannel(ctx, &cfg.RecorderChannelOpts, withCtx(ctx, reportTestResults))
+	if err != nil {
+		return nil, err
+	}
+	gd, err := dispatcher.NewChannel(ctx, &cfg.GsChannelOpts, withCtx(ctx, uploadArtifacts))
+	if err != nil {
+		rd.Close()
+		return nil, err
+	}
+
 	return &sinkpb.DecoratedSink{
 		Service: &sinkServer{
-			cfg: cfg,
+			cfg:     cfg,
+			recC:    &rd,
+			gsC:     &gd,
+			closeFn: func() { closeAndDrainChannels(ctx, &rd, &gd) },
 		},
 		Prelude: authTokenPrelude(cfg.AuthToken),
 	}, nil
+}
+
+func closeSinkServer(ss sinkpb.SinkServer) {
+	dec := ss.(*sinkpb.DecoratedSink)
+	dec.Service.(*sinkServer).closeFn()
+}
+
+func closeAndDrainChannels(ctx context.Context, chs ...*dispatcher.Channel) {
+	var wg sync.WaitGroup
+	wg.Add(len(chs))
+	for _, ch := range chs {
+		go func() {
+			defer wg.Done()
+			ch.CloseAndDrain(ctx)
+		}()
+	}
+	wg.Wait()
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -71,6 +121,30 @@ func authTokenPrelude(authToken string) func(context.Context, string, proto.Mess
 	}
 }
 
+func reportTestResults(ctx context.Context, b *buffer.Batch) error {
+	for _, d := range b.Data {
+		_, ok := d.(*sinkpb.TestResult)
+		if !ok {
+			logging.Errorf(ctx, "invalid message type for reportTestResults")
+			return nil
+		}
+		// TODO(1017288) - invoke Recorder.CreateTestResult()
+	}
+	return nil
+}
+
+func uploadArtifacts(ctx context.Context, b *buffer.Batch) error {
+	for _, d := range b.Data {
+		_, ok := d.(*artifactWorkload)
+		if !ok {
+			logging.Errorf(ctx, "invalid message type for uploadArtifacts")
+			return nil
+		}
+		// TODO(1017288) - invoke Google Storage APIs
+	}
+	return nil
+}
+
 // ReportTestResults implement sinkpb.SinkServer.
 func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
@@ -79,5 +153,25 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 		}
 	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, tr := range in.TestResults {
+			for name, art := range tr.InputArtifacts {
+				s.gsC.C <- artifactWorkload{name, art}
+			}
+			for name, art := range tr.OutputArtifacts {
+				s.gsC.C <- artifactWorkload{name, art}
+			}
+		}
+	}()
+	for _, tr := range in.TestResults {
+		s.recC.C <- tr
+	}
+	wg.Wait()
+
+	// TODO(1017288) - set `TestResultNames` in the response
 	return &sinkpb.ReportTestResultsResponse{}, nil
 }
