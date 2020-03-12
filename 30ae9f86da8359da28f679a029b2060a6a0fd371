@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d07ce05_448f3c12",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-12T00:15:30Z",
+      "side": 1,
+      "message": "Why silently ignore instead of erring? Same question for empty hostname below.",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0003e23b_0ae95189",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-12T00:15:30Z",
+      "side": 1,
+      "message": "IMO use a job definition with non-zero priority as base. Currently this test case doesn\u0027t differentiate between \"negative means lower it to zero, the lowest valid value\" and \"negative means silently ignore it\".",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "033e355f_4d099d73",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-12T00:15:30Z",
+      "side": 1,
+      "message": "Similar comment as above. It\u0027s not clear that it was ignored and not actually set to the empty string.",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
