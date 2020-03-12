@@ -1,7 +1,10 @@
 {
   "extends": "gts/tslint.json",
   "rules": {
+    "ordered-imports": true,
+    "quotemark": [true, "single"],
     "semicolon": true,
-    "trailing-comma": [true, {"multiline": "always", "singleline": "never"}]
+    "trailing-comma": [true, {"multiline": "always", "singleline": "never"}],
+    "whitespace": [true, "check-module"]
   }
 }

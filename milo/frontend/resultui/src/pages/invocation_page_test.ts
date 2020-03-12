@@ -12,31 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Commands, RouterLocation} from '@vaadin/router';
-import {assert} from 'chai';
+import { Commands, RouterLocation } from '@vaadin/router';
+import { assert } from 'chai';
 import sinon from 'sinon';
 
-import {InvocationPageElement} from './invocation_page';
+import { InvocationPageElement } from './invocation_page';
 
 
 describe('Invocation Test Page', () => {
   it('should get invocation name from URL', async () => {
     const page = new InvocationPageElement();
-    const location = {params: {'invocation_name': 'invocation_name'}} as
-        Partial<RouterLocation>as RouterLocation;
-    const cmd = {} as Partial<Commands>as Commands;
+    const location = {params: {'invocation_name': 'invocation_name'}} as Partial<RouterLocation> as RouterLocation;
+    const cmd = {} as Partial<Commands> as Commands;
     await page.onBeforeEnter(location, cmd);
     assert.strictEqual(page.invocationName, location.params['invocation_name']);
   });
 
-  it('should redirect to "/not-found" when invocation_name is not provided',
-     async () => {
-       const page = new InvocationPageElement();
-       const location = {params: {}} as Partial<RouterLocation>as
-           RouterLocation;
-       const redirect = sinon.spy();
-       const cmd = {redirect} as Partial<Commands>as Commands;
-       await page.onBeforeEnter(location, cmd);
-       assert.isTrue(redirect.calledOnceWith('/not-found'));
-     });
+  it('should redirect to "/not-found" when invocation_name is not provided', async () => {
+    const page = new InvocationPageElement();
+    const location = {params: {}} as Partial<RouterLocation> as RouterLocation;
+    const redirect = sinon.spy();
+    const cmd = {redirect} as Partial<Commands> as Commands;
+    await page.onBeforeEnter(location, cmd);
+    assert.isTrue(redirect.calledOnceWith('/not-found'));
+  });
 });

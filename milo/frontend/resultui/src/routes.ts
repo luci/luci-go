@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './pages/error_page';
 import './pages/invocation_page';
 import './pages/login_page';
 import './pages/not_found_page';
 
-import {Router} from '@vaadin/router';
+import { Router } from '@vaadin/router';
 
 const router = new Router(document.getElementById('app-root'));
 router.setRoutes([
@@ -27,6 +28,10 @@ router.setRoutes([
   {
     path: '/login',
     component: 'tr-login-page',
+  },
+  {
+    path: '/error',
+    component: 'tr-error-page',
   },
   {
     path: '/:path*',
