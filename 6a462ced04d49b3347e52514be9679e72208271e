@@ -273,6 +273,24 @@
     },
     {
       "key": {
+        "uuid": "ad434b75_e5007280",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-12T00:58:05Z",
+      "side": 1,
+      "message": "I see input.properties and infra inside a proto that\u0027s written to the datastore. Any build I fetch using this go code (which doesn\u0027t retrieve BuildInputProperties or BuildInfra entities) has input.properties and infra fields set.",
+      "parentUuid": "d48ad61d_47bcda1a",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8275d6d_e24af2c6",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
