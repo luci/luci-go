@@ -25,6 +25,7 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
@@ -72,6 +73,14 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// GsChannelOpts specify the dispatcher options for Google Storage upload workloads,
+	// Recorder service, such as the max number of in-flight workloads, and the qps limit.
+	GsChannelOpts dispatcher.Options
+
+	// RecorderChannelOpts specify the dispatcher options for the workloads with Recorder
+	// service, such as the max number of in-flight workloads, and the qps limit.
+	RecorderChannelOpts dispatcher.Options
 }
 
 // Server contains state relevant to the server itself.
@@ -182,12 +191,15 @@ func (s *Server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		defer cancel()
+		var err error
 		if s.testListener == nil {
-			s.errC <- s.httpSrv.ListenAndServe()
+			err = s.httpSrv.ListenAndServe()
 		} else {
 			// In test mode, the the listener MUST be prepared already.
-			s.errC <- s.httpSrv.Serve(s.testListener)
+			err = s.httpSrv.Serve(s.testListener)
 		}
+		closeSinkServer(ss)
+		s.errC <- err
 	}()
 	go func() {
 		<-ctx.Done()
