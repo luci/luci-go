@@ -43,7 +43,7 @@ func installTestListener(srv *Server) (string, func() error) {
 	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
 }
 
-func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
+func report(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
 		Host:    host,
 		Options: &prpc.Options{Insecure: true},
@@ -111,7 +111,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// check that the server is up.
-			_, err := reportTestResults(ctx, addr, "secret", req)
+			_, err := report(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
 			// close the server
@@ -129,7 +129,7 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			// check that the server is up.
-			_, err := reportTestResults(ctx, addr, "secret", req)
+			_, err := report(ctx, addr, "secret", req)
 			So(err, ShouldBeNil)
 
 			// close the context, and check the server is down.
@@ -151,7 +151,7 @@ func TestServer(t *testing.T) {
 				}()
 
 				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
+				_, err := report(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
 				// finish the callback and verify that the server stopped running
@@ -170,7 +170,7 @@ func TestServer(t *testing.T) {
 				}()
 
 				// check that the server is running
-				_, err := reportTestResults(ctx, addr, "secret", req)
+				_, err := report(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 
 				// close the server to emit a server error.
@@ -183,18 +183,18 @@ func TestServer(t *testing.T) {
 			So(srv.Start(ctx), ShouldBeNil)
 
 			Convey("with 200 OK", func() {
-				res, err := reportTestResults(ctx, addr, "secret", req)
+				res, err := report(ctx, addr, "secret", req)
 				So(err, ShouldBeNil)
 				So(res, ShouldNotBeNil)
 			})
 
 			Convey("with 401 Unauthorized if the auth_token missing", func() {
-				_, err := reportTestResults(ctx, addr, "", req)
+				_, err := report(ctx, addr, "", req)
 				So(status.Code(err), ShouldEqual, codes.Unauthenticated)
 			})
 
 			Convey("with 403 Forbidden if auth_token mismatched", func() {
-				_, err := reportTestResults(ctx, addr, "not-a-secret", req)
+				_, err := report(ctx, addr, "not-a-secret", req)
 				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
 			})
 		})
