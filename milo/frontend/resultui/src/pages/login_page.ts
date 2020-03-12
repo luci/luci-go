@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { MobxLitElement } from '@adobe/lit-mobx';
+import * as signin from '@chopsui/chops-signin';
+import { BeforeEnterObserver, Router, RouterLocation } from '@vaadin/router';
+import { customElement, html } from 'lit-element';
+
 import '../components/page_header';
 
-import {MobxLitElement} from '@adobe/lit-mobx';
-import * as signin from '@chopsui/chops-signin';
-import {BeforeEnterObserver, Router, RouterLocation} from '@vaadin/router';
-import {customElement, html} from 'lit-element';
 
 /**
  * Prompts the user to login.
