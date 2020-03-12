@@ -14,9 +14,9 @@
 
 import '@chopsui/chops-signin';
 
-import {MobxLitElement} from '@adobe/lit-mobx';
-import {css, customElement, html} from 'lit-element';
-import {observable} from 'mobx';
+import { MobxLitElement } from '@adobe/lit-mobx';
+import { css, customElement, html } from 'lit-element';
+import { observable } from 'mobx';
 
 /**
  * Renders page header, including a sign-in widget.
