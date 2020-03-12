@@ -291,6 +291,24 @@
     },
     {
       "key": {
+        "uuid": "b21eae31_f2881021",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-12T17:00:48Z",
+      "side": 1,
+      "message": "are you sure? i spot-checked a couple and i don\u0027t see it. e.g. \nhttps://pantheon.corp.google.com/datastore/entities;kind\u003dBuild;ns\u003d__$DEFAULT$__/edit;key\u003d0%2F%257C5%2FBuild%257C22%2Fid%253A8886018352591431696?project\u003dcr-buildbucket\n\nit is a completed linux-rel build.\nI copy the value of \"proto\" properties,\nand then run\n\n  xclip -selection clipboard -o | base64 -d \u003e ~/tmp/build\n  cat ~/tmp/build | protoc --decode\u003dbuildbucket.v2.Build go.chromium.org/luci/buildbucket/proto/*.proto -I ./go.chromium.org/luci/grpc/proto/ -I .\n\nin infra.git/go/src\n\nit prints\n\n  id: 8886018352591431696\n  builder {\n    project: \"chromium\"\n    bucket: \"try\"\n    builder: \"linux-rel\"\n  }\n  number: 332372\n  created_by: \"user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com\"\n  create_time {\n    seconds: 1584029544\n    nanos: 226436000\n  }\n  start_time {\n    seconds: 1584029561\n    nanos: 511210000\n  }\n  end_time {\n    seconds: 1584032214\n    nanos: 749151000\n  }\n  update_time {\n    seconds: 1584032214\n    nanos: 955583000\n  }\n  status: FAILURE\n  input {\n    gerrit_changes {\n      host: \"chromium-review.googlesource.com\"\n      project: \"chromium/src\"\n      change: 2098786\n      patchset: 2\n    }\n  }\n  summary_markdown: \"1 Test Suite(s) failed.\\n\\n**content_browsertests** failed.\"\n  exe {\n    cipd_package: \"infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build\"\n    cipd_version: \"refs/heads/master\"\n  }\n  scheduling_timeout {\n    seconds: 7200\n  }\n  execution_timeout {\n    seconds: 14400\n  }",
+      "parentUuid": "ad434b75_e5007280",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8275d6d_e24af2c6",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
