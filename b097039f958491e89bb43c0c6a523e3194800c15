@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "06fcf073_115f07a3",
+        "filename": "milo/frontend/resultui/package.json",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T05:07:49Z",
+      "side": 1,
+      "message": "When you install the deps, npm will look at package-lock.json and install the dependencies of specified version. So as long as you have the same package-lock.json file, you will have exactly the same dependencies installed.\npackage.json specify dependency versions that \"should\" work. When dependencies need to be updated (e.g. add a new dependencies with transitive dependencies), they are still subject to version range specified in package.json, but package-lock.json may be updated accordingly to avoid duplicate dependencies (same library different version) as much as possible.\nIf the package is a library, the dependents don\u0027t need to respect package-lock.json. But they do need to respect package.json.",
+      "parentUuid": "60ecda35_9ea351d8",
+      "range": {
+        "startLine": 9,
+        "startChar": 29,
+        "endLine": 16,
+        "endChar": 23
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "736bf2c8_e0e28362",
         "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbfe65f8_a465c0c4",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T05:07:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "736bf2c8_e0e28362",
+      "range": {
+        "startLine": 36,
+        "startChar": 55,
+        "endLine": 36,
+        "endChar": 58
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "93ef19aa_2fa491be",
+        "filename": "milo/frontend/resultui/src/components/invocation_details.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T05:07:49Z",
+      "side": 1,
+      "message": "Probably not a strong argument. It doesn\u0027t add another layer of nesting comparing to conditional rendering. In lit-html, conditional rendering is quite verbose for non-trivial html.\n${condition ? html`\n  \u003cdiv\u003econditionally rendered\u003c/div\u003e\n` : \u0027\u0027}\nSo I prefer hiding it via CSS when possible (and there\u0027s not much performance hit).",
+      "parentUuid": "8ce3b579_4c84f2e2",
+      "range": {
+        "startLine": 68,
+        "startChar": 21,
+        "endLine": 68,
+        "endChar": 73
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b525703_8c3f4f21",
         "filename": "milo/frontend/resultui/src/services/resultdb.ts",
         "patchSetId": 4
@@ -115,6 +187,30 @@
       "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3936c12f_8aca62c5",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T05:07:49Z",
+      "side": 1,
+      "message": "I think it will be a quite some work for someone who hasn\u0027t done code generation before (and I haven\u0027t).",
+      "parentUuid": "5b525703_8c3f4f21",
+      "range": {
+        "startLine": 20,
+        "startChar": 3,
+        "endLine": 20,
+        "endChar": 78
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -162,6 +258,30 @@
       "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07ca698e_0c655f33",
+        "filename": "milo/frontend/resultui/src/services/resultdb.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-12T05:07:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd107b8e_4ad4471c",
+      "range": {
+        "startLine": 21,
+        "startChar": 3,
+        "endLine": 21,
+        "endChar": 68
+      },
+      "revId": "b097039f958491e89bb43c0c6a523e3194800c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
