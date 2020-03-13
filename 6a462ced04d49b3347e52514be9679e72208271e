@@ -327,6 +327,24 @@
     },
     {
       "key": {
+        "uuid": "30d0c703_264081bc",
+        "filename": "buildbucket/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-13T19:27:24Z",
+      "side": 1,
+      "message": "filed crbug.com/1061540",
+      "parentUuid": "4b560934_9d079870",
+      "revId": "6a462ced04d49b3347e52514be9679e72208271e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d8275d6d_e24af2c6",
         "filename": "buildbucket/appengine/model/model.go",
         "patchSetId": 1
