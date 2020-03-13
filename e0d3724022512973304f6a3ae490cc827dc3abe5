@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c7ed5b9d_8e8d47de",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/logs.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "updated; I changed this proto before I looked at the implementation.",
+      "parentUuid": "41ecc418_683b6e87",
+      "range": {
+        "startLine": 159,
+        "startChar": 7,
+        "endLine": 163,
+        "endChar": 42
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3816d53_feb55622",
         "filename": "logdog/appengine/coordinator/flex/logs/query.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "034fe9cf_438218f1",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "Nah. There are only two uses of this API that I\u0027m aware of:\n  * luci notify, which uses a fixed prefix and no cursor - https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/luci_notify/notify/srcman.go;l\u003d62?q\u003dQuery\u0026ss\u003dchromium%2Finfra%2Finfra:go%2Fsrc%2Fgo.chromium.org%2Fluci%2Fluci_notify%2F\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n  * when I run this from the command line",
+      "parentUuid": "f3816d53_feb55622",
+      "range": {
+        "startLine": 114,
+        "startChar": 11,
+        "endLine": 114,
+        "endChar": 33
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b0382284_6f3d9a5c",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "sgtm, Done.",
+      "parentUuid": "f65a93d9_5bba4f5e",
+      "range": {
+        "startLine": 157,
+        "startChar": 54,
+        "endLine": 157,
+        "endChar": 63
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b49dc6f7_eef2b97a",
         "filename": "logdog/appengine/coordinator/flex/logs/query.go",
         "patchSetId": 1
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "59bb47b9_35059c73",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "Hrm, I wish there was a way to return \"hey some things didn\u0027t load, check the logs if you care\", but I can\u0027t.. I\u0027ll just log and keep this in mind for future APIs...",
+      "parentUuid": "b49dc6f7_eef2b97a",
+      "range": {
+        "startLine": 174,
+        "startChar": 4,
+        "endLine": 174,
+        "endChar": 8
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0a5ea4e_15ac3d7b",
         "filename": "logdog/appengine/coordinator/flex/logs/query.go",
         "patchSetId": 1
@@ -105,6 +201,30 @@
       "writtenOn": "2020-03-12T21:33:34Z",
       "side": 1,
       "message": "nit: Handling of this stuff is very hard to follow :-/ Maybe \"if r.State {\" can be refactored into be a separate loop:\n\nq.Run(...) loop (perhaps collecting *coordinator.LogStream)\nif r.State {\n  another loop that deals with LogStreamState specifically\n}",
+      "range": {
+        "startLine": 199,
+        "startChar": 24,
+        "endLine": 199,
+        "endChar": 39
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6206801_5ec1ddc5",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "This is an unfortunate side effect of the API and object model (which are both bad). The API protos and models don\u0027t line up, and so the query has a \"LogStreamState\" message which is partially from coordinator.LogStream and partially from coordinator.LogStreamState (which are separate entities for no reason that I can discern). For fun, the State boolean also controls the population of Desc, which doesn\u0027t reside in the LogStreamState response object.\n\nI\u0027ll see if I can clarify/add some commentary, but it\u0027s pretty bad.",
+      "parentUuid": "b0a5ea4e_15ac3d7b",
       "range": {
         "startLine": 199,
         "startChar": 24,
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "468d2266_6999bdef",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "ah, you\u0027re right. Honestly, it doesn\u0027t really matter. I considered changing the api to just take a regex anyway, but that would technically be a breaking change.\n\nI\u0027ve fixed it, but I\u0027m not sure you\u0027ll love it :D. I did add a test tho...",
+      "parentUuid": "e8b47433_b1baa080",
+      "range": {
+        "startLine": 411,
+        "startChar": 12,
+        "endLine": 411,
+        "endChar": 52
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3677efe0_10c42066",
         "filename": "logdog/appengine/coordinator/logStream.go",
         "patchSetId": 1
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "b645ff63_9406bb07",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 413,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "\u003e annotate\n\nDone.",
+      "parentUuid": "3677efe0_10c42066",
+      "range": {
+        "startLine": 413,
+        "startChar": 14,
+        "endLine": 413,
+        "endChar": 17
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2de3f344_337d3b8e",
         "filename": "logdog/appengine/coordinator/logStream.go",
         "patchSetId": 1
@@ -183,6 +351,30 @@
       "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8711189b_8439e332",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 1,
+      "message": "uh... I thought I had a reason but then I realized I don\u0027t.",
+      "parentUuid": "2de3f344_337d3b8e",
+      "range": {
+        "startLine": 506,
+        "startChar": 2,
+        "endLine": 508,
+        "endChar": 3
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

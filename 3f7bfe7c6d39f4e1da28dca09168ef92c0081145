@@ -22,6 +22,30 @@
       "revId": "3f7bfe7c6d39f4e1da28dca09168ef92c0081145",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "521aebff_50cd9839",
+        "filename": "logdog/api/endpoints/coordinator/logs/v1/logs.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:27:35Z",
+      "side": 0,
+      "message": "yeah I know",
+      "parentUuid": "a548395f_ad6fcf49",
+      "range": {
+        "startLine": 152,
+        "startChar": 5,
+        "endLine": 152,
+        "endChar": 35
+      },
+      "revId": "3f7bfe7c6d39f4e1da28dca09168ef92c0081145",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
