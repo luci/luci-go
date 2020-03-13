@@ -66,7 +66,14 @@ func (swe *swarmingEditor) tweakSlices(fn func(*api.TaskSlice) error) {
 }
 
 func (swe *swarmingEditor) ClearCurrentIsolated() {
-	panic("implement me")
+	swe.tweak(func() error {
+		swe.userPayload.Digest = ""
+		return nil
+	})
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		slc.Properties.CasInputs = nil
+		return nil
+	})
 }
 
 func (swe *swarmingEditor) ClearDimensions() {
