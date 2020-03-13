@@ -79,12 +79,15 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 	}
 	switch err := datastore.Get(c, cfg); err {
 	case nil:
-		return &cfg.Config, nil
 	case datastore.ErrNoSuchEntity:
 		return nil, status.Errorf(codes.NotFound, "no config found with ID %q", req.Id)
 	default:
 		return nil, errors.Annotate(err, "failed to fetch config").Err()
 	}
+	if err := validateConfigOwners(c, cfg); err != nil {
+		return nil, err
+	}
+	return &cfg.Config, nil
 }
 
 // List handles a request to list all configs.
@@ -124,11 +127,8 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 	default:
 		return nil, errors.Annotate(err, "failed to fetch config").Err()
 	}
-	switch is, err := auth.IsMember(c, cfg.Config.GetOwner()...); {
-	case err != nil:
+	if err := validateConfigOwners(c, cfg); err != nil {
 		return nil, err
-	case !is:
-		return nil, status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", req.Id)
 	}
 	amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
 	if err != nil {
@@ -184,4 +184,14 @@ func NewConfigurationServer() config.ConfigurationServer {
 		Service:  &Config{},
 		Postlude: gRPCifyAndLogErr,
 	}
+}
+
+func validateConfigOwners(c context.Context, cfg *model.Config) error {
+	switch is, err := auth.IsMember(c, cfg.Config.GetOwner()...); {
+	case err != nil:
+		return err
+	case !is:
+		return status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", cfg.ID)
+	}
+	return nil
 }

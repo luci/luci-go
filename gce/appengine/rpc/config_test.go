@@ -154,6 +154,26 @@ func TestConfig(t *testing.T) {
 					So(err, ShouldErrLike, "ID is required")
 					So(cfg, ShouldBeNil)
 				})
+
+				Convey("unauthorized owners", func() {
+					c = auth.WithState(c, &authtest.FakeState{
+						IdentityGroups: []string{"owners1"},
+					})
+					So(datastore.Put(c, &model.Config{
+						ID: "id",
+						Config: config.Config{
+							Prefix: "prefix",
+							Owner: []string{
+								"owners2",
+							},
+						},
+					}), ShouldBeNil)
+					cfg, err := srv.Get(c, &config.GetRequest{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "unauthorized user")
+					So(cfg, ShouldBeNil)
+				})
 			})
 
 			Convey("valid", func() {
@@ -166,10 +186,16 @@ func TestConfig(t *testing.T) {
 				})
 
 				Convey("found", func() {
+					c = auth.WithState(c, &authtest.FakeState{
+						IdentityGroups: []string{"owners"},
+					})
 					So(datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: config.Config{
 							Prefix: "prefix",
+							Owner: []string{
+								"owners",
+							},
 						},
 					}), ShouldBeNil)
 					cfg, err := srv.Get(c, &config.GetRequest{
@@ -178,6 +204,9 @@ func TestConfig(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(cfg, ShouldResemble, &config.Config{
 						Prefix: "prefix",
+						Owner: []string{
+							"owners",
+						},
 					})
 				})
 			})
