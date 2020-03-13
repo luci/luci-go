@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc98e500_a4d91120",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T21:26:02Z",
+      "side": 1,
+      "message": "this must have exact same message as when user is not authorized.\nI\u0027d create\n\nfunc (req.Id) error {\n  return status.Errorf(codes.NotFound, \"no config found with ID %q or unauthorized user\", req.Id)\n}\n\nand then call it whenever code.NotFound is necessary.\n\n\nThat said, I\u0027d like to hear Sana thinks.",
+      "range": {
+        "startLine": 83,
+        "startChar": 14,
+        "endLine": 83,
+        "endChar": 81
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bece2b7_fb6ac71e",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T21:26:02Z",
+      "side": 1,
+      "message": "can this whole code be a new function, re-used from List and Get  calls?",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e57a080_ce0a5d10",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T21:26:02Z",
+      "side": 1,
+      "message": "please include the the \"not found or not authorized user\"\n\nUser must not be able to distinguish configs which don\u0027t actually exist from those which user has no access to.",
+      "range": {
+        "startLine": 174,
+        "startChar": 27,
+        "endLine": 174,
+        "endChar": 47
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13ece0d4_07efb122",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T21:26:02Z",
+      "side": 1,
+      "message": "same here.",
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
