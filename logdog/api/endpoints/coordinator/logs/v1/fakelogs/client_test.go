@@ -64,6 +64,7 @@ func TestFakeLogs(t *testing.T) {
 			Convey(`can query`, func() {
 				rsp, err := c.Query(ctx, &logs.QueryRequest{
 					Project: coordinatorTest.AllAccessProject,
+					Path:    "some/prefix/+/**",
 					Tags: map[string]string{
 						"tag": "",
 					},
@@ -76,7 +77,7 @@ func TestFakeLogs(t *testing.T) {
 				})
 
 				rsp, err = c.Query(ctx, &logs.QueryRequest{
-					Path: "**/+/other/**",
+					Path: "some/prefix/+/other/**",
 				})
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResemble, &logs.QueryResponse{
