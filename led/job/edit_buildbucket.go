@@ -73,7 +73,14 @@ func (bbe *buildbucketEditor) ClearDimensions() {
 }
 
 func (bbe *buildbucketEditor) Env(env map[string]string) {
-	panic("implement me")
+	if len(env) == 0 {
+		return
+	}
+
+	bbe.tweak(func() error {
+		updateStringPairList(&bbe.bb.EnvVars, env)
+		return nil
+	})
 }
 
 func (bbe *buildbucketEditor) Priority(priority int32) {

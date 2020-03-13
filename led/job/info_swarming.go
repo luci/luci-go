@@ -15,6 +15,8 @@
 package job
 
 import (
+	"reflect"
+
 	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -59,7 +61,29 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 }
 
 func (s swInfo) Env() (ret map[string]string, err error) {
-	panic("implement me")
+	slices := s.GetTask().GetTaskSlices()
+	extractEnv := func(slc *swarmingpb.TaskSlice) (slcEnv map[string]string) {
+		if env := slices[0].GetProperties().GetEnv(); len(env) > 0 {
+			slcEnv = make(map[string]string, len(env))
+			for _, pair := range env {
+				slcEnv[pair.Key] = pair.Value
+			}
+		}
+		return
+	}
+
+	if len(slices) >= 1 {
+		ret = extractEnv(slices[0])
+
+		for idx, slc := range slices[1:] {
+			if slcEnv := extractEnv(slc); !reflect.DeepEqual(ret, slcEnv) {
+				return nil, errors.Reason(
+					"slice %d has env which differs from slice 0: %v vs %v",
+					idx+1, slcEnv, ret).Err()
+			}
+		}
+	}
+	return
 }
 
 func (s swInfo) Priority() int32 {

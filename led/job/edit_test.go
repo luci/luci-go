@@ -64,3 +64,78 @@ func TestClearCurrentIsolated(t *testing.T) {
 		},
 	})
 }
+
+func TestEnv(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Env`, []testCase{
+		{
+			name: "empty",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Env(nil)
+				})
+				So(must(jd.Info().Env()), ShouldBeEmpty)
+			},
+		},
+
+		{
+			name:        "new",
+			skipSWEmpty: true,
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Env(map[string]string{
+						"KEY": "VALUE",
+						"DEL": "", // noop
+					})
+				})
+				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+					"KEY": "VALUE",
+				})
+			},
+		},
+
+		{
+			name:        "add",
+			skipSWEmpty: true,
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Env(map[string]string{
+						"KEY": "VALUE",
+					})
+				})
+				SoEdit(jd, func(je Editor) {
+					je.Env(map[string]string{
+						"OTHER": "NEW_VAL",
+						"DEL":   "", // noop
+					})
+				})
+				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+					"KEY":   "VALUE",
+					"OTHER": "NEW_VAL",
+				})
+			},
+		},
+
+		{
+			name:        "del",
+			skipSWEmpty: true,
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Env(map[string]string{
+						"KEY": "VALUE",
+					})
+				})
+				SoEdit(jd, func(je Editor) {
+					je.Env(map[string]string{
+						"OTHER": "NEW_VAL",
+						"KEY":   "", // delete
+					})
+				})
+				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+					"OTHER": "NEW_VAL",
+				})
+			},
+		},
+	})
+}
