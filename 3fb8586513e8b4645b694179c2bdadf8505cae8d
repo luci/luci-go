@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2a8f52fe_edc4d8ab",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T21:52:50Z",
+      "side": 1,
+      "message": "In this state, yes I\u0027d add a function because otherwise you need to keep a string in three different functions in sync (this line and L126 must both match L194). But if we deduplicate per L132, the string would only appear in one function so I\u0027d say once that\u0027s done then adding a function becomes optional (but can still be done since the string will be in two places in the same function).",
+      "parentUuid": "cc98e500_a4d91120",
+      "range": {
+        "startLine": 83,
+        "startChar": 14,
+        "endLine": 83,
+        "endChar": 81
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8bece2b7_fb6ac71e",
         "filename": "gce/appengine/rpc/config.go",
         "patchSetId": 2
@@ -42,6 +66,47 @@
         "endLine": 132,
         "endChar": 2
       },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e55c046f_b990449c",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T21:52:50Z",
+      "side": 1,
+      "message": "Can\u0027t be reused in List but this is the same code as Get, so yeah, let\u0027s extract this into a function. Can probably move the entire block into validateConfigOwners and rename it to get or something.",
+      "parentUuid": "8bece2b7_fb6ac71e",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf9482f0_0cecc4d3",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T21:52:50Z",
+      "side": 1,
+      "message": "Add Get here, since it does its own ACLs check now as well. However, anyone who currently has Get access via readers/writers/admins group is losing access because none of the configs currently specify any owners. I think we may want to change the ACLs check to be \"if the user is a member of the config-specified owners group, or a member of the admin, writers, or readers (for Get only) groups\".",
       "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
