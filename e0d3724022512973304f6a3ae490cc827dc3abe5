@@ -332,6 +332,30 @@
     },
     {
       "key": {
+        "uuid": "32c2ada4_dc8c1e04",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T20:35:41Z",
+      "side": 1,
+      "message": "😄 😂",
+      "parentUuid": "f75bffc9_273e25d2",
+      "range": {
+        "startLine": 411,
+        "startChar": 12,
+        "endLine": 411,
+        "endChar": 52
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3677efe0_10c42066",
         "filename": "logdog/appengine/coordinator/logStream.go",
         "patchSetId": 1
