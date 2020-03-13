@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7db19700_4fc28ba2",
+        "filename": "led/job/edit_swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T10:08:34Z",
+      "side": 1,
+      "message": "won\u0027t work with 2+ removals because of L123 changes indexes https://play.golang.com/p/ucyKC8ONs3W\n\nbetter:\n\n\t\tidx :\u003d 0\n\t\tfor _, cur :\u003d range newPath {\n\t\t\tif cur !\u003d v[1:] {\n\t\t\t\tnewPath[idx] \u003d cur\n\t\t\t\tidx++\n\t\t\t}\n\t\t}\n\t\tnewPath \u003d newPath[:idx]",
+      "range": {
+        "startLine": 116,
+        "startChar": 3,
+        "endLine": 124,
+        "endChar": 4
+      },
+      "revId": "1457e130a97606c5b165addb03a82d9e69f98e01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86a8ce7d_9b5b30a2",
+        "filename": "led/job/edit_swarming.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-13T10:08:34Z",
+      "side": 1,
+      "message": "can be merged with L105..L112 block:\n\nvar pair *api.StringListPair\nfor _, pair \u003d range *prefixes {\n\tif pair.Key \u003d\u003d \"PATH\" {\n\t\t\tnewPath :\u003d make([]string, len(pair.Values))\n\t\t\tcopy(newPath, pair.Values)\n\t\t\tpair.Values \u003d newPath\n\t\t\tbreak\n\t\t}\n\t}\nif pair \u003d\u003d nil {\n  pair  \u003d \u0026{..}\n  *prefixes \u003d append(*prefixes, pair)\n}",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 63
+      },
+      "revId": "1457e130a97606c5b165addb03a82d9e69f98e01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
