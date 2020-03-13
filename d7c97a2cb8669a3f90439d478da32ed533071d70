@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b927318d_417090d9",
+        "filename": "led/job/edit_cipd_pkgs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T23:45:04Z",
+      "side": 1,
+      "message": "Just \"fmt\"?",
+      "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4e75231_67864046",
+        "filename": "led/job/edit_cipd_pkgs_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T23:45:04Z",
+      "side": 1,
+      "message": "Test relies on the fact that je.CIPDPkgs works for adding packages. IMO construct the job definition with three packages then only test deletion with one je.CIPDPkgs call.",
+      "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
