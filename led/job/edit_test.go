@@ -139,3 +139,48 @@ func TestEnv(t *testing.T) {
 		},
 	})
 }
+
+func TestPrefixPathEnv(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `PrefixPathEnv`, []testCase{
+		{
+			name: "empty",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.PrefixPathEnv(nil)
+				})
+				So(must(jd.Info().PrefixPathEnv()), ShouldBeEmpty)
+			},
+		},
+
+		{
+			name:        "add",
+			skipSWEmpty: true,
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.PrefixPathEnv([]string{"some/path", "other/path"})
+				})
+				So(must(jd.Info().PrefixPathEnv()), ShouldResemble, []string{
+					"some/path", "other/path",
+				})
+			},
+		},
+
+		{
+			name:        "remove",
+			skipSWEmpty: true,
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.PrefixPathEnv([]string{"some/path", "other/path", "third"})
+				})
+				SoEdit(jd, func(je Editor) {
+					je.PrefixPathEnv([]string{"!other/path"})
+				})
+				So(must(jd.Info().PrefixPathEnv()), ShouldResemble, []string{
+					"some/path", "third",
+				})
+			},
+		},
+	})
+}

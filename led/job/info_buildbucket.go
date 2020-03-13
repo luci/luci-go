@@ -52,7 +52,14 @@ func (b bbInfo) Priority() int32 {
 }
 
 func (b bbInfo) PrefixPathEnv() (ret []string, err error) {
-	panic("implement me")
+	for _, keyVals := range b.EnvPrefixes {
+		if keyVals.Key == "PATH" {
+			ret = make([]string, len(keyVals.Values))
+			copy(ret, keyVals.Values)
+			break
+		}
+	}
+	return
 }
 
 func (b bbInfo) Tags() (ret []string) {
