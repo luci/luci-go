@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0665bcf2_67392c19",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T23:59:28Z",
+      "side": 1,
+      "message": "Remove tests assume correctness of Add. IMO construct job def with changes already there then test Remove in isolation.",
+      "revId": "ac8d35fa07f20c33f53ec39217aa830c31705c5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
