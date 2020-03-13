@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "583d103f_f71a5af0",
+        "filename": "logdog/appengine/coordinator/flex/logs/query.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-13T20:19:14Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a6206801_5ec1ddc5",
+      "range": {
+        "startLine": 199,
+        "startChar": 24,
+        "endLine": 199,
+        "endChar": 39
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e8b47433_b1baa080",
         "filename": "logdog/appengine/coordinator/logStream.go",
         "patchSetId": 1
@@ -272,6 +296,30 @@
       "side": 1,
       "message": "ah, you\u0027re right. Honestly, it doesn\u0027t really matter. I considered changing the api to just take a regex anyway, but that would technically be a breaking change.\n\nI\u0027ve fixed it, but I\u0027m not sure you\u0027ll love it :D. I did add a test tho...",
       "parentUuid": "e8b47433_b1baa080",
+      "range": {
+        "startLine": 411,
+        "startChar": 12,
+        "endLine": 411,
+        "endChar": 52
+      },
+      "revId": "e0d3724022512973304f6a3ae490cc827dc3abe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f75bffc9_273e25d2",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-13T20:19:14Z",
+      "side": 1,
+      "message": "ugh, this is PHP-style solution...",
+      "parentUuid": "468d2266_6999bdef",
       "range": {
         "startLine": 411,
         "startChar": 12,
