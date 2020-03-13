@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "e8a3513c_27d9a771",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:35:23Z",
+      "side": 1,
+      "message": "\u003e Is there a CL in the future that uses these? Right now their use could be inlined in runCases and I think it\u0027d be more readable in fewer lines.\n\nYes there is.\n\n\u003e \n\u003e // Make a swarming job whose last slice expires in 60 + 180 + 360 \u003d 600 seconds.\n\u003e tc.fn(testSWJob(60 * time.Second, 180 * time.Second, 360 * time.Second))",
+      "parentUuid": "d7245db6_5c079779",
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "89b1735a_ae15cb69",
         "filename": "led/job/helpers_for_test.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5f59e17_a91647fd",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:35:23Z",
+      "side": 1,
+      "message": "because then each entry would need to be `testCase{...}` instead of just `{...}`",
+      "parentUuid": "89b1735a_ae15cb69",
+      "range": {
+        "startLine": 84,
+        "startChar": 49,
+        "endLine": 84,
+        "endChar": 52
+      },
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "455086f3_2b57174c",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:35:23Z",
+      "side": 1,
+      "message": "yep, you\u0027re right. Done.",
+      "parentUuid": "4e2e1809_33a4b3bb",
+      "range": {
+        "startLine": 103,
+        "startChar": 45,
+        "endLine": 103,
+        "endChar": 48
+      },
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f0ccc47_163427c8",
         "filename": "led/job/helpers_for_test.go",
         "patchSetId": 6
@@ -79,6 +145,24 @@
       "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed1f45ca_00dda79f",
+        "filename": "led/job/helpers_for_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-13T02:35:23Z",
+      "side": 1,
+      "message": "The trouble is that it turns\n\n   SoEdit(jd, func() {\n     // stuff that actually matters\n   })\n\nInto\n\n   err :\u003d jd.Edit(func() {\n     // stuff that actually matters\n   })\n   So(err, ShouldBeNil)\n\nWhich introduces the err variable and adds visual noise.\n\nMy preference is for tests to maximize the \u0027interesting\u0027 parts of the test while minimizing the noisy parts of the test. Otherwise if the noise overwhelms the interesting parts of the tests, all the tests end up looking like 50 lines of boilerplate with 1 or 2 interesting differences buried somewhere in the middle.\n\nI suspect this is a matter of taste :).",
+      "parentUuid": "9f0ccc47_163427c8",
+      "revId": "599d138fd5290c1d09b554da05cf1ac88a7c8b1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
