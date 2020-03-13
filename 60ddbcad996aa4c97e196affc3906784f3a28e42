@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb6f8e54_2261cc5a",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T23:55:03Z",
+      "side": 1,
+      "message": "Add godoc (in general preferred for all exported functions). In particular, dirInTask meaning and the difference in meaning when cipdPkg/cipdVers are empty.",
+      "revId": "60ddbcad996aa4c97e196affc3906784f3a28e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72dabb82_9cece1c9",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-13T23:55:03Z",
+      "side": 1,
+      "message": "Can you document the reason for this?",
+      "revId": "60ddbcad996aa4c97e196affc3906784f3a28e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
