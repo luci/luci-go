@@ -392,7 +392,7 @@ func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
 	if name == "" {
 		name = "**"
 	}
-	if err := types.StreamName(strings.ReplaceAll(string(name), "*", "a")).Validate(); err != nil {
+	if err := types.StreamName(strings.Replace(string(name), "*", "a", -1)).Validate(); err != nil {
 		return nil, errors.Annotate(err, "name invalid").Err()
 	}
 
