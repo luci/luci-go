@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8eb6313f_3d99a010",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-14T00:06:11Z",
+      "side": 1,
+      "message": "Add godoc (I don\u0027t know what auto is without looking at the code).",
+      "revId": "dbb54451a162fbe1fa177c05276bc7e51c4aa448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c0e3d3e_5c453395",
+        "filename": "luciexe/exe/props.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-14T00:06:11Z",
+      "side": 1,
+      "message": "Is this luciexe change related...? It\u0027s also WriteProperties, but it seems like you\u0027re not importing this in led (at least in the files in this CL).",
+      "revId": "dbb54451a162fbe1fa177c05276bc7e51c4aa448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
