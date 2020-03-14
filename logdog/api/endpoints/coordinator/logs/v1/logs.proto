@@ -149,32 +149,18 @@ message QueryRequest {
     NO = 2;
   }
 
-  // The request project to request.
+  // (required) The project to query from.
   string project = 1;
 
-  // The query parameter.
+  // (required) The stream query parameter.
   //
-  // The path expression may substitute a glob ("*") for a specific path
-  // component. That is, any stream that matches the remaining structure qualifies
-  // regardless of its value in that specific positional field.
+  // Paths are of the form "full/path/prefix/+/stream/name", where the
+  // "stream/name" portion can contain glob-style "*" and "**" operators.
   //
-  // An unbounded wildcard may appear as a component at the end of both the
-  // prefix and name query components. "**" matches all remaining components.
+  // If this is just "full/path/prefix", then the stream/name is assumed to be
+  // "**" (meaning all streams).
   //
-  // If the supplied path query does not contain a path separator ("+"), it will
-  // be treated as if the prefix is "**".
-  //
-  // Examples:
-  //   - Empty ("") will return all streams.
-  //   - **/+/** will return all streams.
-  //   - foo/bar/** will return all streams with the "foo/bar" prefix.
-  //   - foo/bar/**/+/baz will return all streams beginning with the "foo/bar"
-  //     prefix and named "baz" (e.g., "foo/bar/qux/lol/+/baz")
-  //   - foo/bar/+/** will return all streams with a "foo/bar" prefix.
-  //   - foo/*/+/baz will return all streams with a two-component prefix whose
-  //     first value is "foo" and whose name is "baz".
-  //   - foo/bar will return all streams whose name is "foo/bar".
-  //   - */* will return all streams with two-component names.
+  // Omitting the full path prefix is an error (no wildcards are permitted).
   string path = 2;
 
   // If true, returns that the streams' full state is returned instead of just
@@ -211,9 +197,10 @@ message QueryRequest {
   // Older restricts results to streams created before the specified date.
   google.protobuf.Timestamp older = 13;
 
-  // If not empty, constrains the results to those whose protobuf version string
-  // matches the supplied version.
-  string proto_version = 14;
+  // [DEPRECATED] If not empty, constrains the results to those whose protobuf
+  // version string matches the supplied version.
+  reserved "proto_version";
+  reserved 14;
 
   // Tags is the set of tags to constrain the query with.
   //

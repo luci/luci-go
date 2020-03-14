@@ -16,15 +16,17 @@ package coordinator
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -357,130 +359,178 @@ func generatePathComponents(prefix, name string) ds.PropertySlice {
 	return c
 }
 
-func addComponentFilter(q *ds.Query, full, f, base string, value types.StreamName) (*ds.Query, error) {
-	segments := value.Segments()
-	if len(segments) == 0 {
-		// All-component query; impose no constraints.
-		return q, nil
-	}
-
-	// Profile the string. If it doesn't have any glob characters in it,
-	// fully constrain the base field.
-	hasGlob := false
-	for i, seg := range segments {
-		switch seg {
-		case "*", "**":
-			hasGlob = true
-
-		default:
-			// Regular segment. Assert that it is valid.
-			if err := types.StreamName(seg).Validate(); err != nil {
-				return nil, fmt.Errorf("invalid %s component at index %d (%s): %s", full, i, seg, err)
-			}
-		}
-	}
-	if !hasGlob {
-		// Direct field (full) query.
-		return q.Eq(full, string(value)), nil
-	}
-
-	// Add specific field constraints for each non-glob segment.
-	greedy := false
-	rstack := []string(nil)
-	for i, seg := range segments {
-		switch seg {
-		case "*":
-			// Skip asserting this segment.
-			if greedy {
-				// Add a placeholder (e.g., .../**/a/*/b, placeholder ensures "a" gets
-				// position -2 instead of -1.
-				//
-				// Note that "" can never be a segment, because we validate each
-				// non-glob path segment and "" is not a valid stream name component.
-				rstack = append(rstack, "")
-			}
-			continue
-
-		case "**":
-			if greedy {
-				return nil, fmt.Errorf("cannot have more than one greedy glob")
-			}
-
-			// Mark that we're greedy, and skip asserting this segment.
-			greedy = true
-			continue
-
-		default:
-			if greedy {
-				// Add this to our reverse stack. We'll query the reverse field from
-				// this stack after we know how many elements are ultimately in it.
-				rstack = append(rstack, seg)
-			} else {
-				q = q.Eq(f, fmt.Sprintf("%sF:%d:%s", base, i, seg))
-			}
-		}
-	}
-
-	// Add the reverse stack to pin the elements at the end of the path name
-	// (e.g., a/b/**/c/d, stack will be {c, d}, need to map to {r.0=d, r.1=c}.
-	for i, seg := range rstack {
-		if seg == "" {
-			// Placeholder, skip.
-			continue
-		}
-		q = q.Eq(f, fmt.Sprintf("%sR:%d:%s", base, len(rstack)-i-1, seg))
-	}
-
-	// If we're not greedy, fix this size of this component.
-	if !greedy {
-		q = q.Eq(f, fmt.Sprintf("%sC:%d", base, len(segments)))
-	}
-	return q, nil
+// LogStreamQuery is a function returning `true` if the provided LogStream
+// matches.
+type LogStreamQuery struct {
+	q             *ds.Query
+	includePurged bool
+	checks        []func(*LogStream) bool
 }
 
-// AddLogStreamPathFilter constructs a compiled LogStreamPathQuery. It will
-// return an error if the supllied query string describes an invalid query.
-func AddLogStreamPathFilter(q *ds.Query, path string) (*ds.Query, error) {
-	prefix, name := types.StreamPath(path).Split()
+// NewLogStreamQuery returns a new LogStreamQuery constrained to the prefix of
+// `pathGlob`, and with a filter function for the stream name in `pathGlob`.
+//
+// By default, it will exclude purged logs.
+//
+// pathGlob must have a prefix without wildcards, and a stream name portion
+// which can include `*` or `**` in any combination.
+//
+// Returns an error if the supplied pathGlob string describes an invalid query.
+func NewLogStreamQuery(pathGlob string) (*LogStreamQuery, error) {
+	prefix, name := types.StreamPath(pathGlob).Split()
 
-	err := error(nil)
-	q, err = addComponentFilter(q, "Prefix", "_C", "P", prefix)
+	if prefix == "" {
+		return nil, errors.New("prefix invalid: empty")
+	}
+	if strings.ContainsRune(string(prefix), '*') {
+		return nil, errors.New("prefix invalid: contains wildcard `*`")
+	}
+	if err := prefix.Validate(); err != nil {
+		return nil, errors.Annotate(err, "prefix invalid").Err()
+	}
+
+	if name == "" {
+		name = "**"
+	}
+	if err := types.StreamName(strings.ReplaceAll(string(name), "*", "a")).Validate(); err != nil {
+		return nil, errors.Annotate(err, "name invalid").Err()
+	}
+
+	ret := &LogStreamQuery{
+		q: ds.NewQuery("LogStream").Eq("Prefix", string(prefix)).Order("-Created"),
+	}
+
+	// Escape all regexp metachars. This will have the effect of escaping * as
+	// well. We can then replace sequences of escaped *'s to get the expression we
+	// want.
+	nameEscaped := regexp.QuoteMeta(string(name))
+	exp := strings.NewReplacer(
+		"/\\*\\*/", "(.*)/",
+		"/\\*\\*", "(.*)",
+		"\\*\\*/", "(.*)",
+		"\\*\\*", "(.*)",
+		"\\*", "([^/][^/]*)",
+	).Replace(nameEscaped)
+
+	re, err := regexp.Compile(fmt.Sprintf("^%s$", exp))
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "compiling name regex").Err()
 	}
-	q, err = addComponentFilter(q, "Name", "_C", "N", name)
+
+	// this function implements the check for purged as well as the name
+	// assertion.
+	ret.checks = append(ret.checks, func(ls *LogStream) bool {
+		if !ret.includePurged && ls.Purged {
+			return false
+		}
+		return re.MatchString(ls.Name)
+	})
+
+	return ret, nil
+}
+
+// SetCursor causes the LogStreamQuery to start from the given encoded cursor.
+func (lsp *LogStreamQuery) SetCursor(ctx context.Context, cursor string) error {
+	if cursor == "" {
+		return nil
+	}
+
+	cursorObj, err := ds.DecodeCursor(ctx, cursor)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return q, nil
+
+	lsp.q = lsp.q.Start(cursorObj)
+	return nil
 }
 
-// AddLogStreamTerminatedFilter returns a derived query that asserts that a log
-// stream has been terminated.
-func AddLogStreamTerminatedFilter(q *ds.Query, v bool) *ds.Query {
-	return q.Eq("_Terminated", v)
+// OnlyContentType constrains the LogStreamQuery to only return LogStreams of
+// the given content type.
+func (lsp *LogStreamQuery) OnlyContentType(ctype string) {
+	if ctype == "" {
+		return
+	}
+	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
+		return ls.ContentType == ctype
+	})
 }
 
-// AddLogStreamArchivedFilter returns a derived query that asserts that a log
-// stream has been archived.
-func AddLogStreamArchivedFilter(q *ds.Query, v bool) *ds.Query {
-	return q.Eq("_Archived", v)
+// OnlyStreamType constrains the LogStreamQuery to only return LogStreams of
+// the given stream type.
+func (lsp *LogStreamQuery) OnlyStreamType(stype logpb.StreamType) error {
+	if _, ok := logpb.StreamType_name[int32(stype)]; !ok {
+		return errors.New("unknown StreamType")
+	}
+	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
+		return ls.StreamType == stype
+	})
+	return nil
 }
 
-// AddLogStreamPurgedFilter returns a derived query that asserts that a log
-// stream has been archived.
-func AddLogStreamPurgedFilter(q *ds.Query, v bool) *ds.Query {
-	return q.Eq("Purged", v)
+// IncludePurged will have the LogStreamQuery return purged logs as well.
+func (lsp *LogStreamQuery) IncludePurged() {
+	lsp.includePurged = true
 }
 
-// AddOlderFilter adds a filter to queries that restricts them to results that
-// were created before the supplied time.
-func AddOlderFilter(q *ds.Query, t time.Time) *ds.Query {
-	return q.Lt("Created", t.UTC()).Order("-Created")
+// OnlyPurged will have the LogStreamQuery return ONLY purged logs.
+//
+// Will result in NO logs if IncludePurged hasn't been set.
+func (lsp *LogStreamQuery) OnlyPurged() {
+	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
+		return ls.Purged
+	})
 }
 
-// AddNewerFilter adds a filter to queries that restricts them to results that
-// were created after the supplied time.
-func AddNewerFilter(q *ds.Query, t time.Time) *ds.Query {
-	return q.Gt("Created", t.UTC()).Order("-Created")
+// TimeBound constrains LogStreams returned to be bound by the given lower and
+// upper creation timestamps.
+func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamp.Timestamp) {
+	// we use a datastore filter here because lsp.q is already ordered by
+	// -Created, and so we can apply an inequality to it.
+	if lower != nil {
+		lsp.q = lsp.q.Gt("Created", google.TimeFromProto(lower).UTC())
+	}
+	if upper != nil {
+		lsp.q = lsp.q.Lt("Created", google.TimeFromProto(upper).UTC())
+	}
+}
+
+// MustHaveTags constrains LogStreams returned to have all of the given tags.
+func (lsp *LogStreamQuery) MustHaveTags(tags map[string]string) {
+	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
+		for k, v := range tags {
+			actual, ok := ls.Tags[k]
+			if !ok {
+				return false
+			}
+			if v != "" && v != actual {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+func (lsp *LogStreamQuery) filter(ls *LogStream) bool {
+	for _, checkFn := range lsp.checks {
+		if !checkFn(ls) {
+			return false
+		}
+	}
+	return true
+}
+
+// Run executes the LogStreamQuery and calls `cb` with each LogStream which
+// matches the LogStreamQuery.
+//
+// If `cb` returns ds.Stop, the query will stop with a nil error.
+// If `cb` returns a different error, the query will stop with the returned
+// error.
+// If `cb` returns nil, the query continues until it exhausts.
+func (lsp *LogStreamQuery) Run(ctx context.Context, cb func(*LogStream, ds.CursorCB) error) error {
+	return ds.Run(ctx, lsp.q, func(ls *LogStream, getCursor ds.CursorCB) (err error) {
+		if lsp.filter(ls) {
+			err = cb(ls, getCursor)
+		}
+		return
+	})
 }

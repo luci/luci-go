@@ -97,16 +97,3 @@ func (m TagMap) toProperties() (ds.PropertySlice, error) {
 	}
 	return parts, nil
 }
-
-// AddLogStreamTagFilter adds a tag filter to a Query object.
-//
-// This method will only add equality filters to the query. If value is empty,
-// a presence filter will be added; otherwise, an equality filter will be added.
-//
-// This incorporates the encoding expressed by TagMap.
-func AddLogStreamTagFilter(q *ds.Query, key string, value string) *ds.Query {
-	if value == "" {
-		return q.Eq("_Tags", encodeKey(key))
-	}
-	return q.Eq("_Tags", encodeKey(fmt.Sprintf("%s=%s", key, value)))
-}

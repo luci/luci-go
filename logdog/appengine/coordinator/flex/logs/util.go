@@ -20,22 +20,28 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 )
 
-func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {
-	lss := logdog.LogStreamState{
-		ProtoVersion:  ls.ProtoVersion,
-		Created:       google.NewTimestamp(ls.Created),
-		TerminalIndex: lst.TerminalIndex,
-		Purged:        ls.Purged,
-	}
+func fillStateFromLogStream(s *logdog.LogStreamState, ls *coordinator.LogStream) {
+	s.ProtoVersion = ls.ProtoVersion
+	s.Created = google.NewTimestamp(ls.Created)
+	s.Purged = ls.Purged
+}
 
-	if ast := lst.ArchivalState(); ast.Archived() {
-		lss.Archive = &logdog.LogStreamState_ArchiveInfo{
-			IndexUrl:      lst.ArchiveIndexURL,
-			StreamUrl:     lst.ArchiveStreamURL,
+func fillStateFromLogStreamState(s *logdog.LogStreamState, lss *coordinator.LogStreamState) {
+	s.TerminalIndex = lss.TerminalIndex
+
+	if ast := lss.ArchivalState(); ast.Archived() {
+		s.Archive = &logdog.LogStreamState_ArchiveInfo{
+			IndexUrl:      lss.ArchiveIndexURL,
+			StreamUrl:     lss.ArchiveStreamURL,
 			Complete:      ast == coordinator.ArchivedComplete,
-			LogEntryCount: lst.ArchiveLogEntryCount,
+			LogEntryCount: lss.ArchiveLogEntryCount,
 		}
 	}
+}
 
-	return &lss
+func buildLogStreamState(ls *coordinator.LogStream, lss *coordinator.LogStreamState) *logdog.LogStreamState {
+	ret := &logdog.LogStreamState{}
+	fillStateFromLogStream(ret, ls)
+	fillStateFromLogStreamState(ret, lss)
+	return ret
 }

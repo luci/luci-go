@@ -84,31 +84,3 @@ func TestTagMap(t *testing.T) {
 		})
 	})
 }
-
-func TestTagMapQuery(t *testing.T) {
-	t.Parallel()
-
-	Convey(`A Datastore query`, t, func() {
-		q := ds.NewQuery("test")
-
-		Convey(`Will request an encoded presence key if no value is specified.`, func() {
-			q = AddLogStreamTagFilter(q, "FindThisKey", "")
-
-			fq, err := q.Finalize()
-			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
-				"_Tags": sps(encodeKey("FindThisKey")),
-			})
-		})
-
-		Convey(`Will request an encoded key/value.`, func() {
-			q = AddLogStreamTagFilter(q, "FindThisKey", "DesiredValue")
-
-			fq, err := q.Finalize()
-			So(err, ShouldBeNil)
-			So(fq.EqFilters(), ShouldResemble, map[string]ds.PropertySlice{
-				"_Tags": sps(encodeKey("FindThisKey=DesiredValue")),
-			})
-		})
-	})
-}
