@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -61,13 +62,12 @@ func validTestResult(now time.Time) *sinkpb.TestResult {
 func TestReportTestResults(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
-	req := &sinkpb.ReportTestResultsRequest{
-		TestResults: []*sinkpb.TestResult{validTestResult(now)},
-	}
+	req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{validTestResult(now)}}
 
 	Convey("ReportTestResults", t, func() {
-		ctx := metadata.NewIncomingContext(
-			context.Background(),
+		ctx := authtest.MockAuthConfig(context.Background())
+		ctx = metadata.NewIncomingContext(
+			ctx,
 			metadata.Pairs(AuthTokenKey, authTokenValue("secret")),
 		)
 		sink, err := newSinkServer(ctx, ServerConfig{AuthToken: "secret"})
