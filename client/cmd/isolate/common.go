@@ -88,7 +88,7 @@ type isolateFlags struct {
 func (c *isolateFlags) Init(f *flag.FlagSet) {
 	c.ArchiveOptions.Init()
 	f.StringVar(&c.Isolate, "isolate", "", ".isolate file to load the dependency data from")
-	f.StringVar(&c.Isolate, "i", "", "Alias for --isolate")
+	f.StringVar(&c.Isolate, "i", "", "Alias for -isolate")
 	f.Var(&c.Blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 	f.Var(&c.ConfigVariables, "config-variable", "Config variables are used to determine which conditions should be matched when loading a .isolate file, default: [].")
 	f.Var(&c.PathVariables, "path-variable", "Path variables are used to replace file paths when loading a .isolate file, default: {}")
@@ -99,9 +99,9 @@ func (c *isolateFlags) Init(f *flag.FlagSet) {
 type RequiredIsolateFlags uint
 
 const (
-	// RequireIsolateFile means the --isolate flag is required.
+	// RequireIsolateFile means the -isolate flag is required.
 	RequireIsolateFile RequiredIsolateFlags = 1 << iota
-	// RequireIsolatedFile means the --isolated flag is required.
+	// RequireIsolatedFile means the -isolated flag is required.
 	RequireIsolatedFile
 )
 
