@@ -1,0 +1,28 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e12ad4d2_9c1e4de0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-16T23:16:01Z",
+      "side": 1,
+      "message": "\u003e \"indicies\" is a possible misspelling of \"indices\".\n\nIs this a common spelling? I\u0027ve seen indexes and indices only so far...",
+      "parentUuid": "72e1433c_b50c96d3",
+      "range": {
+        "startLine": 7,
+        "startChar": 30,
+        "endLine": 7,
+        "endChar": 38
+      },
+      "revId": "5bc2d4a79f228017ee8a4c1d8c8c7a694d60af51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
