@@ -59,7 +59,7 @@ func srcmanCheckout(c context.Context, build *Build) (Checkout, error) {
 		ContentType: srcman.ContentTypeSourceManifest,
 	}
 	logProject := build.Infra.Logdog.Project
-	logPath := path.Join(build.Infra.Logdog.Prefix, "**")
+	logPath := path.Join(build.Infra.Logdog.Prefix, "+", "**")
 
 	// Perform the query, capturing exactly one log stream and erroring otherwise.
 	var log *coordinator.LogStream
