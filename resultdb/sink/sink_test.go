@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
@@ -76,7 +77,7 @@ func TestServer(t *testing.T) {
 
 	Convey("Server", t, func() {
 		req := &sinkpb.ReportTestResultsRequest{}
-		ctx := context.Background()
+		ctx := authtest.MockAuthConfig(context.Background())
 		srv := NewServer(ServerConfig{AuthToken: "secret"})
 		So(srv, ShouldNotBeNil)
 
