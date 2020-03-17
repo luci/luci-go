@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1adadc2_7387ae06",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-17T00:56:04Z",
+      "side": 0,
+      "message": "is this preserved in the new logic?",
+      "range": {
+        "startLine": 285,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 3
+      },
+      "revId": "19f5f2661ffa887a867bcb6e30fa92446b431e80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
