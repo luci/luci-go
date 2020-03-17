@@ -82,6 +82,30 @@
     },
     {
       "key": {
+        "uuid": "53446c0d_54dd614b",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:49:51Z",
+      "side": 1,
+      "message": "please ignore this. i forgot to remove this draft",
+      "parentUuid": "e1c6e9f6_6a269aa7",
+      "range": {
+        "startLine": 195,
+        "startChar": 1,
+        "endLine": 197,
+        "endChar": 2
+      },
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "039c5fc1_eebe2f31",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 2
