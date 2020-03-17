@@ -67,6 +67,7 @@ luci.tree_closer(
 #
 # === luci-notify.cfg
 # notifiers: <
+#   name: "email notifier"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     email: <
@@ -85,6 +86,7 @@ luci.tree_closer(
 #   >
 # >
 # notifiers: <
+#   name: "tree closer"
 #   builders: <
 #     bucket: "bucket"
 #     name: "builder 2"

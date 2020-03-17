@@ -126,6 +126,7 @@ luci.builder(
 #
 # === luci-notify.cfg
 # notifiers: <
+#   name: "email notifier"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     email: <
@@ -138,6 +139,7 @@ luci.builder(
 #   >
 # >
 # notifiers: <
+#   name: "blamelist notifier"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     notify_blamelist: <>
@@ -149,6 +151,7 @@ luci.builder(
 #   >
 # >
 # notifiers: <
+#   name: "blamelist notifier with infra failures"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     on_occurrence: INFRA_FAILURE
@@ -161,6 +164,7 @@ luci.builder(
 #   >
 # >
 # notifiers: <
+#   name: "notifier with regex filter"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     failed_step_regexp: ".*test.*"
@@ -171,6 +175,7 @@ luci.builder(
 #   >
 # >
 # notifiers: <
+#   name: "notifier with rotang rotations"
 #   notifications: <
 #     on_occurrence: FAILURE
 #     email: <
