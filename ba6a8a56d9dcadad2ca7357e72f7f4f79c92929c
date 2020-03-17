@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "13cd40c7_67209bc9",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "i mean there is no code that validates requestID parameter which is coming from in.RequestID in L119. This is still relevant for PS4.",
+      "parentUuid": "65630553_68947271",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "315e9e77_990be9f2",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 2
@@ -335,6 +353,24 @@
       "writtenOn": "2020-03-17T00:47:11Z",
       "side": 1,
       "message": "please explain that response contains update tokens in the same order as returned invocations",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e78c210_22db826f",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "bump",
+      "parentUuid": "b30bfee1_7d19c7a5",
       "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

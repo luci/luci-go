@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea79e493_532cc8fc",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "this is inconsistent with other request validation functions. For example, its error messages do not follow the same pattern, which starts with a path to the invalid field. \n\nother RPCs:\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/batch_create_test_results.go;l\u003d40?q\u003dBatchCreateTestResult\n\nhttps://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/internal/services/recorder/batch_create_test_exonerations.go\n\nstepping back, another example of inconsistency is that this file combines both batch and non-batch code. Could we make it consistent?",
+      "range": {
+        "startLine": 141,
+        "startChar": 17,
+        "endLine": 141,
+        "endChar": 57
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac57f38d_9ebb877a",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "i think this defines a new deduped variable and does not set the above one",
+      "range": {
+        "startLine": 150,
+        "startChar": 15,
+        "endLine": 150,
+        "endChar": 16
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e2843ff_71ff1c06",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "nit: swap the order, to be consistent with L254 nd L257",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 256,
+        "endChar": 8
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ffb1de7_44e56c04",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "or\n\n--\n\nor just return err, like the rest of the code",
+      "range": {
+        "startLine": 258,
+        "startChar": 61,
+        "endLine": 258,
+        "endChar": 64
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34b188d8_71e95e29",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "let\u0027s be even more clear here:\n\n  some, but not all of of the invocations ....",
+      "range": {
+        "startLine": 278,
+        "startChar": 54,
+        "endLine": 278,
+        "endChar": 58
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b67dbd3_49131ce2",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:20:26Z",
+      "side": 1,
+      "message": "here we have 4 cases. please use a switch",
+      "range": {
+        "startLine": 266,
+        "startChar": 1,
+        "endLine": 278,
+        "endChar": 116
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
