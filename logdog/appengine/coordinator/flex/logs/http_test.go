@@ -57,54 +57,6 @@ func TestHTTP(t *testing.T) {
 			return result
 		}
 
-		Convey(`Match Streams`, func() {
-			streams := []*coordinator.LogStream{
-				{Name: "foo/bar/baz"},
-				{Name: "foo/bar/stdout"},
-				{Name: "foo/baz"},
-				{Name: "stdout"},
-				{Name: "stderr"},
-			}
-			Convey(`Single wildcard`, func() {
-				streams = matchStreams(streams, "*")
-				So(streams, ShouldResemble, []*coordinator.LogStream{
-					{Name: "stdout"},
-					{Name: "stderr"},
-				})
-			})
-			Convey(`tail`, func() {
-				streams = matchStreams(streams, "**/baz")
-				So(streams, ShouldResemble, []*coordinator.LogStream{
-					{Name: "foo/bar/baz"},
-					{Name: "foo/baz"},
-				})
-			})
-			Convey(`foo/baz`, func() {
-				streams = matchStreams(streams, "foo/*")
-				So(streams, ShouldResemble, []*coordinator.LogStream{
-					{Name: "foo/baz"},
-				})
-			})
-			Convey(`double wildcard`, func() {
-				streams = matchStreams(streams, "foo/**")
-				So(streams, ShouldResemble, []*coordinator.LogStream{
-					{Name: "foo/bar/baz"},
-					{Name: "foo/bar/stdout"},
-					{Name: "foo/baz"},
-				})
-			})
-			Convey(`everything`, func() {
-				streams = matchStreams(streams, "**")
-				So(streams, ShouldResemble, []*coordinator.LogStream{
-					{Name: "foo/bar/baz"},
-					{Name: "foo/bar/stdout"},
-					{Name: "foo/baz"},
-					{Name: "stdout"},
-					{Name: "stderr"},
-				})
-			})
-		})
-
 		Convey(`Do nothing`, func() {
 			data := fakeData([]logResp{})
 			So(serve(c, data, resp), ShouldBeNil)
