@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1533ee6_e65cc271",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-17T22:53:18Z",
+      "side": 1,
+      "message": "Typo: Structure",
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cdc6558_29967ab4",
+        "filename": "milo/frontend/resultui/src/models/test_node_test.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-17T22:53:18Z",
+      "side": 1,
+      "message": "Should we also assert the content here?",
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60013ad9_63679cce",
+        "filename": "milo/frontend/resultui/src/models/test_node_test.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1369089
+      },
+      "writtenOn": "2020-03-17T22:53:18Z",
+      "side": 1,
+      "message": "Should we also assert the content?",
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
