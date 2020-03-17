@@ -22,7 +22,6 @@ import (
 	"image/color"
 	"math"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -175,8 +174,6 @@ type userOptions struct {
 	project string
 	// path is the full path (prefix + name) of the requested log stream.
 	path types.StreamPath
-	// wildcard indicates that the name contains wildcards ("*" or "**").
-	wildcard bool
 	// format indicates the format the user wants the data back in.
 	// Valid formats are "raw", "lite", and "full.
 	// If the user specifies "?format=html",
@@ -250,82 +247,43 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 	if err = prefix.Validate(); err != nil {
 		return
 	}
-	if strings.Contains(name.String(), "*") {
-		options.wildcard = true
-	} else if err = name.Validate(); err != nil {
-		// Validate name, if it is a fully resolved path.
+
+	// Replace any wildcards in 'name' with 'a', then Validate the result. We'll
+	// allow wildcard chars through though.
+	if err = types.StreamName(strings.Replace(string(name), "*", "a", -1)).Validate(); err != nil {
 		return
 	}
+
 	options.project = parts[0]
 	err = config.ValidateProjectName(options.project)
 	return
 }
 
-// matchStreams returns streams that:
-// * Are not purged.
-// * Matches the path pattern.
-func matchStreams(streams []*coordinator.LogStream, pattern string) []*coordinator.LogStream {
-	// Filter results that match the requested stream name.
-	// ** turns into .*
-	// * turns into [^/]*
-	doubles := strings.Split(pattern, "**")
-	for i, d := range doubles {
-		singles := strings.Split(d, "*")
-		for j, s := range singles {
-			singles[j] = regexp.QuoteMeta(s)
-		}
-		doubles[i] = strings.Join(singles, "[^/]*")
-	}
-	r := regexp.MustCompile(fmt.Sprintf("^%s$", strings.Join(doubles, ".*")))
-	result := make([]*coordinator.LogStream, 0, len(streams))
-	for _, stream := range streams {
-		if stream.Purged {
-			continue
-		}
-		if stream.StreamType != logpb.StreamType_TEXT {
-			// Multistream viewing only supported for text streams.
-			continue
-		}
-		if r.MatchString(stream.Name) {
-			result = append(result, stream)
-		}
-	}
-	return result
-}
-
 // resolveStreams takes a path containing a wildcard and resolves it to the list
 // of all known paths.  Purge checks are also performed here.
 func resolveStreams(c context.Context, options userOptions) ([]*coordinator.LogStream, error) {
-	prefix, name := options.path.Split()
+	q, err := coordinator.NewLogStreamQuery(string(options.path))
+	if err != nil {
+		return nil, errors.Annotate(err, "generating LogStreamQuery").Err()
+	}
+
 	streams := []*coordinator.LogStream{}
-	var err error
-	if options.wildcard {
-		q := datastore.NewQuery("LogStream").Eq("Prefix", prefix.String()).Eq("Purged", false)
-		err = datastore.GetAll(c, q, &streams)
-	} else {
-		streams = append(streams, &coordinator.LogStream{ID: coordinator.LogStreamID(options.path)})
-		err = datastore.Get(c, streams[0])
+	err = q.Run(c, func(ls *coordinator.LogStream, _ datastore.CursorCB) error {
+		streams = append(streams, ls)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "reading LogStreams").Err()
 	}
 
-	switch {
-	case len(streams) == 0, datastore.IsErrNoSuchEntity(err):
-		return nil, coordinator.ErrPathNotFound
-	case err != nil:
-		return nil, err
-	case !options.wildcard:
-		// If the user requested HTML format, check to see if the stream is a binary or datagram stream.
-		// If so, then this mode is not supported, and instead just render a link to the supported mode.
-		if options.isHTML() && streams[0].StreamType != logpb.StreamType_TEXT {
-			err = errRawRedirect
-		}
-		return streams, err
+	// If the user requested HTML format, check to see if the stream is a binary
+	// or datagram stream. If so, then this mode is not supported, and instead
+	// just render a link to the supported mode.
+	if len(streams) == 1 && options.isHTML() && streams[0].StreamType != logpb.StreamType_TEXT {
+		err = errRawRedirect
 	}
 
-	result := matchStreams(streams, name.String())
-	if len(result) == 0 {
-		return nil, coordinator.ErrPathNotFound
-	}
-	return result, nil
+	return streams, err
 }
 
 // initParams generates a set of params for each LogStream given.
