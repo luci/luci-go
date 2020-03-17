@@ -1,0 +1,273 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "af80c594_a1760b7b",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "just noticed this. this should be removed because pb.RecorderClient is an interfaces.\nnot for this CL",
+      "range": {
+        "startLine": 60,
+        "startChar": 10,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "336bf99f_14447b44",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "i don\u0027t see why we need this given tha we can use Recorder above",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 0
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d19a6145_fc0b0c27",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "we already have recorder above. Why can\u0027t it be used?",
+      "range": {
+        "startLine": 86,
+        "startChar": 1,
+        "endLine": 86,
+        "endChar": 19
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "851cd51b_f8724e63",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "i think this should be in defer, otherwise it is not guaranteed",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7840ae2a_eab66932",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "why aren\u0027t we using s.cfg.Recorder? for both prod and test cases",
+      "range": {
+        "startLine": 64,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 44
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d17b90e_549f8eef",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "nit: crbug.com/1017288",
+      "range": {
+        "startLine": 86,
+        "startChar": 9,
+        "endLine": 86,
+        "endChar": 16
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0095bf15_fa7814b9",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "request id is 36 ASCII string. and this does not fit. Why not just uuid?",
+      "range": {
+        "startLine": 98,
+        "startChar": 13,
+        "endLine": 98,
+        "endChar": 20
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be72a4c4_c42b641c",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "if this happens, we are losing data, so its not OK to just log it.\nalso it is pretty much impossible, so let\u0027s panic",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df5d634c_9f09510b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "i don\u0027t see copied. here we copy a ref to a string",
+      "range": {
+        "startLine": 113,
+        "startChar": 16,
+        "endLine": 113,
+        "endChar": 41
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fe8760a_d5d4f817",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "fn would be useful here too",
+      "range": {
+        "startLine": 139,
+        "startChar": 34,
+        "endLine": 139,
+        "endChar": 38
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8280e050_bcda717b",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "I\u0027ve noticed that in a lot of places you log errors instead of returning them. i think this can lead to very confusing behavior, e.g. a program finished successfully, but actually didn\u0027t do its job. I recommend defaulting to returning errors, and switching to logging if and only if it is really OK to ignore the error. For example, this error is not ignorable. this should have been prevented in validation. I think a panic would be more appropriate",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ba64eb9_ab8587d8",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "in go, map iteration order is non-deterministic. please sort rArts before retruning",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c65e59ea_3da2d737",
+        "filename": "resultdb/sink/sink_server_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T19:01:25Z",
+      "side": 1,
+      "message": "lease don\u0027t mix resultdb with other imports",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
