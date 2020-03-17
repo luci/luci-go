@@ -195,16 +195,6 @@ func TestValidation(t *testing.T) {
 				}
 			}`,
 			requiredFieldError, "tree_status_host")
-
-		testValidation(`duplicate notifier name`, `
-			notifiers {
-				name: "foo"
-			}
-			notifiers {
-				name: "foo"
-			}`,
-			duplicateNotifierError, "foo")
-
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {
