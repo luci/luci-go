@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "eeb9c3cb_c06ec52a",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-17T23:29:37Z",
+      "side": 1,
+      "message": "This is a preference thing, but I wouldn\u0027t expose the entire RecorderChannelOpts to the user of ServerConfig. I would rather expose ONLY the portions of it which the user of ServerConfig is expected to tune (if any), and would then consume those portions to produce a full dispatcher.Options internally.\n\nI would probably start by hard coding the entire Options block, and then when you have multiple ServerConfigs which need different recorder channel behaviors, tune or parameterize as appropriate. Right now it exposes this internal implementation detail to the users of ServerConfig.\n\nThe benefit of doing this is it reduces the cognitive overhead for users of ServerConfig, and also lets you abstract this detail away (i.e. today it\u0027s implemented with dispatcher.Channel, tomorrow it might be implemented with something else). It also prevents misconfiguration (currently someone could provide a completely misconfigured Channel).\n\nAgain, it\u0027s a preference, so I defer to nodir here, but this is my inclination.",
+      "range": {
+        "startLine": 80,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 20
+      },
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "336bf99f_14447b44",
         "filename": "resultdb/sink/sink.go",
         "patchSetId": 7
@@ -168,6 +191,24 @@
       "writtenOn": "2020-03-17T19:01:25Z",
       "side": 1,
       "message": "if this happens, we are losing data, so its not OK to just log it.\nalso it is pretty much impossible, so let\u0027s panic",
+      "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "298033d4_3290ece5",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-17T23:29:37Z",
+      "side": 1,
+      "message": "Agree; you know that you push only *sinkpb.TestResult into this channel, so just do\n\n   tr :\u003d d.(*sinkpb.TestResult)\n\nand let the panic happen. My general rule of thumb is:\n  * If the error could be fixed by adjusting the program inputs, then return and/or log an error.\n  * If the error could only be fixed by changing the source code, panic.",
+      "parentUuid": "be72a4c4_c42b641c",
       "revId": "eae461402d4e13040da7031d54df4f10a05d887e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
