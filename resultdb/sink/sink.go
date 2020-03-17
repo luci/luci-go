@@ -25,7 +25,9 @@ import (
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
@@ -72,6 +74,16 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// RecorderChannelOpts specify the options of the dispatcher sending requests to
+	// Recorder service.
+	RecorderChannelOpts dispatcher.Options
+
+	// ResultDBHost specifies the hostname of ResultDB, where test results are reported.
+	ResultDBHost string
+
+	// mocks RecorderClient in tests
+	recorderTestClient pb.RecorderClient
 }
 
 // Server contains state relevant to the server itself.
@@ -95,7 +107,9 @@ func NewServer(cfg ServerConfig) *Server {
 	if cfg.Address == "" {
 		cfg.Address = DefaultAddr
 	}
-
+	if cfg.ResultDBHost == "" {
+		cfg.ResultDBHost = chromeinfra.ResultDBHost
+	}
 	s := &Server{
 		cfg:  cfg,
 		errC: make(chan error, 1),
@@ -182,12 +196,15 @@ func (s *Server) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
 		defer cancel()
+		var err error
 		if s.testListener == nil {
-			s.errC <- s.httpSrv.ListenAndServe()
+			err = s.httpSrv.ListenAndServe()
 		} else {
 			// In test mode, the the listener MUST be prepared already.
-			s.errC <- s.httpSrv.Serve(s.testListener)
+			err = s.httpSrv.Serve(s.testListener)
 		}
+		closeSinkServer(ctx, ss)
+		s.errC <- err
 	}()
 	go func() {
 		<-ctx.Done()
