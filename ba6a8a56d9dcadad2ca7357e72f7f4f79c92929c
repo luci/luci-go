@@ -1,0 +1,158 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d2d7b771_f3ee7405",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "does not validate requestID",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "315e9e77_990be9f2",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "this loop, and this function in general, combines validation and other logic. This is different from all other RPCs. Please separate.",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31bddf38_46f5c69f",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "q\n\nuse %q for unverified input",
+      "range": {
+        "startLine": 152,
+        "startChar": 31,
+        "endLine": 152,
+        "endChar": 32
+      },
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1c6e9f6_6a269aa7",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "it should increment by the number of non-deduped rows. this will not increment the metric if *at least one* deduped",
+      "range": {
+        "startLine": 195,
+        "startChar": 1,
+        "endLine": 197,
+        "endChar": 2
+      },
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "039c5fc1_eebe2f31",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "this is misleading. we did fetch, but we failed to parse a row we got from spanner",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0850bd5_e5fc5373",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "this is possible:\n- request with requestID X and 1 invocation\n- receive OK response\n- request with same request id and 2 invocations\n\nwe should not panic on bad user input",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7dd03f30_eebce9ba",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "in this case, we are iterating a slice with the same length.\nit is more typical to have ret[i] \u003d updateToken here",
+      "range": {
+        "startLine": 261,
+        "startChar": 8,
+        "endLine": 261,
+        "endChar": 14
+      },
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b30bfee1_7d19c7a5",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T00:47:11Z",
+      "side": 1,
+      "message": "please explain that response contains update tokens in the same order as returned invocations",
+      "revId": "ba6a8a56d9dcadad2ca7357e72f7f4f79c92929c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
