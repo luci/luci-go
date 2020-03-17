@@ -1,0 +1,343 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39bddca9_57953c29",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "space between // and P",
+      "range": {
+        "startLine": 15,
+        "startChar": 2,
+        "endLine": 15,
+        "endChar": 3
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d59125d9_de13b625",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "there should be extra space before -\notherwise godoc will not render it properly\n\nyou can see it yourself locally using \n\n  godoc -http :8080\n\nhttps://godoc.org/golang.org/x/tools/cmd/godoc\n\ni also wonder if a blank space is required between these two lines",
+      "range": {
+        "startLine": 18,
+        "startChar": 2,
+        "endLine": 18,
+        "endChar": 3
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c61ed91_2ac9676d",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "package doc says\n\n\u003e WARNING: This package should only ever be imported by generated messages. The compatibility agreement covers nothing except for functionality needed to keep existing generated messages operational. Breakages that occur due to unauthorized usages of this package are not the author\u0027s responsibility.\n\nis there a better way?",
+      "range": {
+        "startLine": 57,
+        "startChar": 37,
+        "endLine": 57,
+        "endChar": 46
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bb4a2a5_25dbd0ac",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "did you mean to make it public?",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 9
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ce4b60e_5e7a2787",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "nit: standard name for this is \"ok\"",
+      "range": {
+        "startLine": 111,
+        "startChar": 9,
+        "endLine": 111,
+        "endChar": 14
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc480765_8555020f",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "there is no need to write break in switch-cases in golang",
+      "range": {
+        "startLine": 119,
+        "startChar": 5,
+        "endLine": 119,
+        "endChar": 10
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a75e994_c77354de",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "this is repeated 3 times\n\n  child :\u003d mask { children: map[string]mask{} }\n\nin L112?",
+      "range": {
+        "startLine": 131,
+        "startChar": 6,
+        "endLine": 131,
+        "endChar": 35
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42b39cb9_5d094e3a",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 141,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 1
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8af39cdf_5085531b",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 161,
+        "startChar": 71,
+        "endLine": 161,
+        "endChar": 72
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6707295a_fe0c1c21",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "lexicographically",
+      "range": {
+        "startLine": 168,
+        "startChar": 30,
+        "endLine": 168,
+        "endChar": 44
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6d67054_b94b1739",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "nit: normalizePaths",
+      "range": {
+        "startLine": 169,
+        "startChar": 5,
+        "endLine": 169,
+        "endChar": 20
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "edd44159_f334723f",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "stringset.New(len(paths))",
+      "range": {
+        "startLine": 170,
+        "startChar": 12,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d6eb5d3_1283fd35",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "please move this closer to the usage, i.e. after sorting",
+      "range": {
+        "startLine": 170,
+        "startChar": 1,
+        "endLine": 172,
+        "endChar": 16
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cc83cfb_d4fa1390",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "doc comments\n\nsame below",
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1537a372_55440f8f",
+        "filename": "common/proto/mask/mask_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:53:31Z",
+      "side": 1,
+      "message": "So(err, ShouldErrLike, \"update mask allows a repeated field only at the last position; field: msgs is not last\")\n\nalso, can use error substring, see ShouldErrLike docs",
+      "range": {
+        "startLine": 162,
+        "startChar": 3,
+        "endLine": 162,
+        "endChar": 127
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
