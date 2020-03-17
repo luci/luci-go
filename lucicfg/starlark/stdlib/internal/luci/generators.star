@@ -1013,6 +1013,7 @@ def gen_notify_cfg(ctx):
       )
 
     notifiers_pb.append(notify_pb.Notifier(
+        name = n.props.name,
         notifications = [_notify_notification_pb(n) for n in notifications],
         tree_closers = [_notify_tree_closer_pb(n) for n in tree_closers],
         builders = [notify_pb.Builder(
