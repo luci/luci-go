@@ -103,25 +103,6 @@ func TestLogStream(t *testing.T) {
 			},
 		}
 
-		Convey(`Will skip invalid tags when loading.`, func() {
-			pmap, err := ls.Save(false)
-			So(err, ShouldBeNil)
-			pmap["_Tags"] = sps(encodeKey("!!!invalid key!!!"))
-
-			So(ls.Load(pmap), ShouldBeNil)
-			So(ls.Tags, ShouldResemble, TagMap(nil))
-		})
-
-		Convey(`With invalid tags will fail to encode.`, func() {
-			ls.Tags = TagMap{
-				"!!!invalid key!!!": "value",
-			}
-
-			ls.SetDSValidate(false)
-			_, err := ls.Save(true)
-			So(err, ShouldErrLike, "failed to encode tags")
-		})
-
 		Convey(`Can populate the LogStream with descriptor state.`, func() {
 			So(ls.LoadDescriptor(&desc), ShouldBeNil)
 			So(ls.Validate(), ShouldBeNil)
