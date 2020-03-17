@@ -19,13 +19,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/proto/internal/testingpb"
-	"google.golang.org/protobuf/runtime/protoimpl"
 )
-
-type testMsg = testingpb.Full
-
-var testMsgDescriptor = protoimpl.X.MessageDescriptorOf(&testMsg{})
 
 func TestParsePath(t *testing.T) {
 	Convey("Expect path parsing", t, func() {
