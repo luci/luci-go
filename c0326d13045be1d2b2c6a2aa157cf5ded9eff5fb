@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c6ca6fe_7c05e883",
+        "filename": "logdog/appengine/coordinator/tagMap.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-17T05:35:02Z",
+      "side": 1,
+      "message": "aka OOM 😄",
+      "range": {
+        "startLine": 42,
+        "startChar": 9,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
