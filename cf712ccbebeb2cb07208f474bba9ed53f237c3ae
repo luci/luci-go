@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fdd43f1a_f54b86aa",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2020-03-17T06:18:10Z",
+      "side": 0,
+      "message": "I think this piece of code is missing in the new change? Is it intentional?",
+      "range": {
+        "startLine": 169,
+        "startChar": 8,
+        "endLine": 169,
+        "endChar": 18
+      },
+      "revId": "cf712ccbebeb2cb07208f474bba9ed53f237c3ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
