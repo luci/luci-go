@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c4af054_ccf0df1e",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-17T06:41:44Z",
+      "side": 1,
+      "message": "Can you explain a little more about this? It looks like your code guarantees uniqueness of host/notifier, not host/builder, is that right?\n\nCould you not have one builder with two notifiers, each of which has the same host?",
+      "range": {
+        "startLine": 39,
+        "startChar": 19,
+        "endLine": 40,
+        "endChar": 28
+      },
+      "revId": "41463c268d8ebe75fe3651e5916ac397fe458c7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
