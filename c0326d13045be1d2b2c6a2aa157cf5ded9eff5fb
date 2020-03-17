@@ -22,6 +22,30 @@
       "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "62fa23c2_014fdc1d",
+        "filename": "logdog/appengine/coordinator/tagMap.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-17T07:09:47Z",
+      "side": 1,
+      "message": "that would be a panic anyway :)",
+      "parentUuid": "4c6ca6fe_7c05e883",
+      "range": {
+        "startLine": 42,
+        "startChar": 9,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
