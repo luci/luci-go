@@ -1,0 +1,566 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "83077919_4e3d375e",
+        "filename": "common/proto/internal/testingpb/testing.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "nit: missing newline in the end",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "963b397c_7d038b00",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 3
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08209dc5_34b35d12",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "no pkg doc?",
+      "range": {
+        "startLine": 30,
+        "startChar": 73,
+        "endLine": 31,
+        "endChar": 6
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "887456ae_995f5677",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "JSON",
+      "range": {
+        "startLine": 33,
+        "startChar": 55,
+        "endLine": 33,
+        "endChar": 59
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d26a4c27_84c83490",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "will crash if rawPath was empty",
+      "range": {
+        "startLine": 57,
+        "startChar": 24,
+        "endLine": 57,
+        "endChar": 37
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d736617e_ebcfe9ed",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "nit: for a variable with such a small scope (2 lines), consider a shorter name, e.g. n\n\nor just inline it. taking len is not slow and introducing a new variable actually results in more code",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 10
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9325c91_c74d8d5d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "nit: should start with the symbol name",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1111b67a_a3293ac4",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "would be simpler to reverse the condition to unindent L79-90",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35d0c2fd_6757eef0",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "period",
+      "range": {
+        "startLine": 96,
+        "startChar": 57,
+        "endLine": 96,
+        "endChar": 58
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b25fc87d_ed97fdfd",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "updates",
+      "range": {
+        "startLine": 112,
+        "startChar": 55,
+        "endLine": 112,
+        "endChar": 61
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26851616_3892bd73",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "nit: expected\n\nsame below",
+      "range": {
+        "startLine": 121,
+        "startChar": 25,
+        "endLine": 121,
+        "endChar": 31
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8889a20_711ecc3f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "\\n here\n\nwe try to limit comments to 80 lines of code",
+      "range": {
+        "startLine": 123,
+        "startChar": 84,
+        "endLine": 123,
+        "endChar": 85
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f9ccc30_4a7712a2",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "a repeated",
+      "range": {
+        "startLine": 125,
+        "startChar": 50,
+        "endLine": 125,
+        "endChar": 51
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06039cdb_bd3514e3",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "q\n\n%q when printing a string that can be empty, whitespace, have quotes or other stuff that can result in a weird error message\n\nthis applies to many places",
+      "range": {
+        "startLine": 125,
+        "startChar": 78,
+        "endLine": 125,
+        "endChar": 79
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59dffca4_a8b2719b",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "unnecessary\n\nsame below",
+      "range": {
+        "startLine": 137,
+        "startChar": 63,
+        "endLine": 137,
+        "endChar": 72
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6dfcd4d5_d9b38cc6",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "intentional?",
+      "range": {
+        "startLine": 180,
+        "startChar": 23,
+        "endLine": 180,
+        "endChar": 26
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9569dfdb_9dd84fd6",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "this will crash if t.pos \u003e\u003d len(t.path)",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 35
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa6adb32_626e45d2",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "i find this code could be more straightforward. Consider:\n\n  closingRel :\u003d strings.IndexFunc(t.path[t.pos:], \u0027`\u0027)\n  if closing !\u003d -1 {\n    // return err...\n  }\n  closingAbs :\u003d t.pos + closingRel \n  sb.WriteString(t.pos[t.pos:closingAbs])\n  t.pos \u003d closingAbs + 1",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61927ac7_6d4e7031",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 229,
+        "startChar": 78,
+        "endLine": 229,
+        "endChar": 86
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8117af6f_13bd472d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "i think this is true, otherwise `t.pos \u003e\u003d pathLen` would be true",
+      "range": {
+        "startLine": 232,
+        "startChar": 27,
+        "endLine": 232,
+        "endChar": 42
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2b39138_ae15bb68",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "given path \"-\" it will return a token \"-\" like it is a valid int",
+      "range": {
+        "startLine": 252,
+        "startChar": 2,
+        "endLine": 257,
+        "endChar": 8
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce9de3ed_f79a3936",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "nit: this unnecessarily creates a new string, although we just need a segment of t.path\nnote that golang does not allocate memory when taking a substring of a string",
+      "range": {
+        "startLine": 260,
+        "startChar": 9,
+        "endLine": 260,
+        "endChar": 13
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4755b0c_7227a82d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "unexpected",
+      "range": {
+        "startLine": 272,
+        "startChar": 30,
+        "endLine": 272,
+        "endChar": 37
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2efae368_de9cab8f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "returns",
+      "range": {
+        "startLine": 276,
+        "startChar": 19,
+        "endLine": 276,
+        "endChar": 25
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e23dbc3_089d5b81",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "func stringPredicate(r rune) bool {",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0d92618_7a7b4bc8",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T23:28:18Z",
+      "side": 1,
+      "message": "i think this function has more responsibilities than it needs, e.g. this. Nothing prevents the user from doing \n\n  prefix + read(data, cond)\n\nthen this func would not have to copy bytes unnecessarily, i.e. in L289 we could do\n\n  if !cond(r) {\n    return data[:i]\n  }\n\n--\n\nnit: consider making the func name a bit more specific, e.g. readWhile",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
