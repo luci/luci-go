@@ -22,6 +22,30 @@
       "revId": "cf712ccbebeb2cb07208f474bba9ed53f237c3ae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "365d0b17_fd19bb0e",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-17T18:38:48Z",
+      "side": 0,
+      "message": "We always read from spanner after creating/deduplicating so this will be populated by that query.",
+      "parentUuid": "fdd43f1a_f54b86aa",
+      "range": {
+        "startLine": 169,
+        "startChar": 8,
+        "endLine": 169,
+        "endChar": 18
+      },
+      "revId": "cf712ccbebeb2cb07208f474bba9ed53f237c3ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
