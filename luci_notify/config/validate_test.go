@@ -195,6 +195,33 @@ func TestValidation(t *testing.T) {
 				}
 			}`,
 			requiredFieldError, "tree_status_host")
+
+		testValidation(`duplicate tree_status_host within notifier`, `
+			notifiers {
+				name: "invalid"
+				tree_closers {
+					tree_status_host: "tree1.com"
+				}
+				tree_closers {
+					tree_status_host: "tree1.com"
+				}
+			}`,
+			duplicateHostError, "tree1.com")
+
+		testValidation(`duplicate tree_status_host, different notifiers`, `
+			notifiers {
+				name: "fine"
+				tree_closers {
+					tree_status_host: "tree1.com"
+				}
+			}
+			notifiers {
+				name: "also fine"
+				tree_closers {
+					tree_status_host: "tree1.com"
+				}
+			}`,
+			"", "")
 	})
 
 	Convey(`Test Environment for validateSettings`, t, func() {
