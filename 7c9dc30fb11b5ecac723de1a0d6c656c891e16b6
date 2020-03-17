@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "e315549a_51f8cdd5",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-17T18:32:22Z",
+      "side": 1,
+      "message": "please keep resultdb imports in a separate block",
+      "revId": "7c9dc30fb11b5ecac723de1a0d6c656c891e16b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5d9a7637_e61d7fc9",
         "filename": "resultdb/sink/sink_server.go",
         "patchSetId": 3
