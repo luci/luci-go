@@ -55,14 +55,13 @@ func init() {
 }
 
 const (
-	requiredFieldError     = "field %q is required"
-	invalidFieldError      = "field %q has invalid format"
-	uniqueFieldError       = "field %q must be unique in %s"
-	badEmailError          = "recipient %q is not a valid RFC 5322 email address"
-	badRepoURLError        = "repo url %q is invalid"
-	duplicateBuilderError  = "builder %q is specified more than once in file"
-	duplicateNotifierError = "notifier %q is specified more than once in file"
-	badRegexError          = "field %q contains an invalid regex: %s"
+	requiredFieldError    = "field %q is required"
+	invalidFieldError     = "field %q has invalid format"
+	uniqueFieldError      = "field %q must be unique in %s"
+	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
+	badRepoURLError       = "repo url %q is invalid"
+	duplicateBuilderError = "builder %q is specified more than once in file"
+	badRegexError         = "field %q contains an invalid regex: %s"
 )
 
 // validateNotification is a helper function for validateConfig which validates
@@ -124,11 +123,7 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifypb.Builder, builde
 }
 
 // validateNotifier validates a Notifier.
-func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, builderNames, notifierNames stringset.Set) {
-	if !notifierNames.Add(cfgNotifier.Name) {
-		c.Errorf(duplicateNotifierError, cfgNotifier.Name)
-	}
-
+func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, builderNames stringset.Set) {
 	for i, cfgNotification := range cfgNotifier.Notifications {
 		c.Enter("notification #%d", i+1)
 		validateNotification(c, cfgNotification)
@@ -150,10 +145,9 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, bui
 // requirements in the proto definition.
 func validateProjectConfig(ctx *validation.Context, projectCfg *notifypb.ProjectConfig) {
 	builderNames := stringset.New(len(projectCfg.Notifiers)) // At least one builder per notifier
-	notifierNames := stringset.New(len(projectCfg.Notifiers))
 	for i, cfgNotifier := range projectCfg.Notifiers {
 		ctx.Enter("notifier #%d", i+1)
-		validateNotifier(ctx, cfgNotifier, builderNames, notifierNames)
+		validateNotifier(ctx, cfgNotifier, builderNames)
 		ctx.Exit()
 	}
 }
