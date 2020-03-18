@@ -61,6 +61,7 @@ const (
 	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
 	badRepoURLError       = "repo url %q is invalid"
 	duplicateBuilderError = "builder %q is specified more than once in file"
+	duplicateHostError    = "builder has multiple tree closers with host %q"
 	badRegexError         = "field %q contains an invalid regex: %s"
 )
 
@@ -81,9 +82,13 @@ func validateNotification(c *validation.Context, cfgNotification *notifypb.Notif
 
 // validateTreeCloser is a helper function for validateConfig which validates an
 // individual tree closer configuration.
-func validateTreeCloser(c *validation.Context, cfgTreeCloser *notifypb.TreeCloser) {
-	if cfgTreeCloser.TreeStatusHost == "" {
+func validateTreeCloser(c *validation.Context, cfgTreeCloser *notifypb.TreeCloser, treeStatusHosts stringset.Set) {
+	host := cfgTreeCloser.TreeStatusHost
+	if host == "" {
 		c.Errorf(requiredFieldError, "tree_status_host")
+	}
+	if !treeStatusHosts.Add(host) {
+		c.Errorf(duplicateHostError, host)
 	}
 
 	validateRegexField(c, "failed_step_regexp", cfgTreeCloser.FailedStepRegexp)
@@ -129,9 +134,10 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, bui
 		validateNotification(c, cfgNotification)
 		c.Exit()
 	}
+	hosts := stringset.New(len(cfgNotifier.TreeClosers))
 	for i, cfgTreeCloser := range cfgNotifier.TreeClosers {
 		c.Enter("tree_closer #%d", i+1)
-		validateTreeCloser(c, cfgTreeCloser)
+		validateTreeCloser(c, cfgTreeCloser, hosts)
 		c.Exit()
 	}
 	for i, cfgBuilder := range cfgNotifier.Builders {

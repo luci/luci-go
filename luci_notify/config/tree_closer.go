@@ -34,11 +34,11 @@ type TreeCloser struct {
 	// BuilderKey is a datastore key to this TreeCloser's parent builder.
 	BuilderKey *datastore.Key `gae:"$parent"`
 
-	// Name is the name of this rule. This is duplicated from
-	// notifypb.TreeCloser, so that we can use it as the ID for datastore.
-	// The combination of tree closer name and builder it's applied to is
+	// TreeStatusHost is the host that this rule opens/closes. This is
+	// duplicated from notifypb.TreeCloser, so that we can use it as the ID
+	// for datastore. The combination of tree status host and builder is
 	// guaranteed to be unique.
-	Name string `gae:"$id"`
+	TreeStatusHost string `gae:"$id"`
 
 	// TreeCloser is the underlying TreeCloser proto from the current
 	// version of the config.
