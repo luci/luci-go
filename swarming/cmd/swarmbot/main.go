@@ -14,8 +14,30 @@
 
 package main
 
-// This is Swarming bot code written in Go.
+import (
+	"os"
+
+	"github.com/maruel/subcommands"
+	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/versioncli"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+)
+
+const version = "0.1"
+
+func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+	return &subcommands.DefaultApplication{
+		Name:  "swarmbot",
+		Title: "Swarming Bot commands",
+		Commands: []*subcommands.Command{
+			cmdRunTask,
+			subcommands.CmdHelp,
+			versioncli.CmdVersion(version),
+		},
+	}
+}
 
 func main() {
-	// TODO(crbug.com/962804): implement here.
+	app := getApplication(chromeinfra.DefaultAuthOptions())
+	os.Exit(subcommands.Run(app, nil))
 }
