@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "74c6f7c4_1e252916",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9770aff_e5f71471",
+      "range": {
+        "startLine": 48,
+        "startChar": 100,
+        "endLine": 48,
+        "endChar": 101
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c29350a7_be59b9bd",
         "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5067dd4_9d5fef88",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Still needed, moved validation up to outer call. ptal",
+      "parentUuid": "c29350a7_be59b9bd",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 14
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "a3adb545_7559ab72",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae711b4a_e13d87e5",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 45
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2c5985d_0d1e2652",
         "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
         "patchSetId": 6
@@ -91,6 +163,30 @@
       "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1233998b_cce2f453",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "What I did is call the appropriate validation on CreateInvocation and BatchCreateInvocations, and only after that call createInvocations, that way createInvocations which is the shared implementation doesn\u0027t have to do validation itself.",
+      "parentUuid": "e2c5985d_0d1e2652",
+      "range": {
+        "startLine": 97,
+        "startChar": 37,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "1ede9134_7ed3981b",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68374f82_dc5fde3c",
+      "range": {
+        "startLine": 171,
+        "startChar": 101,
+        "endLine": 171,
+        "endChar": 104
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "79ae4c7b_51daba26",
         "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
         "patchSetId": 6
@@ -137,6 +257,30 @@
       "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e03520_dfbb518d",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79ae4c7b_51daba26",
+      "range": {
+        "startLine": 73,
+        "startChar": 13,
+        "endLine": 73,
+        "endChar": 53
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "ee13b254_0aa9a154",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e69cbd5b_3fde402b",
+      "range": {
+        "startLine": 51,
+        "startChar": 25,
+        "endLine": 51,
+        "endChar": 31
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b186c31d_0c306872",
         "filename": "resultdb/proto/rpc/v1/recorder.proto",
         "patchSetId": 6
@@ -183,6 +351,30 @@
       "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f716bd0_81efd4f2",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T07:38:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b186c31d_0c306872",
+      "range": {
+        "startLine": 53,
+        "startChar": 19,
+        "endLine": 54,
+        "endChar": 12
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
