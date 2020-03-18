@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "176ecf7a_40279827",
+        "filename": "common/proto/internal/testingpb/testing.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83077919_4e3d375e",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "963b397c_7d038b00",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -39,6 +57,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5120e87_946236ae",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "963b397c_7d038b00",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 3
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "09ea444a_9e155801",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "There is. It is written in the downstream CL.",
+      "parentUuid": "08209dc5_34b35d12",
+      "range": {
+        "startLine": 30,
+        "startChar": 73,
+        "endLine": 31,
+        "endChar": 6
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "887456ae_995f5677",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -85,6 +151,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c20685f_ab265a26",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "887456ae_995f5677",
+      "range": {
+        "startLine": 33,
+        "startChar": 55,
+        "endLine": 33,
+        "endChar": 59
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +224,54 @@
     },
     {
       "key": {
+        "uuid": "12700214_61d7d933",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Oh totally missed that. Good catch. Fix it by adding a new boundary check.",
+      "parentUuid": "d26a4c27_84c83490",
+      "range": {
+        "startLine": 57,
+        "startChar": 24,
+        "endLine": 57,
+        "endChar": 37
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c1f0d29a_5b824f2e",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Rename it to `n` as a new boundary check is added.",
+      "parentUuid": "d736617e_ebcfe9ed",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 10
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9325c91_c74d8d5d",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -151,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "732e383d_6500a0ba",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9325c91_c74d8d5d",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1111b67a_a3293ac4",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -165,6 +321,24 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "578d3d15_b2e06167",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1111b67a_a3293ac4",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "d50e7f8e_8b8ffca3",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35d0c2fd_6757eef0",
+      "range": {
+        "startLine": 96,
+        "startChar": 57,
+        "endLine": 96,
+        "endChar": 58
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b25fc87d_ed97fdfd",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -211,6 +409,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40b44230_178a18da",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b25fc87d_ed97fdfd",
+      "range": {
+        "startLine": 112,
+        "startChar": 55,
+        "endLine": 112,
+        "endChar": 61
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "91062d32_9c04beae",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26851616_3892bd73",
+      "range": {
+        "startLine": 121,
+        "startChar": 25,
+        "endLine": 121,
+        "endChar": 31
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8889a20_711ecc3f",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -257,6 +503,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8beca154_d95b0231",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b8889a20_711ecc3f",
+      "range": {
+        "startLine": 123,
+        "startChar": 84,
+        "endLine": 123,
+        "endChar": 85
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -306,6 +576,54 @@
     },
     {
       "key": {
+        "uuid": "304cab65_7018a886",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06039cdb_bd3514e3",
+      "range": {
+        "startLine": 125,
+        "startChar": 78,
+        "endLine": 125,
+        "endChar": 79
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eea4f67b_8760d08f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f9ccc30_4a7712a2",
+      "range": {
+        "startLine": 125,
+        "startChar": 50,
+        "endLine": 125,
+        "endChar": 51
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59dffca4_a8b2719b",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -329,6 +647,30 @@
     },
     {
       "key": {
+        "uuid": "4179b60c_4e991d60",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59dffca4_a8b2719b",
+      "range": {
+        "startLine": 137,
+        "startChar": 63,
+        "endLine": 137,
+        "endChar": 72
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6dfcd4d5_d9b38cc6",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -340,6 +682,30 @@
       "writtenOn": "2020-03-17T23:28:18Z",
       "side": 1,
       "message": "intentional?",
+      "range": {
+        "startLine": 180,
+        "startChar": 23,
+        "endLine": 180,
+        "endChar": 26
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a048efe6_be87a359",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "My initial thought is that none of these seems to be an appropriate zero value. But since, this is used internally. I guess starting from 0 probably is fine? Made the change.",
+      "parentUuid": "6dfcd4d5_d9b38cc6",
       "range": {
         "startLine": 180,
         "startChar": 23,
@@ -375,6 +741,30 @@
     },
     {
       "key": {
+        "uuid": "1571fc89_a855fa4f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "I feel like this fail is intentional. Users are expected to call `hasMoreTokens` before calling `nextToken` so `t.pos` should always be smaller than the path length at this moment. So if users are calling `nextToken` when there is no more token available, a crash is expected. \n\nAn alternative way is to do a `t.pos \u003e\u003d pathLength` check at the beginning and return error if so. WDYT?",
+      "parentUuid": "9569dfdb_9dd84fd6",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 35
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "aa6adb32_626e45d2",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -392,6 +782,24 @@
     },
     {
       "key": {
+        "uuid": "890f1d2d_6371c350",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa6adb32_626e45d2",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "61927ac7_6d4e7031",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -403,6 +811,30 @@
       "writtenOn": "2020-03-17T23:28:18Z",
       "side": 1,
       "message": "unnecessary",
+      "range": {
+        "startLine": 229,
+        "startChar": 78,
+        "endLine": 229,
+        "endChar": 86
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb26b358_afe2e42d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "I think this `String` function call is needed as stringBuilder is a struct?",
+      "parentUuid": "61927ac7_6d4e7031",
       "range": {
         "startLine": 229,
         "startChar": 78,
@@ -438,6 +870,30 @@
     },
     {
       "key": {
+        "uuid": "15d5e7f8_e1d6f065",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "That\u0027s right! Removed",
+      "parentUuid": "8117af6f_13bd472d",
+      "range": {
+        "startLine": 232,
+        "startChar": 27,
+        "endLine": 232,
+        "endChar": 42
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2b39138_ae15bb68",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -458,6 +914,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "daf3acca_b60dd8e4",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "That\u0027s a great catch. I\u0027ve missed that. Add a check and a test for that.",
+      "parentUuid": "f2b39138_ae15bb68",
+      "range": {
+        "startLine": 252,
+        "startChar": 2,
+        "endLine": 257,
+        "endChar": 8
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -484,6 +964,30 @@
     },
     {
       "key": {
+        "uuid": "a395dd5f_c9862725",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "That\u0027s a good call out. Changing the implementation to make the read function return index only so that we don\u0027t create a new string every time.",
+      "parentUuid": "ce9de3ed_f79a3936",
+      "range": {
+        "startLine": 260,
+        "startChar": 9,
+        "endLine": 260,
+        "endChar": 13
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f4755b0c_7227a82d",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -504,6 +1008,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "595a10c5_38f0bb22",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f4755b0c_7227a82d",
+      "range": {
+        "startLine": 272,
+        "startChar": 30,
+        "endLine": 272,
+        "endChar": 37
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -530,6 +1058,30 @@
     },
     {
       "key": {
+        "uuid": "a3dd8645_da8edeef",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2efae368_de9cab8f",
+      "range": {
+        "startLine": 276,
+        "startChar": 19,
+        "endLine": 276,
+        "endChar": 25
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e23dbc3_089d5b81",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -547,6 +1099,24 @@
     },
     {
       "key": {
+        "uuid": "fcd23a31_fabbff1b",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e23dbc3_089d5b81",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0d92618_7a7b4bc8",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -561,6 +1131,24 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faef61b9_4ebf58f7",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T05:53:41Z",
+      "side": 1,
+      "message": "Make sense! I\u0027ve renamed the function to `readWhile` and change the implementation to return the index only so that we don\u0027t need to create a new string unnecessarily.",
+      "parentUuid": "c0d92618_7a7b4bc8",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
