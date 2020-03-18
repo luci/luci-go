@@ -15,6 +15,8 @@
 package job
 
 import (
+	"strings"
+
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
@@ -99,7 +101,60 @@ func (swe *swarmingEditor) SwarmingHostname(host string) {
 	panic("implement me")
 }
 
+func updatePrefixPathEnv(values []string, prefixes *[]*api.StringListPair) {
+	var pair *api.StringListPair
+	for _, pair = range *prefixes {
+		if pair.Key == "PATH" {
+			newPath := make([]string, len(pair.Values))
+			copy(newPath, pair.Values)
+			pair.Values = newPath
+			break
+		}
+	}
+	if pair == nil {
+		pair = &api.StringListPair{Key: "PATH"}
+		*prefixes = append(*prefixes, pair)
+	}
+
+	var newPath []string
+	for _, pair := range *prefixes {
+		if pair.Key == "PATH" {
+			newPath = make([]string, len(pair.Values))
+			copy(newPath, pair.Values)
+			break
+		}
+	}
+
+	for _, v := range values {
+		if strings.HasPrefix(v, "!") {
+			idx := 0
+			for _, cur := range newPath {
+				if cur != v[1:] {
+					newPath[idx] = cur
+					idx++
+				}
+			}
+			newPath = newPath[:idx]
+		} else {
+			newPath = append(newPath, v)
+		}
+	}
+
+	pair.Values = newPath
+}
+
 func (swe *swarmingEditor) PrefixPathEnv(values []string) {
+	if len(values) == 0 {
+		return
+	}
+
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		updatePrefixPathEnv(values, &slc.Properties.EnvPaths)
+		return nil
+	})
+}
+
+func validateTags(tags []string) error {
 	panic("implement me")
 }
 

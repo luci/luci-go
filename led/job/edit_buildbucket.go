@@ -100,7 +100,14 @@ func (bbe *buildbucketEditor) Experimental(isExperimental bool) {
 }
 
 func (bbe *buildbucketEditor) PrefixPathEnv(values []string) {
-	panic("implement me")
+	if len(values) == 0 {
+		return
+	}
+
+	bbe.tweak(func() error {
+		updatePrefixPathEnv(values, &bbe.bb.EnvPrefixes)
+		return nil
+	})
 }
 
 func (bbe *buildbucketEditor) AddGerritChange(cl *bbpb.GerritChange) {
