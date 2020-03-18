@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
@@ -169,17 +168,16 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 		}
 
 		// The stream does not exist. Proceed with transactional registration.
-		lstKey := ds.KeyForObj(c, lst)
-		err = tumble.RunUnbuffered(c, lstKey, func(c context.Context) ([]tumble.Mutation, error) {
+		err = ds.RunInTransaction(c, func(c context.Context) error {
 			// Load our state and stream (transactional).
 			switch err := ds.Get(c, ls, lst); {
 			case err == nil:
 				// The stream is already registered.
-				return nil, nil
+				return nil
 
 			case !anyNoSuchEntity(err):
 				log.WithError(err).Errorf(c, "Failed to check for stream registration (transactional).")
-				return nil, err
+				return err
 			}
 
 			// The stream is not yet registered.
@@ -199,7 +197,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to load descriptor into LogStream.")
-				return nil, grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
+				return grpcutil.Errf(codes.InvalidArgument, "Failed to load descriptor.")
 			}
 
 			// If our registration request included a terminal index, terminate the
@@ -220,7 +218,7 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 				log.Fields{
 					log.ErrorKey: err,
 				}.Errorf(c, "Failed to Put LogStream.")
-				return nil, grpcutil.Internal
+				return grpcutil.Internal
 			}
 
 			// Send archival task.
@@ -229,8 +227,8 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 			if preTerminated {
 				delay = set.OptimisticArchivalDelay
 			}
-			return nil, TaskArchival(c, lst, delay)
-		})
+			return TaskArchival(c, lst, delay)
+		}, nil)
 		if err != nil {
 			log.Fields{
 				log.ErrorKey: err,

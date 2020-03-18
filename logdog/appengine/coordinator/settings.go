@@ -65,7 +65,9 @@ var defaultSettings = Settings{
 	ArchivistLeaseTime:      15 * time.Minute,
 }
 
-// settingsPage is a UI page to configure a static Tumble configuration.
+// settingsPage is a UI page to configure a static logdog configuration.
+//
+// TODO(iannucci): This should be in luci-config, not a settings page.
 type settingsPage struct {
 	portal.BasePage
 }

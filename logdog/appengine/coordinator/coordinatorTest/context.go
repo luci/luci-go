@@ -26,9 +26,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/memlogger"
 	configPB "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
@@ -47,8 +49,8 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/settings"
-	"go.chromium.org/luci/tumble"
 
+	gaeMemory "go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
@@ -69,9 +71,6 @@ func init() {
 // Environment contains all of the testing facilities that are installed into
 // the Context.
 type Environment struct {
-	// Tumble is the Tumble testing instance.
-	Tumble tumble.Testing
-
 	// Clock is the installed test clock instance.
 	Clock testclock.TestClock
 
@@ -143,9 +142,6 @@ func (e *Environment) ModProjectConfig(c context.Context, project string, fn fun
 	})
 }
 
-// IterateTumbleAll iterates all Tumble instances across all namespaces.
-func (e *Environment) IterateTumbleAll(c context.Context) { e.Tumble.IterateAll(c) }
-
 func (e *Environment) modTextProtobuf(c context.Context, configSet config.Set, path string,
 	msg proto.Message, fn func()) {
 
@@ -187,7 +183,12 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 
 	// Get our starting context. This installs, among other things, in-memory
 	// gae, settings, and logger.
-	c := e.Tumble.Context()
+	c := gaeMemory.Use(memlogger.Use(context.Background()))
+	c, _ = testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
+	c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
+	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
+	ds.GetTestable(c).Consistent(true)
+
 	c = caching.WithEmptyProcessCache(c)
 	if *testGoLogger {
 		c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
@@ -275,14 +276,6 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 			PrefixExpiration: google.NewDuration(24 * time.Hour),
 		}
 	})
-
-	// Setup Tumble. This also adds the two Tumble indexes to datastore.
-	e.Tumble.EnableDelayedMutations(c)
-
-	tcfg := e.Tumble.GetConfig(c)
-	tcfg.TemporalRoundFactor = 0 // Makes test timing easier to understand.
-	tcfg.TemporalMinDelay = 0    // Makes test timing easier to understand.
-	e.Tumble.UpdateSettings(c, tcfg)
 
 	// Install authentication state.
 	c = auth.WithState(c, &e.AuthState)
