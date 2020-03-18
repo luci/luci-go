@@ -15,8 +15,8 @@
 package coordinator
 
 import (
+	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -26,9 +26,40 @@ import (
 
 // TagMap is tag map that stores log stream tags into the datastore.
 //
-// Tags are stored both as presence entries (Key) and as equality entries
-// (Key=Value). Both entry contents are encoded via encodeKey.
+// This is serialized to a non-indexed JSON {string:string} object in the
+// datastore.
 type TagMap map[string]string
+
+var _ ds.PropertyConverter = (*TagMap)(nil)
+
+// ToProperty implements ds.PropertyConverter
+func (tm *TagMap) ToProperty() (ds.Property, error) {
+	if *tm == nil {
+		return ds.MkPropertyNI(nil), nil
+	}
+	dat, err := json.Marshal(*tm)
+	if err != nil {
+		panic("impossible: marshalling map[string]string failed.")
+	}
+	return ds.MkPropertyNI(dat), nil
+}
+
+// FromProperty implements ds.PropertyConverter
+func (tm *TagMap) FromProperty(prop ds.Property) error {
+	if typ := prop.Type(); typ != ds.PTBytes {
+		return errors.Reason("wrong type: %s != PTBytes", typ).Err()
+	}
+	newTM := TagMap{}
+	if err := json.Unmarshal(prop.Value().([]byte), &newTM); err != nil {
+		return err
+	}
+	if len(newTM) == 0 {
+		*tm = nil
+	} else {
+		*tm = newTM
+	}
+	return nil
+}
 
 // tagMapFromProperties converts a set of tag property objects into a TagMap.
 //
@@ -51,7 +82,9 @@ func tagMapFromProperties(props ds.PropertySlice) (TagMap, error) {
 
 		parts := strings.SplitN(e, "=", 2)
 		if len(parts) != 2 {
-			// This is a presence entry. Ignore.
+			// Deprecated: when _Tags was indexed, this was used to indicate presence
+			// of a key. This case is left in to allow old values to be processed
+			// correctly.
 			continue
 		}
 		k, v := parts[0], parts[1]
@@ -67,33 +100,4 @@ func tagMapFromProperties(props ds.PropertySlice) (TagMap, error) {
 		tm = nil
 	}
 	return tm, lme.Get()
-}
-
-// toProperties converts a TagMap to a set of Property objects for storage.
-func (m TagMap) toProperties() (ds.PropertySlice, error) {
-	if len(m) == 0 {
-		return nil, nil
-	}
-
-	// Deterministic conversion.
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	parts := make(ds.PropertySlice, 0, len(m)*2)
-	for _, k := range keys {
-		v := m[k]
-		if err := types.ValidateTag(k, v); err != nil {
-			return nil, err
-		}
-
-		// Presence entry.
-		parts = append(parts, ds.MkProperty(encodeKey(k)))
-
-		// Value entry.
-		parts = append(parts, ds.MkProperty(encodeKey(fmt.Sprintf("%s=%s", k, v))))
-	}
-	return parts, nil
 }
