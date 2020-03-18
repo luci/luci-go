@@ -15,11 +15,15 @@ package sink
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 )
@@ -27,6 +31,45 @@ import (
 // sinkServer implements sinkpb.SinkServer.
 type sinkServer struct {
 	cfg ServerConfig
+}
+
+func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
+	return &sinkpb.DecoratedSink{
+		Service: &sinkServer{
+			cfg: cfg,
+		},
+		Prelude: authTokenPrelude(cfg.AuthToken),
+	}, nil
+}
+
+// authTokenValue returns the value of the Authorization HTTP header that all requests must
+// have.
+func authTokenValue(authToken string) string {
+	return fmt.Sprintf("%s %s", AuthTokenPrefix, authToken)
+}
+
+// authTokenValidator is a factory function generating a pRPC prelude that validates
+// a given HTTP request with the auth key.
+func authTokenPrelude(authToken string) func(context.Context, string, proto.Message) (context.Context, error) {
+	expected := authTokenValue(authToken)
+	missingKeyErr := status.Errorf(codes.Unauthenticated, "Authorization header is missing")
+
+	return func(ctx context.Context, _ string, _ proto.Message) (context.Context, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, missingKeyErr
+		}
+		tks := md.Get(AuthTokenKey)
+		if len(tks) == 0 {
+			return nil, missingKeyErr
+		}
+		for _, tk := range tks {
+			if tk == expected {
+				return ctx, nil
+			}
+		}
+		return nil, status.Errorf(codes.PermissionDenied, "no valid auth_token found")
+	}
 }
 
 // ReportTestResults implement sinkpb.SinkServer.
