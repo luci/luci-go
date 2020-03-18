@@ -65,6 +65,38 @@ func TestValidateInvocationDeadline(t *testing.T) {
 	})
 }
 
+func TestValidateMultipleCreateInvocationRequests(t *testing.T) {
+	t.Parallel()
+	now := testclock.TestRecentTimeUTC
+	Convey(`TestValidateMultipleCreateInvocationRequests`, t, func() {
+		Convey(`invalid request id - Batch`, func() {
+			_, err := validateMultipleCreateInvocationRequests(now,
+				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+					InvocationId: "u:a",
+				}}, "😃", false)
+			So(err, ShouldErrLike, "request_id: does not match")
+		})
+		Convey(`non-matching request id - Batch`, func() {
+			_, err := validateMultipleCreateInvocationRequests(now,
+				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+					InvocationId: "u:a",
+					RequestId:    "valid, but different",
+				}}, "valid", false)
+			So(err, ShouldErrLike, `request_id: "valid" does not match`)
+		})
+		Convey(`valid`, func() {
+			ids, err := validateMultipleCreateInvocationRequests(now,
+				[]*pb.CreateInvocationRequest{&pb.CreateInvocationRequest{
+					InvocationId: "u:a",
+					RequestId:    "valid",
+				}}, "valid", false)
+			So(err, ShouldBeNil)
+			So(ids.Has("u:a"), ShouldBeTrue)
+			So(len(ids), ShouldEqual, 1)
+		})
+	})
+}
+
 func TestValidateCreateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
@@ -183,7 +215,7 @@ func TestCreateInvocation(t *testing.T) {
 
 		Convey(`empty request`, func() {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `bad request: invocation_id: unspecified`)
+			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `bad request: requests[0]: invocation_id: unspecified`)
 		})
 
 		req := &pb.CreateInvocationRequest{
@@ -272,6 +304,85 @@ func TestCreateInvocation(t *testing.T) {
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
 			err = span.ReadInvocation(ctx, txn, "u:inv", map[string]interface{}{
+				"InvocationExpirationTime":          &invExpirationTime,
+				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
+			})
+			So(err, ShouldBeNil)
+			So(expectedResultsExpirationTime, ShouldHappenWithin, time.Second, start.Add(expectedResultExpiration))
+			So(invExpirationTime, ShouldHappenWithin, time.Second, start.Add(invocationExpirationDuration))
+		})
+		Convey(`end to end - Batch`, func() {
+			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
+			headers := &metadata.MD{}
+			bqExport := &pb.BigQueryExport{
+				Project:     "project",
+				Dataset:     "dataset",
+				Table:       "table",
+				TestResults: &pb.BigQueryExport_TestResults{},
+			}
+			req := &pb.BatchCreateInvocationsRequest{
+				Requests: []*pb.CreateInvocationRequest{
+					&pb.CreateInvocationRequest{
+						InvocationId: "u:batch-inv",
+						Invocation: &pb.Invocation{
+							Deadline: deadline,
+							Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+							BigqueryExports: []*pb.BigQueryExport{
+								bqExport,
+							},
+						},
+					},
+					&pb.CreateInvocationRequest{
+						InvocationId: "u:batch-inv2",
+						Invocation: &pb.Invocation{
+							Deadline: deadline,
+							Tags:     pbutil.StringPairs("a", "1", "b", "2"),
+							BigqueryExports: []*pb.BigQueryExport{
+								bqExport,
+							},
+						},
+					},
+				},
+			}
+
+			resp, err := recorder.BatchCreateInvocations(ctx, req, prpc.Header(headers))
+			So(err, ShouldBeNil)
+
+			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
+			proto.Merge(expected, &pb.Invocation{
+				Name:  "invocations/u:batch-inv",
+				State: pb.Invocation_ACTIVE,
+
+				// we use Spanner commit time, so skip the check
+				CreateTime: resp.Invocations[0].CreateTime,
+			})
+			expected2 := proto.Clone(req.Requests[1].Invocation).(*pb.Invocation)
+			proto.Merge(expected2, &pb.Invocation{
+				Name:  "invocations/u:batch-inv2",
+				State: pb.Invocation_ACTIVE,
+
+				// we use Spanner commit time, so skip the check
+				CreateTime: resp.Invocations[1].CreateTime,
+			})
+			So(resp.Invocations[0], ShouldResembleProto, expected)
+			So(resp.Invocations[1], ShouldResembleProto, expected2)
+
+			So(headers.Get(UpdateTokenMetadataKey), ShouldHaveLength, 2)
+
+			txn := span.Client(ctx).ReadOnlyTransaction()
+			defer txn.Close()
+
+			inv, err := span.ReadInvocationFull(ctx, txn, "u:batch-inv")
+			So(err, ShouldBeNil)
+			So(inv, ShouldResembleProto, expected)
+
+			inv2, err := span.ReadInvocationFull(ctx, txn, "u:batch-inv2")
+			So(err, ShouldBeNil)
+			So(inv2, ShouldResembleProto, expected2)
+
+			// Check fields not present in the proto.
+			var invExpirationTime, expectedResultsExpirationTime time.Time
+			err = span.ReadInvocation(ctx, txn, "u:batch-inv", map[string]interface{}{
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})

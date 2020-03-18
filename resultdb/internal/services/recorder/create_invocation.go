@@ -19,16 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/ptypes"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -101,87 +98,17 @@ func validateCreateInvocationRequest(req *pb.CreateInvocationRequest, now time.T
 
 // CreateInvocation implements pb.RecorderServer.
 func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvocationRequest) (*pb.Invocation, error) {
-	now := clock.Now(ctx).UTC()
-
-	allowCustomID, err := auth.IsMember(ctx, customIdGroup)
+	invs, tokens, err := s.createInvocations(ctx, []*pb.CreateInvocationRequest{in}, in.RequestId)
 	if err != nil {
 		return nil, err
 	}
-	if err := validateCreateInvocationRequest(in, now, allowCustomID); err != nil {
-		return nil, appstatus.BadRequest(err)
+	if len(invs) != 1 || len(tokens) != 1 {
+		panic("createInvocations did not return either an error or a valid invocation/token pair")
 	}
-
-	invID := span.InvocationID(in.InvocationId)
-
-	// Prepare the invocation we will return.
-	inv := &pb.Invocation{
-		Name:            invID.Name(),
-		State:           pb.Invocation_ACTIVE,
-		Deadline:        in.Invocation.GetDeadline(),
-		Tags:            in.Invocation.GetTags(),
-		BigqueryExports: in.Invocation.GetBigqueryExports(),
-	}
-
-	// Ensure the invocation has a deadline.
-	if inv.Deadline == nil {
-		inv.Deadline = pbutil.MustTimestampProto(now.Add(defaultInvocationDeadlineDuration))
-	}
-
-	pbutil.NormalizeInvocation(inv)
-
-	commitTimestamp, err := span.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		// Dedupe the request if possible.
-		if in.RequestId != "" {
-			var curRequestID spanner.NullString
-			err := span.ReadInvocation(ctx, txn, invID, map[string]interface{}{
-				"CreateRequestId": &curRequestID,
-			})
-			st, _ := appstatus.Get(err)
-			switch {
-			case st.Code() == codes.NotFound:
-				// Continue to creation.
-
-			case err != nil:
-				return err
-
-			case curRequestID.Valid && curRequestID.StringVal == in.RequestId:
-				// Dedupe the request.
-				inv, err = span.ReadInvocationFull(ctx, txn, invID)
-				return err
-
-			default:
-				return invocationAlreadyExists(invID)
-			}
-		}
-
-		return txn.BufferWrite([]*spanner.Mutation{
-			span.InsertMap("Invocations", s.rowOfInvocation(ctx, inv, in.RequestId)),
-		})
-	})
-	switch {
-	case spanner.ErrCode(err) == codes.AlreadyExists:
-		return nil, invocationAlreadyExists(invID)
-
-	case err != nil:
-		return nil, err
-	}
-
-	if inv.CreateTime == nil {
-		// The request was not deduped.
-		inv.CreateTime = pbutil.MustTimestampProto(commitTimestamp)
-		span.IncRowCount(ctx, 1, span.Invocations, span.Inserted)
-	}
-
-	// Return an update token to the client, only if the creation was successful
-	// or it is a valid deduplication.
-	// Generate a token with the invocation id as the state, no embedded data.
-	updateToken, err := generateInvocationToken(ctx, invID)
-	if err != nil {
-		return nil, err
-	}
-	prpc.SetHeader(ctx, metadata.Pairs(UpdateTokenMetadataKey, updateToken))
-
-	return inv, nil
+	md := metadata.MD{}
+	md.Set(UpdateTokenMetadataKey, tokens...)
+	prpc.SetHeader(ctx, md)
+	return invs[0], nil
 }
 
 func invocationAlreadyExists(id span.InvocationID) error {
