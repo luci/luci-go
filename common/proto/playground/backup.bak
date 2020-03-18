@@ -1,0 +1,532 @@
+// Copyright 2020 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package proto
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"unicode"
+
+	"github.com/golang/protobuf/proto"
+	"google.golang.org/genproto/protobuf/field_mask"
+	protov2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/runtime/protoimpl"
+)
+
+const (
+	exclude = iota
+	partiallyInclude
+	entirelyInclude
+)
+
+type mask struct {
+	descriptor protoreflect.MessageDescriptor
+	isRepeated bool
+	children   map[string]mask
+}
+
+func FromFieldMask(fieldMask *field_mask.FieldMask, targeMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (mask, error) {
+	descriptor := protoimpl.X.MessageDescriptorOf(targeMsg)
+	parsedPaths := make([]path, len(fieldMask.GetPaths()))
+	for i, p := range fieldMask.GetPaths() {
+		if pp, err := parsePath(p, descriptor, isFieldNameJSON); err != nil {
+			return mask{}, err
+		} else {
+			parsedPaths[i] = pp
+		}
+	}
+	return fromParsedPaths(parsedPaths, descriptor, isUpdateMask)
+}
+
+func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, isUpdateMask bool) (mask, error) {
+	root := mask{
+		descriptor: desc,
+		children:   map[string]mask{},
+	}
+	for _, p := range normalizedPaths(parsedPaths) {
+		curNode := root
+		curNodeName := ""
+		for _, seg := range p {
+			if curNode.isRepeated && isUpdateMask {
+				return mask{}, fmt.Errorf("update mask allows a repeated field only at the last position; field: %s is not last", curNodeName)
+			}
+			if _, found := curNode.children[seg]; !found {
+				child := mask{
+					children: map[string]mask{},
+				}
+				switch curDesc := curNode.descriptor; {
+				case curDesc.IsMapEntry():
+					child.descriptor = curDesc.Fields().ByName(protoreflect.Name("value")).Message()
+				case curNode.isRepeated:
+					child.descriptor = curDesc
+				default:
+					field := curDesc.Fields().ByName(protoreflect.Name(seg))
+					child.descriptor = field.Message()
+					child.isRepeated = field.Cardinality() == protoreflect.Repeated
+				}
+				curNode.children[seg] = child
+			}
+			curNode = curNode.children[seg]
+			curNodeName = seg
+		}
+	}
+	return root, nil
+}
+
+type ByDepth []path
+
+func (ps ByDepth) Len() int      { return len(ps) }
+func (ps ByDepth) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
+func (ps ByDepth) Less(i, j int) bool {
+	lenI, lenJ := len(ps[i]), len(ps[j])
+	if lenI == lenJ {
+		for index, segI := range ps[i] {
+			if segI == ps[j][index] {
+				continue
+			}
+			return segI < ps[j][index]
+		}
+		return true
+	}
+	return lenI < lenJ
+}
+
+func normalizedPaths(paths []path) []path {
+	sort.Sort(ByDepth(paths))
+	m := map[string]path{}
+	ret := []path{}
+	delimiter := string(pathDelimiter)
+PATH_LOOP:
+	for _, p := range paths {
+		for i := range p {
+			key := strings.Join(p[:i+1], delimiter)
+			if _, found := m[key]; found {
+				continue PATH_LOOP
+			}
+		}
+		ret = append(ret, p)
+		m[strings.Join(p, delimiter)] = p
+	}
+	return ret
+}
+
+func (m mask) Trim(msg proto.Message) proto.Message {
+	reflectMsg := protoimpl.X.MessageOf(msg)
+	reflectMsg.Range(func(fieldDesc protoreflect.FieldDescriptor, fieldVal protoreflect.Value) bool {
+		fieldName := string(fieldDesc.Name())
+		switch m.includesImpl(path{fieldName}, 0) {
+		case Exclude:
+			reflectMsg.Clear(fieldDesc)
+		case PartiallyInclude:
+			// Child for this field must exist because INCLUDE_PARTIALLY.
+			switch curDesc, child := m.descriptor, m.children[fieldName]; {
+			case curDesc == nil:
+				// The field is scalar, but the field mask does not specify to include it entirely. Skip it because scalars do not have subfields.
+				// Note that fromFieldMask would fail on such a mask because a scalar field cannot be followed by other fields.
+				reflectMsg.Clear(fieldDesc)
+				break
+			case fieldDesc.IsMap():
+				mapData := fieldVal.Map()
+				mapData.Range(func(key protoreflect.MapKey, value protoreflect.Value) bool {
+					switch m.includesImpl(path{fieldName, key.String()}, 0) {
+					case Exclude:
+						mapData.Clear(key)
+					case PartiallyInclude:
+						if fieldDesc.MapValue().Kind() == protoreflect.MessageKind {
+							// Child for mk must exist because INCLUDE_PARTIALLY.
+							child.children[key.String()].Trim(protoimpl.X.ProtoMessageV1Of(value.Interface()))
+						} else {
+							// The field is scalar, see the comment above.
+							mapData.Clear(key)
+						}
+					}
+					return true
+				})
+			case fieldDesc.IsList():
+				starChild := child.children["*"]
+				for i, list := 0, fieldVal.List(); i < list.Len(); i++ {
+					starChild.Trim(protoimpl.X.ProtoMessageV1Of(list.Get(i).Interface()))
+				}
+			default:
+				child.Trim(protoimpl.X.ProtoMessageV1Of(fieldVal.Interface()))
+			}
+		}
+		return true
+	})
+	return msg
+}
+
+type Inclusiveness int8
+
+const (
+	Exclude Inclusiveness = iota
+	PartiallyInclude
+	EntirelyInclude
+)
+
+func (m mask) Includes(path string) (Inclusiveness, error) {
+	parsedPath, err := parsePath(path, m.descriptor, false)
+	if err != nil {
+		return Exclude, err
+	}
+
+	return m.includesImpl(parsedPath, 0), nil
+
+}
+
+func (m mask) includesImpl(p path, startAt int) Inclusiveness {
+	if len(m.children) == 0 {
+		return EntirelyInclude
+	}
+	if startAt >= len(p) {
+		// This node is intermediate and we've exhausted the path.
+		// Some of the value's subfields are included, so includes this value partially.
+		return PartiallyInclude
+	}
+
+	ret := Exclude
+	for _, seg := range []string{p[startAt], "*"} {
+		// star child should also be examined.
+		// e.g. children are {'a': {'b': {}}, STAR: {'c': {}}}
+		// If seg is 'x', we should check the star child.
+		if child, ok := m.children[seg]; ok {
+			if childRes := child.includesImpl(p, startAt+1); childRes > ret {
+				ret = childRes
+			}
+		}
+	}
+	return ret
+}
+
+func (m mask) Merge(src proto.Message, dest proto.Message) error {
+	srcMsg, destMsg := protoimpl.X.MessageOf(src), protoimpl.X.MessageOf(dest)
+	if srcDesc, destDesc := srcMsg.Descriptor(), destMsg.Descriptor(); m.descriptor != srcDesc || m.descriptor != destDesc {
+		return fmt.Errorf(
+			"expect the descriptors of both source and destination message to be %s; got src: %s desc: %s",
+			m.descriptor.FullName(), srcDesc.FullName(), destDesc.FullName())
+	}
+	for fieldName, submask := range m.children {
+		// Star field is not possible here. So this will never be nil.
+		fieldDesc := m.descriptor.Fields().ByName(protoreflect.Name(fieldName))
+		switch srcVal, destVal := srcMsg.Get(fieldDesc), destMsg.Get(fieldDesc); {
+		// Only non-repeated submessages can be merged partially.
+		case len(submask.children) > 0 && submask.descriptor != nil && !submask.isRepeated:
+			submask.Merge(toProtoMessage(srcVal.Message()), toProtoMessage(destVal.Message()))
+			break
+		case fieldDesc.IsList():
+			newVal := destMsg.NewField(fieldDesc)
+			for i, srcList, destList := 0, srcVal.List(), newVal.List(); i < srcList.Len(); i++ {
+				destList.Append(cloneValueIfMessage(srcList.Get(i), fieldDesc.Kind()))
+			}
+			destMsg.Set(fieldDesc, newVal)
+			break
+		case fieldDesc.IsMap():
+			mapValKind := fieldDesc.MapValue().Kind()
+			newVal := destMsg.NewField(fieldDesc)
+			destMap := newVal.Map()
+			srcVal.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
+				destMap.Set(k, cloneValueIfMessage(v, mapValKind))
+				return true
+			})
+			destMsg.Set(fieldDesc, newVal)
+		default:
+			// Scalar value
+			destMsg.Set(fieldDesc, cloneValueIfMessage(srcVal, fieldDesc.Kind()))
+		}
+	}
+	return nil
+}
+
+func cloneValueIfMessage(val protoreflect.Value, kind protoreflect.Kind) protoreflect.Value {
+	if kind == protoreflect.MessageKind {
+		return protoreflect.ValueOfMessage(protov2.Clone(val.Message().Interface()).ProtoReflect())
+	}
+	return val
+}
+
+func (m mask) Submask(path string) (mask, bool, error) {
+	parsedPath, err := parsePath(path, m.descriptor, false)
+	if err != nil {
+		return mask{}, false, err
+	}
+	submask, ok := m.subMaskImpl(parsedPath, 0)
+	return submask, ok, nil
+}
+
+func (m mask) subMaskImpl(p path, startAt int) (mask, bool) {
+	if startAt >= len(p) || len(m.children) == 0 {
+		return m, true
+	}
+
+	for _, seg := range []string{p[startAt], "*"} {
+		// star child should also be examined for the same reason on includeImpl
+		if child, ok := m.children[seg]; ok {
+			if submask, ok := child.subMaskImpl(p, startAt+1); ok {
+				return submask, true
+			}
+		}
+	}
+	return mask{}, false
+}
+
+func toProtoMessage(reflectMsg protoreflect.Message) proto.Message {
+	return protoimpl.X.ProtoMessageV1Of(reflectMsg)
+}
+
+type path []string
+
+func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor, isJSONName bool) (path, error) {
+	t := newTokenizer(rawPath)
+	ctx := &parseCtx{
+		curDescriptor: descriptor,
+	}
+	ret := path{}
+	for t.hasMoreTokens() {
+		if tok, err := t.nextToken(); err != nil {
+			return nil, err
+		} else {
+			seg, err := parseSegment(tok, isJSONName, ctx)
+			if err != nil {
+				return nil, err
+			}
+			ret = append(ret, seg)
+		}
+	}
+
+	// Remove the trailing start if needed
+	if length := len(ret); ret[length-1] == "*" {
+		return ret[:length-1], nil
+	}
+	return ret, nil
+}
+
+type parseCtx struct {
+	curDescriptor protoreflect.MessageDescriptor
+	isList        bool
+	mustBeLast    bool
+}
+
+func (ctx *parseCtx) advanceToField(fieldName string, isJSONName bool) (string, error) {
+	if msgDesc := ctx.curDescriptor; msgDesc != nil {
+		var fieldDesc protoreflect.FieldDescriptor
+		if isJSONName {
+			fieldDesc = msgDesc.Fields().ByJSONName(fieldName)
+		} else {
+			fieldDesc = msgDesc.Fields().ByName(protoreflect.Name(fieldName))
+		}
+		if fieldDesc == nil {
+			return "", fmt.Errorf("field %s does not exist in message %s", fieldName, msgDesc.Name())
+		}
+		ctx.curDescriptor = fieldDesc.Message()
+		ctx.isList = fieldDesc.IsList()
+		return string(fieldDesc.Name()), nil
+	}
+	return "", fmt.Errorf("can't advance to field when current is nil")
+}
+
+var mapKeyKindToExpectTokenType = map[protoreflect.Kind]tokenType{
+	protoreflect.Int32Kind:    intType,
+	protoreflect.Int64Kind:    intType,
+	protoreflect.Sint32Kind:   intType,
+	protoreflect.Sint64Kind:   intType,
+	protoreflect.Uint32Kind:   intType,
+	protoreflect.Uint64Kind:   intType,
+	protoreflect.Sfixed32Kind: intType,
+	protoreflect.Fixed32Kind:  intType,
+	protoreflect.Sfixed64Kind: intType,
+	protoreflect.Fixed64Kind:  intType,
+	protoreflect.BoolKind:     boolType,
+	protoreflect.StringKind:   strType,
+}
+
+func parseSegment(tok token, isJSONName bool, ctx *parseCtx) (string, error) {
+	switch desc := ctx.curDescriptor; {
+	case ctx.mustBeLast:
+		return "", fmt.Errorf("expect end of string; got token: %s", tok.value)
+	case ctx.isList:
+		// The current segment corresponds to a list field (non-map entry repeated field). Only star is allowed
+		if tok.typ != star {
+			return "", fmt.Errorf("expect a star following repeated field; got token: %s", tok.value)
+		}
+		ctx.isList = false
+		return "*", nil
+
+	case desc == nil:
+		return "", fmt.Errorf("scalar field cannot have subfield: %s", tok.value)
+
+	case desc.IsMapEntry():
+		if tok.typ != star {
+			keyKind := desc.Fields().ByName(protoreflect.Name("key")).Kind()
+			if expectTokenType, found := mapKeyKindToExpectTokenType[keyKind]; !found {
+				return "", fmt.Errorf("unexpected map key kind %s", keyKind.GoString())
+			} else if expectTokenType != tok.typ {
+				return "", fmt.Errorf("expect map key kind %s; got token: %s", keyKind.String(), tok.value)
+			}
+		}
+
+		if _, err := ctx.advanceToField("value", false); err != nil {
+			return "", err
+		}
+		return tok.value, nil
+
+	case tok.typ == star:
+		// a star field cannot be followed by any subfields if it does not corresponds to a repeated field
+		ctx.mustBeLast = true
+		return "*", nil
+
+	case tok.typ != strType:
+		return "", fmt.Errorf("expect a field name of type string; got token: %s", tok.value)
+
+	default:
+		return ctx.advanceToField(tok.value, isJSONName)
+	}
+}
+
+type tokenizer struct {
+	path      []rune
+	delimiter rune
+	pos       int
+}
+
+var pathDelimiter = '.'
+
+func newTokenizer(path string) *tokenizer {
+	return &tokenizer{
+		path:      []rune(path),
+		delimiter: pathDelimiter,
+	}
+}
+
+type token struct {
+	typ   tokenType
+	value string
+}
+
+type tokenType int8
+
+const (
+	star tokenType = iota + 1
+	strType
+	boolType
+	intType
+)
+
+func (t tokenType) String() string {
+	switch t {
+	case star:
+		return "star"
+	case strType:
+		return "string"
+	case boolType:
+		return "boolean"
+	case intType:
+		return "integer"
+	default:
+		return fmt.Sprintf("TokenType(%d)", t)
+	}
+}
+
+var nonBackstickPredicate = func(r rune) bool {
+	return r != '`'
+}
+var stringPredicate = func(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
+}
+
+func (t tokenizer) hasMoreTokens() bool {
+	return t.pos < len(t.path)
+}
+
+func (t *tokenizer) nextToken() (token, error) {
+	if t.pos > 0 {
+		if t.path[t.pos] != t.delimiter {
+			return token{}, fmt.Errorf("expect delimiter: %c; got %c", t.delimiter, t.path[t.pos])
+		}
+		t.pos++ // swallow the delimiter if not reading the first token
+		if t.pos == len(t.path) {
+			return token{}, fmt.Errorf("path can't end with delimiter: %c", t.delimiter)
+		}
+	}
+
+	switch r, pathLen := t.path[t.pos], len(t.path); {
+	case r == '`':
+		t.pos++ // swallow the starting backtick
+		var sb strings.Builder
+		for {
+			val := read(t.path[t.pos:], "", nonBackstickPredicate)
+			t.pos += len(val)
+			sb.WriteString(val)
+			if t.pos >= pathLen {
+				return token{}, fmt.Errorf("a quoted string is never closed; got: %s", sb.String())
+			}
+			t.pos++ // Swallow the discovered backtick
+			if t.pos >= pathLen || (t.pos < pathLen && t.path[t.pos] != '`') {
+				// Stop if eof or the discovered backtick is not for escaping
+				break
+			}
+			sb.WriteRune('`')
+			t.pos++ // Swallow the escaped backtick
+		}
+		return token{
+			typ:   strType,
+			value: sb.String(),
+		}, nil
+
+	case r == '*':
+		t.pos++ // swallow the star
+		return token{
+			typ:   star,
+			value: "*",
+		}, nil
+
+	case r == '-' || unicode.IsDigit(r):
+		val := read(t.path[t.pos+1:], string(r), unicode.IsDigit)
+		t.pos += len(val)
+		return token{
+			typ:   intType,
+			value: val,
+		}, nil
+
+	case r == '_' || unicode.IsLetter(r):
+		val := read(t.path[t.pos+1:], string(r), stringPredicate)
+		t.pos += len(val)
+		typ := strType
+		if val == "true" || val == "false" {
+			typ = boolType
+		}
+		return token{
+			typ:   typ,
+			value: val,
+		}, nil
+
+	default:
+		return token{}, fmt.Errorf("unknown token: %c", r)
+	}
+}
+
+func read(data []rune, prefix string, cond func(r rune) bool) string {
+	var sb strings.Builder
+	sb.WriteString(prefix)
+	for _, r := range data {
+		if cond(r) {
+			sb.WriteRune(r)
+		} else {
+			break
+		}
+	}
+	return sb.String()
+}
