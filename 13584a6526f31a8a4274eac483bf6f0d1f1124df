@@ -42,6 +42,29 @@
     },
     {
       "key": {
+        "uuid": "c51e1a8d_90edfd69",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "i didn\u0027t understand what this means until I read test_node.ts.\nplease make it obvious that this is a regex, e.g. /\\W/",
+      "range": {
+        "startLine": 27,
+        "startChar": 24,
+        "endLine": 27,
+        "endChar": 26
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "715725d6_a16e89d1",
         "filename": "milo/frontend/resultui/src/components/test_nav_tree/test_nav_node.ts",
         "patchSetId": 2
@@ -128,6 +151,29 @@
     },
     {
       "key": {
+        "uuid": "493bd201_5ab0275e",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "this looks like something a test outputed/returned. Test exoneration is produced by test orchestration layer. consider TestObject",
+      "range": {
+        "startLine": 22,
+        "startChar": 12,
+        "endLine": 22,
+        "endChar": 22
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cb27e8c4_8fea6810",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 2
@@ -161,6 +207,121 @@
         "startChar": 0,
         "endLine": 30,
         "endChar": 24
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac7e4c9a_a4591fb6",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "what else implementes ITest? if nothing, why is it needed?",
+      "range": {
+        "startLine": 35,
+        "startChar": 11,
+        "endLine": 35,
+        "endChar": 28
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb65880d_a8186e22",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "nit: I think it would be more simpler and type safe if we had two functions addTestResult and addTestExoneration. Internally the logic of getting a variant object can be extracted to a separate func",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 11
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c455cf4_008dffa9",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "note that this has quadratic time complexity.\n\ni bet you will need to put variants in a map or set often in this codebase. On the server side, we have https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/resultdb/pbutil/variant.go;l\u003d102?q\u003dVariantHash\u0026sq\u003d\n\nwhich makes it linear. Consider something like\n\n  func variantKey(variant: ReadonlyArray\u003cITestVariant\u003e): string{\n    return variant.sorted().join(\u0027|\u0027);\n  }\n\n\n  readonly variants: {[key: string]: ITestVariant} \u003d {};\n\n  ...  \n  const key \u003d variantKey(output.variant);\n  this.variants[key] \u003d this.variants[key] || new TestVariant(output.variant);\n  const variant \u003d this.variants[key]",
+      "range": {
+        "startLine": 40,
+        "startChar": 32,
+        "endLine": 40,
+        "endChar": 36
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95343004_984d6e0c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 61,
+        "startChar": 17,
+        "endLine": 61,
+        "endChar": 42
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae9e9844_dddf63b1",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 68,
+        "startChar": 29,
+        "endLine": 68,
+        "endChar": 38
       },
       "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -283,6 +444,52 @@
     },
     {
       "key": {
+        "uuid": "d05a57a7_f530693b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 120,
+        "startChar": 48,
+        "endLine": 120,
+        "endChar": 56
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cee934ae_e235cc6e",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "this code unnecessarily assumes that the test starts with \\w\n\nconsider using split instead. it definitely won\u0027t lose data",
+      "range": {
+        "startLine": 123,
+        "startChar": 34,
+        "endLine": 123,
+        "endChar": 36
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "02d765bd_3654d58e",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 2
@@ -299,6 +506,29 @@
         "startChar": 2,
         "endLine": 140,
         "endChar": 14
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79719d41_0795e5aa",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "FWIU the intention is to check the case when idSegs is empty. i think the intention would be clearer if we had\n\n  if (test.idSegs.length \u003d\u003d 0)",
+      "range": {
+        "startLine": 152,
+        "startChar": 9,
+        "endLine": 152,
+        "endChar": 16
       },
       "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -329,6 +559,75 @@
     },
     {
       "key": {
+        "uuid": "56c3b34b_0986f042",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "intentional?",
+      "range": {
+        "startLine": 156,
+        "startChar": 0,
+        "endLine": 159,
+        "endChar": 11
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1946abb_e6b6312c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "nit: child",
+      "range": {
+        "startLine": 162,
+        "startChar": 8,
+        "endLine": 162,
+        "endChar": 14
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "075415d0_33ccf942",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "this is linear. it could be O(1) if we used a hash",
+      "range": {
+        "startLine": 162,
+        "startChar": 37,
+        "endLine": 162,
+        "endChar": 41
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b734b762_e64bbcc3",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 2
@@ -345,6 +644,201 @@
         "startChar": 0,
         "endLine": 171,
         "endChar": 25
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2e021f5_e6a2a9b8",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "this is not exactly a test node related code. should this be in a separate file?",
+      "range": {
+        "startLine": 171,
+        "startChar": 13,
+        "endLine": 171,
+        "endChar": 23
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84799692_8dbfacd3",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "would it be simpler to do\n\n  let pageToken \u003d \u0027\u0027;\n\nand then\n\n  pageToken \u003d res.nextPageToken || \u0027\u0027;\n\nin L184?",
+      "range": {
+        "startLine": 178,
+        "startChar": 6,
+        "endLine": 178,
+        "endChar": 45
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e65b216b_c2278b5c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "tsc can infer this type on its own, can\u0027t it?",
+      "range": {
+        "startLine": 180,
+        "startChar": 17,
+        "endLine": 180,
+        "endChar": 43
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b16a25f_98e0849c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "yield* res.testResults",
+      "range": {
+        "startLine": 185,
+        "startChar": 8,
+        "endLine": 187,
+        "endChar": 9
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adfefbf0_55c70267",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "unnecesary?",
+      "range": {
+        "startLine": 188,
+        "startChar": 24,
+        "endLine": 188,
+        "endChar": 38
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6802c105_323f209f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "this merge-join algorithm assumes that test results and exonerations are sorted by test id, correct?\n\nneed another feature request to make exonerations sorted by test id too",
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3645f64_fd8589ab",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "why these functions aren\u0027t normal private methods of the class?",
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c118321_d760617e",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "name loadMore incorrectly suggests that this can continue loading from where it left off",
+      "range": {
+        "startLine": 227,
+        "startChar": 8,
+        "endLine": 227,
+        "endChar": 16
+      },
+      "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "210031a1_ea3ab46d",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:13:22Z",
+      "side": 1,
+      "message": "nit: limit",
+      "range": {
+        "startLine": 227,
+        "startChar": 17,
+        "endLine": 227,
+        "endChar": 22
       },
       "revId": "13584a6526f31a8a4274eac483bf6f0d1f1124df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
