@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "19f4a43e_c3d07f12",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T22:45:23Z",
+      "side": 1,
+      "message": "1. yes, i understand that we might need to deal with unicode. Yet, this problem is not at all parsing-specific. It is a generic problem for the entire Golang and yet, golang made a choice to use operate on \"string\" in all libraries and very few operate on []rune. This should be a sign for us that we are solving this problem differently from everyone else.\n2. i feel like you are assuming that dealing with \"string\" type necessarily means that we operate on raw bytes.  Have you read https://blog.golang.org/strings ? It explains how range loop iterates over runes, and how utf8.DecodeRuneInString can be used to read a rune.\n\nyes, i recommend using string directly, and then use range-loop, utf8 package and unicide package to extract runes when you need. WDYT?",
+      "parentUuid": "2fa75667_d6f417e7",
+      "range": {
+        "startLine": 212,
+        "startChar": 40,
+        "endLine": 212,
+        "endChar": 46
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "82baa7af_7d565699",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 5
