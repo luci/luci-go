@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4bde6e2d_6b89344d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "ah, I didn\u0027t realize you\u0027d have to do this conversion. This copies the string each time. it would be better to implement your own IndexRune that searches over []rune\n\nhowever, stepping back, why are we converting the string to []rune? what\u0027s the problem working with a string?\n\nwe also make two copies in L218 (one for string(...) and one for writing). Would make only one if t.path was a string. Also in L248",
+      "range": {
+        "startLine": 212,
+        "startChar": 40,
+        "endLine": 212,
+        "endChar": 46
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82baa7af_7d565699",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 215,
+        "startChar": 77,
+        "endLine": 215,
+        "endChar": 86
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5f6f71b_5e52e030",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "nit: i think it would be simpler if save a \"checkpoint\" before L240, e.g.\n\n  start :\u003d t.pos\n  t.pos++\n  n :\u003d ....\n\nand then here use start",
+      "range": {
+        "startLine": 248,
+        "startChar": 24,
+        "endLine": 248,
+        "endChar": 33
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a96e0a7_5e0f9a06",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "nit: normally this param would go before cond because, when calling this func, start is short and cond can be a long inline function",
+      "range": {
+        "startLine": 280,
+        "startChar": 50,
+        "endLine": 280,
+        "endChar": 55
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f23217d0_46f3af0a",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "note that if we turn t.path to string, then this reduces to\n\n\tfor i, r :\u003d range rs {\n\t\tif !cond(r) {\n\t\t\treturn i\n\t\t}\n\t}\n\treturn len(rs)\n\nassuming we don\u0027t pass start. If you look at strings package, most functions do not accept start because it is more idiomatic to pass a substring, e.g. Index(mystring[offset:], sep)",
+      "range": {
+        "startLine": 284,
+        "startChar": 1,
+        "endLine": 291,
+        "endChar": 11
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

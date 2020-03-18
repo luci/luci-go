@@ -718,6 +718,47 @@
     },
     {
       "key": {
+        "uuid": "71054f60_61dd7a4f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "it is fairly typical to assign zero value to an arbitrary member",
+      "parentUuid": "a048efe6_be87a359",
+      "range": {
+        "startLine": 180,
+        "startChar": 23,
+        "endLine": 180,
+        "endChar": 26
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e1b6eb0c_9724259d",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "why was this removed? unused?",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9569dfdb_9dd84fd6",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -753,6 +794,30 @@
       "side": 1,
       "message": "I feel like this fail is intentional. Users are expected to call `hasMoreTokens` before calling `nextToken` so `t.pos` should always be smaller than the path length at this moment. So if users are calling `nextToken` when there is no more token available, a crash is expected. \n\nAn alternative way is to do a `t.pos \u003e\u003d pathLength` check at the beginning and return error if so. WDYT?",
       "parentUuid": "9569dfdb_9dd84fd6",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 35
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "054565d9_78944ae1",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "if this is a part of the function\u0027s API, then the function docstring should say that",
+      "parentUuid": "1571fc89_a855fa4f",
       "range": {
         "startLine": 220,
         "startChar": 28,
@@ -976,6 +1041,30 @@
       "side": 1,
       "message": "That\u0027s a good call out. Changing the implementation to make the read function return index only so that we don\u0027t create a new string every time.",
       "parentUuid": "ce9de3ed_f79a3936",
+      "range": {
+        "startLine": 260,
+        "startChar": 9,
+        "endLine": 260,
+        "endChar": 13
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "33d6f75f_34e39e5a",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T18:06:40Z",
+      "side": 1,
+      "message": "we still create a new string in L255 in the new patchset.\nthis is related to my another comment in ps5 about making t.path a string (as opposed to []rune), so let\u0027s keep this code resolved",
+      "parentUuid": "a395dd5f_c9862725",
       "range": {
         "startLine": 260,
         "startChar": 9,
