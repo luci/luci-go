@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "8edd9f36_6aa1f2f3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-18T07:43:17Z",
+      "side": 1,
+      "message": "could you add a link to design doc in #c0 of this bug?",
+      "revId": "c3a6b639603e6ec7269e0da667255e152ceeb1b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bb4c4310_75744950",
         "filename": "swarming/cmd/swarmbot/main.go",
         "patchSetId": 2
