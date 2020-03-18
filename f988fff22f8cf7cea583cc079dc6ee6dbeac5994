@@ -190,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "78ec2ca3_c80576b9",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T07:53:08Z",
+      "side": 1,
+      "message": "great",
+      "parentUuid": "1233998b_cce2f453",
+      "range": {
+        "startLine": 97,
+        "startChar": 37,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68374f82_dc5fde3c",
         "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
         "patchSetId": 6
