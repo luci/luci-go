@@ -70,6 +70,29 @@
       "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4d63c408_29e22201",
+        "filename": "logdog/appengine/coordinator/tagMap_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-18T19:59:27Z",
+      "side": 1,
+      "message": "these are the tests to ensure the new code can still load old entities",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 7
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
