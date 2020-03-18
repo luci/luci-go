@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "767ac1ba_431b4987",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-03-18T23:15:10Z",
+      "side": 1,
+      "message": "I decided to exact it to the `notFoundErr` func",
+      "parentUuid": "2a8f52fe_edc4d8ab",
+      "range": {
+        "startLine": 83,
+        "startChar": 14,
+        "endLine": 83,
+        "endChar": 81
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8bece2b7_fb6ac71e",
         "filename": "gce/appengine/rpc/config.go",
         "patchSetId": 2
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "013f54c1_4893dd1b",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-03-18T23:15:10Z",
+      "side": 1,
+      "message": "Moved and renamed it to getConfigByID",
+      "parentUuid": "e55c046f_b990449c",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 2
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bf9482f0_0cecc4d3",
         "filename": "gce/appengine/rpc/config.go",
         "patchSetId": 2
@@ -110,6 +158,24 @@
       "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e48920ca_6e94f8f6",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-03-18T23:15:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf9482f0_0cecc4d3",
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -136,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "0a17ef8b_b56ed2b5",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-03-18T23:15:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e57a080_ce0a5d10",
+      "range": {
+        "startLine": 174,
+        "startChar": 27,
+        "endLine": 174,
+        "endChar": 47
+      },
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13ece0d4_07efb122",
         "filename": "gce/appengine/rpc/config_test.go",
         "patchSetId": 2
@@ -150,6 +240,24 @@
       "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99fae0f3_569fcb6f",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1398165
+      },
+      "writtenOn": "2020-03-18T23:15:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13ece0d4_07efb122",
+      "revId": "3fb8586513e8b4645b694179c2bdadf8505cae8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
