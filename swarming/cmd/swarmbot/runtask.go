@@ -1,4 +1,4 @@
-// Copyright 2019 The LUCI Authors.
+// Copyright 2020 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,29 +15,27 @@
 package main
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/maruel/subcommands"
-	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/client/versioncli"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-const version = "0.1"
-
-func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
-	return &subcommands.DefaultApplication{
-		Name:  "swarmbot",
-		Title: "Swarming Bot commands",
-		Commands: []*subcommands.Command{
-			cmdRunTask,
-			subcommands.CmdHelp,
-			versioncli.CmdVersion(version),
-		},
-	}
+// run_isolated.py in Go
+var cmdRunTask = &subcommands.Command{
+	UsageLine: "runtask <options>...",
+	ShortDesc: "runs swarming task",
+	CommandRun: func() subcommands.CommandRun {
+		return &cmdRunTaskRun{}
+	},
 }
 
-func main() {
-	app := getApplication(chromeinfra.DefaultAuthOptions())
-	os.Exit(subcommands.Run(app, nil))
+type cmdRunTaskRun struct {
+	subcommands.CommandRunBase
+}
+
+func (c *cmdRunTaskRun) Run(
+	a subcommands.Application, args []string, env subcommands.Env) int {
+	// TODO(crbug.com/962804): implement here
+	fmt.Println("running swarming task...")
+	return 0
 }
