@@ -22,6 +22,30 @@
       "revId": "41463c268d8ebe75fe3651e5916ac397fe458c7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cacf5041_44c81d15",
+        "filename": "luci_notify/config/tree_closer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-18T01:14:11Z",
+      "side": 1,
+      "message": "There\u0027s an existing validation check that each builder appears only once across the whole config. So we can\u0027t have multiple notifiers referencing the same builder. The only way to have multiple actions for the same builder is by putting them all within the same notifier.",
+      "parentUuid": "7c4af054_ccf0df1e",
+      "range": {
+        "startLine": 39,
+        "startChar": 19,
+        "endLine": 40,
+        "endChar": 28
+      },
+      "revId": "41463c268d8ebe75fe3651e5916ac397fe458c7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
