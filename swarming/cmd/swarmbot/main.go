@@ -14,8 +14,8 @@
 
 package main
 
-// This is run_isolated.py written by Go.
+// This is Swarming bot code written in Go.
 
 func main() {
-	// TODO(tikuta): fill here.
+	// TODO(crbug.com/962804): implement here.
 }
