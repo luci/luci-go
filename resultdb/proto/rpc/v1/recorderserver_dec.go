@@ -42,6 +42,23 @@ func (s *DecoratedRecorder) CreateInvocation(ctx context.Context, req *CreateInv
 	return
 }
 
+func (s *DecoratedRecorder) BatchCreateInvocations(ctx context.Context, req *BatchCreateInvocationsRequest) (rsp *BatchCreateInvocationsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchCreateInvocations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchCreateInvocations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchCreateInvocations", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedRecorder) UpdateInvocation(ctx context.Context, req *UpdateInvocationRequest) (rsp *Invocation, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context

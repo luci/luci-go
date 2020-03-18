@@ -55,6 +55,26 @@ func (mr *MockRecorderClientMockRecorder) CreateInvocation(ctx, in interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInvocation", reflect.TypeOf((*MockRecorderClient)(nil).CreateInvocation), varargs...)
 }
 
+// BatchCreateInvocations mocks base method
+func (m *MockRecorderClient) BatchCreateInvocations(ctx context.Context, in *BatchCreateInvocationsRequest, opts ...grpc.CallOption) (*BatchCreateInvocationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchCreateInvocations", varargs...)
+	ret0, _ := ret[0].(*BatchCreateInvocationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateInvocations indicates an expected call of BatchCreateInvocations
+func (mr *MockRecorderClientMockRecorder) BatchCreateInvocations(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateInvocations", reflect.TypeOf((*MockRecorderClient)(nil).BatchCreateInvocations), varargs...)
+}
+
 // UpdateInvocation mocks base method
 func (m *MockRecorderClient) UpdateInvocation(ctx context.Context, in *UpdateInvocationRequest, opts ...grpc.CallOption) (*Invocation, error) {
 	m.ctrl.T.Helper()
@@ -251,6 +271,21 @@ func (m *MockRecorderServer) CreateInvocation(arg0 context.Context, arg1 *Create
 func (mr *MockRecorderServerMockRecorder) CreateInvocation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInvocation", reflect.TypeOf((*MockRecorderServer)(nil).CreateInvocation), arg0, arg1)
+}
+
+// BatchCreateInvocations mocks base method
+func (m *MockRecorderServer) BatchCreateInvocations(arg0 context.Context, arg1 *BatchCreateInvocationsRequest) (*BatchCreateInvocationsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchCreateInvocations", arg0, arg1)
+	ret0, _ := ret[0].(*BatchCreateInvocationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchCreateInvocations indicates an expected call of BatchCreateInvocations
+func (mr *MockRecorderServerMockRecorder) BatchCreateInvocations(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchCreateInvocations", reflect.TypeOf((*MockRecorderServer)(nil).BatchCreateInvocations), arg0, arg1)
 }
 
 // UpdateInvocation mocks base method
