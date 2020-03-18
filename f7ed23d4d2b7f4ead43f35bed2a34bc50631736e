@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "43b0f801_845be0eb",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T23:45:41Z",
+      "side": 1,
+      "message": "SGTM and thanks for sharing the doc. I\u0027ve change the implementation to use string instead of []rune in the latest patchset.",
+      "parentUuid": "19f4a43e_c3d07f12",
+      "range": {
+        "startLine": 212,
+        "startChar": 40,
+        "endLine": 212,
+        "endChar": 46
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82baa7af_7d565699",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 5
@@ -93,6 +117,30 @@
       "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d287de62_96c27d7b",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T23:45:41Z",
+      "side": 1,
+      "message": "Done! Realize I should use the pointer to `strings.Builder` instead of the struct directly.",
+      "parentUuid": "82baa7af_7d565699",
+      "range": {
+        "startLine": 215,
+        "startChar": 77,
+        "endLine": 215,
+        "endChar": 86
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -119,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "00a64aa3_931bd14a",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T23:45:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5f6f71b_5e52e030",
+      "range": {
+        "startLine": 248,
+        "startChar": 24,
+        "endLine": 248,
+        "endChar": 33
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a96e0a7_5e0f9a06",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 5
@@ -142,6 +214,30 @@
     },
     {
       "key": {
+        "uuid": "cd12c2c4_5fb116b9",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T23:45:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a96e0a7_5e0f9a06",
+      "range": {
+        "startLine": 280,
+        "startChar": 50,
+        "endLine": 280,
+        "endChar": 55
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f23217d0_46f3af0a",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 5
@@ -162,6 +258,30 @@
       "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90652b1e_8ad620c0",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T23:45:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f23217d0_46f3af0a",
+      "range": {
+        "startLine": 284,
+        "startChar": 1,
+        "endLine": 291,
+        "endChar": 11
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
