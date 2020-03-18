@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "224c068a_778f7bd4",
+        "filename": "logdog/appengine/coordinator/coordinatorTest/context.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-18T19:31:59Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 189,
+        "startChar": 45,
+        "endLine": 189,
+        "endChar": 72
+      },
+      "revId": "61173fee1923a6d2d6d64c6a834c34794a3afecd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
