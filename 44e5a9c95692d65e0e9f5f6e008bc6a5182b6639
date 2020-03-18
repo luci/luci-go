@@ -759,6 +759,24 @@
     },
     {
       "key": {
+        "uuid": "bc12599b_07d19672",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T21:07:29Z",
+      "side": 1,
+      "message": "Yes. I was looking at the coverage report and realize that it is currently not used anywhere so I just removed it.",
+      "parentUuid": "e1b6eb0c_9724259d",
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9569dfdb_9dd84fd6",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 3
@@ -827,6 +845,30 @@
       "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "343f5983_b0c5660a",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T21:07:29Z",
+      "side": 1,
+      "message": "Updated the doc.",
+      "parentUuid": "054565d9_78944ae1",
+      "range": {
+        "startLine": 220,
+        "startChar": 28,
+        "endLine": 220,
+        "endChar": 35
+      },
+      "revId": "44e5a9c95692d65e0e9f5f6e008bc6a5182b6639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2fa75667_d6f417e7",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-18T21:07:29Z",
+      "side": 1,
+      "message": "I\u0027ll defer addressing other comments before we figure out whether we should use string or []rune.\n\nThe reason I choose rune over string while I was implementing this is that \n1. we may be dealing with non-ASCII characters so converting it to []rune means that while iterating, we will iterate over character instead of all bytes a unicode code point is encoded to. \n2. it allow me to leverage some helper function unicode pkg provides like `isDigit` or `isLetter` which I don\u0027t find it available for byte.\n\nNow that I read more I realize that those conversion may introduce extra overhead (e.g. mem allocation) and also incur more copies as you pointed out in the comment. So, for the sake of performance, now I am more lean towards using string directly. Is that also what you suggested?",
+      "parentUuid": "4bde6e2d_6b89344d",
+      "range": {
+        "startLine": 212,
+        "startChar": 40,
+        "endLine": 212,
+        "endChar": 46
+      },
+      "revId": "f7ed23d4d2b7f4ead43f35bed2a34bc50631736e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "82baa7af_7d565699",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 5
