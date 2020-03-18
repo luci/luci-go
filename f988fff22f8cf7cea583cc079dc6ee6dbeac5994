@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d9770aff_e5f71471",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 48,
+        "startChar": 100,
+        "endLine": 48,
+        "endChar": 101
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c29350a7_be59b9bd",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "remove\nit is defined in L53",
+      "range": {
+        "startLine": 51,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 14
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae711b4a_e13d87e5",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "nit: other files keep validation functions in the top, so that a reader first learns what a valid message looks like, and then reads how it is used",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 45
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2c5985d_0d1e2652",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "this looks confusing in CreateInvocation because there is not `requests`.\nsee how BatchCreateTestExonerations does not have this problem, i.e. why not validateBatchCreateInvocationsRequest()?\n\nsame below",
+      "range": {
+        "startLine": 97,
+        "startChar": 37,
+        "endLine": 97,
+        "endChar": 49
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68374f82_dc5fde3c",
+        "filename": "resultdb/internal/services/recorder/batch_create_invocation.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "nit: txn is typically a second param after ctx",
+      "range": {
+        "startLine": 171,
+        "startChar": 101,
+        "endLine": 171,
+        "endChar": 104
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79ae4c7b_51daba26",
+        "filename": "resultdb/internal/services/recorder/create_invocation_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "it is defined in batch_create_test_results.go\nso perhaps this test should be in batch_create_test_results_test.go",
+      "range": {
+        "startLine": 73,
+        "startChar": 13,
+        "endLine": 73,
+        "endChar": 53
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e69cbd5b_3fde402b",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 51,
+        "startChar": 25,
+        "endLine": 51,
+        "endChar": 31
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b186c31d_0c306872",
+        "filename": "resultdb/proto/rpc/v1/recorder.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-18T01:31:12Z",
+      "side": 1,
+      "message": "BatchCreateInvocationRequest.requests",
+      "range": {
+        "startLine": 53,
+        "startChar": 19,
+        "endLine": 54,
+        "endChar": 12
+      },
+      "revId": "f988fff22f8cf7cea583cc079dc6ee6dbeac5994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
