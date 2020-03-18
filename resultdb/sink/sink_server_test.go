@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -60,13 +61,17 @@ func validTestResult(now time.Time) *sinkpb.TestResult {
 func TestReportTestResults(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
+	req := &sinkpb.ReportTestResultsRequest{
+		TestResults: []*sinkpb.TestResult{validTestResult(now)},
+	}
 
 	Convey("ReportTestResults", t, func() {
-		sink := &sinkServer{}
-		ctx := context.Background()
-		req := &sinkpb.ReportTestResultsRequest{
-			TestResults: []*sinkpb.TestResult{validTestResult(now)},
-		}
+		ctx := metadata.NewIncomingContext(
+			context.Background(),
+			metadata.Pairs(AuthTokenKey, authTokenValue("secret")),
+		)
+		sink, err := newSinkServer(ctx, ServerConfig{AuthToken: "secret"})
+		So(err, ShouldBeNil)
 
 		Convey("returns a success for a valid request", func() {
 			_, err := sink.ReportTestResults(ctx, req)
