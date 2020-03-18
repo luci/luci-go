@@ -19,18 +19,16 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/errors"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTagMap(t *testing.T) {
 	t.Parallel()
 
 	Convey(`Will return nil when encoding an empty TagMap.`, t, func() {
-		tm := TagMap{}
-		props, err := tm.toProperties()
+		tm := TagMap(nil)
+		prop, err := tm.ToProperty()
 		So(err, ShouldBeNil)
-		So(props, ShouldBeNil)
+		So(prop, ShouldResemble, ds.MkPropertyNI(nil))
 	})
 
 	Convey(`Will return nil when decoding an empty property set.`, t, func() {
@@ -46,41 +44,48 @@ func TestTagMap(t *testing.T) {
 			"quux": "",
 		}
 
-		props, err := tm.toProperties()
+		prop, err := tm.ToProperty()
 		So(err, ShouldBeNil)
-		So(props, ShouldResemble, sps(
-			encodeKey("baz"),
-			encodeKey("baz=qux"),
-			encodeKey("foo"),
-			encodeKey("foo=bar"),
-			encodeKey("quux"),
-			encodeKey("quux="),
+		So(prop, ShouldResemble, ds.MkPropertyNI(
+			[]byte(`{"baz":"qux","foo":"bar","quux":""}`),
 		))
 
 		Convey(`Can decode tags.`, func() {
-			dtm, err := tagMapFromProperties(props)
-			So(err, ShouldBeNil)
+			dtm := TagMap{}
+			So(dtm.FromProperty(prop), ShouldBeNil)
 			So(dtm, ShouldResemble, tm)
 		})
+	})
 
-		Convey(`Will decode mixed invalid and valid tags, returning errors for the invalid.`, func() {
-			props = append(props, []ds.Property{
-				ds.MkProperty(123), // Not a string.
-				ds.MkProperty("not a valid encoded key"),
-				ds.MkProperty(encodeKey("!!!invalid tag!!!=12")),
-			}...)
-
-			dtm, err := tagMapFromProperties(props)
-			So(dtm, ShouldResemble, tm)
-
-			So(err, ShouldHaveSameTypeAs, errors.MultiError{})
-			me := err.(errors.MultiError)
-			So(len(me), ShouldEqual, 9)
-
-			// 0-5 are the valid encoded tags.
-			So(me[6], ShouldErrLike, "property is not a string")
-			So(me[7], ShouldErrLike, "failed to decode property")
-			So(me[8], ShouldErrLike, "invalid tag")
+	Convey(`Will decode old properties into new map.`, t, func() {
+		ls := &LogStream{noDSValidate: true}
+		err := ls.Load(ds.PropertyMap{
+			"_Tags": sps(
+				encodeKey("foo"),
+				encodeKey("foo=bar"),
+				encodeKey("quux"),
+				encodeKey("quux="),
+			),
 		})
+		So(err, ShouldBeNil)
+		So(ls.Tags, ShouldResemble, TagMap{
+			"foo":  "bar",
+			"quux": "",
+		})
+
+		out, err := ls.Save(false)
+		So(err, ShouldBeNil)
+		So(out["Tags"], ShouldResemble, ds.MkPropertyNI(
+			[]byte(`{"foo":"bar","quux":""}`),
+		))
+	})
+
+	Convey(`Can load from datastore`, t, func() {
+		ls := &LogStream{noDSValidate: true}
+		err := ls.Load(ds.PropertyMap{
+			"Tags": ds.PropertySlice{ds.MkPropertyNI([]byte(`{"foo":"bar"}`))},
+		})
+		So(err, ShouldBeNil)
+		So(ls.Tags, ShouldResemble, TagMap{"foo": "bar"})
 	})
 }

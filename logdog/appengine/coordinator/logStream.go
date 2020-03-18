@@ -36,36 +36,19 @@ import (
 // CurrentSchemaVersion is the current schema version of the LogStream.
 // Changes that are not backward-compatible should update this field so
 // migration logic and scripts can translate appropriately.
-const CurrentSchemaVersion = "1"
+//
+// History:
+//   1 - Contained _Tags and _C queryable fields
+//   2 - Removed _Tags and _C queryable fields and applied noindex to
+//       most fields, since query filtering is now implemented in-memory instead
+//       of via datastore filters.
+const CurrentSchemaVersion = "2"
 
 // ErrPathNotFound is the canonical error returned when a Log Stream Path is not found.
 var ErrPathNotFound = grpcutil.Errf(codes.NotFound, "path not found")
 
 // LogStream is the primary datastore model containing information and state of
 // an individual log stream.
-//
-// This structure contains the standard queryable fields, and is the source of
-// truth for log stream state. Writes to LogStream should be done via Put, which
-// will ensure that the LogStream's related query objects are kept in sync.
-//
-// This structure has additional datastore fields imposed by the
-// PropertyLoadSaver. These fields enable querying against some of the complex
-// data types:
-//	  - _C breaks the the Prefix and Name fields into positionally-queryable
-//	    entries. It is used to build globbing queries.
-//
-//	    It is composed of entries detailing (T is the path [P]refix or [N]ame):
-//	    - TF:n:value ("T" has a component, "value", at index "n").
-//	    - TR:n:value ("T" has a component, "value", at reverse-index "n").
-//	    - TC:count ("T" has "count" total elements).
-//
-//	    For example, the path "foo/bar/+/baz" would break into:
-//	    ["PF:0:foo", "PF:1:bar", "PR:0:bar", "PR:1:foo", "PC:2", "NF:0:baz",
-//	     "NR:0:baz", "NC:1"].
-//
-//	  - _Tags is a string slice containing:
-//	    - KEY=[VALUE] key/value tags.
-//	    - KEY key presence tags.
 type LogStream struct {
 	// ID is the LogStream ID. It is generated from the stream's Prefix/Name
 	// fields.
@@ -75,48 +58,44 @@ type LogStream struct {
 	// to facilitate schema migrations.
 	//
 	// The current schema is currentSchemaVersion.
-	Schema string
+	Schema string // index needed for batch conversions
 
 	// Prefix is this log stream's prefix value. Log streams with the same prefix
 	// are logically grouped.
 	//
 	// This value should not be changed once populated, as it will invalidate the
 	// ID.
-	Prefix string
+	Prefix string // index needed for Query RPC
 	// Name is the unique name of this log stream within the Prefix scope.
 	//
 	// This value should not be changed once populated, as it will invalidate the
 	// ID.
-	Name string
+	Name string `gae:",noindex"`
 
 	// Created is the time when this stream was created.
-	Created time.Time
+	Created time.Time // index needed for Query RPC
 
 	// Purged, if true, indicates that this log stream has been marked as purged.
 	// Non-administrative queries and requests for this stream will operate as
 	// if this entry doesn't exist.
-	Purged bool
+	Purged bool `gae:",noindex"`
 	// PurgedTime is the time when this stream was purged.
 	PurgedTime time.Time `gae:",noindex"`
 
 	// ProtoVersion is the version string of the protobuf, as reported by the
 	// Collector (and ultimately self-identified by the Butler).
-	ProtoVersion string
+	ProtoVersion string `gae:",noindex"`
 	// Descriptor is the binary protobuf data LogStreamDescriptor.
 	Descriptor []byte `gae:",noindex"`
 	// ContentType is the MIME-style content type string for this stream.
-	ContentType string
+	ContentType string `gae:",noindex"`
 	// StreamType is the data type of the stream.
-	StreamType logpb.StreamType
+	StreamType logpb.StreamType `gae:",noindex"`
 	// Timestamp is the Descriptor's recorded client-side timestamp.
-	Timestamp time.Time
+	Timestamp time.Time `gae:",noindex"`
 
-	// Tags is a set of arbitrary key/value tags associated with this stream. Tags
-	// can be queried against.
-	//
-	// The serialization/deserialization is handled manually in order to enable
-	// key/value queries.
-	Tags TagMap `gae:"-"`
+	// Tags is a set of arbitrary key/value tags associated with this stream.
+	Tags TagMap `gae:",noindex"`
 
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
@@ -163,20 +142,16 @@ func (s *LogStream) Path() types.StreamPath {
 
 // Load implements ds.PropertyLoadSaver.
 func (s *LogStream) Load(pmap ds.PropertyMap) error {
-	// Handle custom properties. Consume them before using the default
-	// PropertyLoadSaver.
-	for k := range pmap {
-		if !strings.HasPrefix(k, "_") {
-			continue
-		}
-
-		switch k {
-		case "_Tags":
-			// Load the tag map. Ignore errors.
-			tm, _ := tagMapFromProperties(pmap.Slice(k))
-			s.Tags = tm
-		}
+	// Load "_Tags" from old entities.
+	if oldTags, ok := pmap["_Tags"]; ok {
+		// Load the tag map. Ignore errors.
+		tm, _ := tagMapFromProperties(oldTags.Slice())
+		s.Tags = tm
 	}
+
+	// Drop old _C field to save memory which is derived entirely from Prefix and
+	// Name, which are separately stored.
+	delete(pmap, "_C")
 
 	if err := ds.GetPLS(s).Load(pmap); err != nil {
 		return err
@@ -201,22 +176,7 @@ func (s *LogStream) Save(withMeta bool) (ds.PropertyMap, error) {
 	}
 	s.Schema = CurrentSchemaVersion
 
-	// Save default struct fields.
-	pmap, err := ds.GetPLS(s).Save(withMeta)
-	if err != nil {
-		return nil, err
-	}
-
-	// Encode _Tags.
-	pmap["_Tags"], err = s.Tags.toProperties()
-	if err != nil {
-		return nil, fmt.Errorf("failed to encode tags: %v", err)
-	}
-
-	// Generate our path components, "_C".
-	pmap["_C"] = generatePathComponents(s.Prefix, s.Name)
-
-	return pmap, nil
+	return ds.GetPLS(s).Save(withMeta)
 }
 
 // Validate evaluates the state and data contents of the LogStream and returns
@@ -327,36 +287,6 @@ func (s *LogStream) DescriptorProto() (*logpb.LogStreamDescriptor, error) {
 // This is a testing parameter, and should NOT be used in production code.
 func (s *LogStream) SetDSValidate(v bool) {
 	s.noDSValidate = !v
-}
-
-// generatePathComponents generates the "_C" property path components for path
-// glob querying.
-//
-// See the comment on LogStream for more information.
-func generatePathComponents(prefix, name string) ds.PropertySlice {
-	ps, ns := types.StreamName(prefix).Segments(), types.StreamName(name).Segments()
-
-	// Allocate our components array. For each component, there are two entries
-	// (forward and reverse), as well as one count entry per component type.
-	c := make(ds.PropertySlice, 0, (len(ps)+len(ns)+1)*2)
-
-	gen := func(b string, segs []string) {
-		// Generate count component (PC:4).
-		c = append(c, ds.MkProperty(fmt.Sprintf("%sC:%d", b, len(segs))))
-
-		// Generate forward and reverse components.
-		for i, s := range segs {
-			c = append(c,
-				// Forward (PF:0:foo).
-				ds.MkProperty(fmt.Sprintf("%sF:%d:%s", b, i, s)),
-				// Reverse (PR:3:foo)
-				ds.MkProperty(fmt.Sprintf("%sR:%d:%s", b, len(segs)-i-1, s)),
-			)
-		}
-	}
-	gen("P", ps)
-	gen("N", ns)
-	return c
 }
 
 // LogStreamQuery is a function returning `true` if the provided LogStream
