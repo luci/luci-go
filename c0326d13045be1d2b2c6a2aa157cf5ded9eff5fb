@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "a244e27f_ffba1c05",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-18T20:11:14Z",
+      "side": 1,
+      "message": "optional nit: if k \u003d\u003d \"_Tags\" { ... }",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 15
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9f93196_979bfff5",
+        "filename": "logdog/appengine/coordinator/logStream.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-18T20:11:14Z",
+      "side": 1,
+      "message": "maybe we should drop _C from here to save some memory? Otherwise it is going to end up in `extra`. I assume it is OK if it\u0027s no longer present when we save the entity later.",
+      "range": {
+        "startLine": 162,
+        "startChar": 29,
+        "endLine": 162,
+        "endChar": 33
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "390e0b31_9ce28428",
+        "filename": "logdog/appengine/coordinator/tagMap.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-18T20:11:14Z",
+      "side": 1,
+      "message": "this is no longer true?\n\nHow do tags are queried? Maybe map[k]v representation is not the best one now. I suspect list[\"\u003ck\u003e\u003d\u003cv\u003e\"] would be overall better (fast to decode/encode when not needed, fast to convert to stringset when needed to filter against).",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 30,
+        "endChar": 62
+      },
+      "revId": "c0326d13045be1d2b2c6a2aa157cf5ded9eff5fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4c6ca6fe_7c05e883",
         "filename": "logdog/appengine/coordinator/tagMap.go",
         "patchSetId": 3
