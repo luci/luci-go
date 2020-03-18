@@ -172,7 +172,6 @@ configuration parameters must be defined visit its settings page at:
 
 * Configure the "Configuration Service Settings" to point to the **Configuration
   Service** instance.
-* Update "Tumble Settings" appropriate (see [tumble docs](/tumble)).
 * If using timeseries monitoring, update the "Time Series Monitoring Settings".
 * If using **Auth Service**, set the "Authorization Settings".
 

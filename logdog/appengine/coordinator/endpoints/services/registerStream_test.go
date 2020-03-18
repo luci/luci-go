@@ -110,7 +110,6 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.GetTestable(c).CatchupIndexes()
-					env.IterateTumbleAll(c)
 
 					So(tls.Get(c), ShouldBeNil)
 
@@ -151,7 +150,6 @@ func TestRegisterStream(t *testing.T) {
 							env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 								env.Clock.Add(3 * time.Second)
 							})
-							env.IterateTumbleAll(c)
 
 							tls.WithProjectNamespace(c, func(c context.Context) {
 								So(ds.Get(c, tls.State), ShouldBeNil)
@@ -173,7 +171,7 @@ func TestRegisterStream(t *testing.T) {
 						env.Clock.Add(3 * time.Second)
 					})
 					prefixCreated := ds.RoundTime(env.Clock.Now())
-					streamCreated := prefixCreated.Add(18 * time.Second)
+					streamCreated := prefixCreated.Add(12 * time.Second)
 					req.TerminalIndex = 1337
 					expResp.State.TerminalIndex = 1337
 
@@ -181,7 +179,6 @@ func TestRegisterStream(t *testing.T) {
 					So(err, ShouldBeRPCOK)
 					So(resp, ShouldResemble, expResp)
 					ds.GetTestable(c).CatchupIndexes()
-					env.IterateTumbleAll(c)
 
 					So(tls.Get(c), ShouldBeNil)
 
@@ -204,7 +201,6 @@ func TestRegisterStream(t *testing.T) {
 
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)
-					env.IterateTumbleAll(c)
 				})
 
 				Convey(`Will schedule the correct archival expiration delay`, func() {

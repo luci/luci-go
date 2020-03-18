@@ -24,17 +24,3 @@ indexes:
   properties:
   - name: Created
   - name: _ArchivalState
-
-##
-# Tumble Indexes
-##
-
-- kind: tumble.Mutation
-  properties:
-  - name: ExpandedShard
-  - name: TargetRoot
-
-- kind: tumble.Mutation
-  properties:
-  - name: TargetRoot
-  - name: ProcessAfter
