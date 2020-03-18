@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3b30887c_8c0cb2be",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Done.\n\nAlso split codes into two files.",
+      "parentUuid": "ea79e493_532cc8fc",
+      "range": {
+        "startLine": 141,
+        "startChar": 17,
+        "endLine": 141,
+        "endChar": 57
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ac57f38d_9ebb877a",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3edf8dab_a5f539d7",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Done. Declared var err earlier and changed this to \u003d.",
+      "parentUuid": "ac57f38d_9ebb877a",
+      "range": {
+        "startLine": 150,
+        "startChar": 15,
+        "endLine": 150,
+        "endChar": 16
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c60282ab_8e0123e9",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e2843ff_71ff1c06",
+      "range": {
+        "startLine": 255,
+        "startChar": 2,
+        "endLine": 256,
+        "endChar": 8
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ffb1de7_44e56c04",
         "filename": "resultdb/internal/services/recorder/create_invocation.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88d24281_ccf64f7f",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Return err for simplicity.",
+      "parentUuid": "4ffb1de7_44e56c04",
+      "range": {
+        "startLine": 258,
+        "startChar": 61,
+        "endLine": 258,
+        "endChar": 64
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -137,6 +233,54 @@
       "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6837f8d5_d20d1eac",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Oops, python habits. Done.",
+      "parentUuid": "4b67dbd3_49131ce2",
+      "range": {
+        "startLine": 266,
+        "startChar": 1,
+        "endLine": 278,
+        "endChar": 116
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3ea6ae07_a488f8c4",
+        "filename": "resultdb/internal/services/recorder/create_invocation.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1118104
+      },
+      "writtenOn": "2020-03-18T00:01:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34b188d8_71e95e29",
+      "range": {
+        "startLine": 278,
+        "startChar": 54,
+        "endLine": 278,
+        "endChar": 58
+      },
+      "revId": "3b74af583fa96fe1ed7e8caf2ef06278ff2be148",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
