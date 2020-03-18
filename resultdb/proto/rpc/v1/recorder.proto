@@ -39,12 +39,20 @@ service Recorder {
   // Creates a new invocation.
   // The request specifies the invocation id and its contents.
   //
-  // The response header medata contains "update-token" required for future
+  // The response header metadata contains "update-token" required for future
   // updates, including finalization.
   //
   // If invocation with the given ID already exists, returns ALREADY_EXISTS
   // error code.
   rpc CreateInvocation(CreateInvocationRequest) returns (Invocation) {};
+
+  // Creates multiple invocations in a single rpc.
+  //
+  // The response header metadata contains a multi-valued "update-token"
+  // required for future updates, including finalization. The tokens will be
+  // given in the same order as BatchCreateInvocationRequest.requests.
+  rpc BatchCreateInvocations(BatchCreateInvocationsRequest)
+      returns (BatchCreateInvocationsResponse) {};
 
   // Updates an existing non-finalized invocation.
   rpc UpdateInvocation(UpdateInvocationRequest) returns (Invocation) {};
@@ -102,6 +110,19 @@ message CreateInvocationRequest {
   // A random UUID is recommended.
   // This request is only idempotent if a `request_id` is provided.
   string request_id = 3;
+}
+
+// A request message for BatchCreateInvocations
+message BatchCreateInvocationsRequest {
+  // requests[i].request_id MUST be either empty or equal to request_id in
+  // this message.
+  repeated CreateInvocationRequest requests = 1;
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided, so it is
+  // strongly recommended to populate this field.
+  string request_id = 2;
 }
 
 // A request message for UpdateInvocation RPC.
@@ -236,6 +257,13 @@ message BatchCreateTestExonerationsResponse {
   // Test exonerations created.
   repeated TestExoneration test_exonerations = 1;
 }
+
+// A response message for BatchCreateInvocations RPC.
+message BatchCreateInvocationsResponse {
+  // Invocations created.
+  repeated Invocation invocations = 1;
+}
+
 
 // == Misc =====================================================================
 
