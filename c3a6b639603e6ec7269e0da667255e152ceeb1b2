@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb4c4310_75744950",
+        "filename": "swarming/cmd/swarmbot/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002224
+      },
+      "writtenOn": "2020-03-18T07:39:23Z",
+      "side": 1,
+      "message": "do we usually update the date?",
+      "range": {
+        "startLine": 1,
+        "startChar": 15,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "c3a6b639603e6ec7269e0da667255e152ceeb1b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
