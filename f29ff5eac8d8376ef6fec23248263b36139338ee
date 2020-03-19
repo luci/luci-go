@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "04cf5e19_8e2b25b9",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T18:17:31Z",
+      "side": 1,
+      "message": "\u003e an ascii byte will never show up in multiple byte sequence for a unicode code point\n\nTIL. cool",
+      "parentUuid": "935bff72_a935a45f",
+      "range": {
+        "startLine": 213,
+        "startChar": 30,
+        "endLine": 213,
+        "endChar": 39
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6ea65ef_39043ef3",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 6

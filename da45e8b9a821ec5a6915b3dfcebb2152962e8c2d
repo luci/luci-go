@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cea46ef6_cd5613cf",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T18:17:31Z",
+      "side": 1,
+      "message": "i think the intention would be clearer if we did (n \u003d\u003d -1 || n \u003d\u003d 0) or just (n \u003c\u003d 0)",
+      "range": {
+        "startLine": 245,
+        "startChar": 17,
+        "endLine": 245,
+        "endChar": 45
+      },
+      "revId": "da45e8b9a821ec5a6915b3dfcebb2152962e8c2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
