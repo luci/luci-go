@@ -55,7 +55,7 @@ var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").E
 // ServerConfig defines the parameters of the server.
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
-	Recorder *pb.RecorderClient
+	Recorder pb.RecorderClient
 
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
@@ -91,11 +91,14 @@ type Server struct {
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
+// It panics if cfg.Recorder is nil.
 func NewServer(cfg ServerConfig) *Server {
 	if cfg.Address == "" {
 		cfg.Address = DefaultAddr
 	}
-
+	if cfg.Recorder == nil {
+		panic("the Recorder client must be set")
+	}
 	s := &Server{
 		cfg:  cfg,
 		errC: make(chan error, 1),
@@ -181,12 +184,19 @@ func (s *Server) Start(ctx context.Context) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 	go func() {
-		defer cancel()
+		var err error
+		defer func() {
+			// close SinkServer to complete all the outgoing requests
+			// before sending a signal to s.errC.
+			closeSinkServer(ctx, ss)
+			s.errC <- err
+			cancel()
+		}()
 		if s.testListener == nil {
-			s.errC <- s.httpSrv.ListenAndServe()
+			err = s.httpSrv.ListenAndServe()
 		} else {
 			// In test mode, the the listener MUST be prepared already.
-			s.errC <- s.httpSrv.Serve(s.testListener)
+			err = s.httpSrv.Serve(s.testListener)
 		}
 	}()
 	go func() {
