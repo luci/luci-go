@@ -15,16 +15,22 @@ package sink
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,28 +66,85 @@ func validTestResult(now time.Time) *sinkpb.TestResult {
 
 func TestReportTestResults(t *testing.T) {
 	t.Parallel()
+
 	now := testclock.TestRecentTimeUTC
 	req := &sinkpb.ReportTestResultsRequest{
-		TestResults: []*sinkpb.TestResult{validTestResult(now)},
-	}
+		TestResults: []*sinkpb.TestResult{validTestResult(now)}}
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	recClient := pb.NewMockRecorderClient(ctl)
 
 	Convey("ReportTestResults", t, func() {
-		ctx := metadata.NewIncomingContext(
-			context.Background(),
-			metadata.Pairs(AuthTokenKey, authTokenValue("secret")),
-		)
-		sink, err := newSinkServer(ctx, ServerConfig{AuthToken: "secret"})
+		ctx := authtest.MockAuthConfig(context.Background())
+		ctx = metadata.NewIncomingContext(
+			ctx, metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+		sink, err := newSinkServer(ctx, ServerConfig{
+			AuthToken: "secret", Recorder: recClient, Invocation: "inv1"})
 		So(err, ShouldBeNil)
 
 		Convey("returns a success for a valid request", func() {
 			_, err := sink.ReportTestResults(ctx, req)
 			So(err, ShouldBeNil)
+			recClient.EXPECT().BatchCreateTestResults(gomock.Any(), gomock.Any())
+
+			// close the server to drain the channel and process the queued items asap.
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			closeSinkServer(ctx, sink)
 		})
 
 		Convey("returns an error for a request with an invalid artifact", func() {
 			req.TestResults[0].InputArtifacts["input_art2"] = &sinkpb.Artifact{}
 			_, err := sink.ReportTestResults(ctx, req)
 			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			recClient.EXPECT().BatchCreateTestResults(
+				gomock.Any(), gomock.Any()).MaxTimes(0)
+
+			// close the server to drain the channel and process the queued items asap.
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			closeSinkServer(ctx, sink)
+		})
+	})
+}
+
+func TestSinkArtsToRpcArts(t *testing.T) {
+	t.Parallel()
+
+	Convey("sinkToRpcArts", t, func() {
+		ctx := context.Background()
+		sinkArts := map[string]*sinkpb.Artifact{}
+
+		Convey("sets the size of the artifact", func() {
+			Convey("with the length of contents", func() {
+				sinkArts["art1"] = &sinkpb.Artifact{
+					Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
+				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				So(len(rpcArts), ShouldEqual, 1)
+				So(rpcArts[0].Size, ShouldEqual, 3)
+			})
+
+			Convey("with the size of the file", func() {
+				f, err := ioutil.TempFile("", "test-artifact")
+				So(err, ShouldBeNil)
+				f.Write([]byte("123"))
+				f.Close()
+				defer os.Remove(f.Name())
+
+				sinkArts["art1"] = &sinkpb.Artifact{
+					Body: &sinkpb.Artifact_FilePath{FilePath: f.Name()}}
+				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				So(len(rpcArts), ShouldEqual, 1)
+				So(rpcArts[0].Size, ShouldEqual, 3)
+			})
+
+			Convey("with -1 if the file is not accessible", func() {
+				sinkArts["art1"] = &sinkpb.Artifact{
+					Body: &sinkpb.Artifact_FilePath{FilePath: "does-not-exist/foo/bar"}}
+				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				So(len(rpcArts), ShouldEqual, 1)
+				So(rpcArts[0].Size, ShouldEqual, -1)
+			})
 		})
 	})
 }
