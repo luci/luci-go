@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9021a312_dbd27c2e",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T22:39:16Z",
+      "side": 1,
+      "message": "nit: i think it is more typical to have this on one line. its ok to exceed 80 cols in golang. Consider more compact\n\n  rc, err :  \u003d dispatcher.NewChannel(ctx, recorderDispatcherOpts(), func(b *buffer.Batch) error {\n    req :\u003d prepareReportTestResultsRequest(ctx, s.cfg.Invocation, b)\n    _, err :\u003d s.cfg.Recorder.BatchCreateTestResults(ctx, req)\n    return err\n  })",
+      "range": {
+        "startLine": 74,
+        "startChar": 33,
+        "endLine": 75,
+        "endChar": 2
+      },
+      "revId": "2dfb14c34141d0315b00faf72f867acf14a65b9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
