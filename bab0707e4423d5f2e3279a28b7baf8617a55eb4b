@@ -34,6 +34,24 @@
       "revId": "bab0707e4423d5f2e3279a28b7baf8617a55eb4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09b0e77a_dd3dc394",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T19:36:07Z",
+      "side": 1,
+      "message": "now we have 3 conditions in ps11 (L241, L242, L249) instead of two. All I meant is\n\n  // Check if \u0027-\u0027 is the last character or look ahead to see if it is\n  // followed by a digit.\n  case b \u003d\u003d \u0027-\u0027 \u0026\u0026 (t.pos+1 \u003d\u003d pathLen || !unicode.IsDigit(rune(t.path[t.pos+1]))):\n    return token{}, fmt.Errorf(\"expected digit following minus sign for negative numbers; got minus sign only\")\n\n  case b \u003d\u003d \u0027-\u0027 || unicode.IsDigit(rune(b)):\n    start :\u003d t.pos\n    ...",
+      "parentUuid": "c1a12fa6_c8981f41",
+      "revId": "bab0707e4423d5f2e3279a28b7baf8617a55eb4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
