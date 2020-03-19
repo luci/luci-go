@@ -74,17 +74,13 @@ func (*Config) Get(c context.Context, req *config.GetRequest) (*config.Config, e
 	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
-	cfg := &model.Config{
-		ID: req.Id,
+
+	cfg, err := getConfigByID(c, req.Id)
+	if err != nil {
+		return nil, err
 	}
-	switch err := datastore.Get(c, cfg); err {
-	case nil:
-		return &cfg.Config, nil
-	case datastore.ErrNoSuchEntity:
-		return nil, status.Errorf(codes.NotFound, "no config found with ID %q", req.Id)
-	default:
-		return nil, errors.Annotate(err, "failed to fetch config").Err()
-	}
+
+	return &cfg.Config, nil
 }
 
 // List handles a request to list all configs.
@@ -112,24 +108,12 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 			return nil, status.Errorf(codes.InvalidArgument, "field %q is invalid or immutable", p)
 		}
 	}
-	cfg := &model.Config{
-		ID: req.Id,
-	}
-	switch err := datastore.Get(c, cfg); err {
-	case nil:
-	case datastore.ErrNoSuchEntity:
-		// Update is accessible by all users. To avoid revealing information about config existence
-		// to unauthorized users, not found and permission denied responses should be ambiguous.
-		return nil, status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", req.Id)
-	default:
-		return nil, errors.Annotate(err, "failed to fetch config").Err()
-	}
-	switch is, err := auth.IsMember(c, cfg.Config.GetOwner()...); {
-	case err != nil:
+
+	cfg, err := getConfigByID(c, req.Id)
+	if err != nil {
 		return nil, err
-	case !is:
-		return nil, status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", req.Id)
 	}
+
 	amt, err := cfg.Config.ComputeAmount(req.Config.GetCurrentAmount(), clock.Now(c))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to parse amount").Err()
@@ -159,7 +143,7 @@ func (*Config) Update(c context.Context, req *config.UpdateRequest) (*config.Con
 
 // configPrelude ensures the user is authorized to use the config API.
 func configPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	if methodName == "Update" {
+	if methodName == "Update" || methodName == "Get" {
 		// Update performs its own authorization checks, so allow all callers through.
 		logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
 		return c, nil
@@ -184,4 +168,31 @@ func NewConfigurationServer() config.ConfigurationServer {
 		Service:  &Config{},
 		Postlude: gRPCifyAndLogErr,
 	}
+}
+
+func getConfigByID(c context.Context, id string) (*model.Config, error) {
+	cfg := &model.Config{
+		ID: id,
+	}
+	switch err := datastore.Get(c, cfg); err {
+	case nil:
+	case datastore.ErrNoSuchEntity:
+		return nil, notFoundErr(id)
+	default:
+		return nil, errors.Annotate(err, "failed to fetch config").Err()
+	}
+
+	switch is, err := auth.IsMember(c, cfg.Config.GetOwner()...); {
+	case err != nil:
+		return nil, err
+	case !is:
+		return nil, notFoundErr(id)
+	}
+	return cfg, nil
+}
+
+func notFoundErr(id string) error {
+	// To avoid revealing information about config existence to unauthorized users,
+	// not found and permission denied responses should be ambiguous.
+	return status.Errorf(codes.NotFound, "no config found with ID %q or unauthorized user", id)
 }
