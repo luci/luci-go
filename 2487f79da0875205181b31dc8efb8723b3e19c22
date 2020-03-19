@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43034a95_6d27b7d7",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "accident?",
+      "range": {
+        "startLine": 17,
+        "startChar": 42,
+        "endLine": 17,
+        "endChar": 47
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84d9cf47_a28ed885",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "period",
+      "range": {
+        "startLine": 81,
+        "startChar": 52,
+        "endLine": 81,
+        "endChar": 53
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77cd38f8_0d9b7b0e",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "why do these fields need to be public?",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 25
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db0c32d5_2d7b67a1",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "most likely, the paths do not overlap, so I recommend preallocating ret\n\n  ret :\u003d make([]path, 0, len(paths))",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 176,
+        "endChar": 16
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "450a196c_fa7c4637",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 204,
+        "startChar": 65,
+        "endLine": 204,
+        "endChar": 67
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2eac822_cc9604f1",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "nit: consider IncludePartially and IncludeEntirely instead. This way, when using an IDE and starting to type \"Incl...\", IDE suggests both. This is also consistent with, for example, https://godoc.org/net/http#StatusAccepted",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 205,
+        "endChar": 17
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4f55257_08c776e1",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 221,
+        "startChar": 70,
+        "endLine": 221,
+        "endChar": 72
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

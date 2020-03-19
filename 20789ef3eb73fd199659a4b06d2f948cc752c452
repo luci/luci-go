@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "3175491a_0a9d178a",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "yep, this is very reasonable",
+      "parentUuid": "fd7a50ec_3e0adf2b",
+      "range": {
+        "startLine": 57,
+        "startChar": 37,
+        "endLine": 57,
+        "endChar": 46
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4bb4a2a5_25dbd0ac",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 2
@@ -178,6 +202,30 @@
       "side": 1,
       "message": "I was debating between whether to make it exported or not. From the usage point of view, I think exporting this struct is not needed. All user needs are \n\n```\nm :\u003d FromFieldMask(....)\nm.Trim(...)\n```\n\nHowever, as I launch the godoc server. I realized that the doc for receiver functions of unexported struct won\u0027t show up. For this reason, I\u0027ve changed it to public in latest patchset.",
       "parentUuid": "4bb4a2a5_25dbd0ac",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 9
+      },
+      "revId": "20789ef3eb73fd199659a4b06d2f948cc752c452",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88caa9cc_dbe31f93",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:49:59Z",
+      "side": 1,
+      "message": "sgtm",
+      "parentUuid": "420c24c7_669a034d",
       "range": {
         "startLine": 67,
         "startChar": 5,
