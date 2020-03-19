@@ -35,3 +35,18 @@ message WithInner {
   }
   repeated Inner msgs = 1;
 }
+
+message Full {
+  int32 num = 1;
+  repeated int32 nums = 2;
+  string str = 3;
+  repeated string strs = 4;
+  Full msg = 5;
+  repeated Full msgs = 6;
+  map<string, int32> map_str_num = 7;
+  map<int32, string> map_num_str = 8;
+  map<bool, string> map_bool_str = 9;
+  map<string, Full> map_str_msg = 10;
+  string json_name = 11;
+  string json_name_option = 12 [json_name="another_json_name"];
+}
