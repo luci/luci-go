@@ -57,8 +57,8 @@ func doDecrypt(ctx context.Context, service *cloudkms.Service, input []byte, key
 func cmdDecrypt(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "decrypt <options> <path>",
-		ShortDesc: "decrypts some ciphertext that was previously encrypted using a key in cloudkms",
-		LongDesc: `Uploads a ciphertext for decryption by cloudkms.
+		ShortDesc: "decrypts some ciphertext that was previously encrypted using a key in Cloud KMS",
+		LongDesc: `Uploads a ciphertext for decryption by Cloud KMS.
 
 <path> refers to the path to the crypto key. e.g.
 

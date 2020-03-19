@@ -115,7 +115,7 @@ type cryptRun struct {
 
 func (c *cryptRun) Init(authOpts auth.Options) {
 	c.commonFlags.Init(authOpts)
-	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data cannot be larger than 64KiB.")
+	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data for encrypt and decrypt cannot be larger than 64KiB.")
 }
 
 func (c *cryptRun) Parse(ctx context.Context, args []string) error {
