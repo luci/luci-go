@@ -91,7 +91,38 @@ func (s swInfo) Priority() int32 {
 }
 
 func (s swInfo) PrefixPathEnv() (ret []string, err error) {
-	panic("implement me")
+	slices := s.GetTask().GetTaskSlices()
+	if len(slices) >= 1 {
+		for _, keyVals := range slices[0].GetProperties().GetEnvPaths() {
+			if keyVals.Key == "PATH" {
+				ret = make([]string, len(keyVals.Values))
+				copy(ret, keyVals.Values)
+				break
+			}
+		}
+	}
+	if len(slices) > 1 {
+		for idx, slc := range slices[1:] {
+			foundIt := false
+			for _, keyVal := range slc.GetProperties().GetEnvPaths() {
+				if keyVal.Key == "PATH" {
+					foundIt = true
+					if !reflect.DeepEqual(ret, keyVal.Values) {
+						return nil, errors.Reason(
+							"slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
+							idx+1, keyVal.Values, ret).Err()
+					}
+					break
+				}
+			}
+			if !foundIt && len(ret) > 0 {
+				return nil, errors.Reason(
+					"slice %d has $PATH env prefixes which differ from slice 0: %v vs %v",
+					idx+1, []string{}, ret).Err()
+			}
+		}
+	}
+	return
 }
 
 func (s swInfo) Tags() (ret []string) {
