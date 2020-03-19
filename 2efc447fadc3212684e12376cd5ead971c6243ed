@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "891fb041_2285b19a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T07:30:41Z",
+      "side": 1,
+      "message": "nit: not sure what the recommended spacing is around operators, but should at least be consistent with the line above.\n\nActually, maybe even consider factoring this into a local since it\u0027s the same expression twice, and means you can give it a descriptive name like estimatedNumTreeClosers",
+      "range": {
+        "startLine": 96,
+        "startChar": 71,
+        "endLine": 96,
+        "endChar": 73
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
