@@ -2,6 +2,115 @@
   "comments": [
     {
       "key": {
+        "uuid": "23aa925d_f59f3891",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "nit: could you make sure these lines do not exceed 80 cols?\nis gts OK with this? at least google js styleguide requires it \nhttps://google.github.io/styleguide/jsguide.html#formatting-column-limit\n\nsame below",
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c098d24_699a06da",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "nit: simpler: \"Stale\"",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 19
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee4a5dd3_b765eda3",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "is this necessary?",
+      "range": {
+        "startLine": 75,
+        "startChar": 12,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fb7d4b5_81e3d8c5",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "private readonly",
+      "range": {
+        "startLine": 84,
+        "startChar": 37,
+        "endLine": 84,
+        "endChar": 38
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ada6759_9c21990c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "nit: i think this logic really belongs to the callsite, not here, because this is the only usage of prefix, i.e. it would be simpler to have\n\n  private constructor(private readonly path: string, private readonly name: string) { }\n\nand then\n\n  child \u003d new TestNode(this.path + nextSeg, nextSeg);\n\nin L152",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "33b84dee_a44db9f7",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -48,6 +157,52 @@
     },
     {
       "key": {
+        "uuid": "8c273605_73f192ce",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "\\W+\n\n  \"ab//c\".match(/\\w*(\\W|$)/g) \u003d\u003d [\"ab/\", \"/\", \"c\", \"\"]",
+      "range": {
+        "startLine": 108,
+        "startChar": 38,
+        "endLine": 108,
+        "endChar": 40
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fef00b0c_038751a6",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "in all my experiments, the last element of idSegs was an empty string, so this if statement appears to be unnecessary. I think we can do idSegs.pop() unconditionally",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a0e7f273_188b9fb9",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -64,6 +219,52 @@
         "startChar": 42,
         "endLine": 125,
         "endChar": 54
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8863ef6_ab830dee",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "we\u0027re throwing away allocated memory here. why not this.unbranchedTests.splice(0) ?",
+      "range": {
+        "startLine": 135,
+        "startChar": 9,
+        "endLine": 135,
+        "endChar": 24
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e86394b6_e131b031",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T07:57:31Z",
+      "side": 1,
+      "message": "in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2107340/2/milo/frontend/resultui/src/models/test_node.ts#152 you said that there is a benefit of checking nextSeg !\u003d\u003d undefined. I did not understand that. \nnextSeg can be undefined iff test.idSegs is empty. In particular, a valid segment is always a string.\nso I still think the code would be cleaner if we did\n\n  if (test.idSegs.length \u003d\u003d 0) {\n    this.tests.push(test.test);\n    return;\n  }\n\n  const nextSeg \u003d test.idSegs.pop();",
+      "range": {
+        "startLine": 144,
+        "startChar": 4,
+        "endLine": 144,
+        "endChar": 32
       },
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
