@@ -52,6 +52,24 @@
       "revId": "bab0707e4423d5f2e3279a28b7baf8617a55eb4b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "675ca5ff_48bfd61b",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 246,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T20:17:43Z",
+      "side": 1,
+      "message": "Oops.. I guess I get it wrong. Changed it to what is suggested.",
+      "parentUuid": "09b0e77a_dd3dc394",
+      "revId": "bab0707e4423d5f2e3279a28b7baf8617a55eb4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
