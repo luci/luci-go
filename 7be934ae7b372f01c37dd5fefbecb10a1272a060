@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "12abd02f_179af723",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T06:33:50Z",
+      "side": 1,
+      "message": "Please address this comment too",
+      "parentUuid": "85d2870a_ec43e43e",
+      "range": {
+        "startLine": 23,
+        "startChar": 12,
+        "endLine": 23,
+        "endChar": 22
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92640442_4e0d9bcc",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 2
