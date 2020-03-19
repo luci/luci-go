@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7c90193e_e0642af5",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "It\u0027s not really practical to stick with the 80-col limit though.\nEspecially when we use lit-html.",
+      "parentUuid": "23aa925d_f59f3891",
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c098d24_699a06da",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b52b21af_b84aa32b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c098d24_699a06da",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 19
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "05632dc9_dd944b3e",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Yes. Somehow the type of this is not TestNode (probably is a subclass of it)",
+      "parentUuid": "ee4a5dd3_b765eda3",
+      "range": {
+        "startLine": 75,
+        "startChar": 12,
+        "endLine": 75,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6fb7d4b5_81e3d8c5",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "5c6d3a95_87f7d157",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6fb7d4b5_81e3d8c5",
+      "range": {
+        "startLine": 84,
+        "startChar": 37,
+        "endLine": 84,
+        "endChar": 38
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ada6759_9c21990c",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -99,6 +189,30 @@
       "writtenOn": "2020-03-19T07:57:31Z",
       "side": 1,
       "message": "nit: i think this logic really belongs to the callsite, not here, because this is the only usage of prefix, i.e. it would be simpler to have\n\n  private constructor(private readonly path: string, private readonly name: string) { }\n\nand then\n\n  child \u003d new TestNode(this.path + nextSeg, nextSeg);\n\nin L152",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96534b1b_7659e87b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "But there\u0027s nothing to force the caller to construct the path correctly (apart from that it\u0027s a  private constructor).\nI think it\u0027s better to handle that in the constructor.",
+      "parentUuid": "8ada6759_9c21990c",
       "range": {
         "startLine": 86,
         "startChar": 16,
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "4fe4fc4b_88fe52d7",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33b84dee_a44db9f7",
+      "range": {
+        "startLine": 90,
+        "startChar": 55,
+        "endLine": 90,
+        "endChar": 65
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eba2d0b8_01b31956",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -154,6 +292,30 @@
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52cb56d5_cb39b89c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eba2d0b8_01b31956",
+      "range": {
+        "startLine": 105,
+        "startChar": 85,
+        "endLine": 105,
+        "endChar": 90
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "c83a0493_7dcc1849",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c273605_73f192ce",
+      "range": {
+        "startLine": 108,
+        "startChar": 38,
+        "endLine": 108,
+        "endChar": 40
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fef00b0c_038751a6",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -200,6 +386,30 @@
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acbc283f_b8115c6b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "But we actually want to keep empty string when it ends with /\\W/.\nAdded a comment to indicate that.",
+      "parentUuid": "fef00b0c_038751a6",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "e39c9a36_4aa35d4f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a0e7f273_188b9fb9",
+      "range": {
+        "startLine": 125,
+        "startChar": 42,
+        "endLine": 125,
+        "endChar": 54
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8863ef6_ab830dee",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -249,6 +483,30 @@
     },
     {
       "key": {
+        "uuid": "9388436a_d3926483",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8863ef6_ab830dee",
+      "range": {
+        "startLine": 135,
+        "startChar": 9,
+        "endLine": 135,
+        "endChar": 24
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e86394b6_e131b031",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -260,6 +518,30 @@
       "writtenOn": "2020-03-19T07:57:31Z",
       "side": 1,
       "message": "in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2107340/2/milo/frontend/resultui/src/models/test_node.ts#152 you said that there is a benefit of checking nextSeg !\u003d\u003d undefined. I did not understand that. \nnextSeg can be undefined iff test.idSegs is empty. In particular, a valid segment is always a string.\nso I still think the code would be cleaner if we did\n\n  if (test.idSegs.length \u003d\u003d 0) {\n    this.tests.push(test.test);\n    return;\n  }\n\n  const nextSeg \u003d test.idSegs.pop();",
+      "range": {
+        "startLine": 144,
+        "startChar": 4,
+        "endLine": 144,
+        "endChar": 32
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76dfa415_37b15aad",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-19T16:01:06Z",
+      "side": 1,
+      "message": "the return type of test.idSegs.pop() is string | undefined.\nSo if we check length,\nthe code would be\n```\nif (test.idSegs.length \u003d\u003d 0) {\n  this.tests.push(test.test);\n  return;\n}\nconst nextSeg \u003d test.idSegs.pop() as string;\n```\nWe need to cast string | undefined to string.\nI want to limit the usage of down casting as much as possible.\nI do agree that the gain is very marginal though.",
+      "parentUuid": "e86394b6_e131b031",
       "range": {
         "startLine": 144,
         "startChar": 4,
