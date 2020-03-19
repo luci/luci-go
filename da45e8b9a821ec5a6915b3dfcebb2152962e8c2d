@@ -22,6 +22,30 @@
       "revId": "da45e8b9a821ec5a6915b3dfcebb2152962e8c2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8fbe58f_9b4aeb86",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:43:32Z",
+      "side": 1,
+      "message": "I feel like b \u003d\u003d \u0027-\u0027 \u0026\u0026 n \u003d\u003d -1 is a valid scenario, it indicates the last segment is a negative number. The reason checking t.pos \u003d\u003d pathLen is to avoid the scenario that \u0027-\u0027 is the last character of path string. I agree this looks a bit unclear. I\u0027ve moved it to the top to avoid confusion.",
+      "parentUuid": "cea46ef6_cd5613cf",
+      "range": {
+        "startLine": 245,
+        "startChar": 17,
+        "endLine": 245,
+        "endChar": 45
+      },
+      "revId": "da45e8b9a821ec5a6915b3dfcebb2152962e8c2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
