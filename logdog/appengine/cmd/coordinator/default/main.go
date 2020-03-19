@@ -68,6 +68,10 @@ func main() {
 	r.POST("/admin/cron/stats/:stat/:namespace", base, cronStatsNSHandler)
 	r.GET("/admin/cron/stats", base, cronStatsHandler)
 
+	r.POST("/admin/cron/garbage_collect/:namespace/:before/:shard/:maxshard", base, gcCronHandlerNSShard)
+	r.POST("/admin/cron/garbage_collect/:namespace/:before", base, gcCronHandlerNS)
+	r.GET("/admin/cron/garbage_collect", base, gcCronHandler)
+
 	// Redirect "/" to "/app/".
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
