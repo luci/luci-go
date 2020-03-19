@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "421cd266_abd72c7b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "its ok not to enforce 80-col limit on HTML, but here the context is comments",
+      "parentUuid": "7c90193e_e0642af5",
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c098d24_699a06da",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -213,6 +231,30 @@
       "side": 1,
       "message": "But there\u0027s nothing to force the caller to construct the path correctly (apart from that it\u0027s a  private constructor).\nI think it\u0027s better to handle that in the constructor.",
       "parentUuid": "8ada6759_9c21990c",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d32b43d3_261daa46",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "if it is essential to TestNode (i.e. if it assumes that path ends with name), then TestNode should have a field \"prefix\", not \"path\", to reduce the assumption in the codebase.\n\nhowever, i just re-read the code and I don\u0027t see where path is used. Neither in this CL, nor I see usage of immediatePath in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2107340",
+      "parentUuid": "96534b1b_7659e87b",
       "range": {
         "startLine": 86,
         "startChar": 16,
@@ -413,6 +455,30 @@
     },
     {
       "key": {
+        "uuid": "fb676772_0ebe1ae4",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "i don\u0027t see the new comment\n\nalso, i don\u0027t see a harm in having an empty string in the end if the testID does NOT end with \\W, which means we can drop the entire if statement and simplify this code?",
+      "parentUuid": "acbc283f_b8115c6b",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a0e7f273_188b9fb9",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -551,6 +617,30 @@
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0f4fb43_39152c09",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "cool, didn\u0027t know TS is so smart that it changes type of the variable after (x \u003d\u003d\u003d undefined) check.",
+      "parentUuid": "76dfa415_37b15aad",
+      "range": {
+        "startLine": 144,
+        "startChar": 4,
+        "endLine": 144,
+        "endChar": 32
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

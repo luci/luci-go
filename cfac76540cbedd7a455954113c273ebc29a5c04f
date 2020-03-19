@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "42c03c66_9d1225e3",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 21,
+        "startChar": 31,
+        "endLine": 21,
+        "endChar": 32
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f57da74_8e3b46d0",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "currently TestNode exposes elidedXXX properties, but (partially) does not expose non-elided XXX properties. Then why do we expose the aspect of elision to TestNode\u0027s clients. I don\u0027t see a reason for this additional complexity for them. I think this is an opportunity to completely encapsulate the aspect by renaming private path, tests and children to _path, _tests_, _children (or unelidedPath, ...), and rename elidedTests to just tests, elidedChildren to children, etc.",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f9afecc_6b470678",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "should this be elidedPath? \nthis.node does include parent\u0027s name, but this does",
+      "range": {
+        "startLine": 61,
+        "startChar": 16,
+        "endLine": 61,
+        "endChar": 26
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cdd9162_e812fefa",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "i think you meant .tests\notherwise this will stack-overflow because it may call itself",
+      "range": {
+        "startLine": 62,
+        "startChar": 85,
+        "endLine": 62,
+        "endChar": 96
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c45e0357_f37dcd9f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "is this where we could use node.path?\n\nif used it here, then\n- we wouldn\u0027t need to do this O(n^2) string concatenation (for each node)\n- elidedName can return this.elidedNode.path",
+      "range": {
+        "startLine": 71,
+        "startChar": 6,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "572520ad_711ae31b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 99
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7b57018_9843148b",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "stale",
+      "range": {
+        "startLine": 89,
+        "startChar": 16,
+        "endLine": 89,
+        "endChar": 31
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c551aeb_784a6e6c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "this is a bit complicated recursive call. The stack may look like\n  \n  addTestWithIdSegs\n  branchTest\n  addTestWithIdSegs\n  branchTest\n  addTestWithIdSegs\n  branchTest\n\ninstead of simpler\n\n  addTestWithIdSegs\n  addTestWithIdSegs\n  addTestWithIdSegs\n\nalso note that branchTest is used only here and this function is fairly short.\n\nfollowing go/how-to-write-software \"The system should always look like it was designed to do exactly what it does now. Refactor it continuously so that it always looks like this, either before a change or immediately after it.\", let\u0027s inline branchTest here. We can always add complexity later.",
+      "range": {
+        "startLine": 109,
+        "startChar": 9,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59857708_6a39d8f4",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T16:53:55Z",
+      "side": 1,
+      "message": "is there a way to create an observable for [all tests in a node and its descendants] dynamically on demand? i.e. only when a user clicks one a test in the nav panel",
+      "range": {
+        "startLine": 110,
+        "startChar": 9,
+        "endLine": 110,
+        "endChar": 18
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
