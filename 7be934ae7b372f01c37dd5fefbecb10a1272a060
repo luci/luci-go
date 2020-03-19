@@ -1,0 +1,533 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85d2870a_ec43e43e",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Could this type just be called TestResultOrExoneration?\n\nI feel like TestObject is too general and doesn\u0027t clearly convey what the type is.",
+      "range": {
+        "startLine": 23,
+        "startChar": 12,
+        "endLine": 23,
+        "endChar": 22
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92640442_4e0d9bcc",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: \"Tests\" rather than \"Test\"",
+      "range": {
+        "startLine": 26,
+        "startChar": 4,
+        "endLine": 26,
+        "endChar": 8
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e84638e9_1e11e52c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: remove extra space before comment",
+      "range": {
+        "startLine": 26,
+        "startChar": 3,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94db50cf_491dcbc5",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Suggestion for making this comment a little more clear:\n\n\"Contains test results and exonerations, grouped by variant, for the given test id.\"",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 62
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1be0284_d20e4363",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Suggestion here too:\n\"Contains test results and exonerations for the given test variant.\"",
+      "range": {
+        "startLine": 41,
+        "startChar": 3,
+        "endLine": 41,
+        "endChar": 44
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3daa90d4_2c0c56a7",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Suggestion for rewording this comment:\n\nTestNode enables the organization of tests into a tree-like structure, branching on path components in the test name.\n\nPath components are delimited by non-word characters (i.e. [^a-zA-Z0-9_]).\n\nFor efficiency, the tree representation is lazily evaluated. After tests are added to the node, the children of the node will not be computed until this.branchUnbranchedTests() is called.\n\nthis.branchUnbranchedTests() will only populate the direct children of the node, not the children\u0027s children.",
+      "range": {
+        "startLine": 50,
+        "startChar": 3,
+        "endLine": 55,
+        "endChar": 104
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b316ae9f_fcbef091",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: descendants",
+      "range": {
+        "startLine": 58,
+        "startChar": 67,
+        "endLine": 58,
+        "endChar": 78
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4357a14_3067efa0",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: belongs",
+      "range": {
+        "startLine": 58,
+        "startChar": 46,
+        "endLine": 58,
+        "endChar": 52
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eadc47df_f9e4e298",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "I\u0027m thinking about how we can make the naming here most clear. In general, this class has two types of fields/properties: those of the full, un-elided tree, and those of the elided version of the tree.\n\nGiven that the former represent the actual underlying data and the latter are computed from the former, perhaps we could keep the former names simple, and add \"elided\" or some similar word to the computed properties?\n\nSo the name changes would be:\nimmediateBranchName-\u003ename\nimmediatePath-\u003epath\nimmediateUnbranchedTests-\u003eunbranchedTests\nimmediateTests-\u003etests\nimmediateChildren-\u003echildren\nbranchName()-\u003eelidedBranchName()\ntests()-\u003eelidedTests()\nchildren()-\u003eelidedChildren()\n\nWhat do you think?",
+      "range": {
+        "startLine": 59,
+        "startChar": 19,
+        "endLine": 59,
+        "endChar": 38
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23e4dc7a_27da3140",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Can you add a comment indicating that this also contains the node name?",
+      "range": {
+        "startLine": 60,
+        "startChar": 11,
+        "endLine": 60,
+        "endChar": 24
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4820852d_20a57ef3",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: there are",
+      "range": {
+        "startLine": 63,
+        "startChar": 25,
+        "endLine": 63,
+        "endChar": 32
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31b924f5_2b69ffbd",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: there are",
+      "range": {
+        "startLine": 68,
+        "startChar": 25,
+        "endLine": 68,
+        "endChar": 32
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caf51f11_f442a983",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "s/collapsed/elided/ ?",
+      "range": {
+        "startLine": 72,
+        "startChar": 24,
+        "endLine": 72,
+        "endChar": 33
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c53386_23056a9d",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: belonging",
+      "range": {
+        "startLine": 91,
+        "startChar": 24,
+        "endLine": 91,
+        "endChar": 30
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c52a05c3_cbc5a9ea",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: its descendants",
+      "range": {
+        "startLine": 91,
+        "startChar": 48,
+        "endLine": 91,
+        "endChar": 63
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "254ed477_dd5d1eab",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "nit: Adds",
+      "range": {
+        "startLine": 99,
+        "startChar": 5,
+        "endLine": 99,
+        "endChar": 8
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89ed234a_f0193bc8",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Does this comment refer to what the current code does, or what *would* happen if we didn\u0027t have the special handling below?\n\nWhat is the desired behaviour in this case?",
+      "range": {
+        "startLine": 106,
+        "startChar": 7,
+        "endLine": 108,
+        "endChar": 37
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d1ffc15_fe50a9da",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Converts",
+      "range": {
+        "startLine": 123,
+        "startChar": 5,
+        "endLine": 123,
+        "endChar": 12
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9222da57_f09a27ad",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "descendants",
+      "range": {
+        "startLine": 124,
+        "startChar": 41,
+        "endLine": 124,
+        "endChar": 52
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9219409d_01435403",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "calls",
+      "range": {
+        "startLine": 124,
+        "startChar": 17,
+        "endLine": 124,
+        "endChar": 21
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6008d383_eeb2852f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "Suggest a comment for this method too, along the lines of:\n\nTakes a test and adds it to the appropriate place in the tree, creating new nodes as necessary.",
+      "range": {
+        "startLine": 137,
+        "startChar": 10,
+        "endLine": 137,
+        "endChar": 20
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a3314b51_450ef594",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "If there are no segments left, the test belongs to this node.",
+      "range": {
+        "startLine": 139,
+        "startChar": 7,
+        "endLine": 139,
+        "endChar": 66
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dadab517_2b8e245d",
+        "filename": "milo/frontend/resultui/src/models/test_node_test.ts",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T03:14:08Z",
+      "side": 1,
+      "message": "can we also assert that node.allTests contains test1 and test2? are there any other public properties that might be worth verifying?",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 42
+      },
+      "revId": "7be934ae7b372f01c37dd5fefbecb10a1272a060",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
