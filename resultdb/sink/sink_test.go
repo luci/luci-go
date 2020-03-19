@@ -27,7 +27,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
+	"go.chromium.org/luci/server/auth/authtest"
 
+	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -59,14 +61,20 @@ func TestNewServer(t *testing.T) {
 	t.Parallel()
 
 	Convey("NewServer", t, func() {
+		recClient := pb.NewMockRecorderClient(nil)
+
 		Convey("succeeds", func() {
-			srv := NewServer(ServerConfig{Address: ":42", AuthToken: "hello"})
+			srv := NewServer(
+				ServerConfig{Address: ":42", AuthToken: "hello", Recorder: recClient})
 			So(srv, ShouldNotBeNil)
 		})
 		Convey("uses the default address, if not given", func() {
-			srv := NewServer(ServerConfig{})
+			srv := NewServer(ServerConfig{Recorder: recClient})
 			So(srv, ShouldNotBeNil)
 			So(srv.cfg.Address, ShouldNotEqual, "")
+		})
+		Convey("panics if cfg.Recorder is nil", func() {
+			So(func() { NewServer(ServerConfig{}) }, ShouldPanic)
 		})
 	})
 }
@@ -76,12 +84,14 @@ func TestServer(t *testing.T) {
 
 	Convey("Server", t, func() {
 		req := &sinkpb.ReportTestResultsRequest{}
-		ctx := context.Background()
-		srv := NewServer(ServerConfig{AuthToken: "secret"})
-		So(srv, ShouldNotBeNil)
+		recClient := pb.NewMockRecorderClient(nil)
 
+		// a test server with a test listener
+		srv := NewServer(ServerConfig{AuthToken: "secret", Recorder: recClient})
+		So(srv, ShouldNotBeNil)
 		addr, cleanup := installTestListener(srv)
 		defer cleanup()
+		ctx := authtest.MockAuthConfig(context.Background())
 
 		Convey("Creates a random auth token, if not given", func() {
 			srv.cfg.AuthToken = ""
@@ -89,14 +99,14 @@ func TestServer(t *testing.T) {
 			So(srv.cfg.AuthToken, ShouldNotEqual, "")
 		})
 
-		Convey("Start", func() {
+		Convey("Start fails", func() {
 			So(srv.Start(ctx), ShouldBeNil)
 
-			Convey("fails if called twice", func() {
+			Convey("if called twice", func() {
 				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
 			})
 
-			Convey("fails after being closed", func() {
+			Convey("after being closed", func() {
 				// close the server
 				err := srv.Close()
 				So(err, ShouldBeNil)
@@ -203,10 +213,13 @@ func TestServer(t *testing.T) {
 
 func TestServerExport(t *testing.T) {
 	t.Parallel()
+	recClient := pb.NewMockRecorderClient(nil)
 
 	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		srv := NewServer(ServerConfig{Address: ":42", AuthToken: "hello"})
+		srv := NewServer(ServerConfig{
+			Address: ":42", AuthToken: "hello", Recorder: recClient})
+		So(srv, ShouldNotBeNil)
 		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
 		So(sink, ShouldNotBeNil)
