@@ -64,7 +64,7 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		builders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
 			for _, cfgBuilder := range cfgNotifier.Builders {
-				id := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
+				id := idForBuilder(cfgBuilder)
 				builders = append(builders, &Builder{
 					ProjectKey: parentKey,
 					ID:         id,
@@ -89,6 +89,44 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 			}
 		}
 
+		// 1/4 the number of notifiers is guess at how many tree closers we'll have.
+		// Completely made up, but ultimately this is just a hint for the initial
+		// size of the set, and hence doesn't need to be perfect (or even very good).
+		liveTreeClosers := stringset.New(len(cs.ProjectConfig.Notifiers) / 4)
+		treeClosers := make([]*TreeCloser, 0, len(cs.ProjectConfig.Notifiers)/4)
+		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				builderId := idForBuilder(cfgBuilder)
+				builderKey := datastore.MakeKey(c, "Project", cs.ProjectID, "Builder", builderId)
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeClosers = append(treeClosers, &TreeCloser{
+						BuilderKey:     builderKey,
+						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
+					})
+				}
+			}
+		}
+
+		datastore.Get(c, treeClosers)
+
+		i = 0
+		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
+			for _, _ = range cfgNotifier.Builders {
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeClosers[i].TreeCloser = *cfgTreeCloser
+
+					// Default the status to "Open" for new TreeClosers that we haven't
+					// yet seen any builds for.
+					if treeClosers[i].Status == "" {
+						treeClosers[i].Status = Open
+					}
+
+					toSave = append(toSave, treeClosers[i])
+					i++
+				}
+			}
+		}
+
 		for _, et := range cs.EmailTemplates {
 			et.ProjectKey = parentKey
 			toSave = append(toSave, et)
@@ -102,6 +140,9 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 				return removeDescendants(c, "Builder", parentKey, liveBuilders.Has)
 			}
 			work <- func() error {
+				return removeDescendants(c, "TreeCloser", parentKey, liveTreeClosers.Has)
+			}
+			work <- func() error {
 				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {
 					_, ok := cs.EmailTemplates[name]
 					return ok
@@ -109,6 +150,11 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 			}
 		})
 	}, nil)
+}
+
+// idForBuilder returns the canonical id for a builder: <bucket>/<name>
+func idForBuilder(builder *notifypb.Builder) string {
+	return fmt.Sprintf("%s/%s", builder.Bucket, builder.Name)
 }
 
 // clearDeadProjects calls deleteProject for all projects in the datastore
