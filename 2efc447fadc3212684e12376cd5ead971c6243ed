@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "aeaff2c5_5f943f39",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "or we could just not pre-allocate it :)",
+      "range": {
+        "startLine": 92,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 79
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8ec7623d_e3d05f5a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "we never add anything to it",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 17
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "891fb041_2285b19a",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 3
@@ -18,6 +64,99 @@
         "startChar": 71,
         "endLine": 96,
         "endChar": 73
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5e47681_a724cc54",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "re spacing: this code appears to be not gofmt-ed. I doubt gofmt would allow such inconsistency",
+      "parentUuid": "891fb041_2285b19a",
+      "range": {
+        "startLine": 96,
+        "startChar": 71,
+        "endLine": 96,
+        "endChar": 73
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15a08a76_8aed2249",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "a trick to avoid hardcoding entity kind strings: datastore.KeyForObj(builders[i])\nand then you don\u0027t need idForBuilder func",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 100,
+        "endChar": 85
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abae9a3a_c7e5d7bb",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "here we are only preparing entities to fetch, so this can be in L73?\nit would eliminate L97-100.\n\nalso we\u0027d be able to read builders and treeClosers in one batch RPC:\n\n  datastore.Get(c, builders, treeClosers)",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 106,
+        "endChar": 5
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87f0df92_1c98a2a1",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T08:32:11Z",
+      "side": 1,
+      "message": "same here. This loop can be inside L83.\n\nto be clear: the reason we have two loops above, is that we need one before reading from DS, and one after.",
+      "range": {
+        "startLine": 115,
+        "startChar": 4,
+        "endLine": 115,
+        "endChar": 7
       },
       "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
