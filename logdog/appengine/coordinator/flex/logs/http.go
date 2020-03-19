@@ -30,10 +30,12 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
+	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
@@ -125,35 +127,23 @@ Rendering took {{ .Duration }}</div>
 // If both log and err are nil, that is a signal that the fetch routine is sleeping.
 // That would be a good time to flush any output.
 type logResp struct {
-	stream *coordinator.LogStream
-	log    *logpb.LogEntry
-	err    error
+	desc *logpb.LogStreamDescriptor
+	log  *logpb.LogEntry
+	err  error
 }
 
 // logData contains content and metadata for a log stream.
 // The content is accessed via ch.
 type logData struct {
 	ch <-chan logResp
-	// logStreams hold the final resolved list of logStreams we are fetching.
-	// This is used by the renderer to pull out viewer_url tags and set content-type.
-	logStreams []*coordinator.LogStream
-	options    userOptions
+
+	logDesc *logpb.LogStreamDescriptor // decoded logStream.Descriptor
+
+	options userOptions
 }
 
-// viewerURL is a convenience function to extract the logdog.viewer_url tag
-// out of a logStream, if available.
-// If given multiple streams, it will return the first one found with the viewer_url tag.
 func (ld *logData) viewerURL() string {
-	for _, s := range ld.logStreams {
-		desc, err := s.DescriptorValue()
-		if err != nil {
-			continue
-		}
-		if u, ok := desc.Tags["logdog.viewer_url"]; ok {
-			return u
-		}
-	}
-	return ""
+	return ld.logDesc.Tags["logdog.viewer_url"]
 }
 
 // nopFlusher is an http.Flusher that does nothing.  It's used as a standin
@@ -243,14 +233,7 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 		return
 	}
 	options.path = types.StreamPath(parts[1])
-	prefix, name := options.path.Split()
-	if err = prefix.Validate(); err != nil {
-		return
-	}
-
-	// Replace any wildcards in 'name' with 'a', then Validate the result. We'll
-	// allow wildcard chars through though.
-	if err = types.StreamName(strings.Replace(string(name), "*", "a", -1)).Validate(); err != nil {
+	if err = options.path.Validate(); err != nil {
 		return
 	}
 
@@ -259,62 +242,28 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 	return
 }
 
-// resolveStreams takes a path containing a wildcard and resolves it to the list
-// of all known paths.  Purge checks are also performed here.
-func resolveStreams(c context.Context, options userOptions) ([]*coordinator.LogStream, error) {
-	q, err := coordinator.NewLogStreamQuery(string(options.path))
-	if err != nil {
-		return nil, errors.Annotate(err, "generating LogStreamQuery").Err()
-	}
-
-	streams := []*coordinator.LogStream{}
-	err = q.Run(c, func(ls *coordinator.LogStream, _ datastore.CursorCB) error {
-		streams = append(streams, ls)
-		return nil
-	})
-	if err != nil {
-		return nil, errors.Annotate(err, "reading LogStreams").Err()
-	}
-
-	// If the user requested HTML format, check to see if the stream is a binary
-	// or datagram stream. If so, then this mode is not supported, and instead
-	// just render a link to the supported mode.
-	if len(streams) == 1 && options.isHTML() && streams[0].StreamType != logpb.StreamType_TEXT {
-		err = errRawRedirect
-	}
-
-	return streams, err
-}
-
 // initParams generates a set of params for each LogStream given.
-func initParams(c context.Context, streams []*coordinator.LogStream, project string) ([]fetchParams, error) {
-	states := make([]*coordinator.LogStreamState, len(streams))
-	for i, stream := range streams {
-		states[i] = stream.State(c)
-	}
-	// Get the log states, which we use to fetch the backend storage.
-	switch err := datastore.Get(c, states); {
+func initParams(c context.Context, stream *coordinator.LogStream, desc *logpb.LogStreamDescriptor, project string) (ret fetchParams, err error) {
+	state := stream.State(c)
+	switch err = datastore.Get(c, state); {
 	case datastore.IsErrNoSuchEntity(err):
-		return nil, coordinator.ErrPathNotFound
+		err = coordinator.ErrPathNotFound
+		return
 	case err != nil:
-		return nil, err
+		return
 	}
 
 	// Get the backend storage instances.  These will be closed in fetch.
-	params := make([]fetchParams, len(streams))
-	for i, stream := range streams {
-		st, err := flex.GetServices(c).StorageForStream(c, states[i], project)
-		if err != nil {
-			return nil, err
-		}
-		params[i] = fetchParams{
-			storage: st,
-			stream:  stream,
-			state:   states[i],
-		}
+	st, err := flex.GetServices(c).StorageForStream(c, state, project)
+	if err != nil {
+		return
 	}
-
-	return params, nil
+	return fetchParams{
+		storage: st,
+		stream:  stream,
+		state:   state,
+		desc:    desc,
+	}, nil
 }
 
 // startFetch sets up the backend storage instance (Either BigTable or Google Storage)
@@ -341,14 +290,15 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		return
 	}
 
-	// Enumerate all of the streams we will be fetching from.
-	// If the input path is a fully qualified path, this will return exactly 1 stream.
-	streams, err := resolveStreams(c, data.options)
-	if err != nil {
+	logStream := &coordinator.LogStream{ID: coordinator.LogStreamID(data.options.path)}
+	if err = ds.Get(c, logStream); err != nil {
+		return
+	}
+	if data.logDesc, err = logStream.DescriptorProto(); err != nil {
 		return
 	}
 
-	params, err := initParams(c, streams, project)
+	param, err := initParams(c, logStream, data.logDesc, project)
 	if err != nil {
 		return
 	}
@@ -357,9 +307,8 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 	// fetch() to signal that all logs have been returned (or an error was encountered).
 	ch := make(chan logResp, maxBuffer)
 	// Start fetching!!!
-	go fetch(c, ch, params)
+	go fetch(c, ch, param)
 	data.ch = ch
-	data.logStreams = streams
 	return
 }
 
@@ -367,28 +316,16 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 type fetchParams struct {
 	storage storage.Storage
 	stream  *coordinator.LogStream
+	desc    *logpb.LogStreamDescriptor
 	state   *coordinator.LogStreamState
 }
 
 // fetch is a goroutine that fetches log entries from all storage layers and
 // sends it through ch in the order of prefix index.
 // The LogStreamState is used purely for checking Terminal Indices.
-func fetch(c context.Context, ch chan<- logResp, allParams []fetchParams) {
+func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 	defer close(ch) // Close the channel when we're done fetching.
 
-	// TODO(hinoka): Remove this check once multistream view is supported.
-	if len(allParams) > 1 {
-		streamPaths := make([]string, len(allParams))
-		for i, p := range allParams {
-			streamPaths[i] = string(p.stream.Path())
-			p.storage.Close()
-		}
-		ch <- logResp{nil, nil, fmt.Errorf("Only single stream supported, found %d: %s", len(allParams), strings.Join(streamPaths, "\n"))}
-		return
-	}
-
-	// Extract the params we need.
-	params := allParams[0]
 	state := params.state
 	st := params.storage
 	defer st.Close() // Close the connection to the backend when we're done.
@@ -401,7 +338,7 @@ func fetch(c context.Context, ch chan<- logResp, allParams []fetchParams) {
 		// This is useful when the log stream terminated after the user request started.
 		if !state.Terminated() {
 			if err = datastore.Get(c, state); err != nil {
-				ch <- logResp{nil, nil, err}
+				ch <- logResp{err: err}
 				return
 			}
 		}
@@ -411,7 +348,7 @@ func fetch(c context.Context, ch chan<- logResp, allParams []fetchParams) {
 		// Signal regardless of error.  Server will bail on error and flush otherwise.
 		// Important: if fetchOnce errors out, we still expect nextIndex to increment regardless,
 		// otherwise this may get stuck in an infinite loop.
-		ch <- logResp{nil, nil, err}
+		ch <- logResp{err: err}
 
 		// Check if the log has finished streaming and if we're done.
 		if state.Terminated() && nextIndex > types.MessageIndex(state.TerminalIndex) {
@@ -443,7 +380,7 @@ func fetch(c context.Context, ch chan<- logResp, allParams []fetchParams) {
 		}
 		if tr := clock.Sleep(c, backoff); tr.Err != nil {
 			// If the user cancelled the request, bail out instead.
-			ch <- logResp{nil, nil, tr.Err}
+			ch <- logResp{err: tr.Err}
 			return
 		}
 		index = nextIndex
@@ -489,7 +426,7 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 			return false
 		}
 		// Send the log entry over!  This may block if the channel buffer is full.
-		ch <- logResp{params.stream, le, nil}
+		ch <- logResp{params.desc, le, nil}
 		index = sidx + 1
 		return true
 	})
@@ -545,7 +482,7 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	// Tell the browser to prefer https.
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 	// Set the correct content type based off the log stream and format.
-	contentType := data.logStreams[0].ContentType
+	contentType := data.logDesc.ContentType
 	if data.options.isHTML() {
 		// Only text/html is supported for HTML mode.
 		contentType = "text/html"
@@ -771,7 +708,8 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 					logging.WithError(perr).Debugf(c, "Got error while converting duration")
 					duration = prevDuration
 				}
-				lt.DataTimestamp = logResp.stream.Timestamp.Add(duration).UnixNano() / 1e6
+				tStamp := google.TimeFromProto(logResp.desc.Timestamp)
+				lt.DataTimestamp = tStamp.Add(duration).UnixNano() / 1e6
 				lt.DurationInfo = durationInfo(prevDuration, duration)
 				prevDuration = duration
 				ierr = lineTemplate.Execute(w, lt)
