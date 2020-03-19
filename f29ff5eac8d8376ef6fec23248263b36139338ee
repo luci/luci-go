@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "935bff72_a935a45f",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T17:45:09Z",
+      "side": 1,
+      "message": "Oh!! Actually this is one of the other reasons I choose rune over byte before. But I was reading utf-8 encoding (https://en.wikipedia.org/wiki/UTF-8) yesterday (since the grammar is designed to support utf-8 quoted string), and I have learned that an ascii byte will never show up in multiple byte sequence for a unicode code point. That\u0027s why I use `IndexByte` here and it should be safe unless user intentionally provide invalid byte in a utf-8 encoded string (I\u0027ve also tested this scenario and it turns out IndexRune will yield the same result as IndexByte: https://play.golang.org/p/85aMaqUzX-I). \n\nI\u0027ve switched to `IndexRune` in the latest patchset to keep consistent with other cases where they are iterating over Rune.",
+      "parentUuid": "85c8e84e_b5f39f2e",
+      "range": {
+        "startLine": 213,
+        "startChar": 30,
+        "endLine": 213,
+        "endChar": 39
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f6ea65ef_39043ef3",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "edc05a03_cb9fe732",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T17:45:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6ea65ef_39043ef3",
+      "range": {
+        "startLine": 272,
+        "startChar": 0,
+        "endLine": 280,
+        "endChar": 1
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4d8184ae_777812f9",
         "filename": "common/proto/mask/parse.go",
         "patchSetId": 6
@@ -68,6 +116,30 @@
       "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c946b0f_66a2d871",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T17:45:09Z",
+      "side": 1,
+      "message": "ah. Makes sense. I\u0027ve also switched to `IndexFunc` so that I don\u0027t need to create my own. less maintenance cost:)",
+      "parentUuid": "4d8184ae_777812f9",
+      "range": {
+        "startLine": 292,
+        "startChar": 1,
+        "endLine": 293,
+        "endChar": 18
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
