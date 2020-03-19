@@ -189,10 +189,74 @@ PATH_LOOP:
 
 // Trim clears protobuf message fields that are not in the mask.
 //
-// Uses Includes to decide what to trim, see its docstring.
-// If mask is a leaf, this is a noop.
-func (m Mask) Trim(msg proto.Message) proto.Message {
-	return msg
+// Uses Includes to decide what to trim, see its doc.
+// If mask is a leaf or the provided message is nil, this is a noop.
+// Returns error if the provided message has different message descriptor
+// from that of mask.
+func (m Mask) Trim(msg proto.Message) error {
+	if msg == nil || m.descriptor == nil {
+		return nil
+	}
+	reflectMsg := protoimpl.X.MessageOf(msg)
+	if msgDescName, maskDescName := reflectMsg.Descriptor().FullName(), m.descriptor.FullName(); msgDescName != maskDescName {
+		return fmt.Errorf("expected the provided message has same descriptor as that of mask; got message descriptor name: %s and mask descriptor name: %s", msgDescName, maskDescName)
+	}
+	m.trimImpl(reflectMsg)
+	return nil
+}
+
+func (m Mask) trimImpl(reflectMsg protoreflect.Message) {
+	reflectMsg.Range(func(fieldDesc protoreflect.FieldDescriptor, fieldVal protoreflect.Value) bool {
+		fieldName := string(fieldDesc.Name())
+		switch m.includesImpl(path{fieldName}, 0) {
+		case Exclude:
+			reflectMsg.Clear(fieldDesc)
+		case IncludePartially:
+			// child for this field must exist because the path is included partially
+			switch child := m.children[fieldName]; {
+			case fieldDesc.IsMap():
+				child.trimMap(fieldVal.Map(), fieldDesc.MapValue().Kind())
+			case fieldDesc.IsList():
+				// star child is the only possible child for list field
+				starChild := child.children["*"]
+				for i, list := 0, fieldVal.List(); i < list.Len(); i++ {
+					starChild.trimImpl(list.Get(i).Message())
+				}
+			case fieldDesc.Kind() != protoreflect.MessageKind:
+				// The field is scalar but the mask does not specify to include
+				// it entirely. Skip it because scalars do not have subfields.
+				// Note that FromFieldMask would fail on such a mask because a
+				// scalar field cannot be followed by other fields.
+				reflectMsg.Clear(fieldDesc)
+			default:
+				child.trimImpl(fieldVal.Message())
+			}
+		}
+		return true
+	})
+}
+
+func (m Mask) trimMap(protoMap protoreflect.Map, valueKind protoreflect.Kind) {
+	protoMap.Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
+		switch keyName := k.String(); m.includesImpl(path{keyName}, 0) {
+		case Exclude:
+			protoMap.Clear(k)
+		case IncludePartially:
+			if valueKind != protoreflect.MessageKind {
+				// Same reason as comment above that value is scalar
+				protoMap.Clear(k)
+			} else {
+				// mask might not have a child of keyName but it can still
+				// partially include the key because of star child.
+				for _, seg := range []string{keyName, "*"} {
+					if child, ok := m.children[seg]; ok {
+						child.trimImpl(v.Message())
+					}
+				}
+			}
+		}
+		return true
+	})
 }
 
 // Inclusiveness tells if a field value at the given path is included.
@@ -212,7 +276,35 @@ const (
 // The path must have canonical field names, i.e. not JSON names.
 // Returns error if path parsing fails.
 func (m Mask) Includes(path string) (Inclusiveness, error) {
-	panic("not implemented")
+	parsedPath, err := parsePath(path, m.descriptor, false)
+	if err != nil {
+		return Exclude, err
+	}
+	return m.includesImpl(parsedPath, 0), nil
+}
+
+func (m Mask) includesImpl(p path, startAt int) Inclusiveness {
+	if len(m.children) == 0 {
+		return IncludeEntirely
+	}
+	if startAt >= len(p) {
+		// This node is intermediate and we've exhausted the path. Some of the
+		// value's subfields are included, so includes this value partially.
+		return IncludePartially
+	}
+
+	ret := Exclude
+	// star child should also be examined.
+	// e.g. children are {"a": {"b": {}}, "*": {"c": {}}}
+	// If seg is 'x', we should check the star child.
+	for _, seg := range []string{p[startAt], "*"} {
+		if child, ok := m.children[seg]; ok {
+			if childRes := child.includesImpl(p, startAt+1); childRes > ret {
+				ret = childRes
+			}
+		}
+	}
+	return ret
 }
 
 // Merge merges masked fields from src to dest.
