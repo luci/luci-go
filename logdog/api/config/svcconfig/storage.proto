@@ -28,4 +28,9 @@ message Storage {
 
   reserved "max_log_age";
   reserved 2;
+
+  // Configures the logdog service to eventually and permanently delete logs
+  // (including their google storage archived data) older than this number of
+  // days.
+  int32 delete_logs_older_than_days = 3;
 }
