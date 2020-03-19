@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db355353_b6a989fd",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "why not just \"name\"? Surely this is just the name of the node. I personally find \"branchName\" a little more confusing",
+      "range": {
+        "startLine": 56,
+        "startChar": 19,
+        "endLine": 56,
+        "endChar": 29
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "012fc018_37f6405d",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "descendants",
+      "range": {
+        "startLine": 90,
+        "startChar": 55,
+        "endLine": 90,
+        "endChar": 65
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09ec683c_654bf7e2",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "branchUnbranchedTests",
+      "range": {
+        "startLine": 99,
+        "startChar": 38,
+        "endLine": 99,
+        "endChar": 50
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aacba559_9378a4ae",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "\"Use /\\w*(\\W|$)/g instead of /\\w+(\\W|$)/g so that testIds ending with a non-alphanumerical character will get their own leaf.\"",
+      "range": {
+        "startLine": 103,
+        "startChar": 51,
+        "endLine": 103,
+        "endChar": 62
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee1fa10a_f8408ecb",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "s/ends whith/that ends with/",
+      "range": {
+        "startLine": 105,
+        "startChar": 75,
+        "endLine": 105,
+        "endChar": 85
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1ffbab6_a1335d62",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "I don\u0027t understand this comment... any way you can make it clearer?",
+      "range": {
+        "startLine": 109,
+        "startChar": 7,
+        "endLine": 109,
+        "endChar": 63
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "686aa1de_30123844",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-19T05:35:12Z",
+      "side": 1,
+      "message": "descendants",
+      "range": {
+        "startLine": 123,
+        "startChar": 42,
+        "endLine": 123,
+        "endChar": 53
+      },
+      "revId": "0bb2c3753e3f6519d140b15df4e4c30d0da7e999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
