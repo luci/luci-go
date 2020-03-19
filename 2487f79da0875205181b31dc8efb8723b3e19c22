@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e8915e4a_fe1e4fcf",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Oops.",
+      "parentUuid": "43034a95_6d27b7d7",
+      "range": {
+        "startLine": 17,
+        "startChar": 42,
+        "endLine": 17,
+        "endChar": 47
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "84d9cf47_a28ed885",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22eb24c5_c7fb0ab6",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84d9cf47_a28ed885",
+      "range": {
+        "startLine": 81,
+        "startChar": 52,
+        "endLine": 81,
+        "endChar": 53
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b437d6cd_65fec290",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Probably not I think. Moved them to private.",
+      "parentUuid": "77cd38f8_0d9b7b0e",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 25
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db0c32d5_2d7b67a1",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 3
@@ -91,6 +163,30 @@
       "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf8f3894_1ce312d6",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db0c32d5_2d7b67a1",
+      "range": {
+        "startLine": 176,
+        "startChar": 1,
+        "endLine": 176,
+        "endChar": 16
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "5a771418_2d4ec98e",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "450a196c_fa7c4637",
+      "range": {
+        "startLine": 204,
+        "startChar": 65,
+        "endLine": 204,
+        "endChar": 67
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2eac822_cc9604f1",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 3
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "f9d45bc6_047ff563",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2eac822_cc9604f1",
+      "range": {
+        "startLine": 205,
+        "startChar": 1,
+        "endLine": 205,
+        "endChar": 17
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4f55257_08c776e1",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 3
@@ -160,6 +304,30 @@
       "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f00f5b98_2d22a35a",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-19T18:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4f55257_08c776e1",
+      "range": {
+        "startLine": 221,
+        "startChar": 70,
+        "endLine": 221,
+        "endChar": 72
+      },
+      "revId": "2487f79da0875205181b31dc8efb8723b3e19c22",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
