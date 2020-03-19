@@ -1,0 +1,268 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "731f74a8_49fa1f74",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "seems redundant with L95",
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e05621e_09beb330",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "note that the interface is not pRPC specific, so this can be omitted",
+      "range": {
+        "startLine": 101,
+        "startChar": 22,
+        "endLine": 101,
+        "endChar": 27
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a27047d_ad4b7581",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "note that we might be sending null in case of panic here.\n\nis it important to call closeSinkServer before sending err to errC? if yes, a comment would be nice. otherwise, s.errC can stay in the end of this func",
+      "range": {
+        "startLine": 191,
+        "startChar": 13,
+        "endLine": 191,
+        "endChar": 16
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a0b2fa1_bbf9c6ef",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "nit: in go, doc comment should start with the symbol name\n\n  // recorderDispatcherOpts ...",
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7bbaf6d_b115c44c",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "with tens of thousands of tests in some tasks, this is probably too small. Can we increase it to somewhere between 100 and 500?",
+      "range": {
+        "startLine": 45,
+        "startChar": 18,
+        "endLine": 45,
+        "endChar": 20
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f06902d7_881328e3",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "if this the only purpose of using ErrorFnQuiet? the default also retries on transient errors https://screenshot.googleplex.com/8fH8fB78zHi",
+      "range": {
+        "startLine": 50,
+        "startChar": 2,
+        "endLine": 50,
+        "endChar": 30
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f273657d_6720e765",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "unused?",
+      "range": {
+        "startLine": 58,
+        "startChar": 1,
+        "endLine": 58,
+        "endChar": 8
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6642aeb5_0ac6e29e",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "nit: inline into L82?",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 10
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e24d0e6_41e88cff",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "nit: do we really need these vars? why not use sart.FilePath and sart.Contents below directly? it is not like sart can be nil (it is validated)",
+      "range": {
+        "startLine": 126,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 28
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b724fb5_d7008090",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "note: this log goes to the global context-less log file, so it may be cryptic to read this with everything else in one file. could you at least say \"artifact %q\" here?",
+      "range": {
+        "startLine": 134,
+        "startChar": 24,
+        "endLine": 134,
+        "endChar": 25
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a882780_dc00c1d4",
+        "filename": "resultdb/sink/sink_server.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "nit: [a TODO for X] and [a comment that we are not doing X] seem redundant with each other. Isn\u0027t just TODO enough?",
+      "range": {
+        "startLine": 146,
+        "startChar": 4,
+        "endLine": 148,
+        "endChar": 31
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50e75a60_86e77f73",
+        "filename": "resultdb/sink/sink_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T20:05:52Z",
+      "side": 1,
+      "message": "just pb to be consistent with with codebase\n\nsame in other flies in this cl",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 32,
+        "endChar": 6
+      },
+      "revId": "e3fe2cef7d1ff5e9aae5afa9236980b173c2a91e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
