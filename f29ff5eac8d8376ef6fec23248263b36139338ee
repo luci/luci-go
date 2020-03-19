@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85c8e84e_b5f39f2e",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:19:02Z",
+      "side": 1,
+      "message": "i think this should be IndexRune. \nIndexByte operates at byte level and does not decode runes, which there may be a code point that has \u0027`\u0027 byte in it",
+      "range": {
+        "startLine": 213,
+        "startChar": 30,
+        "endLine": 213,
+        "endChar": 39
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6ea65ef_39043ef3",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:19:02Z",
+      "side": 1,
+      "message": "i see what you meant by not being able to reuse existing functions.\nyou can still convert bytes to runes without heap allocation\n\n  unicode.IsDigit(rune(b))\n\nor you could read a rune in L208 using \n\n  r :\u003d utf8.DecodeRuneInString(t.path[t.pos:]) \n\nin L208",
+      "range": {
+        "startLine": 272,
+        "startChar": 0,
+        "endLine": 280,
+        "endChar": 1
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d8184ae_777812f9",
+        "filename": "common/proto/mask/parse.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-19T00:19:02Z",
+      "side": 1,
+      "message": "this operates at byte level, which means it might incorrectly call cond() on a part of a rune.\n\ni think we should use range loop here. range loop over string automatically decodes runes as it runs.\n\nthis means, cond can be `func(rune) bool` which is related to my comment about reusing existing funcs. \n\n\n------------\n\nalso, this func looks very similar to https://godoc.org/strings#IndexFunc\ne.g. L243 could be\n\n  end :\u003d strings.IndexFunc(t.path[t.pos:], func(rune r) { return !unicode.IsDigit(r)})\n  if end !\u003d -1 { \n     ... \n  } else { \n     t.pos \u003d end\n  }\n\nup to you",
+      "range": {
+        "startLine": 292,
+        "startChar": 1,
+        "endLine": 293,
+        "endChar": 18
+      },
+      "revId": "f29ff5eac8d8376ef6fec23248263b36139338ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
