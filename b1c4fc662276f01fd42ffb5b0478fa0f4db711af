@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c4f1f06_7aa4b27b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-19T07:01:23Z",
+      "side": 1,
+      "message": "bug https://bugs.chromium.org/p/chromium/issues/detail?id\u003d1007002\u0026q\u003dLogdog%20retention\u0026can\u003d2",
+      "revId": "b1c4fc662276f01fd42ffb5b0478fa0f4db711af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
