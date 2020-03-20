@@ -17,10 +17,12 @@ package mask
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/proto/internal/testingpb"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/runtime/protoimpl"
+
+	"go.chromium.org/luci/common/proto/internal/testingpb"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -162,6 +164,251 @@ func TestFromFieldMask(t *testing.T) {
 			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: msgs is not last")
 			_, err = parse([]string{"map_str_msg.*.str"}, true)
 			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: map_str_msg is not last")
+		})
+	})
+}
+func TestTrim(t *testing.T) {
+	Convey("Test", t, func() {
+		testTrim := func(maskPaths []string, msg proto.Message) {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			err = m.Trim(msg)
+			So(err, ShouldBeNil)
+		}
+		Convey("trim scalar field", func() {
+			msg := &testMsg{Num: 1}
+			testTrim([]string{"str"}, msg)
+			So(msg, ShouldResemble, &testMsg{})
+		})
+		Convey("keep scalar field", func() {
+			msg := &testMsg{Num: 1}
+			testTrim([]string{"num"}, msg)
+			So(msg, ShouldResemble, &testMsg{Num: 1})
+		})
+		Convey("trim repeated scalar field", func() {
+			msg := &testMsg{Nums: []int32{1, 2}}
+			testTrim([]string{"str"}, msg)
+			So(msg, ShouldResemble, &testMsg{})
+		})
+		Convey("keep repeated scalar field", func() {
+			msg := &testMsg{Nums: []int32{1, 2}}
+			testTrim([]string{"nums"}, msg)
+			So(msg, ShouldResemble, &testMsg{Nums: []int32{1, 2}})
+		})
+		Convey("trim submessage", func() {
+			msg := &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+				},
+			}
+			testTrim([]string{"str"}, msg)
+			So(msg, ShouldResemble, &testMsg{})
+		})
+		Convey("keep submessage entirely", func() {
+			msg := &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			}
+			testTrim([]string{"msg"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			})
+		})
+		Convey("keep submessage partially", func() {
+			msg := &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			}
+			testTrim([]string{"msg.str"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				Msg: &testMsg{
+					Str: "abc",
+				},
+			})
+		})
+		Convey("trim repeated message field", func() {
+			msg := &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1},
+					&testMsg{Num: 2},
+				},
+			}
+			testTrim([]string{"str"}, msg)
+			So(msg, ShouldResemble, &testMsg{})
+		})
+		Convey("keep subfield of repeated message field entirely", func() {
+			msg := &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1, Str: "abc"},
+					&testMsg{Num: 2, Str: "bcd"},
+				},
+			}
+			testTrim([]string{"msgs"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1, Str: "abc"},
+					&testMsg{Num: 2, Str: "bcd"},
+				},
+			})
+		})
+		Convey("keep subfield of repeated message field partially", func() {
+			msg := &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1, Str: "abc"},
+					&testMsg{Num: 2, Str: "bcd"},
+				},
+			}
+			testTrim([]string{"msgs.*.str"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Str: "abc"},
+					&testMsg{Str: "bcd"},
+				},
+			})
+		})
+		Convey("trim map field", func() {
+			msg := &testMsg{
+				MapStrNum: map[string]int32{"a": 1},
+			}
+			testTrim([]string{"str"}, msg)
+			So(msg, ShouldResemble, &testMsg{})
+		})
+		Convey("trim map (scalar value)", func() {
+			msg := &testMsg{
+				MapStrNum: map[string]int32{
+					"a": 1,
+					"b": 2,
+				},
+			}
+			testTrim([]string{"map_str_num.a"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				MapStrNum: map[string]int32{
+					"a": 1,
+				},
+			})
+		})
+		Convey("trim map (message value) ", func() {
+			msg := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			}
+			testTrim([]string{"map_str_msg.a"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+				},
+			})
+		})
+		Convey("trim map (message value) and keep message value partially", func() {
+			msg := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1, Str: "abc"},
+					"b": &testMsg{Num: 2, Str: "bcd"},
+				},
+			}
+			testTrim([]string{"map_str_msg.a.num"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+				},
+			})
+		})
+		Convey("trim map (message value) with star key and keep message value partially", func() {
+			msg := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1, Str: "abc"},
+					"b": &testMsg{Num: 2, Str: "bcd"},
+				},
+			}
+			testTrim([]string{"map_str_msg.*.num"}, msg)
+			So(msg, ShouldResemble, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			})
+		})
+		Convey("trim map (message value) with both star key and actual key", func() {
+			msg := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1, Str: "abc"},
+					"b": &testMsg{Num: 2, Str: "bcd"},
+				},
+			}
+			testTrim([]string{"map_str_msg.*.num", "map_str_msg.a"}, msg)
+			// expect keep "a" entirely and "b" partially
+			So(msg, ShouldResemble, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1, Str: "abc"},
+					"b": &testMsg{Num: 2},
+				},
+			})
+		})
+		Convey("No-op for empty mask trim", func() {
+			m, msg := Mask{}, &testMsg{Num: 1}
+			m.Trim(msg)
+			So(msg, ShouldResemble, &testMsg{Num: 1})
+		})
+		Convey("Error when trim nil message", func() {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			var msg proto.Message
+			err = m.Trim(msg)
+			So(err, ShouldErrLike, "nil message")
+		})
+		Convey("Error when descriptor mismatch", func() {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			err = m.Trim(&testingpb.Simple{})
+			So(err, ShouldErrLike, "expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple")
+		})
+	})
+}
+
+func TestIncludes(t *testing.T) {
+	Convey("Test include", t, func() {
+		testIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			actual, err := m.Includes(path)
+			So(err, ShouldBeNil)
+			So(actual, ShouldEqual, expectedIncl)
+		}
+		Convey("all", func() {
+			testIncludes([]string{}, "str", IncludeEntirely)
+		})
+		Convey("entirely", func() {
+			testIncludes([]string{"str"}, "str", IncludeEntirely)
+		})
+		Convey("entirely multiple levels", func() {
+			testIncludes([]string{"msg.msg.str"}, "msg.msg.str", IncludeEntirely)
+		})
+		Convey("entirely star", func() {
+			testIncludes([]string{"map_str_msg.*.str"}, "map_str_msg.xyz.str", IncludeEntirely)
+		})
+		Convey("partially", func() {
+			testIncludes([]string{"msg.str"}, "msg", IncludePartially)
+		})
+		Convey("partially multiple levels", func() {
+			testIncludes([]string{"msg.msg.str"}, "msg.msg", IncludePartially)
+		})
+		Convey("partially star", func() {
+			testIncludes([]string{"map_str_msg.*.str"}, "map_str_msg.xyz", IncludePartially)
+		})
+		Convey("exclude", func() {
+			testIncludes([]string{"str"}, "num", Exclude)
+		})
+		Convey("exclude multiple levels", func() {
+			testIncludes([]string{"msg.str"}, "msg.num", Exclude)
 		})
 	})
 }
