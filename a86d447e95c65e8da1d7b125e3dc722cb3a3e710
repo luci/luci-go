@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d80eb1c_dc4769f3",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "nit: \"name\" made more sense to me, i.e. it is a name of node. \"text\" or \"displayName\" would make sense to me too. When I hear \"branch\", i think of is path between a node and its descendant.\n\nI can see where the idea of \"branch\" is coming from (elision), but I think we agreed not to expose elision aspect to others and we are indirectly doing it here by calling it branch",
+      "range": {
+        "startLine": 64,
+        "startChar": 16,
+        "endLine": 64,
+        "endChar": 26
+      },
+      "revId": "a86d447e95c65e8da1d7b125e3dc722cb3a3e710",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

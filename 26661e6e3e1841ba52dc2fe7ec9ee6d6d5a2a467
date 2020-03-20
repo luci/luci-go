@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "63dfa0fb_3c1ee028",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "i think it applies to code less.\nit is mostly applies to comments because, unlike in code, in comments you could put a linebreak between any two words.",
+      "parentUuid": "db5e3505_1b86ab0d",
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c098d24_699a06da",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -297,6 +315,30 @@
       "side": 1,
       "message": "It serves as an ID of the node.\nThis is important when implement node selection.\nWithout it, updating the tree may cause the node to be deselected.\nIt\u0027s not used yet since node selection isn\u0027t included in either CL.",
       "parentUuid": "d32b43d3_261daa46",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5ae884a_8b0a11f9",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "i understand that it identifies the node and that we must preserve it. The difference between passing a prefix and passing a path, is that with prefix we have a guarantee that the path ends with the name; whereas without prefix we don\u0027t have this guarantee. Nowhere in the code I see reliance of this guarantee.\n\nbut it is not a big deal",
+      "parentUuid": "5b4441e9_ae8bb019",
       "range": {
         "startLine": 86,
         "startChar": 16,

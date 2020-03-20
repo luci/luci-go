@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "06b1abaa_394fa0ed",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "got it",
+      "parentUuid": "f8cd98e0_99e9204f",
+      "range": {
+        "startLine": 61,
+        "startChar": 16,
+        "endLine": 61,
+        "endChar": 26
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1cdd9162_e812fefa",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -225,6 +249,30 @@
       "side": 1,
       "message": "I did some benchmark and string concatenation appears to be quite efficient.\nConcatenate 100k strings takes only 0.01s ~ 0.02s.\nMajor browsers should be able to do the simple optimisation.\n\nWe can\u0027t return path here.\nName is the branch name of this node, it will be shown as the \u0027folder name\u0027\nWe can potentially use path to compute the name, but that will still be a O(child.path.length).",
       "parentUuid": "c45e0357_f37dcd9f",
+      "range": {
+        "startLine": 71,
+        "startChar": 6,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8bef427a_0c6b385a",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "oh, i see the diff now",
+      "parentUuid": "e2b94d8c_cb22ee76",
       "range": {
         "startLine": 71,
         "startChar": 6,
@@ -422,6 +470,30 @@
       "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8821b33f_f843e38c",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T02:52:31Z",
+      "side": 1,
+      "message": "\u003e We can turn it into a computed value, but computed value will only be cached when accessed by an observer. however will be used during actions (non-observer), so using @observable is better than @computed.\n\nhm, sorry, i still don\u0027t understand. We do use @computed in L86 in ps8. Doesn\u0027t this contract what you say?\n\nwhy doesn\u0027t the following work:\n1) add a test to this._tests only if nextSeg \u003d\u003d\u003d undefined\n2)\n\n  @computed get tests(): readonly ReadonlyTest[] { \n    const ret \u003d [];\n\n    function dfs(n: TestNode) {\n      ret.Array.prototype.push.apply(ret, n._tests);\n      n.unelidedChildren.forEach(dfs);\n    }\n\n    dfs(this);\n    return ret; \n  }\n\njust to be clear: my concern here is that this has O(tests * depth) space complexity, and we are using only a tiny bit of it. I.e. we are precomputing all-tests in each node, but in practice the user would click only on few.",
+      "parentUuid": "b5b9fb45_276098f9",
+      "range": {
+        "startLine": 110,
+        "startChar": 9,
+        "endLine": 110,
+        "endChar": 18
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
