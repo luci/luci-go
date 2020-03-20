@@ -42,7 +42,9 @@ import (
 //   2 - Removed _Tags and _C queryable fields and applied noindex to
 //       most fields, since query filtering is now implemented in-memory instead
 //       of via datastore filters.
-const CurrentSchemaVersion = "2"
+//   3 - Removed all non-indexed fields which are redundant with content in
+//       Descriptor.
+const CurrentSchemaVersion = "3"
 
 // ErrPathNotFound is the canonical error returned when a Log Stream Path is not found.
 var ErrPathNotFound = grpcutil.Errf(codes.NotFound, "path not found")
@@ -87,15 +89,6 @@ type LogStream struct {
 	ProtoVersion string `gae:",noindex"`
 	// Descriptor is the binary protobuf data LogStreamDescriptor.
 	Descriptor []byte `gae:",noindex"`
-	// ContentType is the MIME-style content type string for this stream.
-	ContentType string `gae:",noindex"`
-	// StreamType is the data type of the stream.
-	StreamType logpb.StreamType `gae:",noindex"`
-	// Timestamp is the Descriptor's recorded client-side timestamp.
-	Timestamp time.Time `gae:",noindex"`
-
-	// Tags is a set of arbitrary key/value tags associated with this stream.
-	Tags TagMap `gae:",noindex"`
 
 	// extra causes datastore to ignore unrecognized fields and strip them in
 	// future writes.
@@ -142,16 +135,14 @@ func (s *LogStream) Path() types.StreamPath {
 
 // Load implements ds.PropertyLoadSaver.
 func (s *LogStream) Load(pmap ds.PropertyMap) error {
-	// Load "_Tags" from old entities.
-	if oldTags, ok := pmap["_Tags"]; ok {
-		// Load the tag map. Ignore errors.
-		tm, _ := tagMapFromProperties(oldTags.Slice())
-		s.Tags = tm
-	}
-
-	// Drop old _C field to save memory which is derived entirely from Prefix and
-	// Name, which are separately stored.
+	// Drop old _C and _Tags fields to save memory.
+	//   * _C is is derived entirely from Prefix and Name
+	//   * _Tags is derived entirely from Descriptor
+	//   * Tags is derived entirely from Descriptor (and briefly appeared in
+	//     schema version 2)
 	delete(pmap, "_C")
+	delete(pmap, "_Tags")
+	delete(pmap, "Tags")
 
 	if err := ds.GetPLS(s).Load(pmap); err != nil {
 		return err
@@ -199,25 +190,8 @@ func (s *LogStream) validateImpl(enforceHashID bool) error {
 	if err := types.StreamName(s.Name).Validate(); err != nil {
 		return fmt.Errorf("invalid name: %s", err)
 	}
-	if s.ContentType == "" {
-		return errors.New("empty content type")
-	}
 	if s.Created.IsZero() {
 		return errors.New("created time is not set")
-	}
-
-	switch s.StreamType {
-	case logpb.StreamType_TEXT, logpb.StreamType_BINARY, logpb.StreamType_DATAGRAM:
-		break
-
-	default:
-		return fmt.Errorf("unsupported stream type: %v", s.StreamType)
-	}
-
-	for k, v := range s.Tags {
-		if err := types.ValidateTag(k, v); err != nil {
-			return fmt.Errorf("invalid tag [%s]: %s", k, err)
-		}
 	}
 
 	// Ensure that our Descriptor can be unmarshalled.
@@ -231,11 +205,7 @@ func (s *LogStream) validateImpl(enforceHashID bool) error {
 // LogStream entry. These fields are:
 //   - Prefix
 //   - Name
-//   - ContentType
-//   - StreamType
 //   - Descriptor
-//   - Timestamp
-//   - Tags
 func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 	if err := desc.Validate(true); err != nil {
 		return fmt.Errorf("invalid descriptor: %v", err)
@@ -248,17 +218,8 @@ func (s *LogStream) LoadDescriptor(desc *logpb.LogStreamDescriptor) error {
 
 	s.Prefix = desc.Prefix
 	s.Name = desc.Name
-	s.ContentType = desc.ContentType
-	s.StreamType = desc.StreamType
 	s.Descriptor = pb
 
-	// We know that the timestamp is valid b/c it's checked in ValidateDescriptor.
-	if ts := desc.Timestamp; ts != nil {
-		s.Timestamp = ds.RoundTime(google.TimeFromProto(ts).UTC())
-	}
-
-	// Note: tag content was validated via ValidateDescriptor.
-	s.Tags = TagMap(desc.Tags)
 	return nil
 }
 
@@ -286,6 +247,7 @@ type LogStreamQuery struct {
 	q             *ds.Query
 	includePurged bool
 	checks        []func(*LogStream) bool
+	descChecks    []func(*logpb.LogStreamDescriptor) bool
 }
 
 // NewLogStreamQuery returns a new LogStreamQuery constrained to the prefix of
@@ -371,8 +333,8 @@ func (lsp *LogStreamQuery) OnlyContentType(ctype string) {
 	if ctype == "" {
 		return
 	}
-	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
-		return ls.ContentType == ctype
+	lsp.descChecks = append(lsp.descChecks, func(desc *logpb.LogStreamDescriptor) bool {
+		return desc.ContentType == ctype
 	})
 }
 
@@ -382,8 +344,8 @@ func (lsp *LogStreamQuery) OnlyStreamType(stype logpb.StreamType) error {
 	if _, ok := logpb.StreamType_name[int32(stype)]; !ok {
 		return errors.New("unknown StreamType")
 	}
-	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
-		return ls.StreamType == stype
+	lsp.descChecks = append(lsp.descChecks, func(desc *logpb.LogStreamDescriptor) bool {
+		return desc.StreamType == stype
 	})
 	return nil
 }
@@ -417,9 +379,9 @@ func (lsp *LogStreamQuery) TimeBound(lower, upper *timestamp.Timestamp) {
 
 // MustHaveTags constrains LogStreams returned to have all of the given tags.
 func (lsp *LogStreamQuery) MustHaveTags(tags map[string]string) {
-	lsp.checks = append(lsp.checks, func(ls *LogStream) bool {
+	lsp.descChecks = append(lsp.descChecks, func(desc *logpb.LogStreamDescriptor) bool {
 		for k, v := range tags {
-			actual, ok := ls.Tags[k]
+			actual, ok := desc.Tags[k]
 			if !ok {
 				return false
 			}
@@ -435,6 +397,18 @@ func (lsp *LogStreamQuery) filter(ls *LogStream) bool {
 	for _, checkFn := range lsp.checks {
 		if !checkFn(ls) {
 			return false
+		}
+	}
+	if len(lsp.descChecks) > 0 {
+		desc, err := ls.DescriptorProto()
+		if err != nil {
+			return false
+		}
+
+		for _, checkFn := range lsp.descChecks {
+			if !checkFn(desc) {
+				return false
+			}
 		}
 	}
 	return true
