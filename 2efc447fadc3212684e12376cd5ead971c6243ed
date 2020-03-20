@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cba13905_6a13a704",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "Eh, stringset.New requires you give it something as a size hint, and this seems a better estimate than 0. Not a big deal either way though.",
+      "parentUuid": "aeaff2c5_5f943f39",
+      "range": {
+        "startLine": 92,
+        "startChar": 2,
+        "endLine": 94,
+        "endChar": 79
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ec7623d_e3d05f5a",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c85ff83_7a19d2c7",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ec7623d_e3d05f5a",
+      "range": {
+        "startLine": 95,
+        "startChar": 2,
+        "endLine": 95,
+        "endChar": 17
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "31e5d7a4_b3fa822a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "This code is indeed gofmt\u0027ed. This is what gofmt produces. I think the logic is to omit spaces around operators when the expression is one of \u003e\u003d2 args to a function.\n\nYou can see this here (doesn\u0027t compile, but \"Format\" works): https://play.golang.org/p/K68GAv0oN6R\n\nMoot point anyway, pulled it out into a local as Joey suggested.",
+      "parentUuid": "d5e47681_a724cc54",
+      "range": {
+        "startLine": 96,
+        "startChar": 71,
+        "endLine": 96,
+        "endChar": 73
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15a08a76_8aed2249",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 3
@@ -115,6 +187,30 @@
       "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5ddff09_5aed3574",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15a08a76_8aed2249",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 100,
+        "endChar": 85
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "e0bc4f0b_3749cc06",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abae9a3a_c7e5d7bb",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 106,
+        "endChar": 5
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87f0df92_1c98a2a1",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 3
@@ -161,6 +281,30 @@
       "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6060769e_903bebab",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-20T01:54:40Z",
+      "side": 1,
+      "message": "Done. I\u0027m aware of the purpose, just didn\u0027t think of combining the outermost parts of my new loops with the existing loops.",
+      "parentUuid": "87f0df92_1c98a2a1",
+      "range": {
+        "startLine": 115,
+        "startChar": 4,
+        "endLine": 115,
+        "endChar": 7
+      },
+      "revId": "2efc447fadc3212684e12376cd5ead971c6243ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
