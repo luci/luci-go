@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7118c516_067981c5",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-20T00:17:56Z",
+      "side": 1,
+      "message": "Technically this is implicit at this point.",
+      "range": {
+        "startLine": 109,
+        "startChar": 86,
+        "endLine": 109,
+        "endChar": 100
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "558046be_277c6994",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-20T00:17:56Z",
+      "side": 1,
+      "message": "I don\u0027t like to panic in HTTP handlers but I left it like this for now.",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 8
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c01574c_06741cb3",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-20T00:17:56Z",
+      "side": 1,
+      "message": "Seems to be called \"message\" in old entities, but I don\u0027t think the Python code is handling that case.",
+      "range": {
+        "startLine": 64,
+        "startChar": 27,
+        "endLine": 64,
+        "endChar": 32
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
