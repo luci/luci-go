@@ -15,6 +15,8 @@
 package job
 
 import (
+	"sort"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
@@ -54,7 +56,17 @@ func (bbe *buildbucketEditor) tweak(fn func() error) {
 }
 
 func (bbe *buildbucketEditor) Tags(values []string) {
-	panic("implement me")
+	if len(values) == 0 {
+		return
+	}
+
+	bbe.tweak(func() (err error) {
+		if err = validateTags(values); err == nil {
+			bbe.bb.ExtraTags = append(bbe.bb.ExtraTags, values...)
+			sort.Strings(bbe.bb.ExtraTags)
+		}
+		return nil
+	})
 }
 
 func (bbe *buildbucketEditor) TaskPayload(cipdPkg, cipdVers, dirInTask string) {

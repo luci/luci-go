@@ -184,3 +184,31 @@ func TestPrefixPathEnv(t *testing.T) {
 		},
 	})
 }
+
+func TestTags(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Tags`, []testCase{
+		{
+			name: "empty",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Tags(nil)
+				})
+				So(jd.Info().Tags(), ShouldBeEmpty)
+			},
+		},
+
+		{
+			name: "add",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Tags([]string{"other:value", "key:value"})
+				})
+				So(jd.Info().Tags(), ShouldResemble, []string{
+					"key:value", "other:value",
+				})
+			},
+		},
+	})
+}
