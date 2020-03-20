@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ca34de16_a82ba46e",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-20T07:25:37Z",
+      "side": 1,
+      "message": "Initially I was trying to make callsites nicer with zero values (by avoiding conditions around each editor method), but the more I think about it, the more I realize you\u0027re right; the semantics here are weird. I\u0027ll fix these (and I think there may be one or two others further down).",
+      "parentUuid": "1d07ce05_448f3c12",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0003e23b_0ae95189",
         "filename": "led/job/edit_test.go",
         "patchSetId": 6
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "fa9587e1_36c060c7",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-20T07:25:37Z",
+      "side": 1,
+      "message": "Adjusted for previous comment",
+      "parentUuid": "0003e23b_0ae95189",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "033e355f_4d099d73",
         "filename": "led/job/edit_test.go",
         "patchSetId": 6
@@ -50,6 +86,24 @@
       "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49bdeca4_3c354607",
+        "filename": "led/job/edit_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-20T07:25:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "033e355f_4d099d73",
+      "revId": "30ae9f86da8359da28f679a029b2060a6a0fd371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
