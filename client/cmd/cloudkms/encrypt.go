@@ -58,7 +58,7 @@ func cmdEncrypt(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "encrypt <options> <path>",
 		ShortDesc: "encrypts some plaintext",
-		LongDesc: `Uploads a plaintext for encryption by cloudkms.
+		LongDesc: `Uploads a plaintext for encryption by Cloud KMS.
 
 <path> refers to the path to the crypto key. e.g.
 
