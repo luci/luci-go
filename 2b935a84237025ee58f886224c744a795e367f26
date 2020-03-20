@@ -19,6 +19,46 @@
     },
     {
       "key": {
+        "uuid": "b9af1f68_164e5494",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-03-20T19:11:40Z",
+      "side": 1,
+      "message": "Tiny nit: please use the imperative for the first line of commit messages (\"Modify\" instead of \"Modified\").\nhttps://github.com/google/eng-practices/blob/master/review/developer/cl-descriptions.md#first-line-firstline",
+      "range": {
+        "startLine": 7,
+        "startChar": 8,
+        "endLine": 7,
+        "endChar": 16
+      },
+      "revId": "2b935a84237025ee58f886224c744a795e367f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "720f7e99_96cf6180",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-03-20T19:11:40Z",
+      "side": 1,
+      "message": "It would be nice to include the motivation here too. Basically, we want to be able to detect when we should retry a gerrit operation. That\u0027s currently impossible because the CLI doesn\u0027t produce structured output when an API call fails.",
+      "revId": "2b935a84237025ee58f886224c744a795e367f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d002cc6_838a6623",
         "filename": "client/cmd/gerrit/change.go",
         "patchSetId": 1
@@ -30,6 +70,30 @@
       "writtenOn": "2020-03-20T19:07:53Z",
       "side": 1,
       "message": "Please remove this comment. It is the same as the function name and therefore it doesn\u0027t answer any potential questions.\n\nSee also\nhttps://docs.google.com/document/d/1RcyAlELsO7K2-TwLk-1t8VZy60PoSBotPGBaou4a_5c/edit",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 17
+      },
+      "revId": "2b935a84237025ee58f886224c744a795e367f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ded30217_38405174",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1347995
+      },
+      "writtenOn": "2020-03-20T19:11:40Z",
+      "side": 1,
+      "message": "Yeah looks like this just got copy-pasted from the original location, so definitely ok to delete now that it\u0027s in a separate method.",
+      "parentUuid": "9d002cc6_838a6623",
       "range": {
         "startLine": 115,
         "startChar": 0,
