@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7beee514_682e452b",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-20T18:19:15Z",
+      "side": 1,
+      "message": "Please document that \u0027-\u0027 will be recognized as \"read the signature from stdin\".",
+      "range": {
+        "startLine": 177,
+        "startChar": 18,
+        "endLine": 177,
+        "endChar": 27
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78faf748_8778370a",
+        "filename": "client/cmd/cloudkms/verify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-20T18:19:15Z",
+      "side": 1,
+      "message": "Consider also adding a subcommand just to do that. In may applications it is more convenient and safer just to fetch the public key and commit it into a repository.",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 2
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "665daa7c_65a0b5bc",
+        "filename": "client/cmd/cloudkms/verify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-20T18:19:15Z",
+      "side": 1,
+      "message": "nit: do this first to reject ill-formated signatures before doing any RPCs",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 2
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
