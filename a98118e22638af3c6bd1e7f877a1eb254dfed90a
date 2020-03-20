@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "9734c03f_7d2bdb59",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T20:01:40Z",
+      "side": 1,
+      "message": "this also suggests that we are missing tests",
+      "parentUuid": "b1e33026_3479eea3",
+      "range": {
+        "startLine": 347,
+        "startChar": 20,
+        "endLine": 347,
+        "endChar": 45
+      },
+      "revId": "a98118e22638af3c6bd1e7f877a1eb254dfed90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e51f3fa_605ff723",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 2
