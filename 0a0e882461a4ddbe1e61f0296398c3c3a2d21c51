@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3594a748_5992e6d1",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T20:26:41Z",
+      "side": 1,
+      "message": "note that we are iterating this list for nothing if starChild is empty (i.e. if it does not exist). maybe start the loop only if is not empty?",
+      "range": {
+        "startLine": 228,
+        "startChar": 4,
+        "endLine": 230,
+        "endChar": 5
+      },
+      "revId": "0a0e882461a4ddbe1e61f0296398c3c3a2d21c51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
