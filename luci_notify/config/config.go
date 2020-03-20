@@ -59,33 +59,66 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
 
-		// Collect the list of builders we want to update or create.
+		// Collect the list of builders and tree closers we want to update or create.
 		liveBuilders := stringset.New(len(cs.ProjectConfig.Notifiers))
 		builders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
+
+		// 1/4 the number of notifiers is guess at how many tree closers we'll have.
+		// Completely made up, but ultimately this is just a hint for the initial
+		// size of the set, and hence doesn't need to be perfect (or even very good).
+		sizeHint := len(cs.ProjectConfig.Notifiers) / 4
+		liveTreeClosers := stringset.New(sizeHint)
+		treeClosers := make([]*TreeCloser, 0, sizeHint)
+
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
 			for _, cfgBuilder := range cfgNotifier.Builders {
-				id := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
-				builders = append(builders, &Builder{
+				builder := &Builder{
 					ProjectKey: parentKey,
-					ID:         id,
-				})
-				liveBuilders.Add(id)
+					ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
+				}
+				builders = append(builders, builder)
+				liveBuilders.Add(builder.ID)
+
+				builderKey := datastore.KeyForObj(c, builder)
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeClosers = append(treeClosers, &TreeCloser{
+						BuilderKey:     builderKey,
+						TreeStatusHost: cfgTreeCloser.TreeStatusHost,
+					})
+					liveTreeClosers.Add(fmt.Sprintf("%s:%s", builder.ID, cfgTreeCloser.TreeStatusHost))
+				}
 			}
 		}
 
-		// Lookup the builders in the datastore, if they're not found that's OK since
-		// there could be new builders being initialized.
-		datastore.Get(c, builders)
+		// Lookup the builders and tree closers in the datastore, if they're not
+		// found that's OK since there could be new entities being initialized.
+		datastore.Get(c, builders, treeClosers)
 
-		i := 0
+		builderIndex := 0
+		treeCloserIndex := 0
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
 			for _, cfgBuilder := range cfgNotifier.Builders {
-				builders[i].Repository = cfgBuilder.Repository
-				builders[i].Notifications = notifypb.Notifications{
+				builder := builders[builderIndex]
+				builder.Repository = cfgBuilder.Repository
+				builder.Notifications = notifypb.Notifications{
 					Notifications: cfgNotifier.Notifications,
 				}
-				toSave = append(toSave, builders[i])
-				i++
+				toSave = append(toSave, builder)
+				builderIndex++
+
+				for _, cfgTreeCloser := range cfgNotifier.TreeClosers {
+					treeCloser := treeClosers[treeCloserIndex]
+					treeCloser.TreeCloser = *cfgTreeCloser
+
+					// Default the status to "Open" for new TreeClosers that we haven't
+					// yet seen any builds for.
+					if treeCloser.Status == "" {
+						treeCloser.Status = Open
+					}
+
+					toSave = append(toSave, treeCloser)
+					treeCloserIndex++
+				}
 			}
 		}
 
@@ -100,6 +133,9 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 			}
 			work <- func() error {
 				return removeDescendants(c, "Builder", parentKey, liveBuilders.Has)
+			}
+			work <- func() error {
+				return removeDescendants(c, "TreeCloser", parentKey, liveTreeClosers.Has)
 			}
 			work <- func() error {
 				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {

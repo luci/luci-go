@@ -16,6 +16,7 @@ package config
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/service/datastore"
 
@@ -51,13 +52,17 @@ func TestConfigIngestion(t *testing.T) {
 								recipients: "janedoe@chromium.org"
 							}
 						}
+						tree_closers {
+							tree_status_host: "chromium-status.appspot.com"
+							failed_step_regexp: "test"
+							failed_step_regexp_exclude: "experimental_test"
+						}
 						builders {
 							bucket: "ci"
 							name: "linux"
 							repository: "https://chromium.googlesource.com/chromium/src"
 						}
-					}
-				`,
+					}`,
 				"luci-notify/email-templates/a.template": "a\n\nchromium",
 				"luci-notify/email-templates/b.template": "b\n\nchromium",
 			},
@@ -170,6 +175,22 @@ func TestConfigIngestion(t *testing.T) {
 			},
 		})
 
+		var treeClosers []*TreeCloser
+		So(datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), ShouldBeNil)
+		So(treeClosers, ShouldResemble, []*TreeCloser{
+			{
+				BuilderKey:     datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux"),
+				TreeStatusHost: "chromium-status.appspot.com",
+				TreeCloser: notifypb.TreeCloser{
+					TreeStatusHost:          "chromium-status.appspot.com",
+					FailedStepRegexp:        "test",
+					FailedStepRegexpExclude: "experimental_test",
+				},
+				Status: Open,
+				// We don't care what value the "Timestamp" field has.
+			},
+		})
+
 		Convey("preserve updated fields", func() {
 			// Update the Chromium builder in the datastore, simulating that some request was handled.
 			chromiumBuilder := builders[0]
@@ -186,6 +207,12 @@ func TestConfigIngestion(t *testing.T) {
 			}
 			So(datastore.Put(c, chromiumBuilder), ShouldBeNil)
 
+			// Similar with the TreeCloser
+			treeCloser := treeClosers[0]
+			treeCloser.Status = Closed
+			treeCloser.Timestamp = time.Now().UTC()
+			So(datastore.Put(c, treeCloser), ShouldBeNil)
+
 			datastore.GetTestable(c).CatchupIndexes()
 
 			So(updateProjects(c), ShouldBeNil)
@@ -201,6 +228,14 @@ func TestConfigIngestion(t *testing.T) {
 			So(newBuilders[0].Status, ShouldEqual, chromiumBuilder.Status)
 			So(newBuilders[0].Revision, ShouldResemble, chromiumBuilder.Revision)
 			So(&newBuilders[0].GitilesCommits, ShouldResembleProto, &chromiumBuilder.GitilesCommits)
+
+			var newTreeClosers []*TreeCloser
+			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), ShouldBeNil)
+			So(newTreeClosers, ShouldHaveLength, 1)
+			So(newTreeClosers[0].Status, ShouldEqual, treeCloser.Status)
+			// The returned Timestamp field is rounded to the microsecond, as datastore only stores times to µs precision.
+			µs, _ := time.ParseDuration("1µs")
+			So(newTreeClosers[0].Timestamp, ShouldEqual, treeCloser.Timestamp.Round(µs))
 		})
 
 		Convey("delete project", func() {
