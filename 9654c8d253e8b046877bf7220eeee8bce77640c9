@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d6c885c_1b40474f",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-20T23:47:08Z",
+      "side": 1,
+      "message": "this is good, but are you sure this tag is actually set by our Go Gerrit client?",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 149,
+        "endChar": 36
+      },
+      "revId": "9654c8d253e8b046877bf7220eeee8bce77640c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
