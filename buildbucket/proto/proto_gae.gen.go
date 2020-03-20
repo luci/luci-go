@@ -44,3 +44,26 @@ func (p *Build) FromProperty(prop datastore.Property) error {
 	}
 	return proto.Unmarshal(data.([]byte), p)
 }
+
+var _ datastore.PropertyConverter = (*BuildInfra)(nil)
+
+// ToProperty implements datastore.PropertyConverter. It causes an embedded
+// 'BuildInfra' to serialize to an unindexed '[]byte' when used with the
+// "go.chromium.org/gae" library.
+func (p *BuildInfra) ToProperty() (prop datastore.Property, err error) {
+	data, err := proto.Marshal(p)
+	if err == nil {
+		prop.SetValue(data, datastore.NoIndex)
+	}
+	return
+}
+
+// FromProperty implements datastore.PropertyConverter. It parses a '[]byte'
+// into an embedded 'BuildInfra' when used with the "go.chromium.org/gae" library.
+func (p *BuildInfra) FromProperty(prop datastore.Property) error {
+	data, err := prop.Project(datastore.PTBytes)
+	if err != nil {
+		return err
+	}
+	return proto.Unmarshal(data.([]byte), p)
+}
