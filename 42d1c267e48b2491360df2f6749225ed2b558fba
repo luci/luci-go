@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2825fe95_ac2deec4",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "Great catch! Moved after L224.",
+      "parentUuid": "c0717b9c_37a867ea",
+      "range": {
+        "startLine": 222,
+        "startChar": 36,
+        "endLine": 222,
+        "endChar": 46
+      },
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1009f5d9_9ec068ce",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c58cb681_9b3763fb",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "That does read better. Thanks for suggestion!",
+      "parentUuid": "1009f5d9_9ec068ce",
+      "range": {
+        "startLine": 244,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 5
+      },
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b062a7f5_b7c50cc2",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. That doesn\u0027t occur to me while I am implementing this. Will keep it in mind in the future! Done",
+      "parentUuid": "26a796ed_bcdfd3e0",
+      "range": {
+        "startLine": 292,
+        "startChar": 35,
+        "endLine": 292,
+        "endChar": 42
+      },
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c569aaf4_4c99f1c1",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 4
@@ -82,6 +154,30 @@
       "writtenOn": "2020-03-20T19:35:05Z",
       "side": 1,
       "message": "nice",
+      "range": {
+        "startLine": 308,
+        "startChar": 59,
+        "endLine": 308,
+        "endChar": 72
+      },
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9def911d_18bc64d8",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "c569aaf4_4c99f1c1",
       "range": {
         "startLine": 308,
         "startChar": 59,
@@ -111,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "59cc9a10_4b81ccf8",
+        "filename": "common/proto/mask/mask_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "Done! Fix the same in mask.go",
+      "parentUuid": "0f7d47ef_94c8e2b9",
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c7874a1_39642e87",
         "filename": "common/proto/mask/mask_test.go",
         "patchSetId": 4
@@ -125,6 +239,24 @@
       "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00bc5de6_568c986c",
+        "filename": "common/proto/mask/mask_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-20T20:13:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c7874a1_39642e87",
+      "revId": "42d1c267e48b2491360df2f6749225ed2b558fba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
