@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e68b93b8_bf16112a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2020-03-20T19:07:53Z",
+      "side": 1,
+      "message": "please add\n\nBug: fuchsia:47289\n\non its own line at the bottom\n\nThat will associate this change with the issue in Monorail, and result in a comment on the issue when the change is merged",
+      "revId": "2b935a84237025ee58f886224c744a795e367f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d002cc6_838a6623",
+        "filename": "client/cmd/gerrit/change.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1137164
+      },
+      "writtenOn": "2020-03-20T19:07:53Z",
+      "side": 1,
+      "message": "Please remove this comment. It is the same as the function name and therefore it doesn\u0027t answer any potential questions.\n\nSee also\nhttps://docs.google.com/document/d/1RcyAlELsO7K2-TwLk-1t8VZy60PoSBotPGBaou4a_5c/edit",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 17
+      },
+      "revId": "2b935a84237025ee58f886224c744a795e367f26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
