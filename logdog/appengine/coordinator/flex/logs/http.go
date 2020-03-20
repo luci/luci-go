@@ -261,8 +261,8 @@ func initParams(c context.Context, stream *coordinator.LogStream, desc *logpb.Lo
 	return fetchParams{
 		storage: st,
 		stream:  stream,
-		state:   state,
 		desc:    desc,
+		state:   state,
 	}, nil
 }
 
