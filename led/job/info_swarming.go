@@ -126,5 +126,9 @@ func (s swInfo) PrefixPathEnv() (ret []string, err error) {
 }
 
 func (s swInfo) Tags() (ret []string) {
-	panic("implement me")
+	if tags := s.GetTask().GetTags(); len(tags) > 0 {
+		ret = make([]string, len(tags))
+		copy(ret, tags)
+	}
+	return
 }
