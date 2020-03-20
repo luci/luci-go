@@ -79,6 +79,7 @@ var cryptoKeysPathComponents = []string{
 	"locations",
 	"keyRings",
 	"cryptoKeys",
+	"cryptoKeyVersions",
 }
 
 // validateCryptoKeysKMSPath validates a cloudkms path used for the API calls currently

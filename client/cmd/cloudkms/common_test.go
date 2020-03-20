@@ -41,6 +41,10 @@ func TestPathValidation(t *testing.T) {
 		err := validateCryptoKeysKMSPath("projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key")
 		So(err, ShouldBeNil)
 	})
+	Convey(`Good path.`, t, func() {
+		err := validateCryptoKeysKMSPath("projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key/cryptoKeyVersions/1")
+		So(err, ShouldBeNil)
+	})
 	Convey(`Support leading slash.`, t, func() {
 		err := validateCryptoKeysKMSPath("/projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key")
 		So(err, ShouldBeNil)
