@@ -221,19 +221,10 @@ func (s *LogStream) validateImpl(enforceHashID bool) error {
 	}
 
 	// Ensure that our Descriptor can be unmarshalled.
-	if _, err := s.DescriptorValue(); err != nil {
+	if _, err := s.DescriptorProto(); err != nil {
 		return fmt.Errorf("could not unmarshal descriptor: %v", err)
 	}
 	return nil
-}
-
-// DescriptorValue returns the unmarshalled Descriptor field protobuf.
-func (s *LogStream) DescriptorValue() (*logpb.LogStreamDescriptor, error) {
-	pb := logpb.LogStreamDescriptor{}
-	if err := proto.Unmarshal(s.Descriptor, &pb); err != nil {
-		return nil, err
-	}
-	return &pb, nil
 }
 
 // LoadDescriptor loads the fields in the log stream descriptor into this

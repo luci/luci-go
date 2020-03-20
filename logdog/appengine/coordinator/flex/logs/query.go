@@ -195,7 +195,7 @@ func (r *queryRunner) runQuery(resp *logdog.QueryResponse) error {
 			fillStateFromLogStream(toAdd.State, ls)
 			respLogStreamStates = append(respLogStreamStates, toAdd.State)
 
-			if desc, err := ls.DescriptorValue(); err != nil {
+			if desc, err := ls.DescriptorProto(); err != nil {
 				log.Errorf(r, "processing %q: loading descriptor: %s", toAdd.Path, err)
 			} else {
 				toAdd.Desc = desc

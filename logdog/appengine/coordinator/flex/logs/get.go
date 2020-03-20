@@ -114,7 +114,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 		resp.State = buildLogStreamState(ls, lst)
 
 		var err error
-		resp.Desc, err = ls.DescriptorValue()
+		resp.Desc, err = ls.DescriptorProto()
 		if err != nil {
 			log.WithError(err).Errorf(c, "Failed to deserialize descriptor protobuf.")
 			return nil, grpcutil.Internal
