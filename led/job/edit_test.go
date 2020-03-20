@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 
 	api "go.chromium.org/luci/swarming/proto/api"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
@@ -135,6 +136,82 @@ func TestEnv(t *testing.T) {
 				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
 					"OTHER": "NEW_VAL",
 				})
+			},
+		},
+	})
+}
+
+func TestPriority(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Priority`, []testCase{
+		{
+			name: "negative",
+			fn: func(jd *Definition) {
+				So(jd.Edit(func(je Editor) {
+					je.Priority(-1)
+				}), ShouldErrLike, "negative Priority")
+			},
+		},
+
+		{
+			name: "set",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Priority(100)
+				})
+				So(jd.Info().Priority(), ShouldEqual, 100)
+			},
+		},
+
+		{
+			name: "reset",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.Priority(100)
+				})
+				SoEdit(jd, func(je Editor) {
+					je.Priority(200)
+				})
+				So(jd.Info().Priority(), ShouldEqual, 200)
+			},
+		},
+	})
+}
+
+func TestSwarmingHostname(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `SwarmingHostname`, []testCase{
+		{
+			name: "empty",
+			fn: func(jd *Definition) {
+				So(jd.Edit(func(je Editor) {
+					je.SwarmingHostname("")
+				}), ShouldErrLike, "empty SwarmingHostname")
+			},
+		},
+
+		{
+			name: "set",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.SwarmingHostname("example.com")
+				})
+				So(jd.Info().SwarmingHostname(), ShouldEqual, "example.com")
+			},
+		},
+
+		{
+			name: "reset",
+			fn: func(jd *Definition) {
+				SoEdit(jd, func(je Editor) {
+					je.SwarmingHostname("example.com")
+				})
+				SoEdit(jd, func(je Editor) {
+					je.SwarmingHostname("other.example.com")
+				})
+				So(jd.Info().SwarmingHostname(), ShouldEqual, "other.example.com")
 			},
 		},
 	})
