@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 )
 
 type apiCallInput struct {
@@ -49,6 +50,11 @@ type changeRun struct {
 	inputLocation string
 	input         apiCallInput
 	apiFunc       apiCall
+}
+
+type failureOutput struct {
+	Message   string `json:"message"`
+	Transient bool   `json:"transient"`
 }
 
 func newChangeRun(authOpts auth.Options, cmdOpts changeRunOptions, apiFunc apiCall) *changeRun {
@@ -105,6 +111,24 @@ func (c *changeRun) Parse(a subcommands.Application, args []string) error {
 	return nil
 }
 
+func (c *changeRun) writeOutput(v interface{}) error {
+	out := os.Stdout
+	var err error
+	if c.jsonOutput != "-" {
+		out, err = os.Create(c.jsonOutput)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+	}
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = out.Write(data)
+	return err
+}
+
 func (c *changeRun) main(a subcommands.Application) error {
 	// Create auth client and context.
 	authCl, err := c.createAuthClient()
@@ -120,24 +144,13 @@ func (c *changeRun) main(a subcommands.Application) error {
 	}
 	v, err := c.apiFunc(ctx, g, &c.input)
 	if err != nil {
+		c.writeOutput(failureOutput{
+			Message:   err.Error(),
+			Transient: transient.Tag.In(err),
+		})
 		return err
 	}
-
-	// Write output.
-	out := os.Stdout
-	if c.jsonOutput != "-" {
-		out, err = os.Create(c.jsonOutput)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-	}
-	data, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err
-	}
-	_, err = out.Write(data)
-	return err
+	return c.writeOutput(v)
 }
 
 func (c *changeRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
