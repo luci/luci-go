@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "db5e3505_1b86ab0d",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "fixed. Should we apply the 80-col limit to other non-html TS code too?\nI personally find 80-col limit on TS to be too restrictive because we have added type annotations and accessibility modifiers comparing to JS.",
+      "parentUuid": "421cd266_abd72c7b",
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c098d24_699a06da",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -267,6 +285,30 @@
     },
     {
       "key": {
+        "uuid": "5b4441e9_ae8bb019",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "It serves as an ID of the node.\nThis is important when implement node selection.\nWithout it, updating the tree may cause the node to be deselected.\nIt\u0027s not used yet since node selection isn\u0027t included in either CL.",
+      "parentUuid": "d32b43d3_261daa46",
+      "range": {
+        "startLine": 86,
+        "startChar": 16,
+        "endLine": 86,
+        "endChar": 22
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33b84dee_a44db9f7",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 6
@@ -476,6 +518,30 @@
       "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48c3c073_6d3f2879",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "I added the example explaining why we need to pop. But I guess a counter example was needed too.\n\nYou are right, the empty string will be elided into its parent anyway. Removing this.",
+      "parentUuid": "fb676772_0ebe1ae4",
+      "range": {
+        "startLine": 111,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 5
+      },
+      "revId": "26661e6e3e1841ba52dc2fe7ec9ee6d6d5a2a467",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

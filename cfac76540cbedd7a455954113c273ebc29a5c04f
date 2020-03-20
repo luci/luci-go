@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3cc4962b_ca5685ee",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42c03c66_9d1225e3",
+      "range": {
+        "startLine": 21,
+        "startChar": 31,
+        "endLine": 21,
+        "endChar": 32
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f57da74_8e3b46d0",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bd684462_d82d98b8",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "changed the naming of all properties other than this.elidedNode.",
+      "parentUuid": "1f57da74_8e3b46d0",
+      "range": {
+        "startLine": 60,
+        "startChar": 5,
+        "endLine": 60,
+        "endChar": 11
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f9afecc_6b470678",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -59,6 +107,30 @@
       "writtenOn": "2020-03-19T16:53:55Z",
       "side": 1,
       "message": "should this be elidedPath? \nthis.node does include parent\u0027s name, but this does",
+      "range": {
+        "startLine": 61,
+        "startChar": 16,
+        "endLine": 61,
+        "endChar": 26
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8cd98e0_99e9204f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "No, it needs to be name rather than path.\nthis.name was originally called this.branchName. It is the label that will be displayed at each node in the folder-like structure.\nI guess I should stick with the original name to make it clearer.",
+      "parentUuid": "9f9afecc_6b470678",
       "range": {
         "startLine": 61,
         "startChar": 16,
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "bce26057_7a577cb8",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "I realised that it\u0027s not necessary to have both \u0027allTests\u0027 and \u0027tests\u0027.\nSo removed \u0027tests\u0027 and changed the name from \u0027allTests\u0027 to \u0027tests\u0027.",
+      "parentUuid": "1cdd9162_e812fefa",
+      "range": {
+        "startLine": 62,
+        "startChar": 85,
+        "endLine": 62,
+        "endChar": 96
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c45e0357_f37dcd9f",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -114,6 +210,30 @@
       "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2b94d8c_cb22ee76",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "I did some benchmark and string concatenation appears to be quite efficient.\nConcatenate 100k strings takes only 0.01s ~ 0.02s.\nMajor browsers should be able to do the simple optimisation.\n\nWe can\u0027t return path here.\nName is the branch name of this node, it will be shown as the \u0027folder name\u0027\nWe can potentially use path to compute the name, but that will still be a O(child.path.length).",
+      "parentUuid": "c45e0357_f37dcd9f",
+      "range": {
+        "startLine": 71,
+        "startChar": 6,
+        "endLine": 71,
+        "endChar": 24
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "64dd7e72_262f62a5",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "removed since this CL doesn\u0027t contain lazy evaluation anymore.",
+      "parentUuid": "572520ad_711ae31b",
+      "range": {
+        "startLine": 83,
+        "startChar": 4,
+        "endLine": 83,
+        "endChar": 99
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7b57018_9843148b",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -160,6 +304,30 @@
       "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b16caec_a588b41a",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "changed the description since this CL doesn\u0027t contain lazy evaluation anymore.",
+      "parentUuid": "d7b57018_9843148b",
+      "range": {
+        "startLine": 89,
+        "startChar": 16,
+        "endLine": 89,
+        "endChar": 31
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -186,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "df4e4e8e_91250bdf",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c551aeb_784a6e6c",
+      "range": {
+        "startLine": 109,
+        "startChar": 9,
+        "endLine": 109,
+        "endChar": 19
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59857708_6a39d8f4",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 7
@@ -206,6 +398,30 @@
       "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5b9fb45_276098f9",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-20T01:59:57Z",
+      "side": 1,
+      "message": "We can turn it into a computed value, but computed value will only be cached when accessed by an observer.\nthis._allTests however will be used during actions (non-observer), so using @observable is better than @computed.\n\nAn alternative is to use keepAlive with @computed, but mobx doc says that could cause memory leak.\nhttps://mobx.js.org/refguide/computed-decorator.html",
+      "parentUuid": "59857708_6a39d8f4",
+      "range": {
+        "startLine": 110,
+        "startChar": 9,
+        "endLine": 110,
+        "endChar": 18
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
