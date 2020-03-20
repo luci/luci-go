@@ -2,6 +2,63 @@
   "comments": [
     {
       "key": {
+        "uuid": "30ad345d_861ff839",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "ToProto looks pure and it is not obvious that this func will mutate b.Proto. please document it",
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6eeea40_a5e07874",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "i am sure you will need this in other places, so I assume you will move it later.",
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "85327fa6_1034df7f",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "less hardcoding: datastore.KeyForObj(b)",
+      "range": {
+        "startLine": 94,
+        "startChar": 8,
+        "endLine": 94,
+        "endChar": 53
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7118c516_067981c5",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -48,6 +105,168 @@
     },
     {
       "key": {
+        "uuid": "045380a3_deee6cff",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "at least add a TODO to change it to return an error?\n\ni actually don\u0027t understand the reasoning for not doing it in this CL. If you land it like this, later you will have to refactor code in all callsites of ToProto because the function signature will change. If you do it in this CL, your callsite actually get simplified from\n  return ent.ToProto(ctx), nil\nto\n  return ent.ToProto(ctx)\n\nin general, it is very unusual to have a function that accepts a context and does not return an error",
+      "parentUuid": "558046be_277c6994",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 8
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53e1ea08_74ba7d58",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "structpb\n\nhttps://source.chromium.org/search?q\u003d%22github.com%2Fgolang%2Fprotobuf%2Fptypes%2Fstruct%22%20f:buildbucket%20-f:pb.go\n\nsame in other files",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 21,
+        "endChar": 8
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9102bd79_a430c982",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "i bet you will are going to deal with a lot of struct literals in tests and, i believe, writing this was painful. Consider a helper function\n\n  jsonToStruct(`{\"input\": \"input value\"}`)\n\n  jsonToStruct(`{\n    \"key1: \"value1\",\n    \"key2\": \"value2\"\n  }`)",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 7
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e99b134_453c8b19",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "ShouldResemble is unsafe for protos. That\u0027s why there is ShouldResembleProto.\n\nthere are also ShouldResembleProtoText and ShouldResembleProtoJSON, which could be much more readable\n\n  So(b.ToProto(ctx).Output.Properties, ShouldResembleProtoJSON, `{\"output\": \"output value\"}`)",
+      "range": {
+        "startLine": 163,
+        "startChar": 41,
+        "endLine": 163,
+        "endChar": 55
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f56ca40f_3043f481",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "i am not sure this will work in the future. Please use \u0026s.Struct",
+      "range": {
+        "startLine": 40,
+        "startChar": 44,
+        "endLine": 40,
+        "endChar": 45
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2b86c3a_d8ca9a08",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 47,
+        "startChar": 25,
+        "endLine": 47,
+        "endChar": 27
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aff352a_597c9d13",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "nit: period",
+      "range": {
+        "startLine": 55,
+        "startChar": 63,
+        "endLine": 55,
+        "endChar": 64
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5c01574c_06741cb3",
         "filename": "buildbucket/appengine/model/details.go",
         "patchSetId": 1
@@ -64,6 +283,29 @@
         "startChar": 27,
         "endLine": 64,
         "endChar": 32
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "045989fb_a4de8c2a",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-20T21:54:26Z",
+      "side": 1,
+      "message": "its weird to have a public field of a private type. We should probably make dsStruct public.",
+      "range": {
+        "startLine": 76,
+        "startChar": 7,
+        "endLine": 76,
+        "endChar": 15
       },
       "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
