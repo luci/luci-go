@@ -83,18 +83,17 @@ func TestLogStream(t *testing.T) {
 		now := ds.RoundTime(tc.Now().UTC())
 
 		ls := LogStream{
-			ID:          LogStreamID("testing/+/log/stream"),
-			Prefix:      "testing",
-			Name:        "log/stream",
-			Created:     now.UTC(),
-			ContentType: string(types.ContentTypeText),
+			ID:      LogStreamID("testing/+/log/stream"),
+			Prefix:  "testing",
+			Name:    "log/stream",
+			Created: now.UTC(),
 		}
 
 		desc := logpb.LogStreamDescriptor{
 			Prefix:      "testing",
 			Name:        "log/stream",
 			StreamType:  logpb.StreamType_TEXT,
-			ContentType: "application/text",
+			ContentType: string(types.ContentTypeText),
 			Timestamp:   google.NewTimestamp(now),
 			Tags: map[string]string{
 				"foo":  "bar",
@@ -120,25 +119,9 @@ func TestLogStream(t *testing.T) {
 
 					So(ls.Validate(), ShouldErrLike, "invalid name")
 				})
-				Convey(`Without a valid content type`, func() {
-					ls.ContentType = ""
-					So(ls.Validate(), ShouldErrLike, "empty content type")
-				})
 				Convey(`Without a valid created time`, func() {
 					ls.Created = time.Time{}
 					So(ls.Validate(), ShouldErrLike, "created time is not set")
-				})
-				Convey(`Without a valid stream type`, func() {
-					ls.StreamType = -1
-					So(ls.Validate(), ShouldErrLike, "unsupported stream type")
-				})
-				Convey(`Without an invalid tag: empty key`, func() {
-					ls.Tags[""] = "empty"
-					So(ls.Validate(), ShouldErrLike, "invalid tag")
-				})
-				Convey(`Without an invalid tag: bad key`, func() {
-					ls.Tags["!"] = "bad-value"
-					So(ls.Validate(), ShouldErrLike, "invalid tag")
 				})
 				Convey(`With an invalid descriptor protobuf`, func() {
 					ls.Descriptor = []byte{0x00} // Invalid tag, "0".
@@ -294,12 +277,13 @@ func TestNewLogStreamGlob(t *testing.T) {
 
 	mkLS := func(path string, now time.Time) *LogStream {
 		prefix, name := types.StreamPath(path).Split()
-		ret := &LogStream{
+		ret := &LogStream{Created: now}
+		So(ret.LoadDescriptor(&logpb.LogStreamDescriptor{
 			Prefix:      string(prefix),
 			Name:        string(name),
 			ContentType: string(types.ContentTypeText),
-			Created:     now,
-		}
+			Timestamp:   google.NewTimestamp(now),
+		}), ShouldBeNil)
 		updateLogStreamID(ret)
 		return ret
 	}
