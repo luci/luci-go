@@ -25,40 +25,26 @@ import (
 	"io"
 	"math/big"
 	"os"
-	"time"
 
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
+	cloudkms "cloud.google.com/go/kms/apiv1"
+	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doVerify(ctx context.Context, service *cloudkms.Service, input *os.File, inputSig []byte, keyPath string) error {
+func doVerify(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, inputSig []byte, keyPath string) error {
 	// Verify Elliptic Curve signature.
 	var parsedSig struct{ R, S *big.Int }
 	if _, err := asn1.Unmarshal(inputSig, &parsedSig); err != nil {
 		return fmt.Errorf("asn1.Unmarshal: %v", err)
 	}
 
-	var resp *cloudkms.PublicKey
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		var err error
-		resp, err = service.
-			Projects.
-			Locations.
-			KeyRings.
-			CryptoKeys.
-			CryptoKeyVersions.
-			GetPublicKey(keyPath).Context(ctx).Do()
-		return err
-	}, func(err error, d time.Duration) {
-		logging.Warningf(ctx, "Transient error while making request, retrying in %s...", d)
-	})
+	resp, err := client.GetPublicKey(ctx, &kmspb.GetPublicKeyRequest{Name: keyPath})
 	if err != nil {
+		logging.Errorf(ctx, "Error while making request")
 		return err
 	}
 
