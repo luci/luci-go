@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9c5209a2_50907268",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-21T04:04:22Z",
+      "side": 1,
+      "message": "I\u0027m unsure what to do about this. As written, this preserves the scopes and doesn\u0027t require a new `luci-auth login` with new scopes. However, the new API has exported an additional scope: https://github.com/googleapis/google-cloud-go/blob/master/kms/apiv1/doc.go#L58\n\nI\u0027m afraid to use this for fear of causing an outage since the builders will not have logged in with this scope. Here\u0027s an example of how this is handled in our Spanner client in ResultDB:\nhttps://source.chromium.org/chromium/_/chromium/infra/luci/luci-go/+/84764d3e6a4a370f5e2204816154104aa93d5b76:common/spantest/spantest.go;l\u003d74;drc\u003d20ce1a1a2fd950ba24129f6086313cf1ac8fbde5?originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n\nbut, that was new code deployed for the first time. Not code being upgraded from an old scope to new scope.",
+      "range": {
+        "startLine": 38,
+        "startChar": 57,
+        "endLine": 38,
+        "endChar": 105
+      },
+      "revId": "4428ac9134ac6e70538d40dcaff2c04c71103ba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
