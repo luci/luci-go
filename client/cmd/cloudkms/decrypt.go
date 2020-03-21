@@ -64,7 +64,7 @@ func cmdDecrypt(authOpts auth.Options) *subcommands.Command {
 
 projects/<project>/locations/<location>/keyRings/<keyRing>/cryptoKeys/<cryptoKey>`,
 		CommandRun: func() subcommands.CommandRun {
-			c := cryptRun{doRequest: doDecrypt}
+			c := cryptRun{doCrypt: doDecrypt}
 			c.Init(authOpts)
 			return &c
 		},

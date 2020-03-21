@@ -22,7 +22,10 @@ import (
 	"encoding/asn1"
 	"encoding/pem"
 	"fmt"
+	"io"
+	"log"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -35,7 +38,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doVerify(ctx context.Context, service *cloudkms.Service, input, inputSig []byte, keyPath string) error {
+func doVerify(ctx context.Context, service *cloudkms.Service, input *os.File, inputSig []byte, keyPath string) error {
 	// Verify Elliptic Curve signature.
 	var parsedSig struct{ R, S *big.Int }
 	if _, err := asn1.Unmarshal(inputSig, &parsedSig); err != nil {
@@ -72,7 +75,9 @@ func doVerify(ctx context.Context, service *cloudkms.Service, input, inputSig []
 	}
 
 	hash := sha256.New()
-	hash.Write(input)
+	if _, err := io.Copy(hash, input); err != nil {
+		log.Fatal(err)
+	}
 	digest := hash.Sum(nil)
 	if !ecdsa.Verify(ecKey, digest, parsedSig.R, parsedSig.S) {
 		return fmt.Errorf("ecdsa.Verify failed on key: %s", keyPath)
