@@ -73,24 +73,18 @@ func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
 }
 
-func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.Service, []byte, error) {
+func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.Service, error) {
 	// Set up service.
 	authCl, err := c.createAuthClient(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	service, err := cloudkms.New(authCl)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Read in input.
-	bytes, err := readInput(c.input)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return service, bytes, nil
+	return service, nil
 }
 
 func readInput(file string) ([]byte, error) {
@@ -98,6 +92,13 @@ func readInput(file string) ([]byte, error) {
 		return ioutil.ReadAll(os.Stdin)
 	}
 	return ioutil.ReadFile(file)
+}
+
+func readInputFd(file string) (*os.File, error) {
+	if file == "-" {
+		return os.Stdin, nil
+	}
+	return os.Open(file)
 }
 
 func writeOutput(file string, data []byte) error {
@@ -149,7 +150,7 @@ func validateCryptoKeysKMSPath(path string) error {
 type verifyRun struct {
 	commonFlags
 	inputSig string
-	doVerify func(ctx context.Context, service *cloudkms.Service, input, inputSig []byte, keyPath string) error
+	doVerify func(ctx context.Context, service *cloudkms.Service, input *os.File, inputSig []byte, keyPath string) error
 }
 
 func (v *verifyRun) Init(authOpts auth.Options) {
@@ -168,10 +169,17 @@ func (v *verifyRun) Parse(ctx context.Context, args []string) error {
 }
 
 func (v *verifyRun) main(ctx context.Context) error {
-	service, bytes, err := v.commonMain(ctx)
+	service, err := v.commonMain(ctx)
 	if err != nil {
 		return err
 	}
+
+	// Open input file descriptor.
+	fd, err := readInputFd(v.input)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
 
 	// Read in signature.
 	sigBytes, err := readInput(v.inputSig)
@@ -179,7 +187,7 @@ func (v *verifyRun) main(ctx context.Context) error {
 		return err
 	}
 
-	return v.doVerify(ctx, service, bytes, sigBytes, v.keyPath)
+	return v.doVerify(ctx, service, fd, sigBytes, v.keyPath)
 }
 
 func (v *verifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -195,10 +203,66 @@ func (v *verifyRun) Run(a subcommands.Application, args []string, env subcommand
 	return 0
 }
 
+type signRun struct {
+	commonFlags
+	output string
+	doSign func(ctx context.Context, service *cloudkms.Service, input *os.File, keyPath string) ([]byte, error)
+}
+
+func (s *signRun) Init(authOpts auth.Options) {
+	s.commonFlags.Init(authOpts)
+	s.Flags.StringVar(&s.output, "output", "", "Path to write operation results to (use '-' for stdout).")
+}
+
+func (s *signRun) Parse(ctx context.Context, args []string) error {
+	if err := s.commonFlags.Parse(args); err != nil {
+		return err
+	}
+	if s.output == "" {
+		return errors.New("output location is required")
+	}
+	return nil
+}
+
+func (s *signRun) main(ctx context.Context) error {
+	service, err := s.commonMain(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Read in input.
+	fd, err := readInputFd(s.input)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	result, err := s.doSign(ctx, service, fd, s.keyPath)
+	if err != nil {
+		return err
+	}
+
+	// Write output.
+	return writeOutput(s.output, result)
+}
+
+func (s *signRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, s, env)
+	if err := s.Parse(ctx, args); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while parsing arguments")
+		return 1
+	}
+	if err := s.main(ctx); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while executing command")
+		return 1
+	}
+	return 0
+}
+
 type cryptRun struct {
 	commonFlags
-	output    string
-	doRequest func(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error)
+	output  string
+	doCrypt func(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error)
 }
 
 func (c *cryptRun) Init(authOpts auth.Options) {
@@ -217,12 +281,18 @@ func (c *cryptRun) Parse(ctx context.Context, args []string) error {
 }
 
 func (c *cryptRun) main(ctx context.Context) error {
-	service, bytes, err := c.commonMain(ctx)
+	service, err := c.commonMain(ctx)
 	if err != nil {
 		return err
 	}
 
-	result, err := c.doRequest(ctx, service, bytes, c.keyPath)
+	// Read in input.
+	bytes, err := readInput(c.input)
+	if err != nil {
+		return err
+	}
+
+	result, err := c.doCrypt(ctx, service, bytes, c.keyPath)
 	if err != nil {
 		return err
 	}
