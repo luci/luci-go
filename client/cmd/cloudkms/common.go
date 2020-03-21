@@ -36,22 +36,61 @@ type commonFlags struct {
 	subcommands.CommandRunBase
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
-	output         string
+	keyPath        string
+	input          string
 }
 
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.authFlags.Register(&c.Flags, authOpts)
-	c.Flags.StringVar(&c.output, "output", "", "Path to write operation results to (use '-' for stdout).")
+	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data for encrypt and decrypt cannot be larger than 64KiB.")
 }
 
-func (c *commonFlags) Parse() error {
+func (c *commonFlags) Parse(args []string) error {
 	var err error
 	c.parsedAuthOpts, err = c.authFlags.Options()
-	return err
+	if err != nil {
+		return err
+	}
+
+	if len(args) < 1 {
+		return errors.New("positional arguments missing")
+	}
+	if len(args) > 1 {
+		return errors.New("unexpected positional arguments")
+	}
+	if c.input == "" {
+		return errors.New("input file is required")
+	}
+	if err := validateCryptoKeysKMSPath(args[0]); err != nil {
+		return err
+	}
+	c.keyPath = args[0]
+
+	return nil
 }
 
 func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
+}
+
+func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.Service, []byte, error) {
+	// Set up service.
+	authCl, err := c.createAuthClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	service, err := cloudkms.New(authCl)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Read in input.
+	bytes, err := readInput(c.input)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return service, bytes, nil
 }
 
 func readInput(file string) ([]byte, error) {
@@ -107,54 +146,78 @@ func validateCryptoKeysKMSPath(path string) error {
 	return nil
 }
 
+type verifyRun struct {
+	commonFlags
+	inputSig string
+	doVerify func(ctx context.Context, service *cloudkms.Service, input, inputSig []byte, keyPath string) error
+}
+
+func (v *verifyRun) Init(authOpts auth.Options) {
+	v.commonFlags.Init(authOpts)
+	v.Flags.StringVar(&v.inputSig, "input-sig", "", "Path to read signature from (use '-' for stdin).")
+}
+
+func (v *verifyRun) Parse(ctx context.Context, args []string) error {
+	if err := v.commonFlags.Parse(args); err != nil {
+		return err
+	}
+	if v.inputSig == "" {
+		return errors.New("input signature is required")
+	}
+	return nil
+}
+
+func (v *verifyRun) main(ctx context.Context) error {
+	service, bytes, err := v.commonMain(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Read in signature.
+	sigBytes, err := readInput(v.inputSig)
+	if err != nil {
+		return err
+	}
+
+	return v.doVerify(ctx, service, bytes, sigBytes, v.keyPath)
+}
+
+func (v *verifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, v, env)
+	if err := v.Parse(ctx, args); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while parsing arguments")
+		return 1
+	}
+	if err := v.main(ctx); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while executing command")
+		return 1
+	}
+	return 0
+}
+
 type cryptRun struct {
 	commonFlags
-	keyPath   string
-	input     string
+	output    string
 	doRequest func(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error)
 }
 
 func (c *cryptRun) Init(authOpts auth.Options) {
 	c.commonFlags.Init(authOpts)
-	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data for encrypt and decrypt cannot be larger than 64KiB.")
+	c.Flags.StringVar(&c.output, "output", "", "Path to write operation results to (use '-' for stdout).")
 }
 
 func (c *cryptRun) Parse(ctx context.Context, args []string) error {
-	if err := c.commonFlags.Parse(); err != nil {
+	if err := c.commonFlags.Parse(args); err != nil {
 		return err
-	}
-	if len(args) < 1 {
-		return errors.New("positional arguments missing")
-	}
-	if len(args) > 1 {
-		return errors.New("unexpected positional arguments")
-	}
-	if c.input == "" {
-		return errors.New("input file is required")
 	}
 	if c.output == "" {
 		return errors.New("output location is required")
 	}
-	if err := validateCryptoKeysKMSPath(args[0]); err != nil {
-		return err
-	}
-	c.keyPath = args[0]
 	return nil
 }
 
 func (c *cryptRun) main(ctx context.Context) error {
-	// Set up service.
-	authCl, err := c.createAuthClient(ctx)
-	if err != nil {
-		return err
-	}
-	service, err := cloudkms.New(authCl)
-	if err != nil {
-		return err
-	}
-
-	// Read in input.
-	bytes, err := readInput(c.input)
+	service, bytes, err := c.commonMain(ctx)
 	if err != nil {
 		return err
 	}

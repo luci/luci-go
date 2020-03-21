@@ -50,6 +50,7 @@ func getApplication(defaultAuthOpts auth.Options) *cli.Application {
 			cmdDecrypt(defaultAuthOpts),
 			cmdEncrypt(defaultAuthOpts),
 			cmdSign(defaultAuthOpts),
+			cmdVerify(defaultAuthOpts),
 			authcli.SubcommandInfo(defaultAuthOpts, "whoami", false),
 			authcli.SubcommandLogin(defaultAuthOpts, "login", false),
 			authcli.SubcommandLogout(defaultAuthOpts, "logout", false),

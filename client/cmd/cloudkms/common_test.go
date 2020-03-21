@@ -86,3 +86,39 @@ func TestCryptoRunParse(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 }
+
+func TestVerifyRunParse(t *testing.T) {
+	ctx := context.Background()
+	path := "/projects/chromium/locations/global/keyRings/test/cryptoKeys/my_key/cryptoKeyVersions/1"
+	flags := []string{"-input", "hello", "-input-sig", "goodbye"}
+	testParse := func(flags, args []string) error {
+		v := verifyRun{}
+		v.Init(auth.Options{})
+		v.GetFlags().Parse(flags)
+		return v.Parse(ctx, args)
+	}
+	Convey(`Make sure that Parse fails with no positional args.`, t, func() {
+		err := testParse(flags, []string{})
+		So(err, ShouldErrLike, "positional arguments missing")
+	})
+	Convey(`Make sure that Parse fails with too many positional args.`, t, func() {
+		err := testParse(flags, []string{"one", "two"})
+		So(err, ShouldErrLike, "unexpected positional arguments")
+	})
+	Convey(`Make sure that Parse fails with no input.`, t, func() {
+		err := testParse([]string{"-input-sig", "goodbye"}, []string{path})
+		So(err, ShouldErrLike, "input file")
+	})
+	Convey(`Make sure that Parse fails with no input sig.`, t, func() {
+		err := testParse([]string{"-input", "hello"}, []string{path})
+		So(err, ShouldErrLike, "input sig")
+	})
+	Convey(`Make sure that Parse fails with bad key path.`, t, func() {
+		err := testParse(flags, []string{"abcdefg"})
+		So(err, ShouldNotBeNil)
+	})
+	Convey(`Make sure that Parse works with everything set right.`, t, func() {
+		err := testParse(flags, []string{path})
+		So(err, ShouldBeNil)
+	})
+}
