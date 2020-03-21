@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1bfe0221_c0f06cce",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-21T01:24:57Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "7beee514_682e452b",
+      "range": {
+        "startLine": 177,
+        "startChar": 18,
+        "endLine": 177,
+        "endChar": 27
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78faf748_8778370a",
         "filename": "client/cmd/cloudkms/verify.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "74d5fee3_661e6ebe",
+        "filename": "client/cmd/cloudkms/verify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-21T01:24:57Z",
+      "side": 1,
+      "message": "Adding in follow-up CL (now 3 follow-ups in flight).",
+      "parentUuid": "78faf748_8778370a",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 2
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "665daa7c_65a0b5bc",
         "filename": "client/cmd/cloudkms/verify.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c2ed17_0d3e0a55",
+        "filename": "client/cmd/cloudkms/verify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-21T01:24:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "665daa7c_65a0b5bc",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 72,
+        "endChar": 2
+      },
+      "revId": "55a48cd1d0d7336e9f6876db2ddafbbcb3088af3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
