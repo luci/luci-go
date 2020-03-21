@@ -16,12 +16,12 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"time"
 
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
+	cloudkms "cloud.google.com/go/kms/apiv1"
+	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"
@@ -29,21 +29,17 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
+func doEncrypt(ctx context.Context, client *cloudkms.KeyManagementClient, input []byte, keyPath string) ([]byte, error) {
 	// Set up request, encoding plaintext as base64.
-	req := cloudkms.EncryptRequest{
-		Plaintext: base64.StdEncoding.EncodeToString(input),
+	req := &kmspb.EncryptRequest{
+		Name:      keyPath,
+		Plaintext: input,
 	}
 
-	var resp *cloudkms.EncryptResponse
+	var resp *kmspb.EncryptResponse
 	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
 		var err error
-		resp, err = service.
-			Projects.
-			Locations.
-			KeyRings.
-			CryptoKeys.
-			Encrypt(keyPath, &req).Context(ctx).Do()
+		resp, err = client.Encrypt(ctx, req)
 		return err
 	}, func(err error, d time.Duration) {
 		logging.Warningf(ctx, "Transient error while making request, retrying in %s...", d)
@@ -51,7 +47,7 @@ func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, key
 	if err != nil {
 		return nil, err
 	}
-	return base64.StdEncoding.DecodeString(resp.Ciphertext)
+	return resp.Ciphertext, nil
 }
 
 func cmdEncrypt(authOpts auth.Options) *subcommands.Command {

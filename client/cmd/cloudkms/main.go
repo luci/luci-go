@@ -20,8 +20,6 @@ import (
 
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
-
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
@@ -37,7 +35,7 @@ import (
 const version = "0.1"
 
 func getApplication(defaultAuthOpts auth.Options) *cli.Application {
-	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, cloudkms.CloudPlatformScope}
+	defaultAuthOpts.Scopes = []string{auth.OAuthScopeEmail, "https://www.googleapis.com/auth/cloud-platform"}
 	return &cli.Application{
 		Name:  "cloudkms",
 		Title: "Client for interfacing with Google Cloud Key Management Service",
