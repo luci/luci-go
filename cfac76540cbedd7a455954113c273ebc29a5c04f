@@ -494,6 +494,30 @@
       "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cd719e8_0e1432a1",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 7
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-22T15:42:28Z",
+      "side": 1,
+      "message": "changed the implementation to use dfs and compute on request.\nAlso, update the tests instead of re-computing from scratch to reduce the time complexity when a new test is added.",
+      "parentUuid": "8821b33f_f843e38c",
+      "range": {
+        "startLine": 110,
+        "startChar": 9,
+        "endLine": 110,
+        "endChar": 18
+      },
+      "revId": "cfac76540cbedd7a455954113c273ebc29a5c04f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
