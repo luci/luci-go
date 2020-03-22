@@ -33,8 +33,8 @@ declare global {
   }
   type ObservablePromise<T> = IObservableValue<Tagged<'loading', null> | Tagged<'ok', T> | Tagged<'err', unknown>>;
 }
-Promise.prototype.toObservable = function<T>(this: Promise<T>): ObservablePromise<T> {
-  const ret = observable.box({tag: 'loading', v: null}, {deep: false}) as ObservablePromise<T>;
+Promise.prototype.toObservable = function<T>(this: Promise<T>): ObservablePromise<awaited T> {
+  const ret = observable.box({tag: 'loading', v: null}, {deep: false}) as ObservablePromise<awaited T>;
   this.then((v) => ret.set({tag: 'ok', v}));
   this.catch((err) => ret.set({tag: 'err', v: err}));
   return ret;
