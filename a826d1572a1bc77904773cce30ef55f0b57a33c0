@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "34354a50_ef2c6f03",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "I still want to preserve the order though.\nActually, since results are sorted by variant already, I only need to compare it with the last element.",
+      "parentUuid": "0f68a69a_4090bc0e",
+      "range": {
+        "startLine": 40,
+        "startChar": 36,
+        "endLine": 40,
+        "endChar": 40
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "121e48e3_37d58022",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "0ac4f8a6_168ad6ae",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "121e48e3_37d58022",
+      "range": {
+        "startLine": 58,
+        "startChar": 6,
+        "endLine": 58,
+        "endChar": 21
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e438bc54_7b50e5d2",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -92,6 +140,30 @@
       "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71ad8f21_03631434",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e438bc54_7b50e5d2",
+      "range": {
+        "startLine": 61,
+        "startChar": 26,
+        "endLine": 61,
+        "endChar": 27
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "1bb34f47_513c606d",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Not really. They are intentionally exported.\nBy exporting those functions, we allow filter logic to be separated out of TestLoader.\nHere are some examples:\n1. if the caller wants to filter out expected result, it can modify the req passed to streamTestResult\n2. if the caller wants to see only testId matches certain pattern, it can do a mapping on streamTest before passing to testLoader.\n\nI made streamTestResultAndExonerations private to the file (unexported) because that\u0027s probably an implementation detail caller will never care about.\nAlso added some file level description to explain that.",
+      "parentUuid": "6195cf25_30c2e6bd",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 6
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e0bcb6c_f97a83be",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -138,6 +234,30 @@
       "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2f4f4ee_57c44555",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e0bcb6c_f97a83be",
+      "range": {
+        "startLine": 72,
+        "startChar": 74,
+        "endLine": 75,
+        "endChar": 7
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -164,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "7229fb3e_a4bf0cad",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05fda031_b361e5c7",
+      "range": {
+        "startLine": 98,
+        "startChar": 10,
+        "endLine": 98,
+        "endChar": 20
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "10da66b9_7bda3503",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -187,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "b44633f4_81a9b999",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "10da66b9_7bda3503",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 32
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0630ba76_3b44b9a2",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -207,6 +375,30 @@
       "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6223167_f95948d4",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T22:20:40Z",
+      "side": 1,
+      "message": "functions are (mostly) kept public due to reasons I explained in another thread. But I moved this to the top since it\u0027s probably the most important one. And added file level description.",
+      "parentUuid": "0630ba76_3b44b9a2",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 150,
+        "endChar": 11
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
