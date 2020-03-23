@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f68a69a_4090bc0e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "this is O(N) unnecessarily. The following would be O(1):\n\n  let testVariant \u003d this.variants[variantKey];",
+      "range": {
+        "startLine": 40,
+        "startChar": 36,
+        "endLine": 40,
+        "endChar": 40
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "121e48e3_37d58022",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "nit: this is a bit confusing because normally hash values are not unique. I recommend using word \"key\" instead, because normally keys are unique",
+      "range": {
+        "startLine": 58,
+        "startChar": 6,
+        "endLine": 58,
+        "endChar": 21
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e438bc54_7b50e5d2",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "on the server, we use \":\" as a key-value separator, as do many other applications and your UI. consider using \":\" here too",
+      "range": {
+        "startLine": 61,
+        "startChar": 26,
+        "endLine": 61,
+        "endChar": 27
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e0bcb6c_f97a83be",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "nit: does it fit on one line?",
+      "range": {
+        "startLine": 72,
+        "startChar": 74,
+        "endLine": 75,
+        "endChar": 7
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05fda031_b361e5c7",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "TestResultOrExoneration?",
+      "range": {
+        "startLine": 98,
+        "startChar": 10,
+        "endLine": 98,
+        "endChar": 20
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10da66b9_7bda3503",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:10:25Z",
+      "side": 1,
+      "message": "wouldn\u0027t a for-await-of loop be simpler?",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 131,
+        "endChar": 32
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
