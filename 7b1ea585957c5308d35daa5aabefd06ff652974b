@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a41bed29_af7b9bd8",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T00:39:38Z",
+      "side": 1,
+      "message": "will fix in the CL following this. (or should I open a separate CL for this?)",
+      "parentUuid": "21ab02f8_be9e0323",
+      "range": {
+        "startLine": 81,
+        "startChar": 55,
+        "endLine": 81,
+        "endChar": 73
+      },
+      "revId": "7b1ea585957c5308d35daa5aabefd06ff652974b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f429ffb8_fd6d8554",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 10
@@ -36,6 +60,30 @@
       "writtenOn": "2020-03-22T23:46:23Z",
       "side": 1,
       "message": "FWIU you are concerned with usage of keepAlive here. FWIU you reason you have it here is that there are some simple functions (not observables) that need tests too. If so, why can\u0027t we have a simple function .computeTests() for simple functions and an observable .tests for observables?\n\n  public function computeAllTests() { ... }\n  @computed get allTest(): readonly ReadonlyTest[]{ return this.computeAllTests(); }\n\nwould it address the memory leak concern?",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 22
+      },
+      "revId": "7b1ea585957c5308d35daa5aabefd06ff652974b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f1cd744_b3082df9",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-23T00:39:38Z",
+      "side": 1,
+      "message": "In that case, this.computeAllTests() will need to traverse all descendant node every time it is called instead of using the cache.\nAnd tests will be accessed that way a lot more frequently than using this.allTests (typically in a handler of some event).\nSince this.allTests only depends on property on this node or its descendants, keepAlive should be safe to use here.",
+      "parentUuid": "f429ffb8_fd6d8554",
       "range": {
         "startLine": 92,
         "startChar": 13,
