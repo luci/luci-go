@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76b30c5c_c4cf0c4b",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:53:23Z",
+      "side": 1,
+      "message": "nit: why not just destList",
+      "range": {
+        "startLine": 346,
+        "startChar": 12,
+        "endLine": 346,
+        "endChar": 23
+      },
+      "revId": "58223d69f45a5fda44147c684ad638e399d2a319",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
