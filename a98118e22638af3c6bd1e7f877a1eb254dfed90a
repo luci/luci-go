@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a2c717f2_50611317",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-23T17:01:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "099e2047_dca06595",
+      "range": {
+        "startLine": 346,
+        "startChar": 6,
+        "endLine": 346,
+        "endChar": 64
+      },
+      "revId": "a98118e22638af3c6bd1e7f877a1eb254dfed90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1e33026_3479eea3",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 2
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "d548f795_0a90f552",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-23T17:01:07Z",
+      "side": 1,
+      "message": "Yes, the submask might have children. But I thought it is WAI for a list or map field as the doc suggests that \n\n\u003e Repeated fields or map fields will be overwritten entirely. Partial updates are not supported for such field.\n\nThe python implementation[1] have the same behavior and I believe this is why we take isUpdateMask boolean in `FromFieldMask` function. \n\nI can either break this assumption and make a recursive call here or explicitly return an error. WDYT? Also, do you know why this restriction is put at the first place in the python implementation?\n\n\n[1]: https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/components/components/protoutil/field_masks.py#217",
+      "parentUuid": "9734c03f_7d2bdb59",
+      "range": {
+        "startLine": 347,
+        "startChar": 20,
+        "endLine": 347,
+        "endChar": 45
+      },
+      "revId": "a98118e22638af3c6bd1e7f877a1eb254dfed90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e51f3fa_605ff723",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 2
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "8b007d04_f16be960",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 355,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-23T17:01:07Z",
+      "side": 1,
+      "message": "This goes back to the comment above that if we want to support partial update for list or map field. I will wait till we reach a conclusion there and make changes if needed.",
+      "parentUuid": "9e51f3fa_605ff723",
+      "range": {
+        "startLine": 355,
+        "startChar": 16,
+        "endLine": 355,
+        "endChar": 21
+      },
+      "revId": "a98118e22638af3c6bd1e7f877a1eb254dfed90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "490b36e9_59b13ff4",
         "filename": "common/proto/mask/mask.go",
         "patchSetId": 2
@@ -106,6 +178,30 @@
       "writtenOn": "2020-03-20T19:45:37Z",
       "side": 1,
       "message": "what about a list? shouldn\u0027t a list be cloned too?",
+      "range": {
+        "startLine": 372,
+        "startChar": 63,
+        "endLine": 373,
+        "endChar": 27
+      },
+      "revId": "a98118e22638af3c6bd1e7f877a1eb254dfed90a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80cb3ea5_83e56894",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-23T17:01:07Z",
+      "side": 1,
+      "message": "The list or map field should have been handled in the case statement at L344 and L351 which means we should never receive a list or map value here (also, there\u0027s no list or map kind[1]). I\u0027ve updated the doc to make it clear. Do you think that\u0027s good enough.\n\n[1]: https://godoc.org/google.golang.org/protobuf/reflect/protoreflect#Kind",
+      "parentUuid": "490b36e9_59b13ff4",
       "range": {
         "startLine": 372,
         "startChar": 63,
