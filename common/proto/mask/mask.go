@@ -52,7 +52,6 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"go.chromium.org/luci/common/data/stringset"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
@@ -61,6 +60,8 @@ import (
 	// go protobuf library from v1.3 to v1.4 as these functions only exist in
 	// latest version. It is discouraged to import protoimpl as per its pkg doc.
 	"google.golang.org/protobuf/runtime/protoimpl"
+
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // Mask is a tree representation of a field Mask. Serves as a tree node too.
@@ -189,10 +190,74 @@ PATH_LOOP:
 
 // Trim clears protobuf message fields that are not in the mask.
 //
-// Uses Includes to decide what to trim, see its docstring.
-// If mask is a leaf, this is a noop.
-func (m Mask) Trim(msg proto.Message) proto.Message {
-	return msg
+// If mask is empty, this is a noop. It returns error when the supplied
+// message is nil or has a different message descriptor from that of mask.
+// It uses Includes to decide what to trim, see its doc.
+func (m Mask) Trim(msg proto.Message) error {
+	if m.IsEmpty() {
+		return nil
+	}
+	reflectMsg := protoimpl.X.MessageOf(msg)
+	if err := checkMsgHaveDesc(reflectMsg, m.descriptor); err != nil {
+		return err
+	}
+	m.trimImpl(reflectMsg)
+	return nil
+}
+
+func (m Mask) trimImpl(reflectMsg protoreflect.Message) {
+	reflectMsg.Range(func(fieldDesc protoreflect.FieldDescriptor, fieldVal protoreflect.Value) bool {
+		fieldName := string(fieldDesc.Name())
+		switch incl, _ := m.includesImpl(path{fieldName}); incl {
+		case Exclude:
+			reflectMsg.Clear(fieldDesc)
+		case IncludePartially:
+			// child for this field must exist because the path is included partially
+			switch child := m.children[fieldName]; {
+			case fieldDesc.IsMap():
+				child.trimMap(fieldVal.Map(), fieldDesc.MapValue().Kind())
+			case fieldDesc.Kind() != protoreflect.MessageKind:
+				// The field is scalar but the mask does not specify to include
+				// it entirely. Skip it because scalars do not have subfields.
+				// Note that FromFieldMask would fail on such a mask because a
+				// scalar field cannot be followed by other fields.
+				reflectMsg.Clear(fieldDesc)
+			case fieldDesc.IsList():
+				// star child is the only possible child for list field
+				if starChild, ok := child.children["*"]; ok {
+					for i, list := 0, fieldVal.List(); i < list.Len(); i++ {
+						starChild.trimImpl(list.Get(i).Message())
+					}
+				}
+			default:
+				child.trimImpl(fieldVal.Message())
+			}
+		}
+		return true
+	})
+}
+
+func (m Mask) trimMap(protoMap protoreflect.Map, valueKind protoreflect.Kind) {
+	protoMap.Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
+		keyString := k.String()
+		switch incl, _ := m.includesImpl(path{keyString}); {
+		case incl == Exclude:
+			protoMap.Clear(k)
+		case incl == IncludePartially && valueKind != protoreflect.MessageKind:
+			// same reason as comment above that value is scalar
+			protoMap.Clear(k)
+		case incl == IncludePartially:
+			// Mask might not have a child of keyName but it can still partially
+			// include the key because of star child. So, check both key child
+			// and star child.
+			for _, seg := range []string{keyString, "*"} {
+				if child, ok := m.children[seg]; ok {
+					child.trimImpl(v.Message())
+				}
+			}
+		}
+		return true
+	})
 }
 
 // Inclusiveness tells if a field value at the given path is included.
@@ -212,7 +277,40 @@ const (
 // The path must have canonical field names, i.e. not JSON names.
 // Returns error if path parsing fails.
 func (m Mask) Includes(path string) (Inclusiveness, error) {
-	panic("not implemented")
+	parsedPath, err := parsePath(path, m.descriptor, false)
+	if err != nil {
+		return Exclude, err
+	}
+	incl, _ := m.includesImpl(parsedPath)
+	return incl, nil
+}
+
+// includesImpl implements Includes(). It returns the computed inclusiveness
+// and the leaf mask that includes the path if IncludeEntirely, or the
+// intermediate mask that the last segment of path represents if
+// IncludePartially or an empty mask if Exclude.
+func (m Mask) includesImpl(p path) (Inclusiveness, Mask) {
+	if len(m.children) == 0 {
+		return IncludeEntirely, m
+	}
+	if len(p) == 0 {
+		// This node is intermediate and we've exhausted the path. Some of the
+		// value's subfields are included, so includes this value partially.
+		return IncludePartially, m
+	}
+
+	incl, inclMask := Exclude, Mask{}
+	// star child should also be examined.
+	// e.g. children are {"a": {"b": {}}, "*": {"c": {}}}
+	// If seg is 'x', we should check the star child.
+	for _, seg := range []string{p[0], "*"} {
+		if child, ok := m.children[seg]; ok {
+			if cIncl, cInclMask := child.includesImpl(p[1:]); cIncl > incl {
+				incl, inclMask = cIncl, cInclMask
+			}
+		}
+	}
+	return incl, inclMask
 }
 
 // Merge merges masked fields from src to dest.
@@ -236,4 +334,24 @@ func (m Mask) Merge(src proto.Message, dest proto.Message) error {
 // mask
 func (m Mask) Submask(path string) (Mask, error) {
 	panic("not implemented")
+}
+
+// IsEmpty reports whether a mask is of empty value. Such mask implies keeping
+// everything when calling Trim, merging nothing when calling Merge and always
+// returning IncludeEntirely when calling Includes
+func (m Mask) IsEmpty() bool {
+	return m.descriptor == nil && !m.isRepeated && len(m.children) == 0
+}
+
+// checkMsgHaveDesc validates that the descriptor of given proto reflect message
+// matches the expected message descriptor. It returns error when the given
+// message is nil or descriptor of which doesn't match the expectation.
+func checkMsgHaveDesc(msg protoreflect.Message, expectedDesc protoreflect.MessageDescriptor) error {
+	if msg == nil {
+		return fmt.Errorf("nil message")
+	}
+	if msgDesc := msg.Descriptor(); msgDesc != expectedDesc {
+		return fmt.Errorf("expected message have descriptor: %s; got descriptor: %s", expectedDesc.FullName(), msgDesc.FullName())
+	}
+	return nil
 }
