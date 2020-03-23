@@ -24,32 +24,41 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func testArtifactFile(writer func(f *os.File)) *sinkpb.Artifact {
+	f, err := ioutil.TempFile("", "test-artifact")
+	So(err, ShouldBeNil)
+	writer(f)
+	f.Close()
+	return &sinkpb.Artifact{Body: &sinkpb.Artifact_FilePath{FilePath: f.Name()}}
+}
+
 func TestSinkArtsToRpcArts(t *testing.T) {
 	t.Parallel()
+	sinkArts := map[string]*sinkpb.Artifact{}
 
 	Convey("sinkToRpcArts", t, func() {
 		ctx := context.Background()
-		sinkArts := map[string]*sinkpb.Artifact{}
+		gsc := &gsChannel{}
+		So(gsc.init(ctx), ShouldBeNil)
+		defer gsc.closeAndDrain(ctx)
 
 		Convey("sets the size of the artifact", func() {
 			Convey("with the length of contents", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, 3)
 			})
 
 			Convey("with the size of the file", func() {
-				f, err := ioutil.TempFile("", "test-artifact")
-				So(err, ShouldBeNil)
-				f.Write([]byte("123"))
-				f.Close()
-				defer os.Remove(f.Name())
-
-				sinkArts["art1"] = &sinkpb.Artifact{
-					Body: &sinkpb.Artifact_FilePath{FilePath: f.Name()}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				sinkArts["art1"] = testArtifactFile(func(f *os.File) {
+					n, err := f.Write(make([]byte, 3))
+					So(err, ShouldBeNil)
+					So(n, ShouldEqual, 3)
+				})
+				defer os.Remove(sinkArts["art1"].GetFilePath())
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, 3)
 			})
@@ -57,10 +66,20 @@ func TestSinkArtsToRpcArts(t *testing.T) {
 			Convey("with -1 if the file is not accessible", func() {
 				sinkArts["art1"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_FilePath{FilePath: "does-not-exist/foo/bar"}}
-				rpcArts := sinkArtsToRpcArts(ctx, sinkArts)
+				rpcArts := sinkArtsToRpcArts(ctx, gsc, sinkArts)
 				So(len(rpcArts), ShouldEqual, 1)
 				So(rpcArts[0].Size, ShouldEqual, -1)
 			})
+		})
+
+		Convey("send an artifact to gsChannel", func() {
+			sinkArts["art1"] = testArtifactFile(func(f *os.File) {
+				n, err := f.Write(make([]byte, 512))
+				So(err, ShouldBeNil)
+				So(n, ShouldEqual, 512)
+			})
+			defer os.Remove(sinkArts["art1"].GetFilePath())
+			// TODO(ddoman): implement me
 		})
 	})
 }
