@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "7408bbbb_a8baa05f",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:55:56Z",
+      "side": 1,
+      "message": "a separate CL is better. I would get LGTMed right away",
+      "parentUuid": "a41bed29_af7b9bd8",
+      "range": {
+        "startLine": 81,
+        "startChar": 55,
+        "endLine": 81,
+        "endChar": 73
+      },
+      "revId": "7b1ea585957c5308d35daa5aabefd06ff652974b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f429ffb8_fd6d8554",
         "filename": "milo/frontend/resultui/src/models/test_node.ts",
         "patchSetId": 10
@@ -93,6 +117,30 @@
       "revId": "7b1ea585957c5308d35daa5aabefd06ff652974b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59615a2e_e3dfa2fd",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T00:55:56Z",
+      "side": 1,
+      "message": "got it.\nin the bottom-up approach, unclear how a particular piece of code is going to be used later.",
+      "parentUuid": "6f1cd744_b3082df9",
+      "range": {
+        "startLine": 92,
+        "startChar": 13,
+        "endLine": 92,
+        "endChar": 22
+      },
+      "revId": "7b1ea585957c5308d35daa5aabefd06ff652974b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
