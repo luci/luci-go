@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04e8825b_3b8fe795",
+        "filename": "milo/frontend/resultui/.gitignore",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:48:55Z",
+      "side": 1,
+      "message": "this is not specific to resultui\n\nplease either add this to your ~/.gitignore\nor in the repo root",
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc7ed8ce_835688a1",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:48:55Z",
+      "side": 1,
+      "message": "nit: this is a condition for the testIter param, not a precondition for other state?\n\nthis is prefixed with \"@\", so I guess you are referring to jsdoc? JSDoc has a different guidance https://jsdoc.app/tags-param.html\n\nsame applies below",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6cf0c40_89a7fe6a",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:48:55Z",
+      "side": 1,
+      "message": "variantKey",
+      "range": {
+        "startLine": 59,
+        "startChar": 21,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17774136_53343539",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:48:55Z",
+      "side": 1,
+      "message": "do we still need all this complexity that results or exonerations are not sorted by variant?\n\nthe previous version was simpler\n\nit looks like we don\u0027t even use computed variant key in L186 loop",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 4
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
