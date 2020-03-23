@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "465cf163_e7f2a41c",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-23T23:54:54Z",
+      "side": 1,
+      "message": "note that ordering them on the server is undesirable because they are not physically ordered by variant.",
+      "parentUuid": "2ccae44a_b927f8b3",
+      "range": {
+        "startLine": 40,
+        "startChar": 36,
+        "endLine": 40,
+        "endChar": 40
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "121e48e3_37d58022",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
