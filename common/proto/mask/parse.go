@@ -34,12 +34,16 @@ const pathDelimiter = '.'
 // of its canonical form. However, the result segments in path will use
 // canonical field name.
 func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor, isJSONName bool) (path, error) {
+	ctx := &parseCtx{
+		curDescriptor: descriptor,
+	}
+	return parsePathWithContext(rawPath, ctx, isJSONName)
+}
+
+func parsePathWithContext(rawPath string, ctx *parseCtx, isJSONName bool) (path, error) {
 	t := &tokenizer{
 		path:      rawPath,
 		delimiter: pathDelimiter,
-	}
-	ctx := &parseCtx{
-		curDescriptor: descriptor,
 	}
 	ret := path{}
 	for t.hasMoreTokens() {
