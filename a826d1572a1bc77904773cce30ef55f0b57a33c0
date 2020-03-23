@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "f81651fb_17fa37f4",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-23T05:54:02Z",
+      "side": 1,
+      "message": "Agreed, this isn\u0027t really a hash. How about calling this something like \"keyForVariant\" and having a comment like:\n\n/** Generates a unique string key for the given test variant. */",
+      "parentUuid": "121e48e3_37d58022",
+      "range": {
+        "startLine": 58,
+        "startChar": 6,
+        "endLine": 58,
+        "endChar": 21
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e438bc54_7b50e5d2",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4
@@ -64,6 +88,29 @@
         "startChar": 26,
         "endLine": 61,
         "endChar": 27
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6195cf25_30c2e6bd",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-23T05:54:02Z",
+      "side": 1,
+      "message": "Is there any reason to export all of these streaming functions? Looking at the usage in https://crrev.com/c/2107340, it looks like your calling code calls all of these and then passes the iterators into TestLoader.\n\nCan these just become implementation details of TestLoader? Then you can have a much simpler API.",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 6
       },
       "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -133,6 +180,29 @@
         "startChar": 2,
         "endLine": 131,
         "endChar": 32
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0630ba76_3b44b9a2",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-23T05:54:02Z",
+      "side": 1,
+      "message": "Assuming you make the other implementation details private as mentioned above, then I\u0027d recommend moving TestLoader to the top of this file and putting a helpful overview of the functionality of this file in this class comment.\n\nRight now, when I read this file, there\u0027s nothing at the top that explains what the code in the file is for, and the class it\u0027s named after (TestLoader) is right at the bottom with a comment that assumes prior knowledge. So the only way to understand this file is to read all of the code.",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 150,
+        "endChar": 11
       },
       "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
