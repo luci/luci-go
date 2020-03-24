@@ -180,7 +180,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 				SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
 				FROM UNNEST(@variantContains) kv
 			))
-		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
+		ORDER BY tr.TestId, tr.InvocationId, tr.ResultId
 		%s
 	`, strings.Join(extraSelect, ","), from, limit))
 	st.Params["invIDs"] = q.InvocationIDs

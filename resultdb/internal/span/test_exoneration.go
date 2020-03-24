@@ -101,7 +101,7 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 				(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
 				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ExonerationID > @afterExonerationID)
 		  )
-		ORDER BY InvocationId, TestId, ExonerationId
+		ORDER BY TestId, InvocationId, ExonerationId
 		LIMIT @limit
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
