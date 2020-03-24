@@ -88,6 +88,30 @@
     },
     {
       "key": {
+        "uuid": "778053c6_80a00fc7",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T04:59:45Z",
+      "side": 1,
+      "message": "ha, nice. I actually checked order of property iteration [1] to suggest something like this \nbut it didn\u0027t occur to me to check Map :)\n\n[1]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for...in",
+      "parentUuid": "96450c23_808737be",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 40
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a5d6763d_aa5710b0",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 8
