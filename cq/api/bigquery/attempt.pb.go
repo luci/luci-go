@@ -287,8 +287,6 @@ type Attempt struct {
 	//   * builds triggered as part of this Attempt, which were later removed from
 	//     project CQ config and hence were no longer required by CQ by Attempt
 	//     end time.
-	//   * builds triggered as part of this Attempt that failed and were retried.
-	//     The latest retried build will be included, however.
 	Builds []*Build `protobuf:"bytes,8,rep,name=builds,proto3" json:"builds,omitempty"`
 	// Final status of the Attempt.
 	Status AttemptStatus `protobuf:"varint,9,opt,name=status,proto3,enum=bigquery.AttemptStatus" json:"status,omitempty"`
@@ -514,10 +512,13 @@ type Build struct {
 	// or triggered because there was no reusable build, or because builds by
 	// this builder are all not reusable.
 	Origin Build_Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=bigquery.Build_Origin" json:"origin,omitempty"`
-	// Whether this build must pass in order for the CLs to be considered
-	// ready to submit. True means this build must pass, false means this
-	// build is "optional", and this build should not be used to assess
+	// Whether this build's builder must pass in order for the CLs to be
+	// considered ready to submit. True means this builder must pass, false means
+	// this builder is "optional", and so this build should not be used to assess
 	// the correctness of the CLs in the Attempt.
+	//
+	// Tip: join this with the Buildbucket BigQuery table to figure out which
+	// builder this build belongs to.
 	Critical             bool     `protobuf:"varint,4,opt,name=critical,proto3" json:"critical,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
