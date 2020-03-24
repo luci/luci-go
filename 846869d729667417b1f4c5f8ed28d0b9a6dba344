@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "98e811f3_b9137173",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Maybe it should not do that. Especially in the error case it will be partially updated. Changed to copy (alternately I can move the tag update after datastore.Get).",
+      "parentUuid": "30ad345d_861ff839",
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d6eeea40_a5e07874",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -56,6 +74,30 @@
       "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32760384_2833af1e",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85327fa6_1034df7f",
+      "range": {
+        "startLine": 94,
+        "startChar": 8,
+        "endLine": 94,
+        "endChar": 53
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -129,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "d803f5b4_4b7700f1",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "045380a3_deee6cff",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 8
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53e1ea08_74ba7d58",
         "filename": "buildbucket/appengine/model/build_test.go",
         "patchSetId": 1
@@ -152,6 +218,30 @@
     },
     {
       "key": {
+        "uuid": "6890acc8_334f57e3",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53e1ea08_74ba7d58",
+      "range": {
+        "startLine": 21,
+        "startChar": 1,
+        "endLine": 21,
+        "endChar": 8
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9102bd79_a430c982",
         "filename": "buildbucket/appengine/model/build_test.go",
         "patchSetId": 1
@@ -163,6 +253,30 @@
       "writtenOn": "2020-03-20T21:54:26Z",
       "side": 1,
       "message": "i bet you will are going to deal with a lot of struct literals in tests and, i believe, writing this was painful. Consider a helper function\n\n  jsonToStruct(`{\"input\": \"input value\"}`)\n\n  jsonToStruct(`{\n    \"key1: \"value1\",\n    \"key2\": \"value2\"\n  }`)",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 7
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca56cb82_3ae470e1",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "It\u0027s painful but I prefer for test cases to be easy to understand in isolation, even if that means they\u0027re more verbose. Limited use of helper functions means less indirection means less cognitive load trying to understand (and esp. debug failing) tests. That said, jsonToStruct seems fairly easy to understand without having to actually check the code or even the godoc if you see a function with that name, so I\u0027ll consider it for the future (but omitted for now).",
+      "parentUuid": "9102bd79_a430c982",
       "range": {
         "startLine": 102,
         "startChar": 6,
@@ -198,6 +312,30 @@
     },
     {
       "key": {
+        "uuid": "d3045beb_a27413a0",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e99b134_453c8b19",
+      "range": {
+        "startLine": 163,
+        "startChar": 41,
+        "endLine": 163,
+        "endChar": 55
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f56ca40f_3043f481",
         "filename": "buildbucket/appengine/model/details.go",
         "patchSetId": 1
@@ -218,6 +356,30 @@
       "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33f17d77_682d0f78",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f56ca40f_3043f481",
+      "range": {
+        "startLine": 40,
+        "startChar": 44,
+        "endLine": 40,
+        "endChar": 45
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -244,6 +406,30 @@
     },
     {
       "key": {
+        "uuid": "8e5aa028_e2cbbdaa",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d2b86c3a_d8ca9a08",
+      "range": {
+        "startLine": 47,
+        "startChar": 25,
+        "endLine": 47,
+        "endChar": 27
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aff352a_597c9d13",
         "filename": "buildbucket/appengine/model/details.go",
         "patchSetId": 1
@@ -255,6 +441,30 @@
       "writtenOn": "2020-03-20T21:54:26Z",
       "side": 1,
       "message": "nit: period",
+      "range": {
+        "startLine": 55,
+        "startChar": 63,
+        "endLine": 55,
+        "endChar": 64
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6284c6ee_13be2cbb",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "This isn\u0027t the end of the sentence, I broke here for 80 chars (someone else said to limit to 80 for godoc but not necessary for any other lines).",
+      "parentUuid": "9aff352a_597c9d13",
       "range": {
         "startLine": 55,
         "startChar": 63,
@@ -310,6 +520,30 @@
       "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fac7293c_591892ac",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-24T21:49:26Z",
+      "side": 1,
+      "message": "Oh it\u0027s because I originally had all the structs here private assuming they\u0027re model package implementation detail, but datastore package doesn\u0027t like that.",
+      "parentUuid": "045989fb_a4de8c2a",
+      "range": {
+        "startLine": 76,
+        "startChar": 7,
+        "endLine": 76,
+        "endChar": 15
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
