@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "40c674cf_1b818db7",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "I see. I thought they were ordered. Changed to dictionary lookup.\nThe public property this.variants remains to be an array so the order is stable when new variants are added.\nAdded a comment to explain that as well.",
+      "parentUuid": "465cf163_e7f2a41c",
+      "range": {
+        "startLine": 40,
+        "startChar": 36,
+        "endLine": 40,
+        "endChar": 40
+      },
+      "revId": "a826d1572a1bc77904773cce30ef55f0b57a33c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "121e48e3_37d58022",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 4

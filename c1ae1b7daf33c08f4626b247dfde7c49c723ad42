@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "b43a5336_bf15cbf8",
+        "filename": "milo/frontend/resultui/.gitignore",
+        "patchSetId": 5
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04e8825b_3b8fe795",
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d61fac88_ee7d7b88",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 5
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d0902bc4_d8363d9c",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d61fac88_ee7d7b88",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fc7ed8ce_835688a1",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 5
@@ -62,6 +104,30 @@
       "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c799124f_0c75155b",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc7ed8ce_835688a1",
+      "range": {
+        "startLine": 36,
+        "startChar": 5,
+        "endLine": 36,
+        "endChar": 18
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,54 @@
     },
     {
       "key": {
+        "uuid": "ec634612_ef7b2ae4",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a6cf0c40_89a7fe6a",
+      "range": {
+        "startLine": 59,
+        "startChar": 21,
+        "endLine": 59,
+        "endChar": 32
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "42129d24_fa0120d0",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd311f2e_5dacf61f",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 66
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4b11c41_6a1dd58a",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 5
@@ -131,6 +245,30 @@
       "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d51cbfb2_880219db",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "removed since key is no longer used.",
+      "parentUuid": "b4b11c41_6a1dd58a",
+      "range": {
+        "startLine": 148,
+        "startChar": 8,
+        "endLine": 148,
+        "endChar": 29
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -181,6 +319,30 @@
     },
     {
       "key": {
+        "uuid": "adf7f748_f21249eb",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "removed variantKey from this function so it\u0027s back to the previous version (and much simpler now).",
+      "parentUuid": "7c0186d7_dfdcadaa",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 4
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d45f236_6706790c",
         "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
         "patchSetId": 5
@@ -201,6 +363,30 @@
       "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b34d1da_528088a3",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T01:47:51Z",
+      "side": 1,
+      "message": "Added a comment to explain that.\n\nHere\u0027s a copy of that.\n\n      // assert.deepInclude expects array elements in \u0027actual\u0027 to deepEqual\n      // (rather than deepInclude) their counter parts in \u0027expected\u0027.\n      // For example, assert.deepInclude({a: [{b: 0, _b: 0}]}, {a: [{b: 0}]})\n      // will fail because \u0027a[0]._b\u0027 is not present in \u0027expected\u0027.\n      // Strip out properties we don\u0027t want to test first, so private properties\n      // in \u0027actual\u0027 won\u0027t cause the test to fail.",
+      "parentUuid": "1d45f236_6706790c",
+      "range": {
+        "startLine": 256,
+        "startChar": 6,
+        "endLine": 256,
+        "endChar": 65
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
