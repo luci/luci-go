@@ -170,9 +170,9 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test results after the one specified in the page token.
 			AND (
-				(tr.InvocationId > @afterInvocationId) OR
-				(tr.InvocationId = @afterInvocationId AND tr.TestId > @afterTestId) OR
-				(tr.InvocationId = @afterInvocationId AND tr.TestId = @afterTestId AND tr.ResultId > @afterResultId)
+				(tr.TestId > @afterTestId) OR
+				(tr.TestId = @afterTestId AND tr.InvocationId > @afterInvocationId) OR
+				(tr.TestId = @afterTestId AND tr.InvocationId = @afterInvocationId AND tr.ResultId > @afterResultId)
 			)
 			AND REGEXP_CONTAINS(tr.TestId, @TestIdRegexp)
 			AND (@variantHashEquals IS NULL OR tr.VariantHash = @variantHashEquals)
@@ -180,7 +180,7 @@ func queryTestResults(ctx context.Context, txn *spanner.ReadOnlyTransaction, q T
 				SELECT LOGICAL_AND(kv IN UNNEST(tr.Variant))
 				FROM UNNEST(@variantContains) kv
 			))
-		ORDER BY tr.InvocationId, tr.TestId, tr.ResultId
+		ORDER BY tr.TestId, tr.InvocationId, tr.ResultId
 		%s
 	`, strings.Join(extraSelect, ","), from, limit))
 	st.Params["invIDs"] = q.InvocationIDs
