@@ -16,6 +16,7 @@ package limiter
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
 	"go.chromium.org/luci/common/errors"
@@ -75,6 +76,7 @@ type Options struct {
 // All methods are safe for concurrent use.
 type Limiter struct {
 	opts        Options // options passed to New, as is
+	titleForLog string  // how the limiter is named in logs and error replies
 	concurrency int64   // atomic int with number of current in-flight requests
 }
 
@@ -102,7 +104,10 @@ func New(opts Options) (*Limiter, error) {
 	if opts.MaxConcurrentRequests <= 0 {
 		return nil, errors.New("max concurrent requests must be positive")
 	}
-	return &Limiter{opts: opts}, nil
+	return &Limiter{
+		opts:        opts,
+		titleForLog: fmt.Sprintf("%s<=%d", opts.Name, opts.MaxConcurrentRequests),
+	}, nil
 }
 
 // ReportMetrics updates all limiter's gauge metrics to match the current state.
@@ -148,9 +153,9 @@ func (l *Limiter) CheckRequest(ctx context.Context, ri *RequestInfo) (done func(
 func (l *Limiter) reject(ctx context.Context, ri *RequestInfo, reason string) error {
 	rejectedCounter.Add(ctx, 1, l.opts.Name, ri.CallLabel, ri.PeerLabel, reason)
 	if l.opts.AdvisoryMode {
-		logging.Warningf(ctx, "limiter %q in advisory mode: the request hit the %s limit", l.opts.Name, reason)
+		logging.Warningf(ctx, "limiter %q in advisory mode: the request hit the %s limit", l.titleForLog, reason)
 	} else {
-		logging.Errorf(ctx, "limiter %q: the request hit the %s limit", l.opts.Name, reason)
+		logging.Errorf(ctx, "limiter %q: the request hit the %s limit", l.titleForLog, reason)
 	}
-	return errors.Annotate(ErrLimitReached, "limiter %q: %s limit", l.opts.Name, reason).Err()
+	return errors.Annotate(ErrLimitReached, "limiter %q: %s limit", l.titleForLog, reason).Err()
 }
