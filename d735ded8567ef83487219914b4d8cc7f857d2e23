@@ -2,6 +2,121 @@
   "comments": [
     {
       "key": {
+        "uuid": "afab3f33_15983c72",
+        "filename": "milo/frontend/resultui/src/libs/extensions.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:55:47Z",
+      "side": 1,
+      "message": "i think this is now unused",
+      "range": {
+        "startLine": 86,
+        "startChar": 40,
+        "endLine": 86,
+        "endChar": 44
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96450c23_808737be",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:55:47Z",
+      "side": 1,
+      "message": "Could you just use a Map here?\n\nhttps://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map\n\nMap lets you iterate over items in the order they were inserted.",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 40
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5d6763d_aa5710b0",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:55:47Z",
+      "side": 1,
+      "message": "Nit: add \" objects.\" to the end of this, so it becomes more like a full sentence.\n\n\"Groups test results and exonerations into Test objects.\"",
+      "range": {
+        "startLine": 171,
+        "startChar": 3,
+        "endLine": 171,
+        "endChar": 49
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ec364eb_641118c3",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:55:47Z",
+      "side": 1,
+      "message": "for clarity, call this expectedTestResults?",
+      "range": {
+        "startLine": 188,
+        "startChar": 12,
+        "endLine": 188,
+        "endChar": 23
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed058cfd_db8f63ab",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:55:47Z",
+      "side": 1,
+      "message": "expectedTestExonerations?",
+      "range": {
+        "startLine": 213,
+        "startChar": 12,
+        "endLine": 213,
+        "endChar": 28
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c8b4e102_67fc2313",
         "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
         "patchSetId": 8
