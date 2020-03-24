@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	_struct "github.com/golang/protobuf/ptypes/struct"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 
@@ -168,18 +170,36 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
+				key := datastore.NewKey(ctx, "Build", "", 1, nil)
+				// TODO(crbug/1042991): Move to model package.
+				// This test shouldn't need to know how model.Build entities are stored.
+				So(datastore.Put(ctx, &model.BuildInfra{
+					ID:    1,
+					Build: key,
+				}), ShouldBeNil)
+				So(datastore.Put(ctx, &model.BuildInputProperties{
+					ID:    1,
+					Build: key,
+				}), ShouldBeNil)
 				req := &pb.GetBuildRequest{
 					Id: 1,
 				}
 				rsp, err := srv.GetBuild(ctx, req)
 				So(err, ShouldBeNil)
 				So(rsp, ShouldResemble, &pb.Build{
+					Id: 1,
 					Builder: &pb.BuilderID{
 						Project: "project",
 						Bucket:  "bucket",
 						Builder: "builder",
 					},
-					Id: 1,
+					Infra: &pb.BuildInfra{},
+					Input: &pb.Build_Input{
+						Properties: &_struct.Struct{},
+					},
+					Output: &pb.Build_Output{
+						Properties: &_struct.Struct{},
+					},
 				})
 			})
 		})

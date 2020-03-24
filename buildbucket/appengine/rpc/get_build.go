@@ -70,8 +70,7 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		default:
 			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 		}
-		// TODO(crbug/1042991): Merge in zeroed properties.
-		return &ent.Proto, nil
+		return ent.ToProto(ctx)
 	}
 	// TODO(crbug/1042991): Implement get by builder/build number.
 	return &pb.Build{}, nil
