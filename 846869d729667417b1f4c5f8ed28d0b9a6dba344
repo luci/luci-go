@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "4bbff28b_aeb638e5",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T22:27:09Z",
+      "side": 1,
+      "message": "i think copy is fine.\n\npython version doesn\u0027t copy because i was trying to squeeze as much perf as possible. Not a big deal with Go.",
+      "parentUuid": "98e811f3_b9137173",
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6eeea40_a5e07874",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -289,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "2958ec4d_af17870b",
+        "filename": "buildbucket/appengine/model/build_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T22:27:09Z",
+      "side": 1,
+      "message": "doing in another CL is fine.\n\n\u003e Limited use of helper functions\n\ni this does not apply to this particular case. Future CLs will demonstrate it.",
+      "parentUuid": "ca56cb82_3ae470e1",
+      "range": {
+        "startLine": 102,
+        "startChar": 6,
+        "endLine": 110,
+        "endChar": 7
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e99b134_453c8b19",
         "filename": "buildbucket/appengine/model/build_test.go",
         "patchSetId": 1
@@ -477,6 +519,30 @@
     },
     {
       "key": {
+        "uuid": "27138f9f_b0344ae0",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T22:27:09Z",
+      "side": 1,
+      "message": "oops, sorry",
+      "parentUuid": "6284c6ee_13be2cbb",
+      "range": {
+        "startLine": 55,
+        "startChar": 63,
+        "endLine": 55,
+        "endChar": 64
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c01574c_06741cb3",
         "filename": "buildbucket/appengine/model/details.go",
         "patchSetId": 1
@@ -497,6 +563,30 @@
       "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3ce4504_1629f222",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T22:27:09Z",
+      "side": 1,
+      "message": "probably doesn\u0027t matter anymore",
+      "parentUuid": "5c01574c_06741cb3",
+      "range": {
+        "startLine": 64,
+        "startChar": 27,
+        "endLine": 64,
+        "endChar": 32
+      },
+      "revId": "846869d729667417b1f4c5f8ed28d0b9a6dba344",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
