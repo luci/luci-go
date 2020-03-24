@@ -22,6 +22,30 @@
       "revId": "58223d69f45a5fda44147c684ad638e399d2a319",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "639fc97e_091402fd",
+        "filename": "common/proto/mask/mask.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1381059
+      },
+      "writtenOn": "2020-03-24T01:18:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76b30c5c_c4cf0c4b",
+      "range": {
+        "startLine": 346,
+        "startChar": 12,
+        "endLine": 346,
+        "endChar": 23
+      },
+      "revId": "58223d69f45a5fda44147c684ad638e399d2a319",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
