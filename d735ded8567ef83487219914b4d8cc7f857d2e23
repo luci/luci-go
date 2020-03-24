@@ -112,6 +112,30 @@
     },
     {
       "key": {
+        "uuid": "f69e0387_6bb167de",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:56:07Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. Didn\u0027t know Map supports that.\nBut I think it\u0027s still better to stick with the current implementation. Because we will need to expose \u0027variantKey\u0027 if we use Map. I want to keep variantKey as an implementation detail of this file.\nAdded a comment to indicate that.",
+      "parentUuid": "778053c6_80a00fc7",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 79,
+        "endChar": 40
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a5d6763d_aa5710b0",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 8
@@ -132,6 +156,30 @@
       "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b57425c5_c83bff44",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5d6763d_aa5710b0",
+      "range": {
+        "startLine": 171,
+        "startChar": 3,
+        "endLine": 171,
+        "endChar": 49
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -158,6 +206,30 @@
     },
     {
       "key": {
+        "uuid": "52a7548e_01d19306",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ec364eb_641118c3",
+      "range": {
+        "startLine": 188,
+        "startChar": 12,
+        "endLine": 188,
+        "endChar": 23
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed058cfd_db8f63ab",
         "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
         "patchSetId": 8
@@ -181,6 +253,30 @@
     },
     {
       "key": {
+        "uuid": "e3e15a21_173f79b5",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:56:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed058cfd_db8f63ab",
+      "range": {
+        "startLine": 213,
+        "startChar": 12,
+        "endLine": 213,
+        "endChar": 28
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c8b4e102_67fc2313",
         "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
         "patchSetId": 8
@@ -201,6 +297,30 @@
       "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb6e4630_87b5a016",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:56:07Z",
+      "side": 1,
+      "message": "the actual values being stripped out are the private properties in TestVariant (only variantKey for now).\nI don\u0027t want to include that here (in code or in the comment) because variantKey should just be an implementation detail.\n\ntested multiple plugins, none of them does what I want here.\nMade a new plugin, recursiveDeepInclude. Like deepInclude, but use recursiveDeepInclude instead of deepEqual to perform equality check when comparing elements in (nested) properties that are array.",
+      "parentUuid": "c8b4e102_67fc2313",
+      "range": {
+        "startLine": 257,
+        "startChar": 6,
+        "endLine": 262,
+        "endChar": 50
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
