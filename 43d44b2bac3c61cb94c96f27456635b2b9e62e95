@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b02e59ac_de69e898",
+        "filename": "resultdb/internal/span/test_result.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-24T22:29:14Z",
+      "side": 1,
+      "message": "we need to update this to match the order.\n\nsame in exonerations",
+      "range": {
+        "startLine": 173,
+        "startChar": 4,
+        "endLine": 175,
+        "endChar": 104
+      },
+      "revId": "43d44b2bac3c61cb94c96f27456635b2b9e62e95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
