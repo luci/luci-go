@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d726f5c8_42f4225d",
+        "filename": "led/job/jobcreate/util.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-24T12:15:18Z",
+      "side": 1,
+      "message": "yeah...",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 10
+      },
+      "revId": "4561c1d311ffbeca95e6676c636b8ea491537267",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
