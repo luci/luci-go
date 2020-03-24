@@ -97,18 +97,18 @@ func QueryTestExonerations(ctx context.Context, txn *spanner.ReadOnlyTransaction
 		WHERE InvocationId IN UNNEST(@invIDs)
 			# Skip test exonerations after the one specified in the page token.
 			AND (
-				(InvocationId > @afterInvocationId) OR
-				(InvocationId = @afterInvocationId AND TestId > @afterTestId) OR
-				(InvocationId = @afterInvocationId AND TestId = @afterTestId AND ExonerationID > @afterExonerationID)
+				(TestId > @afterTestId) OR
+				(TestId = @afterTestId AND InvocationId > @afterInvocationId) OR
+				(TestId = @afterTestId AND InvocationId = @afterInvocationId AND ExonerationID > @afterExonerationId)
 		  )
-		ORDER BY InvocationId, TestId, ExonerationId
+		ORDER BY TestId, InvocationId, ExonerationId
 		LIMIT @limit
 	`)
 	st.Params["invIDs"] = q.InvocationIDs
 	st.Params["limit"] = q.PageSize
 	st.Params["afterInvocationId"],
 		st.Params["afterTestId"],
-		st.Params["afterExonerationID"],
+		st.Params["afterExonerationId"],
 		err = parseTestObjectPageToken(q.PageToken)
 	if err != nil {
 		return
