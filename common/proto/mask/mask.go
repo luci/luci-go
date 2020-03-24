@@ -151,6 +151,7 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 
 // normalizePaths normalizes parsed paths. Returns a new slice of paths.
 //
+// Removes trailing stars, e.g. converts ["a", "*"] to ["a"].
 // Removes paths that have a segment prefix already present in paths,
 // e.g. removes ["a", "b"] from [["a", "b"], ["a",]].
 //
@@ -158,6 +159,9 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 // path. If two paths have same number of segments, break the tie by comparing
 // the segments at each index lexicographically.
 func normalizePaths(paths []path) []path {
+	for i := range paths {
+		paths[i] = removeTrailingStar(paths[i])
+	}
 	sort.SliceStable(paths, func(i, j int) bool {
 		lenI, lenJ := len(paths[i]), len(paths[j])
 		if lenI == lenJ {
@@ -186,6 +190,13 @@ PATH_LOOP:
 		present.Add(strings.Join(p, delimiter))
 	}
 	return ret
+}
+
+func removeTrailingStar(p path) path {
+	if n := len(p); n > 0 && p[n-1] == "*" {
+		return p[:n-1]
+	}
+	return p
 }
 
 // Trim clears protobuf message fields that are not in the mask.
@@ -281,7 +292,7 @@ func (m Mask) Includes(path string) (Inclusiveness, error) {
 	if err != nil {
 		return Exclude, err
 	}
-	incl, _ := m.includesImpl(parsedPath)
+	incl, _ := m.includesImpl(removeTrailingStar(parsedPath))
 	return incl, nil
 }
 

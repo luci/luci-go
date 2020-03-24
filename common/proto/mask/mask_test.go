@@ -36,6 +36,15 @@ func TestNormalizePath(t *testing.T) {
 	Convey("Retrun empty paths when given empty paths", t, func() {
 		So(normalizePaths([]path{}), ShouldResemble, []path{})
 	})
+	Convey("Remove trailing star", t, func() {
+		So(normalizePaths([]path{
+			path{"a", "*"},
+			path{"b", "c", "*"},
+		}), ShouldResemble, []path{
+			path{"a"},
+			path{"b", "c"},
+		})
+	})
 	Convey("Remove all deduplicate paths", t, func() {
 		So(normalizePaths([]path{
 			path{"a", "b"},
@@ -386,6 +395,7 @@ func TestIncludes(t *testing.T) {
 		})
 		Convey("partially star", func() {
 			testIncludes([]string{"map_str_msg.*.str"}, "map_str_msg.xyz", IncludePartially)
+			testIncludes([]string{"map_str_msg.a.str"}, "map_str_msg.*", IncludePartially)
 		})
 		Convey("exclude", func() {
 			testIncludes([]string{"str"}, "num", Exclude)
@@ -558,6 +568,11 @@ func TestSubmask(t *testing.T) {
 			actual, err := buildMask("msg").Submask("msg.msgs.*.msg")
 			So(err, ShouldBeNil)
 			assertMaskEqual(actual, Mask{descriptor: testMsgDescriptor})
+		})
+		Convey("when path has trailing star", func() {
+			actual, err := buildMask("msgs.*.str").Submask("msgs.*")
+			So(err, ShouldBeNil)
+			assertMaskEqual(actual, buildMask("str"))
 		})
 		Convey("Error when path is excluded", func() {
 			_, err := buildMask("msg.msg.str").Submask("str")
