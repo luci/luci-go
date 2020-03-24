@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "86efaef8_f69993e2",
+        "filename": "milo/frontend/resultui/src/libs/extensions.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afab3f33_15983c72",
+      "range": {
+        "startLine": 86,
+        "startChar": 40,
+        "endLine": 86,
+        "endChar": 44
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51b2b8c3_f57acfc9",
+        "filename": "milo/frontend/resultui/src/libs/extensions.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c7404c1_d29ae07f",
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0da3bda_7316e2e6",
         "filename": "milo/frontend/resultui/src/libs/iterable_map.ts",
         "patchSetId": 8
@@ -62,6 +104,30 @@
       "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d949ca19_b1dd13b1",
+        "filename": "milo/frontend/resultui/src/libs/iterable_map.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-24T16:57:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0da3bda_7316e2e6",
+      "range": {
+        "startLine": 19,
+        "startChar": 23,
+        "endLine": 19,
+        "endChar": 39
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
