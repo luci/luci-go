@@ -64,23 +64,6 @@ func TestFromFieldMask(t *testing.T) {
 		parse := func(paths []string, isUpdateMask bool) (Mask, error) {
 			return FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, isUpdateMask)
 		}
-		// TODO(yiwzhang): ShouldBeResemble will hit infinite loop when comparing
-		// descriptor. Comparing the full name of message as a temporary workaround
-		var assertMaskEqual func(actual Mask, expect Mask)
-		assertMaskEqual = func(actual Mask, expect Mask) {
-			if expect.descriptor == nil {
-				So(actual.descriptor, ShouldBeNil)
-			} else {
-				So(actual.descriptor, ShouldNotBeNil)
-				So(actual.descriptor.FullName(), ShouldEqual, expect.descriptor.FullName())
-			}
-			So(actual.isRepeated, ShouldEqual, expect.isRepeated)
-			So(actual.children, ShouldHaveLength, len(expect.children))
-			for seg, expectSubmask := range expect.children {
-				So(actual.children, ShouldContainKey, seg)
-				assertMaskEqual(actual.children[seg], expectSubmask)
-			}
-		}
 
 		Convey("empty field mask", func() {
 			actual, err := parse([]string{}, false)
@@ -411,4 +394,191 @@ func TestIncludes(t *testing.T) {
 			testIncludes([]string{"msg.str"}, "msg.num", Exclude)
 		})
 	})
+}
+
+func TestMerge(t *testing.T) {
+	Convey("Test merge", t, func() {
+		testMerge := func(maskPaths []string, src *testMsg, dest *testMsg) {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			So(m.Merge(src, dest), ShouldBeNil)
+		}
+		Convey("scalar field", func() {
+			src := &testMsg{Num: 1}
+			dest := &testMsg{Num: 2}
+			testMerge([]string{"num"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{Num: 1})
+		})
+		Convey("repeated scalar field", func() {
+			src := &testMsg{Nums: []int32{1, 2, 3}}
+			dest := &testMsg{Nums: []int32{4, 5}}
+			testMerge([]string{"nums"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{Nums: []int32{1, 2, 3}})
+		})
+		Convey("repeated message field", func() {
+			src := &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1},
+					&testMsg{Str: "abc"},
+				},
+			}
+			dest := &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Msg: &testMsg{}},
+				},
+			}
+			testMerge([]string{"msgs"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				Msgs: []*testMsg{
+					&testMsg{Num: 1},
+					&testMsg{Str: "abc"},
+				},
+			})
+		})
+		Convey("entire submessage", func() {
+			src := &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			}
+			dest := &testMsg{
+				Msg: &testMsg{
+					Num: 2,
+					Str: "def",
+				},
+			}
+			testMerge([]string{"msg"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			})
+		})
+		Convey("partial submessage", func() {
+			src := &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "abc",
+				},
+			}
+			dest := &testMsg{
+				Msg: &testMsg{
+					Num: 2,
+					Str: "def",
+				},
+			}
+			testMerge([]string{"msg.num"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				Msg: &testMsg{
+					Num: 1,
+					Str: "def",
+				},
+			})
+		})
+		Convey("map field ", func() {
+			src := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			}
+			dest := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"c": &testMsg{Num: 1},
+				},
+			}
+			testMerge([]string{"map_str_msg"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			})
+		})
+		Convey("map field (dest map is nil)", func() {
+			src := &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			}
+			dest := &testMsg{
+				MapStrMsg: nil,
+			}
+			testMerge([]string{"map_str_msg"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{
+				MapStrMsg: map[string]*testMsg{
+					"a": &testMsg{Num: 1},
+					"b": &testMsg{Num: 2},
+				},
+			})
+		})
+		Convey("empty mask", func() {
+			src := &testMsg{Num: 1}
+			dest := &testMsg{Num: 2}
+			So(Mask{}.Merge(src, dest), ShouldBeNil)
+			So(dest, ShouldResembleProto, &testMsg{Num: 2})
+		})
+		Convey("multiple fields", func() {
+			src := &testMsg{Num: 1, Strs: []string{"a", "b"}}
+			dest := &testMsg{Num: 2, Strs: []string{"c"}}
+			testMerge([]string{"num", "strs"}, src, dest)
+			So(dest, ShouldResembleProto, &testMsg{Num: 1, Strs: []string{"a", "b"}})
+		})
+		Convey("Error when one of proto message is nil", func() {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			var src proto.Message
+			So(m.Merge(src, &testMsg{}), ShouldErrLike, "src message: nil message")
+		})
+		Convey("Error when proto message descriptors does not match", func() {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			err = m.Merge(&testMsg{}, &testingpb.Simple{})
+			So(err, ShouldErrLike, "dest message: expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple")
+		})
+	})
+}
+
+func TestSubmask(t *testing.T) {
+	Convey("Test submask", t, func() {
+		buildMask := func(paths ...string) Mask {
+			m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
+			So(err, ShouldBeNil)
+			return m
+		}
+		Convey("when path is partially included", func() {
+			actual, err := buildMask("msg.msgs.*.str").Submask("msg")
+			So(err, ShouldBeNil)
+			assertMaskEqual(actual, buildMask("msgs.*.str"))
+		})
+		Convey("when path is entirely included", func() {
+			actual, err := buildMask("msg").Submask("msg.msgs.*.msg")
+			So(err, ShouldBeNil)
+			assertMaskEqual(actual, Mask{descriptor: testMsgDescriptor})
+		})
+		Convey("Error when path is excluded", func() {
+			_, err := buildMask("msg.msg.str").Submask("str")
+			So(err, ShouldErrLike, "the given path \"str\" is excluded from mask")
+		})
+	})
+}
+
+// TODO(yiwzhang): ShouldBeResemble will hit infinite loop when comparing
+// descriptor. Comparing the full name of message as a temporary workaround
+func assertMaskEqual(actual Mask, expect Mask) {
+	if expect.descriptor == nil {
+		So(actual.descriptor, ShouldBeNil)
+	} else {
+		So(actual.descriptor, ShouldNotBeNil)
+		So(actual.descriptor.FullName(), ShouldEqual, expect.descriptor.FullName())
+	}
+	So(actual.isRepeated, ShouldEqual, expect.isRepeated)
+	So(actual.children, ShouldHaveLength, len(expect.children))
+	for seg, expectSubmask := range expect.children {
+		So(actual.children, ShouldContainKey, seg)
+		assertMaskEqual(actual.children[seg], expectSubmask)
+	}
 }

@@ -315,11 +315,71 @@ func (m Mask) includesImpl(p path) (Inclusiveness, Mask) {
 
 // Merge merges masked fields from src to dest.
 //
+// If mask is empty, this is a noop. It returns error when one of src or dest
+// message is nil or has different message descriptor from that of mask.
 // Empty field will be merged as long as they are present in the mask. Repeated
 // fields or map fields will be overwritten entirely. Partial updates are not
 // supported for such field.
-func (m Mask) Merge(src proto.Message, dest proto.Message) error {
-	panic("not implemented")
+func (m Mask) Merge(src, dest proto.Message) error {
+	if m.IsEmpty() {
+		return nil
+	}
+	srcReflectMsg := protoimpl.X.MessageOf(src)
+	if err := checkMsgHaveDesc(srcReflectMsg, m.descriptor); err != nil {
+		return fmt.Errorf("src message: %s", err.Error())
+	}
+	destReflectMsg := protoimpl.X.MessageOf(dest)
+	if err := checkMsgHaveDesc(destReflectMsg, m.descriptor); err != nil {
+		return fmt.Errorf("dest message: %s", err.Error())
+	}
+	m.mergeImpl(srcReflectMsg, destReflectMsg)
+	return nil
+}
+
+func (m Mask) mergeImpl(src, dest protoreflect.Message) {
+	for seg, submask := range m.children {
+		// star field is not supported for update mask so this won't be nil
+		fieldDesc := m.descriptor.Fields().ByName(protoreflect.Name(seg))
+		switch srcVal, kind := src.Get(fieldDesc), fieldDesc.Kind(); {
+		case fieldDesc.IsList():
+			newField := dest.NewField(fieldDesc)
+			srcList, destList := srcVal.List(), newField.List()
+			for i := 0; i < srcList.Len(); i++ {
+				destList.Append(cloneValue(srcList.Get(i), kind))
+			}
+			dest.Set(fieldDesc, newField)
+
+		case fieldDesc.IsMap():
+			newField := dest.NewField(fieldDesc)
+			destMap := newField.Map()
+			mapValKind := fieldDesc.MapValue().Kind()
+			srcVal.Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
+				destMap.Set(k, cloneValue(v, mapValKind))
+				return true
+			})
+			dest.Set(fieldDesc, newField)
+
+		case len(submask.children) > 0 && fieldDesc.Kind() == protoreflect.MessageKind:
+			// only singular message field can be merged partially
+			submask.mergeImpl(srcVal.Message(), dest.Mutable(fieldDesc).Message())
+
+		default:
+			// scalar value
+			dest.Set(fieldDesc, cloneValue(srcVal, kind))
+		}
+	}
+}
+
+// cloneValue returns a cloned value for message kind or the same instance of
+// input value for all the other kinds (i.e. scalar). List and map value are not
+// expected as they have been explicitly handled in mergeImpl.
+func cloneValue(v protoreflect.Value, kind protoreflect.Kind) protoreflect.Value {
+	if kind == protoreflect.MessageKind {
+		msg := protoimpl.X.ProtoMessageV1Of(v.Message().Interface())
+		clonedMsg := proto.Clone(msg)
+		return protoreflect.ValueOf(protoimpl.X.MessageOf(clonedMsg))
+	}
+	return v
 }
 
 // Submask returns a sub-mask given a path from the received mask to it.
@@ -331,9 +391,30 @@ func (m Mask) Merge(src proto.Message, dest proto.Message) error {
 // without children.
 //
 // Returns error if path parsing fails or path is excluded from the received
-// mask
+// mask.
 func (m Mask) Submask(path string) (Mask, error) {
-	panic("not implemented")
+	ctx := &parseCtx{
+		curDescriptor: m.descriptor,
+		isList:        m.isRepeated && !(m.descriptor != nil && m.descriptor.IsMapEntry()),
+	}
+
+	parsedPath, err := parsePathWithContext(path, ctx, false)
+	if err != nil {
+		return Mask{}, err
+	}
+	switch incl, inclMask := m.includesImpl(parsedPath); incl {
+	case IncludeEntirely:
+		return Mask{
+			descriptor: ctx.curDescriptor,
+			isRepeated: ctx.isList || (ctx.curDescriptor != nil && ctx.curDescriptor.IsMapEntry()),
+		}, nil
+	case Exclude:
+		return Mask{}, fmt.Errorf("the given path %q is excluded from mask", path)
+	case IncludePartially:
+		return inclMask, nil
+	default:
+		return Mask{}, fmt.Errorf("unknown Inclusiveness: %d", incl)
+	}
 }
 
 // IsEmpty reports whether a mask is of empty value. Such mask implies keeping
