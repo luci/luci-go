@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0269b66_e1bbbe3c",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-24T12:24:18Z",
+      "side": 1,
+      "message": "you mean new LUCI project just for led tasks?",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 73
+      },
+      "revId": "edd610d15009cee2500444d584c4f1d057bb4cee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b9b29e9_3779e9b2",
+        "filename": "led/job/job.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1114919
+      },
+      "writtenOn": "2020-03-24T12:24:18Z",
+      "side": 1,
+      "message": "👍 very helpful",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 238,
+        "endChar": 0
+      },
+      "revId": "edd610d15009cee2500444d584c4f1d057bb4cee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
