@@ -19,6 +19,29 @@
     },
     {
       "key": {
+        "uuid": "d61fac88_ee7d7b88",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T00:55:39Z",
+      "side": 1,
+      "message": "This should be @fileoverview.\n\nPTAL at go/js-style#jsdoc-tags for a list of available JSDoc tags and some usage/formatting guidelines for them.",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 12
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fc7ed8ce_835688a1",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 5
@@ -65,6 +88,52 @@
     },
     {
       "key": {
+        "uuid": "bd311f2e_5dacf61f",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T00:55:39Z",
+      "side": 1,
+      "message": "Suggested rewording:\n\nContains a list of results and exonerations for a given test variant. Includes a string key for faster comparison of variants.",
+      "range": {
+        "startLine": 59,
+        "startChar": 3,
+        "endLine": 59,
+        "endChar": 66
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4b11c41_6a1dd58a",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T00:55:39Z",
+      "side": 1,
+      "message": "should this be called resultWithKeyIter?",
+      "range": {
+        "startLine": 148,
+        "startChar": 8,
+        "endLine": 148,
+        "endChar": 29
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "17774136_53343539",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 5
@@ -81,6 +150,53 @@
         "startChar": 2,
         "endLine": 155,
         "endChar": 4
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c0186d7_dfdcadaa",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T00:55:39Z",
+      "side": 1,
+      "message": "It\u0027s implicitly used at L188 and L194 with the param expansion, but I agree this is hard to understand. I\u0027d love if we could figure out a way to avoid this complexity of this function.",
+      "parentUuid": "17774136_53343539",
+      "range": {
+        "startLine": 148,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 4
+      },
+      "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d45f236_6706790c",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 5
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T00:55:39Z",
+      "side": 1,
+      "message": "Can you explain a bit about why you need the deepStripNotIn function here? What extra properties are you filtering out? I\u0027m wondering if there\u0027s a way we can make this a little easier to understand.",
+      "range": {
+        "startLine": 256,
+        "startChar": 6,
+        "endLine": 256,
+        "endChar": 65
       },
       "revId": "c1ae1b7daf33c08f4626b247dfde7c49c723ad42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
