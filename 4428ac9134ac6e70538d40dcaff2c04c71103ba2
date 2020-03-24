@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "e4426edd_bfbdf9fe",
+        "filename": "client/cmd/cloudkms/decrypt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-24T00:49:49Z",
+      "side": 1,
+      "message": "I realized that this retry is useless (in the previous version of the code too), since nothing tags errors as transient for retry.Default to recognize them as such.\n\nBut looks like new API has retries built-in: https://github.com/googleapis/google-cloud-go/blob/master/kms/apiv1/key_management_client.go#L74\n\nSo I think we should just remove retry.Retry from our code.",
+      "range": {
+        "startLine": 40,
+        "startChar": 8,
+        "endLine": 40,
+        "endChar": 54
+      },
+      "revId": "4428ac9134ac6e70538d40dcaff2c04c71103ba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9c5209a2_50907268",
         "filename": "client/cmd/cloudkms/main.go",
         "patchSetId": 1
@@ -46,6 +69,30 @@
       "revId": "4428ac9134ac6e70538d40dcaff2c04c71103ba2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90d6f829_85b8e1bc",
+        "filename": "client/cmd/cloudkms/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-24T00:49:49Z",
+      "side": 1,
+      "message": "\u0027cloud-platform\u0027 is a superset of all Cloud scopes, it should be safe to keep using it. If you want more assurance, look at API doc for each RPC, it lists scopes it accepts, e.g. https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys/encrypt:\n\n  Requires one of the following OAuth scopes:\n\n  https://www.googleapis.com/auth/cloudkms\n  https://www.googleapis.com/auth/cloud-platform\n\n(one of them, not both at once)",
+      "parentUuid": "34072592_ced3273c",
+      "range": {
+        "startLine": 38,
+        "startChar": 57,
+        "endLine": 38,
+        "endChar": 105
+      },
+      "revId": "4428ac9134ac6e70538d40dcaff2c04c71103ba2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
