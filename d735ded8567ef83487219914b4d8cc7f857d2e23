@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c8b4e102_67fc2313",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T04:41:18Z",
+      "side": 1,
+      "message": "Couple of questions about this:\n1. what are the actual values in your test objects being stripped out by deepStripNotIn? (just for my own education)\n2. instead of implementing deepStripNotIn, could we just implement a more sane version of deepInclude that does what we want? Or just use something like chaiSubset?\n\nhttps://www.chaijs.com/plugins/chai-subset/",
+      "range": {
+        "startLine": 257,
+        "startChar": 6,
+        "endLine": 262,
+        "endChar": 50
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
