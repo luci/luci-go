@@ -387,6 +387,30 @@
       "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "50bacffa_a6a19b1c",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 8
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-24T23:05:13Z",
+      "side": 1,
+      "message": "Thanks, I find this much more readable.",
+      "parentUuid": "cb6e4630_87b5a016",
+      "range": {
+        "startLine": 257,
+        "startChar": 6,
+        "endLine": 262,
+        "endChar": 50
+      },
+      "revId": "d735ded8567ef83487219914b4d8cc7f857d2e23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
