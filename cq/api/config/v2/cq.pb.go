@@ -905,9 +905,9 @@ type Verifiers_Tryjob_Builder struct {
 	// additional OWNERS, lint, etc checks which are useful to run against
 	// the latest revision of the CL's target branch.
 	DisableReuse bool `protobuf:"varint,2,opt,name=disable_reuse,json=disableReuse,proto3" json:"disable_reuse,omitempty"`
-	// Optional. If YES (default), running or not-yet-started tryjobs
-	// previously triggered by CQ will be cancelled as soon as substantially
-	// different patchset is uploaded to a CL.
+	// Optional. If YES (default), running or not-yet-started builds of this
+	// builder previously triggered by CQ will be cancelled as soon as
+	// a substantially different patchset is uploaded to a CL.
 	CancelStale Toggle `protobuf:"varint,11,opt,name=cancel_stale,json=cancelStale,proto3,enum=cq.config.Toggle" json:"cancel_stale,omitempty"`
 	// Optional name of a builder (aka parent) which will trigger this builder
 	// (aka child).

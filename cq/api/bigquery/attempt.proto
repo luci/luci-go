@@ -55,8 +55,6 @@ message Attempt {
   //   * builds triggered as part of this Attempt, which were later removed from
   //     project CQ config and hence were no longer required by CQ by Attempt
   //     end time.
-  //   * builds triggered as part of this Attempt that failed and were retried.
-  //     The latest retried build will be included, however.
   repeated Build builds = 8;
 
   // Final status of the Attempt.
@@ -157,10 +155,13 @@ message Build {
   // this builder are all not reusable.
   Origin origin = 3;
 
-  // Whether this build must pass in order for the CLs to be considered
-  // ready to submit. True means this build must pass, false means this
-  // build is "optional", and this build should not be used to assess
+  // Whether this build's builder must pass in order for the CLs to be
+  // considered ready to submit. True means this builder must pass, false means
+  // this builder is "optional", and so this build should not be used to assess
   // the correctness of the CLs in the Attempt.
+  //
+  // Tip: join this with the Buildbucket BigQuery table to figure out which
+  // builder this build belongs to.
   bool critical = 4;
 }
 
