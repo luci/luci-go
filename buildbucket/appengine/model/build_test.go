@@ -20,10 +20,12 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -38,6 +40,11 @@ func TestBuild(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
+		m, err := mask.FromFieldMask(&field_mask.FieldMask{
+			// Empty mask is the same as "*".
+			Paths: []string{},
+		}, &pb.Build{}, false, false)
+		So(err, ShouldBeNil)
 
 		Convey("read/write", func() {
 			So(datastore.Put(ctx, &Build{
@@ -113,8 +120,30 @@ func TestBuild(t *testing.T) {
 				},
 			}), ShouldBeNil)
 
+			Convey("mask", func() {
+				Convey("include", func() {
+					m, err := mask.FromFieldMask(&field_mask.FieldMask{
+						Paths: []string{"id"},
+					}, &pb.Build{}, false, false)
+					So(err, ShouldBeNil)
+					p, err := b.ToProto(ctx, m)
+					So(err, ShouldBeNil)
+					So(p.Id, ShouldEqual, 1)
+				})
+
+				Convey("exclude", func() {
+					m, err := mask.FromFieldMask(&field_mask.FieldMask{
+						Paths: []string{"builder"},
+					}, &pb.Build{}, false, false)
+					So(err, ShouldBeNil)
+					p, err := b.ToProto(ctx, m)
+					So(err, ShouldBeNil)
+					So(p.Id, ShouldEqual, 0)
+				})
+			})
+
 			Convey("tags", func() {
-				p, err := b.ToProto(ctx)
+				p, err := b.ToProto(ctx, m)
 				So(err, ShouldBeNil)
 				So(p.Tags, ShouldResembleProto, []*pb.StringPair{
 					{
@@ -130,7 +159,7 @@ func TestBuild(t *testing.T) {
 			})
 
 			Convey("infra", func() {
-				p, err := b.ToProto(ctx)
+				p, err := b.ToProto(ctx, m)
 				So(err, ShouldBeNil)
 				So(p.Infra, ShouldResembleProto, &pb.BuildInfra{
 					Buildbucket: &pb.BuildInfra_Buildbucket{
@@ -141,7 +170,7 @@ func TestBuild(t *testing.T) {
 			})
 
 			Convey("input properties", func() {
-				p, err := b.ToProto(ctx)
+				p, err := b.ToProto(ctx, m)
 				So(err, ShouldBeNil)
 				So(p.Input.Properties, ShouldResembleProtoJSON, `{"input": "input value"}`)
 				So(b.Proto.Input, ShouldBeNil)
@@ -163,7 +192,7 @@ func TestBuild(t *testing.T) {
 						},
 					},
 				}), ShouldBeNil)
-				p, err := b.ToProto(ctx)
+				p, err := b.ToProto(ctx, m)
 				So(err, ShouldBeNil)
 				So(p.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
 				So(b.Proto.Output, ShouldBeNil)
@@ -184,7 +213,7 @@ func TestBuild(t *testing.T) {
 					Bytes:    s,
 					IsZipped: false,
 				}), ShouldBeNil)
-				p, err := b.ToProto(ctx)
+				p, err := b.ToProto(ctx, m)
 				So(err, ShouldBeNil)
 				So(p.Steps, ShouldResembleProto, []*pb.Step{
 					{

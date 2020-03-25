@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -83,14 +84,19 @@ type Build struct {
 
 // ToProto returns the *pb.Build representation of this build.
 // TODO(crbug/1042991): Support field masks.
-func (b *Build) ToProto(ctx context.Context) (*pb.Build, error) {
+func (b *Build) ToProto(ctx context.Context, m mask.Mask) (*pb.Build, error) {
 	p := proto.Clone(&b.Proto).(*pb.Build)
-	for _, t := range b.Tags {
-		k, v := strpair.Parse(t)
-		p.Tags = append(p.Tags, &pb.StringPair{
-			Key:   k,
-			Value: v,
-		})
+	switch inc, err := m.Includes("tags"); {
+	case err != nil:
+		return nil, errors.Annotate(err, "error checking %q field inclusiveness", "tags").Err()
+	case inc != mask.Exclude:
+		for _, t := range b.Tags {
+			k, v := strpair.Parse(t)
+			p.Tags = append(p.Tags, &pb.StringPair{
+				Key:   k,
+				Value: v,
+			})
+		}
 	}
 	key := datastore.KeyForObj(ctx, b)
 	inf := &BuildInfra{
@@ -109,11 +115,36 @@ func (b *Build) ToProto(ctx context.Context) (*pb.Build, error) {
 		ID:    1,
 		Build: key,
 	}
-	if err := datastore.Get(ctx, inf, inp, out, stp); err != nil {
-		// Output properties won't be found unless the build has finished.
-		// Steps won't be found unless the build has started.
-		if merr, ok := err.(errors.MultiError); !ok || merr[0] != nil || merr[1] != nil || (merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity) || (merr[3] != nil && merr[3] != datastore.ErrNoSuchEntity) {
+	var dets []interface{}
+	var err error
+	appendIfIncluded := func(path string, det interface{}) {
+		// Halt on first error.
+		if err != nil {
+			return
+		}
+		switch inc, e := m.Includes(path); {
+		case e != nil:
+			err = errors.Annotate(err, "error checking %q field inclusiveness", path).Err()
+		case inc != mask.Exclude:
+			dets = append(dets, det)
+		}
+	}
+	appendIfIncluded("infra", inf)
+	appendIfIncluded("input.properties", inp)
+	appendIfIncluded("output.properties", out)
+	appendIfIncluded("steps", stp)
+	if err != nil {
+		return nil, err
+	}
+	if err := datastore.Get(ctx, dets); err != nil {
+		merr, ok := err.(errors.MultiError)
+		if !ok {
 			return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
+		}
+		for _, e := range merr {
+			if e != nil && e != datastore.ErrNoSuchEntity {
+				return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
+			}
 		}
 	}
 	p.Infra = &inf.Proto
@@ -125,10 +156,12 @@ func (b *Build) ToProto(ctx context.Context) (*pb.Build, error) {
 		p.Output = &pb.Build_Output{}
 	}
 	p.Output.Properties = &out.Proto.Struct
-	var err error
 	p.Steps, err = stp.ToProto(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Annotate(err, "error fetching steps for %q", key).Err()
+	}
+	if err := m.Trim(p); err != nil {
+		return nil, errors.Annotate(err, "error trimming fields for %q", key).Err()
 	}
 	return p, nil
 }
