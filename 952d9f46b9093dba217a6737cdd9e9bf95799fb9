@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ec0549f_a1dcadf6",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-25T05:39:44Z",
+      "side": 1,
+      "message": "if so, please use regexp.MustCompile",
+      "range": {
+        "startLine": 274,
+        "startChar": 15,
+        "endLine": 274,
+        "endChar": 20
+      },
+      "revId": "952d9f46b9093dba217a6737cdd9e9bf95799fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe8e8b31_06525647",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-25T05:39:44Z",
+      "side": 1,
+      "message": "i didn\u0027t catch it in the design review, but we generally wrap user-supplied regexps with ^ and $ because the user should always want them, otherwise they can easily match things that don\u0027t intend to match.",
+      "range": {
+        "startLine": 276,
+        "startChar": 35,
+        "endLine": 276,
+        "endChar": 53
+      },
+      "revId": "952d9f46b9093dba217a6737cdd9e9bf95799fb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
