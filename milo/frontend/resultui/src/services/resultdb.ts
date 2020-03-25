@@ -66,7 +66,7 @@ export interface TestResult {
 export interface TestExoneration {
   readonly name: string;
   readonly testId: string;
-  readonly variant: Variant;
+  readonly variant?: Variant;
   readonly exonerationId: string;
   readonly explanationHTML?: string;
 }
