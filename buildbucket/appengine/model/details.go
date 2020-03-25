@@ -15,6 +15,11 @@
 package model
 
 import (
+	"bytes"
+	"compress/zlib"
+	"context"
+	"io/ioutil"
+
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
@@ -86,4 +91,39 @@ type BuildOutputProperties struct {
 	Build *datastore.Key `gae:"$parent"`
 	// Proto is the struct.Struct representation of the properties field.
 	Proto DSStruct `gae:"properties,noindex"`
+}
+
+// BuildSteps is a representation of a build proto's steps field
+// in the datastore.
+type BuildSteps struct {
+	_kind string `gae:"$kind,BuildSteps"`
+	// ID is always 1 because only one such entity exists.
+	ID int `gae:"$id"`
+	// Build is the key for the build this entity belongs to.
+	Build *datastore.Key `gae:"$parent"`
+	// IsZipped indicates whether or not Bytes must be zlib decompressed.
+	IsZipped bool `gae:"step_container_bytes_zipped,noindex"`
+	// Bytes is the pb.Build proto representation of the build proto where only steps is set.
+	// IsZipped determines whether this value is compressed or not.
+	Bytes []byte `gae:"steps,noindex"`
+}
+
+// ToProto returns the []*pb.Step representation of these steps.
+func (s *BuildSteps) ToProto(ctx context.Context) ([]*pb.Step, error) {
+	b := s.Bytes
+	if s.IsZipped {
+		r, err := zlib.NewReader(bytes.NewReader(s.Bytes))
+		if err != nil {
+			return nil, errors.Annotate(err, "error creating reader for %q", datastore.KeyForObj(ctx, s)).Err()
+		}
+		b, err = ioutil.ReadAll(r)
+		if err != nil {
+			return nil, errors.Annotate(err, "error reading %q", datastore.KeyForObj(ctx, s)).Err()
+		}
+	}
+	p := &pb.Build{}
+	if err := proto.Unmarshal(b, p); err != nil {
+		return nil, errors.Annotate(err, "error unmarshalling %q", datastore.KeyForObj(ctx, s)).Err()
+	}
+	return p.Steps, nil
 }

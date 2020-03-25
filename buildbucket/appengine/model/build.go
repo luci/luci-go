@@ -105,9 +105,14 @@ func (b *Build) ToProto(ctx context.Context) (*pb.Build, error) {
 		ID:    1,
 		Build: key,
 	}
-	if err := datastore.Get(ctx, inf, inp, out); err != nil {
+	stp := &BuildSteps{
+		ID:    1,
+		Build: key,
+	}
+	if err := datastore.Get(ctx, inf, inp, out, stp); err != nil {
 		// Output properties won't be found unless the build has finished.
-		if merr, ok := err.(errors.MultiError); !ok || merr[0] != nil || merr[1] != nil || (merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity) {
+		// Steps won't be found unless the build has started.
+		if merr, ok := err.(errors.MultiError); !ok || merr[0] != nil || merr[1] != nil || (merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity) || (merr[3] != nil && merr[3] != datastore.ErrNoSuchEntity) {
 			return nil, errors.Annotate(err, "error fetching build details for %q", key).Err()
 		}
 	}
@@ -120,6 +125,10 @@ func (b *Build) ToProto(ctx context.Context) (*pb.Build, error) {
 		p.Output = &pb.Build_Output{}
 	}
 	p.Output.Properties = &out.Proto.Struct
-	// TODO(crbug/1042991): Add steps.
+	var err error
+	p.Steps, err = stp.ToProto(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return p, nil
 }
