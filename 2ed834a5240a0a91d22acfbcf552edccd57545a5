@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "30f49802_fd0514d3",
+        "filename": "led/main.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T15:18:56Z",
+      "side": 1,
+      "message": "TODO(crbug/...) if possible. It\u0027s not really a TODO (except to remove the comment) but it will at least provide a reference that is kept up to date (as opposed to a comment written however long ago). Also helpful when grepping for things that need to be updated to close the bug.",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 17,
+        "endChar": 12
+      },
+      "revId": "2ed834a5240a0a91d22acfbcf552edccd57545a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
