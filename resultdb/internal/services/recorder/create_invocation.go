@@ -123,5 +123,5 @@ func (s *recorderServer) CreateInvocation(ctx context.Context, in *pb.CreateInvo
 }
 
 func invocationAlreadyExists(id span.InvocationID) error {
-	return appstatus.Errorf(codes.AlreadyExists, "%s already exsts", id.Name())
+	return appstatus.Errorf(codes.AlreadyExists, "%s already exists", id.Name())
 }
