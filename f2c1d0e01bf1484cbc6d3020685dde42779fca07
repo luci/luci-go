@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3765117f_fbb66437",
+        "filename": "led/ledcmd/clients.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T18:01:36Z",
+      "side": 1,
+      "message": "Usually I\u0027d use the same flow for tests and prod, i.e. even the prod client should be stored in the context with the same context key.\n\nhttps://godoc.org/go.chromium.org/luci/common/cli#ContextModificator\nCan use it to install prod clients into the context for the actual led binary.",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "611b0a9d_33c2d5c6",
+        "filename": "led/ledcmd/consolidate_isolateds_test.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T18:01:36Z",
+      "side": 1,
+      "message": "Arguably this struct warrants its own tests.",
+      "revId": "f2c1d0e01bf1484cbc6d3020685dde42779fca07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
