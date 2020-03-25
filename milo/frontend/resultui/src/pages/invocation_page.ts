@@ -22,6 +22,9 @@ import moment from 'moment';
 import '../components/invocation_details';
 import '../components/page_header';
 import '../components/status_bar';
+import '../components/test_nav_tree';
+import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
+import { ReadonlyTest, TestNode } from '../models/test_node';
 import { Invocation, InvocationState, ResultDb } from '../services/resultdb';
 
 const INVOCATION_STATE_DISPLAY_MAP = {
@@ -39,8 +42,7 @@ const INVOCATION_STATE_DISPLAY_MAP = {
  * Otherwise, shows results for the invocation.
  */
 @customElement('tr-invocation-page')
-export class InvocationPageElement extends MobxLitElement implements
-    BeforeEnterObserver {
+export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref accessToken = '';
   @observable.ref invocationName = '';
 
@@ -69,6 +71,29 @@ export class InvocationPageElement extends MobxLitElement implements
       return null;
     }
     return req.v;
+  }
+
+  @computed
+  private get testIter(): AsyncIterableIterator<ReadonlyTest> {
+    if (!this.resultDb) {
+      return (async function*() {})();
+    }
+    return streamTests(
+      streamTestResults({invocations: [this.invocationName]}, this.resultDb),
+      streamTestExonerations({invocations: [this.invocationName]}, this.resultDb),
+    );
+  }
+
+  @computed
+  private get testLoader() {
+    const ret = new TestLoader(TestNode.newRoot(), this.testIter);
+    ret.loadMore();
+    return ret;
+  }
+
+  @computed
+  private get testTree(): TestNode | null {
+    return this.testLoader?.node || null;
   }
 
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
@@ -100,11 +125,11 @@ export class InvocationPageElement extends MobxLitElement implements
   private refreshAccessToken = () => {
     // Awaiting on authInstance to load may block the loading of authInstance,
     // creating a deadlock. Use synced call instead.
-    this.accessToken = signin.getAuthInstanceSync()
-                           ?.currentUser.get()
-                           .getAuthResponse()
-                           .access_token ||
-        '';
+    this.accessToken = signin
+      .getAuthInstanceSync()
+      ?.currentUser.get()
+      .getAuthResponse()
+      .access_token || '';
     if (!this.accessToken) {
       const searchParams = new URLSearchParams();
       searchParams.set('redirect', window.location.href);
@@ -144,7 +169,10 @@ export class InvocationPageElement extends MobxLitElement implements
         .loading=${this.invocationReq.get().tag === 'loading'}
       ></tr-status-bar>
       ${!this.invocation ? null : html`
-        <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
+      <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
+      `}
+      ${!this.testTree ? null : html`
+      <tr-test-nav-tree .root=${this.testTree}></tr-test-nav-tree>
       `}
     `;
   }
@@ -156,5 +184,4 @@ export class InvocationPageElement extends MobxLitElement implements
       padding: 5px;
     }
   `;
-
 }
