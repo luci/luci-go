@@ -16,6 +16,24 @@
       "revId": "1d603f3b75dbfa24a94721a7119420596130da27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d3f334f_db3aeb39",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T14:56:17Z",
+      "side": 1,
+      "message": "I guess order is only irrelevant if you return p.",
+      "parentUuid": "9a6ee2ff_c1d564ee",
+      "revId": "1d603f3b75dbfa24a94721a7119420596130da27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
