@@ -1029,6 +1029,7 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		now := clock.Now(s.Context)
 		latency := now.Sub(started)
 		statusCode := rw.Status()
+
 		if healthCheck {
 			// Do not log fast health check calls AT ALL, they just spam logs.
 			if latency < healthTimeLogThreshold {
@@ -1040,12 +1041,20 @@ func (s *Server) rootMiddleware(c *router.Context, next router.Handler) {
 		} else {
 			s.lastReqTime.Store(now)
 		}
+
+		// When running behind Envoy, log its request IDs to simplify debugging.
+		var extraFields logging.Fields
+		if xrid := c.Request.Header.Get("X-Request-Id"); xrid != "" {
+			extraFields = logging.Fields{"requestId": xrid}
+		}
+
 		entry := sdlogger.LogEntry{
 			Severity:     severityTracker.MaxSeverity(),
 			Timestamp:    sdlogger.ToTimestamp(now),
 			TraceID:      traceID,
 			TraceSampled: span.IsRecordingEvents(),
 			SpanID:       spanCtx.SpanID.String(), // the top-level span ID
+			Fields:       extraFields,
 			RequestInfo: &sdlogger.RequestInfo{
 				Method:       c.Request.Method,
 				URL:          getRequestURL(c.Request),
