@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "040b5122_4533fe8f",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T17:08:32Z",
+      "side": 1,
+      "message": "Oh right.",
+      "parentUuid": "5a10d005_81da6bf9",
+      "range": {
+        "startLine": 125,
+        "startChar": 32,
+        "endLine": 125,
+        "endChar": 37
+      },
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c392447f_18a26f4c",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "604a5452_a8472ccb",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T17:08:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c392447f_18a26f4c",
+      "range": {
+        "startLine": 131,
+        "startChar": 32,
+        "endLine": 131,
+        "endChar": 38
+      },
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2e00dad9_8c6065a4",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "144abaf582df1778396bb7e23a47391765351f5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c79a11d2_6493eebe",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T17:08:32Z",
+      "side": 1,
+      "message": "Eh ok.",
+      "parentUuid": "2e00dad9_8c6065a4",
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "7619d3bf_a19fb29d",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T17:08:32Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "02f3ff3a_e7957cfa",
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6e94e604_98af3155",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
@@ -128,6 +212,30 @@
       "writtenOn": "2020-03-25T16:52:02Z",
       "side": 1,
       "message": "this creates this msg and parses it every time. could you move it up to a global variant (of type mask.Mask)?",
+      "range": {
+        "startLine": 44,
+        "startChar": 11,
+        "endLine": 63,
+        "endChar": 3
+      },
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6f3a04b_25ce7bee",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T17:08:32Z",
+      "side": 1,
+      "message": "I wanted to but I don\u0027t see how to create a Mask without using FromFieldMask. Maybe mask package needs MustParseFromFieldMask which doesn\u0027t return an error? That will have the added benefit that it panics immediately when any server code executes instead of holding the error until a request comes in, since the default field mask should always parse.",
+      "parentUuid": "6e94e604_98af3155",
       "range": {
         "startLine": 44,
         "startChar": 11,
