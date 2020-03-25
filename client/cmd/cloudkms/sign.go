@@ -17,52 +17,42 @@ package main
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"io"
 	"os"
-	"time"
 
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
+	cloudkms "cloud.google.com/go/kms/apiv1"
+	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doSign(ctx context.Context, service *cloudkms.Service, input *os.File, keyPath string) ([]byte, error) {
+func doSign(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, keyPath string) ([]byte, error) {
 	digest := sha256.New()
 	if _, err := io.Copy(digest, input); err != nil {
 		logging.Warningf(ctx, "Error while reading input")
 		return nil, err
 	}
-	digestB64 := base64.StdEncoding.EncodeToString(digest.Sum(nil))
 
 	// Set up request, including a SHA256 hash of the plaintext.
-	req := cloudkms.AsymmetricSignRequest{
-		Digest: &cloudkms.Digest{Sha256: digestB64},
+	req := &kmspb.AsymmetricSignRequest{
+		Name: keyPath,
+		Digest: &kmspb.Digest{
+			Digest: &kmspb.Digest_Sha256{
+				Sha256: digest.Sum(nil),
+			},
+		},
 	}
 
-	var resp *cloudkms.AsymmetricSignResponse
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		var err error
-		resp, err = service.
-			Projects.
-			Locations.
-			KeyRings.
-			CryptoKeys.
-			CryptoKeyVersions.
-			AsymmetricSign(keyPath, &req).Context(ctx).Do()
-		return err
-	}, func(err error, d time.Duration) {
-		logging.Warningf(ctx, "Transient error while making request, retrying in %s...", d)
-	})
+	resp, err := client.AsymmetricSign(ctx, req)
 	if err != nil {
+		logging.Errorf(ctx, "Error while making request")
 		return nil, err
 	}
-	return base64.StdEncoding.DecodeString(resp.Signature)
+
+	return resp.Signature, nil
 }
 
 func cmdSign(authOpts auth.Options) *subcommands.Command {

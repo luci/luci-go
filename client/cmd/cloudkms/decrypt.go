@@ -16,42 +16,29 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
-	"time"
 
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
+	cloudkms "cloud.google.com/go/kms/apiv1"
+	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry"
-	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doDecrypt(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
+func doDecrypt(ctx context.Context, client *cloudkms.KeyManagementClient, input []byte, keyPath string) ([]byte, error) {
 	// Set up request, using the ciphertext directly (should already be base64 encoded).
-	req := cloudkms.DecryptRequest{
-		Ciphertext: base64.StdEncoding.EncodeToString(input),
+	req := &kmspb.DecryptRequest{
+		Name:       keyPath,
+		Ciphertext: input,
 	}
 
-	var resp *cloudkms.DecryptResponse
-	err := retry.Retry(ctx, transient.Only(retry.Default), func() error {
-		var err error
-		resp, err = service.
-			Projects.
-			Locations.
-			KeyRings.
-			CryptoKeys.
-			Decrypt(keyPath, &req).Context(ctx).Do()
-		return err
-	}, func(err error, d time.Duration) {
-		logging.Warningf(ctx, "Transient error while making request, retrying in %s...", d)
-	})
+	resp, err := client.Decrypt(ctx, req)
 	if err != nil {
+		logging.Errorf(ctx, "Error while making request")
 		return nil, err
 	}
-	return base64.StdEncoding.DecodeString(resp.Plaintext)
+	return resp.Plaintext, nil
 }
 
 func cmdDecrypt(authOpts auth.Options) *subcommands.Command {

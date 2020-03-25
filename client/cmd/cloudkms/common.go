@@ -17,13 +17,15 @@ package main
 import (
 	"context"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"strings"
 
+	"golang.org/x/oauth2"
+	"google.golang.org/api/option"
+
 	"github.com/maruel/subcommands"
 
-	cloudkms "google.golang.org/api/cloudkms/v1"
+	cloudkms "cloud.google.com/go/kms/apiv1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
@@ -69,22 +71,26 @@ func (c *commonFlags) Parse(args []string) error {
 	return nil
 }
 
-func (c *commonFlags) createAuthClient(ctx context.Context) (*http.Client, error) {
-	return auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts).Client()
+func (c *commonFlags) createAuthTokenSource(ctx context.Context) (oauth2.TokenSource, error) {
+	a := auth.NewAuthenticator(ctx, auth.SilentLogin, c.parsedAuthOpts)
+	if err := a.CheckLoginRequired(); err != nil {
+		return nil, errors.Annotate(err, "please login with `luci-auth login`").Err()
+	}
+	return a.TokenSource()
 }
 
-func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.Service, error) {
+func (c *commonFlags) commonMain(ctx context.Context) (*cloudkms.KeyManagementClient, error) {
 	// Set up service.
-	authCl, err := c.createAuthClient(ctx)
+	authTS, err := c.createAuthTokenSource(ctx)
 	if err != nil {
 		return nil, err
 	}
-	service, err := cloudkms.New(authCl)
+	client, err := cloudkms.NewKeyManagementClient(ctx, option.WithTokenSource(authTS))
 	if err != nil {
 		return nil, err
 	}
 
-	return service, nil
+	return client, nil
 }
 
 func readInput(file string) ([]byte, error) {
@@ -150,7 +156,7 @@ func validateCryptoKeysKMSPath(path string) error {
 type verifyRun struct {
 	commonFlags
 	inputSig string
-	doVerify func(ctx context.Context, service *cloudkms.Service, input *os.File, inputSig []byte, keyPath string) error
+	doVerify func(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, inputSig []byte, keyPath string) error
 }
 
 func (v *verifyRun) Init(authOpts auth.Options) {
@@ -206,7 +212,7 @@ func (v *verifyRun) Run(a subcommands.Application, args []string, env subcommand
 type signRun struct {
 	commonFlags
 	output string
-	doSign func(ctx context.Context, service *cloudkms.Service, input *os.File, keyPath string) ([]byte, error)
+	doSign func(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, keyPath string) ([]byte, error)
 }
 
 func (s *signRun) Init(authOpts auth.Options) {
@@ -262,7 +268,7 @@ func (s *signRun) Run(a subcommands.Application, args []string, env subcommands.
 type cryptRun struct {
 	commonFlags
 	output  string
-	doCrypt func(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error)
+	doCrypt func(ctx context.Context, client *cloudkms.KeyManagementClient, input []byte, keyPath string) ([]byte, error)
 }
 
 func (c *cryptRun) Init(authOpts auth.Options) {
