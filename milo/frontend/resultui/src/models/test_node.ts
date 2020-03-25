@@ -66,20 +66,20 @@ export class TestNode {
   @computed get name() { return this.elidedNode.name; }
   @computed get children(): readonly TestNode[] { return this.elidedNode.node.unelidedChildren; }
   @computed private get elidedNode() {
-    let name = this.unelidedBranchName;
+    let name = this.unelidedName;
 
     // If the node has a single child, elide it into its parent.
     let node: TestNode = this;
     while (node.unelidedChildren.length === 1) {
       node = node.unelidedChildren[0];
-      name += node.unelidedBranchName;
+      name += node.unelidedName;
     }
     return {name, node};
   }
 
   static newRoot() { return new TestNode('', ''); }
-  private constructor(prefix: string, private readonly unelidedBranchName: string) {
-    this.unelidedPath = prefix + unelidedBranchName;
+  private constructor(prefix: string, private readonly unelidedName: string) {
+    this.unelidedPath = prefix + unelidedName;
   }
 
   /**
@@ -143,7 +143,7 @@ export class TestNode {
     // TODO(weiweilin): we will only need to compare with the last child once
     // all tests are sorted by testId.
     // crbug.com/1062117
-    let child = this.unelidedChildren.find((c) => c.unelidedBranchName === nextSeg);
+    let child = this.unelidedChildren.find((c) => c.unelidedName === nextSeg);
     if (child === undefined) {
       child = new TestNode(this.unelidedPath, nextSeg);
       this.unelidedChildren.push(child);
