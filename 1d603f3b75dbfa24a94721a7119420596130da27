@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a6ee2ff_c1d564ee",
+        "filename": "buildbucket/appengine/model/details.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-25T08:21:51Z",
+      "side": 1,
+      "message": "this seems to rely on the impl details of the compiler which does not actually guarantee that Unmarshal will be called before p.Steps is evaluated: https://golang.org/ref/spec#Order_of_evaluation\nIn fact, reading the code, I\u0027d expect the opposite order, in which case this func would always return nil as steps\n\nso, could you please make this\n\n  err :\u003d proto.Unmarshal(b, p)\n  return p.Steps, err\n\n?",
+      "revId": "1d603f3b75dbfa24a94721a7119420596130da27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
