@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "003e4472_790917a6",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T16:45:03Z",
+      "side": 1,
+      "message": "Relaxed to allow not found for all details.",
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd9d0267_e11fa808",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-25T16:45:03Z",
+      "side": 1,
+      "message": "Didn\u0027t see this in the proto so I guess it\u0027s still pending.",
+      "revId": "144abaf582df1778396bb7e23a47391765351f5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
