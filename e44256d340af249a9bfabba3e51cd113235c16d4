@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d15fa84_6b86647f",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/test_nav_node.ts",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-25T04:24:32Z",
+      "side": 1,
+      "message": "should this be \"tr-test-nav-tree\"?",
+      "range": {
+        "startLine": 26,
+        "startChar": 13,
+        "endLine": 26,
+        "endChar": 26
+      },
+      "revId": "e44256d340af249a9bfabba3e51cd113235c16d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
