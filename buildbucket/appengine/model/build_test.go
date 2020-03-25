@@ -18,6 +18,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	"go.chromium.org/gae/impl/memory"
@@ -30,7 +31,7 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestModel(t *testing.T) {
+func TestBuild(t *testing.T) {
 	t.Parallel()
 
 	Convey("Build", t, func() {
@@ -166,6 +167,31 @@ func TestModel(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(p.Output.Properties, ShouldResembleProtoJSON, `{"output": "output value"}`)
 				So(b.Proto.Output, ShouldBeNil)
+			})
+
+			Convey("steps", func() {
+				s, err := proto.Marshal(&pb.Build{
+					Steps: []*pb.Step{
+						{
+							Name: "step",
+						},
+					},
+				})
+				So(err, ShouldBeNil)
+				So(datastore.Put(ctx, &BuildSteps{
+					ID:       1,
+					Build:    key,
+					Bytes:    s,
+					IsZipped: false,
+				}), ShouldBeNil)
+				p, err := b.ToProto(ctx)
+				So(err, ShouldBeNil)
+				So(p.Steps, ShouldResembleProto, []*pb.Step{
+					{
+						Name: "step",
+					},
+				})
+				So(b.Proto.Steps, ShouldBeEmpty)
 			})
 		})
 	})
