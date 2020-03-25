@@ -18,6 +18,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"io"
+	"os"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -30,9 +32,12 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-func doSign(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
+func doSign(ctx context.Context, service *cloudkms.Service, input *os.File, keyPath string) ([]byte, error) {
 	digest := sha256.New()
-	digest.Write(input)
+	if _, err := io.Copy(digest, input); err != nil {
+		logging.Warningf(ctx, "Error while reading input")
+		return nil, err
+	}
 	digestB64 := base64.StdEncoding.EncodeToString(digest.Sum(nil))
 
 	// Set up request, including a SHA256 hash of the plaintext.
@@ -75,7 +80,7 @@ projects/<project>/locations/<location>/keyRings/<keyRing>/cryptoKeys/<cryptoKey
 
 -output will be the signature`,
 		CommandRun: func() subcommands.CommandRun {
-			c := cryptRun{doRequest: doSign}
+			c := signRun{doSign: doSign}
 			c.Init(authOpts)
 			return &c
 		},
