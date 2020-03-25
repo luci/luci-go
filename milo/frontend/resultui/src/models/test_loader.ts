@@ -17,6 +17,7 @@
  * results and exonerations from resultDb to a TestNode.
  */
 
+import { computed, observable } from 'mobx';
 import { QueryTestExonerationsRequest, QueryTestResultRequest, ResultDb,  TestExoneration, TestResult, Variant } from '../services/resultdb';
 import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExoneration } from './test_node';
 
@@ -31,6 +32,12 @@ import { isTestResult, ReadonlyTest, ReadonlyVariant, TestNode, TestResultOrExon
  * different levels.
  */
 export class TestLoader {
+  @computed get isLoading() { return this._isLoading; }
+  @observable.ref private _isLoading = false;
+
+  @computed get canLoadMore() { return this._canLoadMore; }
+  @observable.ref private _canLoadMore = true;
+
   /**
    * @param testIter the tests should be sorted by id.
    */
@@ -39,16 +46,35 @@ export class TestLoader {
     private readonly testIter: AsyncIterator<ReadonlyTest>,
   ) {}
 
+  private loadPromise = Promise.resolve();
   /**
    * Loads more tests from the iterator to the node.
    */
-  async loadMore(limit = 100) {
+  loadMore(limit = 100) {
+    if (this.canLoadMore) {
+      this.loadPromise = this.loadPromise.then(() => this.loadMoreInternal(limit));
+    }
+    return this.loadPromise;
+  }
+
+  /**
+   * Loads more tests from the iterator to the node.
+   *
+   * @precondition there should not exist a running instance of
+   * this.loadMoreInternal
+   */
+  private async loadMoreInternal(limit: number) {
+    this._isLoading = true;
     while (limit > 0) {
       const next = await this.testIter.next();
-      if (next.done) { return; }
+      if (next.done) {
+        this._canLoadMore = false;
+        break;
+      }
       this.node.addTest(next.value);
       limit--;
     }
+    this._isLoading = false;
   }
 }
 
