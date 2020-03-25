@@ -39,12 +39,10 @@ type commonFlags struct {
 	authFlags      authcli.Flags
 	parsedAuthOpts auth.Options
 	keyPath        string
-	input          string
 }
 
 func (c *commonFlags) Init(authOpts auth.Options) {
 	c.authFlags.Register(&c.Flags, authOpts)
-	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data for encrypt and decrypt cannot be larger than 64KiB.")
 }
 
 func (c *commonFlags) Parse(args []string) error {
@@ -59,9 +57,6 @@ func (c *commonFlags) Parse(args []string) error {
 	}
 	if len(args) > 1 {
 		return errors.New("unexpected positional arguments")
-	}
-	if c.input == "" {
-		return errors.New("input file is required")
 	}
 	if err := validateCryptoKeysKMSPath(args[0]); err != nil {
 		return err
@@ -155,18 +150,23 @@ func validateCryptoKeysKMSPath(path string) error {
 
 type verifyRun struct {
 	commonFlags
+	input    string
 	inputSig string
 	doVerify func(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, inputSig []byte, keyPath string) error
 }
 
 func (v *verifyRun) Init(authOpts auth.Options) {
 	v.commonFlags.Init(authOpts)
+	v.Flags.StringVar(&v.input, "input", "", "Path to file with data to verify (use '-' for stdin).")
 	v.Flags.StringVar(&v.inputSig, "input-sig", "", "Path to read signature from (use '-' for stdin).")
 }
 
 func (v *verifyRun) Parse(ctx context.Context, args []string) error {
 	if err := v.commonFlags.Parse(args); err != nil {
 		return err
+	}
+	if v.input == "" {
+		return errors.New("input file is required")
 	}
 	if v.inputSig == "" {
 		return errors.New("input signature is required")
@@ -211,18 +211,23 @@ func (v *verifyRun) Run(a subcommands.Application, args []string, env subcommand
 
 type signRun struct {
 	commonFlags
+	input  string
 	output string
 	doSign func(ctx context.Context, client *cloudkms.KeyManagementClient, input *os.File, keyPath string) ([]byte, error)
 }
 
 func (s *signRun) Init(authOpts auth.Options) {
 	s.commonFlags.Init(authOpts)
-	s.Flags.StringVar(&s.output, "output", "", "Path to write operation results to (use '-' for stdout).")
+	s.Flags.StringVar(&s.input, "input", "", "Path to file with data to sign (use '-' for stdin).")
+	s.Flags.StringVar(&s.output, "output", "", "Path to write signature to (use '-' for stdout).")
 }
 
 func (s *signRun) Parse(ctx context.Context, args []string) error {
 	if err := s.commonFlags.Parse(args); err != nil {
 		return err
+	}
+	if s.input == "" {
+		return errors.New("input file is required")
 	}
 	if s.output == "" {
 		return errors.New("output location is required")
@@ -267,18 +272,23 @@ func (s *signRun) Run(a subcommands.Application, args []string, env subcommands.
 
 type cryptRun struct {
 	commonFlags
+	input   string
 	output  string
 	doCrypt func(ctx context.Context, client *cloudkms.KeyManagementClient, input []byte, keyPath string) ([]byte, error)
 }
 
 func (c *cryptRun) Init(authOpts auth.Options) {
 	c.commonFlags.Init(authOpts)
+	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data for encrypt and decrypt cannot be larger than 64KiB.")
 	c.Flags.StringVar(&c.output, "output", "", "Path to write operation results to (use '-' for stdout).")
 }
 
 func (c *cryptRun) Parse(ctx context.Context, args []string) error {
 	if err := c.commonFlags.Parse(args); err != nil {
 		return err
+	}
+	if c.input == "" {
+		return errors.New("input file is required")
 	}
 	if c.output == "" {
 		return errors.New("output location is required")
@@ -314,6 +324,55 @@ func (c *cryptRun) Run(a subcommands.Application, args []string, env subcommands
 		return 1
 	}
 	if err := c.main(ctx); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while executing command")
+		return 1
+	}
+	return 0
+}
+
+type downloadRun struct {
+	commonFlags
+	output     string
+	doDownload func(ctx context.Context, client *cloudkms.KeyManagementClient, keyPath string) ([]byte, error)
+}
+
+func (d *downloadRun) Init(authOpts auth.Options) {
+	d.commonFlags.Init(authOpts)
+	d.Flags.StringVar(&d.output, "output", "", "Path to write key to (use '-' for stdout).")
+}
+
+func (d *downloadRun) Parse(ctx context.Context, args []string) error {
+	if err := d.commonFlags.Parse(args); err != nil {
+		return err
+	}
+	if d.output == "" {
+		return errors.New("output location is required")
+	}
+	return nil
+}
+
+func (d *downloadRun) main(ctx context.Context) error {
+	service, err := d.commonMain(ctx)
+	if err != nil {
+		return err
+	}
+
+	result, err := d.doDownload(ctx, service, d.keyPath)
+	if err != nil {
+		return err
+	}
+
+	// Write output.
+	return writeOutput(d.output, result)
+}
+
+func (d *downloadRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	ctx := cli.GetContext(a, d, env)
+	if err := d.Parse(ctx, args); err != nil {
+		logging.WithError(err).Errorf(ctx, "Error while parsing arguments")
+		return 1
+	}
+	if err := d.main(ctx); err != nil {
 		logging.WithError(err).Errorf(ctx, "Error while executing command")
 		return 1
 	}
