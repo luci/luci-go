@@ -179,7 +179,7 @@ func deduplicateCreateInvocations(ctx context.Context, txn span.Txn, idSet span.
 		if rowRequestID.IsNull() || rowRequestID.String() != requestID {
 			return invocationAlreadyExists(invID)
 		}
-		invCount += 1
+		invCount++
 		return nil
 	})
 	switch {
