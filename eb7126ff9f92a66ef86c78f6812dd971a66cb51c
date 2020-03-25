@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f9633ef2_3fd50d7d",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-25T02:11:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44a1d320_5affe7f6",
+      "revId": "eb7126ff9f92a66ef86c78f6812dd971a66cb51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6de7e6f7_f4e736d3",
         "filename": "client/cmd/cloudkms/sign.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "eb7126ff9f92a66ef86c78f6812dd971a66cb51c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed6b4b7e_15328dbb",
+        "filename": "client/cmd/cloudkms/sign.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2020-03-25T02:11:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6de7e6f7_f4e736d3",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 16
+      },
+      "revId": "eb7126ff9f92a66ef86c78f6812dd971a66cb51c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
