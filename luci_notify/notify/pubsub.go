@@ -159,7 +159,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 
 	// Helper function for notifying.
 	notifyNoBlame := func(n notifypb.Notifications, oldStatus buildbucketpb.Status) error {
-		n = n.Filter(oldStatus, &build.Build)
+		n = Filter(&n, oldStatus, &build.Build)
 		recipients = append(recipients, ComputeRecipients(c, n, nil, nil)...)
 		templateInput.OldStatus = oldStatus
 		return Notify(c, d, recipients, templateInput)
@@ -244,7 +244,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	// Get the blamelist logs, if needed.
 	var aggregateLogs Logs
 	aggregateRepoWhiteset := BlamelistRepoWhiteset(builder.Notifications)
-	if len(aggregateRepoWhiteset) > 0 && len(checkout) > 0{
+	if len(aggregateRepoWhiteset) > 0 && len(checkout) > 0 {
 		oldCheckout := NewCheckout(builder.GitilesCommits)
 		aggregateLogs, err = ComputeLogs(c, luciProject, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
 		if err != nil {
@@ -300,7 +300,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		}
 
 		// Notify, and include the blamelist.
-		n := builder.Notifications.Filter(builder.Status, &build.Build)
+		n := Filter(&builder.Notifications, builder.Status, &build.Build)
 		recipients = append(recipients, ComputeRecipients(c, n, commits[:index], aggregateLogs)...)
 		templateInput.OldStatus = builder.Status
 		if err := Notify(c, d, recipients, templateInput); err != nil {
