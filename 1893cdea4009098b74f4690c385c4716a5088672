@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bacd795a_88d065ca",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-26T06:51:48Z",
+      "side": 1,
+      "message": "return here",
+      "range": {
+        "startLine": 224,
+        "startChar": 3,
+        "endLine": 224,
+        "endChar": 8
+      },
+      "revId": "1893cdea4009098b74f4690c385c4716a5088672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7996c4f1_6100158b",
+        "filename": "common/isolatedclient/isolatedclient.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-26T06:51:48Z",
+      "side": 1,
+      "message": "return here",
+      "range": {
+        "startLine": 302,
+        "startChar": 3,
+        "endLine": 302,
+        "endChar": 9
+      },
+      "revId": "1893cdea4009098b74f4690c385c4716a5088672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8da9b74_e5ff3633",
+        "filename": "common/lhttp/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-26T06:51:48Z",
+      "side": 1,
+      "message": "return here",
+      "range": {
+        "startLine": 129,
+        "startChar": 5,
+        "endLine": 129,
+        "endChar": 10
+      },
+      "revId": "1893cdea4009098b74f4690c385c4716a5088672",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
