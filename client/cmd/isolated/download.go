@@ -140,6 +140,14 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	// Prepare isolated client.
 	ctx, cancel := context.WithCancel(c.defaultFlags.MakeLoggingContext(os.Stderr))
 	signals.HandleInterrupt(cancel)
+	if err := c.runMain(ctx, a, args); err != nil {
+		errors.Log(ctx, err)
+		return err
+	}
+	return nil
+}
+
+func (c *downloadRun) runMain(ctx context.Context, a subcommands.Application, args []string) error {
 	authClient, err := c.createAuthClient(ctx)
 	if err != nil {
 		return err
