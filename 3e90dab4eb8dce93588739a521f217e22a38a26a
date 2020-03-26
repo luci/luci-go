@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "70a18b48_37fb7e39",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-26T05:47:10Z",
+      "side": 1,
+      "message": "changed to use mwc-button.",
+      "parentUuid": "bca1398d_d12176f7",
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b8f60a9_7e3193e8",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 11
@@ -39,6 +57,30 @@
       "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f023e3f_08671008",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-26T05:47:10Z",
+      "side": 1,
+      "message": "It\u0027s used in this.isLoading.",
+      "parentUuid": "5b8f60a9_7e3193e8",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 26
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b66ecc5d_1d271de4",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-26T05:47:10Z",
+      "side": 1,
+      "message": "Local variable doesn\u0027t work (if we go with this implementation)\nloadPromise needs to persist across multiple calls.",
+      "parentUuid": "982c85ef_f6b0c4ef",
+      "range": {
+        "startLine": 57,
+        "startChar": 11,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4c52ba8_7c15b336",
         "filename": "milo/frontend/resultui/src/models/test_loader.ts",
         "patchSetId": 11
@@ -76,6 +142,30 @@
       "writtenOn": "2020-03-26T01:25:40Z",
       "side": 1,
       "message": "loadMore above seems to ignore this precondition\n\ni think would make more sense to me is\n1) in loadMore, check if loadPromise is null. If it is not null, do nothing\n2) otherwise start the iterator, assign to loadMore, subscribe to it and set loadPromise to null when it is done\n3) make loadMore async, so that the caller, if they want to, know when loadMore is done\n4) document clearly that loadMore is noop if the previous call is done yet\n5) in UI, disable \"load more\" button when clicked, and enable it again when loadMore promise is done",
+      "range": {
+        "startLine": 65,
+        "startChar": 5,
+        "endLine": 66,
+        "endChar": 26
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d737091b_49f59cbe",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-26T05:47:10Z",
+      "side": 1,
+      "message": "loadMore doesn\u0027t ignore this precondition.\nthis.loadPromise schedules a this.loadMoreInternal call after the previous load promise resolves. It doesn\u0027t call loadMoreInternal directly.\n\nThx for your suggestion.\nBut I still prefer the current approach. Although the implementation is more complex, it\u0027s behaviour is simpler:\nLoad more.\nRather than:\nIf it\u0027s not loading, load more. If it\u0027s loading, ignore the request (which includes \u0027limit\u0027).",
+      "parentUuid": "b4c52ba8_7c15b336",
       "range": {
         "startLine": 65,
         "startChar": 5,
@@ -102,6 +192,24 @@
       "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd664e21_7184fcd4",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-26T05:47:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "373f3042_81ce5fee",
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
