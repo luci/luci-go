@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "884ab86e_e62e6a1f",
+        "filename": "resultdb/sink/gs_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "copying comment here in case the other one gets lost: I thought we agreed in the meeting to use a plain Go channel for this, with N workers receiving from it. Dispatcher seems an overkill for this.\n\nthe red flag is that our batch size is 1",
+      "range": {
+        "startLine": 31,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 29
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c4994bb_4eb0aed2",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "if we don\u0027t do this, the result is the same because writing would fail?\n\nalso strictly speaking, this is racy because the bucket may disappear",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 2
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e53a843f_f1903b33",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "i think it would be simpler to move L67 if-statement here (between NewWriter and w.Close), and call \n\n  w.Write(art.Contents)",
+      "range": {
+        "startLine": 81,
+        "startChar": 14,
+        "endLine": 81,
+        "endChar": 32
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16542b98_e2dbb421",
+        "filename": "resultdb/sink/gs_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "does resultSink has to do this? This can be configured at the bucket level once",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 91,
+        "endChar": 2
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c2c420f_0b7c4824",
+        "filename": "resultdb/sink/rdb_channel.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "now we have 3 variables that duplicate fields in pb.Artifact below.\n\nit would be easier to declare one Artifact variable here and get rid of these variables",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 30
+      },
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "645b2f7b_ea0b1f6e",
+        "filename": "resultdb/sink/sink.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:36Z",
+      "side": 1,
+      "message": "i think it would be better to return an error",
+      "revId": "7401c7688d4212f771400e2a9a4a30fd83b7e5f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
