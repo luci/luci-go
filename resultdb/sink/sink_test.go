@@ -15,83 +15,55 @@ package sink
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	pb "go.chromium.org/luci/resultdb/proto/rpc/v1"
 	sinkpb "go.chromium.org/luci/resultdb/proto/sink/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func installTestListener(srv *Server) (string, func() error) {
-	l, err := net.Listen("tcp", "localhost:0")
-	So(err, ShouldBeNil)
-	srv.testListener = l
-
-	// return the serving address
-	return fmt.Sprint("localhost:", l.Addr().(*net.TCPAddr).Port), l.Close
-}
-
-func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
-	sinkClient := sinkpb.NewSinkPRPCClient(&prpc.Client{
-		Host:    host,
-		Options: &prpc.Options{Insecure: true},
-	})
-	// install the auth token into the context, if present
-	if authToken != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, AuthTokenKey, authTokenValue(authToken))
-	}
-	return sinkClient.ReportTestResults(ctx, in)
-}
-
 func TestNewServer(t *testing.T) {
 	t.Parallel()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	Convey("NewServer", t, func() {
-		recClient := pb.NewMockRecorderClient(nil)
-
 		Convey("succeeds", func() {
-			srv := NewServer(
-				ServerConfig{Address: ":42", AuthToken: "hello", Recorder: recClient})
+			srv := NewServer(testServerConfig(ctl, ":42", "hello"))
 			So(srv, ShouldNotBeNil)
 		})
 		Convey("uses the default address, if not given", func() {
-			srv := NewServer(ServerConfig{Recorder: recClient})
+			srv := NewServer(testServerConfig(ctl, "", ""))
 			So(srv, ShouldNotBeNil)
 			So(srv.cfg.Address, ShouldNotEqual, "")
-		})
-		Convey("panics if cfg.Recorder is nil", func() {
-			So(func() { NewServer(ServerConfig{}) }, ShouldPanic)
 		})
 	})
 }
 
 func TestServer(t *testing.T) {
 	t.Parallel()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	Convey("Server", t, func() {
 		req := &sinkpb.ReportTestResultsRequest{}
-		recClient := pb.NewMockRecorderClient(nil)
+		ctx := authtest.MockAuthConfig(context.Background())
 
 		// a test server with a test listener
-		srv := NewServer(ServerConfig{AuthToken: "secret", Recorder: recClient})
+		srv := NewServer(testServerConfig(ctl, "", "secret"))
 		So(srv, ShouldNotBeNil)
 		addr, cleanup := installTestListener(srv)
 		defer cleanup()
-		ctx := authtest.MockAuthConfig(context.Background())
 
 		Convey("Creates a random auth token, if not given", func() {
 			srv.cfg.AuthToken = ""
@@ -213,13 +185,14 @@ func TestServer(t *testing.T) {
 
 func TestServerExport(t *testing.T) {
 	t.Parallel()
-	recClient := pb.NewMockRecorderClient(nil)
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	Convey("Export returns the configured address and auth_token", t, func() {
 		ctx := context.Background()
-		srv := NewServer(ServerConfig{
-			Address: ":42", AuthToken: "hello", Recorder: recClient})
+		srv := NewServer(testServerConfig(ctl, ":42", "hello"))
 		So(srv, ShouldNotBeNil)
+
 		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
 		So(sink, ShouldNotBeNil)
