@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1393e14a_c7e63a0b",
+        "filename": "luci_notify/api/config/testdata/basic.cfg",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "why same builder is defined twice in this test?\nisn\u0027t this disallowed by validation?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 3
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a5d2c39_dc102085",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "what if it is INFRA_FAILURE, or CANCELED, etc? this isn\u0027t source tree\u0027s fault, so we should not close it in these cases?",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1794cf86_8f04541a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "nit: i believe golint dislikes when an if-branches ending with \"return\" is followed by \"else\".",
+      "range": {
+        "startLine": 337,
+        "startChar": 2,
+        "endLine": 337,
+        "endChar": 9
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f5b7e99_9852ede4",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "let\u0027s not assume that in code, but check https://godoc.org/go.chromium.org/gae/service/datastore#CurrentTransaction",
+      "range": {
+        "startLine": 344,
+        "startChar": 63,
+        "endLine": 345,
+        "endChar": 49
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90866490_1691ff79",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/luci_notify/notify/pubsub.go;l\u003d49?q\u003dconfig%5C.Builder%20f:notify",
+      "range": {
+        "startLine": 350,
+        "startChar": 14,
+        "endLine": 350,
+        "endChar": 79
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b7fd9c0_3bcdd627",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "the error returned by this func is ignored",
+      "range": {
+        "startLine": 359,
+        "startChar": 13,
+        "endLine": 359,
+        "endChar": 16
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8a216f1_091f9804",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "same as below, this is out of order",
+      "range": {
+        "startLine": 205,
+        "startChar": 3,
+        "endLine": 205,
+        "endChar": 48
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ceb27f1d_ff8eb458",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "we shouldn\u0027t close the tree if this build is a for a previous commit",
+      "range": {
+        "startLine": 307,
+        "startChar": 3,
+        "endLine": 308,
+        "endChar": 35
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b334efc8_33d73e8a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T15:34:33Z",
+      "side": 1,
+      "message": "should we call UpdateTreeClosers here too?\n\nin general, please check all exit points in this (complicated) code. Not all of them clal notifyNoBlame",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
