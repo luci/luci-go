@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto"
 	"encoding/base64"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -28,6 +27,7 @@ import (
 	"strings"
 
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/retry"
@@ -216,10 +216,13 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 		}
 		decompressor, err := isolated.GetDecompressor(i.namespace, bytes.NewReader(decoded))
 		if err != nil {
-			return err
+			return errors.Annotate(err, "GetDecompressor failed").Err()
 		}
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
+		if err != nil {
+			return errors.Annotate(err, "io.Copy failed").Err()
+		}
 		return err
 	}
 
@@ -230,7 +233,7 @@ func (i *Client) Fetch(c context.Context, digest isolated.HexDigest, dest io.Wri
 // postJSON does authenticated POST request.
 func (i *Client) postJSON(c context.Context, resource string, headers map[string]string, in, out interface{}) error {
 	if len(resource) == 0 || resource[0] != '/' {
-		return errors.New("resource must start with '/'")
+		return errors.Reason("resource must start with '/'").Err()
 	}
 	_, err := lhttp.PostJSON(c, i.retryFactory, i.authClient, i.url+resource, headers, in, out)
 	return err
@@ -291,10 +294,13 @@ func (gcs defaultGCSHandler) Fetch(c context.Context, i *Client, content isolate
 		defer resp.Body.Close()
 		decompressor, err := isolated.GetDecompressor(i.namespace, resp.Body)
 		if err != nil {
-			return err
+			return errors.Annotate(err, "GCS GetDecompressor failed").Err()
 		}
 		defer decompressor.Close()
 		_, err = io.Copy(dest, decompressor)
+		if err != nil {
+			return errors.Annotate(err, "GCS io.Copy failed").Err()
+		}
 		return err
 	}
 	_, err := lhttp.NewRequest(c, i.anonClient, i.retryFactory, rgen, handler, nil)()
