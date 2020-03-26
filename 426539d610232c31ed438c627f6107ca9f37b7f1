@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d699db26_e832b3d7",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-26T08:16:41Z",
+      "side": 1,
+      "message": "How do you think to show log in most shallow place instead of inside library part?\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/client/cmd/isolated/download.go?l\u003d211\u0026rcl\u003df53839aaa9a2f035946ec0c0c591b4947f274744",
+      "revId": "426539d610232c31ed438c627f6107ca9f37b7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
