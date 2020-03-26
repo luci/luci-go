@@ -24,6 +24,7 @@ import { ReadonlyTest, TestNode } from './test_node';
 
 
 chai.use(chaiRecursiveDeepInclude);
+const sleep = (t: number) => new Promise((r) => setTimeout(r, t));
 
 describe('test_loader', () => {
   const testResult1 = {testId: 'a', resultId: '1', variant: {def: {'key1': 'val1'}}} as Partial<TestResult> as TestResult;
@@ -135,10 +136,12 @@ describe('test_loader', () => {
       testLoader = new TestLoader(
         {addTest: spy} as Partial<TestNode> as TestNode,
         (async function* () {
+          await sleep(1);
           yield test1;
           yield test2;
           yield test3;
           yield test4;
+          await sleep(1);
           yield test5;
         })(),
       );
@@ -157,30 +160,37 @@ describe('test_loader', () => {
     });
 
     it('should preserve loading progress', async () => {
+      assert.isFalse(testLoader.done);
+
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 2);
       assert.strictEqual(spy.getCall(0).args[0], test1);
       assert.strictEqual(spy.getCall(1).args[0], test2);
+      assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 4);
       assert.strictEqual(spy.getCall(2).args[0], test3);
       assert.strictEqual(spy.getCall(3).args[0], test4);
+      assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 5);
       assert.strictEqual(spy.getCall(4).args[0], test5);
+      assert.isTrue(testLoader.done);
 
+      // Should not load when the iterator is exhausted.
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 5);
+      assert.isTrue(testLoader.done);
     });
 
-    it('should not load when the iterator is exhausted', async () => {
-      await testLoader.loadMore(6);
-      assert.strictEqual(spy.callCount, 5);
-
-      await testLoader.loadMore(6);
-      assert.strictEqual(spy.callCount, 5);
+    it('should indicate whether the it is loading new tests', async () => {
+      assert.isFalse(testLoader.isLoading);
+      const promise = testLoader.loadMore(5);
+      assert.isTrue(testLoader.isLoading);
+      await promise;
+      assert.isFalse(testLoader.isLoading);
     });
   });
 
