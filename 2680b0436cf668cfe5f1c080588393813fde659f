@@ -22,6 +22,30 @@
       "revId": "2680b0436cf668cfe5f1c080588393813fde659f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37ea9d0b_a7cba6e5",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-26T05:10:53Z",
+      "side": 1,
+      "message": "notifyNoBlame is always called from within a transaction... except for one place I missed, fixed now.",
+      "parentUuid": "6eaa0102_c22ed0f3",
+      "range": {
+        "startLine": 167,
+        "startChar": 15,
+        "endLine": 167,
+        "endChar": 49
+      },
+      "revId": "2680b0436cf668cfe5f1c080588393813fde659f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
