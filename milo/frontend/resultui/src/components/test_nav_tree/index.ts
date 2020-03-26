@@ -18,7 +18,9 @@ import '@material/mwc-icon';
 import { css, customElement, html } from 'lit-element';
 import { repeat } from 'lit-html/directives/repeat';
 import { observable } from 'mobx';
-import { TestNode } from '../../models/test_node';
+
+import { TestLoader } from '../../models/test_loader';
+import '../dot_spinner';
 import './test_nav_node';
 
 
@@ -29,26 +31,44 @@ import './test_nav_node';
  */
 @customElement('tr-test-nav-tree')
 export class TestNavTreeElement extends MobxLitElement {
-  @observable.ref root?: TestNode;
+  @observable.ref testLoader?: TestLoader;
 
   protected render() {
+    const root = this.testLoader?.node!;
+
     return html`
-      <div id="header" title=${this.root!.name}>${this.root!.name}</div>
-      <div id="body">
-        <div id="content">
-          ${repeat(this.root!.children, (node) => node.name, (node) => html`
+      <div id="container">
+        <div id="header" title=${root.name}>${root.name}</div>
+        <div id="body">
+          ${repeat(root.children, (node) => node.name, (node) => html`
           <tr-test-nav-node
             .depth=${0}
             .node=${node}
           >
           </tr-test-nav-node>
           `)}
+          <button
+            id="load-more-btn"
+            @click=${() => this.testLoader!.loadMore()}
+            ?disabled=${this.testLoader!.done || this.testLoader!.isLoading}
+          >
+            ${this.testLoader!.isLoading ?
+              html`Loading <tr-dot-spinner></tr-dot-spinner>` :
+              this.testLoader!.done ? 'All Tests are Loaded' : 'Load More'
+            }
+          </button>
         </div>
       </div>
     `;
   }
 
   static styles = css`
+    #container {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
     #header {
       background-color: #DDDDDD;
       padding: 2px 5px;
@@ -61,15 +81,21 @@ export class TestNavTreeElement extends MobxLitElement {
     }
 
     #body {
-      display: grid;
-      grid-template-columns: 24px 1fr;
-      grid-gap: 5px;
       overflow-y: auto;
-      height: 100%;
     }
-    #content {
-      grid-column: 1/3;
-      grid-row: 1;
+
+    #load-more-btn {
+      width: 100%;
+      height: 24px;
+      color: #fff;
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+    #load-more-btn:not([disabled]) {
+      cursor: pointer;
+    }
+    #load-more-btn:disabled {
+      opacity: 0.65;
     }
   `;
 }
