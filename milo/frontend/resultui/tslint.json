@@ -5,7 +5,7 @@
     "quotemark": [true, "single"],
     "semicolon": true,
     "trailing-comma": [true, {"multiline": "always", "singleline": "never"}],
-    "whitespace": [true, "check-module"],
+    "whitespace": [true, "check-module", "check-branch"],
     "no-trailing-whitespace": true
   }
 }

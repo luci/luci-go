@@ -157,30 +157,54 @@ describe('test_loader', () => {
     });
 
     it('should preserve loading progress', async () => {
+      assert.isFalse(testLoader.done);
+
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 2);
       assert.strictEqual(spy.getCall(0).args[0], test1);
       assert.strictEqual(spy.getCall(1).args[0], test2);
+      assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 4);
       assert.strictEqual(spy.getCall(2).args[0], test3);
       assert.strictEqual(spy.getCall(3).args[0], test4);
+      assert.isFalse(testLoader.done);
 
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 5);
       assert.strictEqual(spy.getCall(4).args[0], test5);
+      assert.isTrue(testLoader.done);
 
+      // Should not load when the iterator is exhausted.
       await testLoader.loadMore(2);
       assert.strictEqual(spy.callCount, 5);
+      assert.isTrue(testLoader.done);
     });
 
-    it('should not load when the iterator is exhausted', async () => {
-      await testLoader.loadMore(6);
-      assert.strictEqual(spy.callCount, 5);
+    it('should handle concurrent loadMore calls correctly', async () => {
+      assert.isFalse(testLoader.isLoading);
+      const loadReq1 = testLoader.loadMore(3);
+      const loadReq2 = testLoader.loadMore(3);
+      const loadReq3 = testLoader.loadMore(3);
+      assert.isTrue(testLoader.isLoading);
 
-      await testLoader.loadMore(6);
+      await loadReq1;
+      assert.strictEqual(spy.callCount, 3);
+      // loadReq2 has not finished loading yet.
+      assert.isTrue(testLoader.isLoading);
+      assert.isFalse(testLoader.done);
+
+      await loadReq2;
       assert.strictEqual(spy.callCount, 5);
+      // The list is exhausted, loadReq3 should not change the loading state.
+      assert.isFalse(testLoader.isLoading);
+      assert.isTrue(testLoader.done);
+
+      await loadReq3;
+      assert.strictEqual(spy.callCount, 5);
+      assert.isFalse(testLoader.isLoading);
+      assert.isTrue(testLoader.done);
     });
   });
 

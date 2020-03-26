@@ -14,14 +14,20 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import * as signin from '@chopsui/chops-signin';
+import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
-import { action, computed, observable, when } from 'mobx';
+import { classMap } from 'lit-html/directives/class-map';
+import { styleMap } from 'lit-html/directives/style-map';
+import { action, computed, observable, reaction, when } from 'mobx';
 import moment from 'moment';
 
 import '../components/invocation_details';
 import '../components/page_header';
 import '../components/status_bar';
+import '../components/test_nav_tree';
+import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
+import { ReadonlyTest, TestNode } from '../models/test_node';
 import { Invocation, InvocationState, ResultDb } from '../services/resultdb';
 
 const INVOCATION_STATE_DISPLAY_MAP = {
@@ -39,10 +45,10 @@ const INVOCATION_STATE_DISPLAY_MAP = {
  * Otherwise, shows results for the invocation.
  */
 @customElement('tr-invocation-page')
-export class InvocationPageElement extends MobxLitElement implements
-    BeforeEnterObserver {
+export class InvocationPageElement extends MobxLitElement implements BeforeEnterObserver {
   @observable.ref accessToken = '';
   @observable.ref invocationName = '';
+  @observable.ref leftPanelExpanded = false;
 
   @computed
   private get resultDb(): ResultDb | null {
@@ -71,6 +77,24 @@ export class InvocationPageElement extends MobxLitElement implements
     return req.v;
   }
 
+  @computed
+  private get testIter(): AsyncIterableIterator<ReadonlyTest> {
+    if (!this.resultDb) {
+      return (async function*() {})();
+    }
+    return streamTests(
+      streamTestResults({invocations: [this.invocationName]}, this.resultDb),
+      streamTestExonerations({invocations: [this.invocationName]}, this.resultDb),
+    );
+  }
+
+  // testLoader is used by non-observers, keep it alive.
+  @computed({keepAlive: true})
+  private get testLoader() {
+    const ret = new TestLoader(TestNode.newRoot(), this.testIter);
+    return ret;
+  }
+
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     this.refreshAccessToken();
     const invocationName = location.params['invocation_name'];
@@ -81,30 +105,40 @@ export class InvocationPageElement extends MobxLitElement implements
     return;
   }
 
-  private disposer: () => void = () => {};
+  private disposers: Array<() => void> = [];
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener('user-update', this.refreshAccessToken);
     this.refreshAccessToken();
-    this.disposer = when(
+    this.disposers.push(when(
       () => this.invocationReq.get().tag === 'err',
       () => Router.go('/error'),
-    );
+    ));
+    // Load the first batch whenever this.testLoader is updated.
+    this.disposers.push(reaction(
+      () => this.testLoader,
+      () => {
+        this.testLoader.loadMore();
+      },
+      {fireImmediately: true},
+    ));
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('user-update', this.refreshAccessToken);
-    this.disposer();
+    for (const disposer of this.disposers) {
+      disposer();
+    }
   }
   @action
   private refreshAccessToken = () => {
     // Awaiting on authInstance to load may block the loading of authInstance,
     // creating a deadlock. Use synced call instead.
-    this.accessToken = signin.getAuthInstanceSync()
-                           ?.currentUser.get()
-                           .getAuthResponse()
-                           .access_token ||
-        '';
+    this.accessToken = signin
+      .getAuthInstanceSync()
+      ?.currentUser.get()
+      .getAuthResponse()
+      .access_token || '';
     if (!this.accessToken) {
       const searchParams = new URLSearchParams();
       searchParams.set('redirect', window.location.href);
@@ -144,17 +178,70 @@ export class InvocationPageElement extends MobxLitElement implements
         .loading=${this.invocationReq.get().tag === 'loading'}
       ></tr-status-bar>
       ${!this.invocation ? null : html`
-        <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
+      <tr-invocation-details .invocation=${this.invocation}></tr-invocation-details>
       `}
+      <div id="main" class=${classMap({'show-left-panel': this.leftPanelExpanded})}>
+        <div
+          id="left-panel"
+          style=${styleMap({display: this.leftPanelExpanded ? '' : 'none'})}
+        >
+          <tr-test-nav-tree .testLoader=${this.testLoader}></tr-test-nav-tree>
+        </div>
+        <div id="test-result-view">
+          <div id="test-result-header">
+            <div id="menu-button" @click=${() => this.leftPanelExpanded = !this.leftPanelExpanded}>
+              <mwc-icon id="menu-icon">menu</mwc-icon>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }
 
   static styles = css`
+    :host {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow-y: hidden;
+    }
+
     #test-invocation-summary {
       font-size: 16px;
       line-spacing: 0.15px;
       padding: 5px;
     }
-  `;
 
+    #main {
+      display: flex;
+      flex: 1;
+      border-top: 2px solid #DDDDDD;
+      overflow-y: hidden;
+    }
+    #left-panel {
+      overflow-y: hidden;
+      border-right: 2px solid #DDDDDD;
+      width: 400px;
+      resize: horizontal;
+    }
+    #test-result-view {
+      flex: 1;
+      display: flex;
+      overflow-y: hidden;
+    }
+    #test-result-header {
+      width: 100%;
+      height: 32px;
+      background: #DDDDDD;
+    }
+    #menu-button {
+      display: inline-table;
+      height: 100%;
+      cursor: pointer;
+    }
+    #menu-icon {
+      display: table-cell;
+      vertical-align: middle;
+    }
+  `;
 }

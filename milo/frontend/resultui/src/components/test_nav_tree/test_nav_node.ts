@@ -31,6 +31,10 @@ export class TestNavNodeElement extends MobxLitElement {
   @observable.ref node?: TestNode;
   @observable.ref expanded = false;
 
+  // Always render the children once it was expanded so the children's state
+  // don't get reset after the node is collapsed.
+  @observable.ref private wasExpanded = false;
+
   protected render() {
     return html`
       <div
@@ -42,7 +46,10 @@ export class TestNavNodeElement extends MobxLitElement {
         <mwc-icon
           class="expand-toggle"
           style=${styleMap({ display: this.node!.children.length === 0 ? 'none' : '' })}
-          @click=${() => this.expanded = !this.expanded}
+          @click=${() => {
+            this.expanded = !this.expanded;
+            this.wasExpanded = true;
+          }}
         >
           ${this.expanded ? 'expand_more' : 'chevron_right'}
         </mwc-icon>
@@ -57,16 +64,18 @@ export class TestNavNodeElement extends MobxLitElement {
       </div>
       <div id="body">
         <div id="content-ruler" style=${styleMap({left: `${this.depth * 10}px`})}></div>
-        ${!this.expanded ? '' : html`
-        <div id="content">
-          ${repeat(this.node!.children, (node) => node.name, (node) => html`
+        <div
+          id="content"
+          style=${styleMap({ display: this.expanded ? '' : 'none' })}
+        >
+          ${repeat(this.wasExpanded ? this.node!.children : [], (node) => node.name, (node) => html`
           <tr-test-nav-node
             .depth=${this.depth + 1}
             .node=${node}
           >
           </tr-test-nav-node>
           `)}
-        </div>`}
+        </div>
       </div>
     `;
   }
@@ -80,10 +89,10 @@ export class TestNavNodeElement extends MobxLitElement {
       display: grid;
       grid-template-columns: 24px 1fr;
       grid-template-rows: 24px;
-      cursor: pointer;
       user-select: none;
     }
     .expandable-header .expand-toggle {
+      cursor: pointer;
       grid-row: 1;
       grid-column: 1;
     }
