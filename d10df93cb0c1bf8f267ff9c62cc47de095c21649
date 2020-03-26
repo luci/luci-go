@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "09008deb_1638029a",
+        "filename": "milo/frontend/resultui/src/models/test_loader_test.ts",
+        "patchSetId": 13
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-26T05:59:02Z",
+      "side": 1,
+      "message": "Any way we can avoid having sleeps here? This is a common cause of flaky tests.",
+      "range": {
+        "startLine": 139,
+        "startChar": 16,
+        "endLine": 139,
+        "endChar": 25
+      },
+      "revId": "d10df93cb0c1bf8f267ff9c62cc47de095c21649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

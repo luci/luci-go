@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82e34874_d1fb4202",
+        "filename": "milo/frontend/resultui/package-lock.json",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-26T05:59:02Z",
+      "side": 0,
+      "message": "Massive update to dependencies here; could this be in a separate CL? We should get in the habit of landing these separately to code changes, so either can be rolled back independent of the other.",
+      "revId": "28548c3587df87cfc0c05cbde56f82fbe1d29a34",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
