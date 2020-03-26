@@ -52,6 +52,24 @@
       "revId": "426539d610232c31ed438c627f6107ca9f37b7f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00d2cfc0_7431fd26",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-26T09:05:25Z",
+      "side": 1,
+      "message": "ptal",
+      "parentUuid": "8e2452a6_da13a99d",
+      "revId": "426539d610232c31ed438c627f6107ca9f37b7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
