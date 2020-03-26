@@ -484,7 +484,9 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 				retryCnt += 1
 				lastRetryErr = err
 			}); err != nil {
-				d.addError(fileType, name, errors.Annotate(err, "failed to read from cache").Err())
+				err = errors.Annotate(err, "failed to read from cache").Err()
+				d.addError(fileType, name, err)
+				errors.Log(d.ctx, err)
 				return
 			}
 			if lastRetryErr != nil {
