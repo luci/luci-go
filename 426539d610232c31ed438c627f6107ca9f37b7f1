@@ -16,6 +16,24 @@
       "revId": "426539d610232c31ed438c627f6107ca9f37b7f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94dfd57d_a17cf6c3",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1375000
+      },
+      "writtenOn": "2020-03-26T08:39:12Z",
+      "side": 1,
+      "message": "Yeah, that seems better. Do we still need this printf if we errors.Log() here?",
+      "parentUuid": "d699db26_e832b3d7",
+      "revId": "426539d610232c31ed438c627f6107ca9f37b7f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
