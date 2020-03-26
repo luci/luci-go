@@ -21,12 +21,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/prpctest"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/resultdb/internal"
@@ -118,12 +116,14 @@ func TestBatchCreateInvocations(t *testing.T) {
 
 			res2, err := recorder.BatchCreateInvocations(ctx, req)
 			So(err, ShouldBeNil)
+			// Update tokens are regenerated the second time, but they are both valid.
+			res2.UpdateTokens = res.UpdateTokens
+			// Otherwise, the responses must be identical.
 			So(res2, ShouldResembleProto, res)
 		})
 
 		Convey(`end to end`, func() {
 			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
-			headers := &metadata.MD{}
 			bqExport := &pb.BigQueryExport{
 				Project:     "project",
 				Dataset:     "dataset",
@@ -155,7 +155,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 				},
 			}
 
-			resp, err := recorder.BatchCreateInvocations(ctx, req, prpc.Header(headers))
+			resp, err := recorder.BatchCreateInvocations(ctx, req)
 			So(err, ShouldBeNil)
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
@@ -176,8 +176,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			})
 			So(resp.Invocations[0], ShouldResembleProto, expected)
 			So(resp.Invocations[1], ShouldResembleProto, expected2)
-
-			So(headers.Get(UpdateTokenMetadataKey), ShouldHaveLength, 2)
+			So(resp.UpdateTokens, ShouldHaveLength, 2)
 
 			txn := span.Client(ctx).ReadOnlyTransaction()
 			defer txn.Close()

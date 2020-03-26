@@ -20,11 +20,9 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/resultdb/internal/appstatus"
@@ -80,10 +78,7 @@ func (s *recorderServer) BatchCreateInvocations(ctx context.Context, in *pb.Batc
 	if err != nil {
 		return nil, err
 	}
-	md := metadata.MD{}
-	md.Set(UpdateTokenMetadataKey, tokens...)
-	prpc.SetHeader(ctx, md)
-	return &pb.BatchCreateInvocationsResponse{Invocations: invs}, nil
+	return &pb.BatchCreateInvocationsResponse{Invocations: invs, UpdateTokens: tokens}, nil
 }
 
 // createInvocations is a shared implementation for CreateInvocation and BatchCreateInvocations RPCs.
