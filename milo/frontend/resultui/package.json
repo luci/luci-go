@@ -8,10 +8,11 @@
     "@adobe/lit-mobx": "0.0.2",
     "@chopsui/chops-signin": "^0.3.1",
     "@chopsui/prpc-client": "^1.1.0",
-    "@material/mwc-icon": "^0.13.0",
+    "@material/mwc-button": "^0.14.1",
+    "@material/mwc-icon": "^0.14.1",
     "@vaadin/router": "^1.7.1",
-    "deep-equal": "^2.0.1",
     "lit-element": "^2.3.1",
+    "lit-html": "^1.2.1",
     "mobx": "^5.15.4",
     "mobx-utils": "^5.5.5",
     "moment": "^2.24.0"
@@ -19,7 +20,6 @@
   "devDependencies": {
     "@babel/preset-env": "^7.9.0",
     "@types/chai": "^4.2.11",
-    "@types/deep-equal": "^1.0.1",
     "@types/gapi": "0.0.39",
     "@types/gapi.auth2": "0.0.51",
     "@types/karma": "^4.4.0",
