@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0724ee5f_4a83f81f",
+        "filename": "resultdb/sink/storage_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:43Z",
+      "side": 1,
+      "message": "the fact that this mockable interface is at artifact level of abstraction (as opposed to low-level GS files) to means that this entire func https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2121839/3/resultdb/sink/gs_raw.go#43 will not be covered with tests? \nFWIU all we need is to pass a func of type\n\n  func uploadGSFile (ctx context.Context, name string, contents io.Reader) error\n\nno?",
+      "range": {
+        "startLine": 25,
+        "startChar": 49,
+        "endLine": 25,
+        "endChar": 57
+      },
+      "revId": "dd4bf6d915017e165e1304168960ea2703b925f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5dfe72b_71c9ccb5",
+        "filename": "resultdb/sink/storage_raw.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:51:43Z",
+      "side": 1,
+      "message": "unlike uploadArtifact, non-mocked fetchURL impl doesn\u0027t make RPCs, so why does it need to be mockable?\nnote that we aren\u0027t passing context here",
+      "range": {
+        "startLine": 26,
+        "startChar": 1,
+        "endLine": 26,
+        "endChar": 9
+      },
+      "revId": "dd4bf6d915017e165e1304168960ea2703b925f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
