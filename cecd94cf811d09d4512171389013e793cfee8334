@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed9948ca_18f5263e",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 493,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2020-03-26T07:46:15Z",
+      "side": 1,
+      "message": "I think it is better to use errors.Log where showing error from here instead of aboves?",
+      "revId": "cecd94cf811d09d4512171389013e793cfee8334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
