@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c4451fb_b1d1e3e9",
+        "filename": "resultdb/sink/testutil.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:31:15Z",
+      "side": 1,
+      "message": "must be defer f.Close() before writer(f)",
+      "revId": "4c1743f5ca86e9cf0bd57c04b11ba1c8720b9c0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48c7d172_d7a831ac",
+        "filename": "resultdb/sink/testutil.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:31:15Z",
+      "side": 1,
+      "message": "\",\\n\" before }\n\napplies to all code",
+      "range": {
+        "startLine": 75,
+        "startChar": 27,
+        "endLine": 75,
+        "endChar": 28
+      },
+      "revId": "4c1743f5ca86e9cf0bd57c04b11ba1c8720b9c0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d28b8240_bb07afc7",
+        "filename": "resultdb/sink/testutil.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:31:15Z",
+      "side": 1,
+      "message": "why not just\n\n  type invMatcher string",
+      "revId": "4c1743f5ca86e9cf0bd57c04b11ba1c8720b9c0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28dbeaa5_a45cf377",
+        "filename": "resultdb/sink/testutil.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:31:15Z",
+      "side": 1,
+      "message": "!ok",
+      "range": {
+        "startLine": 120,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 15
+      },
+      "revId": "4c1743f5ca86e9cf0bd57c04b11ba1c8720b9c0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
