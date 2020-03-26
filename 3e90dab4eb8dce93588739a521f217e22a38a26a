@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bca1398d_d12176f7",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "i never saw enabled button and https://screenshot.googleplex.com/cjRWiAOHEua did not look like disabled to me.\n\ni assume this style is temporary. otherwise, please use https://standards.google",
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b8f60a9_7e3193e8",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "this is not being used anywhere",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 26
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "982c85ef_f6b0c4ef",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "i am not sure what\u0027s the purpose of this property at the class level. The only place where we read it back is L59, but a local variable would do just fine",
+      "range": {
+        "startLine": 57,
+        "startChar": 11,
+        "endLine": 57,
+        "endChar": 22
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4c52ba8_7c15b336",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "loadMore above seems to ignore this precondition\n\ni think would make more sense to me is\n1) in loadMore, check if loadPromise is null. If it is not null, do nothing\n2) otherwise start the iterator, assign to loadMore, subscribe to it and set loadPromise to null when it is done\n3) make loadMore async, so that the caller, if they want to, know when loadMore is done\n4) document clearly that loadMore is noop if the previous call is done yet\n5) in UI, disable \"load more\" button when clicked, and enable it again when loadMore promise is done",
+      "range": {
+        "startLine": 65,
+        "startChar": 5,
+        "endLine": 66,
+        "endChar": 26
+      },
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "373f3042_81ce5fee",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 11
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "in the other file you tried to preserve state, i think, by using \"display\" instead of trinary operator.\ndo you want to use it here too, so that hiding/displaying the left panel does not lose the node state?",
+      "revId": "3e90dab4eb8dce93588739a521f217e22a38a26a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f51d2a05_1ad45e38",
+        "filename": "milo/frontend/resultui/src/models/test_node.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "\\W+\n\nab//\".match(/\\w*(\\W|$)/g) \u003d\u003d [\"ab/\", \"/\", \"\"]",
+      "range": {
+        "startLine": 109,
+        "startChar": 38,
+        "endLine": 109,
+        "endChar": 40
+      },
+      "revId": "36f96a2408027384f24c5602c120f6c721d3ab97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7098a95_9f3624f5",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T01:25:40Z",
+      "side": 1,
+      "message": "nit: would be simpler to \n\n private get testIter(): AsyncIterableIterator\u003cReadonlyTest\u003e {\n    if (this.resultDb) {\n      yield* streamTests(streamTestObjects(\n        streamTestResults({invocations: [this.invocationName]}, this.resultDb),\n        streamTestExonerations({invocations: [this.invocationName]}, this.resultDb),\n    }\n  }",
+      "range": {
+        "startLine": 79,
+        "startChar": 6,
+        "endLine": 79,
+        "endChar": 38
+      },
+      "revId": "36f96a2408027384f24c5602c120f6c721d3ab97",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
