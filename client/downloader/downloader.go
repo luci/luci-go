@@ -469,6 +469,9 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 					if perr := pw.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe writer").Err()
 					}
+					if err != nil {
+						errors.Log(ctx, err)
+					}
 					return err
 				})
 
@@ -476,6 +479,9 @@ func (d *Downloader) scheduleFileJob(filename, name string, details *isolated.Fi
 					err := d.options.Cache.AddWithHardlink(details.Digest, pr, filename, os.FileMode(mode))
 					if perr := pr.CloseWithError(err); perr != nil {
 						return errors.Annotate(perr, "failed to close pipe reader").Err()
+					}
+					if err != nil {
+						errors.Log(ctx, err)
 					}
 					return err
 				})
