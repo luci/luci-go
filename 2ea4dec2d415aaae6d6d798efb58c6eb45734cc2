@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7cd3e98_b69f99c2",
+        "filename": "milo/frontend/resultui/src/components/test_nav_tree/index.ts",
+        "patchSetId": 16
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:14:53Z",
+      "side": 1,
+      "message": "nit: i think we can omit this part for simplicity? this is more-or-less obvious to programmers that there may be less",
+      "range": {
+        "startLine": 59,
+        "startChar": 81,
+        "endLine": 59,
+        "endChar": 89
+      },
+      "revId": "2ea4dec2d415aaae6d6d798efb58c6eb45734cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbab5ce9_215b755e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 16
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:14:53Z",
+      "side": 1,
+      "message": "nit: space after if",
+      "range": {
+        "startLine": 55,
+        "startChar": 4,
+        "endLine": 55,
+        "endChar": 6
+      },
+      "revId": "2ea4dec2d415aaae6d6d798efb58c6eb45734cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1529b3e_7fd3c66e",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 16
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:14:53Z",
+      "side": 1,
+      "message": "FWIU this means that if there is at least one request failure, then the whole chain gets stuck forever?\n\nif you plan to address this in another CL (together with communicating the error to the user), then a TODO would be fine too",
+      "range": {
+        "startLine": 59,
+        "startChar": 40,
+        "endLine": 59,
+        "endChar": 44
+      },
+      "revId": "2ea4dec2d415aaae6d6d798efb58c6eb45734cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cb462e4_a0b6c3be",
+        "filename": "milo/frontend/resultui/src/models/test_loader.ts",
+        "patchSetId": 16
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-26T16:14:53Z",
+      "side": 1,
+      "message": "from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of\ni learned this nice trick today:\n\n  const { done, value } \u003d await this.testIter.next()",
+      "range": {
+        "startLine": 71,
+        "startChar": 12,
+        "endLine": 71,
+        "endChar": 16
+      },
+      "revId": "2ea4dec2d415aaae6d6d798efb58c6eb45734cc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
