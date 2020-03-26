@@ -21,6 +21,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/metadata"
@@ -58,9 +59,11 @@ func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.R
 
 func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 	return ServerConfig{
-		Address:   addr,
-		AuthToken: tk,
-		Recorder:  pb.NewMockRecorderClient(ctl),
+		Address:        addr,
+		AuthToken:      tk,
+		Recorder:       pb.NewMockRecorderClient(ctl),
+		GStorage:       &storage.Client{},
+		testStorageRaw: NewMockstorageRaw(ctl),
 	}
 }
 
