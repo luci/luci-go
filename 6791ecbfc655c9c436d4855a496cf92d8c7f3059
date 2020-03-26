@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c139c818_67e39176",
+        "filename": "logdog/server/cmd/logdog_archivist/loop_params.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-26T19:02:14Z",
+      "side": 1,
+      "message": "this may not be needed anymore (though it shouldn\u0027t hurt)",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df5ddc34_f24d5506",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-26T19:02:14Z",
+      "side": 1,
+      "message": "nit: \n\nswitch {\n  case ctx.Err() !\u003d nil:\n    break\n  case err !\u003d nil:\n    panic(...)\n}\n\n(to avoid awkward sleeping and logging below when the context is done)",
+      "range": {
+        "startLine": 131,
+        "startChar": 2,
+        "endLine": 133,
+        "endChar": 3
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "435067a2_8fa432f8",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-26T19:02:14Z",
+      "side": 1,
+      "message": "Not a fan of fire-and-forget. It may lead to weird states (like a ton of goroutines if DeleteArchiveTasks is slow). Considering the acking loop is already in a separate goroutine, is there harm in making sendIt block until it successfully deletes stuff?",
+      "range": {
+        "startLine": 178,
+        "startChar": 3,
+        "endLine": 178,
+        "endChar": 14
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d667ec2_8501de58",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-26T19:02:14Z",
+      "side": 1,
+      "message": "If I read the docs correctly, one does not simply call Reset: https://golang.org/pkg/time/#Timer.Reset\n\n\u003e Reset should be invoked only on stopped or expired timers with drained channels. If a program has already received a value from t.C, the timer is known to have expired and the channel drained, so t.Reset can be used directly. If a program has not yet received a value from t.C, however, the timer must be stopped and—if Stop reports that the timer expired before being stopped—the channel explicitly drained\n\nMaybe not following this protocol is what causing bugs in the dispatcher?",
+      "range": {
+        "startLine": 219,
+        "startChar": 4,
+        "endLine": 219,
+        "endChar": 53
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a277560_5955c937",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2020-03-26T19:02:14Z",
+      "side": 1,
+      "message": "log here too?",
+      "range": {
+        "startLine": 276,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 10
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
