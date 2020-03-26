@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6105eadd_5ccf56af",
+        "filename": "buildbucket/appengine/model/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-26T22:47:10Z",
+      "side": 1,
+      "message": "If that\u0027s the only error scenario then panic would be fine because tests would catch it, but unless a Must exists (MustIncludes would be a strange name though) I\u0027d prefer to treat it as if arbitrary errors can occur so I\u0027ll leave it as is.",
+      "parentUuid": "e4cdb244_ca3acd61",
+      "revId": "b9dd0a13e50a7aee61a76c75c8a9a23b88b8505d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2f9ce531_85758a57",
         "filename": "buildbucket/appengine/model/build.go",
         "patchSetId": 2
