@@ -57,8 +57,9 @@ func TestReportTestResults(t *testing.T) {
 			closeSinkServer(ctx, sink)
 		}()
 
-		// mock
+		// mocks
 		recorder := cfg.Recorder.(*pb.MockRecorderClient)
+		storage := cfg.testStorageRaw.(*MockstorageRaw)
 
 		Convey("creates TestResult", func() {
 			_, err := sink.ReportTestResults(ctx, req)
@@ -66,6 +67,20 @@ func TestReportTestResults(t *testing.T) {
 
 			// rdb_channel should invoke recorder.BatchCreateTestResults()
 			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
+
+			Convey("uploads artifacts", func() {
+				// for each of the input and output artifacts,
+				// - rdb_channel should invoke fetchURL()
+				// - gs_channel should invoke uploadArtifact()
+				for name, art := range req.TestResults[0].InputArtifacts {
+					storage.EXPECT().fetchURL(name, art)
+					storage.EXPECT().uploadArtifact(ctx, name, art)
+				}
+				for name, art := range req.TestResults[0].OutputArtifacts {
+					storage.EXPECT().fetchURL(name, art)
+					storage.EXPECT().uploadArtifact(ctx, name, art)
+				}
+			})
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
