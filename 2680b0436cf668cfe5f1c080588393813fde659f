@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6eaa0102_c22ed0f3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1272456
+      },
+      "writtenOn": "2020-03-26T05:06:03Z",
+      "side": 1,
+      "message": "Your docs for this say it should be called in a transaction to avoid races. How is that achieved here?",
+      "range": {
+        "startLine": 167,
+        "startChar": 15,
+        "endLine": 167,
+        "endChar": 49
+      },
+      "revId": "2680b0436cf668cfe5f1c080588393813fde659f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
