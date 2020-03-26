@@ -19,11 +19,13 @@ import (
 	"regexp"
 	"strings"
 
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/mask"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -35,6 +37,45 @@ var (
 	bucketRegex  = regexp.MustCompile("^[a-z0-9_\\-.]{1,100}$")
 	builderRegex = regexp.MustCompile("^[a-zA-Z0-9_\\-. ]{1,128}$")
 )
+
+// defMask is the default field mask to use for GetBuild requests.
+// Initialized by init.
+var defMask mask.Mask
+
+func init() {
+	var err error
+	defMask, err = mask.FromFieldMask(&field_mask.FieldMask{
+		Paths: []string{
+			"builder",
+			"canary",
+			"create_time",
+			"created_by",
+			"critical",
+			"end_time",
+			"id",
+			"input.experimental",
+			"input.gerrit_changes",
+			"input.gitiles_commit",
+			"number",
+			"start_time",
+			"status",
+			"status_details",
+			"update_time",
+			// TODO(nodir): Add user_duration.
+		},
+	}, &pb.Build{}, false, false)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// TODO(crbug/1042991): Move to a common location.
+func getFieldMask(fields *field_mask.FieldMask) (mask.Mask, error) {
+	if len(fields.GetPaths()) == 0 {
+		return defMask, nil
+	}
+	return mask.FromFieldMask(fields, &pb.Build{}, false, false)
+}
 
 // GetBuild handles a request to retrieve a build. Implements pb.BuildsServer.
 func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build, error) {
@@ -58,6 +99,10 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "one of id or (builder and build_number) is required")
 	}
+	m, err := getFieldMask(req.Fields)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid field mask")
+	}
 	// TODO(crbug/1042991): Check that the user can view this build.
 	if req.Id > 0 {
 		ent := &model.Build{
@@ -70,7 +115,7 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		default:
 			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 		}
-		return ent.ToProto(ctx)
+		return ent.ToProto(ctx, m)
 	}
 	// TODO(crbug/1042991): Implement get by builder/build number.
 	return &pb.Build{}, nil
