@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2645a77_1b216758",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2020-03-27T00:18:39Z",
+      "side": 1,
+      "message": "As usual will probably move this later as needed, since the Python code has an entire module for querying for Build entities.",
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
