@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "899ef451_6c21c0b5",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T03:26:28Z",
+      "side": 1,
+      "message": "imagine a scenario:\n\n  failure -\u003e tree closed\n  infra failure -\u003e tree is open\n\nthat\u0027s a surprising behavior.\n\nINFRA_FAILURE means no signal. The build failed to do its job of source code verification, and failed to produce good/bad signal.  https://source.chromium.org/chromium/infra/infra/+/master:go/src/go.chromium.org/luci/buildbucket/proto/common.proto;l\u003d44;drc\u003d0bd06ad59729c795cc03d26a2703d0bcc9f06344\n\ni think we should skip updating TreeStatus entity if build status is something other than definite SUCCESS or definite FAILURE.",
+      "parentUuid": "82c4fd96_612ee2e1",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1794cf86_8f04541a",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -225,6 +243,54 @@
     },
     {
       "key": {
+        "uuid": "0c348332_60772041",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T03:26:28Z",
+      "side": 1,
+      "message": "notify.Build is a wrapper around buildbucketpb.Build.\nwe just need to refactor that func slightly to accept *buildbucketpb.Build",
+      "parentUuid": "2f908396_cd18e34c",
+      "range": {
+        "startLine": 350,
+        "startChar": 14,
+        "endLine": 350,
+        "endChar": 79
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8be057bd_010e2c7b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T03:26:28Z",
+      "side": 1,
+      "message": "notify.Build is a wrapper around buildbucketpb.Build.\nwe just need to refactor that func slightly to accept *buildbucketpb.Build",
+      "parentUuid": "2f908396_cd18e34c",
+      "range": {
+        "startLine": 350,
+        "startChar": 14,
+        "endLine": 350,
+        "endChar": 79
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b7fd9c0_3bcdd627",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -265,6 +331,29 @@
         "startChar": 13,
         "endLine": 359,
         "endChar": 16
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c655024b_ac6be457",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T03:26:28Z",
+      "side": 1,
+      "message": "wow, this was a serious bug\nthanks for fixing this",
+      "range": {
+        "startLine": 165,
+        "startChar": 22,
+        "endLine": 165,
+        "endChar": 24
       },
       "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",

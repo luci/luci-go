@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "614e8dcd_61a97fd8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T03:26:28Z",
+      "side": 1,
+      "message": "it would be stopped anyway because this is happening in a transaction\n\nwe actually want this to happen atomically, right?",
+      "range": {
+        "startLine": 366,
+        "startChar": 4,
+        "endLine": 367,
+        "endChar": 69
+      },
+      "revId": "4032387351a3842d7f561795d0f4dadda40ab583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
