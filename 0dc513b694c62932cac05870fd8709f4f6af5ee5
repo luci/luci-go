@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8046220b_5a1a791a",
+        "filename": "luci_notify/api/config/testdata/basic.cfg",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1393e14a_c7e63a0b",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 3
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a5d2c39_dc102085",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82c4fd96_612ee2e1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Right, which is what this CL already does. If it\u0027s anything other than \"FAILURE\", the status is \"Open\".",
+      "parentUuid": "4a5d2c39_dc102085",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "ef171c1b_728324ea",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "You\u0027re right. Personally I prefer it this way, but I\u0027ll defer to what golint suggests.",
+      "parentUuid": "1794cf86_8f04541a",
+      "range": {
+        "startLine": 337,
+        "startChar": 2,
+        "endLine": 337,
+        "endChar": 9
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4f5b7e99_9852ede4",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25995bd1_e1c597ef",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f5b7e99_9852ede4",
+      "range": {
+        "startLine": 344,
+        "startChar": 63,
+        "endLine": 345,
+        "endChar": 49
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "2f908396_cd18e34c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "This doesn\u0027t work here, as it takes a notify.Build, not a buildbucketpb.Build.",
+      "parentUuid": "90866490_1691ff79",
+      "range": {
+        "startLine": 350,
+        "startChar": 14,
+        "endLine": 350,
+        "endChar": 79
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b7fd9c0_3bcdd627",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -131,6 +245,30 @@
       "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b8ce0d1_ff1709e5",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b7fd9c0_3bcdd627",
+      "range": {
+        "startLine": 359,
+        "startChar": 13,
+        "endLine": 359,
+        "endChar": 16
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "3a5c7b22_b806e9ac",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8a216f1_091f9804",
+      "range": {
+        "startLine": 205,
+        "startChar": 3,
+        "endLine": 205,
+        "endChar": 48
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ceb27f1d_ff8eb458",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 2
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "7a988c1a_102ce371",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ceb27f1d_ff8eb458",
+      "range": {
+        "startLine": 307,
+        "startChar": 3,
+        "endLine": 308,
+        "endChar": 35
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b334efc8_33d73e8a",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 2
@@ -194,6 +380,24 @@
       "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55c94d13_9ba924b7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b334efc8_33d73e8a",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
