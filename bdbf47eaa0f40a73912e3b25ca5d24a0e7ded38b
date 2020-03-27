@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "6168c812_6b978395",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T00:25:59Z",
+      "side": 1,
+      "message": "curious how are you going to dedup this later? do you memorize all to-be-deduped things? e.g. what prevents you from accidentally writing this code again in another file forgetting that you\u0027ve written this before?",
+      "range": {
+        "startLine": 118,
+        "startChar": 15,
+        "endLine": 119,
+        "endChar": 142
+      },
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bd236fb_9864ec48",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T00:25:59Z",
+      "side": 1,
+      "message": "this query is not strongly consistent (and might slower), compared to python impl, so it may cause unexpected behavior.\n\npython version considers \"build_address\" an indexed tag: \nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l\u003d657;drc\u003ddb70045146b0f73323e948e214905a0817a9603c\n\nso it uses a different search impl: \nhttps://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/search.py;l\u003d493;drc\u003ddb70045146b0f73323e948e214905a0817a9603c\n\nwhich is strongly consistent",
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d6d6fc5_e45f9c60",
+        "filename": "buildbucket/appengine/rpc/get_build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T00:25:59Z",
+      "side": 1,
+      "message": "would https://godoc.org/go.chromium.org/gae/service/datastore#GetAll be simpler?",
+      "range": {
+        "startLine": 121,
+        "startChar": 22,
+        "endLine": 121,
+        "endChar": 25
+      },
+      "revId": "bdbf47eaa0f40a73912e3b25ca5d24a0e7ded38b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f2645a77_1b216758",
         "filename": "buildbucket/appengine/rpc/get_build.go",
         "patchSetId": 1
