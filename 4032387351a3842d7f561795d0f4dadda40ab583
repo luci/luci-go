@@ -46,6 +46,30 @@
       "revId": "4032387351a3842d7f561795d0f4dadda40ab583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "087e5948_6a98cf78",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:57:39Z",
+      "side": 1,
+      "message": "Oh true, I forgot about that.\n\nI\u0027ve changed it to use Put on a slice, but I don\u0027t think using GetAll would be easier here, since we have to filter it down to only the elements that are being updated.",
+      "parentUuid": "d720bfce_47ca7042",
+      "range": {
+        "startLine": 366,
+        "startChar": 4,
+        "endLine": 367,
+        "endChar": 69
+      },
+      "revId": "4032387351a3842d7f561795d0f4dadda40ab583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

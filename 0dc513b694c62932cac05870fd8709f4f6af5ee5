@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "588cae18_af5f35fc",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:57:39Z",
+      "side": 1,
+      "message": "Oh, I see what you mean. Done.",
+      "parentUuid": "899ef451_6c21c0b5",
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1794cf86_8f04541a",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -291,6 +309,30 @@
     },
     {
       "key": {
+        "uuid": "5f72902d_a410e221",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:57:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8be057bd_010e2c7b",
+      "range": {
+        "startLine": 350,
+        "startChar": 14,
+        "endLine": 350,
+        "endChar": 79
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b7fd9c0_3bcdd627",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 2
@@ -349,6 +391,30 @@
       "writtenOn": "2020-03-27T03:26:28Z",
       "side": 1,
       "message": "wow, this was a serious bug\nthanks for fixing this",
+      "range": {
+        "startLine": 165,
+        "startChar": 22,
+        "endLine": 165,
+        "endChar": 24
+      },
+      "revId": "0dc513b694c62932cac05870fd8709f4f6af5ee5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5bb0d213_d4f4685d",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1275796
+      },
+      "writtenOn": "2020-03-27T03:57:39Z",
+      "side": 1,
+      "message": "Yeah, I only noticed it because asserting the transaction status in UpdateTreeClosers didn\u0027t work.",
+      "parentUuid": "c655024b_ac6be457",
       "range": {
         "startLine": 165,
         "startChar": 22,
