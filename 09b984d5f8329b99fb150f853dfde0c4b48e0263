@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b662e9c6_8f51d919",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T19:36:05Z",
+      "side": 1,
+      "message": "nit: strictly speaking, there is no reason to do it serially. Consider using https://godoc.org/go.chromium.org/luci/common/sync/parallel#FanOutIn or https://godoc.org/golang.org/x/sync/errgroup\n\nthen you don\u0027t have to do L171-173",
+      "revId": "09b984d5f8329b99fb150f853dfde0c4b48e0263",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9797c0c_04c85474",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T19:36:05Z",
+      "side": 1,
+      "message": "i just noticed that this is not accurate, because clearly we aren\u0027t ignoring it\n\nbut this is unrelated to your CL",
+      "range": {
+        "startLine": 251,
+        "startChar": 50,
+        "endLine": 251,
+        "endChar": 58
+      },
+      "revId": "09b984d5f8329b99fb150f853dfde0c4b48e0263",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a1f51f06_2c2bce47",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-27T19:36:05Z",
+      "side": 1,
+      "message": "nit: sort of, same here",
+      "revId": "09b984d5f8329b99fb150f853dfde0c4b48e0263",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
