@@ -157,12 +157,21 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	recipients := make([]EmailNotify, len(build.EmailNotify))
 	copy(recipients, build.EmailNotify)
 
-	// Helper function for notifying.
-	notifyNoBlame := func(n notifypb.Notifications, oldStatus buildbucketpb.Status) error {
-		n = Filter(&n, oldStatus, &build.Build)
-		recipients = append(recipients, ComputeRecipients(c, n, nil, nil)...)
+	// Helper functions for notifying and updating tree closer status.
+	notifyNoBlame := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
+		notifications := Filter(&b.Notifications, oldStatus, &build.Build)
+		recipients = append(recipients, ComputeRecipients(c, notifications, nil, nil)...)
 		templateInput.OldStatus = oldStatus
 		return Notify(c, d, recipients, templateInput)
+	}
+	notifyAndUpdateTrees := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
+		notifyErr := notifyNoBlame(c, b, oldStatus)
+		statusErr := UpdateTreeClosers(c, &build.Build)
+
+		if notifyErr != nil || statusErr != nil {
+			return errors.NewMultiError(notifyErr, statusErr)
+		}
+		return nil
 	}
 
 	keepGoing := false
@@ -190,13 +199,15 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 			// Handle the case where there's no repository being tracked.
 			if builder.BuildTime.Before(buildCreateTime) {
 				// The build is in-order with respect to build time, so notify normally.
-				if err := notifyNoBlame(builder.Notifications, builder.Status); err != nil {
+				if err := notifyAndUpdateTrees(c, builder, builder.Status); err != nil {
 					return err
 				}
 				return datastore.Put(c, &updatedBuilder)
 			}
 			logging.Infof(c, "Found build with old time")
-			return notifyNoBlame(builder.Notifications, 0)
+
+			// Don't update trees, since it's out of order.
+			return notifyNoBlame(c, builder, 0)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
@@ -211,7 +222,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		// is uninitialized. Notify about the build as best as we can and then store
 		// the updated builder.
 		if builder.Revision == "" {
-			if err := notifyNoBlame(builder.Notifications, 0); err != nil {
+			if err := notifyAndUpdateTrees(c, builder, 0); err != nil {
 				return err
 			}
 			return datastore.Put(c, &updatedBuilder)
@@ -238,7 +249,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		return notifyNoBlame(builder.Notifications, 0)
+		return notifyNoBlame(c, builder, 0)
 	}
 
 	// Get the blamelist logs, if needed.
@@ -295,8 +306,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		}
 
 		if outOfOrder {
-			// If the build is out-of-order, we want to ignore only on_change notifications.
-			return notifyNoBlame(builder.Notifications, 0)
+			// If the build is out-of-order, we want to ignore only on_change notifications,
+			// and not update trees.
+			return notifyNoBlame(c, builder, 0)
 		}
 
 		// Notify, and include the blamelist.
@@ -306,7 +318,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		if err := Notify(c, d, recipients, templateInput); err != nil {
 			return err
 		}
-		return datastore.Put(c, &updatedBuilder)
+
+		if err := datastore.Put(c, &updatedBuilder); err != nil {
+			return err
+		}
+
+		return UpdateTreeClosers(c, &build.Build)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 }
