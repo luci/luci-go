@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -103,11 +104,9 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid field mask")
 	}
-	// TODO(crbug/1042991): Check that the user can view this build.
+	ent := &model.Build{}
 	if req.Id > 0 {
-		ent := &model.Build{
-			ID: req.Id,
-		}
+		ent.ID = req.Id
 		switch err := datastore.Get(ctx, ent); err {
 		case nil:
 		case datastore.ErrNoSuchEntity:
@@ -115,8 +114,17 @@ func (*Builds) GetBuild(ctx context.Context, req *pb.GetBuildRequest) (*pb.Build
 		default:
 			return nil, errors.Annotate(err, "error fetching build with ID %d", req.Id).Err()
 		}
-		return ent.ToProto(ctx, m)
+	} else {
+		bucket_id := fmt.Sprintf("%s/%s", req.Builder.Project, req.Builder.Bucket)
+		builder_addr := fmt.Sprintf("build_address:luci.%s.%s/%s/%d", req.Builder.Project, req.Builder.Bucket, req.Builder.Builder, req.BuildNumber)
+		q := datastore.NewQuery("Build").Eq("bucket_id", bucket_id).Eq("tags", builder_addr).Limit(1)
+		if err := datastore.Run(ctx, q, func(res *model.Build) { ent = res }); err != nil {
+			return nil, errors.Annotate(err, "error querying builds").Err()
+		}
 	}
-	// TODO(crbug/1042991): Implement get by builder/build number.
-	return &pb.Build{}, nil
+	// TODO(crbug/1042991): Check that the user can view this build.
+	if ent.ID == 0 {
+		return nil, status.Errorf(codes.NotFound, "not found")
+	}
+	return ent.ToProto(ctx, m)
 }
