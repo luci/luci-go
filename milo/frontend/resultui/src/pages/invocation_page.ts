@@ -18,6 +18,7 @@ import '@material/mwc-icon';
 import { BeforeEnterObserver, PreventAndRedirectCommands, Router, RouterLocation } from '@vaadin/router';
 import { css, customElement, html } from 'lit-element';
 import { classMap } from 'lit-html/directives/class-map';
+import { repeat } from 'lit-html/directives/repeat';
 import { styleMap } from 'lit-html/directives/style-map';
 import { action, computed, observable, reaction, when } from 'mobx';
 import moment from 'moment';
@@ -25,6 +26,7 @@ import moment from 'moment';
 import '../components/invocation_details';
 import '../components/page_header';
 import '../components/status_bar';
+import '../components/test-entry';
 import '../components/test_nav_tree';
 import { streamTestExonerations, streamTestResults, streamTests, TestLoader } from '../models/test_loader';
 import { ReadonlyTest, TestNode } from '../models/test_node';
@@ -49,6 +51,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
   @observable.ref accessToken = '';
   @observable.ref invocationName = '';
   @observable.ref leftPanelExpanded = false;
+  @observable.ref pageLength = 100;
 
   @computed
   private get resultDb(): ResultDb | null {
@@ -95,6 +98,16 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     return ret;
   }
 
+  @computed
+  private get selectedTests(): readonly ReadonlyTest[] {
+    return this.testLoader.node.allTests;
+  }
+
+  @computed
+  private get rootName(): string {
+    return this.testLoader.node.name;
+  }
+
   onBeforeEnter(location: RouterLocation, cmd: PreventAndRedirectCommands) {
     this.refreshAccessToken();
     const invocationName = location.params['invocation_name'];
@@ -130,6 +143,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       disposer();
     }
   }
+
   @action
   private refreshAccessToken = () => {
     // Awaiting on authInstance to load may block the loading of authInstance,
@@ -192,6 +206,27 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
             <div id="menu-button" @click=${() => this.leftPanelExpanded = !this.leftPanelExpanded}>
               <mwc-icon id="menu-icon">menu</mwc-icon>
             </div>
+            <span id="root-name" title="common test ID prefix">${this.rootName}</span>
+          </div>
+          <div id="test-result-content">
+            ${repeat(this.selectedTests.slice(0, this.pageLength), (t) => t.id, (t, i) => html`
+            <tr-test-entry
+              .test=${t}
+              .rootName=${this.rootName}
+              .prevTestId=${(this.selectedTests[i-1]?.id || this.rootName)}
+              .expanded=${this.selectedTests.length === 1}
+            ></tr-test-entry>
+            `)}
+            <div>
+              <span>Showing ${Math.min(this.selectedTests.length, this.pageLength)}/${this.selectedTests.length} tests.</span>
+              <span
+                id="load-more"
+                style=${styleMap({'display': this.pageLength >= this.selectedTests.length ? 'none' : ''})}
+                @click=${() => this.pageLength += 100}
+              >
+                Load More
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -227,6 +262,7 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
     #test-result-view {
       flex: 1;
       display: flex;
+      flex-direction: column;
       overflow-y: hidden;
     }
     #test-result-header {
@@ -243,5 +279,17 @@ export class InvocationPageElement extends MobxLitElement implements BeforeEnter
       display: table-cell;
       vertical-align: middle;
     }
+
+    #test-result-content {
+      overflow-y: auto;
+    }
+    #root-name {
+      font-size: 16px;
+      letter-spacing: 0.15px;
+      vertical-align: middle;
+      display: inline-table;
+      height: 100%;
+      margin-left: 5px;
+  }
   `;
 }
