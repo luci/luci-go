@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0097a418_db8f9137",
+        "filename": "led/job/edit_cipd_pkgs.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T06:04:58Z",
+      "side": 1,
+      "message": "goimports did this, I swear.",
+      "parentUuid": "b927318d_417090d9",
+      "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c4e75231_67864046",
         "filename": "led/job/edit_cipd_pkgs_test.go",
         "patchSetId": 6
@@ -30,6 +48,24 @@
       "writtenOn": "2020-03-13T23:45:04Z",
       "side": 1,
       "message": "Test relies on the fact that je.CIPDPkgs works for adding packages. IMO construct the job definition with three packages then only test deletion with one je.CIPDPkgs call.",
+      "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "916cad17_c7ee64e6",
+        "filename": "led/job/edit_cipd_pkgs_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T06:04:58Z",
+      "side": 1,
+      "message": "Technically true, except that \u0027add\u0027 above already shows that adding packages works.\n\nManually constructing the three different led job states here would require triplicating this test (and, in fact, most of the tests in this package).\n\nI\u0027m going to submit for now, but if you feel strongly we can discuss further.",
+      "parentUuid": "c4e75231_67864046",
       "revId": "d7c97a2cb8669a3f90439d478da32ed533071d70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
