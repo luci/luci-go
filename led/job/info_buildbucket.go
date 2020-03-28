@@ -39,6 +39,12 @@ func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	return b.userPayload, nil
 }
 
+func (b bbInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
+	ret = CIPDPkgs{}
+	ret.fromList(b.CipdPackages)
+	return
+}
+
 func (b bbInfo) Env() (ret map[string]string, err error) {
 	ret = make(map[string]string, len(b.EnvVars))
 	for _, pair := range b.EnvVars {

@@ -107,6 +107,13 @@ func (swe *swarmingEditor) Priority(priority int32) {
 	})
 }
 
+func (swe *swarmingEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		cipdPkgs.updateCipdPkgs(&slc.Properties.CipdInputs)
+		return nil
+	})
+}
+
 func (swe *swarmingEditor) SwarmingHostname(host string) {
 	swe.tweak(func() (err error) {
 		if host == "" {

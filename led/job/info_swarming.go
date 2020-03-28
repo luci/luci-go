@@ -60,6 +60,28 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	return nil, nil
 }
 
+func (s swInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
+	slices := s.GetTask().GetTaskSlices()
+	if len(slices) >= 1 {
+		if pkgs := slices[0].GetProperties().GetCipdInputs(); len(pkgs) > 0 {
+			ret = CIPDPkgs{}
+			ret.fromList(pkgs)
+		}
+	}
+	if len(slices) > 1 {
+		for idx, slc := range slices[1:] {
+			pkgDict := CIPDPkgs{}
+			pkgDict.fromList(slc.GetProperties().GetCipdInputs())
+			if !ret.equal(pkgDict) {
+				return nil, errors.Reason(
+					"slice %d has cipd pkgs which differ from slice 0: %v vs %v",
+					idx+1, pkgDict, ret).Err()
+			}
+		}
+	}
+	return
+}
+
 func (s swInfo) Env() (ret map[string]string, err error) {
 	slices := s.GetTask().GetTaskSlices()
 	extractEnv := func(slc *swarmingpb.TaskSlice) (slcEnv map[string]string) {

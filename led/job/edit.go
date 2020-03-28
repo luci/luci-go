@@ -41,7 +41,7 @@ type Editor interface {
 	//    "subdir:name/of/package" -> "version"
 	//
 	// If version is empty, this package will be removed (if it's present).
-	// IMPLEMENT: CIPDPkgs(cipdPkgs CIPDPkgs)
+	CIPDPkgs(cipdPkgs CIPDPkgs)
 
 	// Env edits the swarming environment variables (i.e. those set before the
 	// user payload runs).
