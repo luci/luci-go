@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1c53e149_a3fcfee9",
+        "filename": "logdog/server/cmd/logdog_archivist/loop_params.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T06:27:08Z",
+      "side": 1,
+      "message": "I think it may still be relevant; the batches will still be pretty uniform in workload. If we don\u0027t randomize them then workers will only drift apart slowly. Randomizing them should help scatter them quickly when we do a new version rollout.",
+      "parentUuid": "c139c818_67e39176",
+      "range": {
+        "startLine": 38,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 1
+      },
+      "revId": "6791ecbfc655c9c436d4855a496cf92d8c7f3059",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "df5ddc34_f24d5506",
         "filename": "logdog/server/cmd/logdog_archivist/main.go",
         "patchSetId": 2
