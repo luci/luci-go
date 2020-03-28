@@ -42,7 +42,7 @@ type Info interface {
 	//
 	// For dimensions which "don't expire", they will report an expiration time of
 	// the total task expiration.
-	// IMPLEMENT Dimensions() (ExpiringDimensions, error)
+	Dimensions() (ExpiringDimensions, error)
 
 	// CIPDPkgs returns the mapping of all CIPD packages in the task, in the
 	// same format that Editor.CIPDPkgs takes.

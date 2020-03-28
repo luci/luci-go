@@ -16,7 +16,9 @@ package job
 
 import (
 	"sort"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
@@ -81,7 +83,72 @@ func (bbe *buildbucketEditor) ClearCurrentIsolated() {
 }
 
 func (bbe *buildbucketEditor) ClearDimensions() {
-	panic("implement me")
+	bbe.tweak(func() error {
+		bbe.bb.BbagentArgs.Build.Infra.Swarming.TaskDimensions = nil
+		return nil
+	})
+}
+
+func (bbe *buildbucketEditor) SetDimensions(dims ExpiringDimensions) {
+	bbe.ClearDimensions()
+	dec := DimensionEditCommands{}
+	for key, vals := range dims {
+		dec[key] = &DimensionEditCommand{SetValues: vals}
+	}
+	bbe.EditDimensions(dec)
+}
+
+func (bbe *buildbucketEditor) EditDimensions(dimEdits DimensionEditCommands) {
+	if len(dimEdits) == 0 {
+		return
+	}
+
+	bbe.tweak(func() error {
+		dims, err := bbe.jd.Info().Dimensions()
+		if err != nil {
+			return err
+		}
+
+		dimMap := dims.toLogical()
+		dimEdits.apply(dimMap, 0)
+
+		sw := bbe.bb.BbagentArgs.Build.Infra.Swarming
+		var maxExp time.Duration
+		newDims := make([]*bbpb.RequestedDimension, 0,
+			len(sw.TaskDimensions)+len(dimEdits))
+		for _, key := range keysOf(dimMap) {
+			valueExp := dimMap[key]
+			for _, value := range keysOf(valueExp) {
+				exp := valueExp[value]
+				if exp > maxExp {
+					maxExp = exp
+				}
+
+				toAdd := &bbpb.RequestedDimension{
+					Key:   key,
+					Value: value,
+				}
+				if exp > 0 {
+					toAdd.Expiration = ptypes.DurationProto(exp)
+				}
+				newDims = append(newDims, toAdd)
+			}
+		}
+		sw.TaskDimensions = newDims
+
+		build := bbe.bb.BbagentArgs.Build
+		var curTimeout time.Duration
+		if build.SchedulingTimeout != nil {
+			var err error
+			if curTimeout, err = ptypes.Duration(build.SchedulingTimeout); err != nil {
+				return err
+			}
+		}
+		if maxExp > curTimeout {
+			build.SchedulingTimeout = ptypes.DurationProto(maxExp)
+		}
+		return nil
+	})
 }
 
 func (bbe *buildbucketEditor) Env(env map[string]string) {

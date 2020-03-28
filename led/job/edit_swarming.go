@@ -17,7 +17,9 @@ package job
 import (
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/errors"
 	api "go.chromium.org/luci/swarming/proto/api"
 )
@@ -80,7 +82,116 @@ func (swe *swarmingEditor) ClearCurrentIsolated() {
 }
 
 func (swe *swarmingEditor) ClearDimensions() {
-	panic("implement me")
+	swe.tweakSlices(func(slc *api.TaskSlice) error {
+		slc.Properties.Dimensions = nil
+		return nil
+	})
+}
+
+func (swe *swarmingEditor) SetDimensions(dims ExpiringDimensions) {
+	swe.ClearDimensions()
+
+	dec := DimensionEditCommands{}
+	for key, vals := range dims {
+		dec[key] = &DimensionEditCommand{SetValues: vals}
+	}
+	swe.EditDimensions(dec)
+}
+
+// EditDimensions is a bit trickier for swarming than it is for buildbucket.
+//
+// We want to map the dimEdits onto existing slices; Slices in the swarming task
+// are listed with their expiration times relative to the previous slice, which
+// means we need to do a bit of precomputation to convert these to
+// expiration-relative-to-task-start times.
+//
+// If dimEdits contains set/add values which don't align with any existing
+// slices, this will set an error.
+func (swe *swarmingEditor) EditDimensions(dimEdits DimensionEditCommands) {
+	if len(dimEdits) == 0 {
+		return
+	}
+
+	swe.tweak(func() error {
+		taskRelativeExpirationSet := map[time.Duration]struct{}{}
+		slices := swe.sw.GetTask().GetTaskSlices()
+		sliceByExp := make([]struct {
+			// seconds from start-of-task to expiration of this slice.
+			TotalExpiration time.Duration
+			*api.TaskSlice
+		}, len(slices))
+
+		for i, slc := range slices {
+			sliceRelativeExpiration, err := ptypes.Duration(slc.Expiration)
+			if err != nil {
+				return err
+			}
+			taskRelativeExpiration := sliceRelativeExpiration
+			if i > 0 {
+				taskRelativeExpiration += sliceByExp[i-1].TotalExpiration
+			}
+			taskRelativeExpirationSet[taskRelativeExpiration] = struct{}{}
+
+			sliceByExp[i].TotalExpiration = taskRelativeExpiration
+			sliceByExp[i].TaskSlice = slc
+		}
+
+		checkValidExpiration := func(key string, value ExpiringValue, op string) error {
+			if value.Expiration == 0 {
+				return nil
+			}
+
+			if _, ok := taskRelativeExpirationSet[value.Expiration]; !ok {
+				validExpirations := make([]int64, len(sliceByExp)+1)
+				for i, slc := range sliceByExp {
+					validExpirations[i+1] = int64(slc.TotalExpiration / time.Second)
+				}
+
+				return errors.Reason(
+					"%s%s%s@%d has invalid expiration time: current slices expire at %v",
+					key, op, value.Value, value.Expiration/time.Second, validExpirations).Err()
+			}
+			return nil
+		}
+
+		for key, edits := range dimEdits {
+			for _, setval := range edits.SetValues {
+				if err := checkValidExpiration(key, setval, "="); err != nil {
+					return err
+				}
+			}
+			for _, addval := range edits.AddValues {
+				if err := checkValidExpiration(key, addval, "+="); err != nil {
+					return err
+				}
+			}
+		}
+
+		// Now we know that all the edits slot into some slice, we can actually
+		// apply them.
+		for _, slc := range sliceByExp {
+			if slc.Properties == nil {
+				slc.Properties = &api.TaskProperties{}
+			}
+			dimMap := logicalDimensions{}
+			for _, dim := range slc.Properties.Dimensions {
+				for _, value := range dim.Values {
+					dimMap.updateDuration(dim.Key, value, slc.TotalExpiration)
+				}
+			}
+			dimEdits.apply(dimMap, slc.TotalExpiration)
+			newDims := make([]*api.StringListPair, 0, len(dimMap))
+			for _, key := range keysOf(dimMap) {
+				values := dimMap[key]
+				newDims = append(newDims, &api.StringListPair{
+					Key: key, Values: values.toSlice(),
+				})
+			}
+			slc.Properties.Dimensions = newDims
+		}
+
+		return nil
+	})
 }
 
 func (swe *swarmingEditor) Env(env map[string]string) {

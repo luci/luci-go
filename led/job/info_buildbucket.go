@@ -39,6 +39,18 @@ func (b bbInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 	return b.userPayload, nil
 }
 
+func (b bbInfo) Dimensions() (ExpiringDimensions, error) {
+	ldims := logicalDimensions{}
+	for _, reqDim := range b.BbagentArgs.Build.Infra.Swarming.TaskDimensions {
+		exp := reqDim.Expiration
+		if exp == nil {
+			exp = b.BbagentArgs.Build.SchedulingTimeout
+		}
+		ldims.update(reqDim.Key, reqDim.Value, exp)
+	}
+	return ldims.toExpiringDimensions(), nil
+}
+
 func (b bbInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
 	ret = CIPDPkgs{}
 	ret.fromList(b.CipdPackages)
