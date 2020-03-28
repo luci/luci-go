@@ -16,7 +16,9 @@ package job
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -58,6 +60,25 @@ func (s swInfo) CurrentIsolated() (*swarmingpb.CASTree, error) {
 		return v, nil
 	}
 	return nil, nil
+}
+
+func (s swInfo) Dimensions() (ExpiringDimensions, error) {
+	ldims := logicalDimensions{}
+	var totalExpiration time.Duration
+	for _, slc := range s.GetTask().GetTaskSlices() {
+		exp, err := ptypes.Duration(slc.Expiration)
+		if err != nil {
+			return nil, errors.Annotate(err, "malformed expiration").Err()
+		}
+		totalExpiration += exp
+
+		for _, dim := range slc.GetProperties().GetDimensions() {
+			for _, val := range dim.Values {
+				ldims.updateDuration(dim.Key, val, totalExpiration)
+			}
+		}
+	}
+	return ldims.toExpiringDimensions(), nil
 }
 
 func (s swInfo) CIPDPkgs() (ret CIPDPkgs, err error) {
