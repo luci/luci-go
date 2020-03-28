@@ -17,6 +17,8 @@ package job
 import (
 	"path"
 
+	"github.com/golang/protobuf/jsonpb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api"
 )
@@ -95,7 +97,17 @@ func (b bbInfo) Experimental() bool {
 }
 
 func (b bbInfo) Properties() (ret map[string]string, err error) {
-	panic("implement me")
+	if p := b.GetBbagentArgs().GetBuild().GetInput().GetProperties(); p != nil {
+		m := (&jsonpb.Marshaler{})
+		ret = make(map[string]string, len(p.Fields))
+		for key, field := range p.Fields {
+			if ret[key], err = m.MarshalToString(field); err != nil {
+				ret = nil
+				return
+			}
+		}
+	}
+	return
 }
 
 func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
