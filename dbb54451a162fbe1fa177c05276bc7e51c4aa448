@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "d67be11f_d7c06bc8",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T07:50:34Z",
+      "side": 1,
+      "message": "This is documented on the HighLevelEditor interface: https://chromium.googlesource.com/infra/luci/luci-go/+/dbb54451a162fbe1fa177c05276bc7e51c4aa448/led/job/edit.go#83",
+      "parentUuid": "8eb6313f_3d99a010",
+      "revId": "dbb54451a162fbe1fa177c05276bc7e51c4aa448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c0e3d3e_5c453395",
         "filename": "luciexe/exe/props.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "dbb54451a162fbe1fa177c05276bc7e51c4aa448",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abbc7e84_215a2cc4",
+        "filename": "luciexe/exe/props.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T07:50:34Z",
+      "side": 1,
+      "message": "Yes it\u0027s related; the WriteProperties in led/job forwards directly to this method: https://chromium.googlesource.com/infra/luci/luci-go/+/dbb54451a162fbe1fa177c05276bc7e51c4aa448/led/job/buildbucket.go#26\n\nThat said, nothing uses WriteProperties yet; it\u0027s all part of the same new feature as this chain of CLs.",
+      "parentUuid": "4c0e3d3e_5c453395",
+      "revId": "dbb54451a162fbe1fa177c05276bc7e51c4aa448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
