@@ -34,6 +34,8 @@ message Buildbucket {
   // only will use the "$checkout_dir" bit; but it makes it easy to upgrade
   // a task from kitchen to luciexe by just flipping the 'legacy_kitchen'
   // boolean.
+  //
+  // TODO(iannucci): luciexe should be run_build
   buildbucket.v2.BBAgentArgs bbagent_args = 1;
 
   repeated swarming.v1.CIPDPackage cipd_packages = 2;

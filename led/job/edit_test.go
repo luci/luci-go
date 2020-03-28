@@ -289,3 +289,51 @@ func TestTags(t *testing.T) {
 		},
 	})
 }
+
+func TestTaskPayload(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `TaskPayload`, []testCase{
+		{
+			name:   "empty",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.TaskPayload("", "", "")
+				})
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				So(pkg, ShouldEqual, "")
+				So(vers, ShouldEqual, "")
+				So(path, ShouldEqual, ".")
+			},
+		},
+
+		{
+			name:   "isolate",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.TaskPayload("", "", "some/path")
+				})
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				So(pkg, ShouldEqual, "")
+				So(vers, ShouldEqual, "")
+				So(path, ShouldEqual, "some/path")
+			},
+		},
+
+		{
+			name:   "cipd",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.TaskPayload("pkgname", "latest", "some/path")
+				})
+				pkg, vers, path := jd.HighLevelInfo().TaskPayload()
+				So(pkg, ShouldEqual, "pkgname")
+				So(vers, ShouldEqual, "latest")
+				So(path, ShouldEqual, "some/path")
+			},
+		},
+	})
+}
