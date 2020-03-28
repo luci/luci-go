@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f5c3798e_b16fb958",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T07:17:49Z",
+      "side": 1,
+      "message": "This is only exported because it implements an interface; The docstring you\u0027re looking for is on the interface definition. Note that the type itself is not exported; there\u0027s no way for an external user to call this method except via the exported interface.",
+      "parentUuid": "eb6f8e54_2261cc5a",
+      "revId": "60ddbcad996aa4c97e196affc3906784f3a28e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "72dabb82_9cece1c9",
         "filename": "led/job/edit_buildbucket.go",
         "patchSetId": 6
@@ -30,6 +48,24 @@
       "writtenOn": "2020-03-13T23:55:03Z",
       "side": 1,
       "message": "Can you document the reason for this?",
+      "revId": "60ddbcad996aa4c97e196affc3906784f3a28e42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "028514f8_5f4fa0c6",
+        "filename": "led/job/edit_buildbucket.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2020-03-28T07:17:49Z",
+      "side": 1,
+      "message": "I tried to capture some of the reasoning here: https://chromium.googlesource.com/infra/luci/luci-go/+/aee362c6d0e07505ec21efc39efa096a5e6b58ae/led/job/job.proto#32\n\nThe reason it\u0027s \"luciexe\" is due to https://source.chromium.org/chromium/infra/infra/+/master:appengine/cr-buildbucket/swarming.py;l\u003d427?q\u003dbuildbucket%20executable_path\u0026ss\u003dchromium\u0026originalUrl\u003dhttps:%2F%2Fcs.chromium.org%2F\n\nwhich is actually WRONG, because of https://chromium.googlesource.com/infra/luci/luci-go/+/master/buildbucket/proto/common.proto#102\n\nSo... it\u0027s a bit of a work in progress. Probably this (and buildbucket) should change to run_build to match what\u0027s documented in build.proto.",
+      "parentUuid": "72dabb82_9cece1c9",
       "revId": "60ddbcad996aa4c97e196affc3906784f3a28e42",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
