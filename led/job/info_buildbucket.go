@@ -99,7 +99,14 @@ func (b bbInfo) Properties() (ret map[string]string, err error) {
 }
 
 func (b bbInfo) GerritChanges() (ret []*bbpb.GerritChange) {
-	panic("implement me")
+	if changes := b.GetBbagentArgs().GetBuild().GetInput().GetGerritChanges(); len(changes) > 0 {
+		ret = make([]*bbpb.GerritChange, len(changes))
+		for i, change := range changes {
+			toAdd := *change
+			ret[i] = &toAdd
+		}
+	}
+	return
 }
 
 func (b bbInfo) GitilesCommit() (ret *bbpb.GitilesCommit) {
