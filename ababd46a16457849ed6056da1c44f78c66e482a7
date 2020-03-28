@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "437b8c11_d074aa80",
+        "filename": "buildbucket/cmd/bbagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2020-03-28T00:57:45Z",
+      "side": 1,
+      "message": "i filed crbug.com/1065400 earlier today.\nhow about we avoid future work by doing this conditionally, if the build has invocation name?",
+      "revId": "ababd46a16457849ed6056da1c44f78c66e482a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
