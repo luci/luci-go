@@ -35,6 +35,8 @@ type Buildbucket struct {
 	// only will use the "$checkout_dir" bit; but it makes it easy to upgrade
 	// a task from kitchen to luciexe by just flipping the 'legacy_kitchen'
 	// boolean.
+	//
+	// TODO(iannucci): luciexe should be run_build
 	BbagentArgs      *proto1.BBAgentArgs   `protobuf:"bytes,1,opt,name=bbagent_args,json=bbagentArgs,proto3" json:"bbagent_args,omitempty"`
 	CipdPackages     []*api.CIPDPackage    `protobuf:"bytes,2,rep,name=cipd_packages,json=cipdPackages,proto3" json:"cipd_packages,omitempty"`
 	EnvVars          []*api.StringPair     `protobuf:"bytes,3,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty"`
