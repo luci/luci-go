@@ -11,6 +11,7 @@
     "@material/mwc-button": "^0.14.1",
     "@material/mwc-icon": "^0.14.1",
     "@vaadin/router": "^1.7.1",
+    "copy-to-clipboard": "^3.3.1",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",
     "mobx": "^5.15.4",
