@@ -19,6 +19,23 @@
     },
     {
       "key": {
+        "uuid": "56eb5041_f574c327",
+        "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1178685
+      },
+      "writtenOn": "2020-03-30T00:19:23Z",
+      "side": 1,
+      "message": "placeholder. Will update after test selection is implemented.",
+      "revId": "1155c400af2ba3e2784fae78d83fd77e793da3d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cdae08a2_b7dccea3",
         "filename": "milo/frontend/resultui/src/pages/invocation_page.ts",
         "patchSetId": 3
