@@ -13,21 +13,31 @@
 // limitations under the License.
 
 import path from 'path';
+
+import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack';
 
 const config: webpack.Configuration = {
-  mode: 'development',
-  entry: './src/index.ts',
-  devtool: 'eval-source-map',
+  entry: {
+    index: './src/index.ts',
+  },
   output: {
     path: path.resolve(__dirname, '../appengine/resultui/static/dist/scripts/'),
-    filename: 'index.js',
+    publicPath: '/static/dist/scripts/',
+    filename: '[name].[contenthash].bundle.js',
+    chunkFilename: '[name].[contenthash].bundle.js',
   },
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader',
+        use: {
+          loader: 'ts-loader',
+          options: {
+            configFile: 'tsconfig.build.json',
+          },
+        },
         exclude: /node_modules/,
       },
     ],
@@ -35,9 +45,34 @@ const config: webpack.Configuration = {
   resolve: {
     extensions: ['.js', '.ts'],
   },
+  optimization: {
+    // runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+      maxInitialRequests: Infinity,
+      minSize: 0,
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name(module) {
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+            return `npm.${packageName}`;
+          },
+        },
+      },
+    },
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      alwaysWriteToDisk: true,
+      template: path.resolve(__dirname, './index.html'),
+      filename: path.resolve(__dirname, '../appengine/resultui/index.html'),
+    }),
+    new HtmlWebpackHarddiskPlugin(),
+  ],
   devServer: {
     contentBase: path.join(__dirname, '../appengine/resultui/'),
-    publicPath: '/static/dist/scripts/',
+    writeToDisk: true,
     historyApiFallback: true,
   },
 };
