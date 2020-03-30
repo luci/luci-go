@@ -15,6 +15,7 @@
 package job
 
 import (
+	"encoding/json"
 	"path"
 	"sort"
 	"time"
@@ -192,7 +193,30 @@ func (bbe *buildbucketEditor) Priority(priority int32) {
 }
 
 func (bbe *buildbucketEditor) Properties(props map[string]string, auto bool) {
-	panic("implement me")
+	if len(props) == 0 {
+		return
+	}
+	bbe.tweak(func() error {
+		toWrite := map[string]interface{}{}
+
+		for k, v := range props {
+			if v == "" {
+				toWrite[k] = nil
+			} else {
+				var obj interface{}
+				if err := json.Unmarshal([]byte(v), &obj); err != nil {
+					if !auto {
+						return err
+					}
+					obj = v
+				}
+				toWrite[k] = obj
+			}
+		}
+
+		bbe.bb.WriteProperties(toWrite)
+		return nil
+	})
 }
 
 func (bbe *buildbucketEditor) CIPDPkgs(cipdPkgs CIPDPkgs) {
