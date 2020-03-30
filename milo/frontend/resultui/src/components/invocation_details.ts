@@ -14,11 +14,11 @@
 
 import { MobxLitElement } from '@adobe/lit-mobx';
 import '@material/mwc-icon';
+import dayjs from 'dayjs';
 import { css, customElement } from 'lit-element';
 import { html } from 'lit-html';
 import { styleMap } from 'lit-html/directives/style-map';
 import { computed, observable } from 'mobx';
-import moment from 'moment';
 
 import { Invocation } from '../services/resultdb';
 
@@ -53,9 +53,9 @@ export class InvocationDetailsElement extends MobxLitElement {
       <div id="body">
         <div id="content" style=${styleMap({'display': this.expanded ? '' : 'none'})}>
           <!-- TODO(weiweilin): use <chops-timestamp> -->
-          <div>Create Time: ${moment(this.invocation!.createTime).format('YYYY-MM-DD HH:mm:ss')}</div>
-          <div>Finalize Time: ${moment(this.invocation!.finalizeTime).format('YYYY-MM-DD HH:mm:ss')}</div>
-          <div>Deadline: ${moment(this.invocation!.deadline).format('YYYY-MM-DD HH:mm:ss')}</div>
+          <div>Create Time: ${dayjs(this.invocation!.createTime).format('YYYY-MM-DD HH:mm:ss')}</div>
+          <div>Finalize Time: ${dayjs(this.invocation!.finalizeTime).format('YYYY-MM-DD HH:mm:ss')}</div>
+          <div>Deadline: ${dayjs(this.invocation!.deadline).format('YYYY-MM-DD HH:mm:ss')}</div>
           <div
             id="included-invocations"
             style=${styleMap({'display': this.hasIncludedInvocations ? '' : 'none'})}
