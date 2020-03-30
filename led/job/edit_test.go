@@ -291,6 +291,29 @@ func TestTags(t *testing.T) {
 	})
 }
 
+func TestExperimental(t *testing.T) {
+	t.Parallel()
+
+	runCases(t, `Experimental`, []testCase{
+		{
+			name:   "full",
+			skipSW: true,
+			fn: func(jd *Definition) {
+				So(jd.HighLevelInfo().Experimental(), ShouldBeFalse)
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Experimental(true)
+				})
+				So(jd.HighLevelInfo().Experimental(), ShouldBeTrue)
+
+				SoHLEdit(jd, func(je HighLevelEditor) {
+					je.Experimental(false)
+				})
+				So(jd.HighLevelInfo().Experimental(), ShouldBeFalse)
+			},
+		},
+	})
+}
+
 func TestProperties(t *testing.T) {
 	t.Parallel()
 
