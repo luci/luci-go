@@ -19,9 +19,12 @@ package sink
 import (
 	"context"
 	"encoding/hex"
+	"io"
 	"net"
 	"net/http"
 	"sync/atomic"
+
+	"cloud.google.com/go/storage"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
@@ -56,6 +59,9 @@ var ErrCloseBeforeStart error = errors.Reason("the server is not started yet").E
 type ServerConfig struct {
 	// Recorder is the gRPC client to the Recorder service exposed by ResultDB.
 	Recorder pb.RecorderClient
+	// GStorage is a Google Cloud Storage client to be used for Artifact upload.
+	GStorage     *storage.Client
+	testUploadFn func(context.Context, *storage.ObjectHandle, io.Reader) error
 
 	// AuthToken is a secret token to expect from clients. If it is "" then it
 	// will be randomly generated in a secure way.
@@ -72,6 +78,9 @@ type ServerConfig struct {
 
 	// TestIDPrefix will be prepended to the test_id of each TestResult.
 	TestIDPrefix string
+
+	// GSBucket is the name of the Google Storage bucket to store artifacts in.
+	GSBucket string
 }
 
 // Server contains state relevant to the server itself.
@@ -97,8 +106,12 @@ func NewServer(cfg ServerConfig) *Server {
 		cfg.Address = DefaultAddr
 	}
 	if cfg.Recorder == nil {
-		panic("the Recorder client must be set")
+		panic("missing Recorder client in sink.ServerConfig")
 	}
+	if cfg.GStorage == nil {
+		panic("missing Google Storage client in sink.ServerConfig")
+	}
+
 	s := &Server{
 		cfg:  cfg,
 		errC: make(chan error, 1),

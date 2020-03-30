@@ -16,11 +16,13 @@ package sink
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/grpc/metadata"
@@ -61,6 +63,11 @@ func testServerConfig(ctl *gomock.Controller, addr, tk string) ServerConfig {
 		Address:   addr,
 		AuthToken: tk,
 		Recorder:  pb.NewMockRecorderClient(ctl),
+		GStorage:  &storage.Client{},
+		GSBucket:  "test-bucket",
+		testUploadFn: func(context.Context, *storage.ObjectHandle, io.Reader) error {
+			return nil
+		},
 	}
 }
 

@@ -15,9 +15,11 @@ package sink
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -47,15 +49,14 @@ func TestReportTestResults(t *testing.T) {
 			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
 		cfg := testServerConfig(ctl, "", "secret")
 		cfg.Invocation = "inv1"
+
+		uploadedObjs := map[string]string{}
+		cfg.testUploadFn = func(ctx context.Context, obj *storage.ObjectHandle, r io.Reader) error {
+			uploadedObjs[obj.ObjectName()] = obj.BucketName()
+			return nil
+		}
 		sink, err := newSinkServer(ctx, cfg)
 		So(err, ShouldBeNil)
-
-		defer func() {
-			// close the server to drain the channel and process the queued items.
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			closeSinkServer(ctx, sink)
-		}()
 
 		// mock
 		recorder := cfg.Recorder.(*pb.MockRecorderClient)
@@ -66,6 +67,23 @@ func TestReportTestResults(t *testing.T) {
 
 			// rdb_channel should invoke recorder.BatchCreateTestResults()
 			recorder.EXPECT().BatchCreateTestResults(gomock.Any(), invEq(cfg.Invocation))
+
+			// close the server to drain the channels and process the queued items.
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			closeSinkServer(ctx, sink)
+
+			Convey("uploads artifacts", func() {
+				// input and output sample artifacts have unique names
+				for name, _ := range req.TestResults[0].InputArtifacts {
+					So(uploadedObjs, ShouldContainKey, name)
+					So(uploadedObjs[name], ShouldEqual, cfg.GSBucket)
+				}
+				for name, _ := range req.TestResults[0].OutputArtifacts {
+					So(uploadedObjs, ShouldContainKey, name)
+					So(uploadedObjs[name], ShouldEqual, cfg.GSBucket)
+				}
+			})
 		})
 
 		Convey("returns an error if artifacts are invalid", func() {
